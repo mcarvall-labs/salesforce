@@ -1,4 +1,4 @@
-<img width="940" height="353" alt="Axon Finance" src="https://raw.githubusercontent.com/axon-personal-finances/salesfoce/main/resources/AxonPersonalFinancesLogo.png" />
+<img width="940" height="353" alt="Axon Finance" src="https://raw.githubusercontent.com/axon-personal-finances/salesforce/main/resources/AxonPersonalFinancesLogo.png" />
 
 # Axon Finance
 
