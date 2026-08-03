@@ -29,7 +29,6 @@ import AXF_LBL_NoMovementsFound from '@salesforce/label/c.AXF_LBL_NoMovementsFou
 
 const RECORD_TYPE = 'AXF_CF_RT_Expense';
 const CATEGORY_RECORD_TYPE = 'AXF_CAT_RT_Expense';
-const TARGET_STATUS = 'PAGA';
 
 const STATUS_META = {
     PENDENTE: { icon: 'utility:dislike', variant: 'slds-icon-text-default', label: AXF_LBL_StatusPending },
@@ -67,6 +66,7 @@ export default class AXF_LWC_expenseHomeTable extends LightningElement {
     isModalOpen = false;
     selectedRowId;
     paymentDate = this.today();
+    paidValue;
     searchTerm = '';
     bankMatches = [];
     cardMatches = [];
@@ -122,6 +122,8 @@ export default class AXF_LWC_expenseHomeTable extends LightningElement {
     handleSettleClick(event) {
         this.selectedRowId = event.currentTarget.dataset.id;
         this.paymentDate = this.today();
+        const selectedRow = this.rows.find((row) => row.id === this.selectedRowId);
+        this.paidValue = selectedRow ? selectedRow.value : null;
         this.searchTerm = '';
         this.bankMatches = [];
         this.cardMatches = [];
@@ -135,6 +137,10 @@ export default class AXF_LWC_expenseHomeTable extends LightningElement {
 
     handlePaymentDateChange(event) {
         this.paymentDate = event.detail.value;
+    }
+
+    handlePaidValueChange(event) {
+        this.paidValue = event.detail.value;
     }
 
     async handleSearchChange(event) {
@@ -194,9 +200,12 @@ export default class AXF_LWC_expenseHomeTable extends LightningElement {
 
     async settle(bankTransactionId, creditCardTransactionId) {
         try {
+            if (!this.paymentDate || !this.paidValue || Number(this.paidValue) <= 0) {
+                throw new Error('Informe uma data e um valor pago maior que zero.');
+            }
             await settleCashFlow({
                 cashFlowId: this.selectedRowId,
-                targetStatus: TARGET_STATUS,
+                paidValue: Number(this.paidValue),
                 paymentDate: this.paymentDate,
                 bankTransactionId,
                 creditCardTransactionId

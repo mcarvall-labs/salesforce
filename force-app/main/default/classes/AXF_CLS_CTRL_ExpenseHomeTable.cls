@@ -24,15 +24,28 @@ public with sharing class AXF_CLS_CTRL_ExpenseHomeTable {
     }
 
     @AuraEnabled
-    public static void settleCashFlow(Id cashFlowId, String targetStatus, Date paymentDate, Id bankTransactionId, Id creditCardTransactionId) {
-        if (cashFlowId == null) {
-            throw new AuraHandledException('Cash Flow ID is required.');
-        }
+    public static void settleCashFlow(
+        Id cashFlowId,
+        Decimal paidValue,
+        Date paymentDate,
+        Id bankTransactionId,
+        Id creditCardTransactionId
+    ) {
         try {
-            ALT_CLS_CashFlowHome businessService = new ALT_CLS_CashFlowHome();
-            businessService.settleCashFlow(cashFlowId, targetStatus, paymentDate, bankTransactionId, creditCardTransactionId);
+            new ALT_CLS_CashFlowSettlement().settleExpense(
+                cashFlowId,
+                paidValue,
+                paymentDate,
+                bankTransactionId,
+                creditCardTransactionId
+            );
+        } catch (IllegalArgumentException e) {
+            AuraHandledException handled = new AuraHandledException(e.getMessage());
+            handled.setMessage(e.getMessage());
+            throw handled;
         } catch (Exception e) {
-            throw new AuraHandledException('Erro ao liquidar lançamento: ' + e.getMessage());
+            AuraHandledException handled = new AuraHandledException('Não foi possível liquidar o lançamento.');
+            handled.setMessage('Não foi possível liquidar o lançamento.');
+            throw handled;
         }
-    }
-}
+    }}

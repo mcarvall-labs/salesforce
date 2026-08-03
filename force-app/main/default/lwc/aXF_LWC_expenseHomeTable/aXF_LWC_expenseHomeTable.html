@@ -85,7 +85,8 @@
                     <h2 class="slds-text-heading_medium">{labels.modalTitle}</h2>
                 </header>
                 <div class="slds-modal__content slds-p-around_medium">
-                    <lightning-input type="date" label={labels.paymentDate} value={paymentDate} onchange={handlePaymentDateChange}></lightning-input>
+                    <lightning-input type="date" label={labels.paymentDate} value={paymentDate} onchange={handlePaymentDateChange} required></lightning-input>
+                    <lightning-input type="number" label="Valor Pago" value={paidValue} min="0.01" step="0.01" onchange={handlePaidValueChange} required></lightning-input>
 
                     <div class="slds-p-top_medium">
                         <p class="slds-text-title_caps slds-p-bottom_x-small">{labels.reconcileWithBank} / {labels.reconcileWithCard}</p>
