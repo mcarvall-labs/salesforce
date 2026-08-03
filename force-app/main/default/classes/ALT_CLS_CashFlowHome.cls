@@ -164,7 +164,9 @@ public inherited sharing class ALT_CLS_CashFlowHome {
         List<AXF_OBJ_CashFlow__c> entries = new List<AXF_OBJ_CashFlow__c>();
         Date baseDueDate = request.firstDueDate != null ? request.firstDueDate : Date.today();
         Date resolvedPurchaseDate = request.purchaseDate != null ? request.purchaseDate : Date.today();
-        for (Integer index = 0; index < installmentCount; index++) {
+        Boolean priceFinancing = request.paymentMode == 'FINANCIAMENTO' && request.financingType == 'PRICE';
+        Integer entriesToCreate = priceFinancing ? ALT_CLS_PriceFinancing.initialWindow(installmentCount) : installmentCount;
+        for (Integer index = 0; index < entriesToCreate; index++) {
             Date dueDate = baseDueDate.addMonths(index);
             Boolean isSettledOccurrence = request.isPaid == true && index == 0;
             Decimal occurrenceAmount = request.isTotalAmount == true && installmentCount > 1 && index == installmentCount - 1

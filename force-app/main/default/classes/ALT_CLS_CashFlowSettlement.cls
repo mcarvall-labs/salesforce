@@ -51,7 +51,8 @@ public inherited sharing class ALT_CLS_CashFlowSettlement {
         if (target.AXF_CF_LKP_InstallmentGroup__c != null) {
             groupRecord = [
                 SELECT Id, AXF_IG_PKL_GroupType__c, AXF_IG_NUM_TotalInstallments__c,
-                       AXF_IG_CUR_InstallmentAmount__c
+                       AXF_IG_CUR_InstallmentAmount__c, AXF_IG_CUR_TotalAmount__c,
+                       AXF_IG_PKL_FinancingType__c
                 FROM AXF_OBJ_InstallmentGroup__c
                 WHERE Id = :target.AXF_CF_LKP_InstallmentGroup__c
                 WITH USER_MODE
