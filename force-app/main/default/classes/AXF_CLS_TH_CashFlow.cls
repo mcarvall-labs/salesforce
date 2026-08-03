@@ -15,11 +15,15 @@ public with sharing class AXF_CLS_TH_CashFlow {
     }
 
     public static void handleAfterInsert(List<AXF_OBJ_CashFlow__c> newRecords) {
-        recalculateInstallmentGroups(collectGroupIds(newRecords, null));
+        Set<Id> groupIds = collectGroupIds(newRecords, null);
+        recalculateInstallmentGroups(groupIds);
+        ALT_CLS_SacFinancing.afterCashFlowChange(groupIds);
     }
 
     public static void handleAfterUpdate(List<AXF_OBJ_CashFlow__c> newRecords, Map<Id, AXF_OBJ_CashFlow__c> oldMap) {
-        recalculateInstallmentGroups(collectGroupIds(newRecords, oldMap));
+        Set<Id> groupIds = collectGroupIds(newRecords, oldMap);
+        recalculateInstallmentGroups(groupIds);
+        ALT_CLS_SacFinancing.afterCashFlowChange(groupIds);
     }
 
     public static void handleAfterDelete(List<AXF_OBJ_CashFlow__c> oldRecords) {
@@ -60,6 +64,7 @@ public with sharing class AXF_CLS_TH_CashFlow {
             SELECT AXF_CF_LKP_InstallmentGroup__c, AXF_CF_PKL_Status__c, AXF_CF_CUR_Value__c
             FROM AXF_OBJ_CashFlow__c
             WHERE AXF_CF_LKP_InstallmentGroup__c IN :groupIds
+            WITH USER_MODE
         ]) {
             AXF_OBJ_InstallmentGroup__c grp = groupsToUpdate.get(cf.AXF_CF_LKP_InstallmentGroup__c);
             Decimal value = cf.AXF_CF_CUR_Value__c == null ? 0 : cf.AXF_CF_CUR_Value__c;
@@ -77,7 +82,7 @@ public with sharing class AXF_CLS_TH_CashFlow {
             }
         }
 
-        update groupsToUpdate.values();
+        Database.update(groupsToUpdate.values(), AccessLevel.USER_MODE);
     }
 
     private static void applyPaymentStatusRules(List<AXF_OBJ_CashFlow__c> records) {

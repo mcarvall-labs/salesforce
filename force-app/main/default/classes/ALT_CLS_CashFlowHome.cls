@@ -164,15 +164,21 @@ public inherited sharing class ALT_CLS_CashFlowHome {
         List<AXF_OBJ_CashFlow__c> entries = new List<AXF_OBJ_CashFlow__c>();
         Date baseDueDate = request.firstDueDate != null ? request.firstDueDate : Date.today();
         Date resolvedPurchaseDate = request.purchaseDate != null ? request.purchaseDate : Date.today();
-        for (Integer index = 0; index < installmentCount; index++) {
+        Boolean sacFinancing = request.paymentMode == 'FINANCIAMENTO_SAC';
+        Integer entriesToCreate = sacFinancing ? ALT_CLS_SacFinancing.initialWindow(installmentCount) : installmentCount;
+        Decimal scheduleRate = sacFinancing ? resolveMonthlyAdjustmentRate('SAC', request.monthlyAdjustmentRate) : null;
+        for (Integer index = 0; index < entriesToCreate; index++) {
             Date dueDate = baseDueDate.addMonths(index);
             Boolean isSettledOccurrence = request.isPaid == true && index == 0;
+            Decimal occurrenceAmount = sacFinancing
+                ? ALT_CLS_SacFinancing.estimate(installmentAmount, scheduleRate, index)
+                : installmentAmount;
             entries.add(new AXF_OBJ_CashFlow__c(
                 RecordTypeId = recordTypeId,
                 Name = installmentCount > 1
                     ? request.description + ' (' + (index + 1) + '/' + installmentCount + ')'
                     : request.description,
-                AXF_CF_CUR_Value__c = installmentAmount,
+                AXF_CF_CUR_Value__c = occurrenceAmount,
                 AXF_CF_CUR_PaidValue__c = isSettledOccurrence ? request.paidValue : null,
                 AXF_CF_DAT_PurchaseDate__c = resolvedPurchaseDate,
                 AXF_CF_DAT_DueDate__c = dueDate,
@@ -181,7 +187,7 @@ public inherited sharing class ALT_CLS_CashFlowHome {
                 AXF_CF_PKL_PaymentMethod__c = request.paymentMethod,
                 AXF_CF_PKL_RecurringType__c = request.recurringType,
                 AXF_CF_PKL_ProvisioningStrategy__c = request.recurringType == 'VARIAVEL' ? request.provisioningStrategy : null,
-                AXF_CF_CHK_IsEstimated__c = request.recurringType == 'VARIAVEL' && !isSettledOccurrence,
+                AXF_CF_CHK_IsEstimated__c = (request.recurringType == 'VARIAVEL' || sacFinancing) && !isSettledOccurrence,
                 AXF_CF_PKL_Status__c = resolveInitialStatus(request.entryType, dueDate, isSettledOccurrence, request.paymentDate),
                 AXF_CF_NUM_CurrentInstallment__c = index + 1,
                 AXF_CF_NUM_TotalInstallments__c = request.paymentMode == 'RECORRENTE' ? null : installmentCount,
