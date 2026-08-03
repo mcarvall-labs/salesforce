@@ -47,6 +47,10 @@ public inherited sharing class ALT_CLS_CashFlowHome {
 
         String query = 'SELECT Id, Name, AXF_CF_DAT_DueDate__c, AXF_CF_DAT_PaymentDate__c, AXF_CF_PKL_Status__c, ' +
                        '       AXF_CF_CUR_Value__c, AXF_CF_LKP_Category__c, AXF_CF_LKP_Category__r.Name, ' +
+                       '       AXF_CF_NUM_CurrentInstallment__c, AXF_CF_LKP_InstallmentGroup__c, ' +
+                       '       AXF_CF_LKP_InstallmentGroup__r.AXF_IG_PKL_GroupType__c, ' +
+                       '       AXF_CF_LKP_InstallmentGroup__r.AXF_IG_CUR_InstallmentAmount__c, ' +
+                       '       AXF_CF_LKP_InstallmentGroup__r.AXF_IG_DAT_AdjustmentAnniversary__c, ' +
                        '       AXF_CF_LKP_BankAccountTransaction__c, AXF_CF_LKP_CreditCardTransaction__c ' +
                        'FROM AXF_OBJ_CashFlow__c ' +
                        'WHERE RecordTypeId = :rtId ' +
@@ -165,7 +169,10 @@ public inherited sharing class ALT_CLS_CashFlowHome {
         Date baseDueDate = request.firstDueDate != null ? request.firstDueDate : Date.today();
         Date resolvedPurchaseDate = request.purchaseDate != null ? request.purchaseDate : Date.today();
         Boolean sacFinancing = request.paymentMode == 'FINANCIAMENTO_SAC';
-        Integer entriesToCreate = sacFinancing ? ALT_CLS_SacFinancing.initialWindow(installmentCount) : installmentCount;
+        Boolean consortium = request.paymentMode == 'CONSORCIO';
+        Integer entriesToCreate = sacFinancing
+            ? ALT_CLS_SacFinancing.initialWindow(installmentCount)
+            : consortium ? ALT_CLS_Consortium.initialWindow(installmentCount) : installmentCount;
         Decimal scheduleRate = sacFinancing ? resolveMonthlyAdjustmentRate('SAC', request.monthlyAdjustmentRate) : null;
         for (Integer index = 0; index < entriesToCreate; index++) {
             Date dueDate = baseDueDate.addMonths(index);
@@ -187,7 +194,7 @@ public inherited sharing class ALT_CLS_CashFlowHome {
                 AXF_CF_PKL_PaymentMethod__c = request.paymentMethod,
                 AXF_CF_PKL_RecurringType__c = request.recurringType,
                 AXF_CF_PKL_ProvisioningStrategy__c = request.recurringType == 'VARIAVEL' ? request.provisioningStrategy : null,
-                AXF_CF_CHK_IsEstimated__c = (request.recurringType == 'VARIAVEL' || sacFinancing) && !isSettledOccurrence,
+                AXF_CF_CHK_IsEstimated__c = (request.recurringType == 'VARIAVEL' || sacFinancing || consortium) && !isSettledOccurrence,
                 AXF_CF_PKL_Status__c = resolveInitialStatus(request.entryType, dueDate, isSettledOccurrence, request.paymentDate),
                 AXF_CF_NUM_CurrentInstallment__c = index + 1,
                 AXF_CF_NUM_TotalInstallments__c = request.paymentMode == 'RECORRENTE' ? null : installmentCount,
