@@ -23,7 +23,8 @@ public inherited sharing class ALT_CLS_CashFlowSettlement {
         Decimal paidValue,
         Date paymentDate,
         Id bankTransactionId,
-        Id creditCardTransactionId
+        Id creditCardTransactionId,
+        Boolean consortiumAdjustmentConfirmed
     ) {
         validateInput(cashFlowId, paidValue, paymentDate, bankTransactionId, creditCardTransactionId);
 
@@ -51,7 +52,7 @@ public inherited sharing class ALT_CLS_CashFlowSettlement {
         if (target.AXF_CF_LKP_InstallmentGroup__c != null) {
             groupRecord = [
                 SELECT Id, AXF_IG_PKL_GroupType__c, AXF_IG_NUM_TotalInstallments__c,
-                       AXF_IG_CUR_InstallmentAmount__c
+                       AXF_IG_CUR_InstallmentAmount__c, AXF_IG_DAT_AdjustmentAnniversary__c
                 FROM AXF_OBJ_InstallmentGroup__c
                 WHERE Id = :target.AXF_CF_LKP_InstallmentGroup__c
                 WITH USER_MODE
@@ -74,6 +75,16 @@ public inherited sharing class ALT_CLS_CashFlowSettlement {
                 WITH USER_MODE
                 FOR UPDATE
             ];
+        }
+
+        if (consortiumAdjustmentConfirmed == true && (
+            groupRecord == null ||
+            groupRecord.AXF_IG_PKL_GroupType__c != 'CONSORTIUM' ||
+            paidValue <= groupRecord.AXF_IG_CUR_InstallmentAmount__c ||
+            groupRecord.AXF_IG_DAT_AdjustmentAnniversary__c == null ||
+            target.AXF_CF_DAT_DueDate__c < groupRecord.AXF_IG_DAT_AdjustmentAnniversary__c
+        )) {
+            throw new IllegalArgumentException('The consortium adjustment is not eligible for confirmation.');
         }
 
         if (target.AXF_CF_LKP_InstallmentGroup__c == null) {
@@ -116,6 +127,14 @@ public inherited sharing class ALT_CLS_CashFlowSettlement {
             }
             if (reconciliationTransaction != null) {
                 Database.update(reconciliationTransaction, AccessLevel.USER_MODE);
+            }
+            if (groupRecord != null && groupRecord.AXF_IG_PKL_GroupType__c == 'CONSORTIUM') {
+                ALT_CLS_Consortium.maintain(
+                    groupRecord.Id,
+                    Integer.valueOf(target.AXF_CF_NUM_CurrentInstallment__c),
+                    paidValue,
+                    consortiumAdjustmentConfirmed == true
+                );
             }
         } finally {
             serviceOperation = false;

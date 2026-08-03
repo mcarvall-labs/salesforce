@@ -29,7 +29,8 @@ public with sharing class AXF_CLS_CTRL_ExpenseHomeTable {
         Decimal paidValue,
         Date paymentDate,
         Id bankTransactionId,
-        Id creditCardTransactionId
+        Id creditCardTransactionId,
+        Boolean consortiumAdjustmentConfirmed
     ) {
         try {
             new ALT_CLS_CashFlowSettlement().settleExpense(
@@ -37,7 +38,8 @@ public with sharing class AXF_CLS_CTRL_ExpenseHomeTable {
                 paidValue,
                 paymentDate,
                 bankTransactionId,
-                creditCardTransactionId
+                creditCardTransactionId,
+                consortiumAdjustmentConfirmed
             );
         } catch (IllegalArgumentException e) {
             AuraHandledException handled = new AuraHandledException(e.getMessage());

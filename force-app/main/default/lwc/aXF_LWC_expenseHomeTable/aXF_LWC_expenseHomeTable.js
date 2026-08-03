@@ -1,6 +1,7 @@
 import { LightningElement, wire } from 'lwc';
 import { refreshApex } from '@salesforce/apex';
 import { ShowToastEvent } from 'lightning/platformShowToastEvent';
+import LightningConfirm from 'lightning/confirm';
 import ORG_CURRENCY_CODE from '@salesforce/i18n/currency';
 import getMonthlyMovements from '@salesforce/apex/AXF_CLS_CTRL_ExpenseHomeTable.getMonthlyMovements';
 import getReconciliationSuggestions from '@salesforce/apex/AXF_CLS_CTRL_ExpenseHomeTable.getReconciliationSuggestions';
@@ -53,6 +54,9 @@ export default class AXF_LWC_expenseHomeTable extends LightningElement {
         const reconciled = !!(row.AXF_CF_LKP_BankAccountTransaction__c || row.AXF_CF_LKP_CreditCardTransaction__c);
         return { id: row.Id, name: row.Name, dueDate: row.AXF_CF_DAT_DueDate__c,
             categoryName: row.AXF_CF_LKP_Category__r ? row.AXF_CF_LKP_Category__r.Name : '-', value: row.AXF_CF_CUR_Value__c,
+            groupType: row.AXF_CF_LKP_InstallmentGroup__r?.AXF_IG_PKL_GroupType__c,
+            groupBase: row.AXF_CF_LKP_InstallmentGroup__r?.AXF_IG_CUR_InstallmentAmount__c,
+            adjustmentAnniversary: row.AXF_CF_LKP_InstallmentGroup__r?.AXF_IG_DAT_AdjustmentAnniversary__c,
             statusIcon: meta.icon, statusVariant: meta.variant, statusLabel: meta.label,
             reconciledIcon: reconciled ? 'utility:link' : 'utility:unlink',
             reconciledVariant: reconciled ? 'slds-icon-text-success' : 'slds-icon-text-default', canUnreconcile: reconciled };
@@ -84,7 +88,20 @@ export default class AXF_LWC_expenseHomeTable extends LightningElement {
     async settle(bankTransactionId, creditCardTransactionId) {
         try {
             if (!this.paymentDate || !this.paidValue || Number(this.paidValue) <= 0) throw new Error('Informe uma data e um valor pago maior que zero.');
-            await settleCashFlow({ cashFlowId: this.selectedRowId, paidValue: Number(this.paidValue), paymentDate: this.paymentDate, bankTransactionId, creditCardTransactionId });
+            const row = this.rows.find((item) => item.id === this.selectedRowId);
+            const eligibleAdjustment = row?.groupType === 'CONSORTIUM'
+                && Number(this.paidValue) > Number(row.groupBase)
+                && row.adjustmentAnniversary
+                && row.dueDate >= row.adjustmentAnniversary;
+            const consortiumAdjustmentConfirmed = eligibleAdjustment
+                ? await LightningConfirm.open({
+                    label: 'Confirmar reajuste do consórcio',
+                    message: 'O valor pago é maior que o valor-base. Deseja aplicar este reajuste às parcelas futuras não pagas?',
+                    variant: 'header'
+                })
+                : false;
+            await settleCashFlow({ cashFlowId: this.selectedRowId, paidValue: Number(this.paidValue), paymentDate: this.paymentDate,
+                bankTransactionId, creditCardTransactionId, consortiumAdjustmentConfirmed });
             this.isModalOpen = false; await refreshApex(this.wiredResult);
             this.dispatchEvent(new ShowToastEvent({ variant: 'success', title: this.labels.save, message: this.labels.modalTitle }));
         } catch (error) { this.showErrorToast(error); }

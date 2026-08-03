@@ -132,6 +132,9 @@ public with sharing class AXF_CLS_CTRL_QuickFlowActions {
         if (recurring && dto.type != 'DESPESA') {
             throw handled('Recurring entries are available only for Expenses.');
         }
+        if (consortium && dto.type != 'DESPESA') {
+            throw handled('Consortium entries are available only for Expenses.');
+        }
         if (recurring && !RECURRING_TYPES.contains(dto.recurringType)) {
             throw handled('Select a valid Recurring Type.');
         }
