@@ -6,6 +6,17 @@ public inherited sharing class ALT_CLS_CashFlowSettlement {
     private static final Integer FUTURE_HORIZON = 6;
     private static final Set<String> OPEN_STATUSES = new Set<String>{ 'PENDENTE', 'VENCIDA' };
     private static final Set<String> SETTLED_STATUSES = new Set<String>{ 'PAGA', 'PAGA_EM_ATRASO' };
+    public static Boolean serviceOperation = false;
+
+    public class ReconciliationSuggestion {
+        public Id transactionId;
+        public String source;
+        public Date transactionDate;
+        public Decimal amount;
+        public String description;
+        public Integer score;
+        public String confidence;
+    }
 
     public void settleExpense(
         Id cashFlowId,
@@ -25,7 +36,8 @@ public inherited sharing class ALT_CLS_CashFlowSettlement {
                    AXF_CF_NUM_CurrentInstallment__c, AXF_CF_NUM_TotalInstallments__c,
                    AXF_CF_LKP_Category__c, AXF_CF_LKP_Account__c,
                    AXF_CF_LKP_BankAccount__c, AXF_CF_LKP_CreditCard__c,
-                   AXF_CF_LKP_InstallmentGroup__c
+                   AXF_CF_LKP_InstallmentGroup__c, AXF_CF_PKL_ReconciliationStatus__c,
+                   AXF_CF_LKP_BankAccountTransaction__c, AXF_CF_LKP_CreditCardTransaction__c
             FROM AXF_OBJ_CashFlow__c
             WHERE Id = :cashFlowId
             WITH USER_MODE
@@ -55,7 +67,8 @@ public inherited sharing class ALT_CLS_CashFlowSettlement {
                        AXF_CF_NUM_CurrentInstallment__c, AXF_CF_NUM_TotalInstallments__c,
                        AXF_CF_LKP_Category__c, AXF_CF_LKP_Account__c,
                        AXF_CF_LKP_BankAccount__c, AXF_CF_LKP_CreditCard__c,
-                       AXF_CF_LKP_InstallmentGroup__c
+                       AXF_CF_LKP_InstallmentGroup__c, AXF_CF_PKL_ReconciliationStatus__c,
+                   AXF_CF_LKP_BankAccountTransaction__c, AXF_CF_LKP_CreditCardTransaction__c
                 FROM AXF_OBJ_CashFlow__c
                 WHERE AXF_CF_LKP_InstallmentGroup__c = :groupRecord.Id
                 WITH USER_MODE
@@ -75,6 +88,11 @@ public inherited sharing class ALT_CLS_CashFlowSettlement {
                 throw new IllegalArgumentException('Cash Flow was not found.');
             }
         }
+        SObject reconciliationTransaction = prepareReconciliation(
+            target,
+            bankTransactionId,
+            creditCardTransactionId
+        );
         applyActualSettlement(target, paidValue, paymentDate, bankTransactionId, creditCardTransactionId);
         List<AXF_OBJ_CashFlow__c> recordsToUpdate = new List<AXF_OBJ_CashFlow__c>{ target };
         List<AXF_OBJ_CashFlow__c> recordsToInsert = new List<AXF_OBJ_CashFlow__c>();
@@ -90,11 +108,18 @@ public inherited sharing class ALT_CLS_CashFlowSettlement {
             );
         }
 
-        Database.update(recordsToUpdate, AccessLevel.USER_MODE);
-        if (!recordsToInsert.isEmpty()) {
-            Database.insert(recordsToInsert, AccessLevel.USER_MODE);
-        }
-    }
+        serviceOperation = true;
+        try {
+            Database.update(recordsToUpdate, AccessLevel.USER_MODE);
+            if (!recordsToInsert.isEmpty()) {
+                Database.insert(recordsToInsert, AccessLevel.USER_MODE);
+            }
+            if (reconciliationTransaction != null) {
+                Database.update(reconciliationTransaction, AccessLevel.USER_MODE);
+            }
+        } finally {
+            serviceOperation = false;
+        }    }
 
     private static void validateInput(
         Id cashFlowId,
@@ -125,6 +150,9 @@ public inherited sharing class ALT_CLS_CashFlowSettlement {
         target.AXF_CF_CHK_IsEstimated__c = false;
         target.AXF_CF_LKP_BankAccountTransaction__c = bankTransactionId;
         target.AXF_CF_LKP_CreditCardTransaction__c = creditCardTransactionId;
+        target.AXF_CF_PKL_ReconciliationStatus__c = bankTransactionId != null || creditCardTransactionId != null
+            ? 'RECONCILED'
+            : 'UNRECONCILED';
     }
 
     private static void maintainRecurringForecast(
@@ -207,6 +235,149 @@ public inherited sharing class ALT_CLS_CashFlowSettlement {
         return (total / count).setScale(2, System.RoundingMode.HALF_UP);
     }
 
+    public List<ReconciliationSuggestion> getSuggestions(Id cashFlowId) {
+        if (cashFlowId == null) {
+            throw new IllegalArgumentException('Cash Flow ID is required.');
+        }
+        AXF_OBJ_CashFlow__c cashFlow = [
+            SELECT Id, AXF_CF_CUR_Value__c, AXF_CF_DAT_DueDate__c,
+                   AXF_CF_LKP_BankAccount__c, AXF_CF_LKP_CreditCard__c
+            FROM AXF_OBJ_CashFlow__c
+            WHERE Id = :cashFlowId
+            WITH USER_MODE
+        ];
+        Date startDate = cashFlow.AXF_CF_DAT_DueDate__c.addDays(-7);
+        Date endDate = cashFlow.AXF_CF_DAT_DueDate__c.addDays(7);
+        List<ReconciliationSuggestion> suggestions = new List<ReconciliationSuggestion>();
+        if (cashFlow.AXF_CF_LKP_BankAccount__c != null) {
+            for (AXF_OBJ_BankAccountTransaction__c transactionRecord : [
+                SELECT Id, AXF_BAT_DAT_Date__c, AXF_BAT_CUR_Amount__c, AXF_BAT_TXT_Description__c
+                FROM AXF_OBJ_BankAccountTransaction__c
+                WHERE AXF_BAT_LKP_BankAccount__c = :cashFlow.AXF_CF_LKP_BankAccount__c
+                  AND AXF_BAT_DAT_Date__c >= :startDate AND AXF_BAT_DAT_Date__c <= :endDate
+                  AND AXF_BAT_PKL_ReconciliationStatus__c = 'UNRECONCILED'
+                  AND AXF_BAT_LKP_CashFlow__c = null
+                WITH USER_MODE
+                LIMIT 100
+            ]) {
+                addSuggestion(suggestions, 'BANK', transactionRecord.Id, transactionRecord.AXF_BAT_DAT_Date__c,
+                    transactionRecord.AXF_BAT_CUR_Amount__c, transactionRecord.AXF_BAT_TXT_Description__c, cashFlow);
+            }
+        }
+        if (cashFlow.AXF_CF_LKP_CreditCard__c != null) {
+            for (AXF_OBJ_CreditCardTransaction__c transactionRecord : [
+                SELECT Id, AXF_CCT_DAT_Date__c, AXF_CCT_CUR_Amount__c, AXF_CCT_TXT_Description__c
+                FROM AXF_OBJ_CreditCardTransaction__c
+                WHERE AXF_CCT_LKP_CreditCard__c = :cashFlow.AXF_CF_LKP_CreditCard__c
+                  AND AXF_CCT_DAT_Date__c >= :startDate AND AXF_CCT_DAT_Date__c <= :endDate
+                  AND AXF_CCT_PKL_ReconciliationStatus__c = 'UNRECONCILED'
+                  AND AXF_CCT_LKP_CashFlow__c = null
+                WITH USER_MODE
+                LIMIT 100
+            ]) {
+                addSuggestion(suggestions, 'CARD', transactionRecord.Id, transactionRecord.AXF_CCT_DAT_Date__c,
+                    transactionRecord.AXF_CCT_CUR_Amount__c, transactionRecord.AXF_CCT_TXT_Description__c, cashFlow);
+            }
+        }
+        suggestions.sort(new SuggestionComparator());
+        return suggestions;
+    }
+
+    public void unreconcile(Id cashFlowId) {
+        AXF_OBJ_CashFlow__c cashFlow = [
+            SELECT Id, AXF_CF_PKL_ReconciliationStatus__c,
+                   AXF_CF_LKP_BankAccountTransaction__c, AXF_CF_LKP_CreditCardTransaction__c
+            FROM AXF_OBJ_CashFlow__c WHERE Id = :cashFlowId WITH USER_MODE FOR UPDATE
+        ];
+        SObject transactionRecord;
+        if (cashFlow.AXF_CF_LKP_BankAccountTransaction__c != null) {
+            AXF_OBJ_BankAccountTransaction__c bank = [
+                SELECT Id, AXF_BAT_LKP_CashFlow__c FROM AXF_OBJ_BankAccountTransaction__c
+                WHERE Id = :cashFlow.AXF_CF_LKP_BankAccountTransaction__c WITH USER_MODE FOR UPDATE
+            ];
+            bank.AXF_BAT_LKP_CashFlow__c = null;
+            bank.AXF_BAT_PKL_ReconciliationStatus__c = 'UNRECONCILED';
+            transactionRecord = bank;
+        } else if (cashFlow.AXF_CF_LKP_CreditCardTransaction__c != null) {
+            AXF_OBJ_CreditCardTransaction__c card = [
+                SELECT Id, AXF_CCT_LKP_CashFlow__c FROM AXF_OBJ_CreditCardTransaction__c
+                WHERE Id = :cashFlow.AXF_CF_LKP_CreditCardTransaction__c WITH USER_MODE FOR UPDATE
+            ];
+            card.AXF_CCT_LKP_CashFlow__c = null;
+            card.AXF_CCT_PKL_ReconciliationStatus__c = 'UNRECONCILED';
+            transactionRecord = card;
+        }
+        cashFlow.AXF_CF_LKP_BankAccountTransaction__c = null;
+        cashFlow.AXF_CF_LKP_CreditCardTransaction__c = null;
+        cashFlow.AXF_CF_PKL_ReconciliationStatus__c = 'UNRECONCILED';
+        serviceOperation = true;
+        try {
+            Database.update(cashFlow, AccessLevel.USER_MODE);
+            if (transactionRecord != null) {
+                Database.update(transactionRecord, AccessLevel.USER_MODE);
+            }
+        } finally {
+            serviceOperation = false;
+        }
+    }
+
+    private static SObject prepareReconciliation(AXF_OBJ_CashFlow__c target, Id bankId, Id cardId) {
+        if ((target.AXF_CF_LKP_BankAccountTransaction__c != null && target.AXF_CF_LKP_BankAccountTransaction__c != bankId)
+            || (target.AXF_CF_LKP_CreditCardTransaction__c != null && target.AXF_CF_LKP_CreditCardTransaction__c != cardId)) {
+            throw new IllegalArgumentException('Unreconcile the existing transaction before selecting another one.');
+        }
+        if (bankId != null) {
+            AXF_OBJ_BankAccountTransaction__c bank = [
+                SELECT Id, AXF_BAT_LKP_BankAccount__c, AXF_BAT_PKL_ReconciliationStatus__c, AXF_BAT_LKP_CashFlow__c
+                FROM AXF_OBJ_BankAccountTransaction__c WHERE Id = :bankId WITH USER_MODE FOR UPDATE
+            ];
+            if (bank.AXF_BAT_LKP_CashFlow__c != null && bank.AXF_BAT_LKP_CashFlow__c != target.Id)
+                throw new IllegalArgumentException('The bank transaction is already reconciled.');
+            if (target.AXF_CF_LKP_BankAccount__c != null && bank.AXF_BAT_LKP_BankAccount__c != target.AXF_CF_LKP_BankAccount__c)
+                throw new IllegalArgumentException('The bank transaction belongs to another Bank Account.');
+            bank.AXF_BAT_PKL_ReconciliationStatus__c = 'RECONCILED';
+            bank.AXF_BAT_LKP_CashFlow__c = target.Id;
+            return bank;
+        }
+        if (cardId != null) {
+            AXF_OBJ_CreditCardTransaction__c card = [
+                SELECT Id, AXF_CCT_LKP_CreditCard__c, AXF_CCT_PKL_ReconciliationStatus__c, AXF_CCT_LKP_CashFlow__c
+                FROM AXF_OBJ_CreditCardTransaction__c WHERE Id = :cardId WITH USER_MODE FOR UPDATE
+            ];
+            if (card.AXF_CCT_LKP_CashFlow__c != null && card.AXF_CCT_LKP_CashFlow__c != target.Id)
+                throw new IllegalArgumentException('The credit-card transaction is already reconciled.');
+            if (target.AXF_CF_LKP_CreditCard__c != null && card.AXF_CCT_LKP_CreditCard__c != target.AXF_CF_LKP_CreditCard__c)
+                throw new IllegalArgumentException('The transaction belongs to another Credit Card.');
+            card.AXF_CCT_PKL_ReconciliationStatus__c = 'RECONCILED';
+            card.AXF_CCT_LKP_CashFlow__c = target.Id;
+            return card;
+        }
+        return null;
+    }
+
+    private static void addSuggestion(List<ReconciliationSuggestion> values, String source, Id recordId, Datetime valueDate,
+        Decimal amount, String description, AXF_OBJ_CashFlow__c cashFlow) {
+        Decimal expected = cashFlow.AXF_CF_CUR_Value__c.abs();
+        Decimal difference = (amount.abs() - expected).abs();
+        Integer score = difference == 0 ? 80 : (expected > 0 && difference / expected <= 0.05 ? 70 : 50);
+        Integer dateDifference = Math.abs(cashFlow.AXF_CF_DAT_DueDate__c.daysBetween(valueDate.date()));
+        score += dateDifference == 0 ? 20 : (dateDifference <= 3 ? 10 : 0);
+        if (score < 60) return;
+        ReconciliationSuggestion suggestion = new ReconciliationSuggestion();
+        suggestion.transactionId = recordId; suggestion.source = source; suggestion.transactionDate = valueDate.date();
+        suggestion.amount = amount; suggestion.description = description; suggestion.score = score;
+        suggestion.confidence = score >= 80 ? 'HIGH' : 'MEDIUM';
+        values.add(suggestion);
+    }
+
+    private class SuggestionComparator implements Comparator<ReconciliationSuggestion> {
+        public Integer compare(ReconciliationSuggestion left, ReconciliationSuggestion right) {
+            if (left.score != right.score) return right.score - left.score;
+            Integer dateComparison = left.transactionDate.daysBetween(right.transactionDate);
+            if (dateComparison != 0) return dateComparison;
+            return String.valueOf(left.transactionId).compareTo(String.valueOf(right.transactionId));
+        }
+    }
     private static AXF_OBJ_CashFlow__c buildForecastEntry(
         AXF_OBJ_CashFlow__c source,
         Date dueDate,

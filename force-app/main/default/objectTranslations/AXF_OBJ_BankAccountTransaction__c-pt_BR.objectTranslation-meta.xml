@@ -10,4 +10,5 @@
     </caseValues>
     <gender>Feminine</gender>
     <nameFieldLabel><!-- Transaction Number --></nameFieldLabel>
-</CustomObjectTranslation>
+    <fields><label>Fluxo de Caixa</label><name>AXF_BAT_LKP_CashFlow__c</name></fields>
+    <fields><label>Status de Conciliação</label><name>AXF_BAT_PKL_ReconciliationStatus__c</name><picklistValues><masterLabel>Unreconciled</masterLabel><translation>Não conciliado</translation></picklistValues><picklistValues><masterLabel>Reconciled</masterLabel><translation>Conciliado</translation></picklistValues></fields></CustomObjectTranslation>

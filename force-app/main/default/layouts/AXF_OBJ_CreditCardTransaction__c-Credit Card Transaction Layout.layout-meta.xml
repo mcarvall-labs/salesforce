@@ -15,7 +15,7 @@
                 <field>AXF_CCT_EXI_PluggyTransactionId__c</field>
             </layoutItems>
             <layoutItems>
-                <behavior>Readonly</behavior>
+                <behavior>Required</behavior>
                 <field>Name</field>
             </layoutItems>
         </layoutColumns>
@@ -49,6 +49,15 @@
         <layoutColumns/>
         <layoutColumns/>
         <style>CustomLinks</style>
+    </layoutSections>
+    <layoutSections>
+        <customLabel>true</customLabel><detailHeading>true</detailHeading><editHeading>true</editHeading>
+        <label>Reconciliation</label>
+        <layoutColumns>
+            <layoutItems><behavior>Edit</behavior><field>AXF_CCT_PKL_ReconciliationStatus__c</field></layoutItems>
+            <layoutItems><behavior>Edit</behavior><field>AXF_CCT_LKP_CashFlow__c</field></layoutItems>
+        </layoutColumns><layoutColumns/>
+        <style>TwoColumnsTopToBottom</style>
     </layoutSections>
     <miniLayout>
         <fields>AXF_CCT_LKP_CreditCard__c</fields>

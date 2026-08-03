@@ -87,6 +87,16 @@
         <layoutColumns/>
         <style>CustomLinks</style>
     </layoutSections>
+    <layoutSections>
+        <customLabel>true</customLabel><detailHeading>true</detailHeading><editHeading>true</editHeading>
+        <label>Reconciliation</label>
+        <layoutColumns>
+            <layoutItems><behavior>Edit</behavior><field>AXF_CF_PKL_ReconciliationStatus__c</field></layoutItems>
+            <layoutItems><behavior>Edit</behavior><field>AXF_CF_LKP_BankAccountTransaction__c</field></layoutItems>
+            <layoutItems><behavior>Edit</behavior><field>AXF_CF_LKP_CreditCardTransaction__c</field></layoutItems>
+        </layoutColumns><layoutColumns/>
+        <style>TwoColumnsTopToBottom</style>
+    </layoutSections>
     <miniLayout>
         <fields>AXF_CF_CUR_Value__c</fields>
         <fields>AXF_CF_DAT_DueDate__c</fields>
