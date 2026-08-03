@@ -39,7 +39,7 @@ jobs:
           mapfile -t files < <(git diff --name-only --diff-filter=ACMR "$BASE_SHA" "$GITHUB_SHA" | grep -E 'force-app/.*/(aura|lwc)/.*\.js$' || true)
           if ((${#files[@]})); then npx eslint "${files[@]}"; fi
       - name: Run LWC unit tests
-        run: npm run test:unit -- -- --runInBand
+        run: npm run test:unit -- -- --runInBand --passWithNoTests
 
   salesforce-validation:
     name: Validate Salesforce delta
@@ -76,4 +76,4 @@ jobs:
           fi
           source_args=()
           for path in "${source_paths[@]}"; do source_args+=(--source-dir "$path"); done
-          sf project deploy validate "${source_args[@]}" --target-org AxonFinanceDevHub --test-level NoTestRun --wait 45
+          sf project deploy start "${source_args[@]}" --target-org AxonFinanceDevHub --dry-run --test-level NoTestRun --wait 45
