@@ -2,7 +2,7 @@
 <CustomField xmlns="http://soap.sforce.com/2006/04/metadata">
     <fullName>AXF_CF_PKL_PaymentMode__c</fullName>
     <businessStatus>Active</businessStatus>
-    <description>Modalidade de pagamento/recebimento do lançamento (à vista, parcelado/financiamento, financiamento imobiliário SAC, consórcio ou recorrente).</description>
+    <description>Modalidade de pagamento/recebimento do lançamento (à vista, parcelado, financiamento PRICE/SAC, consórcio ou recorrente).</description>
     <label>Payment Mode</label>
     <required>false</required>
     <trackTrending>false</trackTrending>
@@ -15,11 +15,16 @@
                 <fullName>A_VISTA</fullName>
                 <default>true</default>
                 <label>À Vista</label>
+            </value>            <value>
+                <fullName>PARCELADO</fullName>
+                <default>false</default>
+                <label>Parcelado</label>
             </value>
+
             <value>
                 <fullName>FINANCIAMENTO</fullName>
                 <default>false</default>
-                <label>Parcelado / Financiamento</label>
+                <label>Financiamento PRICE</label>
             </value>
             <value>
                 <fullName>FINANCIAMENTO_SAC</fullName>
