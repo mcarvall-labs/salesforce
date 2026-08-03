@@ -1,8 +1,8 @@
 <template>
     <div class="quick-actions-container">
-        <div class="quick-actions-grid">
-            <button class="slds-button slds-button_destructive btn-expense btn-full-width" onclick={handleOpenExpenseModal}>Nova Despesa</button>
-            <button class="slds-button slds-button_success btn-revenue btn-full-width" onclick={handleOpenRevenueModal}>Nova Receita</button>
+        <div class="slds-grid">
+            <button class="slds-col slds-size_1-of-2 slds-button slds-button_destructive btn-expense btn-full-width" onclick={handleOpenExpenseModal}>Nova Despesa</button>
+            <button class="slds-col slds-size_1-of-2 slds-button slds-button_success btn-revenue btn-full-width" onclick={handleOpenRevenueModal}>Nova Receita</button>
         </div>
     </div>
 
@@ -57,10 +57,11 @@
                             <div class="slds-col slds-size_1-of-1 slds-medium-size_1-of-2 slds-m-bottom_small">
                                 <lightning-combobox name="recurringType" label="Tipo de Recorrência" value={form.recurringType} options={recurringTypeOptions} onchange={handleInputChange} required></lightning-combobox>
                             </div>
-                            <div class="slds-col slds-size_1-of-1 slds-medium-size_1-of-2 slds-m-bottom_small">
-                                <lightning-combobox name="provisioningStrategy" label="Estratégia de Provisão" value={form.provisioningStrategy} options={provisioningStrategyOptions} onchange={handleInputChange} required></lightning-combobox>
-                            </div>
-                        </template>
+                            <template if:true={showProvisioningStrategy}>
+                                <div class="slds-col slds-size_1-of-1 slds-medium-size_1-of-2 slds-m-bottom_small">
+                                    <lightning-combobox name="provisioningStrategy" label="Estratégia de Provisão" value={form.provisioningStrategy} options={provisioningStrategyOptions} onchange={handleInputChange} required></lightning-combobox>
+                                </div>
+                            </template>                        </template>
                         <template if:true={showFinancingFields}>
                             <div class="slds-col slds-size_1-of-1 slds-medium-size_1-of-2 slds-m-bottom_small">
                                 <lightning-combobox name="financingType" label="Tipo de Financiamento" value={form.financingType} options={financingTypeOptions} onchange={handleInputChange} required></lightning-combobox>
@@ -89,10 +90,11 @@
                         <div class="slds-col slds-size_1-of-1 slds-medium-size_1-of-2 slds-m-bottom_small">
                             <lightning-input type="number" name="amount" label={amountLabel} value={form.amount} formatter="currency" step="0.01" min="0.01" onchange={handleInputChange} required></lightning-input>
                         </div>
-                        <div class="slds-col slds-size_1-of-1 slds-medium-size_1-of-2 slds-m-bottom_small">
-                            <lightning-input type="number" name="totalInstallments" label="Quantidade de Parcelas" value={form.totalInstallments} min="1" max="120" onchange={handleInputChange} disabled={isSinglePayment} required></lightning-input>
-                        </div>
-                        <div class="slds-col slds-size_1-of-1 slds-medium-size_1-of-2 slds-m-bottom_small">
+                        <template if:true={showInstallmentCount}>
+                            <div class="slds-col slds-size_1-of-1 slds-medium-size_1-of-2 slds-m-bottom_small">
+                                <lightning-input type="number" name="totalInstallments" label="Quantidade de Parcelas" value={form.totalInstallments} min="1" max="120" onchange={handleInputChange} disabled={isSinglePayment} required></lightning-input>
+                            </div>
+                        </template>                        <div class="slds-col slds-size_1-of-1 slds-medium-size_1-of-2 slds-m-bottom_small">
                             <button type="button" class="slds-button slds-button_neutral" onclick={handleSettlementToggle} aria-pressed={form.isPaid} title={settlementLabel}>
                                 <lightning-icon icon-name={settlementIconName} variant={settlementIconVariant} size="small" class="slds-m-right_x-small"></lightning-icon>
                                 {settlementLabel}

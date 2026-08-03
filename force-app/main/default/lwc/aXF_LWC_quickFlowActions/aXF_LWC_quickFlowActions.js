@@ -37,7 +37,7 @@ export default class AXF_LWC_quickFlowActions extends LightningElement {
             { label: 'Parcelado / Financiamento', value: 'FINANCIAMENTO' },
             { label: 'Financiamento Imobiliário', value: 'FINANCIAMENTO_SAC' },
             { label: 'Consórcio', value: 'CONSORCIO' },
-            { label: 'Recorrente', value: 'RECORRENTE' }
+            ...(this.entryType === 'DESPESA' ? [{ label: 'Recorrente', value: 'RECORRENTE' }] : [])
         ];
     }
 
@@ -86,6 +86,13 @@ export default class AXF_LWC_quickFlowActions extends LightningElement {
         return this.form.paymentMode === 'RECORRENTE';
     }
 
+    get showProvisioningStrategy() {
+        return this.showRecurringFields && this.form.recurringType === 'VARIAVEL';
+    }
+
+    get showInstallmentCount() {
+        return !this.showRecurringFields;
+    }
     get showFinancingFields() {
         return ['FINANCIAMENTO', 'FINANCIAMENTO_SAC'].includes(this.form.paymentMode);
     }
@@ -243,6 +250,9 @@ export default class AXF_LWC_quickFlowActions extends LightningElement {
         if (name === 'paymentMode') {
             this.resetModalityFields();
         }
+        if (name === 'recurringType') {
+            this.form.provisioningStrategy = this.form.recurringType === 'VARIAVEL' ? 'MEDIA_MOVEL' : '';
+        }
         if (name === 'financingType' && this.form.financingType !== 'SAC') {
             this.form.monthlyAdjustmentRate = null;
         }
@@ -274,9 +284,7 @@ export default class AXF_LWC_quickFlowActions extends LightningElement {
         this.form.financingType = this.form.paymentMode === 'FINANCIAMENTO_SAC' ? 'SAC' : '';
         this.form.monthlyAdjustmentRate = null;
         this.form.adjustmentAnniversary = '';
-        if (this.isSinglePayment) {
-            this.form.totalInstallments = 1;
-        }
+        this.form.totalInstallments = this.showRecurringFields ? 6 : 1;
     }
 
     validateForm() {
@@ -332,12 +340,12 @@ export default class AXF_LWC_quickFlowActions extends LightningElement {
             paymentMode: this.form.paymentMode,
             amount: Number(this.form.amount),
             isTotalAmount: this.form.valueType === 'TOTAL',
-            totalInstallments: Number(this.form.totalInstallments) || 1,
+            totalInstallments: this.showInstallmentCount ? Number(this.form.totalInstallments) || 1 : null,
             paymentMethod: this.form.paymentMethod,
             bankAccountId: this.showBankAccount ? this.form.bankAccountId : null,
             creditCardId: this.showCreditCard ? this.form.creditCardId : null,
             recurringType: this.showRecurringFields ? this.form.recurringType : null,
-            provisioningStrategy: this.showRecurringFields ? this.form.provisioningStrategy : null,
+            provisioningStrategy: this.showProvisioningStrategy ? this.form.provisioningStrategy : null,
             financingType: this.showFinancingFields ? this.form.financingType : null,
             monthlyAdjustmentRate: this.showSacRate ? this.toOptionalNumber(this.form.monthlyAdjustmentRate) : null,
             adjustmentAnniversary: this.showConsortiumFields ? this.form.adjustmentAnniversary : null,

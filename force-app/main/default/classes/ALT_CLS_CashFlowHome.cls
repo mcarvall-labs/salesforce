@@ -144,10 +144,10 @@ public inherited sharing class ALT_CLS_CashFlowHome {
             validateConsortiumConfiguration(groupType, request.adjustmentAnniversary);
 
             AXF_OBJ_InstallmentGroup__c groupRecord = new AXF_OBJ_InstallmentGroup__c(
-                AXF_IG_NUM_TotalInstallments__c = installmentCount,
-                AXF_IG_CUR_TotalAmount__c = request.isTotalAmount == true
-                    ? request.amount
-                    : installmentAmount * installmentCount,
+                AXF_IG_NUM_TotalInstallments__c = groupType == 'RECURRING' ? null : installmentCount,
+                AXF_IG_CUR_TotalAmount__c = groupType == 'RECURRING'
+                    ? null
+                    : (request.isTotalAmount == true ? request.amount : installmentAmount * installmentCount),
                 AXF_IG_CUR_InstallmentAmount__c = installmentAmount,
                 AXF_IG_DAT_FirstDueDate__c = request.firstDueDate,
                 AXF_IG_PKL_GroupType__c = groupType,
@@ -180,10 +180,11 @@ public inherited sharing class ALT_CLS_CashFlowHome {
                 AXF_CF_PKL_PaymentMode__c = request.paymentMode,
                 AXF_CF_PKL_PaymentMethod__c = request.paymentMethod,
                 AXF_CF_PKL_RecurringType__c = request.recurringType,
-                AXF_CF_PKL_ProvisioningStrategy__c = request.provisioningStrategy,
+                AXF_CF_PKL_ProvisioningStrategy__c = request.recurringType == 'VARIAVEL' ? request.provisioningStrategy : null,
+                AXF_CF_CHK_IsEstimated__c = request.recurringType == 'VARIAVEL' && !isSettledOccurrence,
                 AXF_CF_PKL_Status__c = resolveInitialStatus(request.entryType, dueDate, isSettledOccurrence, request.paymentDate),
                 AXF_CF_NUM_CurrentInstallment__c = index + 1,
-                AXF_CF_NUM_TotalInstallments__c = installmentCount,
+                AXF_CF_NUM_TotalInstallments__c = request.paymentMode == 'RECORRENTE' ? null : installmentCount,
                 AXF_CF_LKP_Category__c = request.categoryId,
                 AXF_CF_LKP_Account__c = request.accountId,
                 AXF_CF_LKP_BankAccount__c = request.bankAccountId,

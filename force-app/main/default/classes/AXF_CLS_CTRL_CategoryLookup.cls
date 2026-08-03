@@ -10,9 +10,9 @@ public with sharing class AXF_CLS_CTRL_CategoryLookup {
     }
 
     public class CategoryCreationDTO {
-        @AuraEnabled public String name { get; set; }
-        @AuraEnabled public String parentId { get; set; }
-        @AuraEnabled public String recordTypeDeveloperName { get; set; }
+        @AuraEnabled public String name;
+        @AuraEnabled public String parentId;
+        @AuraEnabled public String recordTypeDeveloperName;
     }
 
     @AuraEnabled(cacheable=true)

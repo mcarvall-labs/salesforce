@@ -59,10 +59,10 @@ public with sharing class AXF_CLS_CTRL_QuickFlowActions {
         if (dto.type != 'DESPESA' && dto.type != 'RECEITA') {
             throw handled('Select a valid entry type.');
         }
-        if (dto.totalInstallments == null || dto.totalInstallments < 1 || dto.totalInstallments > 120) {
+        Boolean recurringMode = dto.paymentMode == 'RECORRENTE';
+        if (!recurringMode && (dto.totalInstallments == null || dto.totalInstallments < 1 || dto.totalInstallments > 120)) {
             throw handled('Total Installments must be between 1 and 120.');
-        }
-        Id accountId = parseId(dto.accountId, Account.SObjectType, 'Account is required.');
+        }        Id accountId = parseId(dto.accountId, Account.SObjectType, 'Account is required.');
         Id categoryId = parseOptionalId(dto.categoryId, AXF_OBJ_Category__c.SObjectType, 'Invalid Category.');
         Id bankAccountId = parseOptionalId(
             dto.bankAccountId,
@@ -91,7 +91,7 @@ public with sharing class AXF_CLS_CTRL_QuickFlowActions {
         request.paymentMode = dto.paymentMode;
         request.amount = dto.amount;
         request.isTotalAmount = dto.isTotalAmount == true;
-        request.totalInstallments = dto.totalInstallments;
+        request.totalInstallments = dto.paymentMode == 'RECORRENTE' ? 6 : dto.totalInstallments;
         request.paymentMethod = dto.paymentMethod;
         request.bankAccountId = bankAccountId;
         request.creditCardId = creditCardId;
@@ -129,13 +129,19 @@ public with sharing class AXF_CLS_CTRL_QuickFlowActions {
         if (dto.paymentMode == 'A_VISTA' && dto.totalInstallments != null && dto.totalInstallments > 1) {
             throw handled('A single payment cannot have multiple installments.');
         }
-        if (recurring && (String.isBlank(dto.recurringType) || String.isBlank(dto.provisioningStrategy))) {
-            throw handled('Recurring Type and Provisioning Strategy are required for recurring entries.');
+        if (recurring && dto.type != 'DESPESA') {
+            throw handled('Recurring entries are available only for Expenses.');
         }
-        if (recurring && (!RECURRING_TYPES.contains(dto.recurringType) || !PROVISIONING_STRATEGIES.contains(dto.provisioningStrategy))) {
-            throw handled('Select valid recurring configuration values.');
+        if (recurring && !RECURRING_TYPES.contains(dto.recurringType)) {
+            throw handled('Select a valid Recurring Type.');
         }
-        if (!recurring && (String.isNotBlank(dto.recurringType) || String.isNotBlank(dto.provisioningStrategy))) {
+        Boolean variableRecurring = recurring && dto.recurringType == 'VARIAVEL';
+        if (variableRecurring && !PROVISIONING_STRATEGIES.contains(dto.provisioningStrategy)) {
+            throw handled('Select a valid Provisioning Strategy for variable recurrence.');
+        }
+        if (recurring && !variableRecurring && String.isNotBlank(dto.provisioningStrategy)) {
+            throw handled('Provisioning Strategy is applicable only to variable recurrence.');
+        }        if (!recurring && (String.isNotBlank(dto.recurringType) || String.isNotBlank(dto.provisioningStrategy))) {
             throw handled('Recurring fields are not applicable to the selected modality.');
         }
         if (financing && String.isBlank(dto.financingType)) {
