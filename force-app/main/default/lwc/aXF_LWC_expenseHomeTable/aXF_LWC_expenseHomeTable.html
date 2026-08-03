@@ -57,7 +57,12 @@
                                             </span>
                                         </td>
                                         <td class="slds-text-align_center">
-                                            <lightning-icon icon-name={row.reconciledIcon} size="x-small" class={row.reconciledVariant}></lightning-icon>
+                                                                                        <template if:true={row.canUnreconcile}>
+                                                <lightning-button-icon icon-name={row.reconciledIcon} variant="bare" class={row.reconciledVariant} data-id={row.id} onclick={handleUnreconcile} alternative-text="Desfazer conciliação"></lightning-button-icon>
+                                            </template>
+                                            <template if:false={row.canUnreconcile}>
+                                                <lightning-icon icon-name={row.reconciledIcon} size="x-small" class={row.reconciledVariant}></lightning-icon>
+                                            </template>
                                         </td>
                                     </tr>
                                 </template>
@@ -89,8 +94,7 @@
                     <lightning-input type="number" label="Valor Pago" value={paidValue} min="0.01" step="0.01" onchange={handlePaidValueChange} required></lightning-input>
 
                     <div class="slds-p-top_medium">
-                        <p class="slds-text-title_caps slds-p-bottom_x-small">{labels.reconcileWithBank} / {labels.reconcileWithCard}</p>
-                        <lightning-input type="search" placeholder={labels.searchPlaceholder} value={searchTerm} onchange={handleSearchChange}></lightning-input>
+                        <p class="slds-text-title_caps slds-p-bottom_x-small">Sugestões: {labels.reconcileWithBank} / {labels.reconcileWithCard}</p>
 
                         <template if:true={hasMatches}>
                             <ul class="slds-p-top_x-small">

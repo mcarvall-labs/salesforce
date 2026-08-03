@@ -50,6 +50,15 @@
         <layoutColumns/>
         <style>CustomLinks</style>
     </layoutSections>
+    <layoutSections>
+        <customLabel>true</customLabel><detailHeading>true</detailHeading><editHeading>true</editHeading>
+        <label>Reconciliation</label>
+        <layoutColumns>
+            <layoutItems><behavior>Edit</behavior><field>AXF_BAT_PKL_ReconciliationStatus__c</field></layoutItems>
+            <layoutItems><behavior>Edit</behavior><field>AXF_BAT_LKP_CashFlow__c</field></layoutItems>
+        </layoutColumns><layoutColumns/>
+        <style>TwoColumnsTopToBottom</style>
+    </layoutSections>
     <miniLayout>
         <fields>AXF_BAT_LKP_BankAccount__c</fields>
         <fields>AXF_BAT_EXI_PluggyTransactionId__c</fields>

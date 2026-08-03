@@ -8,6 +8,7 @@
     <columns>AXF_CCT_TXT_Description__c</columns>
     <columns>AXF_CCT_CUR_Amount__c</columns>
     <columns>AXF_CCT_LKP_Category__c</columns>
+    <columns>AXF_CCT_PKL_ReconciliationStatus__c</columns>
     <filterScope>Everything</filterScope>
     <label>View All</label>
 </ListView>

@@ -18,4 +18,4 @@
         <label>Receita</label>
         <name>AXF_CF_RT_Revenue</name>
     </recordTypes>
-</CustomObjectTranslation>
+    <fields><label>Status de Conciliação</label><name>AXF_CF_PKL_ReconciliationStatus__c</name><picklistValues><masterLabel>Unreconciled</masterLabel><translation>Não conciliado</translation></picklistValues><picklistValues><masterLabel>Reconciled</masterLabel><translation>Conciliado</translation></picklistValues></fields></CustomObjectTranslation>
