@@ -8,35 +8,70 @@ public with sharing class AXF_CLS_CTRL_QuickFlowActions {
     private static final Set<String> PAYMENT_MODES = new Set<String>{
         'A_VISTA', 'RECORRENTE', 'FINANCIAMENTO', 'FINANCIAMENTO_SAC', 'CONSORCIO'
     };
+    private static final Set<String> INSTALLMENT_MODES = new Set<String>{
+        'FINANCIAMENTO', 'FINANCIAMENTO_SAC', 'CONSORCIO'
+    };
     private static final Set<String> RECURRING_TYPES = new Set<String>{ 'FIXO', 'VARIAVEL' };
     private static final Set<String> PROVISIONING_STRATEGIES = new Set<String>{ 'MEDIA_MOVEL', 'ULTIMO_VALOR', 'VALOR_BASE' };
     private static final Set<String> FINANCING_TYPES = new Set<String>{ 'PRICE', 'SAC' };
 
     public class CashFlowCreationDTO {
-        @AuraEnabled public String type;
-        @AuraEnabled public String description;
-        @AuraEnabled public String categoryId;
-        @AuraEnabled public String accountId;
-        @AuraEnabled public Date purchaseDate;
-        @AuraEnabled public Date firstDueDate;
-        @AuraEnabled public String paymentMode;
-        @AuraEnabled public Decimal amount;
-        @AuraEnabled public Boolean isTotalAmount;
-        @AuraEnabled public Integer totalInstallments;
-        @AuraEnabled public String paymentMethod;
-        @AuraEnabled public String bankAccountId;
-        @AuraEnabled public String creditCardId;
-        @AuraEnabled public String recurringType;
-        @AuraEnabled public String provisioningStrategy;
-        @AuraEnabled public String financingType;
-        @AuraEnabled public Decimal monthlyAdjustmentRate;
-        @AuraEnabled public Date adjustmentAnniversary;
-        @AuraEnabled public Boolean isPaid;
-        @AuraEnabled public Decimal paidValue;
-        @AuraEnabled public Date paymentDate;
-        @AuraEnabled public Boolean pastDueConfirmed;
+        @AuraEnabled public String type { get; set; }
+        @AuraEnabled public String description { get; set; }
+        @AuraEnabled public String categoryId { get; set; }
+        @AuraEnabled public String accountId { get; set; }
+        @AuraEnabled public Date purchaseDate { get; set; }
+        @AuraEnabled public Date firstDueDate { get; set; }
+        @AuraEnabled public String paymentMode { get; set; }
+        @AuraEnabled public Decimal amount { get; set; }
+        @AuraEnabled public Boolean isTotalAmount { get; set; }
+        @AuraEnabled public Integer totalInstallments { get; set; }
+        @AuraEnabled public String paymentMethod { get; set; }
+        @AuraEnabled public String bankAccountId { get; set; }
+        @AuraEnabled public String creditCardId { get; set; }
+        @AuraEnabled public String recurringType { get; set; }
+        @AuraEnabled public String provisioningStrategy { get; set; }
+        @AuraEnabled public String financingType { get; set; }
+        @AuraEnabled public Decimal monthlyAdjustmentRate { get; set; }
+        @AuraEnabled public Date adjustmentAnniversary { get; set; }
+        @AuraEnabled public Boolean isPaid { get; set; }
+        @AuraEnabled public Decimal paidValue { get; set; }
+        @AuraEnabled public Date paymentDate { get; set; }
+        @AuraEnabled public Boolean pastDueConfirmed { get; set; }
     }
 
+    public class FinancialOptionDTO {
+        @AuraEnabled public String id;
+        @AuraEnabled public String displayLabel;
+    }
+
+    @AuraEnabled(cacheable=true)
+    public static List<FinancialOptionDTO> getRecentBankAccounts(Id accountId) {
+        return mapFinancialOptions(new ALT_CLS_FinancialAccountLookup().getBankAccounts(requireAccountId(accountId)));
+    }
+
+    @AuraEnabled(cacheable=true)
+    public static List<FinancialOptionDTO> getRecentCreditCards(Id accountId) {
+        return mapFinancialOptions(new ALT_CLS_FinancialAccountLookup().getCreditCards(requireAccountId(accountId)));
+    }
+
+    private static List<FinancialOptionDTO> mapFinancialOptions(List<ALT_CLS_FinancialAccountLookup.OptionResult> results) {
+        List<FinancialOptionDTO> options = new List<FinancialOptionDTO>();
+        for (ALT_CLS_FinancialAccountLookup.OptionResult result : results) {
+            FinancialOptionDTO option = new FinancialOptionDTO();
+            option.id = result.id;
+            option.displayLabel = result.displayLabel;
+            options.add(option);
+        }
+        return options;
+    }
+
+    private static Id requireAccountId(Id accountId) {
+        if (accountId == null || accountId.getSObjectType() != Account.SObjectType) {
+            throw handled('Account is required.');
+        }
+        return accountId;
+    }
     @AuraEnabled
     public static List<Id> createCashFlowSeries(CashFlowCreationDTO dto) {
         try {
@@ -53,13 +88,16 @@ public with sharing class AXF_CLS_CTRL_QuickFlowActions {
         if (dto == null) {
             throw handled('Invalid input payload.');
         }
+        if (!INSTALLMENT_MODES.contains(dto.paymentMode) && dto.firstDueDate == null) {
+            dto.firstDueDate = dto.purchaseDate;
+        }
         if (String.isBlank(dto.description) || dto.amount == null || dto.amount <= 0 || dto.firstDueDate == null) {
             throw handled('Description, Due Date, and a positive amount are required.');
         }
         if (dto.type != 'DESPESA' && dto.type != 'RECEITA') {
             throw handled('Select a valid entry type.');
         }
-        if (dto.totalInstallments == null || dto.totalInstallments < 1 || dto.totalInstallments > 120) {
+        if (INSTALLMENT_MODES.contains(dto.paymentMode) && (dto.totalInstallments == null || dto.totalInstallments < 1 || dto.totalInstallments > 120)) {
             throw handled('Total Installments must be between 1 and 120.');
         }
         Id accountId = parseId(dto.accountId, Account.SObjectType, 'Account is required.');

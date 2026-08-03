@@ -589,6 +589,14 @@
         <enabled>true</enabled>
     </pageAccesses>
     <recordTypeVisibilities>
+        <recordType>AXF_OBJ_CashFlow__c.AXF_CF_RT_Expense</recordType>
+        <visible>true</visible>
+    </recordTypeVisibilities>
+    <recordTypeVisibilities>
+        <recordType>AXF_OBJ_CashFlow__c.AXF_CF_RT_Revenue</recordType>
+        <visible>true</visible>
+    </recordTypeVisibilities>
+    <recordTypeVisibilities>
         <recordType>AXF_OBJ_Category__c.AXF_CAT_RT_Expense</recordType>
         <visible>true</visible>
     </recordTypeVisibilities>

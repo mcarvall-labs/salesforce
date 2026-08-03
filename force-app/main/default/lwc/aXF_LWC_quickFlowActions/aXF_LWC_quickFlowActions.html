@@ -44,12 +44,12 @@
 
                         <template if:true={showBankAccount}>
                             <div class="slds-col slds-size_1-of-1 slds-medium-size_1-of-2 slds-m-bottom_small">
-                                <lightning-record-picker name="bankAccountId" label="Conta Bancária" object-api-name="AXF_OBJ_BankAccount__c" value={form.bankAccountId} filter={bankAccountFilter} disabled={financialLookupDisabled} onchange={handleFinancialAccountChange} required></lightning-record-picker>
+                                <c-a-x-f_-l-w-c_financial-lookup name="bankAccountId" label="Conta Corrente" placeholder="Buscar conta corrente..." value={form.bankAccountId} options={bankAccountOptions} disabled={financialLookupDisabled} onchange={handleFinancialAccountChange} required></c-a-x-f_-l-w-c_financial-lookup>
                             </div>
                         </template>
                         <template if:true={showCreditCard}>
                             <div class="slds-col slds-size_1-of-1 slds-medium-size_1-of-2 slds-m-bottom_small">
-                                <lightning-record-picker name="creditCardId" label="Cartão de Crédito" object-api-name="AXF_OBJ_CreditCard__c" value={form.creditCardId} filter={creditCardFilter} disabled={financialLookupDisabled} onchange={handleFinancialAccountChange} required></lightning-record-picker>
+                                <c-a-x-f_-l-w-c_financial-lookup name="creditCardId" label="Cartão de Crédito" placeholder="Buscar cartão de crédito..." value={form.creditCardId} options={creditCardOptions} disabled={financialLookupDisabled} onchange={handleFinancialAccountChange} required></c-a-x-f_-l-w-c_financial-lookup>
                             </div>
                         </template>
 
@@ -80,18 +80,24 @@
                         <div class="slds-col slds-size_1-of-1 slds-medium-size_1-of-2 slds-m-bottom_small">
                             <lightning-input type="date" name="purchaseDate" label="Data da Compra / Ocorrência" value={form.purchaseDate} onchange={handleInputChange} required></lightning-input>
                         </div>
+                        <template if:true={showInstallmentFields}>
                         <div class="slds-col slds-size_1-of-1 slds-medium-size_1-of-2 slds-m-bottom_small">
                             <lightning-input type="date" name="firstDueDate" label="Data do 1º Vencimento" value={form.firstDueDate} onchange={handleInputChange} required></lightning-input>
-                        </div>
+                        </div>                        </template>
+
+                        <template if:true={showInstallmentFields}>
                         <div class="slds-col slds-size_1-of-1 slds-medium-size_1-of-2 slds-m-bottom_small">
                             <lightning-radio-group name="valueType" label="Tipo de Valor" options={valueTypeOptions} value={form.valueType} type="button" onchange={handleInputChange}></lightning-radio-group>
-                        </div>
+                        </div>                        </template>
+
                         <div class="slds-col slds-size_1-of-1 slds-medium-size_1-of-2 slds-m-bottom_small">
                             <lightning-input type="number" name="amount" label={amountLabel} value={form.amount} formatter="currency" step="0.01" min="0.01" onchange={handleInputChange} required></lightning-input>
                         </div>
-                        <div class="slds-col slds-size_1-of-1 slds-medium-size_1-of-2 slds-m-bottom_small">
-                            <lightning-input type="number" name="totalInstallments" label="Quantidade de Parcelas" value={form.totalInstallments} min="1" max="120" onchange={handleInputChange} disabled={isSinglePayment} required></lightning-input>
-                        </div>
+                        <template if:true={showInstallmentCount}>
+                            <div class="slds-col slds-size_1-of-1 slds-medium-size_1-of-2 slds-m-bottom_small">
+                                <lightning-input type="number" name="totalInstallments" label="Quantidade de Parcelas" value={form.totalInstallments} min="1" max="120" onchange={handleInputChange} required></lightning-input>
+                            </div>
+                        </template>
                         <div class="slds-col slds-size_1-of-1 slds-medium-size_1-of-2 slds-m-bottom_small">
                             <button type="button" class="slds-button slds-button_neutral" onclick={handleSettlementToggle} aria-pressed={form.isPaid} title={settlementLabel}>
                                 <lightning-icon icon-name={settlementIconName} variant={settlementIconVariant} size="small" class="slds-m-right_x-small"></lightning-icon>

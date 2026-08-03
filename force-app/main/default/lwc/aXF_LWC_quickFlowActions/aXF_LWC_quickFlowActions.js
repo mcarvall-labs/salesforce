@@ -3,6 +3,8 @@ import { getObjectInfo, getPicklistValues } from 'lightning/uiObjectInfoApi';
 import { ShowToastEvent } from 'lightning/platformShowToastEvent';
 import LightningConfirm from 'lightning/confirm';
 import createCashFlowSeries from '@salesforce/apex/AXF_CLS_CTRL_QuickFlowActions.createCashFlowSeries';
+import getRecentBankAccounts from '@salesforce/apex/AXF_CLS_CTRL_QuickFlowActions.getRecentBankAccounts';
+import getRecentCreditCards from '@salesforce/apex/AXF_CLS_CTRL_QuickFlowActions.getRecentCreditCards';
 import CASH_FLOW_OBJECT from '@salesforce/schema/AXF_OBJ_CashFlow__c';
 import PAYMENT_METHOD_FIELD from '@salesforce/schema/AXF_OBJ_CashFlow__c.AXF_CF_PKL_PaymentMethod__c';
 
@@ -13,6 +15,10 @@ export default class AXF_LWC_quickFlowActions extends LightningElement {
     @track isLoading = false;
     @track entryType = 'DESPESA';
     @track form = {};
+    amountDisplay = '';
+    paidValueDisplay = '';
+    bankAccountOptions = [];
+    creditCardOptions = [];
 
     @wire(getObjectInfo, { objectApiName: CASH_FLOW_OBJECT })
     cashFlowObjectInfo;
@@ -86,6 +92,18 @@ export default class AXF_LWC_quickFlowActions extends LightningElement {
         return this.form.paymentMode === 'RECORRENTE';
     }
 
+    get showProvisioningStrategy() {
+        return this.showRecurringFields && this.form.recurringType === 'VARIAVEL';
+    }
+
+    get showInstallmentCount() {
+        return this.showInstallmentFields;
+    }
+
+    get showInstallmentFields() {
+        return ['FINANCIAMENTO', 'FINANCIAMENTO_SAC', 'CONSORCIO'].includes(this.form.paymentMode);
+    }
+
     get showFinancingFields() {
         return ['FINANCIAMENTO', 'FINANCIAMENTO_SAC'].includes(this.form.paymentMode);
     }
@@ -135,23 +153,15 @@ export default class AXF_LWC_quickFlowActions extends LightningElement {
         return !this.form.accountId;
     }
 
-    get bankAccountFilter() {
-        return {
-            criteria: [{ fieldPath: 'AXF_BA_LKP_Account__c', operator: 'eq', value: this.form.accountId || null }]
-        };
-    }
-
-    get creditCardFilter() {
-        return {
-            criteria: [{ fieldPath: 'AXF_CC_LKP_Account__c', operator: 'eq', value: this.form.accountId || null }]
-        };
-    }
 
     get isSinglePayment() {
         return this.form.paymentMode === 'A_VISTA';
     }
 
     get amountLabel() {
+        if (this.isSinglePayment) {
+            return 'Valor (R$)';
+        }
         return this.form.valueType === 'TOTAL' ? 'Valor Total (R$)' : 'Valor da Parcela (R$)';
     }
 
@@ -195,6 +205,10 @@ export default class AXF_LWC_quickFlowActions extends LightningElement {
 
     resetForm() {
         const today = new Date().toISOString().substring(0, 10);
+        this.amountDisplay = '';
+        this.paidValueDisplay = '';
+        this.bankAccountOptions = [];
+        this.creditCardOptions = [];
         this.form = {
             paymentMode: 'A_VISTA',
             paymentMethod: '',
@@ -224,13 +238,32 @@ export default class AXF_LWC_quickFlowActions extends LightningElement {
         this.form.categoryId = event.detail.value || '';
     }
 
-    handleAccountChange(event) {
+    async handleAccountChange(event) {
         this.form.accountId = event.detail?.value || '';
         this.clearFinancialAccounts();
+        await this.loadFinancialAccountOptions();
+    }
+
+    async loadFinancialAccountOptions() {
+        if (!this.form.accountId) {
+            this.bankAccountOptions = [];
+            this.creditCardOptions = [];
+            return;
+        }
+        try {
+            [this.bankAccountOptions, this.creditCardOptions] = await Promise.all([
+                getRecentBankAccounts({ accountId: this.form.accountId }),
+                getRecentCreditCards({ accountId: this.form.accountId })
+            ]);
+        } catch (error) {
+            this.bankAccountOptions = [];
+            this.creditCardOptions = [];
+            this.showToast('Erro ao carregar contas', this.errorMessage(error), 'error');
+        }
     }
 
     handleFinancialAccountChange(event) {
-        this.form[event.target.name] = event.detail.recordId || '';
+        this.form[event.detail.name] = event.detail.value || '';
     }
 
     handleInputChange(event) {
@@ -279,7 +312,24 @@ export default class AXF_LWC_quickFlowActions extends LightningElement {
         }
     }
 
+    syncVisibleFormValues() {
+        const currencyFields = new Set(['amount', 'paidValue']);
+        this.template.querySelectorAll('lightning-input').forEach((input) => {
+            const fieldName = input.name;
+            if (!fieldName || !Object.prototype.hasOwnProperty.call(this.form, fieldName)) {
+                return;
+            }
+            if (currencyFields.has(fieldName)) {
+                const digits = String(input.value || '').replace(/\D/g, '');
+                this.form[fieldName] = digits ? Number(digits) / 100 : null;
+                return;
+            }
+            this.form[fieldName] = input.type === 'checkbox' ? input.checked : input.value;
+        });
+    }
+
     validateForm() {
+        this.syncVisibleFormValues();
         const inputs = [...this.template.querySelectorAll('lightning-input, lightning-combobox')];
         const validInputs = inputs.reduce((valid, input) => {
             input.reportValidity();
@@ -289,7 +339,7 @@ export default class AXF_LWC_quickFlowActions extends LightningElement {
             throw new Error('Preencha todos os campos obrigatórios.');
         }
         if (this.showBankAccount && !this.form.bankAccountId) {
-            throw new Error('Selecione uma Conta Bancária.');
+            throw new Error('Selecione uma Conta Corrente.');
         }
         if (this.showCreditCard && !this.form.creditCardId) {
             throw new Error('Selecione um Cartão de Crédito.');
@@ -328,7 +378,7 @@ export default class AXF_LWC_quickFlowActions extends LightningElement {
             categoryId: this.form.categoryId || null,
             accountId: this.form.accountId,
             purchaseDate: this.form.purchaseDate,
-            firstDueDate: this.form.firstDueDate,
+            firstDueDate: this.showInstallmentFields ? this.form.firstDueDate : this.form.purchaseDate,
             paymentMode: this.form.paymentMode,
             amount: Number(this.form.amount),
             isTotalAmount: this.form.valueType === 'TOTAL',
