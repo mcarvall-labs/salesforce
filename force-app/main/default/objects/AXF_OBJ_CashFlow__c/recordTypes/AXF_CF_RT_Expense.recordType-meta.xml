@@ -10,6 +10,10 @@
             <default>true</default>
         </values>
         <values>
+            <fullName>PARCELADO</fullName>
+            <default>false</default>
+        </values>
+        <values>
             <fullName>FINANCIAMENTO</fullName>
             <default>false</default>
         </values>

@@ -36,7 +36,8 @@ export default class AXF_LWC_quickFlowActions extends LightningElement {
     get paymentModeOptions() {
         return [
             { label: 'À vista', value: 'A_VISTA' },
-            { label: 'Parcelado / Financiamento', value: 'FINANCIAMENTO' },
+            { label: 'Parcelado', value: 'PARCELADO' },
+            ...(this.entryType === 'DESPESA' ? [{ label: 'Financiamento PRICE', value: 'FINANCIAMENTO' }] : []),
             { label: 'Financiamento Imobiliário', value: 'FINANCIAMENTO_SAC' },
             { label: 'Consórcio', value: 'CONSORCIO' },
             ...(this.entryType === 'DESPESA' ? [{ label: 'Recorrente', value: 'RECORRENTE' }] : [])

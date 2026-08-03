@@ -6,7 +6,7 @@ public with sharing class AXF_CLS_CTRL_QuickFlowActions {
     private static final Set<String> CARD_METHODS = new Set<String>{ 'CARTAO_CREDITO' };
     private static final Set<String> OTHER_METHODS = new Set<String>{ 'BOLETO', 'DINHEIRO' };
     private static final Set<String> PAYMENT_MODES = new Set<String>{
-        'A_VISTA', 'RECORRENTE', 'FINANCIAMENTO', 'FINANCIAMENTO_SAC', 'CONSORCIO'
+        'A_VISTA', 'PARCELADO', 'RECORRENTE', 'FINANCIAMENTO', 'FINANCIAMENTO_SAC', 'CONSORCIO'
     };
     private static final Set<String> RECURRING_TYPES = new Set<String>{ 'FIXO', 'VARIAVEL' };
     private static final Set<String> PROVISIONING_STRATEGIES = new Set<String>{ 'MEDIA_MOVEL', 'ULTIMO_VALOR', 'VALOR_BASE' };

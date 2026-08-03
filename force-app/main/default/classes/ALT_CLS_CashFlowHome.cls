@@ -167,12 +167,15 @@ public inherited sharing class ALT_CLS_CashFlowHome {
         for (Integer index = 0; index < installmentCount; index++) {
             Date dueDate = baseDueDate.addMonths(index);
             Boolean isSettledOccurrence = request.isPaid == true && index == 0;
+            Decimal occurrenceAmount = request.isTotalAmount == true && installmentCount > 1 && index == installmentCount - 1
+                ? request.amount - (installmentAmount * (installmentCount - 1))
+                : installmentAmount;
             entries.add(new AXF_OBJ_CashFlow__c(
                 RecordTypeId = recordTypeId,
                 Name = installmentCount > 1
                     ? request.description + ' (' + (index + 1) + '/' + installmentCount + ')'
                     : request.description,
-                AXF_CF_CUR_Value__c = installmentAmount,
+                AXF_CF_CUR_Value__c = occurrenceAmount,
                 AXF_CF_CUR_PaidValue__c = isSettledOccurrence ? request.paidValue : null,
                 AXF_CF_DAT_PurchaseDate__c = resolvedPurchaseDate,
                 AXF_CF_DAT_DueDate__c = dueDate,
