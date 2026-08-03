@@ -74,6 +74,4 @@ jobs:
             echo "No Salesforce source changes to validate."
             exit 0
           fi
-          source_args=()
-          for path in "${source_paths[@]}"; do source_args+=(--source-dir "$path"); done
-          sf project deploy start "${source_args[@]}" --target-org AxonFinanceDevHub --dry-run --test-level NoTestRun --wait 45
+          sf project deploy start --source-dir force-app --target-org AxonFinanceDevHub --dry-run --test-level NoTestRun --wait 45
