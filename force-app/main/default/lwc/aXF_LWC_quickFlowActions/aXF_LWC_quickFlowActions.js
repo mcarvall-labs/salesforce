@@ -13,6 +13,8 @@ export default class AXF_LWC_quickFlowActions extends LightningElement {
     @track isLoading = false;
     @track entryType = 'DESPESA';
     @track form = {};
+    amountDisplay = '';
+    paidValueDisplay = '';
 
     @wire(getObjectInfo, { objectApiName: CASH_FLOW_OBJECT })
     cashFlowObjectInfo;
@@ -202,6 +204,8 @@ export default class AXF_LWC_quickFlowActions extends LightningElement {
 
     resetForm() {
         const today = new Date().toISOString().substring(0, 10);
+        this.amountDisplay = '';
+        this.paidValueDisplay = '';
         this.form = {
             paymentMode: 'A_VISTA',
             paymentMethod: '',
@@ -240,6 +244,23 @@ export default class AXF_LWC_quickFlowActions extends LightningElement {
         this.form[event.target.name] = event.detail.recordId || '';
     }
 
+    handleCurrencyInput(event) {
+        const fieldName = event.target.name;
+        const digits = String(event.target.value || '').replace(/\D/g, '');
+        this.form[fieldName] = digits ? Number(digits) / 100 : null;
+        this[`${fieldName}Display`] = this.formatCurrency(this.form[fieldName]);
+    }
+
+    formatCurrency(value) {
+        if (value === null || value === undefined || value === '') {
+            return '';
+        }
+        return new Intl.NumberFormat('pt-BR', {
+            style: 'currency',
+            currency: 'BRL',
+            minimumFractionDigits: 2
+        }).format(Number(value));
+    }
     handleInputChange(event) {
         const { name, type } = event.target;
         this.form[name] = type === 'checkbox' ? event.target.checked : event.target.value;
@@ -270,6 +291,7 @@ export default class AXF_LWC_quickFlowActions extends LightningElement {
         this.form.pastDueConfirmed = false;
         if (!this.form.isPaid) {
             this.form.paidValue = null;
+            this.paidValueDisplay = '';
             this.form.paymentDate = '';
         }
     }
