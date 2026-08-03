@@ -88,7 +88,7 @@
                             <lightning-radio-group name="valueType" label="Tipo de Valor" options={valueTypeOptions} value={form.valueType} type="button" onchange={handleInputChange}></lightning-radio-group>
                         </div>
                         <div class="slds-col slds-size_1-of-1 slds-medium-size_1-of-2 slds-m-bottom_small">
-                            <lightning-input type="number" name="amount" label={amountLabel} value={form.amount} formatter="currency" step="0.01" min="0.01" onchange={handleInputChange} required></lightning-input>
+                            <lightning-input type="text" name="amount" label={amountLabel} value={amountDisplay} onchange={handleCurrencyInput} pattern=".*[0-9].*" message-when-pattern-mismatch="Informe um valor maior que zero." required></lightning-input>
                         </div>
                         <template if:true={showInstallmentCount}>
                             <div class="slds-col slds-size_1-of-1 slds-medium-size_1-of-2 slds-m-bottom_small">
@@ -102,7 +102,7 @@
                         </div>
                         <template if:true={showPaidFields}>
                             <div class="slds-col slds-size_1-of-1 slds-medium-size_1-of-2 slds-m-bottom_small">
-                                <lightning-input type="number" name="paidValue" label={paidValueLabel} value={form.paidValue} step="0.01" min="0.01" onchange={handleInputChange} required></lightning-input>
+                                <lightning-input type="text" name="paidValue" label={paidValueLabel} value={paidValueDisplay} onchange={handleCurrencyInput} pattern=".*[0-9].*" message-when-pattern-mismatch="Informe um valor maior que zero." required></lightning-input>
                             </div>
                             <div class="slds-col slds-size_1-of-1 slds-medium-size_1-of-2 slds-m-bottom_small">
                                 <lightning-input type="date" name="paymentDate" label={paymentDateLabel} value={form.paymentDate} onchange={handleInputChange} required></lightning-input>
