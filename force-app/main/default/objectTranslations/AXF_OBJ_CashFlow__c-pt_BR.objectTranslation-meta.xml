@@ -1,12 +1,12 @@
-<?xml version="1.0" encoding="UTF-8"?>
+<?xml version="1.0" encoding="UTF-8" ?>
 <CustomObjectTranslation xmlns="http://soap.sforce.com/2006/04/metadata">
     <caseValues>
         <plural>false</plural>
-        <value>Receita / Despesa</value>
+        <value>Movimentação de Fluxo de Caixa</value>
     </caseValues>
     <caseValues>
         <plural>true</plural>
-        <value>Receitas / Despesas</value>
+        <value>Movimentações de Fluxo de Caixa</value>
     </caseValues>
     <gender>Feminine</gender>
     <nameFieldLabel><!-- Cash Flow Name --></nameFieldLabel>
