@@ -1,0 +1,699 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<CustomLabels xmlns="http://soap.sforce.com/2006/04/metadata">
+    <labels>
+        <fullName>AXF_LBL_AllAccountsSyncedSuccess</fullName>
+        <categories>AxonFinance,Sync</categories>
+        <language>en_US</language>
+        <protected>false</protected>
+        <shortDescription>All Accounts Synced Success Message</shortDescription>
+        <value>All accounts were synchronized successfully!</value>
+    </labels>
+    <labels>
+        <fullName>AXF_LBL_BackToList</fullName>
+        <categories>AxonFinance,LWC</categories>
+        <language>en_US</language>
+        <protected>false</protected>
+        <shortDescription>Back To List Button Label</shortDescription>
+        <value>Back to List</value>
+    </labels>
+    <labels>
+        <fullName>AXF_LBL_BankAccounts</fullName>
+        <categories>AxonFinance,LWC</categories>
+        <language>en_US</language>
+        <protected>false</protected>
+        <shortDescription>Bank Accounts Label</shortDescription>
+        <value>Bank Accounts</value>
+    </labels>
+    <labels>
+        <fullName>AXF_LBL_BatchSyncStartedSuccess</fullName>
+        <categories>AxonFinance,Sync</categories>
+        <language>en_US</language>
+        <protected>false</protected>
+        <shortDescription>Batch Sync Started Success Message</shortDescription>
+        <value>Synchronization batch started successfully!</value>
+    </labels>
+    <labels>
+        <fullName>AXF_LBL_CancelBack</fullName>
+        <categories>AxonFinance,LWC</categories>
+        <language>en_US</language>
+        <protected>false</protected>
+        <shortDescription>Cancel Back Button Label</shortDescription>
+        <value>Cancel / Back</value>
+    </labels>
+    <labels>
+        <fullName>AXF_LBL_Close</fullName>
+        <categories>AxonFinance,LWC</categories>
+        <language>en_US</language>
+        <protected>false</protected>
+        <shortDescription>Close Button Label</shortDescription>
+        <value>Close</value>
+    </labels>
+    <labels>
+        <fullName>AXF_LBL_ConnectionNotFound</fullName>
+        <categories>AxonFinance,Sync</categories>
+        <language>en_US</language>
+        <protected>false</protected>
+        <shortDescription>Connection Not Found Message</shortDescription>
+        <value>Pluggy Connection record not found.</value>
+    </labels>
+    <labels>
+        <fullName>AXF_LBL_ConnectionSyncedSuccess</fullName>
+        <categories>AxonFinance,Sync</categories>
+        <language>en_US</language>
+        <protected>false</protected>
+        <shortDescription>Connection Synced Success Message</shortDescription>
+        <value>Connection {0} synchronized successfully. {1} accounts updated.</value>
+    </labels>
+    <labels>
+        <fullName>AXF_LBL_CreditCards</fullName>
+        <categories>AxonFinance,LWC</categories>
+        <language>en_US</language>
+        <protected>false</protected>
+        <shortDescription>Credit Cards Label</shortDescription>
+        <value>Credit Cards</value>
+    </labels>
+    <labels>
+        <fullName>AXF_LBL_DefaultBankAccountName</fullName>
+        <categories>AxonFinance,Account</categories>
+        <language>en_US</language>
+        <protected>false</protected>
+        <shortDescription>Default Bank Account Name</shortDescription>
+        <value>Bank Account</value>
+    </labels>
+    <labels>
+        <fullName>AXF_LBL_DefaultCreditCardName</fullName>
+        <categories>AxonFinance,Account</categories>
+        <language>en_US</language>
+        <protected>false</protected>
+        <shortDescription>Default Credit Card Name</shortDescription>
+        <value>Credit Card</value>
+    </labels>
+    <labels>
+        <fullName>AXF_LBL_DoNotCloseWindow</fullName>
+        <categories>AxonFinance,LWC</categories>
+        <language>en_US</language>
+        <protected>false</protected>
+        <shortDescription>Do Not Close Window Notice</shortDescription>
+        <value>Please do not close this window.</value>
+    </labels>
+    <labels>
+        <fullName>AXF_LBL_ErrorDetails</fullName>
+        <categories>AxonFinance,LWC</categories>
+        <language>en_US</language>
+        <protected>false</protected>
+        <shortDescription>Error Details Title</shortDescription>
+        <value>Error Details:</value>
+    </labels>
+    <labels>
+        <fullName>AXF_LBL_ErrorSyncingConnection</fullName>
+        <categories>AxonFinance,Sync</categories>
+        <language>en_US</language>
+        <protected>false</protected>
+        <shortDescription>Error Syncing Connection Message</shortDescription>
+        <value>Error synchronizing connection:</value>
+    </labels>
+    <labels>
+        <fullName>AXF_LBL_ErrorToastTitle</fullName>
+        <categories>AxonFinance,LWC</categories>
+        <language>en_US</language>
+        <protected>false</protected>
+        <shortDescription>Error Toast Title</shortDescription>
+        <value>Integration Error</value>
+    </labels>
+    <labels>
+        <fullName>AXF_LBL_ManualSyncTitle</fullName>
+        <categories>AxonFinance,LWC</categories>
+        <language>en_US</language>
+        <protected>false</protected>
+        <shortDescription>Manual Sync Component Title</shortDescription>
+        <value>Pluggy Manual Sync</value>
+    </labels>
+    <labels>
+        <fullName>AXF_LBL_NoAccountsProcessed</fullName>
+        <categories>AxonFinance,Sync</categories>
+        <language>en_US</language>
+        <protected>false</protected>
+        <shortDescription>No Accounts Processed Message</shortDescription>
+        <value>No accounts were processed.</value>
+    </labels>
+    <labels>
+        <fullName>AXF_LBL_NoActiveConnectionsFound</fullName>
+        <categories>AxonFinance,Sync</categories>
+        <language>en_US</language>
+        <protected>false</protected>
+        <shortDescription>No Active Connections Found Message</shortDescription>
+        <value>No active connections found for synchronization.</value>
+    </labels>
+    <labels>
+        <fullName>AXF_LBL_OpenFinanceSync</fullName>
+        <categories>AxonFinance,LWC</categories>
+        <language>en_US</language>
+        <protected>false</protected>
+        <shortDescription>Open Finance Sync Title</shortDescription>
+        <value>Open Finance Synchronization</value>
+    </labels>
+    <labels>
+        <fullName>AXF_LBL_StartSyncNow</fullName>
+        <categories>AxonFinance,LWC</categories>
+        <language>en_US</language>
+        <protected>false</protected>
+        <shortDescription>Start Sync Now Button</shortDescription>
+        <value>Start Synchronization Now</value>
+    </labels>
+    <labels>
+        <fullName>AXF_LBL_SuccessToastTitle</fullName>
+        <categories>AxonFinance,LWC</categories>
+        <language>en_US</language>
+        <protected>false</protected>
+        <shortDescription>Success Toast Title</shortDescription>
+        <value>Success!</value>
+    </labels>
+    <labels>
+        <fullName>AXF_LBL_SyncAllAccountsDesc</fullName>
+        <categories>AxonFinance,LWC</categories>
+        <language>en_US</language>
+        <protected>false</protected>
+        <shortDescription>Sync All Accounts Component Description</shortDescription>
+        <value>Initiate synchronization for all active Pluggy connections.</value>
+    </labels>
+    <labels>
+        <fullName>AXF_LBL_SyncAllAccountsTitle</fullName>
+        <categories>AxonFinance,LWC</categories>
+        <language>en_US</language>
+        <protected>false</protected>
+        <shortDescription>Sync All Accounts Component Title</shortDescription>
+        <value>Sync All Accounts</value>
+    </labels>
+    <labels>
+        <fullName>AXF_LBL_SyncCompleted</fullName>
+        <categories>AxonFinance,LWC</categories>
+        <language>en_US</language>
+        <protected>false</protected>
+        <shortDescription>Sync Completed Title</shortDescription>
+        <value>Synchronization Completed</value>
+    </labels>
+    <labels>
+        <fullName>AXF_LBL_SyncConnectionButton</fullName>
+        <categories>AxonFinance,LWC</categories>
+        <language>en_US</language>
+        <protected>false</protected>
+        <shortDescription>Sync Connection Button Label</shortDescription>
+        <value>Sync Connection</value>
+    </labels>
+    <labels>
+        <fullName>AXF_LBL_SyncError</fullName>
+        <categories>AxonFinance,Sync</categories>
+        <language>en_US</language>
+        <protected>false</protected>
+        <shortDescription>Sync Error Generic Message</shortDescription>
+        <value>Synchronization failed.</value>
+    </labels>
+    <labels>
+        <fullName>AXF_LBL_SyncNowButton</fullName>
+        <categories>AxonFinance,LWC</categories>
+        <language>en_US</language>
+        <protected>false</protected>
+        <shortDescription>Sync Now Button Label</shortDescription>
+        <value>Sync Now</value>
+    </labels>
+    <labels>
+        <fullName>AXF_LBL_SyncSubtitle</fullName>
+        <categories>AxonFinance,LWC</categories>
+        <language>en_US</language>
+        <protected>false</protected>
+        <shortDescription>Sync Subtitle</shortDescription>
+        <value>Updating Bank Accounts and Credit Cards via Pluggy API.</value>
+    </labels>
+    <labels>
+        <fullName>AXF_LBL_SyncSuccess</fullName>
+        <categories>AxonFinance,Sync</categories>
+        <language>en_US</language>
+        <protected>false</protected>
+        <shortDescription>Sync Success Generic Message</shortDescription>
+        <value>Synchronization completed successfully.</value>
+    </labels>
+    <labels>
+        <fullName>AXF_LBL_SyncingAccounts</fullName>
+        <categories>AxonFinance,LWC</categories>
+        <language>en_US</language>
+        <protected>false</protected>
+        <shortDescription>Syncing Accounts Progress Label</shortDescription>
+        <value>Synchronizing accounts...</value>
+    </labels>
+    <labels>
+        <fullName>AXF_LBL_SyncingData</fullName>
+        <categories>AxonFinance,LWC</categories>
+        <language>en_US</language>
+        <protected>false</protected>
+        <shortDescription>Syncing Data Spinner Notice</shortDescription>
+        <value>Synchronizing data with Pluggy...</value>
+    </labels>
+    <labels>
+        <fullName>AXF_LBL_SyncingSpinner</fullName>
+        <categories>AxonFinance,LWC</categories>
+        <language>en_US</language>
+        <protected>false</protected>
+        <shortDescription>Syncing Spinner Status Text</shortDescription>
+        <value>Connecting and synchronizing with Open Finance via Pluggy...</value>
+    </labels>
+    <labels>
+        <fullName>AXF_LBL_TryAgain</fullName>
+        <categories>AxonFinance,LWC</categories>
+        <language>en_US</language>
+        <protected>false</protected>
+        <shortDescription>Try Again Button</shortDescription>
+        <value>Try Again</value>
+    </labels>
+    <labels>
+        <fullName>AXF_LBL_UnexpectedSyncError</fullName>
+        <categories>AxonFinance,Sync</categories>
+        <language>en_US</language>
+        <protected>false</protected>
+        <shortDescription>Unexpected Sync Error Message</shortDescription>
+        <value>Unexpected error during synchronization:</value>
+    </labels>
+    <labels>
+        <fullName>AXF_LBL_WarningToastTitle</fullName>
+        <categories>AxonFinance,LWC</categories>
+        <language>en_US</language>
+        <protected>false</protected>
+        <shortDescription>Warning Toast Title</shortDescription>
+        <value>Synchronization Notice</value>
+    </labels>
+    <labels>
+        <fullName>AXF_LBL_AllTransactions</fullName>
+        <categories>AxonFinance,LWC,Statement</categories>
+        <language>en_US</language>
+        <protected>false</protected>
+        <shortDescription>Bank Statement All Transactions Filter Option</shortDescription>
+        <value>All</value>
+    </labels>
+    <labels>
+        <fullName>AXF_LBL_Apply</fullName>
+        <categories>AxonFinance,LWC</categories>
+        <language>en_US</language>
+        <protected>false</protected>
+        <shortDescription>Apply Button Label</shortDescription>
+        <value>Apply</value>
+    </labels>
+    <labels>
+        <fullName>AXF_LBL_BankStatementTitle</fullName>
+        <categories>AxonFinance,LWC,Statement</categories>
+        <language>en_US</language>
+        <protected>false</protected>
+        <shortDescription>Bank Statement Component Title</shortDescription>
+        <value>Bank Statement</value>
+    </labels>
+    <labels>
+        <fullName>AXF_LBL_ClearFilters</fullName>
+        <categories>AxonFinance,LWC</categories>
+        <language>en_US</language>
+        <protected>false</protected>
+        <shortDescription>Clear Filters Button Label</shortDescription>
+        <value>Clear Filters</value>
+    </labels>
+    <labels>
+        <fullName>AXF_LBL_ColumnAmount</fullName>
+        <categories>AxonFinance,LWC,Statement</categories>
+        <language>en_US</language>
+        <protected>false</protected>
+        <shortDescription>Bank Statement Amount Column Header</shortDescription>
+        <value>Amount</value>
+    </labels>
+    <labels>
+        <fullName>AXF_LBL_ColumnBalance</fullName>
+        <categories>AxonFinance,LWC,Statement</categories>
+        <language>en_US</language>
+        <protected>false</protected>
+        <shortDescription>Bank Statement Running Balance Column Header</shortDescription>
+        <value>Balance</value>
+    </labels>
+    <labels>
+        <fullName>AXF_LBL_ColumnCategory</fullName>
+        <categories>AxonFinance,LWC,Statement</categories>
+        <language>en_US</language>
+        <protected>false</protected>
+        <shortDescription>Bank Statement Category Column Header</shortDescription>
+        <value>Category</value>
+    </labels>
+    <labels>
+        <fullName>AXF_LBL_ColumnDate</fullName>
+        <categories>AxonFinance,LWC,Statement</categories>
+        <language>en_US</language>
+        <protected>false</protected>
+        <shortDescription>Bank Statement Date Column Header</shortDescription>
+        <value>Date</value>
+    </labels>
+    <labels>
+        <fullName>AXF_LBL_CurrentMonth</fullName>
+        <categories>AxonFinance,LWC,Statement</categories>
+        <language>en_US</language>
+        <protected>false</protected>
+        <shortDescription>Bank Statement Current Month Filter Option</shortDescription>
+        <value>Current Month</value>
+    </labels>
+    <labels>
+        <fullName>AXF_LBL_CustomPeriod</fullName>
+        <categories>AxonFinance,LWC,Statement</categories>
+        <language>en_US</language>
+        <protected>false</protected>
+        <shortDescription>Bank Statement Custom Period Filter Option</shortDescription>
+        <value>Custom Period</value>
+    </labels>
+    <labels>
+        <fullName>AXF_LBL_DescriptionFilter</fullName>
+        <categories>AxonFinance,LWC,Statement</categories>
+        <language>en_US</language>
+        <protected>false</protected>
+        <shortDescription>Bank Statement Description Filter/Column Label</shortDescription>
+        <value>Description</value>
+    </labels>
+    <labels>
+        <fullName>AXF_LBL_ErrorLoadingStatement</fullName>
+        <categories>AxonFinance,LWC,Statement</categories>
+        <language>en_US</language>
+        <protected>false</protected>
+        <shortDescription>Bank Statement Loading Error Message</shortDescription>
+        <value>Error loading statement.</value>
+    </labels>
+    <labels>
+        <fullName>AXF_LBL_Filters</fullName>
+        <categories>AxonFinance,LWC,Statement</categories>
+        <language>en_US</language>
+        <protected>false</protected>
+        <shortDescription>Bank Statement Filters Section Title</shortDescription>
+        <value>Filters</value>
+    </labels>
+    <labels>
+        <fullName>AXF_LBL_LastMonth</fullName>
+        <categories>AxonFinance,LWC,Statement</categories>
+        <language>en_US</language>
+        <protected>false</protected>
+        <shortDescription>Bank Statement Last Month Filter Option</shortDescription>
+        <value>Last Month</value>
+    </labels>
+    <labels>
+        <fullName>AXF_LBL_MaxValue</fullName>
+        <categories>AxonFinance,LWC,Statement</categories>
+        <language>en_US</language>
+        <protected>false</protected>
+        <shortDescription>Bank Statement Max Value Filter Label</shortDescription>
+        <value>Max Value</value>
+    </labels>
+    <labels>
+        <fullName>AXF_LBL_MinValue</fullName>
+        <categories>AxonFinance,LWC,Statement</categories>
+        <language>en_US</language>
+        <protected>false</protected>
+        <shortDescription>Bank Statement Min Value Filter Label</shortDescription>
+        <value>Min Value</value>
+    </labels>
+    <labels>
+        <fullName>AXF_LBL_NoTransactionsFound</fullName>
+        <categories>AxonFinance,LWC,Statement</categories>
+        <language>en_US</language>
+        <protected>false</protected>
+        <shortDescription>Bank Statement No Transactions Found Message</shortDescription>
+        <value>No transactions found for the selected filters.</value>
+    </labels>
+    <labels>
+        <fullName>AXF_LBL_Period</fullName>
+        <categories>AxonFinance,LWC,Statement</categories>
+        <language>en_US</language>
+        <protected>false</protected>
+        <shortDescription>Bank Statement Period Filter Label</shortDescription>
+        <value>Period</value>
+    </labels>
+    <labels>
+        <fullName>AXF_LBL_PeriodBalance</fullName>
+        <categories>AxonFinance,LWC,Statement</categories>
+        <language>en_US</language>
+        <protected>false</protected>
+        <shortDescription>Bank Statement Period Balance Summary Label</shortDescription>
+        <value>Period Balance</value>
+    </labels>
+    <labels>
+        <fullName>AXF_LBL_PeriodEnd</fullName>
+        <categories>AxonFinance,LWC,Statement</categories>
+        <language>en_US</language>
+        <protected>false</protected>
+        <shortDescription>Bank Statement Period End Filter Label</shortDescription>
+        <value>To</value>
+    </labels>
+    <labels>
+        <fullName>AXF_LBL_PeriodStart</fullName>
+        <categories>AxonFinance,LWC,Statement</categories>
+        <language>en_US</language>
+        <protected>false</protected>
+        <shortDescription>Bank Statement Period Start Filter Label</shortDescription>
+        <value>From</value>
+    </labels>
+    <labels>
+        <fullName>AXF_LBL_ShowingTransactions</fullName>
+        <categories>AxonFinance,LWC,Statement</categories>
+        <language>en_US</language>
+        <protected>false</protected>
+        <shortDescription>Bank Statement Transactions Displayed Count Label</shortDescription>
+        <value>Transactions displayed:</value>
+    </labels>
+    <labels>
+        <fullName>AXF_LBL_TotalCredits</fullName>
+        <categories>AxonFinance,LWC,Statement</categories>
+        <language>en_US</language>
+        <protected>false</protected>
+        <shortDescription>Bank Statement Total Credits Summary Label</shortDescription>
+        <value>Total Credits</value>
+    </labels>
+    <labels>
+        <fullName>AXF_LBL_TotalDebits</fullName>
+        <categories>AxonFinance,LWC,Statement</categories>
+        <language>en_US</language>
+        <protected>false</protected>
+        <shortDescription>Bank Statement Total Debits Summary Label</shortDescription>
+        <value>Total Debits</value>
+    </labels>
+    <labels>
+        <fullName>AXF_LBL_ClosingDate</fullName>
+        <categories>AxonFinance,LWC,Statement</categories>
+        <language>en_US</language>
+        <protected>false</protected>
+        <shortDescription>Credit Card Statement Closing Date Label</shortDescription>
+        <value>Closing Date</value>
+    </labels>
+    <labels>
+        <fullName>AXF_LBL_CreditCardStatementTitle</fullName>
+        <categories>AxonFinance,LWC,Statement</categories>
+        <language>en_US</language>
+        <protected>false</protected>
+        <shortDescription>Credit Card Statement Component Title</shortDescription>
+        <value>Credit Card Statement</value>
+    </labels>
+    <labels>
+        <fullName>AXF_LBL_DueDate</fullName>
+        <categories>AxonFinance,LWC,Statement</categories>
+        <language>en_US</language>
+        <protected>false</protected>
+        <shortDescription>Credit Card Statement Due Date Label</shortDescription>
+        <value>Due Date</value>
+    </labels>
+    <labels>
+        <fullName>AXF_LBL_ErrorLoadingInvoices</fullName>
+        <categories>AxonFinance,LWC,Statement</categories>
+        <language>en_US</language>
+        <protected>false</protected>
+        <shortDescription>Credit Card Statement Invoice Loading Error</shortDescription>
+        <value>Error loading invoices.</value>
+    </labels>
+    <labels>
+        <fullName>AXF_LBL_Invoice</fullName>
+        <categories>AxonFinance,LWC,Statement</categories>
+        <language>en_US</language>
+        <protected>false</protected>
+        <shortDescription>Credit Card Statement Invoice Dropdown Label</shortDescription>
+        <value>Invoice</value>
+    </labels>
+    <labels>
+        <fullName>AXF_LBL_NoInvoicesFound</fullName>
+        <categories>AxonFinance,LWC,Statement</categories>
+        <language>en_US</language>
+        <protected>false</protected>
+        <shortDescription>Credit Card Statement No Invoices Message</shortDescription>
+        <value>No invoices found for this Credit Card.</value>
+    </labels>
+    <labels>
+        <fullName>AXF_LBL_Status</fullName>
+        <categories>AxonFinance,LWC,Statement</categories>
+        <language>en_US</language>
+        <protected>false</protected>
+        <shortDescription>Credit Card Statement Status Label</shortDescription>
+        <value>Status</value>
+    </labels>
+    <labels>
+        <fullName>AXF_LBL_TotalAmount</fullName>
+        <categories>AxonFinance,LWC,Statement</categories>
+        <language>en_US</language>
+        <protected>false</protected>
+        <shortDescription>Credit Card Statement Total Amount Label</shortDescription>
+        <value>Total Amount</value>
+    </labels>
+    <labels>
+        <fullName>AXF_LBL_ExpensesHomeTitle</fullName>
+        <categories>AxonFinance,LWC,CashFlow</categories>
+        <language>en_US</language>
+        <protected>false</protected>
+        <shortDescription>Expenses Home Table Title</shortDescription>
+        <value>Monthly Expenses</value>
+    </labels>
+    <labels>
+        <fullName>AXF_LBL_RevenuesHomeTitle</fullName>
+        <categories>AxonFinance,LWC,CashFlow</categories>
+        <language>en_US</language>
+        <protected>false</protected>
+        <shortDescription>Revenues Home Table Title</shortDescription>
+        <value>Monthly Revenues</value>
+    </labels>
+    <labels>
+        <fullName>AXF_LBL_ColumnValue</fullName>
+        <categories>AxonFinance,LWC,CashFlow</categories>
+        <language>en_US</language>
+        <protected>false</protected>
+        <shortDescription>Cash Flow Value Column Label</shortDescription>
+        <value>Value</value>
+    </labels>
+    <labels>
+        <fullName>AXF_LBL_ColumnReconciled</fullName>
+        <categories>AxonFinance,LWC,CashFlow</categories>
+        <language>en_US</language>
+        <protected>false</protected>
+        <shortDescription>Cash Flow Reconciled Column Label</shortDescription>
+        <value>Reconciled</value>
+    </labels>
+    <labels>
+        <fullName>AXF_LBL_StatusPending</fullName>
+        <categories>AxonFinance,LWC,CashFlow</categories>
+        <language>en_US</language>
+        <protected>false</protected>
+        <shortDescription>Cash Flow Status Pending</shortDescription>
+        <value>Pending</value>
+    </labels>
+    <labels>
+        <fullName>AXF_LBL_StatusPaid</fullName>
+        <categories>AxonFinance,LWC,CashFlow</categories>
+        <language>en_US</language>
+        <protected>false</protected>
+        <shortDescription>Cash Flow Status Paid</shortDescription>
+        <value>Paid</value>
+    </labels>
+    <labels>
+        <fullName>AXF_LBL_StatusPaidLate</fullName>
+        <categories>AxonFinance,LWC,CashFlow</categories>
+        <language>en_US</language>
+        <protected>false</protected>
+        <shortDescription>Cash Flow Status Paid Late</shortDescription>
+        <value>Paid Late</value>
+    </labels>
+    <labels>
+        <fullName>AXF_LBL_StatusReceived</fullName>
+        <categories>AxonFinance,LWC,CashFlow</categories>
+        <language>en_US</language>
+        <protected>false</protected>
+        <shortDescription>Cash Flow Status Received</shortDescription>
+        <value>Received</value>
+    </labels>
+    <labels>
+        <fullName>AXF_LBL_StatusReceivedLate</fullName>
+        <categories>AxonFinance,LWC,CashFlow</categories>
+        <language>en_US</language>
+        <protected>false</protected>
+        <shortDescription>Cash Flow Status Received Late</shortDescription>
+        <value>Received Late</value>
+    </labels>
+    <labels>
+        <fullName>AXF_LBL_StatusOverdue</fullName>
+        <categories>AxonFinance,LWC,CashFlow</categories>
+        <language>en_US</language>
+        <protected>false</protected>
+        <shortDescription>Cash Flow Status Overdue</shortDescription>
+        <value>Overdue</value>
+    </labels>
+    <labels>
+        <fullName>AXF_LBL_SettleExpenseModalTitle</fullName>
+        <categories>AxonFinance,LWC,CashFlow</categories>
+        <language>en_US</language>
+        <protected>false</protected>
+        <shortDescription>Settle Expense Modal Title</shortDescription>
+        <value>Settle Expense</value>
+    </labels>
+    <labels>
+        <fullName>AXF_LBL_SettleRevenueModalTitle</fullName>
+        <categories>AxonFinance,LWC,CashFlow</categories>
+        <language>en_US</language>
+        <protected>false</protected>
+        <shortDescription>Settle Revenue Modal Title</shortDescription>
+        <value>Settle Revenue</value>
+    </labels>
+    <labels>
+        <fullName>AXF_LBL_PaymentDate</fullName>
+        <categories>AxonFinance,LWC,CashFlow</categories>
+        <language>en_US</language>
+        <protected>false</protected>
+        <shortDescription>Payment Date Field Label</shortDescription>
+        <value>Payment Date</value>
+    </labels>
+    <labels>
+        <fullName>AXF_LBL_ReconcileWithBankTransaction</fullName>
+        <categories>AxonFinance,LWC,CashFlow</categories>
+        <language>en_US</language>
+        <protected>false</protected>
+        <shortDescription>Reconcile With Bank Transaction Option Label</shortDescription>
+        <value>Reconcile with Bank Transaction</value>
+    </labels>
+    <labels>
+        <fullName>AXF_LBL_ReconcileWithCardTransaction</fullName>
+        <categories>AxonFinance,LWC,CashFlow</categories>
+        <language>en_US</language>
+        <protected>false</protected>
+        <shortDescription>Reconcile With Credit Card Transaction Option Label</shortDescription>
+        <value>Reconcile with Credit Card Transaction</value>
+    </labels>
+    <labels>
+        <fullName>AXF_LBL_SettleInCash</fullName>
+        <categories>AxonFinance,LWC,CashFlow</categories>
+        <language>en_US</language>
+        <protected>false</protected>
+        <shortDescription>Settle In Cash Option Label</shortDescription>
+        <value>Settle in Cash</value>
+    </labels>
+    <labels>
+        <fullName>AXF_LBL_SearchTransactionPlaceholder</fullName>
+        <categories>AxonFinance,LWC,CashFlow</categories>
+        <language>en_US</language>
+        <protected>false</protected>
+        <shortDescription>Search Transaction Placeholder</shortDescription>
+        <value>Search transaction...</value>
+    </labels>
+    <labels>
+        <fullName>AXF_LBL_ModalSave</fullName>
+        <categories>AxonFinance,LWC,CashFlow</categories>
+        <language>en_US</language>
+        <protected>false</protected>
+        <shortDescription>Modal Save Button Label</shortDescription>
+        <value>Save</value>
+    </labels>
+    <labels>
+        <fullName>AXF_LBL_ModalCancel</fullName>
+        <categories>AxonFinance,LWC,CashFlow</categories>
+        <language>en_US</language>
+        <protected>false</protected>
+        <shortDescription>Modal Cancel Button Label</shortDescription>
+        <value>Cancel</value>
+    </labels>
+    <labels>
+        <fullName>AXF_LBL_NoMovementsFound</fullName>
+        <categories>AxonFinance,LWC,CashFlow</categories>
+        <language>en_US</language>
+        <protected>false</protected>
+        <shortDescription>No Movements Found Message</shortDescription>
+        <value>No movements found for this month.</value>
+    </labels>
+</CustomLabels>

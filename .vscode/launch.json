@@ -1,0 +1,21 @@
+{
+  "version": "0.2.0",
+  "configurations": [
+    {
+      "name": "Lightning App Local Dev (AXF_CA_FinanceApp)",
+      "type": "node",
+      "request": "launch",
+      "runtimeExecutable": "sf",
+      "runtimeArgs": [
+        "lightning",
+        "dev",
+        "app",
+        "--target-org",
+        "AxonFinance",
+        "--name",
+        "AXF_CA_FinanceApp"
+      ],
+      "port": 8081
+    }
+  ]
+}

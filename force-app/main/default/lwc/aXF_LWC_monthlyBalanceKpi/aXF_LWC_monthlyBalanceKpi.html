@@ -1,0 +1,55 @@
+<template>
+    <div class="slds-card slds-p-around_medium kpi-card-container">
+        <!-- Card Title -->
+        <div class="slds-grid slds-grid_align-spread slds-grid_vertical-align-center slds-m-bottom_small">
+            <h2 class="slds-card__header-title slds-text-heading_small slds-font-weight_bold">
+                <lightning-icon icon-name="utility:chart" size="small" class="slds-m-right_x-small"></lightning-icon>
+                Balanço Mensal (Mês Atual)
+            </h2>
+            <span class="slds-badge slds-badge_lightest">{currentMonthLabel}</span>
+        </div>
+
+        <!-- Main KPI Metrics -->
+        <div class="slds-grid slds-wrap slds-gutters">
+            <!-- Saldo Previsto -->
+            <div class="slds-col slds-size_1-of-1 slds-medium-size_1-of-2 slds-m-bottom_small">
+                <div class={plannedBalanceBoxClass}>
+                    <p class="slds-text-title_bold text-uppercase">Saldo Previsto do Mês</p>
+                    <h3 class="slds-text-heading_medium slds-font-weight_bold slds-m-top_xx-small">
+                        <lightning-formatted-number value={metrics.plannedBalance} format-style="currency" currency-code="BRL"></lightning-formatted-number>
+                    </h3>
+                </div>
+            </div>
+
+            <!-- Saldo Realizado -->
+            <div class="slds-col slds-size_1-of-1 slds-medium-size_1-of-2 slds-m-bottom_small">
+                <div class={realizedBalanceBoxClass}>
+                    <p class="slds-text-title_bold text-uppercase">Saldo Realizado Efetivo</p>
+                    <h3 class="slds-text-heading_medium slds-font-weight_bold slds-m-top_xx-small">
+                        <lightning-formatted-number value={metrics.realizedBalance} format-style="currency" currency-code="BRL"></lightning-formatted-number>
+                    </h3>
+                </div>
+            </div>
+        </div>
+
+        <!-- Detailed Breakdown -->
+        <div class="slds-border_top slds-p-top_small slds-m-top_x-small">
+            <div class="slds-grid slds-wrap slds-gutters">
+                <div class="slds-col slds-size_1-of-2">
+                    <p class="slds-text-title slds-text-color_weak">Receitas (Previsto vs Realizado)</p>
+                    <p class="slds-font-weight_bold text-success slds-m-top_xx-small">
+                        <lightning-formatted-number value={metrics.plannedRevenues} format-style="currency" currency-code="BRL"></lightning-formatted-number>
+                        <span class="slds-text-color_weak slds-m-left_xx-small">/ <lightning-formatted-number value={metrics.realizedRevenues} format-style="currency" currency-code="BRL"></lightning-formatted-number></span>
+                    </p>
+                </div>
+                <div class="slds-col slds-size_1-of-2">
+                    <p class="slds-text-title slds-text-color_weak">Despesas (Previsto vs Realizado)</p>
+                    <p class="slds-font-weight_bold text-danger slds-m-top_xx-small">
+                        <lightning-formatted-number value={metrics.plannedExpenses} format-style="currency" currency-code="BRL"></lightning-formatted-number>
+                        <span class="slds-text-color_weak slds-m-left_xx-small">/ <lightning-formatted-number value={metrics.realizedExpenses} format-style="currency" currency-code="BRL"></lightning-formatted-number></span>
+                    </p>
+                </div>
+            </div>
+        </div>
+    </div>
+</template>

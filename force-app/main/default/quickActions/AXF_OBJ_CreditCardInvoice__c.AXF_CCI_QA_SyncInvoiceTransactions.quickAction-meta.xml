@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<QuickAction xmlns="http://soap.sforce.com/2006/04/metadata">
+    <actionSubtype>ScreenAction</actionSubtype>
+    <height>250</height>
+    <label>Sync Invoice Transactions</label>
+    <lightningWebComponent>aXF_LWC_pluggyManualSync</lightningWebComponent>
+    <optionsCreateFeedItem>false</optionsCreateFeedItem>
+    <type>LightningWebComponent</type>
+    <width>350</width>
+</QuickAction>

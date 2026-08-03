@@ -1,0 +1,115 @@
+<template>
+    <lightning-card title={labels.title} icon-name="utility:moneybag">
+        <div class="slds-p-horizontal_medium slds-p-bottom_medium">
+            <!-- Filter Bar -->
+            <div class="slds-m-bottom_small slds-size_1-of-1 slds-medium-size_1-of-3">
+                <c-a-x-f_-l-w-c_category-lookup
+                    label="Filtrar por Categoria"
+                    value={selectedCategoryId}
+                    record-type-developer-name={categoryRecordType}
+                    placeholder="Buscar categoria (ex: Energia)..."
+                    show-all-option
+                    onchange={handleCategoryFilterChange}>
+                </c-a-x-f_-l-w-c_category-lookup>
+            </div>
+
+            <template if:true={isLoading}>
+                <div class="slds-align_absolute-center slds-p-vertical_large">
+                    <lightning-spinner alternative-text="Loading" size="medium"></lightning-spinner>
+                </div>
+            </template>
+
+            <template if:false={isLoading}>
+                <template if:true={hasRows}>
+                    <div class="slds-scrollable_x">
+                        <table class="slds-table slds-table_bordered slds-table_striped slds-table_cell-buffer">
+                            <thead>
+                                <tr class="slds-line-height_reset">
+                                    <th scope="col">{labels.dueDate}</th>
+                                    <th scope="col">Categoria</th>
+                                    <th scope="col" class="slds-text-align_right">{labels.value}</th>
+                                    <th scope="col">{labels.status}</th>
+                                    <th scope="col" class="slds-text-align_center">{labels.reconciled}</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <template for:each={rows} for:item="row">
+                                    <tr key={row.id}>
+                                        <td>
+                                            <lightning-formatted-date-time value={row.dueDate} year="2-digit" month="2-digit" day="2-digit" time-zone="UTC"></lightning-formatted-date-time>
+                                        </td>
+                                        <td>
+                                            {row.categoryName}
+                                        </td>
+                                        <td class="slds-text-align_right">
+                                            <lightning-formatted-number value={row.value} format-style="currency" currency-code={currencyCode}></lightning-formatted-number>
+                                        </td>
+                                        <td>
+                                            <span
+                                                data-id={row.id}
+                                                onclick={handleSettleClick}
+                                                class={row.statusVariant}
+                                                title={row.statusLabel}
+                                                style="cursor:pointer;"
+                                            >
+                                                <lightning-icon icon-name={row.statusIcon} size="x-small" class={row.statusVariant}></lightning-icon>
+                                                {row.statusLabel}
+                                            </span>
+                                        </td>
+                                        <td class="slds-text-align_center">
+                                            <lightning-icon icon-name={row.reconciledIcon} size="x-small" class={row.reconciledVariant}></lightning-icon>
+                                        </td>
+                                    </tr>
+                                </template>
+                            </tbody>
+                        </table>
+                    </div>
+                </template>
+
+                <template if:true={hasNoRows}>
+                    <div class="slds-illustration slds-illustration_small slds-p-around_medium slds-text-align_center">
+                        <p>{labels.noMovementsFound}</p>
+                    </div>
+                </template>
+            </template>
+        </div>
+    </lightning-card>
+
+    <template if:true={isModalOpen}>
+        <section role="dialog" tabindex="-1" class="slds-modal slds-fade-in-open" aria-modal="true">
+            <div class="slds-modal__container">
+                <header class="slds-modal__header">
+                    <button class="slds-button slds-button_icon slds-modal__close" onclick={handleCloseModal} title={labels.cancel}>
+                        <lightning-icon icon-name="utility:close" size="small"></lightning-icon>
+                    </button>
+                    <h2 class="slds-text-heading_medium">{labels.modalTitle}</h2>
+                </header>
+                <div class="slds-modal__content slds-p-around_medium">
+                    <lightning-input type="date" label={labels.paymentDate} value={paymentDate} onchange={handlePaymentDateChange}></lightning-input>
+
+                    <div class="slds-p-top_medium">
+                        <p class="slds-text-title_caps slds-p-bottom_x-small">{labels.reconcileWithBank} / {labels.reconcileWithCard}</p>
+                        <lightning-input type="search" placeholder={labels.searchPlaceholder} value={searchTerm} onchange={handleSearchChange}></lightning-input>
+
+                        <template if:true={hasMatches}>
+                            <ul class="slds-p-top_x-small">
+                                <template for:each={transactionMatches} for:item="match">
+                                    <li key={match.id} class="slds-p-vertical_x-small">
+                                        <a href="javascript:void(0);" data-id={match.id} data-type={match.type} onclick={handleSelectTransaction}>
+                                            {match.label}
+                                        </a>
+                                    </li>
+                                </template>
+                            </ul>
+                        </template>
+                    </div>
+                </div>
+                <footer class="slds-modal__footer">
+                    <lightning-button variant="neutral" label={labels.settleInCash} onclick={handleSettleInCash}></lightning-button>
+                    <lightning-button variant="brand" label={labels.save} onclick={handleSave} disabled={hasNoSelection}></lightning-button>
+                </footer>
+            </div>
+        </section>
+        <div class="slds-backdrop slds-backdrop_open"></div>
+    </template>
+</template>

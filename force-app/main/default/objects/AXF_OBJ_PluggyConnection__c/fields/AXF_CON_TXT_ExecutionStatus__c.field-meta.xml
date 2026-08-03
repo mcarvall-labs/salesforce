@@ -1,0 +1,13 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<CustomField xmlns="http://soap.sforce.com/2006/04/metadata">
+    <fullName>AXF_CON_TXT_ExecutionStatus__c</fullName>
+    <businessStatus>Active</businessStatus>
+    <description>Armazena o substatus de execução da última tentativa de sincronização (ex: SUCCESS, PARTIAL_SUCCESS, FAILURE).</description>
+    <externalId>false</externalId>
+    <label>Execution Status</label>
+    <length>50</length>
+    <required>false</required>
+    <trackTrending>false</trackTrending>
+    <type>Text</type>
+    <unique>false</unique>
+</CustomField>

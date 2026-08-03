@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<CustomField xmlns="http://soap.sforce.com/2006/04/metadata">
+    <fullName>AXF_CON_DT_LastSyncDatetime__c</fullName>
+    <businessStatus>Active</businessStatus>
+    <description>Mapeia o campo lastUpdatedAt do JSON da Pluggy. Indica exatamente quando a última leitura com sucesso foi consolidada na API.</description>
+    <label>Last Sync Datetime</label>
+    <required>false</required>
+    <trackTrending>false</trackTrending>
+    <type>DateTime</type>
+</CustomField>

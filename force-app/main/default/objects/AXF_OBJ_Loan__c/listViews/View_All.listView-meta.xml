@@ -1,0 +1,13 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<ListView xmlns="http://soap.sforce.com/2006/04/metadata">
+    <fullName>View_All</fullName>
+    <columns>NAME</columns>
+    <columns>AXF_LOA_LKP_PluggyConnection__c</columns>
+    <columns>AXF_LOA_PKL_Type__c</columns>
+    <columns>AXF_LOA_CUR_ContractedAmount__c</columns>
+    <columns>AXF_LOA_CUR_OutstandingBalance__c</columns>
+    <columns>AXF_LOA_NUM_PaidInstallments__c</columns>
+    <columns>AXF_LOA_NUM_TotalInstallments__c</columns>
+    <filterScope>Everything</filterScope>
+    <label>View All</label>
+</ListView>

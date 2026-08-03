@@ -1,0 +1,25 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<CustomFieldTranslation xmlns="http://soap.sforce.com/2006/04/metadata">
+    <label><!-- Payment Method --></label>
+    <name>AXF_CF_PKL_PaymentMethod__c</name>
+    <picklistValues>
+        <masterLabel>Débito em Conta</masterLabel>
+        <translation><!-- Débito em Conta --></translation>
+    </picklistValues>
+    <picklistValues>
+        <masterLabel>Cartão de Crédito</masterLabel>
+        <translation><!-- Cartão de Crédito --></translation>
+    </picklistValues>
+    <picklistValues>
+        <masterLabel>Boleto Bancário</masterLabel>
+        <translation><!-- Boleto Bancário --></translation>
+    </picklistValues>
+    <picklistValues>
+        <masterLabel>Transferência / PIX</masterLabel>
+        <translation><!-- Transferência / PIX --></translation>
+    </picklistValues>
+    <picklistValues>
+        <masterLabel>Dinheiro</masterLabel>
+        <translation><!-- Dinheiro --></translation>
+    </picklistValues>
+</CustomFieldTranslation>

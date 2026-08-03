@@ -1,0 +1,19 @@
+# Arquivos de controle do Git e SO que não devem ir para a Org
+.git/
+.gitignore
+.DS_Store
+
+# Arquivos de documentação do repositório
+README.md
+.forceignore
+sfdx-project.json
+config/
+
+# Se você tiver LWCs com testes automatizados locais (Jest),
+# essa linha impede que os arquivos de teste tentem ser enviados para a Org
+**/__tests__/**
+
+# Impede o deploy de metadados temporários ou de pacotes específicos se houver
+# force-app/main/default/staticresources/meu_teste_local.resource
+**/jsconfig.json
+**/.eslintrc.json

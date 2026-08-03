@@ -1,0 +1,1 @@
+public class AXF_CLS_PluggyAuthException extends Exception {}

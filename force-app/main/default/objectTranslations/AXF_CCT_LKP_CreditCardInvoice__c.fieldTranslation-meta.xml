@@ -1,0 +1,7 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<CustomFieldTranslation xmlns="http://soap.sforce.com/2006/04/metadata">
+    <help><!-- Fatura de cartão de crédito à qual esta transação pertence. --></help>
+    <label>Fatura</label>
+    <name>AXF_CCT_LKP_CreditCardInvoice__c</name>
+    <relationshipLabel><!-- Credit Card Transactions --></relationshipLabel>
+</CustomFieldTranslation>

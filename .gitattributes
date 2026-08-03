@@ -1,0 +1,5 @@
+# Forçar arquivos Apex a serem reconhecidos como Apex
+*.cls linguist-language=Apex
+*.trigger linguist-language=Apex
+*.page linguist-language=Visualforce
+*.component linguist-language=Visualforce

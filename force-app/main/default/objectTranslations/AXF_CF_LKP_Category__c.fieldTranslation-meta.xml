@@ -1,0 +1,7 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<CustomFieldTranslation xmlns="http://soap.sforce.com/2006/04/metadata">
+    <help><!-- Selecione a categoria financeira vinculada a este lançamento. --></help>
+    <label>Categoria</label>
+    <name>AXF_CF_LKP_Category__c</name>
+    <relationshipLabel><!-- Cash Flow Movements --></relationshipLabel>
+</CustomFieldTranslation>
