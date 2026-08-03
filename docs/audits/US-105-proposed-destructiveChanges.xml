@@ -1,0 +1,8 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+  US-105 review artifact only. Intentionally empty: no field currently satisfies
+  the Destructive Candidate gates. Do not deploy this file.
+-->
+<Package xmlns="http://soap.sforce.com/2006/04/metadata">
+    <version>67.0</version>
+</Package>
