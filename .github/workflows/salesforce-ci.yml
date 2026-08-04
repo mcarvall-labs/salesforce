@@ -52,13 +52,28 @@ jobs:
       - uses: actions/checkout@v4
         with:
           fetch-depth: 0
+      - name: Detect Salesforce metadata changes
+        id: salesforce-delta
+        shell: bash
+        run: |
+          mapfile -t source_paths < <(bash scripts/ci/list-salesforce-delta.sh "$BASE_SHA" "$GITHUB_SHA")
+          if ((${#source_paths[@]} == 0)); then
+            echo "has_delta=false" >> "$GITHUB_OUTPUT"
+            echo "No Salesforce source changes to validate."
+          else
+            echo "has_delta=true" >> "$GITHUB_OUTPUT"
+            printf 'Salesforce source path: %s\n' "${source_paths[@]}"
+          fi
       - uses: actions/setup-node@v4
+        if: steps.salesforce-delta.outputs.has_delta == 'true'
         with:
           node-version: 22
           cache: npm
       - name: Install Salesforce CLI
+        if: steps.salesforce-delta.outputs.has_delta == 'true'
         run: npm install --global @salesforce/cli
       - name: Authenticate DEV
+        if: steps.salesforce-delta.outputs.has_delta == 'true'
         shell: bash
         run: |
           test -n "$SALESFORCE_AUTH_URL"
@@ -67,13 +82,16 @@ jobs:
           printf '%s' "$SALESFORCE_AUTH_URL" > "$auth_file"
           sf org login sfdx-url --sfdx-url-file "$auth_file" --alias AxonFinanceDevHub
       - name: Validate changed Salesforce metadata without deploying
+        id: salesforce-validation
+        if: steps.salesforce-delta.outputs.has_delta == 'true'
         shell: bash
         run: |
           mapfile -t source_paths < <(bash scripts/ci/list-salesforce-delta.sh "$BASE_SHA" "$GITHUB_SHA")
-          if ((${#source_paths[@]} == 0)); then
-            echo "No Salesforce source changes to validate."
-            exit 0
-          fi
           source_args=()
           for path in "${source_paths[@]}"; do source_args+=(--source-dir "$path"); done
-          sf project deploy validate "${source_args[@]}" --target-org AxonFinanceDevHub --test-level NoTestRun --wait 45
+          set +e
+          sf project deploy start "${source_args[@]}" --target-org AxonFinanceDevHub --dry-run --test-level NoTestRun --wait 45 --json > salesforce-validation.json
+          validation_status=$?
+          set -e
+          node scripts/ci/publish-salesforce-validation.mjs salesforce-validation.json
+          exit "$validation_status"

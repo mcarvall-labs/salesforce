@@ -1,120 +1,357 @@
 <template>
-    <div class="quick-actions-container">
-        <div class="quick-actions-grid">
-            <button class="slds-button slds-button_destructive btn-expense btn-full-width" onclick={handleOpenExpenseModal}>Nova Despesa</button>
-            <button class="slds-button slds-button_success btn-revenue btn-full-width" onclick={handleOpenRevenueModal}>Nova Receita</button>
-        </div>
+  <div class="quick-actions-container">
+    <div class="quick-actions-grid">
+      <button
+        class="slds-button slds-button_destructive btn-expense btn-full-width"
+        onclick={handleOpenExpenseModal}
+      >
+        Nova Despesa
+      </button>
+      <button
+        class="slds-button slds-button_success btn-revenue btn-full-width"
+        onclick={handleOpenRevenueModal}
+      >
+        Nova Receita
+      </button>
     </div>
+  </div>
 
-    <template if:true={isModalOpen}>
-        <section role="dialog" tabindex="-1" class="slds-modal slds-fade-in-open slds-modal_medium" aria-modal="true" aria-label={modalTitle}>
-            <div class="slds-modal__container">
-                <button class="slds-button slds-button_icon slds-modal__close" title="Fechar" onclick={handleCloseModal}>
-                    <lightning-icon icon-name="utility:close" size="small"></lightning-icon>
-                    <span class="slds-assistive-text">Fechar</span>
-                </button>
+  <template if:true={isModalOpen}>
+    <section
+      role="dialog"
+      tabindex="-1"
+      class="slds-modal slds-fade-in-open slds-modal_medium"
+      aria-modal="true"
+      aria-label={modalTitle}
+    >
+      <div class="slds-modal__container">
+        <button
+          class="slds-button slds-button_icon slds-modal__close"
+          title="Fechar"
+          onclick={handleCloseModal}
+        >
+          <lightning-icon
+            icon-name="utility:close"
+            size="small"
+          ></lightning-icon>
+          <span class="slds-assistive-text">Fechar</span>
+        </button>
 
-                <header class={modalHeaderClass}>
-                    <h2 class="slds-modal__title slds-hyphenate slds-text-heading_medium">
-                        <lightning-icon icon-name={modalIcon} size="medium" class="slds-m-right_small" variant="inverse"></lightning-icon>
-                        {modalTitle}
-                    </h2>
-                </header>
+        <header class={modalHeaderClass}>
+          <h2 class="slds-modal__title slds-hyphenate slds-text-heading_medium">
+            <lightning-icon
+              icon-name={modalIcon}
+              size="medium"
+              class="slds-m-right_small"
+              variant="inverse"
+            ></lightning-icon>
+            {modalTitle}
+          </h2>
+        </header>
 
-                <div class="slds-modal__content slds-p-around_medium">
-                    <template if:true={isLoading}>
-                        <lightning-spinner alternative-text="Salvando lançamento"></lightning-spinner>
-                    </template>
-                    <div class="slds-grid slds-wrap slds-gutters">
-                        <div class="slds-col slds-size_1-of-1 slds-m-bottom_small">
-                            <lightning-radio-group name="paymentMode" label="Modalidade" options={paymentModeOptions} value={form.paymentMode} type="button" onchange={handleInputChange}></lightning-radio-group>
-                        </div>
-                        <div class="slds-col slds-size_1-of-1 slds-medium-size_1-of-2 slds-m-bottom_small">
-                            <lightning-input name="description" label="Descrição" value={form.description} onchange={handleInputChange} required></lightning-input>
-                        </div>
-                        <div class="slds-col slds-size_1-of-1 slds-medium-size_1-of-2 slds-m-bottom_small">
-                            <c-a-x-f_-l-w-c_category-lookup label="Categoria" value={form.categoryId} record-type-developer-name={categoryRecordType} onchange={handleCategoryChange}></c-a-x-f_-l-w-c_category-lookup>
-                        </div>
-                        <div class="slds-col slds-size_1-of-1 slds-medium-size_1-of-2 slds-m-bottom_small">
-                            <c-a-x-f_-l-w-c_account-lookup label="Titular" value={form.accountId} onchange={handleAccountChange}></c-a-x-f_-l-w-c_account-lookup>
-                        </div>
-                        <div class="slds-col slds-size_1-of-1 slds-medium-size_1-of-2 slds-m-bottom_small">
-                            <lightning-combobox name="paymentMethod" label="Forma de Pagamento" value={form.paymentMethod} options={paymentMethodOptions} onchange={handleInputChange} required></lightning-combobox>
-                        </div>
-
-                        <template if:true={showBankAccount}>
-                            <div class="slds-col slds-size_1-of-1 slds-medium-size_1-of-2 slds-m-bottom_small">
-                                <lightning-record-picker name="bankAccountId" label="Conta Bancária" object-api-name="AXF_OBJ_BankAccount__c" value={form.bankAccountId} filter={bankAccountFilter} disabled={financialLookupDisabled} onchange={handleFinancialAccountChange} required></lightning-record-picker>
-                            </div>
-                        </template>
-                        <template if:true={showCreditCard}>
-                            <div class="slds-col slds-size_1-of-1 slds-medium-size_1-of-2 slds-m-bottom_small">
-                                <lightning-record-picker name="creditCardId" label="Cartão de Crédito" object-api-name="AXF_OBJ_CreditCard__c" value={form.creditCardId} filter={creditCardFilter} disabled={financialLookupDisabled} onchange={handleFinancialAccountChange} required></lightning-record-picker>
-                            </div>
-                        </template>
-
-                        <template if:true={showRecurringFields}>
-                            <div class="slds-col slds-size_1-of-1 slds-medium-size_1-of-2 slds-m-bottom_small">
-                                <lightning-combobox name="recurringType" label="Tipo de Recorrência" value={form.recurringType} options={recurringTypeOptions} onchange={handleInputChange} required></lightning-combobox>
-                            </div>
-                            <div class="slds-col slds-size_1-of-1 slds-medium-size_1-of-2 slds-m-bottom_small">
-                                <lightning-combobox name="provisioningStrategy" label="Estratégia de Provisão" value={form.provisioningStrategy} options={provisioningStrategyOptions} onchange={handleInputChange} required></lightning-combobox>
-                            </div>
-                        </template>
-                        <template if:true={showFinancingFields}>
-                            <div class="slds-col slds-size_1-of-1 slds-medium-size_1-of-2 slds-m-bottom_small">
-                                <lightning-combobox name="financingType" label="Tipo de Financiamento" value={form.financingType} options={financingTypeOptions} onchange={handleInputChange} required></lightning-combobox>
-                            </div>
-                        </template>
-                        <template if:true={showSacRate}>
-                            <div class="slds-col slds-size_1-of-1 slds-medium-size_1-of-2 slds-m-bottom_small">
-                                <lightning-input type="number" name="monthlyAdjustmentRate" label="Taxa Mensal de Ajuste (%)" value={form.monthlyAdjustmentRate} step="0.01" onchange={handleInputChange}></lightning-input>
-                            </div>
-                        </template>
-                        <template if:true={showConsortiumFields}>
-                            <div class="slds-col slds-size_1-of-1 slds-medium-size_1-of-2 slds-m-bottom_small">
-                                <lightning-input type="date" name="adjustmentAnniversary" label="Aniversário do Reajuste" value={form.adjustmentAnniversary} onchange={handleInputChange} required></lightning-input>
-                            </div>
-                        </template>
-
-                        <div class="slds-col slds-size_1-of-1 slds-medium-size_1-of-2 slds-m-bottom_small">
-                            <lightning-input type="date" name="purchaseDate" label="Data da Compra / Ocorrência" value={form.purchaseDate} onchange={handleInputChange} required></lightning-input>
-                        </div>
-                        <div class="slds-col slds-size_1-of-1 slds-medium-size_1-of-2 slds-m-bottom_small">
-                            <lightning-input type="date" name="firstDueDate" label="Data do 1º Vencimento" value={form.firstDueDate} onchange={handleInputChange} required></lightning-input>
-                        </div>
-                        <div class="slds-col slds-size_1-of-1 slds-medium-size_1-of-2 slds-m-bottom_small">
-                            <lightning-radio-group name="valueType" label="Tipo de Valor" options={valueTypeOptions} value={form.valueType} type="button" onchange={handleInputChange}></lightning-radio-group>
-                        </div>
-                        <div class="slds-col slds-size_1-of-1 slds-medium-size_1-of-2 slds-m-bottom_small">
-                            <lightning-input type="number" name="amount" label={amountLabel} value={form.amount} formatter="currency" step="0.01" min="0.01" onchange={handleInputChange} required></lightning-input>
-                        </div>
-                        <div class="slds-col slds-size_1-of-1 slds-medium-size_1-of-2 slds-m-bottom_small">
-                            <lightning-input type="number" name="totalInstallments" label="Quantidade de Parcelas" value={form.totalInstallments} min="1" max="120" onchange={handleInputChange} disabled={isSinglePayment} required></lightning-input>
-                        </div>
-                        <div class="slds-col slds-size_1-of-1 slds-medium-size_1-of-2 slds-m-bottom_small">
-                            <button type="button" class="slds-button slds-button_neutral" onclick={handleSettlementToggle} aria-pressed={form.isPaid} title={settlementLabel}>
-                                <lightning-icon icon-name={settlementIconName} variant={settlementIconVariant} size="small" class="slds-m-right_x-small"></lightning-icon>
-                                {settlementLabel}
-                            </button>
-                        </div>
-                        <template if:true={showPaidFields}>
-                            <div class="slds-col slds-size_1-of-1 slds-medium-size_1-of-2 slds-m-bottom_small">
-                                <lightning-input type="number" name="paidValue" label={paidValueLabel} value={form.paidValue} step="0.01" min="0.01" onchange={handleInputChange} required></lightning-input>
-                            </div>
-                            <div class="slds-col slds-size_1-of-1 slds-medium-size_1-of-2 slds-m-bottom_small">
-                                <lightning-input type="date" name="paymentDate" label={paymentDateLabel} value={form.paymentDate} onchange={handleInputChange} required></lightning-input>
-                            </div>
-                        </template>
-                    </div>
-                </div>
-
-                <footer class="slds-modal__footer">
-                    <button class="slds-button slds-button_neutral" onclick={handleCloseModal} disabled={isLoading}>Cancelar</button>
-                    <button class={saveButtonClass} onclick={handleSave} disabled={isLoading}>Salvar Lançamento</button>
-                </footer>
+        <div class="slds-modal__content slds-p-around_medium">
+          <template if:true={isLoading}>
+            <lightning-spinner
+              alternative-text="Salvando lançamento"
+            ></lightning-spinner>
+          </template>
+          <div class="slds-grid slds-wrap slds-gutters">
+            <div class="slds-col slds-size_1-of-1 slds-m-bottom_small">
+              <lightning-radio-group
+                name="paymentMode"
+                label="Modalidade"
+                options={paymentModeOptions}
+                value={form.paymentMode}
+                type="button"
+                onchange={handleInputChange}
+              ></lightning-radio-group>
             </div>
-        </section>
-        <div class="slds-backdrop slds-backdrop_open"></div>
-    </template>
+            <div
+              class="slds-col slds-size_1-of-1 slds-medium-size_1-of-2 slds-m-bottom_small"
+            >
+              <lightning-input
+                name="description"
+                label="Descrição"
+                value={form.description}
+                onchange={handleInputChange}
+                required
+              ></lightning-input>
+            </div>
+            <div
+              class="slds-col slds-size_1-of-1 slds-medium-size_1-of-2 slds-m-bottom_small"
+            >
+              <c-a-x-f_-l-w-c_category-lookup
+                label="Categoria"
+                value={form.categoryId}
+                record-type-developer-name={categoryRecordType}
+                onchange={handleCategoryChange}
+              ></c-a-x-f_-l-w-c_category-lookup>
+            </div>
+            <div
+              class="slds-col slds-size_1-of-1 slds-medium-size_1-of-2 slds-m-bottom_small"
+            >
+              <c-a-x-f_-l-w-c_account-lookup
+                label="Titular"
+                value={form.accountId}
+                onchange={handleAccountChange}
+              ></c-a-x-f_-l-w-c_account-lookup>
+            </div>
+            <div
+              class="slds-col slds-size_1-of-1 slds-medium-size_1-of-2 slds-m-bottom_small"
+            >
+              <lightning-combobox
+                name="paymentMethod"
+                label="Forma de Pagamento"
+                value={form.paymentMethod}
+                options={paymentMethodOptions}
+                onchange={handleInputChange}
+                required
+              ></lightning-combobox>
+            </div>
+
+            <template if:true={showBankAccount}>
+              <div
+                class="slds-col slds-size_1-of-1 slds-medium-size_1-of-2 slds-m-bottom_small"
+              >
+                <c-a-x-f_-l-w-c_financial-lookup
+                  name="bankAccountId"
+                  label="Conta Corrente"
+                  placeholder="Buscar conta corrente..."
+                  value={form.bankAccountId}
+                  options={bankAccountOptions}
+                  disabled={financialLookupDisabled}
+                  onchange={handleFinancialAccountChange}
+                  required
+                ></c-a-x-f_-l-w-c_financial-lookup>
+              </div>
+            </template>
+            <template if:true={showCreditCard}>
+              <div
+                class="slds-col slds-size_1-of-1 slds-medium-size_1-of-2 slds-m-bottom_small"
+              >
+                <c-a-x-f_-l-w-c_financial-lookup
+                  name="creditCardId"
+                  label="Cartão de Crédito"
+                  placeholder="Buscar cartão de crédito..."
+                  value={form.creditCardId}
+                  options={creditCardOptions}
+                  disabled={financialLookupDisabled}
+                  onchange={handleFinancialAccountChange}
+                  required
+                ></c-a-x-f_-l-w-c_financial-lookup>
+              </div>
+            </template>
+
+            <template if:true={showRecurringFields}>
+              <div
+                class="slds-col slds-size_1-of-1 slds-medium-size_1-of-2 slds-m-bottom_small"
+              >
+                <lightning-combobox
+                  name="recurringType"
+                  label="Tipo de Recorrência"
+                  value={form.recurringType}
+                  options={recurringTypeOptions}
+                  onchange={handleInputChange}
+                  required
+                ></lightning-combobox>
+              </div>
+              <div
+                class="slds-col slds-size_1-of-1 slds-medium-size_1-of-2 slds-m-bottom_small"
+              >
+                <lightning-combobox
+                  name="provisioningStrategy"
+                  label="Estratégia de Provisão"
+                  value={form.provisioningStrategy}
+                  options={provisioningStrategyOptions}
+                  onchange={handleInputChange}
+                  required
+                ></lightning-combobox>
+              </div>
+            </template>
+            <template if:true={showFinancingFields}>
+              <div
+                class="slds-col slds-size_1-of-1 slds-medium-size_1-of-2 slds-m-bottom_small"
+              >
+                <lightning-combobox
+                  name="financingType"
+                  label="Tipo de Financiamento"
+                  value={form.financingType}
+                  options={financingTypeOptions}
+                  onchange={handleInputChange}
+                  required
+                ></lightning-combobox>
+              </div>
+            </template>
+            <template if:true={showSacRate}>
+              <div
+                class="slds-col slds-size_1-of-1 slds-medium-size_1-of-2 slds-m-bottom_small"
+              >
+                <lightning-input
+                  type="number"
+                  name="monthlyAdjustmentRate"
+                  label="Taxa Mensal de Ajuste (%)"
+                  value={form.monthlyAdjustmentRate}
+                  step="0.01"
+                  onchange={handleInputChange}
+                ></lightning-input>
+              </div>
+            </template>
+            <template if:true={showConsortiumFields}>
+              <div
+                class="slds-col slds-size_1-of-1 slds-medium-size_1-of-2 slds-m-bottom_small"
+              >
+                <lightning-input
+                  type="date"
+                  name="adjustmentAnniversary"
+                  label="Aniversário do Reajuste"
+                  value={form.adjustmentAnniversary}
+                  onchange={handleInputChange}
+                  required
+                ></lightning-input>
+              </div>
+            </template>
+
+            <div
+              class="slds-col slds-size_1-of-1 slds-medium-size_1-of-2 slds-m-bottom_small"
+            >
+              <lightning-input
+                type="date"
+                name="purchaseDate"
+                label="Data da Compra / Ocorrência"
+                value={form.purchaseDate}
+                onchange={handleInputChange}
+                required
+              ></lightning-input>
+            </div>
+            <template if:true={showInstallmentFields}>
+              <div
+                class="slds-col slds-size_1-of-1 slds-medium-size_1-of-2 slds-m-bottom_small"
+              >
+                <lightning-input
+                  type="date"
+                  name="firstDueDate"
+                  label="Data do 1º Vencimento"
+                  value={form.firstDueDate}
+                  onchange={handleInputChange}
+                  required
+                ></lightning-input>
+              </div>
+            </template>
+
+            <template if:true={showInstallmentFields}>
+              <div
+                class="slds-col slds-size_1-of-1 slds-medium-size_1-of-2 slds-m-bottom_small"
+              >
+                <lightning-radio-group
+                  name="valueType"
+                  label="Tipo de Valor"
+                  options={valueTypeOptions}
+                  value={form.valueType}
+                  type="button"
+                  onchange={handleInputChange}
+                ></lightning-radio-group>
+              </div>
+            </template>
+
+            <div
+              class="slds-col slds-size_1-of-1 slds-medium-size_1-of-2 slds-m-bottom_small"
+            >
+              <lightning-input
+                type="number"
+                name="amount"
+                label={amountLabel}
+                value={form.amount}
+                formatter="currency"
+                step="0.01"
+                min="0.01"
+                onchange={handleInputChange}
+                required
+              ></lightning-input>
+            </div>
+            <template if:true={showInstallmentCount}>
+              <div
+                class="slds-col slds-size_1-of-1 slds-medium-size_1-of-2 slds-m-bottom_small"
+              >
+                <lightning-input
+                  type="number"
+                  name="totalInstallments"
+                  label="Quantidade de Parcelas"
+                  value={form.totalInstallments}
+                  min="1"
+                  max="120"
+                  onchange={handleInputChange}
+                  required
+                ></lightning-input>
+              </div>
+            </template>
+            <div
+              class="slds-col slds-size_1-of-1 slds-medium-size_1-of-2 slds-m-bottom_small"
+            >
+              <button
+                type="button"
+                class="slds-button slds-button_neutral"
+                onclick={handleSettlementToggle}
+                aria-pressed={form.isPaid}
+                title={settlementLabel}
+              >
+                <lightning-icon
+                  icon-name={settlementIconName}
+                  variant={settlementIconVariant}
+                  size="small"
+                  class="slds-m-right_x-small"
+                ></lightning-icon>
+                {settlementLabel}
+              </button>
+            </div>
+            <template if:true={showPaidFields}>
+              <div
+                class="slds-col slds-size_1-of-1 slds-medium-size_1-of-2 slds-m-bottom_small"
+              >
+                <lightning-input
+                  type="number"
+                  name="paidValue"
+                  label={paidValueLabel}
+                  value={form.paidValue}
+                  step="0.01"
+                  min="0.01"
+                  onchange={handleInputChange}
+                  required
+                ></lightning-input>
+              </div>
+              <div
+                class="slds-col slds-size_1-of-1 slds-medium-size_1-of-2 slds-m-bottom_small"
+              >
+                <lightning-input
+                  type="date"
+                  name="paymentDate"
+                  label={paymentDateLabel}
+                  value={form.paymentDate}
+                  onchange={handleInputChange}
+                  required
+                ></lightning-input>
+              </div>
+            </template>
+          </div>
+        </div>
+
+        <footer class="slds-modal__footer">
+          <button
+            class="slds-button slds-button_neutral"
+            onclick={handleCloseModal}
+            disabled={isLoading}
+          >
+            Cancelar
+          </button>
+          <button
+            class={saveButtonClass}
+            onclick={handleSave}
+            disabled={isLoading}
+          >
+            Salvar Lançamento
+          </button>
+        </footer>
+      </div>
+    </section>
+    <div class="slds-backdrop slds-backdrop_open"></div>
+  </template>
 </template>

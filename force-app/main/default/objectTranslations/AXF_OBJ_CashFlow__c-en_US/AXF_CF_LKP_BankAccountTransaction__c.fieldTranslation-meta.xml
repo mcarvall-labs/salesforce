@@ -1,7 +1,0 @@
-<?xml version="1.0" encoding="UTF-8"?>
-<CustomFieldTranslation xmlns="http://soap.sforce.com/2006/04/metadata">
-    <help><!-- Selecione a transação de conta corrente que originou este lançamento. --></help>
-    <label><!-- Bank Account Transaction --></label>
-    <name>AXF_CF_LKP_BankAccountTransaction__c</name>
-    <relationshipLabel><!-- Cash Flow Movements --></relationshipLabel>
-</CustomFieldTranslation>

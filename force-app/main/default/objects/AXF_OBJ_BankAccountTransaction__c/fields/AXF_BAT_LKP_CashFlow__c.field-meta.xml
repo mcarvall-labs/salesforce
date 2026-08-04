@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<CustomField xmlns="http://soap.sforce.com/2006/04/metadata">
+    <fullName>AXF_BAT_LKP_CashFlow__c</fullName>
+    <businessStatus>Active</businessStatus>
+    <deleteConstraint>Restrict</deleteConstraint>
+    <description
+  >Cash Flow entry reconciled atomically with this bank transaction.</description>
+    <label>Cash Flow</label>
+    <referenceTo>AXF_OBJ_CashFlow__c</referenceTo>
+    <relationshipLabel>Reconciled Bank Transactions</relationshipLabel>
+    <relationshipName>ReconciledBankTransactions</relationshipName>
+    <required>false</required>
+    <trackTrending>false</trackTrending>
+    <type>Lookup</type>
+</CustomField>
