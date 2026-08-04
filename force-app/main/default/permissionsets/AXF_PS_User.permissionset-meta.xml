@@ -202,34 +202,6 @@
     </fieldPermissions>
     <fieldPermissions>
         <editable>true</editable>
-        <field
-    >AXF_OBJ_InstallmentGroup__c.AXF_IG_DAT_AdjustmentAnniversary__c</field>
-        <readable>true</readable>
-    </fieldPermissions>
-    <fieldPermissions>
-        <editable>true</editable>
-        <field
-    >AXF_OBJ_InstallmentGroup__c.AXF_IG_DAT_LastAdjustmentDate__c</field>
-        <readable>true</readable>
-    </fieldPermissions>
-    <fieldPermissions>
-        <editable>true</editable>
-        <field
-    >AXF_OBJ_InstallmentGroup__c.AXF_IG_PCT_MonthlyAdjustmentRate__c</field>
-        <readable>true</readable>
-    </fieldPermissions>
-    <fieldPermissions>
-        <editable>true</editable>
-        <field>AXF_OBJ_InstallmentGroup__c.AXF_IG_PKL_FinancingType__c</field>
-        <readable>true</readable>
-    </fieldPermissions>
-    <fieldPermissions>
-        <editable>true</editable>
-        <field>AXF_OBJ_InstallmentGroup__c.AXF_IG_PKL_GroupType__c</field>
-        <readable>true</readable>
-    </fieldPermissions>
-    <fieldPermissions>
-        <editable>true</editable>
         <field>AXF_OBJ_Category__c.AXF_CAT_EXI_PluggyCategoryId__c</field>
         <readable>true</readable>
     </fieldPermissions>
@@ -364,6 +336,34 @@
     <fieldPermissions>
         <editable>true</editable>
         <field>AXF_OBJ_CreditCard__c.AXF_CC_TXT_Level__c</field>
+        <readable>true</readable>
+    </fieldPermissions>
+    <fieldPermissions>
+        <editable>true</editable>
+        <field
+    >AXF_OBJ_InstallmentGroup__c.AXF_IG_DAT_AdjustmentAnniversary__c</field>
+        <readable>true</readable>
+    </fieldPermissions>
+    <fieldPermissions>
+        <editable>true</editable>
+        <field
+    >AXF_OBJ_InstallmentGroup__c.AXF_IG_DAT_LastAdjustmentDate__c</field>
+        <readable>true</readable>
+    </fieldPermissions>
+    <fieldPermissions>
+        <editable>true</editable>
+        <field
+    >AXF_OBJ_InstallmentGroup__c.AXF_IG_PCT_MonthlyAdjustmentRate__c</field>
+        <readable>true</readable>
+    </fieldPermissions>
+    <fieldPermissions>
+        <editable>true</editable>
+        <field>AXF_OBJ_InstallmentGroup__c.AXF_IG_PKL_FinancingType__c</field>
+        <readable>true</readable>
+    </fieldPermissions>
+    <fieldPermissions>
+        <editable>true</editable>
+        <field>AXF_OBJ_InstallmentGroup__c.AXF_IG_PKL_GroupType__c</field>
         <readable>true</readable>
     </fieldPermissions>
     <fieldPermissions>
