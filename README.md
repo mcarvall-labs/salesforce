@@ -111,6 +111,6 @@ Issues and pull requests are welcome. Keep changes focused, include relevant tes
 
 ## License and attribution
 
-Licensed under the [Apache License 2.0](LICENSE). You may use, modify, and distribute this project under its terms. Redistributed copies and derivative works must preserve the required copyright, license, and attribution notices, including the contents of [NOTICE](NOTICE).
+Licensed under the [Apache License 2.0](LICENSE) ([unofficial Brazilian Portuguese translation](LICENSE.pt-BR)). You may use, modify, and distribute this project under its terms. Redistributed copies and derivative works must preserve the required copyright, license, and attribution notices, including the contents of [NOTICE](NOTICE) ([Brazilian Portuguese version](NOTICE.pt-BR)).
 
 Axon Finance is an independent open-source project and is not affiliated with or endorsed by Salesforce or Pluggy. Salesforce and Pluggy are trademarks of their respective owners.
