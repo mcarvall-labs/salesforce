@@ -1,4 +1,4 @@
-<?xml version="1.0" encoding="UTF-8"?>
+<?xml version="1.0" encoding="UTF-8" ?>
 <CustomObjectTranslation xmlns="http://soap.sforce.com/2006/04/metadata">
     <caseValues>
         <plural>false</plural>
@@ -9,5 +9,12 @@
         <value>Transações de Conta Bancária</value>
     </caseValues>
     <gender>Feminine</gender>
+    <layouts>
+        <layout>Bank Account Transaction Layout</layout>
+        <sections>
+            <label><!-- Reconciliation --></label>
+            <section>Reconciliation</section>
+        </sections>
+    </layouts>
     <nameFieldLabel><!-- Transaction Number --></nameFieldLabel>
 </CustomObjectTranslation>

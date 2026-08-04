@@ -1,4 +1,4 @@
-<?xml version="1.0" encoding="UTF-8"?>
+<?xml version="1.0" encoding="UTF-8" ?>
 <CustomObjectTranslation xmlns="http://soap.sforce.com/2006/04/metadata">
     <caseValues>
         <plural>false</plural>
@@ -8,5 +8,13 @@
         <plural>true</plural>
         <value>Financial Categories</value>
     </caseValues>
+    <recordTypes>
+        <label><!-- Despesa --></label>
+        <name>AXF_CAT_RT_Expense</name>
+    </recordTypes>
+    <recordTypes>
+        <label><!-- Receita --></label>
+        <name>AXF_CAT_RT_Revenue</name>
+    </recordTypes>
     <startsWith>Consonant</startsWith>
 </CustomObjectTranslation>

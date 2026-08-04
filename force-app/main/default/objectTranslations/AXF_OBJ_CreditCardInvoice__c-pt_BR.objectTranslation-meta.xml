@@ -1,4 +1,4 @@
-<?xml version="1.0" encoding="UTF-8"?>
+<?xml version="1.0" encoding="UTF-8" ?>
 <CustomObjectTranslation xmlns="http://soap.sforce.com/2006/04/metadata">
     <caseValues>
         <plural>false</plural>
@@ -9,10 +9,5 @@
         <value>Faturas de Cartão de Crédito</value>
     </caseValues>
     <gender>Feminine</gender>
-    <nameFieldLabel><!-- Invoice Number --></nameFieldLabel>
-    <quickActions>
-        <aspect>Master</aspect>
-        <label>Sincronizar Transações da Fatura</label>
-        <name>AXF_CCI_QA_SyncInvoiceTransactions</name>
-    </quickActions>
+    <nameFieldLabel><!-- Invoice Name --></nameFieldLabel>
 </CustomObjectTranslation>

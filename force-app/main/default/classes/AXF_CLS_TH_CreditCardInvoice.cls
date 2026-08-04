@@ -73,7 +73,7 @@ public with sharing class AXF_CLS_TH_CreditCardInvoice {
     if (period.contains('/')) {
       String[] parts = period.split('/');
       if (parts.size() == 2) {
-        String month = parts[0].padStart(2, '0');
+        String month = AXF_CLS_StringUtils.padStart(parts[0], 2, '0');
         String year = parts[1];
         return year + '-' + month;
       }

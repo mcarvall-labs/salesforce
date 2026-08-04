@@ -1,0 +1,5 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<CustomFieldTranslation xmlns="http://soap.sforce.com/2006/04/metadata">
+    <label><!-- Paid Installments Count --></label>
+    <name>AXF_IG_NUM_PaidInstallmentsCount__c</name>
+</CustomFieldTranslation>
