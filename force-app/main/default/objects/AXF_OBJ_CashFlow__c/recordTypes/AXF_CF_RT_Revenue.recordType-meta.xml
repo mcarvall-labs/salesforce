@@ -1,13 +1,40 @@
-<?xml version="1.0" encoding="UTF-8"?>
+<?xml version="1.0" encoding="UTF-8" ?>
 <RecordType xmlns="http://soap.sforce.com/2006/04/metadata">
     <fullName>AXF_CF_RT_Revenue</fullName>
     <active>true</active>
     <label>Revenue</label>
     <picklistValues>
+        <picklist>AXF_CF_PKL_PaymentMethod__c</picklist>
+        <values>
+            <fullName>BOLETO</fullName>
+            <default>false</default>
+        </values>
+        <values>
+            <fullName>CARTAO_CREDITO</fullName>
+            <default>false</default>
+        </values>
+        <values>
+            <fullName>DEBITO_CONTA</fullName>
+            <default>false</default>
+        </values>
+        <values>
+            <fullName>DINHEIRO</fullName>
+            <default>false</default>
+        </values>
+        <values>
+            <fullName>TRANSFERENCIA_PIX</fullName>
+            <default>false</default>
+        </values>
+    </picklistValues>
+    <picklistValues>
         <picklist>AXF_CF_PKL_PaymentMode__c</picklist>
         <values>
             <fullName>A_VISTA</fullName>
             <default>true</default>
+        </values>
+        <values>
+            <fullName>CONSORCIO</fullName>
+            <default>false</default>
         </values>
         <values>
             <fullName>FINANCIAMENTO</fullName>
@@ -18,34 +45,11 @@
             <default>false</default>
         </values>
         <values>
-            <fullName>CONSORCIO</fullName>
+            <fullName>PARCELADO</fullName>
             <default>false</default>
         </values>
         <values>
             <fullName>RECORRENTE</fullName>
-            <default>false</default>
-        </values>
-    </picklistValues>
-    <picklistValues>
-        <picklist>AXF_CF_PKL_PaymentMethod__c</picklist>
-        <values>
-            <fullName>DEBITO_CONTA</fullName>
-            <default>false</default>
-        </values>
-        <values>
-            <fullName>CARTAO_CREDITO</fullName>
-            <default>false</default>
-        </values>
-        <values>
-            <fullName>BOLETO</fullName>
-            <default>false</default>
-        </values>
-        <values>
-            <fullName>TRANSFERENCIA_PIX</fullName>
-            <default>false</default>
-        </values>
-        <values>
-            <fullName>DINHEIRO</fullName>
             <default>false</default>
         </values>
     </picklistValues>
@@ -62,6 +66,17 @@
         <values>
             <fullName>VALOR_BASE</fullName>
             <default>false</default>
+        </values>
+    </picklistValues>
+    <picklistValues>
+        <picklist>AXF_CF_PKL_ReconciliationStatus__c</picklist>
+        <values>
+            <fullName>RECONCILED</fullName>
+            <default>false</default>
+        </values>
+        <values>
+            <fullName>UNRECONCILED</fullName>
+            <default>true</default>
         </values>
     </picklistValues>
     <picklistValues>

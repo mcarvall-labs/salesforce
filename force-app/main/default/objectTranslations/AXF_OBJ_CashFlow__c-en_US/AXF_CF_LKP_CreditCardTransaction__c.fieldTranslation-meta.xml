@@ -1,7 +1,0 @@
-<?xml version="1.0" encoding="UTF-8"?>
-<CustomFieldTranslation xmlns="http://soap.sforce.com/2006/04/metadata">
-    <help><!-- Selecione a transação de cartão de crédito que originou este lançamento. --></help>
-    <label><!-- Credit Card Transaction --></label>
-    <name>AXF_CF_LKP_CreditCardTransaction__c</name>
-    <relationshipLabel><!-- Cash Flow Movements --></relationshipLabel>
-</CustomFieldTranslation>

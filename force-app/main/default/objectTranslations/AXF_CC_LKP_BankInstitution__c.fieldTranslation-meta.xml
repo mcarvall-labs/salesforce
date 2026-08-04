@@ -1,7 +1,0 @@
-<?xml version="1.0" encoding="UTF-8"?>
-<CustomFieldTranslation xmlns="http://soap.sforce.com/2006/04/metadata">
-    <help><!-- Selecione a instituiÃ§Ã£o bancÃ¡ria vinculada a este cartÃ£o de crÃ©dito. --></help>
-    <label>Banco</label>
-    <name>AXF_CC_LKP_BankInstitution__c</name>
-    <relationshipLabel><!-- Credit Cards --></relationshipLabel>
-</CustomFieldTranslation>
