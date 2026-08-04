@@ -1,5 +1,0 @@
-<?xml version="1.0" encoding="UTF-8"?>
-<CustomFieldTranslation xmlns="http://soap.sforce.com/2006/04/metadata">
-    <label><!-- Pluggy Category ID --></label>
-    <name>AXF_CAT_EXI_PluggyCategoryId__c</name>
-</CustomFieldTranslation>

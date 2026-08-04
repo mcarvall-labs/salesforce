@@ -1,7 +1,0 @@
-<?xml version="1.0" encoding="UTF-8"?>
-<CustomFieldTranslation xmlns="http://soap.sforce.com/2006/04/metadata">
-    <help><!-- Conexão Pluggy que originou este investimento. --></help>
-    <label><!-- Pluggy Connection --></label>
-    <name>AXF_INV_LKP_PluggyConnection__c</name>
-    <relationshipLabel><!-- Investments --></relationshipLabel>
-</CustomFieldTranslation>

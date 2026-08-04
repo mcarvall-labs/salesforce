@@ -1,7 +1,0 @@
-<?xml version="1.0" encoding="UTF-8"?>
-<CustomFieldTranslation xmlns="http://soap.sforce.com/2006/04/metadata">
-    <help><!-- Cartão de crédito que gerou esta fatura. --></help>
-    <label>Cartão de Crédito</label>
-    <name>AXF_CCI_MD_CreditCard__c</name>
-    <relationshipLabel><!-- Credit Card Invoices --></relationshipLabel>
-</CustomFieldTranslation>

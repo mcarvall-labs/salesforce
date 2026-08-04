@@ -2,12 +2,12 @@
 <CustomObjectTranslation xmlns="http://soap.sforce.com/2006/04/metadata">
     <caseValues>
         <plural>false</plural>
-        <value>Grupo de Parcelas</value>
+        <value>Transação de Cartão de Crédito</value>
     </caseValues>
     <caseValues>
         <plural>true</plural>
-        <value>Grupos de Parcelas</value>
+        <value>Transações de Cartão de Crédito</value>
     </caseValues>
-    <gender>Masculine</gender>
-    <nameFieldLabel>Nome do Grupo de Parcelas</nameFieldLabel>
+    <gender>Feminine</gender>
+    <nameFieldLabel><!-- Transaction Name --></nameFieldLabel>
 </CustomObjectTranslation>

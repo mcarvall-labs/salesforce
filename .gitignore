@@ -48,3 +48,4 @@ $RECYCLE.BIN/
 **/venv/
 manifest/package.xml
 package.xml
+force-app/main/default/profiles/Admin.profile-meta.xml

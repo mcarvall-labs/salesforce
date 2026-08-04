@@ -1,7 +1,0 @@
-<?xml version="1.0" encoding="UTF-8"?>
-<CustomFieldTranslation xmlns="http://soap.sforce.com/2006/04/metadata">
-    <help><!-- Selecione a instituiÃ§Ã£o bancÃ¡ria geradora desta conta corrente. --></help>
-    <label><!-- Bank Institution --></label>
-    <name>AXF_BA_LKP_BankInstitution__c</name>
-    <relationshipLabel><!-- Bank Accounts --></relationshipLabel>
-</CustomFieldTranslation>
