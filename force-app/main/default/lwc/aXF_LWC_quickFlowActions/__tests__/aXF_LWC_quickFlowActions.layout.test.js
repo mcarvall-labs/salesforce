@@ -11,6 +11,11 @@ const template = fs.readFileSync(
   "utf8"
 );
 
+const controller = fs.readFileSync(
+  path.join(bundleDirectory, "aXF_LWC_quickFlowActions.js"),
+  "utf8"
+);
+
 describe("aXF_LWC_quickFlowActions responsive layout", () => {
   it("uses bounded grid tracks and border-box button sizing", () => {
     expect(template).toContain('class="quick-actions-grid"');
@@ -31,5 +36,16 @@ describe("aXF_LWC_quickFlowActions responsive layout", () => {
   it("preserves both button actions", () => {
     expect(template).toContain("onclick={handleOpenExpenseModal}");
     expect(template).toContain("onclick={handleOpenRevenueModal}");
+  });
+
+  it("formats monetary input from cents while the user types", () => {
+    expect(template).toMatch(
+      /name="amount"[\s\S]*value={amountDisplay}[\s\S]*oninput={handleCurrencyInput}/
+    );
+    expect(template).toMatch(
+      /name="paidValue"[\s\S]*value={paidValueDisplay}[\s\S]*oninput={handleCurrencyInput}/
+    );
+    expect(controller).toContain('new Intl.NumberFormat("pt-BR"');
+    expect(controller).toMatch(/Number\(digits\) \/ 100/);
   });
 });

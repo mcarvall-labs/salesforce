@@ -9,6 +9,10 @@ import CASH_FLOW_OBJECT from "@salesforce/schema/AXF_OBJ_CashFlow__c";
 import PAYMENT_METHOD_FIELD from "@salesforce/schema/AXF_OBJ_CashFlow__c.AXF_CF_PKL_PaymentMethod__c";
 
 const BANK_METHODS = new Set(["DEBITO_CONTA", "TRANSFERENCIA_PIX"]);
+const BRL_FORMATTER = new Intl.NumberFormat("pt-BR", {
+  style: "currency",
+  currency: "BRL"
+});
 
 export default class AXF_LWC_quickFlowActions extends LightningElement {
   @track isModalOpen = false;
@@ -308,6 +312,21 @@ export default class AXF_LWC_quickFlowActions extends LightningElement {
     }
   }
 
+  handleCurrencyInput(event) {
+    const fieldName = event.target.name;
+    const digits = String(event.target.value || "").replace(/\D/g, "");
+    const amount = digits ? Number(digits) / 100 : null;
+    const displayValue = amount === null ? "" : BRL_FORMATTER.format(amount);
+
+    this.form[fieldName] = amount;
+    if (fieldName === "amount") {
+      this.amountDisplay = displayValue;
+    } else if (fieldName === "paidValue") {
+      this.paidValueDisplay = displayValue;
+    }
+    event.target.value = displayValue;
+  }
+
   handleSettlementToggle() {
     this.form.isPaid = !this.form.isPaid;
     this.form.pastDueConfirmed = false;
@@ -334,7 +353,6 @@ export default class AXF_LWC_quickFlowActions extends LightningElement {
   }
 
   syncVisibleFormValues() {
-    const currencyFields = new Set(["amount", "paidValue"]);
     this.template.querySelectorAll("lightning-input").forEach((input) => {
       const fieldName = input.name;
       if (
@@ -343,9 +361,7 @@ export default class AXF_LWC_quickFlowActions extends LightningElement {
       ) {
         return;
       }
-      if (currencyFields.has(fieldName)) {
-        const digits = String(input.value || "").replace(/\D/g, "");
-        this.form[fieldName] = digits ? Number(digits) / 100 : null;
+      if (fieldName === "amount" || fieldName === "paidValue") {
         return;
       }
       this.form[fieldName] =
