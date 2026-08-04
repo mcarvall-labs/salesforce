@@ -82,10 +82,16 @@ jobs:
           printf '%s' "$SALESFORCE_AUTH_URL" > "$auth_file"
           sf org login sfdx-url --sfdx-url-file "$auth_file" --alias AxonFinanceDevHub
       - name: Validate changed Salesforce metadata without deploying
+        id: salesforce-validation
         if: steps.salesforce-delta.outputs.has_delta == 'true'
         shell: bash
         run: |
           mapfile -t source_paths < <(bash scripts/ci/list-salesforce-delta.sh "$BASE_SHA" "$GITHUB_SHA")
           source_args=()
           for path in "${source_paths[@]}"; do source_args+=(--source-dir "$path"); done
-          sf project deploy validate "${source_args[@]}" --target-org AxonFinanceDevHub --test-level NoTestRun --wait 45
+          set +e
+          sf project deploy start "${source_args[@]}" --target-org AxonFinanceDevHub --dry-run --test-level NoTestRun --wait 45 --json > salesforce-validation.json
+          validation_status=$?
+          set -e
+          node scripts/ci/publish-salesforce-validation.mjs salesforce-validation.json
+          exit "$validation_status"
