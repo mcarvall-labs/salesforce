@@ -1,9 +1,10 @@
-<?xml version="1.0" encoding="UTF-8"?>
+<?xml version="1.0" encoding="UTF-8" ?>
 <LightningComponentBundle xmlns="http://soap.sforce.com/2006/04/metadata">
     <apiVersion>67.0</apiVersion>
     <isExposed>true</isExposed>
     <masterLabel>AXF KPI Card Balanço Mensal</masterLabel>
-    <description>Painel resumo de indicadores com total de despesas e receitas do mês (realizadas vs previstas).</description>
+    <description
+  >Painel resumo de indicadores com total de despesas e receitas do mês (realizadas vs previstas).</description>
     <targets>
         <target>lightning__HomePage</target>
         <target>lightning__AppPage</target>

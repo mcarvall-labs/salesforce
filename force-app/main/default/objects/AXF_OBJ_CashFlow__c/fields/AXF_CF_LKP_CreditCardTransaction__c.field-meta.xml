@@ -1,10 +1,12 @@
-<?xml version="1.0" encoding="UTF-8"?>
+<?xml version="1.0" encoding="UTF-8" ?>
 <CustomField xmlns="http://soap.sforce.com/2006/04/metadata">
     <fullName>AXF_CF_LKP_CreditCardTransaction__c</fullName>
     <businessStatus>Active</businessStatus>
-    <deleteConstraint>SetNull</deleteConstraint>
-    <description>Vínculo Relacional. Associa este lançamento à sua transação de cartão de crédito de origem.</description>
-    <inlineHelpText>Selecione a transação de cartão de crédito que originou este lançamento.</inlineHelpText>
+    <deleteConstraint>Restrict</deleteConstraint>
+    <description
+  >Vínculo Relacional. Associa este lançamento à sua transação de cartão de crédito de origem.</description>
+    <inlineHelpText
+  >Selecione a transação de cartão de crédito que originou este lançamento.</inlineHelpText>
     <label>Credit Card Transaction</label>
     <referenceTo>AXF_OBJ_CreditCardTransaction__c</referenceTo>
     <relationshipLabel>Cash Flow Movements</relationshipLabel>
