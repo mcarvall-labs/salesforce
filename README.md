@@ -1,5 +1,5 @@
 <p align="center">
-  <img width="940" alt="Axon Finance" src="https://raw.githubusercontent.com/axon-personal-finances/salesforce/main/resources/AxonPersonalFinancesLogo.png">
+  <img width="940" alt="Axon Finance" src="https://raw.githubusercontent.com/mcarvall-labs/salesforce/main/resources/AxonPersonalFinancesLogo.png">
 </p>
 
 <p align="center"><a href="README.md">English</a> · <a href="README.pt-BR.md">Português</a></p>
@@ -24,7 +24,7 @@ The project integrates with [Pluggy](https://pluggy.ai/) to synchronize financia
 > Install in a sandbox or Developer Edition first. Review the metadata and requested access before deploying to another organization.
 
 <p align="center">
-  <a href="https://githubsfdeploy.herokuapp.com?owner=axon-personal-finances&repo=salesforce&ref=main">
+  <a href="https://githubsfdeploy.herokuapp.com?owner=mcarvall-labs&repo=salesforce&ref=main">
     <img alt="Deploy to Salesforce" src="https://githubsfdeploy.herokuapp.com/resources/img/deploy.png">
   </a>
 </p>
@@ -32,7 +32,7 @@ The project integrates with [Pluggy](https://pluggy.ai/) to synchronize financia
 The button uses the community-maintained GitHub Salesforce Deploy Tool. If your organization blocks third-party deployment tools, use the Salesforce CLI:
 
 ```bash
-git clone https://github.com/axon-personal-finances/salesforce.git
+git clone https://github.com/mcarvall-labs/salesforce.git
 cd salesforce
 sf org login web --alias AxonFinance
 sf project deploy start --source-dir force-app --target-org AxonFinance
