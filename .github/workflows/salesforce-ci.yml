@@ -6,6 +6,7 @@ on:
 
 permissions:
   contents: read
+  pull-requests: write
 
 concurrency:
   group: salesforce-ci-${{ github.event.pull_request.number }}
@@ -47,6 +48,10 @@ jobs:
     environment: DEV
     env:
       SALESFORCE_AUTH_URL: ${{ secrets.SALESFORCE_DEV_AUTH_URL }}
+      SALESFORCE_ARTIFACT_NAME: salesforce-pr-validation-${{ github.run_id }}
+      SALESFORCE_ENVIRONMENT: DEV
+      SALESFORCE_OPERATION: Dry-run validation
+      SALESFORCE_TEST_LEVEL: NoTestRun
       BASE_SHA: ${{ github.event.pull_request.base.sha }}
     steps:
       - uses: actions/checkout@v4
@@ -81,6 +86,9 @@ jobs:
           trap 'rm -f "$auth_file"' EXIT
           printf '%s' "$SALESFORCE_AUTH_URL" > "$auth_file"
           sf org login sfdx-url --sfdx-url-file "$auth_file" --alias AxonFinanceDevHub
+          org_id="$(sf org display --target-org AxonFinanceDevHub --json | jq -r '.result.id')"
+          test -n "$org_id" && test "$org_id" != "null"
+          echo "SALESFORCE_ORG_ID=$org_id" >> "$GITHUB_ENV"
       - name: Validate changed Salesforce metadata without deploying
         id: salesforce-validation
         if: steps.salesforce-delta.outputs.has_delta == 'true'
@@ -95,3 +103,42 @@ jobs:
           set -e
           node scripts/ci/publish-salesforce-validation.mjs salesforce-validation.json
           exit "$validation_status"
+      - name: Upload validation artifact
+        if: always() && steps.salesforce-delta.outputs.has_delta == 'true'
+        uses: actions/upload-artifact@v4
+        with:
+          name: ${{ env.SALESFORCE_ARTIFACT_NAME }}
+          path: salesforce-validation.json
+          if-no-files-found: error
+          retention-days: 30
+      - name: Publish validation evidence to PR
+        if: always() && steps.salesforce-delta.outputs.has_delta == 'true'
+        uses: actions/github-script@v7
+        env:
+          COMMENT_PATH: salesforce-validation-comment.md
+        with:
+          script: |
+            const fs = require('fs');
+            const marker = '<!-- axon-salesforce-validation -->';
+            const body = fs.readFileSync(process.env.COMMENT_PATH, 'utf8');
+            const { owner, repo } = context.repo;
+            const issue_number = context.issue.number;
+            const comments = await github.paginate(github.rest.issues.listComments, {
+              owner,
+              repo,
+              issue_number,
+              per_page: 100,
+            });
+            const existing = comments.find(
+              (comment) => comment.user?.type === 'Bot' && comment.body?.includes(marker),
+            );
+            if (existing) {
+              await github.rest.issues.updateComment({
+                owner,
+                repo,
+                comment_id: existing.id,
+                body,
+              });
+            } else {
+              await github.rest.issues.createComment({ owner, repo, issue_number, body });
+            }
