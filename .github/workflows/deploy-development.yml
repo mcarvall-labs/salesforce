@@ -24,6 +24,10 @@ jobs:
     environment: DEV
     env:
       SALESFORCE_AUTH_URL: ${{ secrets.SALESFORCE_DEV_AUTH_URL }}
+      SALESFORCE_ARTIFACT_NAME: salesforce-development-deploy-${{ github.run_id }}
+      SALESFORCE_ENVIRONMENT: DEV
+      SALESFORCE_OPERATION: Deployment
+      SALESFORCE_TEST_LEVEL: NoTestRun
       EVENT_BASE_SHA: ${{ github.event.before }}
       MANUAL_BASE_SHA: ${{ inputs.base_sha }}
     steps:
@@ -44,7 +48,11 @@ jobs:
           trap 'rm -f "$auth_file"' EXIT
           printf '%s' "$SALESFORCE_AUTH_URL" > "$auth_file"
           sf org login sfdx-url --sfdx-url-file "$auth_file" --alias AxonFinanceDevHub
+          org_id="$(sf org display --target-org AxonFinanceDevHub --json | jq -r '.result.id')"
+          test -n "$org_id" && test "$org_id" != "null"
+          echo "SALESFORCE_ORG_ID=$org_id" >> "$GITHUB_ENV"
       - name: Deploy integrated delta
+        id: deploy
         shell: bash
         run: |
           base_sha="${MANUAL_BASE_SHA:-$EVENT_BASE_SHA}"
@@ -57,6 +65,19 @@ jobs:
           fi
           source_args=()
           for path in "${source_paths[@]}"; do source_args+=(--source-dir "$path"); done
-          sf project deploy start "${source_args[@]}" --target-org AxonFinanceDevHub --test-level NoTestRun --wait 45
+          set +e
+          sf project deploy start "${source_args[@]}" --target-org AxonFinanceDevHub --test-level NoTestRun --wait 45 --json > salesforce-deploy.json
+          deploy_status=$?
+          set -e
+          node scripts/ci/publish-salesforce-validation.mjs salesforce-deploy.json
+          exit "$deploy_status"
+      - name: Upload deployment artifact
+        if: always() && hashFiles('salesforce-deploy.json') != ''
+        uses: actions/upload-artifact@v4
+        with:
+          name: ${{ env.SALESFORCE_ARTIFACT_NAME }}
+          path: salesforce-deploy.json
+          if-no-files-found: error
+          retention-days: 30
       - name: Record deployed commit
         run: echo "Deployed ${GITHUB_SHA} delta to AxonFinanceDevHub"
