@@ -1,0 +1,8 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<CustomField xmlns="http://soap.sforce.com/2006/04/metadata"><fullName
+  >AXF_SPR_LKP_FinancialEntity__c</fullName><label>Financial Entity</label><type
+  >Lookup</type><referenceTo
+  >AXF_OBJ_FinancialEntity__c</referenceTo><relationshipLabel
+  >Sharing Projector Runs</relationshipLabel><relationshipName
+  >SharingProjectorRuns</relationshipName><deleteConstraint
+  >Restrict</deleteConstraint></CustomField>

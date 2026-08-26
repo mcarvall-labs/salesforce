@@ -1,0 +1,7 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<CustomField xmlns="http://soap.sforce.com/2006/04/metadata"><fullName
+  >AXF_CE_LKP_BootstrapAuthority__c</fullName><deleteConstraint
+  >Restrict</deleteConstraint><label>Bootstrap Authority</label><referenceTo
+  >AXF_OBJ_BootstrapAuthority__c</referenceTo><relationshipLabel
+  >Command Executions</relationshipLabel><relationshipName
+  >CommandExecutions</relationshipName><type>Lookup</type></CustomField>

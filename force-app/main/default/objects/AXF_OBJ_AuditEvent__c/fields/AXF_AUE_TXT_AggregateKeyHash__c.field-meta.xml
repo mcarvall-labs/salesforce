@@ -1,0 +1,4 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<CustomField xmlns="http://soap.sforce.com/2006/04/metadata"><fullName
+  >AXF_AUE_TXT_AggregateKeyHash__c</fullName><label
+  >Aggregate Key Hash</label><length>64</length><type>Text</type></CustomField>

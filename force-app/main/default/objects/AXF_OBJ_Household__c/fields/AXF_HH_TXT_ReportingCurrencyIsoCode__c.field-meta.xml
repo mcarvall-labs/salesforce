@@ -1,0 +1,5 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<CustomField xmlns="http://soap.sforce.com/2006/04/metadata"><fullName
+  >AXF_HH_TXT_ReportingCurrencyIsoCode__c</fullName><label
+  >Reporting Currency ISO Code</label><type>Text</type><length
+  >3</length><required>true</required></CustomField>
