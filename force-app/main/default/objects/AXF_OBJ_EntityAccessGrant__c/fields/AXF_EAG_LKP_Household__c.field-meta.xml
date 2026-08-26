@@ -1,0 +1,8 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<CustomField xmlns="http://soap.sforce.com/2006/04/metadata"><fullName
+  >AXF_EAG_LKP_Household__c</fullName><label>Household</label><type
+  >Lookup</type><referenceTo
+  >AXF_OBJ_Household__c</referenceTo><relationshipLabel
+  >Entity Access Grants</relationshipLabel><relationshipName
+  >EntityAccessGrants</relationshipName><deleteConstraint
+  >Restrict</deleteConstraint><required>true</required></CustomField>

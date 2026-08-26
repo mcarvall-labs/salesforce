@@ -1,0 +1,6 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<ValidationRule xmlns="http://soap.sforce.com/2006/04/metadata"><fullName
+  >AXF_EAG_ScopeConsistency</fullName><active
+  >true</active><errorConditionFormula
+  >OR(AND(ISPICKVAL(AXF_EAG_PKL_ScopeType__c, "ENTITY"), ISBLANK(AXF_EAG_LKP_FinancialEntity__c)), AND(ISPICKVAL(AXF_EAG_PKL_ScopeType__c, "HOUSEHOLD"), NOT(ISBLANK(AXF_EAG_LKP_FinancialEntity__c))), AND(NOT(ISBLANK(AXF_EAG_DT_ValidTo__c)), AXF_EAG_DT_ValidTo__c &lt;= AXF_EAG_DT_ValidFrom__c))</errorConditionFormula><errorMessage
+  >Grant scope or validity is invalid.</errorMessage></ValidationRule>

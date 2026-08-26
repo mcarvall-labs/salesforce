@@ -1,0 +1,5 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<ValidationRule xmlns="http://soap.sforce.com/2006/04/metadata"><fullName
+  >AXF_FIE_ActiveInterval</fullName><active>true</active><errorConditionFormula
+  >OR(AND(NOT(ISBLANK(AXF_FIE_DAT_ActiveTo__c)), AXF_FIE_DAT_ActiveTo__c &lt;= AXF_FIE_DAT_ActiveFrom__c), AND(ISPICKVAL(AXF_FIE_PKL_Lifecycle__c, "CLOSED"), ISBLANK(AXF_FIE_DAT_ActiveTo__c)))</errorConditionFormula><errorMessage
+  >Active interval is invalid.</errorMessage></ValidationRule>

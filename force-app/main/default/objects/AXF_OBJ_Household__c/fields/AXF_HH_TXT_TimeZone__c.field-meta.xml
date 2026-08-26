@@ -1,0 +1,4 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<CustomField xmlns="http://soap.sforce.com/2006/04/metadata"><fullName
+  >AXF_HH_TXT_TimeZone__c</fullName><label>Time Zone</label><type
+  >Text</type><length>80</length><required>true</required></CustomField>

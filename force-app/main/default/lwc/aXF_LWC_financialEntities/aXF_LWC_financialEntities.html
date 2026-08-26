@@ -1,0 +1,154 @@
+<template>
+  <section class="container" aria-labelledby="title">
+    <h1 id="title" class="slds-text-heading_medium">Entidades financeiras</h1>
+    <lightning-button
+      label="Nova entidade"
+      onclick={startCreate}
+      disabled={cannotCreate}
+    ></lightning-button>
+    <div class="status" aria-live="polite" aria-atomic="true">
+      <template lwc:if={loading}
+        ><lightning-spinner
+          alternative-text="Carregando entidades financeiras"
+        ></lightning-spinner
+      ></template>
+      <template lwc:elseif={empty}
+        ><p>Nenhuma entidade financeira disponível.</p></template
+      >
+      <template lwc:elseif={forbidden}
+        ><p>Não foi possível acessar esse conteúdo.</p></template
+      >
+      <template lwc:elseif={recoverableError}>
+        <p role="alert">{errorMessage}</p>
+        <lightning-button
+          label="Tentar novamente"
+          onclick={handleRetry}
+        ></lightning-button>
+      </template>
+      <template lwc:elseif={conflict}
+        ><p role="alert">{errorMessage}</p>
+        <lightning-button
+          label="Recarregar"
+          onclick={handleRetry}
+        ></lightning-button
+      ></template>
+      <template lwc:elseif={terminalError}
+        ><p role="alert">{errorMessage}</p></template
+      >
+    </div>
+    <template lwc:if={ready}>
+      <ul class="entity-list">
+        <template for:each={entities} for:item="entity">
+          <li key={entity.entityRef}>
+            <button
+              class="entity"
+              type="button"
+              data-ref={entity.entityRef}
+              onclick={handleSelect}
+            >
+              <span class="name">{entity.displayName}</span>
+              <span>{entity.kind}</span
+              ><span>{entity.reportingCurrencyIsoCode}</span
+              ><span>{entity.lifecycle}</span>
+            </button>
+          </li>
+        </template>
+      </ul>
+    </template>
+    <template lwc:if={selected}>
+      <article class="detail" tabindex="-1" aria-labelledby="detail-title">
+        <h2 id="detail-title">{selected.displayName}</h2>
+        <dl>
+          <dt>Tipo</dt>
+          <dd>{selected.kind}</dd>
+          <dt>Moeda</dt>
+          <dd>{selected.reportingCurrencyIsoCode}</dd>
+          <dt>Estado</dt>
+          <dd>{selected.lifecycle}</dd>
+        </dl>
+        <form onsubmit={handleSave}>
+          <template lwc:if={canEditLegalName}
+            ><lightning-input
+              name="legalName"
+              label="Nome legal"
+              value={selected.legalName}
+              onchange={handleChange}
+              required
+            ></lightning-input
+          ></template>
+          <lightning-input
+            name="displayName"
+            label="Nome de exibição"
+            value={selected.displayName}
+            onchange={handleChange}
+            required
+          ></lightning-input>
+          <lightning-combobox
+            name="lifecycle"
+            label="Estado"
+            value={selected.lifecycle}
+            options={lifecycleOptions}
+            onchange={handleChange}
+            required
+          ></lightning-combobox>
+          <template lwc:if={closedLifecycle}>
+            <lightning-input
+              type="date"
+              name="activeTo"
+              label="Data de encerramento"
+              value={selected.activeTo}
+              onchange={handleChange}
+              required
+            ></lightning-input>
+          </template>
+          <lightning-button
+            type="submit"
+            variant="brand"
+            label="Salvar"
+            disabled={saving}
+          ></lightning-button>
+        </form>
+      </article>
+    </template>
+    <template lwc:if={creating}>
+      <form
+        class="detail"
+        onsubmit={handleCreate}
+        aria-label="Criar entidade financeira"
+      >
+        <lightning-combobox
+          name="kind"
+          label="Tipo"
+          value={createDraft.kind}
+          options={kindOptions}
+          onchange={handleCreateChange}
+          required
+        ></lightning-combobox>
+        <lightning-input
+          name="legalName"
+          label="Nome legal"
+          value={createDraft.legalName}
+          onchange={handleCreateChange}
+          required
+        ></lightning-input>
+        <lightning-input
+          name="displayName"
+          label="Nome de exibição"
+          value={createDraft.displayName}
+          onchange={handleCreateChange}
+          required
+        ></lightning-input>
+        <lightning-button
+          type="submit"
+          variant="brand"
+          label="Criar"
+          disabled={saving}
+        ></lightning-button>
+        <lightning-button
+          label="Cancelar"
+          onclick={cancelCreate}
+        ></lightning-button>
+      </form>
+    </template>
+  </section>
+</template>
