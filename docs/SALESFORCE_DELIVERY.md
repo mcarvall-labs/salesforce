@@ -1,72 +1,88 @@
-# Salesforce Development and Delivery
+# Salesforce development and delivery
 
-## Source of truth and environments
+## Promotion flow
 
-Git is the source of truth for deployable Salesforce metadata. Orgs execute and validate source; they must not merge concurrent issue branches. The release commit validated must be the release commit deployed.
+| Environment | Alias       | Deployment                                     |
+| ----------- | ----------- | ---------------------------------------------- |
+| Development | `AXON_DEV`  | Developer/Codex during authorized User Stories |
+| UAT         | `AXON_UAT`  | Merged PR in `develop`, via delta              |
+| Production  | `AXON_PROD` | Merged PR in `main`, via delta                 |
 
-| Purpose                | Alias               | Org type                   |
-| ---------------------- | ------------------- | -------------------------- |
-| Shared DEV and Dev Hub | `AxonFinanceDevHub` | Developer Edition          |
-| Simulated production   | `AxonFinance`       | Separate Developer Edition |
+DEV stays empty during pipeline setup. No bootstrap, seed or deploy. User Stories
+will introduce required definitions and dependencies incrementally. No pipeline
+uses DEV or retired org aliases.
 
-The orgs have no Salesforce relationship. Git and CI/CD provide their promotion path. There is no UAT org; integrated functional validation happens in `AxonFinanceDevHub`.
+Create Jira issue branches from develop. Obtain owner validation in DEV before
+opening the develop PR. After UAT deployment, obtain acceptance before approving
+promotion to main. Never merge without authorization.
 
-## Branches
+## Workflows and evidence
 
-- `main` is the exact production baseline.
-- `develop` is the shared integration baseline deployed to DEV.
-- `feature/us-XXX` and `defect/bug-XXX` isolate issue development.
-- `release/*` optionally selects only approved integration commits.
-- `hotfix/*` starts from `main` and is merged back into `develop` after release.
+- `salesforce-ci.yml`: PR creation, reopening and updates targeting develop/main.
+  Quality checks plus dry-run delta validation against UAT/PROD respectively.
+- `deploy-salesforce.yml`: push to develop/main, requiring a merged PR associated
+  with the exact commit. Direct pushes fail closed. Deploy to UAT/PROD respectively.
 
-Issue branches normally start from updated `develop`, synchronize with it before merge, and target `develop` in pull requests. Prefer squash merge so each issue creates one identifiable integration commit.
+Validation and deployment use RunLocalTests. PRs never persist metadata. Deployment
+reruns tests for the actual merged commit rather than quick-deploying a different
+synthetic PR merge. Authenticated Org IDs are checked before metadata operations.
 
-Never validate an issue in integrated `develop` and then promote its original issue branch directly to `main`.
+Each operation publishes a PR comment and a 30-day artifact containing result.json,
+source-paths.txt and summary.md. Comments include outcome, commit, baseline,
+deployment ID, test counts, initial errors and links to complete evidence.
+Preflight failures may lack a scope file. Runner/setup failures are reported through
+job status and logs even if no artifact could be produced. Auth output is never uploaded.
+Configuration-only PRs report no metadata changes without contacting an org.
+They run in the secret-free `CI` environment; metadata PRs require approval of the
+appropriate validation environment before credentials are released.
 
-## Standard flow
+## GitHub environments
 
-1. Create the issue branch from `develop`.
-2. Develop locally; use a scratch org when the required source and dependencies can be provisioned.
-3. Open a pull request to `develop`.
-4. CI checks changed-file formatting and lint, runs LWC tests, and validates the Salesforce delta against DEV without persisting it.
-5. Resolve metadata conflicts in Git.
-6. Squash-merge the approved issue into `develop`.
-7. CI deploys the merge delta to `AxonFinanceDevHub`.
-8. Perform integrated functional validation in DEV.
-9. Promote all approved changes through `develop → main`, or create `release/*` from `main` and apply only approved squash commits.
-10. Manually run `Deploy Salesforce Production` with the full SHA currently deployed to production and the approved full SHA from `main`.
-11. CI validates the exact delta in `AxonFinance` with local Apex tests and quick-deploys that same validated package.
+| Environment       | Allowed ref         | Org         |
+| ----------------- | ------------------- | ----------- |
+| `UAT-VALIDATION`  | `refs/pull/*/merge` | `AXON_UAT`  |
+| `PROD-VALIDATION` | `refs/pull/*/merge` | `AXON_PROD` |
+| `UAT`             | `develop`           | `AXON_UAT`  |
+| `PROD`            | `main`              | `AXON_PROD` |
 
-If an issue fails in DEV, revert its merge commit in `develop` and let CI deploy the resulting delta. Never restore DEV by deploying an older issue branch.
+Configure in each environment:
 
-## Current scratch-org constraint
+- Secret `SALESFORCE_AUTH_URL`: target org SFDX auth URL, never committed or logged.
+- Variable `SALESFORCE_ORG_ID`: exact expected 18-character Org ID.
+- Variable `SALESFORCE_BASE_SHA`: full initial commit matching verified installed
+  metadata, required until the first successful deployment establishes history.
 
-`AxonFinanceDevHub` can create scratch orgs, but the current repository cannot yet provision the complete application into an empty org. The full-source test found missing dependencies, unsupported translations, and metadata that depends on the shape of the existing org.
+Require owner approval for both validation environments and PROD. PR workflow code
+can access secrets after approval: inspect workflow/script changes first. Fork PRs
+are rejected for authenticated validation. No pull_request_target head-code execution.
 
-For that reason, automated PR validation currently uses a check-only delta against DEV. Scratch-org automation can replace this gate after the repository contains a reproducible org definition, all required dependencies, and scratch-compatible metadata.
+Protect develop/main: require PRs, current `Lint and unit tests` and
+`Validate Salesforce delta` checks, zero required external approvals and resolved
+conversations. Block direct pushes, force pushes and deletion, including admins.
+Preserve stronger existing protections. Do not bypass checks to install workflows.
 
-## GitHub Free public-repository configuration
+This project has a single GitHub user. GitHub does not allow authors to approve
+their own PRs, so the owner merges after reviewing the changes and passing checks.
+PRs remain mandatory; this does not waive DEV/UAT acceptance or protected
+environment approval. Agents still require explicit authorization to merge.
 
-Create these encrypted environment secrets under **Settings > Environments**:
+## Baseline, concurrency and recovery
 
-- Environment `DEV`: `SALESFORCE_DEV_AUTH_URL`, generated from `AxonFinanceDevHub`.
-- Environment `PROD`: `SALESFORCE_PROD_AUTH_URL`, generated from `AxonFinance`.
+Use the last successful deploy-salesforce.yml push run for the destination branch
+(or the verified initial baseline) through the exact operation SHA. Failed runs do
+not advance the baseline. Deploys are serialized per branch. Superseded pending
+runs remain in the next cumulative delta. PRs use the same deployed baseline.
 
-Never commit authentication URLs or place them in logs.
+Do not guess the first baseline from a branch. Audit installed source first. Empty
+orgs cannot accept arbitrary increments without dependencies. Missing baselines or
+dependencies fail closed; there is no automatic full-org provisioning.
+If deployment history expires or is removed, update SALESFORCE_BASE_SHA in both
+corresponding environments to the last verified deployment before continuing.
 
-Protect `develop` and `main`, require pull requests, and require the `Lint and unit tests` and `Validate Salesforce delta` checks. Block force pushes and branch deletion.
+Pending/timeout is not success: inspect the Salesforce job before retrying.
+A successful deployment with failed comment publication may be redeployed from the
+older baseline; inspect post-deploy effects first. Do not overlap manual deploys.
 
-Configure `PROD` with a required reviewer and restrict it to `main`. Production remains a manual `workflow_dispatch` operation requiring both immutable SHAs, and its secret is released only after environment approval.
-
-## Delta deployment
-
-Automatic workflows include only added, copied, modified, and renamed paths under `force-app`. LWC and Aura changes promote the complete bundle. Companion metadata files are collapsed into their source component when possible.
-
-Deleted metadata is intentionally excluded. Deletion requires a reviewed destructive-change package, impact analysis, rollback planning, and explicit authorization.
-
-Production requires two immutable SHAs:
-
-- `base_sha`: the commit currently deployed in `AxonFinance`.
-- `commit_sha`: the approved commit from `main`.
-
-After successful deployment, retain the deployed `commit_sha` as the `base_sha` for the next release.
+Deletions and rename deletions block the delta. They require an explicitly approved
+destructive release with impact analysis and recovery planning. Reverts introducing
+deletions follow the same restriction. Never silently omit deleted metadata.
