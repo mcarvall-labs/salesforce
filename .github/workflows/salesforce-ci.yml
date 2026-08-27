@@ -12,6 +12,27 @@ concurrency:
   cancel-in-progress: true
 
 jobs:
+  scope:
+    name: Detect metadata scope
+    runs-on: ubuntu-latest
+    outputs:
+      has_metadata: ${{ steps.scope.outputs.has_metadata }}
+    steps:
+      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
+        with:
+          fetch-depth: 0
+          persist-credentials: false
+      - id: scope
+        env:
+          BASE_SHA: ${{ github.event.pull_request.base.sha }}
+        run: |
+          git diff --name-only "$BASE_SHA" "$GITHUB_SHA" -- force-app > "$RUNNER_TEMP/metadata-paths.txt"
+          if test -s "$RUNNER_TEMP/metadata-paths.txt"; then
+            echo "has_metadata=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "has_metadata=false" >> "$GITHUB_OUTPUT"
+          fi
+
   quality:
     name: Lint and unit tests
     runs-on: ubuntu-latest
@@ -29,7 +50,7 @@ jobs:
         env:
           BASE_SHA: ${{ github.event.pull_request.base.sha }}
         run: |
-          mapfile -t files < <(git diff --name-only --diff-filter=ACMR "$BASE_SHA" "$GITHUB_SHA" | grep -E '\.(cls|cmp|component|css|html|js|json|md|page|trigger|xml|yaml|yml)$' || true)
+          mapfile -t files < <(git diff --name-only --diff-filter=ACMR "$BASE_SHA" "$GITHUB_SHA" | grep -E '\.(cls|cmp|component|css|html|js|mjs|json|md|page|trigger|xml|yaml|yml)$' || true)
           if ((${#files[@]})); then npx prettier --check "${files[@]}"; fi
       - name: Lint changed Lightning code
         shell: bash
@@ -40,60 +61,77 @@ jobs:
           if ((${#files[@]})); then npx eslint "${files[@]}"; fi
       - name: Run LWC unit tests
         run: npm run test:unit -- -- --runInBand
+      - name: Test delivery automation
+        run: node --test scripts/ci/salesforce-delivery.test.mjs
 
   salesforce-validation:
     name: Validate Salesforce delta
+    needs: scope
     runs-on: ubuntu-latest
-    environment: DEV
-    env:
-      SALESFORCE_AUTH_URL: ${{ secrets.SALESFORCE_DEV_AUTH_URL }}
-      AXON_DEV_ORG_ID: 00Dfj00000YrNnkEAF
-      BASE_SHA: ${{ github.event.pull_request.base.sha }}
+    timeout-minutes: 150
+    outputs:
+      summary: ${{ steps.operation.outputs.summary }}
+    environment: ${{ needs.scope.outputs.has_metadata != 'true' && 'CI' || (github.base_ref == 'main' && 'PROD-VALIDATION' || 'UAT-VALIDATION') }}
+    permissions:
+      contents: read
+      actions: read
     steps:
+      - name: Reject untrusted PR sources
+        env:
+          SAME_REPOSITORY: ${{ github.event.pull_request.head.repo.full_name == github.repository }}
+        run: test "$SAME_REPOSITORY" = "true"
       - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
         with:
           fetch-depth: 0
+          persist-credentials: false
       - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4.4.0
         with:
           node-version: 22
-          cache: npm
-      - name: Detect Salesforce metadata changes
-        id: salesforce-delta
-        shell: bash
-        run: |
-          mapfile -t source_paths < <(bash scripts/ci/list-salesforce-delta.sh "$BASE_SHA" "$GITHUB_SHA")
-          if ((${#source_paths[@]} == 0)); then
-            echo "has_delta=false" >> "$GITHUB_OUTPUT"
-            echo "No Salesforce source changes to validate."
-          else
-            echo "has_delta=true" >> "$GITHUB_OUTPUT"
-            printf 'Salesforce source path: %s\n' "${source_paths[@]}"
-          fi
       - name: Install Salesforce CLI
-        if: steps.salesforce-delta.outputs.has_delta == 'true'
+        if: needs.scope.outputs.has_metadata == 'true'
         run: npm install --global @salesforce/cli@2.148.3
-      - name: Authenticate DEV
-        if: steps.salesforce-delta.outputs.has_delta == 'true'
-        shell: bash
-        run: |
-          test -n "$SALESFORCE_AUTH_URL"
-          auth_file="$RUNNER_TEMP/development-auth-url.txt"
-          trap 'rm -f "$auth_file"' EXIT
-          printf '%s' "$SALESFORCE_AUTH_URL" > "$auth_file"
-          sf org login sfdx-url --sfdx-url-file "$auth_file" --alias AXON_DEV
-          actual_org_id="$(sf org display --target-org AXON_DEV --json | node -e "let s='';process.stdin.on('data',d=>s+=d).on('end',()=>process.stdout.write(JSON.parse(s).result.id))")"
-          test "$actual_org_id" = "$AXON_DEV_ORG_ID"
-      - name: Validate changed Salesforce metadata without deploying
-        id: salesforce-validation
-        if: steps.salesforce-delta.outputs.has_delta == 'true'
-        shell: bash
-        run: |
-          mapfile -t source_paths < <(bash scripts/ci/list-salesforce-delta.sh "$BASE_SHA" "$GITHUB_SHA")
-          source_args=()
-          for path in "${source_paths[@]}"; do source_args+=(--source-dir "$path"); done
-          set +e
-          sf project deploy start "${source_args[@]}" --target-org AXON_DEV --dry-run --test-level RunSpecifiedTests --tests ALT_CLS_AxfCanonicalTest --tests ALT_CLS_AxfHouseholdGoldenFixturesTest --tests ALT_CLS_AxfHouseholdBehaviorTest --wait 45 --json > salesforce-validation.json
-          validation_status=$?
-          set -e
-          node scripts/ci/publish-salesforce-validation.mjs salesforce-validation.json
-          exit "$validation_status"
+      - name: Validate delta without persisting changes
+        id: operation
+        env:
+          GH_TOKEN: ${{ github.token }}
+          OPERATION: validate
+          TARGET_ENV: ${{ github.base_ref == 'main' && 'PROD' || 'UAT' }}
+          TARGET_BRANCH: ${{ github.base_ref }}
+          PR_BASE_SHA: ${{ github.event.pull_request.base.sha }}
+          SALESFORCE_AUTH_URL: ${{ needs.scope.outputs.has_metadata == 'true' && secrets.SALESFORCE_AUTH_URL || '' }}
+          EXPECTED_ORG_ID: ${{ vars.SALESFORCE_ORG_ID }}
+          INITIAL_BASE_SHA: ${{ vars.SALESFORCE_BASE_SHA }}
+          EVIDENCE_DIR: ${{ runner.temp }}/salesforce-evidence
+        run: node scripts/ci/salesforce-delivery.mjs
+      - name: Upload validation evidence
+        if: always()
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
+        with:
+          name: salesforce-validation-${{ github.run_id }}-${{ github.run_attempt }}
+          path: ${{ runner.temp }}/salesforce-evidence/
+          retention-days: 30
+          if-no-files-found: warn
+
+  comment:
+    name: Publish validation result
+    if: always() && github.event.pull_request.head.repo.full_name == github.repository
+    needs: [quality, salesforce-validation]
+    runs-on: ubuntu-latest
+    permissions:
+      actions: read
+      pull-requests: write
+    steps:
+      - uses: actions/github-script@60a0d83039c74a4aee543508d2ffcb1c3799cdea9 # v7.0.1
+        env:
+          VALIDATION_RESULT: ${{ needs.salesforce-validation.result }}
+          QUALITY_RESULT: ${{ needs.quality.result }}
+          VALIDATED_SHA: ${{ github.sha }}
+          SF_SUMMARY: ${{ needs.salesforce-validation.outputs.summary }}
+        with:
+          script: |
+            const runUrl = `${context.serverUrl}/${context.repo.owner}/${context.repo.repo}/actions/runs/${context.runId}`;
+            const {data} = await github.rest.actions.listWorkflowRunArtifacts({...context.repo, run_id: context.runId});
+            const evidence = data.artifacts.filter(a => !a.expired).map(a => `[${a.name}](${runUrl}/artifacts/${a.id})`).join('\n') || 'No artifact was produced; inspect the workflow logs.';
+            const target = context.payload.pull_request.base.ref === 'main' ? 'AXON_PROD' : 'AXON_UAT';
+            await github.rest.issues.createComment({...context.repo, issue_number: context.issue.number,
+              body: `## Salesforce PR validation: ${target}\n\n**Validation job:** ${process.env.VALIDATION_RESULT}\n**Quality checks:** ${process.env.QUALITY_RESULT}\n**Validated merge SHA:** \`${process.env.VALIDATED_SHA}\`\n\n${process.env.SF_SUMMARY || 'Validation did not produce a report.'}\n\n[Validation summary and logs](${runUrl})\n\n### Evidence\n${evidence}\n\nValidation uses dry-run: no metadata is persisted.`});
