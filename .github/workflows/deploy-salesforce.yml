@@ -1,0 +1,79 @@
+name: Deploy Salesforce
+
+on:
+  push:
+    branches: [develop, main]
+
+permissions:
+  contents: read
+  actions: read
+  pull-requests: read
+
+concurrency:
+  group: salesforce-deploy-${{ github.ref_name }}
+  cancel-in-progress: false
+
+jobs:
+  deploy:
+    name: Deploy merged Salesforce delta
+    runs-on: ubuntu-latest
+    timeout-minutes: 150
+    outputs:
+      summary: ${{ steps.operation.outputs.summary }}
+    environment: ${{ github.ref_name == 'main' && 'PROD' || 'UAT' }}
+    steps:
+      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
+        with:
+          fetch-depth: 0
+          persist-credentials: false
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4.4.0
+        with:
+          node-version: 22
+      - name: Install Salesforce CLI
+        run: npm install --global @salesforce/cli@2.148.3
+      - name: Deploy cumulative delta
+        id: operation
+        env:
+          GH_TOKEN: ${{ github.token }}
+          OPERATION: deploy
+          TARGET_ENV: ${{ github.ref_name == 'main' && 'PROD' || 'UAT' }}
+          TARGET_BRANCH: ${{ github.ref_name }}
+          SALESFORCE_AUTH_URL: ${{ secrets.SALESFORCE_AUTH_URL }}
+          EXPECTED_ORG_ID: ${{ vars.SALESFORCE_ORG_ID }}
+          INITIAL_BASE_SHA: ${{ vars.SALESFORCE_BASE_SHA }}
+          EVIDENCE_DIR: ${{ runner.temp }}/salesforce-evidence
+        run: node scripts/ci/salesforce-delivery.mjs
+      - name: Upload deployment evidence
+        if: always()
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
+        with:
+          name: salesforce-deploy-${{ github.run_id }}-${{ github.run_attempt }}
+          path: ${{ runner.temp }}/salesforce-evidence/
+          retention-days: 30
+          if-no-files-found: warn
+
+  comment:
+    name: Publish deployment result
+    if: always()
+    needs: deploy
+    runs-on: ubuntu-latest
+    permissions:
+      actions: read
+      contents: read
+      pull-requests: write
+    steps:
+      - uses: actions/github-script@60a0d83039c74a4aee543508d2ffcb1c3799cdea9 # v7.0.1
+        env:
+          DEPLOY_RESULT: ${{ needs.deploy.result }}
+          SF_SUMMARY: ${{ needs.deploy.outputs.summary }}
+        with:
+          script: |
+            const runUrl = `${context.serverUrl}/${context.repo.owner}/${context.repo.repo}/actions/runs/${context.runId}`;
+            const {data: prs} = await github.rest.repos.listPullRequestsAssociatedWithCommit({...context.repo, commit_sha: context.sha});
+            const {data} = await github.rest.actions.listWorkflowRunArtifacts({...context.repo, run_id: context.runId});
+            const evidence = data.artifacts.filter(a => !a.expired).map(a => `[${a.name}](${runUrl}/artifacts/${a.id})`).join('\n') || 'No artifact was produced; inspect the workflow logs.';
+            const environment = context.ref === 'refs/heads/main' ? 'AXON_PROD' : 'AXON_UAT';
+            for (const pr of prs.filter(p => p.merged_at && p.merge_commit_sha === context.sha)) {
+              await github.rest.issues.createComment({...context.repo, issue_number: pr.number,
+                body: `## Salesforce deployment: ${environment}\n\n**Job result:** ${process.env.DEPLOY_RESULT}\n**Commit:** \`${context.sha}\`\n\n${process.env.SF_SUMMARY || 'Deployment did not produce a report.'}\n\n[Deployment summary and logs](${runUrl})\n\n### Evidence\n${evidence}`});
+            }
