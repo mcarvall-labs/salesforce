@@ -57,9 +57,14 @@ can access secrets after approval: inspect workflow/script changes first. Fork P
 are rejected for authenticated validation. No pull_request_target head-code execution.
 
 Protect develop/main: require PRs, current `Lint and unit tests` and
-`Validate Salesforce delta` checks, one review, dismissed stale reviews and resolved
+`Validate Salesforce delta` checks, zero required external approvals and resolved
 conversations. Block direct pushes, force pushes and deletion, including admins.
 Preserve stronger existing protections. Do not bypass checks to install workflows.
+
+This project has a single GitHub user. GitHub does not allow authors to approve
+their own PRs, so the owner merges after reviewing the changes and passing checks.
+PRs remain mandatory; this does not waive DEV/UAT acceptance or protected
+environment approval. Agents still require explicit authorization to merge.
 
 ## Baseline, concurrency and recovery
 
