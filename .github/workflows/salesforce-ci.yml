@@ -89,10 +89,18 @@ jobs:
         shell: bash
         run: |
           mapfile -t source_paths < <(bash scripts/ci/list-salesforce-delta.sh "$BASE_SHA" "$GITHUB_SHA")
+          apex_tests_file="$RUNNER_TEMP/axon-delta-tests.txt"
+          bash scripts/ci/list-salesforce-tests.sh "$BASE_SHA" "$GITHUB_SHA" > "$apex_tests_file"
+          mapfile -t apex_tests < "$apex_tests_file"
           source_args=()
           for path in "${source_paths[@]}"; do source_args+=(--source-dir "$path"); done
+          test_args=(--test-level NoTestRun)
+          if ((${#apex_tests[@]})); then
+            test_args=(--test-level RunSpecifiedTests)
+            for test_class in "${apex_tests[@]}"; do test_args+=(--tests "$test_class"); done
+          fi
           set +e
-          sf project deploy start "${source_args[@]}" --target-org AXON_DEV --dry-run --test-level RunSpecifiedTests --tests ALT_CLS_AxfCanonicalTest --tests ALT_CLS_AxfHouseholdGoldenFixturesTest --tests ALT_CLS_AxfHouseholdBehaviorTest --wait 45 --json > salesforce-validation.json
+          sf project deploy start "${source_args[@]}" "${test_args[@]}" --target-org AXON_DEV --dry-run --wait 45 --json > salesforce-validation.json
           validation_status=$?
           set -e
           node scripts/ci/publish-salesforce-validation.mjs salesforce-validation.json

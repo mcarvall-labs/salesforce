@@ -108,6 +108,37 @@
             disabled={saving}
           ></lightning-button>
         </form>
+        <template lwc:if={canManageAccess}
+          ><section aria-label="Compartilhar entidade">
+            <h3>Compartilhar</h3>
+            <lightning-input
+              name="targetUserId"
+              label="Pessoa"
+              value={accessDraft.targetUserId}
+              onchange={handleAccessChange}
+            ></lightning-input>
+            <lightning-combobox
+              name="role"
+              label="Acesso"
+              value={accessDraft.role}
+              options={roleOptions}
+              onchange={handleAccessChange}
+            ></lightning-combobox>
+            <lightning-button
+              label="Conceder acesso"
+              onclick={handleAssignAccess}
+              disabled={saving}
+            ></lightning-button>
+            <lightning-button
+              label="Remover acesso"
+              onclick={handleRemoveAccess}
+              disabled={saving}
+            ></lightning-button>
+            <template lwc:if={errorMessage}
+              ><p role="status">{errorMessage}</p></template
+            >
+          </section></template
+        >
       </article>
     </template>
     <template lwc:if={creating}>

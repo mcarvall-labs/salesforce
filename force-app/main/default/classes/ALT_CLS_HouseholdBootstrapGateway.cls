@@ -7,13 +7,14 @@ public without sharing class ALT_CLS_HouseholdBootstrapGateway {
 
   public Result persist(Command command) {
     User principal = new ALT_CLS_ServicePrincipalResolver().resolve();
-    AXF_OBJ_BootstrapAuthority__c authority = [
-      SELECT Id, OwnerId, AXF_BSA_PKL_State__c
-      FROM AXF_OBJ_BootstrapAuthority__c
-      WHERE AXF_BSA_EXI_AuthorityKey__c = :HOUSEHOLD_KEY
-      LIMIT 1
-      FOR UPDATE
-    ];
+    List<AXF_OBJ_BootstrapAuthority__c> authorities = (List<AXF_OBJ_BootstrapAuthority__c>) Database.queryWithBinds(
+      'SELECT Id, OwnerId, AXF_BSA_PKL_State__c FROM AXF_OBJ_BootstrapAuthority__c WHERE AXF_BSA_EXI_AuthorityKey__c = :authorityKey LIMIT 1 FOR UPDATE',
+      new Map<String, Object>{ 'authorityKey' => HOUSEHOLD_KEY },
+      AccessLevel.SYSTEM_MODE
+    );
+    if (authorities.isEmpty())
+      throw new GatewayException('SERVICE_PRINCIPAL_UNAVAILABLE');
+    AXF_OBJ_BootstrapAuthority__c authority = authorities[0];
     if (authority.OwnerId != principal.Id)
       throw new GatewayException('SERVICE_PRINCIPAL_UNAVAILABLE');
     String scopeKey = ALT_CLS_AxfCanonical.scopedHash(
@@ -53,7 +54,7 @@ public without sharing class ALT_CLS_HouseholdBootstrapGateway {
 
     AXF_OBJ_Household__c household = new AXF_OBJ_Household__c(
       Name = 'Primary Household',
-      OwnerId = principal.Id,
+      OwnerId = UserInfo.getUserId(),
       AXF_HH_EXI_HouseholdKey__c = HOUSEHOLD_KEY,
       AXF_HH_TXT_ReportingCurrencyIsoCode__c = command.reportingCurrency,
       AXF_HH_TXT_TimeZone__c = command.timeZone,
@@ -68,7 +69,7 @@ public without sharing class ALT_CLS_HouseholdBootstrapGateway {
     );
     AXF_OBJ_FinancialEntity__c entity = new AXF_OBJ_FinancialEntity__c(
       Name = command.displayName,
-      OwnerId = principal.Id,
+      OwnerId = UserInfo.getUserId(),
       AXF_FIE_LKP_Household__c = household.Id,
       AXF_FIE_EXI_EntityKey__c = command.entityKey,
       AXF_FIE_EXI_EntityRef__c = entityRef,
@@ -88,72 +89,12 @@ public without sharing class ALT_CLS_HouseholdBootstrapGateway {
     .FederationIdentifier;
     if (String.isBlank(userKey))
       throw new GatewayException('PRINCIPAL_IDENTITY_REQUIRED');
-    AXF_OBJ_HouseholdFinancialEntity__c membership = new AXF_OBJ_HouseholdFinancialEntity__c(
-      AXF_HFE_MD_Household__c = household.Id,
-      AXF_HFE_LKP_FinancialEntity__c = entity.Id,
-      AXF_HFE_EXI_MembershipKey__c = ALT_CLS_AxfCanonical.scopedHash(
-        new List<String>{ 'hfe-v1', HOUSEHOLD_KEY, command.entityKey }
-      ),
-      AXF_HFE_PKL_Role__c = 'PRIMARY',
-      AXF_HFE_PKL_Status__c = 'ACTIVE',
-      AXF_HFE_DT_ValidFrom__c = System.now(),
-      AXF_HFE_NUM_Version__c = 1
-    );
-    Database.insert(membership, AccessLevel.SYSTEM_MODE);
-    List<AXF_OBJ_EntityAccessGrant__c> grants = new List<AXF_OBJ_EntityAccessGrant__c>{
-      grant(
-        household.Id,
-        null,
-        userKey,
-        'HOUSEHOLD',
-        HOUSEHOLD_KEY,
-        'AXF_CreateFinancialEntity,AXF_RevokeEntityAccess'
-      ),
-      grant(
-        household.Id,
-        entity.Id,
-        userKey,
-        'ENTITY',
-        command.entityKey,
-        'AXF_ReadFinancialEntity,AXF_UpdateFinancialEntity'
-      )
-    };
-    Database.insert(grants, AccessLevel.SYSTEM_MODE);
-    Database.insert(
-      new AXF_OBJ_Household__Share(
-        ParentId = household.Id,
-        UserOrGroupId = UserInfo.getUserId(),
-        AccessLevel = 'Edit',
-        RowCause = Schema.AXF_OBJ_Household__Share.RowCause.AXF_HouseholdGrant__c
-      ),
-      AccessLevel.SYSTEM_MODE
-    );
-    Database.insert(
-      new AXF_OBJ_FinancialEntity__Share(
-        ParentId = entity.Id,
-        UserOrGroupId = UserInfo.getUserId(),
-        AccessLevel = 'Edit',
-        RowCause = Schema.AXF_OBJ_FinancialEntity__Share.RowCause.AXF_EntityGrant__c
-      ),
-      AccessLevel.SYSTEM_MODE
-    );
     String shareHash = ALT_CLS_AxfCanonical.scopedHash(
       new List<String>{
         String.valueOf(household.Id),
         String.valueOf(entity.Id),
         String.valueOf(UserInfo.getUserId())
       }
-    );
-    Database.insert(
-      new AXF_OBJ_SharingProjectorRun__c(
-        OwnerId = principal.Id,
-        AXF_SPR_LKP_Household__c = household.Id,
-        AXF_SPR_LKP_FinancialEntity__c = entity.Id,
-        AXF_SPR_PKL_State__c = 'VERIFIED',
-        AXF_SPR_TXT_DesiredHash__c = shareHash,
-        AXF_SPR_TXT_ActualHash__c = shareHash
-      ),
-      AccessLevel.SYSTEM_MODE
     );
     Result result = new Result();
     result.householdId = household.Id;
@@ -168,7 +109,7 @@ public without sharing class ALT_CLS_HouseholdBootstrapGateway {
     );
     Database.insert(
       new AXF_OBJ_CommandExecution__c(
-        OwnerId = principal.Id,
+        OwnerId = UserInfo.getUserId(),
         AXF_CE_LKP_Household__c = household.Id,
         AXF_CE_EXI_IdempotencyScopeKey__c = scopeKey,
         AXF_CE_TXT_OperationId__c = 'household.household.initialize.v1',
@@ -189,13 +130,13 @@ public without sharing class ALT_CLS_HouseholdBootstrapGateway {
       AccessLevel.SYSTEM_MODE
     );
     AXF_OBJ_AuditEvent__c auditEvent = new AXF_OBJ_AuditEvent__c(
-      OwnerId = principal.Id,
+      OwnerId = UserInfo.getUserId(),
       AXF_AUE_EXI_EventId__c = cryptoUuid(),
       AXF_AUE_LKP_Household__c = household.Id,
       AXF_AUE_LKP_FinancialEntity__c = entity.Id,
       AXF_AUE_LKP_ActorUser__c = UserInfo.getUserId(),
       AXF_AUE_TXT_ActorPrincipalKey__c = userKey,
-      AXF_AUE_TXT_EffectivePrincipalKey__c = principal.FederationIdentifier,
+      AXF_AUE_TXT_EffectivePrincipalKey__c = userKey,
       AXF_AUE_TXT_OperationId__c = 'household.household.initialize.v1',
       AXF_AUE_TXT_AggregateType__c = 'Household',
       AXF_AUE_TXT_AggregateKeyHash__c = ALT_CLS_AxfCanonical.sha256(
@@ -207,7 +148,6 @@ public without sharing class ALT_CLS_HouseholdBootstrapGateway {
       AXF_AUE_TXT_CorrelationId__c = command.correlationId,
       AXF_AUE_TXT_CommandScopeHash__c = scopeKey,
       AXF_AUE_TXT_AfterHash__c = shareHash,
-      AXF_AUE_NUM_GrantVersion__c = 1,
       AXF_AUE_DT_OccurredAt__c = System.now()
     );
     auditEvent.AXF_AUE_TXT_IntegrityHash__c = ALT_CLS_AxfCanonical.sha256(
@@ -220,40 +160,6 @@ public without sharing class ALT_CLS_HouseholdBootstrapGateway {
     return result;
   }
 
-  private static AXF_OBJ_EntityAccessGrant__c grant(
-    Id householdId,
-    Id entityId,
-    String federationId,
-    String scopeType,
-    String scopeKey,
-    String capabilities
-  ) {
-    return new AXF_OBJ_EntityAccessGrant__c(
-      AXF_EAG_LKP_Household__c = householdId,
-      AXF_EAG_LKP_FinancialEntity__c = entityId,
-      AXF_EAG_LKP_User__c = UserInfo.getUserId(),
-      AXF_EAG_EXI_GrantKey__c = ALT_CLS_AxfCanonical.scopedHash(
-        new List<String>{
-          'grant-v1',
-          HOUSEHOLD_KEY,
-          scopeType,
-          scopeKey,
-          federationId,
-          'HOUSEHOLD_OPERATIONS',
-          '1'
-        }
-      ),
-      AXF_EAG_PKL_Role__c = 'OWNER',
-      AXF_EAG_PKL_ScopeType__c = scopeType,
-      AXF_EAG_TXT_OperationSet__c = capabilities,
-      AXF_EAG_TXT_Purpose__c = 'HOUSEHOLD_OPERATIONS',
-      AXF_EAG_TXT_FieldPolicyVersion__c = 'AXF-AUTHORIZATION@1.0.0',
-      AXF_EAG_PKL_Status__c = 'ACTIVE',
-      AXF_EAG_DT_ValidFrom__c = System.now(),
-      AXF_EAG_NUM_GrantRevision__c = 1,
-      AXF_EAG_NUM_Version__c = 1
-    );
-  }
   private static String cryptoUuid() {
     String h = EncodingUtil.convertToHex(Crypto.generateAesKey(128))
       .toLowerCase();

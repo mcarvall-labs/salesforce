@@ -4,9 +4,21 @@ import listEntities from "@salesforce/apex/AXF_CLS_CTRL_FinancialEntity.listEnti
 import createEntity from "@salesforce/apex/AXF_CLS_CTRL_FinancialEntity.createEntity";
 import updateEntity from "@salesforce/apex/AXF_CLS_CTRL_FinancialEntity.updateEntity";
 import readEntity from "@salesforce/apex/AXF_CLS_CTRL_FinancialEntity.readEntity";
+import assignAccess from "@salesforce/apex/AXF_CLS_CTRL_FinancialEntity.assignAccess";
+import removeAccess from "@salesforce/apex/AXF_CLS_CTRL_FinancialEntity.removeAccess";
 
 jest.mock(
   "@salesforce/apex/AXF_CLS_CTRL_FinancialEntity.listEntities",
+  () => ({ default: jest.fn() }),
+  { virtual: true }
+);
+jest.mock(
+  "@salesforce/apex/AXF_CLS_CTRL_FinancialEntity.assignAccess",
+  () => ({ default: jest.fn() }),
+  { virtual: true }
+);
+jest.mock(
+  "@salesforce/apex/AXF_CLS_CTRL_FinancialEntity.removeAccess",
   () => ({ default: jest.fn() }),
   { virtual: true }
 );
@@ -168,9 +180,9 @@ describe("c-a-x-f_-l-w-c_financial-entities", () => {
     await flush();
     element.shadowRoot.querySelector("button.entity").click();
     await flush();
-    expect(element.shadowRoot.querySelectorAll("lightning-input")).toHaveLength(
-      1
-    );
+    expect(
+      element.shadowRoot.querySelectorAll("form lightning-input")
+    ).toHaveLength(1);
     expect(element.shadowRoot.textContent).not.toContain("Nome legal");
   });
   it("renders terminal errors explicitly", async () => {
@@ -181,5 +193,255 @@ describe("c-a-x-f_-l-w-c_financial-entities", () => {
     document.body.appendChild(element);
     await flush();
     expect(element.shadowRoot.textContent).toContain("erro terminal");
+  });
+  it("discards a late response after access is removed", async () => {
+    let resolveList;
+    listEntities.mockReturnValue(
+      new Promise((resolve) => {
+        resolveList = resolve;
+      })
+    );
+    const element = createElement("c-a-x-f_-l-w-c_financial-entities", {
+      is: FinancialEntities
+    });
+    document.body.appendChild(element);
+    element.accessRemoved();
+    resolveList({ state: "READY_DATA", entities: [{ displayName: "Secret" }] });
+    await flush();
+    expect(element.shadowRoot.textContent).toContain(
+      "Não foi possível acessar"
+    );
+    expect(element.shadowRoot.textContent).not.toContain("Secret");
+  });
+  it("clears content and reloads after removing Axon access", async () => {
+    listEntities
+      .mockResolvedValueOnce({
+        state: "READY_DATA",
+        entities: [{ entityRef: "ref", displayName: "Display" }]
+      })
+      .mockResolvedValueOnce({ state: "READY_EMPTY", entities: [] });
+    readEntity.mockResolvedValue({
+      state: "READY_DATA",
+      detail: {
+        entityId: "a01000000000001",
+        entityRef: "ref",
+        displayName: "Display",
+        lifecycle: "ACTIVE",
+        version: 1,
+        householdVersion: 1,
+        canManageAccess: true
+      }
+    });
+    removeAccess.mockResolvedValue({ hasRemainingAccess: false });
+    const element = createElement("c-a-x-f_-l-w-c_financial-entities", {
+      is: FinancialEntities
+    });
+    element.householdId = "a00000000000001";
+    document.body.appendChild(element);
+    await flush();
+    element.shadowRoot.querySelector("button.entity").click();
+    await flush();
+    const target = element.shadowRoot.querySelectorAll(
+      "article lightning-input"
+    )[1];
+    target.dispatchEvent(
+      new CustomEvent("change", { detail: { value: "005000000000001" } })
+    );
+    const removeButton = [
+      ...element.shadowRoot.querySelectorAll("article lightning-button")
+    ].find((button) => button.label === "Remover acesso");
+    removeButton.click();
+    await flush();
+    expect(removeAccess).toHaveBeenCalled();
+    expect(element.shadowRoot.textContent).not.toContain("Display");
+  });
+  it("sends exact assign and remove access payloads", async () => {
+    listEntities.mockResolvedValue({
+      state: "READY_DATA",
+      entities: [{ entityRef: "ref", displayName: "Display" }]
+    });
+    readEntity.mockResolvedValue({
+      state: "READY_DATA",
+      detail: {
+        entityId: "a01000000000001",
+        entityRef: "ref",
+        displayName: "Display",
+        lifecycle: "ACTIVE",
+        version: 1,
+        householdVersion: 7,
+        canManageAccess: true
+      }
+    });
+    assignAccess.mockResolvedValue({ role: "EDITOR" });
+    removeAccess.mockResolvedValue({ hasRemainingAccess: false });
+    const element = createElement("c-a-x-f_-l-w-c_financial-entities", {
+      is: FinancialEntities
+    });
+    element.householdId = "a00000000000001";
+    document.body.appendChild(element);
+    await flush();
+    element.shadowRoot.querySelector("button.entity").click();
+    await flush();
+    const section = element.shadowRoot.querySelector(
+      'section[aria-label="Compartilhar entidade"]'
+    );
+    section
+      .querySelector("lightning-input")
+      .dispatchEvent(
+        new CustomEvent("change", { detail: { value: "005000000000001" } })
+      );
+    section
+      .querySelector("lightning-combobox")
+      .dispatchEvent(
+        new CustomEvent("change", { detail: { value: "EDITOR" } })
+      );
+    const buttons = [...section.querySelectorAll("lightning-button")];
+    buttons.find((button) => button.label === "Conceder acesso").click();
+    await flush();
+    expect(assignAccess).toHaveBeenCalledWith({
+      request: {
+        householdId: "a00000000000001",
+        entityId: "a01000000000001",
+        targetUserId: "005000000000001",
+        role: "EDITOR",
+        expectedVersion: 7,
+        idempotencyKey: expect.stringMatching(/^[0-9a-f-]{36}$/),
+        correlationId: expect.stringMatching(/^[0-9a-f-]{36}$/)
+      }
+    });
+    // Successful mutation reloads the list; select the entity again.
+    await flush();
+    element.shadowRoot.querySelector("button.entity").click();
+    await flush();
+    const removeSection = element.shadowRoot.querySelector(
+      'section[aria-label="Compartilhar entidade"]'
+    );
+    removeSection
+      .querySelector("lightning-input")
+      .dispatchEvent(
+        new CustomEvent("change", { detail: { value: "005000000000001" } })
+      );
+    [...removeSection.querySelectorAll("lightning-button")]
+      .find((button) => button.label === "Remover acesso")
+      .click();
+    await flush();
+    expect(removeAccess).toHaveBeenCalledWith({
+      request: {
+        householdId: "a00000000000001",
+        entityId: "a01000000000001",
+        targetUserId: "005000000000001",
+        role: null,
+        expectedVersion: 7,
+        idempotencyKey: expect.stringMatching(/^[0-9a-f-]{36}$/),
+        correlationId: expect.stringMatching(/^[0-9a-f-]{36}$/)
+      }
+    });
+  });
+  it("hides access controls without server capability", async () => {
+    listEntities.mockResolvedValue({
+      state: "READY_DATA",
+      entities: [{ entityRef: "ref", displayName: "Display" }]
+    });
+    readEntity.mockResolvedValue({
+      state: "READY_DATA",
+      detail: {
+        entityRef: "ref",
+        displayName: "Display",
+        lifecycle: "ACTIVE",
+        version: 1,
+        canManageAccess: false
+      }
+    });
+    const element = createElement("c-a-x-f_-l-w-c_financial-entities", {
+      is: FinancialEntities
+    });
+    document.body.appendChild(element);
+    await flush();
+    element.shadowRoot.querySelector("button.entity").click();
+    await flush();
+    expect(
+      element.shadowRoot.querySelector(
+        'section[aria-label="Compartilhar entidade"]'
+      )
+    ).toBeNull();
+  });
+  it("discards late create and update responses after access removal", async () => {
+    let resolveCreate;
+    listEntities.mockResolvedValue({ state: "READY_EMPTY", entities: [] });
+    createEntity.mockReturnValue(
+      new Promise((resolve) => {
+        resolveCreate = resolve;
+      })
+    );
+    const creating = createElement("c-a-x-f_-l-w-c_financial-entities", {
+      is: FinancialEntities
+    });
+    creating.householdId = "a00000000000001";
+    document.body.appendChild(creating);
+    await flush();
+    creating.shadowRoot.querySelector("lightning-button").click();
+    await flush();
+    const createForm = creating.shadowRoot.querySelector(
+      'form[aria-label="Criar entidade financeira"]'
+    );
+    const inputs = createForm.querySelectorAll("lightning-input");
+    inputs[0].dispatchEvent(
+      new CustomEvent("change", { detail: { value: "Legal" } })
+    );
+    inputs[1].dispatchEvent(
+      new CustomEvent("change", { detail: { value: "Display" } })
+    );
+    createForm.dispatchEvent(new CustomEvent("submit"));
+    creating.accessRemoved();
+    resolveCreate({ entityRef: "secret" });
+    await flush();
+    expect(creating.shadowRoot.textContent).toContain(
+      "Não foi possível acessar"
+    );
+    expect(creating.shadowRoot.textContent).not.toContain("Display");
+    document.body.removeChild(creating);
+
+    let resolveUpdate;
+    listEntities.mockResolvedValue({
+      state: "READY_DATA",
+      entities: [{ entityRef: "ref", displayName: "Before" }]
+    });
+    readEntity.mockResolvedValue({
+      state: "READY_DATA",
+      detail: {
+        entityRef: "ref",
+        displayName: "Before",
+        legalName: "Legal",
+        lifecycle: "ACTIVE",
+        version: 1,
+        canManageAccess: false
+      }
+    });
+    updateEntity.mockReturnValue(
+      new Promise((resolve) => {
+        resolveUpdate = resolve;
+      })
+    );
+    const updating = createElement("c-a-x-f_-l-w-c_financial-entities", {
+      is: FinancialEntities
+    });
+    document.body.appendChild(updating);
+    await flush();
+    updating.shadowRoot.querySelector("button.entity").click();
+    await flush();
+    updating.shadowRoot
+      .querySelector("form")
+      .dispatchEvent(new CustomEvent("submit"));
+    updating.accessRemoved();
+    resolveUpdate({
+      entityRef: "ref",
+      displayName: "Secret After",
+      version: 2
+    });
+    await flush();
+    expect(updating.shadowRoot.textContent).toContain(
+      "Não foi possível acessar"
+    );
+    expect(updating.shadowRoot.textContent).not.toContain("Secret After");
   });
 });

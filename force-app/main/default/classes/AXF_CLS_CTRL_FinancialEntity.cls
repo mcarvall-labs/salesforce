@@ -98,7 +98,7 @@ public with sharing class AXF_CLS_CTRL_FinancialEntity {
     validate(request, true, true);
     ALT_CLS_FinancialEntityGateway.Command command = command(request);
     command.payloadHash = ALT_CLS_AxfCanonical.sha256(JSON.serialize(request));
-    return new ALT_CLS_FinancialEntityGateway().createEntity(command);
+    return persistMutation(command, true);
   }
 
   @AuraEnabled
@@ -133,7 +133,29 @@ public with sharing class AXF_CLS_CTRL_FinancialEntity {
     ALT_CLS_FinancialEntityGateway.Command command = command(request);
     command.updateLegalName = mayEditLegalName;
     command.payloadHash = ALT_CLS_AxfCanonical.sha256(JSON.serialize(request));
-    return new ALT_CLS_FinancialEntityGateway().updateEntity(command);
+    return persistMutation(command, false);
+  }
+
+  private static ALT_CLS_FinancialEntityGateway.Result persistMutation(
+    ALT_CLS_FinancialEntityGateway.Command command,
+    Boolean creating
+  ) {
+    Savepoint checkpoint = Database.setSavepoint();
+    try {
+      ALT_CLS_FinancialEntityGateway gateway = new ALT_CLS_FinancialEntityGateway();
+      return creating
+        ? gateway.createEntity(command)
+        : gateway.updateEntity(command);
+    } catch (ALT_CLS_FinancialEntityGateway.GatewayException failure) {
+      Database.rollback(checkpoint);
+      if (failure.getMessage() == 'CONFLICT')
+        throw new AuraHandledException('CONFLICT');
+      deny();
+      return null;
+    } catch (Exception failure) {
+      Database.rollback(checkpoint);
+      throw new AuraHandledException('ERROR_TERMINAL');
+    }
   }
 
   private static void validate(
@@ -236,6 +258,11 @@ public with sharing class AXF_CLS_CTRL_FinancialEntity {
   ) {
     FinancialEntitySummary dto = new FinancialEntitySummary();
     dto.entityRef = record.AXF_FIE_EXI_EntityRef__c;
+    dto.entityId = record.Id;
+    dto.householdVersion = record.AXF_FIE_LKP_Household__r.AXF_HH_NUM_Version__c;
+    dto.canManageAccess = ALT_CLS_EntityAccessService.canManageAccess(
+      record.AXF_FIE_LKP_Household__r.OwnerId
+    );
     dto.displayName = record.AXF_FIE_TXT_DisplayName__c;
     dto.kind = record.AXF_FIE_PKL_Kind__c;
     dto.reportingCurrencyIsoCode = record.AXF_FIE_LKP_Household__r.AXF_HH_TXT_ReportingCurrencyIsoCode__c;
@@ -246,18 +273,30 @@ public with sharing class AXF_CLS_CTRL_FinancialEntity {
     return dto;
   }
   @AuraEnabled
-  public static void revokeGrant(
-    Id grantId,
-    Decimal expectedVersion,
-    String idempotencyKey,
-    String correlationId
+  public static ALT_CLS_EntityAccessService.Result assignAccess(
+    ALT_CLS_EntityAccessService.Request request
   ) {
-    ALT_CLS_AuthorizationRevocationService.revoke(
-      grantId,
-      expectedVersion,
-      idempotencyKey,
-      correlationId
-    );
+    try {
+      return new ALT_CLS_EntityAccessService().assign(request);
+    } catch (ALT_CLS_EntityAccessService.AccessException denied) {
+      if (denied.getMessage() == 'CONFLICT')
+        throw new AuraHandledException('CONFLICT');
+      deny();
+      return null;
+    }
+  }
+  @AuraEnabled
+  public static ALT_CLS_EntityAccessService.Result removeAccess(
+    ALT_CLS_EntityAccessService.Request request
+  ) {
+    try {
+      return new ALT_CLS_EntityAccessService().remove(request);
+    } catch (ALT_CLS_EntityAccessService.AccessException denied) {
+      if (denied.getMessage() == 'CONFLICT')
+        throw new AuraHandledException('CONFLICT');
+      deny();
+      return null;
+    }
   }
   private static FinancialEntitySummary toDetail(
     AXF_OBJ_FinancialEntity__c record,
@@ -269,6 +308,9 @@ public with sharing class AXF_CLS_CTRL_FinancialEntity {
       return summary;
     FinancialEntityDetail dto = new FinancialEntityDetail();
     dto.entityRef = summary.entityRef;
+    dto.entityId = summary.entityId;
+    dto.householdVersion = summary.householdVersion;
+    dto.canManageAccess = summary.canManageAccess;
     dto.displayName = summary.displayName;
     dto.kind = summary.kind;
     dto.reportingCurrencyIsoCode = summary.reportingCurrencyIsoCode;
@@ -296,6 +338,12 @@ public with sharing class AXF_CLS_CTRL_FinancialEntity {
   public virtual class FinancialEntitySummary {
     @AuraEnabled
     public String entityRef;
+    @AuraEnabled
+    public Id entityId;
+    @AuraEnabled
+    public Decimal householdVersion;
+    @AuraEnabled
+    public Boolean canManageAccess;
     @AuraEnabled
     public String displayName;
     @AuraEnabled

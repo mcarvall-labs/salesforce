@@ -3,6 +3,8 @@ import listEntities from "@salesforce/apex/AXF_CLS_CTRL_FinancialEntity.listEnti
 import readEntity from "@salesforce/apex/AXF_CLS_CTRL_FinancialEntity.readEntity";
 import updateEntity from "@salesforce/apex/AXF_CLS_CTRL_FinancialEntity.updateEntity";
 import createEntity from "@salesforce/apex/AXF_CLS_CTRL_FinancialEntity.createEntity";
+import assignAccess from "@salesforce/apex/AXF_CLS_CTRL_FinancialEntity.assignAccess";
+import removeAccess from "@salesforce/apex/AXF_CLS_CTRL_FinancialEntity.removeAccess";
 
 export default class AxfFinancialEntities extends LightningElement {
   state = "LOADING";
@@ -12,23 +14,28 @@ export default class AxfFinancialEntities extends LightningElement {
   saving = false;
   creating = false;
   createDraft = { kind: "PERSON", legalName: "", displayName: "" };
+  accessDraft = { targetUserId: "", role: "VIEWER" };
+  generation = 0;
 
   connectedCallback() {
     this.load();
   }
 
   async load() {
+    const generation = ++this.generation;
     this.state = "LOADING";
     this.entities = [];
     this.selected = undefined;
     try {
       const response = await listEntities();
+      if (generation !== this.generation) return;
       this.state = response.state;
       this.entities = response.state === "READY_DATA" ? response.entities : [];
       if (response.state === "ERROR_TERMINAL")
         this.errorMessage =
           "Ocorreu um erro terminal ao carregar as entidades.";
     } catch {
+      if (generation !== this.generation) return;
       this.state = "ERROR_RECOVERABLE";
       this.errorMessage =
         "Não foi possível carregar as entidades. Tente novamente.";
@@ -36,14 +43,17 @@ export default class AxfFinancialEntities extends LightningElement {
   }
 
   async handleSelect(event) {
+    const generation = ++this.generation;
     const entityRef = event.currentTarget.dataset.ref;
     this.state = "LOADING";
     this.selected = undefined;
     try {
       const response = await readEntity({ entityRef });
+      if (generation !== this.generation) return;
       this.state = response.state;
       if (response.state === "READY_DATA") this.selected = response.detail;
     } catch {
+      if (generation !== this.generation) return;
       this.state = "FORBIDDEN";
     }
   }
@@ -66,6 +76,63 @@ export default class AxfFinancialEntities extends LightningElement {
     };
   }
 
+  handleAccessChange(event) {
+    this.accessDraft = {
+      ...this.accessDraft,
+      [event.target.name]: event.detail.value
+    };
+  }
+
+  async handleAssignAccess() {
+    await this.changeAccess(assignAccess, true);
+  }
+
+  async handleRemoveAccess() {
+    await this.changeAccess(removeAccess, false);
+  }
+
+  async changeAccess(action, assigning) {
+    const generation = ++this.generation;
+    this.saving = true;
+    try {
+      const result = await action({
+        request: {
+          householdId: this.householdId,
+          entityId: this.selected.entityId,
+          targetUserId: this.accessDraft.targetUserId,
+          role: assigning ? this.accessDraft.role : null,
+          expectedVersion:
+            this.selected.householdVersion || this.householdVersion,
+          idempotencyKey: this.uuid(),
+          correlationId: this.uuid()
+        }
+      });
+      if (generation !== this.generation) return;
+      this.errorMessage =
+        !assigning && result.hasRemainingAccess
+          ? "A fonte de acesso da Axon foi removida, mas outra fonte ainda permite acesso."
+          : undefined;
+      this.accessDraft = { targetUserId: "", role: "VIEWER" };
+      this.saving = false;
+      await this.load();
+    } catch (error) {
+      if (generation !== this.generation) return;
+      this.applyMutationError(error);
+    } finally {
+      if (generation === this.generation) this.saving = false;
+    }
+  }
+
+  @api
+  accessRemoved() {
+    ++this.generation;
+    this.entities = [];
+    this.selected = undefined;
+    this.creating = false;
+    this.accessDraft = { targetUserId: "", role: "VIEWER" };
+    this.state = "FORBIDDEN";
+  }
+
   startCreate() {
     this.createDraft = { kind: "PERSON", legalName: "", displayName: "" };
     this.creating = true;
@@ -79,6 +146,7 @@ export default class AxfFinancialEntities extends LightningElement {
 
   async handleCreate(event) {
     event.preventDefault();
+    const generation = ++this.generation;
     this.saving = true;
     try {
       const uuid = this.uuid();
@@ -91,19 +159,22 @@ export default class AxfFinancialEntities extends LightningElement {
           correlationId: this.uuid()
         }
       });
+      if (generation !== this.generation) return;
       this.creating = false;
       await this.load();
     } catch (error) {
+      if (generation !== this.generation) return;
       this.applyMutationError(error);
       this.creating = false;
       this.createDraft = { kind: "PERSON", legalName: "", displayName: "" };
     } finally {
-      this.saving = false;
+      if (generation === this.generation) this.saving = false;
     }
   }
 
   async handleSave(event) {
     event.preventDefault();
+    const generation = ++this.generation;
     this.saving = true;
     this.errorMessage = undefined;
     try {
@@ -119,6 +190,7 @@ export default class AxfFinancialEntities extends LightningElement {
           correlationId: this.uuid()
         }
       });
+      if (generation !== this.generation) return;
       this.selected = { ...this.selected, ...result };
       this.entities = this.entities.map((item) => {
         return item.entityRef === result.entityRef
@@ -128,9 +200,10 @@ export default class AxfFinancialEntities extends LightningElement {
       this.state = "READY_DATA";
       this.template.querySelector(".detail")?.focus();
     } catch (error) {
+      if (generation !== this.generation) return;
       this.applyMutationError(error);
     } finally {
-      this.saving = false;
+      if (generation === this.generation) this.saving = false;
     }
   }
 
@@ -198,6 +271,12 @@ export default class AxfFinancialEntities extends LightningElement {
       { label: "Organização", value: "ORGANIZATION" }
     ];
   }
+  get roleOptions() {
+    return [
+      { label: "Pode visualizar", value: "VIEWER" },
+      { label: "Pode editar", value: "EDITOR" }
+    ];
+  }
   get closedLifecycle() {
     return this.selected?.lifecycle === "CLOSED";
   }
@@ -213,6 +292,10 @@ export default class AxfFinancialEntities extends LightningElement {
   get cannotCreate() {
     return !this.householdId;
   }
+  get canManageAccess() {
+    return this.selected?.canManageAccess === true;
+  }
 
   @api householdId;
+  @api householdVersion;
 }

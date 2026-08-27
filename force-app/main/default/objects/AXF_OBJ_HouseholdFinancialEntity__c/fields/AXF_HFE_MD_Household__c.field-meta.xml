@@ -1,9 +1,0 @@
-<?xml version="1.0" encoding="UTF-8" ?>
-<CustomField xmlns="http://soap.sforce.com/2006/04/metadata"><fullName
-  >AXF_HFE_MD_Household__c</fullName><label>Household</label><type
-  >MasterDetail</type><referenceTo
-  >AXF_OBJ_Household__c</referenceTo><relationshipLabel
-  >Household Financial Entities</relationshipLabel><relationshipName
-  >HouseholdFinancialEntities</relationshipName><reparentableMasterDetail
-  >false</reparentableMasterDetail><writeRequiresMasterRead
-  >false</writeRequiresMasterRead></CustomField>

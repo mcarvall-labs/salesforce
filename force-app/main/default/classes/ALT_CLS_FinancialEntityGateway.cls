@@ -3,11 +3,8 @@ public without sharing class ALT_CLS_FinancialEntityGateway {
   private static Map<String, String> testPayloads = new Map<String, String>();
   @TestVisible
   private static Map<String, String> testOutcomes = new Map<String, String>();
-  private static final String PURPOSE = 'HOUSEHOLD_OPERATIONS';
-  private static final String POLICY = 'AXF-AUTHORIZATION@1.0.0';
 
   public Result createEntity(Command command) {
-    User servicePrincipal = new ALT_CLS_ServicePrincipalResolver().resolve();
     AXF_OBJ_Household__c household = [
       SELECT Id, AXF_HH_EXI_HouseholdKey__c
       FROM AXF_OBJ_Household__c
@@ -25,7 +22,7 @@ public without sharing class ALT_CLS_FinancialEntityGateway {
       return replay.result;
 
     AXF_OBJ_FinancialEntity__c entity = new AXF_OBJ_FinancialEntity__c(
-      OwnerId = servicePrincipal.Id,
+      OwnerId = UserInfo.getUserId(),
       Name = command.displayName,
       AXF_FIE_LKP_Household__c = household.Id,
       AXF_FIE_EXI_EntityKey__c = command.entityKey,
@@ -41,65 +38,9 @@ public without sharing class ALT_CLS_FinancialEntityGateway {
       AXF_FIE_NUM_Version__c = 1
     );
     Database.insert(entity, AccessLevel.SYSTEM_MODE);
-    Database.insert(
-      new AXF_OBJ_HouseholdFinancialEntity__c(
-        AXF_HFE_MD_Household__c = household.Id,
-        AXF_HFE_LKP_FinancialEntity__c = entity.Id,
-        AXF_HFE_EXI_MembershipKey__c = ALT_CLS_AxfCanonical.scopedHash(
-          new List<String>{
-            'hfe-v1',
-            household.AXF_HH_EXI_HouseholdKey__c,
-            command.entityKey
-          }
-        ),
-        AXF_HFE_PKL_Role__c = 'PARTICIPANT',
-        AXF_HFE_PKL_Status__c = 'ACTIVE',
-        AXF_HFE_DT_ValidFrom__c = System.now(),
-        AXF_HFE_NUM_Version__c = 1
-      ),
-      AccessLevel.SYSTEM_MODE
-    );
-    String federationId = currentFederationId();
-    Database.insert(
-      new AXF_OBJ_EntityAccessGrant__c(
-        AXF_EAG_LKP_Household__c = household.Id,
-        AXF_EAG_LKP_FinancialEntity__c = entity.Id,
-        AXF_EAG_LKP_User__c = UserInfo.getUserId(),
-        AXF_EAG_EXI_GrantKey__c = ALT_CLS_AxfCanonical.scopedHash(
-          new List<String>{
-            'grant-v1',
-            household.AXF_HH_EXI_HouseholdKey__c,
-            'ENTITY',
-            command.entityKey,
-            federationId,
-            PURPOSE,
-            '1'
-          }
-        ),
-        AXF_EAG_PKL_Role__c = 'OWNER',
-        AXF_EAG_PKL_ScopeType__c = 'ENTITY',
-        AXF_EAG_TXT_OperationSet__c = 'AXF_ReadFinancialEntity,AXF_UpdateFinancialEntity',
-        AXF_EAG_TXT_Purpose__c = PURPOSE,
-        AXF_EAG_TXT_FieldPolicyVersion__c = POLICY,
-        AXF_EAG_PKL_Status__c = 'ACTIVE',
-        AXF_EAG_DT_ValidFrom__c = System.now(),
-        AXF_EAG_NUM_GrantRevision__c = 1,
-        AXF_EAG_NUM_Version__c = 1
-      ),
-      AccessLevel.SYSTEM_MODE
-    );
-    Database.insert(
-      new AXF_OBJ_FinancialEntity__Share(
-        ParentId = entity.Id,
-        UserOrGroupId = UserInfo.getUserId(),
-        AccessLevel = 'Edit',
-        RowCause = Schema.AXF_OBJ_FinancialEntity__Share.RowCause.AXF_EntityGrant__c
-      ),
-      AccessLevel.SYSTEM_MODE
-    );
     Result result = result(entity);
     persistEvidence(
-      servicePrincipal.Id,
+      UserInfo.getUserId(),
       household.Id,
       entity.Id,
       'household.financial-entity.create.v1',
@@ -112,7 +53,6 @@ public without sharing class ALT_CLS_FinancialEntityGateway {
   }
 
   public Result updateEntity(Command command) {
-    User servicePrincipal = new ALT_CLS_ServicePrincipalResolver().resolve();
     AXF_OBJ_FinancialEntity__c entity = [
       SELECT
         Id,
@@ -159,7 +99,7 @@ public without sharing class ALT_CLS_FinancialEntityGateway {
     Database.update(entity, AccessLevel.SYSTEM_MODE);
     Result result = result(entity);
     persistEvidence(
-      servicePrincipal.Id,
+      UserInfo.getUserId(),
       entity.AXF_FIE_LKP_Household__c,
       entity.Id,
       'household.financial-entity.update.v1',
@@ -261,13 +201,11 @@ public without sharing class ALT_CLS_FinancialEntityGateway {
       AXF_AUE_LKP_FinancialEntity__c = entityId,
       AXF_AUE_LKP_ActorUser__c = UserInfo.getUserId(),
       AXF_AUE_TXT_ActorPrincipalKey__c = actor,
-      AXF_AUE_TXT_EffectivePrincipalKey__c = String.valueOf(ownerId),
+      AXF_AUE_TXT_EffectivePrincipalKey__c = actor,
       AXF_AUE_TXT_OperationId__c = operationId,
       AXF_AUE_TXT_AggregateType__c = 'FinancialEntity',
       AXF_AUE_TXT_AggregateKeyHash__c = aggregateHash,
       AXF_AUE_TXT_ReasonCode__c = 'NOT_REQUIRED',
-      AXF_AUE_TXT_PolicyVersion__c = POLICY,
-      AXF_AUE_TXT_Purpose__c = PURPOSE,
       AXF_AUE_TXT_BeforeHash__c = beforeHash,
       AXF_AUE_TXT_AfterHash__c = afterHash,
       AXF_AUE_TXT_CommandScopeHash__c = scopeKey,

@@ -1,13 +1,8 @@
 public with sharing class ALT_CLS_FinancialEntityAuthorization {
   @TestVisible
   private static Boolean allowCustomPermissionsInTests = false;
-  public static final String POLICY_VERSION = 'AXF-AUTHORIZATION@1.0.0';
-  public static final String PURPOSE = 'HOUSEHOLD_OPERATIONS';
-
   public Decision authorize(String capability, Id householdId, Id entityId) {
     Decision decision = new Decision();
-    decision.policyVersion = POLICY_VERSION;
-    decision.purpose = PURPOSE;
     if (
       String.isBlank(capability) ||
       householdId == null ||
@@ -15,83 +10,47 @@ public with sharing class ALT_CLS_FinancialEntityAuthorization {
     )
       return decision;
 
-    Datetime nowValue = System.now();
-    List<AXF_OBJ_HouseholdFinancialEntity__c> memberships = [
-      SELECT Id, AXF_HFE_LKP_FinancialEntity__c
-      FROM AXF_OBJ_HouseholdFinancialEntity__c
-      WHERE
-        AXF_HFE_MD_Household__c = :householdId
-        AND AXF_HFE_PKL_Status__c = 'ACTIVE'
-        AND AXF_HFE_DT_ValidFrom__c <= :nowValue
-        AND (AXF_HFE_DT_ValidTo__c = NULL
-        OR AXF_HFE_DT_ValidTo__c > :nowValue)
+    List<AXF_OBJ_Household__c> households = [
+      SELECT Id, OwnerId
+      FROM AXF_OBJ_Household__c
+      WHERE Id = :householdId
       WITH USER_MODE
+      LIMIT 1
     ];
-    if (memberships.isEmpty())
+    if (households.isEmpty())
       return decision;
-    if (entityId != null) {
-      Boolean entityMembershipActive = false;
-      for (AXF_OBJ_HouseholdFinancialEntity__c membership : memberships)
-        if (membership.AXF_HFE_LKP_FinancialEntity__c == entityId)
-          entityMembershipActive = true;
-      if (!entityMembershipActive)
-        return decision;
-    }
-
-    Id currentUserId = UserInfo.getUserId();
-    List<AXF_OBJ_EntityAccessGrant__c> grants;
-    if (entityId == null) {
-      grants = [
-        SELECT
-          Id,
-          AXF_EAG_NUM_GrantRevision__c,
-          AXF_EAG_TXT_OperationSet__c,
-          AXF_EAG_TXT_FieldPolicyVersion__c
-        FROM AXF_OBJ_EntityAccessGrant__c
-        WHERE
-          AXF_EAG_LKP_Household__c = :householdId
-          AND AXF_EAG_LKP_User__c = :currentUserId
-          AND AXF_EAG_PKL_Status__c = 'ACTIVE'
-          AND AXF_EAG_TXT_Purpose__c = :PURPOSE
-          AND AXF_EAG_DT_ValidFrom__c <= :nowValue
-          AND (AXF_EAG_DT_ValidTo__c = NULL
-          OR AXF_EAG_DT_ValidTo__c > :nowValue)
-          AND AXF_EAG_PKL_ScopeType__c = 'HOUSEHOLD'
-        WITH USER_MODE
-        LIMIT 1
-      ];
-    } else {
-      grants = [
-        SELECT
-          Id,
-          AXF_EAG_NUM_GrantRevision__c,
-          AXF_EAG_TXT_OperationSet__c,
-          AXF_EAG_TXT_FieldPolicyVersion__c
-        FROM AXF_OBJ_EntityAccessGrant__c
-        WHERE
-          AXF_EAG_LKP_Household__c = :householdId
-          AND AXF_EAG_LKP_User__c = :currentUserId
-          AND AXF_EAG_PKL_Status__c = 'ACTIVE'
-          AND AXF_EAG_TXT_Purpose__c = :PURPOSE
-          AND AXF_EAG_DT_ValidFrom__c <= :nowValue
-          AND (AXF_EAG_DT_ValidTo__c = NULL
-          OR AXF_EAG_DT_ValidTo__c > :nowValue)
-          AND AXF_EAG_PKL_ScopeType__c = 'ENTITY'
-          AND AXF_EAG_LKP_FinancialEntity__c = :entityId
-        WITH USER_MODE
-        LIMIT 1
-      ];
-    }
     if (
-      grants.isEmpty() ||
-      !containsCapability(grants[0].AXF_EAG_TXT_OperationSet__c, capability)
+      entityId != null &&
+      [
+        SELECT COUNT()
+        FROM AXF_OBJ_FinancialEntity__c
+        WHERE Id = :entityId AND AXF_FIE_LKP_Household__c = :householdId
+        WITH USER_MODE
+      ] == 0
+    )
+      return decision;
+    Id accessId = entityId == null ? householdId : entityId;
+    List<UserRecordAccess> accessRows = [
+      SELECT RecordId, HasReadAccess, HasEditAccess
+      FROM UserRecordAccess
+      WHERE UserId = :UserInfo.getUserId() AND RecordId = :accessId
+    ];
+    if (accessRows.isEmpty() || !accessRows[0].HasReadAccess)
+      return decision;
+    if (
+      capability == 'AXF_UpdateFinancialEntity' &&
+      (entityId == null || !accessRows[0].HasEditAccess)
+    )
+      return decision;
+    if (
+      capability == 'AXF_CreateFinancialEntity' &&
+      households[0].OwnerId != UserInfo.getUserId() &&
+      !accessRows[0].HasEditAccess
     )
       return decision;
     decision.allowed = true;
-    decision.grantVersion = grants[0].AXF_EAG_NUM_GrantRevision__c;
     decision.allowedActions.add(capability);
-    if (grants[0].AXF_EAG_TXT_FieldPolicyVersion__c == POLICY_VERSION)
-      decision.allowedFields.add('legalName');
+    decision.allowedFields.add('legalName');
     return decision;
   }
 
@@ -100,22 +59,9 @@ public with sharing class ALT_CLS_FinancialEntityAuthorization {
       FeatureManagement.checkPermission(capability);
   }
 
-  private static Boolean containsCapability(
-    String operationSet,
-    String capability
-  ) {
-    return (',' +
-      String.valueOf(operationSet) +
-      ',')
-      .contains(',' + capability + ',');
-  }
-
   public class Decision {
     public Boolean allowed = false;
     public Set<String> allowedActions = new Set<String>();
     public Set<String> allowedFields = new Set<String>();
-    public Decimal grantVersion;
-    public String policyVersion;
-    public String purpose;
   }
 }

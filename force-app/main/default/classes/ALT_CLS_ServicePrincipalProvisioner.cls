@@ -181,24 +181,6 @@ public without sharing class ALT_CLS_ServicePrincipalProvisioner {
     if (authority.OwnerId != oldPrincipal.Id)
       throw new ProvisioningException('PROVISIONING_DRIFT');
     List<SObject> roots = new List<SObject>();
-    for (AXF_OBJ_Household__c r : [
-      SELECT Id, OwnerId
-      FROM AXF_OBJ_Household__c
-      WHERE OwnerId = :oldPrincipal.Id
-      FOR UPDATE
-    ]) {
-      r.OwnerId = nextPrincipal.Id;
-      roots.add(r);
-    }
-    for (AXF_OBJ_FinancialEntity__c r : [
-      SELECT Id, OwnerId
-      FROM AXF_OBJ_FinancialEntity__c
-      WHERE OwnerId = :oldPrincipal.Id
-      FOR UPDATE
-    ]) {
-      r.OwnerId = nextPrincipal.Id;
-      roots.add(r);
-    }
     for (AXF_OBJ_CommandExecution__c r : [
       SELECT Id, OwnerId
       FROM AXF_OBJ_CommandExecution__c
@@ -211,33 +193,6 @@ public without sharing class ALT_CLS_ServicePrincipalProvisioner {
     for (AXF_OBJ_AuditEvent__c r : [
       SELECT Id, OwnerId
       FROM AXF_OBJ_AuditEvent__c
-      WHERE OwnerId = :oldPrincipal.Id
-      FOR UPDATE
-    ]) {
-      r.OwnerId = nextPrincipal.Id;
-      roots.add(r);
-    }
-    for (AXF_OBJ_EntityAccessGrant__c r : [
-      SELECT Id, OwnerId
-      FROM AXF_OBJ_EntityAccessGrant__c
-      WHERE OwnerId = :oldPrincipal.Id
-      FOR UPDATE
-    ]) {
-      r.OwnerId = nextPrincipal.Id;
-      roots.add(r);
-    }
-    for (AXF_OBJ_AuthorizationInvalidation__c r : [
-      SELECT Id, OwnerId
-      FROM AXF_OBJ_AuthorizationInvalidation__c
-      WHERE OwnerId = :oldPrincipal.Id
-      FOR UPDATE
-    ]) {
-      r.OwnerId = nextPrincipal.Id;
-      roots.add(r);
-    }
-    for (AXF_OBJ_SharingProjectorRun__c r : [
-      SELECT Id, OwnerId
-      FROM AXF_OBJ_SharingProjectorRun__c
       WHERE OwnerId = :oldPrincipal.Id
       FOR UPDATE
     ]) {
@@ -311,28 +266,6 @@ public without sharing class ALT_CLS_ServicePrincipalProvisioner {
           AXF_BSA_EXI_AuthorityKey__c = :AUTHORITY_KEY
           AND OwnerId = :ownerId
       ] == 1 &&
-      [SELECT COUNT() FROM AXF_OBJ_Household__c WHERE OwnerId = :oldOwnerId] ==
-      0 &&
-      [
-        SELECT COUNT()
-        FROM AXF_OBJ_FinancialEntity__c
-        WHERE OwnerId = :oldOwnerId
-      ] == 0 &&
-      [
-        SELECT COUNT()
-        FROM AXF_OBJ_EntityAccessGrant__c
-        WHERE OwnerId = :oldOwnerId
-      ] == 0 &&
-      [
-        SELECT COUNT()
-        FROM AXF_OBJ_AuthorizationInvalidation__c
-        WHERE OwnerId = :oldOwnerId
-      ] == 0 &&
-      [
-        SELECT COUNT()
-        FROM AXF_OBJ_SharingProjectorRun__c
-        WHERE OwnerId = :oldOwnerId
-      ] == 0 &&
       [
         SELECT COUNT()
         FROM AXF_OBJ_CommandExecution__c

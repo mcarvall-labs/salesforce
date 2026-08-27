@@ -35,7 +35,7 @@ Never validate an issue in integrated `develop` and then promote its original is
 8. Perform integrated functional validation in DEV.
 9. Promote all approved changes through `develop → main`, or create `release/*` from `main` and apply only approved squash commits.
 10. Manually run `Deploy Salesforce Production` with the full SHA currently deployed to production and the approved full SHA from `main`.
-11. CI validates the exact delta in `AxonFinance` with local Apex tests and quick-deploys that same validated package.
+11. CI validates the exact delta in `AxonFinance` with only the Apex tests related to changed classes/triggers, then quick-deploys that same validated package.
 
 If an issue fails in DEV, revert its merge commit in `develop` and let CI deploy the resulting delta. Never restore DEV by deploying an older issue branch.
 
@@ -63,6 +63,8 @@ Configure `PROD` with a required reviewer and restrict it to `main`. Production 
 Automatic workflows include only added, copied, modified, and renamed paths under `force-app`. LWC and Aura changes promote the complete bundle. Companion metadata files are collapsed into their source component when possible.
 
 Deleted metadata is intentionally excluded. Deletion requires a reviewed destructive-change package, impact analysis, rollback planning, and explicit authorization.
+
+When the delta contains Apex, CI uses `RunSpecifiedTests` and discovers related `*Test.cls` classes from the changed production symbols. A changed test class is also included directly. Apex without a related test fails before validation. Metadata-only deltas use `NoTestRun`. CI must not use `RunLocalTests` for ordinary delta validation because that couples an issue to unrelated classes already present in the org.
 
 Production requires two immutable SHAs:
 

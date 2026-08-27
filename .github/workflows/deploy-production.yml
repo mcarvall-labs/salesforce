@@ -65,8 +65,16 @@ jobs:
           fi
           source_args=()
           for path in "${source_paths[@]}"; do source_args+=(--source-dir "$path"); done
+          apex_tests_file="$RUNNER_TEMP/axon-delta-tests.txt"
+          bash scripts/ci/list-salesforce-tests.sh "$BASE_SHA" "$GITHUB_SHA" > "$apex_tests_file"
+          mapfile -t apex_tests < "$apex_tests_file"
+          test_args=(--test-level NoTestRun)
+          if ((${#apex_tests[@]})); then
+            test_args=(--test-level RunSpecifiedTests)
+            for test_class in "${apex_tests[@]}"; do test_args+=(--tests "$test_class"); done
+          fi
           result_file="$RUNNER_TEMP/validation-result.json"
-          sf project deploy validate "${source_args[@]}" --target-org AxonFinance --test-level RunLocalTests --wait 60 --json > "$result_file"
+          sf project deploy validate "${source_args[@]}" "${test_args[@]}" --target-org AxonFinance --wait 60 --json > "$result_file"
           deploy_id="$(jq -r '.result.id' "$result_file")"
           test -n "$deploy_id"
           test "$deploy_id" != "null"

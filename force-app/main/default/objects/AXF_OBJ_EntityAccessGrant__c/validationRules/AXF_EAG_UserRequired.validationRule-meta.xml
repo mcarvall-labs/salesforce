@@ -1,8 +1,0 @@
-<?xml version="1.0" encoding="UTF-8" ?>
-<ValidationRule xmlns="http://soap.sforce.com/2006/04/metadata">
-  <fullName>AXF_EAG_UserRequired</fullName>
-  <active>true</active>
-  <errorConditionFormula>ISBLANK(AXF_EAG_LKP_User__c)</errorConditionFormula>
-  <errorDisplayField>AXF_EAG_LKP_User__c</errorDisplayField>
-  <errorMessage>User is required for every Entity Access Grant.</errorMessage>
-</ValidationRule>

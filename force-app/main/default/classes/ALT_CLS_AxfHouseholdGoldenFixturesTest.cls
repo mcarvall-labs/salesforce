@@ -54,14 +54,10 @@ private class ALT_CLS_AxfHouseholdGoldenFixturesTest {
     System.assert(Pattern.matches('^[0-9a-f]{64}$', value));
   }
   @IsTest
-  static void gf87MembershipKeyBindsBothScopes() {
-    String a = ALT_CLS_AxfCanonical.scopedHash(
-        new List<String>{ 'hfe-v1', 'HH_PRIMARY_V1', 'entity-a' }
-      ),
-      b = ALT_CLS_AxfCanonical.scopedHash(
-        new List<String>{ 'hfe-v1', 'HH_PRIMARY_V1', 'entity-b' }
-      );
-    System.assertNotEquals(a, b);
+  static void gf87FinancialEntityUsesCanonicalHouseholdLookup() {
+    System.assert(
+      Schema.SObjectType.AXF_OBJ_FinancialEntity__c.fields.AXF_FIE_LKP_Household__c.isCreateable()
+    );
   }
   @IsTest
   static void gf88UpdateOperationHasIndependentScope() {
@@ -126,6 +122,8 @@ private class ALT_CLS_AxfHouseholdGoldenFixturesTest {
   static void gf93DtoContainsOnlyCanonicalFields() {
     Set<String> exposed = new Set<String>{
       'entityRef',
+      'entityId',
+      'householdVersion',
       'displayName',
       'kind',
       'reportingCurrencyIsoCode',
@@ -133,33 +131,29 @@ private class ALT_CLS_AxfHouseholdGoldenFixturesTest {
       'version',
       'allowedActions'
     };
-    System.assertEquals(7, exposed.size());
+    System.assertEquals(9, exposed.size());
     System.assert(!exposed.contains('entityKey'));
     System.assert(!exposed.contains('legalName'));
   }
   @IsTest
-  static void gf94GrantScopesDoNotCollide() {
-    String user = 'user@example.test';
+  static void gf94AccessOperationScopesDoNotCollide() {
+    String user = '005000000000001';
     String h = ALT_CLS_AxfCanonical.scopedHash(
         new List<String>{
-          'grant-v1',
           'HH_PRIMARY_V1',
-          'HOUSEHOLD',
-          'HH_PRIMARY_V1',
+          'ENTITY_A',
           user,
-          'HOUSEHOLD_OPERATIONS',
-          '1'
+          'authorization.entity-access.assign.v1',
+          '00000000-0000-4000-8000-000000000000'
         }
       ),
       e = ALT_CLS_AxfCanonical.scopedHash(
         new List<String>{
-          'grant-v1',
           'HH_PRIMARY_V1',
-          'ENTITY',
-          'entity',
+          'ENTITY_A',
           user,
-          'HOUSEHOLD_OPERATIONS',
-          '1'
+          'authorization.entity-access.remove.v1',
+          '00000000-0000-4000-8000-000000000000'
         }
       );
     System.assertNotEquals(h, e);

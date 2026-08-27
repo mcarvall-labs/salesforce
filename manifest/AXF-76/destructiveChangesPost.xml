@@ -1,0 +1,23 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<Package xmlns="http://soap.sforce.com/2006/04/metadata">
+  <types>
+    <members>ALT_CLS_AuthorizationRevocationService</members>
+    <name>ApexClass</name>
+  </types>
+  <types>
+    <members>AXF_RevokeEntityAccess</members>
+    <name>CustomPermission</name>
+  </types>
+  <types>
+    <members>AXF_OBJ_AuditEvent__c.AXF_AUE_NUM_GrantVersion__c</members>
+    <name>CustomField</name>
+  </types>
+  <types>
+    <members>AXF_OBJ_AuthorizationInvalidation__c</members>
+    <members>AXF_OBJ_EntityAccessGrant__c</members>
+    <members>AXF_OBJ_HouseholdFinancialEntity__c</members>
+    <members>AXF_OBJ_SharingProjectorRun__c</members>
+    <name>CustomObject</name>
+  </types>
+  <version>67.0</version>
+</Package>

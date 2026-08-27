@@ -1,0 +1,33 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<Package xmlns="http://soap.sforce.com/2006/04/metadata">
+  <types>
+    <members>ALT_CLS_AxfHouseholdBehaviorTest</members>
+    <members>ALT_CLS_AxfHouseholdGoldenFixturesTest</members>
+    <members>ALT_CLS_EntityAccessService</members>
+    <members>ALT_CLS_FinancialEntityAuthorization</members>
+    <members>ALT_CLS_FinancialEntityGateway</members>
+    <members>ALT_CLS_FinancialEntitySelector</members>
+    <members>ALT_CLS_HouseholdBootstrapGateway</members>
+    <members>ALT_CLS_ServicePrincipalProvisioner</members>
+    <members>AXF_CLS_CTRL_FinancialEntity</members>
+    <name>ApexClass</name>
+  </types>
+  <types>
+    <members>AXF_AssignEntityAccess</members>
+    <name>CustomPermission</name>
+  </types>
+  <types>
+    <members>AXF_OBJ_FinancialEntity__c</members>
+    <name>CustomObject</name>
+  </types>
+  <types>
+    <members>aXF_LWC_financialEntities</members>
+    <name>LightningComponentBundle</name>
+  </types>
+  <types>
+    <members>AXF_PS_HouseholdOperator</members>
+    <members>AXF_PS_SecurityProjector</members>
+    <name>PermissionSet</name>
+  </types>
+  <version>67.0</version>
+</Package>
