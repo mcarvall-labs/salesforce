@@ -1,9 +1,0 @@
-<?xml version="1.0" encoding="UTF-8"?>
-<ValidationRule xmlns="http://soap.sforce.com/2006/04/metadata">
-    <fullName>AXF_IG_VR_GroupTypeRequired</fullName>
-    <active>true</active>
-    <description>Requires every installment group to have exactly one canonical group type.</description>
-    <errorConditionFormula>ISBLANK(TEXT(AXF_IG_PKL_GroupType__c))</errorConditionFormula>
-    <errorDisplayField>AXF_IG_PKL_GroupType__c</errorDisplayField>
-    <errorMessage>Group Type is required.</errorMessage>
-</ValidationRule>

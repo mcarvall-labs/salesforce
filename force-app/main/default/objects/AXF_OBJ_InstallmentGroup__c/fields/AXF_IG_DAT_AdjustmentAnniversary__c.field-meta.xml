@@ -1,9 +1,0 @@
-<?xml version="1.0" encoding="UTF-8"?>
-<CustomField xmlns="http://soap.sforce.com/2006/04/metadata">
-    <fullName>AXF_IG_DAT_AdjustmentAnniversary__c</fullName>
-    <description>Stores the immutable base date used to derive annual consortium adjustment anniversaries.</description>
-    <label>Adjustment Anniversary</label>
-    <required>false</required>
-    <trackTrending>false</trackTrending>
-    <type>Date</type>
-</CustomField>

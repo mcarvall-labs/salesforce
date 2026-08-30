@@ -1,0 +1,7 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<Role xmlns="http://soap.sforce.com/2006/04/metadata">
+    <name>Axon - Participante</name>
+    <description>Papel Axon subordinado a Axon - Gestor Financeiro. AXF-7.</description>
+    <mayForecastManagerShare>false</mayForecastManagerShare>
+    <parentRole>Axon_Gestor_Financeiro</parentRole>
+</Role>

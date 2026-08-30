@@ -1,0 +1,62 @@
+<template>
+  <lightning-card title={labels.TITLE} icon-name="standard:user_role">
+    <div class="slds-p-horizontal_medium slds-p-bottom_medium">
+      <template lwc:if={isLoading}>
+        <lightning-spinner alternative-text="Carregando" size="small"></lightning-spinner>
+      </template>
+
+      <template lwc:if={isForbidden}>
+        <p class="slds-text-color_weak" role="status">{labels.FORBIDDEN}</p>
+      </template>
+
+      <template lwc:if={isError}>
+        <p class="slds-text-color_error" role="alert">{labels.LOAD_ERROR}</p>
+        <lightning-button
+          label={labels.RETRY}
+          onclick={handleRetry}
+          class="slds-m-top_x-small"
+        ></lightning-button>
+      </template>
+
+      <template lwc:if={isEmpty}>
+        <p class="slds-text-color_weak" role="status">{labels.EMPTY}</p>
+      </template>
+
+      <template lwc:if={isReady}>
+        <lightning-datatable
+          key-field="userId"
+          data={users}
+          columns={columns}
+          max-row-selection="1"
+          onrowselection={handleRowSelection}
+        ></lightning-datatable>
+
+        <div class="slds-grid slds-gutters slds-grid_vertical-align-end slds-m-top_small">
+          <div class="slds-col slds-size_1-of-2">
+            <lightning-combobox
+              label={labels.LEVEL_LABEL}
+              placeholder={labels.SELECT_PLACEHOLDER}
+              options={levelOptions}
+              value={selectedLevel}
+              onchange={handleLevelChange}
+            ></lightning-combobox>
+          </div>
+          <div class="slds-col slds-size_1-of-2">
+            <lightning-button
+              label={labels.APPLY}
+              variant="brand"
+              disabled={applyDisabled}
+              onclick={handleApply}
+            ></lightning-button>
+          </div>
+        </div>
+
+        <template lwc:if={feedback}>
+          <div class="slds-m-top_small" role="status" aria-live="polite">
+            <lightning-formatted-text value={feedback}></lightning-formatted-text>
+          </div>
+        </template>
+      </template>
+    </div>
+  </lightning-card>
+</template>

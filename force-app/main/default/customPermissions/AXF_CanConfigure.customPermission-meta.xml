@@ -1,0 +1,6 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<CustomPermission xmlns="http://soap.sforce.com/2006/04/metadata">
+    <isLicensed>false</isLicensed>
+    <label>AXF - Pode Configurar</label>
+    <description>Autoridade de configuracao do Axon. Concedida por AXF_PSG_GestorFinanceiro. Exigida no servidor para atribuir nivel de acesso, girar credenciais e retomar o onboarding. Ser o primeiro visitante nao basta. AXF-7.</description>
+</CustomPermission>

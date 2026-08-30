@@ -1,0 +1,6 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<Role xmlns="http://soap.sforce.com/2006/04/metadata">
+    <name>Axon - Gestor Financeiro</name>
+    <description>Papel raiz do Axon; acima de Axon - Participante. AXF-7.</description>
+    <mayForecastManagerShare>false</mayForecastManagerShare>
+</Role>
