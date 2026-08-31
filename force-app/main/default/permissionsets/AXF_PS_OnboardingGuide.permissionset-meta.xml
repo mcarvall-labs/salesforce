@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<PermissionSet xmlns="http://soap.sforce.com/2006/04/metadata">
+    <label>Axon - Guia de onboarding</label>
+    <description
+  >Da acesso ao miniwizard ilustrado de configuracao do Pluggy (tab Guia Pluggy). Componente instrucional, sem dados nem Apex. Sera absorvido pelo modelo de onboarding (AXF-90). AXF-89.</description>
+    <hasActivationRequired>false</hasActivationRequired>
+    <tabSettings>
+        <tab>AXF_PluggyGuide</tab>
+        <visibility>Visible</visibility>
+    </tabSettings>
+</PermissionSet>
