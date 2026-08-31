@@ -29,7 +29,13 @@ async function advanceTo(el, predicate) {
   return target;
 }
 
+beforeEach(() => {
+  jest.useFakeTimers();
+});
+
 afterEach(() => {
+  jest.clearAllTimers();
+  jest.useRealTimers();
   while (document.body.firstChild) {
     document.body.removeChild(document.body.firstChild);
   }
@@ -155,5 +161,47 @@ describe("c-aXF_LWC_pluggyGuide", () => {
     expect(link.getAttribute("href")).toMatch(/^https:\/\//);
     expect(link.getAttribute("target")).toBe("_blank");
     expect(link.getAttribute("rel")).toContain("noopener");
+  });
+
+  it("renders a labelled schematic figure with one chip per external control", async () => {
+    const el = build();
+    const target = await advanceTo(el, (s) => s.media);
+    const svg = el.shadowRoot.querySelector("svg.guide__figure");
+    expect(svg).not.toBeNull();
+    expect(svg.getAttribute("role")).toBe("img");
+    expect(svg.getAttribute("aria-label").length).toBeGreaterThan(0);
+
+    const chips = el.shadowRoot.querySelectorAll(
+      "svg.guide__figure .guide__chip"
+    );
+    expect(chips).toHaveLength(STEPS[target].figure.controls.length);
+    // no real screenshot — the illustration is tagged replaceable
+    expect(
+      el.shadowRoot.querySelector(".guide__figure-tag").textContent.length
+    ).toBeGreaterThan(0);
+  });
+
+  it("highlights one chip at a time only while the animation plays", async () => {
+    const el = build();
+    await advanceTo(el, (s) => s.animation);
+
+    expect(el.shadowRoot.querySelector(".guide__chip_active")).toBeNull();
+
+    el.shadowRoot.querySelector(".guide__anim-btn").click();
+    await flush();
+    expect(el.shadowRoot.querySelectorAll(".guide__chip_active")).toHaveLength(
+      1
+    );
+
+    jest.advanceTimersByTime(1400);
+    await flush();
+    expect(el.shadowRoot.querySelectorAll(".guide__chip_active")).toHaveLength(
+      1
+    );
+
+    // pause -> highlight cleared
+    el.shadowRoot.querySelector(".guide__anim-btn").click();
+    await flush();
+    expect(el.shadowRoot.querySelector(".guide__chip_active")).toBeNull();
   });
 });

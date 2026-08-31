@@ -5,7 +5,8 @@ import { STEPS, OFFICIAL_LINKS } from "./steps";
 /**
  * Pluggy setup mini-wizard (AXF-89). Instructional only — no server calls,
  * no persistence, no side effects (AC7). One action per step (AC1), compact
- * layout (AC9), accessible animation with a static/text alternative (AC5).
+ * layout (AC9), accessible schematic figures with a static/text alternative
+ * and an optional non-autoplaying highlight animation (AC5).
  *
  * Events:
  *  - `guidecomplete` — fired on Finish; the parent onboarding wizard (AXF-90)
@@ -13,12 +14,19 @@ import { STEPS, OFFICIAL_LINKS } from "./steps";
  *  - `opensecureform` — fired from the credentials step; the parent routes to
  *    the AXF-11 secure credentials form.
  */
+const ROW_TOP = 48;
+const ROW_GAP = 30;
+const FIGURE_WIDTH = 320;
+const HIGHLIGHT_MS = 1400;
+
 export default class AxfLwcPluggyGuide extends LightningElement {
   chrome = L.chrome;
   index = 0;
   @track helpOpen = false;
   animationPlaying = false;
   reducedMotion = false;
+  activeControl = 0;
+  _timer;
 
   connectedCallback() {
     this.reducedMotion = this.prefersReducedMotion();
@@ -33,6 +41,7 @@ export default class AxfLwcPluggyGuide extends LightningElement {
 
   disconnectedCallback() {
     this.animationPlaying = false;
+    this.stopHighlight();
   }
 
   // ---- step model ----
@@ -83,6 +92,37 @@ export default class AxfLwcPluggyGuide extends LightningElement {
   }
   get actionLabel() {
     return this.content.action;
+  }
+
+  // ---- schematic figure ----
+  get figure() {
+    return this.step.figure || null;
+  }
+  get figureWindow() {
+    return this.figure ? this.figure.window : "";
+  }
+  get isHighlighting() {
+    return this.hasAnimation && this.animationPlaying && !this.reducedMotion;
+  }
+  get figureControls() {
+    if (!this.figure) {
+      return [];
+    }
+    return this.figure.controls.map((label, i) => ({
+      key: i,
+      n: i + 1,
+      label,
+      y: ROW_TOP + i * ROW_GAP,
+      midY: ROW_TOP + i * ROW_GAP + 11,
+      chipClass:
+        this.isHighlighting && i === this.activeControl
+          ? "guide__chip guide__chip_active"
+          : "guide__chip"
+    }));
+  }
+  get figureViewBox() {
+    const rows = this.figure ? this.figure.controls.length : 0;
+    return `0 0 ${FIGURE_WIDTH} ${ROW_TOP + rows * ROW_GAP + 8}`;
   }
 
   // ---- navigation state ----
@@ -140,20 +180,45 @@ export default class AxfLwcPluggyGuide extends LightningElement {
 
   togglePlay() {
     this.animationPlaying = !this.animationPlaying;
+    if (this.animationPlaying) {
+      this.startHighlight();
+    } else {
+      this.stopHighlight();
+    }
   }
 
   replay() {
-    this.animationPlaying = false;
+    this.stopHighlight();
+    this.animationPlaying = true;
+    this.startHighlight();
+  }
+
+  startHighlight() {
+    this.stopHighlight();
+    if (this.reducedMotion || !this.figure) {
+      return;
+    }
+    this.activeControl = 0;
     // eslint-disable-next-line @lwc/lwc/no-async-operation
-    window.requestAnimationFrame(() => {
-      this.animationPlaying = true;
-    });
+    this._timer = setInterval(() => {
+      const count = this.figure ? this.figure.controls.length : 1;
+      this.activeControl = (this.activeControl + 1) % count;
+    }, HIGHLIGHT_MS);
+  }
+
+  stopHighlight() {
+    if (this._timer) {
+      clearInterval(this._timer);
+      this._timer = undefined;
+    }
+    this.activeControl = 0;
   }
 
   goTo(next) {
     this.index = next;
     this.helpOpen = false;
     this.animationPlaying = false; // leaving a step stops its animation (AC9)
+    this.stopHighlight();
     this.focusHeading();
   }
 

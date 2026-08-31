@@ -21,8 +21,8 @@ const PT = {
     closeHelp: "Ocultar ajuda",
     openLink: "Abrir site oficial",
     mediaPlaceholder: "Imagem ilustrativa — será substituída por telas reais",
-    animationPlaceholder:
-      "Demonstração animada — será substituída por captura real",
+    figureTag:
+      "Ilustração esquemática com dados fictícios — substituível por captura real do MeuPluggy / Pluggy.",
     play: "Reproduzir",
     pause: "Pausar",
     replay: "Repetir",
@@ -157,8 +157,8 @@ const EN = {
     closeHelp: "Hide help",
     openLink: "Open official site",
     mediaPlaceholder: "Illustrative image — will be replaced with real screens",
-    animationPlaceholder:
-      "Animated walkthrough — will be replaced with a real capture",
+    figureTag:
+      "Schematic illustration with fictitious data — replaceable with a real MeuPluggy / Pluggy capture.",
     play: "Play",
     pause: "Pause",
     replay: "Replay",

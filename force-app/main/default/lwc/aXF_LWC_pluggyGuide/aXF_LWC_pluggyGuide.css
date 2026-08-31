@@ -96,29 +96,80 @@
   margin: 0;
 }
 
-.guide__media-frame {
-  position: relative;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  gap: 0.5rem;
-  min-height: 7rem;
-  padding: 0.75rem;
+.guide__figure {
+  display: block;
+  width: 100%;
+  max-width: 22rem;
+  height: auto;
+  margin: 0 auto;
   border: 1px dashed var(--slds-g-color-border-base-2, #c9c9c9);
   border-radius: 0.35rem;
   background: var(--slds-g-color-neutral-base-95, #f3f2f2);
+  color: var(--slds-g-color-neutral-base-10, #181818);
 }
 
-.guide__media-tag {
-  font-size: 0.8rem;
+.guide__figure-win {
+  fill: var(--slds-g-color-neutral-base-90, #ecebea);
+  stroke: var(--slds-g-color-border-base-2, #c9c9c9);
+}
+
+.guide__figure-dot {
+  fill: var(--slds-g-color-neutral-base-60, #a0a0a0);
+}
+
+.guide__figure-title {
+  font-size: 11px;
+  fill: var(--slds-g-color-neutral-base-30, #444);
+}
+
+.guide__chip-box {
+  fill: var(--slds-g-color-neutral-base-100, #fff);
+  stroke: var(--slds-g-color-border-base-2, #c9c9c9);
+}
+
+.guide__chip-num {
+  fill: var(--slds-g-color-neutral-base-80, #d8d8d8);
+}
+
+.guide__chip-n {
+  font-size: 9px;
+  font-weight: 700;
+  text-anchor: middle;
+  dominant-baseline: central;
+  fill: var(--slds-g-color-neutral-base-20, #2e2e2e);
+}
+
+.guide__chip-label {
+  font-size: 11px;
+  dominant-baseline: central;
+  fill: var(--slds-g-color-neutral-base-10, #181818);
+}
+
+.guide__chip_active .guide__chip-box {
+  stroke: var(--slds-g-color-brand-base-50, #0b5cab);
+  stroke-width: 2;
+  fill: var(--slds-g-color-brand-base-95, #eaf3fe);
+}
+
+.guide__chip_active .guide__chip-num {
+  fill: var(--slds-g-color-brand-base-50, #0b5cab);
+}
+
+.guide__chip_active .guide__chip-n {
+  fill: #fff;
+}
+
+.guide__figure-tag {
+  margin: 0.3rem 0 0;
+  font-size: 0.75rem;
+  font-style: italic;
   color: var(--slds-g-color-neutral-base-40, #747474);
-  text-align: center;
 }
 
 .guide__anim-controls {
   display: flex;
   gap: 0.5rem;
+  margin-top: 0.4rem;
 }
 
 .guide__anim-btn {
