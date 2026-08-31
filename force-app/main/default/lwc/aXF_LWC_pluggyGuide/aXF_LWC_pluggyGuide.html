@@ -1,0 +1,121 @@
+<template>
+  <div class="guide" role="group" aria-label={chrome.title}>
+    <header class="guide__head">
+      <p class="guide__eyebrow">{chrome.title}</p>
+      <h2 class="guide__title" tabindex="-1" data-step-heading>
+        {content.title}
+      </h2>
+      <div
+        class="guide__progress"
+        role="progressbar"
+        aria-valuemin="1"
+        aria-valuemax={total}
+        aria-valuenow={humanIndex}
+        aria-label={progressLabel}
+      >
+        <span class="guide__progress-bar" style={progressStyle}></span>
+      </div>
+      <p class="guide__step-of">{progressLabel}</p>
+    </header>
+
+    <div class="guide__body">
+      <template for:each={bodyParagraphs} for:item="p">
+        <p key={p.key} class="guide__text">{p.text}</p>
+      </template>
+
+      <template if:true={officialLink}>
+        <a
+          class="guide__link"
+          href={officialLink}
+          target="_blank"
+          rel="noopener noreferrer"
+        >
+          {chrome.openLink}
+          <span class="guide__link-url"> ({officialLink})</span>
+        </a>
+      </template>
+
+      <template if:true={hasAction}>
+        <button type="button" class="guide__action" onclick={handleAction}>
+          {actionLabel}
+        </button>
+      </template>
+
+      <template if:true={hasMedia}>
+        <figure class="guide__media">
+          <div class="guide__media-frame" aria-hidden="true">
+            <template if:true={hasAnimation}>
+              <span class="guide__media-tag"
+                >{chrome.animationPlaceholder}</span
+              >
+              <div class="guide__anim-controls">
+                <button
+                  type="button"
+                  class="guide__anim-btn"
+                  onclick={togglePlay}
+                  aria-pressed={animationPlaying}
+                >
+                  {playPauseLabel}
+                </button>
+                <button type="button" class="guide__anim-btn" onclick={replay}>
+                  {chrome.replay}
+                </button>
+              </div>
+            </template>
+            <template if:false={hasAnimation}>
+              <span class="guide__media-tag">{chrome.mediaPlaceholder}</span>
+            </template>
+          </div>
+          <figcaption class="guide__media-caption">{mediaAlt}</figcaption>
+          <template if:true={hasAnimation}>
+            <p class="guide__note">{chrome.animationStaticNote}</p>
+          </template>
+          <template if:true={showReducedMotionNote}>
+            <p class="guide__note" role="note">{chrome.reducedMotionNote}</p>
+          </template>
+        </figure>
+      </template>
+
+      <template if:true={hasHelp}>
+        <div class="guide__help">
+          <button
+            type="button"
+            class="guide__help-toggle"
+            onclick={toggleHelp}
+            aria-expanded={helpOpen}
+          >
+            {helpToggleLabel}
+          </button>
+          <template if:true={helpOpen}>
+            <ul class="guide__help-list">
+              <template for:each={helpParagraphs} for:item="h">
+                <li key={h.key}>{h.text}</li>
+              </template>
+            </ul>
+          </template>
+        </div>
+      </template>
+    </div>
+
+    <footer class="guide__nav">
+      <button
+        type="button"
+        class="guide__nav-btn"
+        data-nav="back"
+        onclick={handleBack}
+        disabled={isFirst}
+      >
+        {chrome.back}
+      </button>
+      <button
+        type="button"
+        class="guide__nav-btn guide__nav-btn_primary"
+        data-nav="next"
+        data-last={isLast}
+        onclick={handleNext}
+      >
+        {nextLabel}
+      </button>
+    </footer>
+  </div>
+</template>
