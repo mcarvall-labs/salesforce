@@ -95,11 +95,22 @@ private class AXF_CLS_HolderAccessTest {
         'Gestor carrega AXF_CanConfigure pelo PSG'
       );
 
-      // Person Account por Gestor exige o RT AXF_Person liberado no profile do
-      // Gestor (passo de instalacao) — o caminho pessoa e coberto por
-      // ALT_CLS_AxonHolderTest (rodando como SysAdmin). Aqui validamos autoridade
-      // de cadastro/edicao com Business Account.
       ALT_CLS_AxonHolder svc = new ALT_CLS_AxonHolder();
+
+      // Cadastro de PESSOA por um Gestor no profile Minimum Access — passa quando
+      // o RT AXF_Person esta atribuido ao Permission Set AXF_PS_GestorFinanceiro
+      // (passo de Setup na UI do PS, AXF-77).
+      ALT_CLS_AxonHolder.SaveResult p = svc.saveHolder(
+        person('Ana', 'Gestora')
+      );
+      System.assertEquals('SUCCEEDED', p.outcome, p.message);
+      System.assertEquals(
+        true,
+        [SELECT IsPersonAccount FROM Account WHERE Id = :p.accountId]
+        .IsPersonAccount,
+        'pessoa = Person Account'
+      );
+
       ALT_CLS_AxonHolder.SaveResult b = svc.saveHolder(
         business('Mercearia AXF')
       );
