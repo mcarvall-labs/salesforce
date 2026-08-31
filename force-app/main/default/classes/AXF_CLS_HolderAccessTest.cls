@@ -15,7 +15,14 @@ private class AXF_CLS_HolderAccessTest {
     String roleDevName,
     String psgDevName
   ) {
-    Profile p = [SELECT Id FROM Profile WHERE Name = 'Standard User' LIMIT 1];
+    // Modelo aprovado (Michel, 31/08): usuarios do Axon ficam no profile padrao
+    // "Minimum Access - Salesforce"; todo o acesso vem pelos PSGs.
+    Profile p = [
+      SELECT Id
+      FROM Profile
+      WHERE Name = 'Minimum Access - Salesforce'
+      LIMIT 1
+    ];
     Id roleId = [
       SELECT Id
       FROM UserRole
