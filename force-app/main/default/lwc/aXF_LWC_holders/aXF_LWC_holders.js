@@ -30,7 +30,11 @@ export default class AxfLwcHolders extends LightningElement {
       label: L.colName,
       fieldName: "name",
       type: "button",
-      typeAttributes: { label: { fieldName: "name" }, variant: "base", name: "open" }
+      typeAttributes: {
+        label: { fieldName: "name" },
+        variant: "base",
+        name: "open"
+      }
     },
     { label: L.colType, fieldName: "typeLabel", type: "text", fixedWidth: 130 },
     { label: L.colOwner, fieldName: "ownerName", type: "text" }
@@ -126,7 +130,7 @@ export default class AxfLwcHolders extends LightningElement {
     this.duplicates = [];
     this.feedback = null;
     this.view = VIEW.FORM;
-    this.focusFirstField();
+    this.moveFocus("[data-form-heading]");
   }
 
   handleRowAction(event) {
@@ -144,7 +148,7 @@ export default class AxfLwcHolders extends LightningElement {
     this.duplicates = [];
     this.feedback = null;
     this.view = VIEW.FORM;
-    this.focusFirstField();
+    this.moveFocus("[data-form-heading]");
   }
 
   // ---- form actions ----
@@ -157,6 +161,7 @@ export default class AxfLwcHolders extends LightningElement {
     this.view = VIEW.LIST;
     this.feedback = null;
     this.duplicates = [];
+    this.moveFocus("[data-search]");
   }
 
   async handleSave() {
@@ -168,8 +173,11 @@ export default class AxfLwcHolders extends LightningElement {
     try {
       const result = await saveHolder({ input: this.form });
       this.applyResult(result);
-    } catch (e) {
-      this.feedback = { variant: "error", text: L.genericError };
+    } catch (error) {
+      this.feedback = {
+        variant: "error",
+        text: (error && error.body && error.body.message) || L.genericError
+      };
     } finally {
       this.saving = false;
     }
@@ -187,6 +195,7 @@ export default class AxfLwcHolders extends LightningElement {
         this.view = VIEW.LIST;
         this.duplicates = [];
         refreshApex(this._wired);
+        this.moveFocus("[data-feedback]");
         break;
       case "DUPLICATE_WARNING":
         this.duplicates = (result.possibleDuplicates || []).map((d) => ({
@@ -194,25 +203,32 @@ export default class AxfLwcHolders extends LightningElement {
           typeLabel: d.type === "PERSON" ? L.typePerson : L.typeBusiness
         }));
         this.feedback = { variant: "warning", text: L.dupBody };
+        this.moveFocus("[data-feedback]");
         break;
       case "CONFLICT":
         this.feedback = { variant: "error", text: L.conflict };
+        this.moveFocus("[data-feedback]");
         break;
       case "FORBIDDEN":
         this.feedback = { variant: "error", text: L.forbidden };
+        this.moveFocus("[data-feedback]");
         break;
       case "NOT_FOUND":
       case "INVALID":
       case "FAILED":
       default:
-        this.feedback = { variant: "error", text: result.message || L.genericError };
+        this.feedback = {
+          variant: "error",
+          text: result.message || L.genericError
+        };
+        this.moveFocus("[data-feedback]");
     }
   }
 
-  focusFirstField() {
+  moveFocus(selector) {
     // eslint-disable-next-line @lwc/lwc/no-async-operation
     window.requestAnimationFrame(() => {
-      const el = this.template.querySelector("[data-autofocus]");
+      const el = this.template.querySelector(selector);
       if (el) {
         el.focus();
       }

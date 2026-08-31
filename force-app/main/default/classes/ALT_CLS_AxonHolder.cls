@@ -136,7 +136,10 @@ public with sharing class ALT_CLS_AxonHolder {
    * by a name fragment. Sharing + CRUD + FLS enforced by USER_MODE.
    */
   public List<HolderView> listHolders(String search) {
-    String pattern = '%' + String.escapeSingleQuotes((search == null ? '' : search.trim())) + '%';
+    String pattern =
+      '%' +
+      String.escapeSingleQuotes((search == null ? '' : search.trim())) +
+      '%';
     List<Account> rows = [
       SELECT
         Id,
@@ -167,7 +170,10 @@ public with sharing class ALT_CLS_AxonHolder {
    * @description Returns a single holder, or null when it is not visible / not a holder.
    */
   public HolderView getHolder(Id accountId) {
-    if (accountId == null || accountId.getSobjectType() != Account.SObjectType) {
+    if (
+      accountId == null ||
+      accountId.getSobjectType() != Account.SObjectType
+    ) {
       return null;
     }
     List<Account> rows = [
@@ -182,7 +188,9 @@ public with sharing class ALT_CLS_AxonHolder {
         LastModifiedDate,
         RecordType.DeveloperName
       FROM Account
-      WHERE Id = :accountId AND RecordType.DeveloperName IN (:RT_PERSON, :RT_BUSINESS)
+      WHERE
+        Id = :accountId
+        AND RecordType.DeveloperName IN (:RT_PERSON, :RT_BUSINESS)
       WITH USER_MODE
       LIMIT 1
     ];
@@ -201,7 +209,9 @@ public with sharing class ALT_CLS_AxonHolder {
       return fail(r, Outcome.INVALID, MSG_FAILED);
     }
 
-    return input.accountId == null ? createHolder(input, r) : updateHolder(input, r);
+    return input.accountId == null
+      ? createHolder(input, r)
+      : updateHolder(input, r);
   }
 
   private SaveResult createHolder(SaveInput input, SaveResult r) {
@@ -235,7 +245,11 @@ public with sharing class ALT_CLS_AxonHolder {
     }
     acc.RecordTypeId = rtId;
 
-    List<HolderView> dups = findDuplicates(type, displayName(type, input), null);
+    List<HolderView> dups = findDuplicates(
+      type,
+      displayName(type, input),
+      null
+    );
     if (!dups.isEmpty() && input.confirmedDespiteDuplicates != true) {
       r.possibleDuplicates = dups;
       return fail(r, Outcome.DUPLICATE_WARNING, MSG_DUPLICATE);
@@ -303,7 +317,11 @@ public with sharing class ALT_CLS_AxonHolder {
   // ---- helpers ----
 
   @TestVisible
-  private List<HolderView> findDuplicates(HolderType type, String candidateName, Id excludeId) {
+  private List<HolderView> findDuplicates(
+    HolderType type,
+    String candidateName,
+    Id excludeId
+  ) {
     String norm = normalize(candidateName);
     if (norm == null) {
       return new List<HolderView>();
@@ -375,7 +393,9 @@ public with sharing class ALT_CLS_AxonHolder {
   }
 
   private static Id recordTypeId(String developerName) {
-    Schema.RecordTypeInfo info = Account.SObjectType.getDescribe(SObjectDescribeOptions.DEFERRED)
+    Schema.RecordTypeInfo info = Account.SObjectType.getDescribe(
+        SObjectDescribeOptions.DEFERRED
+      )
       .getRecordTypeInfosByDeveloperName()
       .get(developerName);
     return info == null ? null : info.getRecordTypeId();
@@ -398,7 +418,11 @@ public with sharing class ALT_CLS_AxonHolder {
     return v;
   }
 
-  private static SaveResult fail(SaveResult r, Outcome outcome, String message) {
+  private static SaveResult fail(
+    SaveResult r,
+    Outcome outcome,
+    String message
+  ) {
     r.outcome = outcome.name();
     r.message = message;
     return r;

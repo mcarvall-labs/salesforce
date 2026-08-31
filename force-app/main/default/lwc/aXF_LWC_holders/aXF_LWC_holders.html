@@ -1,19 +1,24 @@
 <template>
   <lightning-card title={labels.title} icon-name="standard:account">
     <div class="slds-var-p-horizontal_medium slds-var-p-bottom_medium">
-      <p class="slds-text-body_small slds-text-color_weak slds-var-m-bottom_small">
+      <p
+        class="slds-text-body_small slds-text-color_weak slds-var-m-bottom_small"
+      >
         {labels.subtitle}
       </p>
 
       <!-- LIST VIEW -->
       <template if:true={isList}>
-        <div class="slds-grid slds-grid_align-spread slds-grid_vertical-align-end slds-var-m-bottom_small">
+        <div
+          class="slds-grid slds-grid_align-spread slds-grid_vertical-align-end slds-var-m-bottom_small"
+        >
           <lightning-input
             type="search"
             label={labels.search}
             value={search}
             onchange={handleSearch}
             class="slds-size_1-of-2"
+            data-search
           ></lightning-input>
           <template if:true={canEdit}>
             <lightning-button
@@ -26,23 +31,43 @@
         </div>
 
         <template if:true={showSpinner}>
-          <div class="slds-align_absolute-center slds-var-p-around_large" role="status" aria-live="polite">
-            <lightning-spinner alternative-text={labels.loading} size="small"></lightning-spinner>
+          <div
+            class="slds-align_absolute-center slds-var-p-around_large"
+            role="status"
+            aria-live="polite"
+          >
+            <lightning-spinner
+              alternative-text={labels.loading}
+              size="small"
+            ></lightning-spinner>
             <span class="slds-var-m-left_small">{labels.loading}</span>
           </div>
         </template>
 
         <template if:true={showError}>
-          <div class="slds-box slds-theme_shade slds-text-align_center" role="alert">
-            <p class="slds-text-heading_small slds-var-m-bottom_x-small">{labels.errorTitle}</p>
-            <lightning-button label={labels.retry} onclick={handleRetry}></lightning-button>
+          <div
+            class="slds-box slds-theme_shade slds-text-align_center"
+            role="alert"
+          >
+            <p class="slds-text-heading_small slds-var-m-bottom_x-small">
+              {labels.errorTitle}
+            </p>
+            <lightning-button
+              label={labels.retry}
+              onclick={handleRetry}
+            ></lightning-button>
           </div>
         </template>
 
         <template if:true={showEmpty}>
-          <div class="slds-box slds-theme_shade slds-text-align_center" role="status">
+          <div
+            class="slds-box slds-theme_shade slds-text-align_center"
+            role="status"
+          >
             <p class="slds-text-heading_small">{labels.empty}</p>
-            <p class="slds-text-body_small slds-text-color_weak">{labels.emptyHint}</p>
+            <p class="slds-text-body_small slds-text-color_weak">
+              {labels.emptyHint}
+            </p>
           </div>
         </template>
 
@@ -57,13 +82,27 @@
         </template>
 
         <template if:true={feedback}>
-          <p class={feedbackClass} role="status" aria-live="polite">{feedback.text}</p>
+          <p
+            class={feedbackClass}
+            role="status"
+            aria-live="polite"
+            tabindex="-1"
+            data-feedback
+          >
+            {feedback.text}
+          </p>
         </template>
       </template>
 
       <!-- FORM VIEW -->
       <template if:true={isForm}>
-        <h2 class="slds-text-heading_small slds-var-m-bottom_small">{formTitle}</h2>
+        <h3
+          class="slds-text-heading_small slds-var-m-bottom_small"
+          tabindex="-1"
+          data-form-heading
+        >
+          {formTitle}
+        </h3>
 
         <template if:false={editing}>
           <lightning-radio-group
@@ -110,12 +149,21 @@
         </template>
 
         <template if:true={hasDuplicates}>
-          <div class="slds-box slds-box_x-small slds-theme_warning slds-var-m-vertical_small" role="alert">
-            <p class="slds-text-title_caps slds-var-m-bottom_x-small">{labels.dupTitle}</p>
-            <p class="slds-text-body_small slds-var-m-bottom_x-small">{labels.dupBody}</p>
+          <div
+            class="slds-box slds-box_x-small slds-theme_warning slds-var-m-vertical_small"
+            role="alert"
+          >
+            <p class="slds-text-title_caps slds-var-m-bottom_x-small">
+              {labels.dupTitle}
+            </p>
+            <p class="slds-text-body_small slds-var-m-bottom_x-small">
+              {labels.dupBody}
+            </p>
             <ul class="slds-list_dotted">
               <template for:each={duplicates} for:item="d">
-                <li key={d.accountId}>{d.name} — {d.typeLabel} · {d.ownerName}</li>
+                <li key={d.accountId}>
+                  {d.name} — {d.typeLabel} · {d.ownerName}
+                </li>
               </template>
             </ul>
             <lightning-button
@@ -128,7 +176,15 @@
         </template>
 
         <template if:true={feedback}>
-          <p class={feedbackClass} role="status" aria-live="assertive">{feedback.text}</p>
+          <p
+            class={feedbackClass}
+            role="alert"
+            aria-live="assertive"
+            tabindex="-1"
+            data-feedback
+          >
+            {feedback.text}
+          </p>
         </template>
 
         <div class="slds-var-m-top_medium">

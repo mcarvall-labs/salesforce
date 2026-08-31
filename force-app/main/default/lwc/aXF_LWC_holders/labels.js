@@ -7,13 +7,16 @@ import LANG from "@salesforce/i18n/lang";
  */
 const PT = {
   title: "Titulares",
-  subtitle: "Pessoas e empresas titulares. Cadastrar aqui não cria usuário, conta ou vínculo.",
+  subtitle:
+    "Pessoas e empresas titulares. Cadastrar aqui não cria usuário, conta ou vínculo.",
   loading: "Carregando titulares…",
   empty: "Nenhum titular cadastrado ainda.",
-  emptyHint: "O primeiro titular pode ser cadastrado sem banco conectado ou onboarding.",
+  emptyHint:
+    "O primeiro titular pode ser cadastrado sem banco conectado ou onboarding.",
   errorTitle: "Não foi possível carregar",
   retry: "Tentar novamente",
-  forbidden: "Você pode consultar titulares, mas não tem autorização para cadastrar ou editar.",
+  forbidden:
+    "Você pode consultar titulares, mas não tem autorização para cadastrar ou editar.",
   newHolder: "Novo titular",
   search: "Buscar por nome",
   colName: "Nome",
@@ -43,10 +46,12 @@ const PT = {
 
 const EN = {
   title: "Holders",
-  subtitle: "Person and business holders. Registering here creates no user, account or link.",
+  subtitle:
+    "Person and business holders. Registering here creates no user, account or link.",
   loading: "Loading holders…",
   empty: "No holders registered yet.",
-  emptyHint: "The first holder can be registered with no connected bank or onboarding.",
+  emptyHint:
+    "The first holder can be registered with no connected bank or onboarding.",
   errorTitle: "Could not load",
   retry: "Try again",
   forbidden: "You can view holders but are not authorized to register or edit.",
@@ -68,12 +73,18 @@ const EN = {
   editTitle: "Edit holder",
   createTitle: "Register holder",
   dupTitle: "Possible duplicate",
-  dupBody: "A holder with this name already exists. Equal names do not prove the same person or business.",
+  dupBody:
+    "A holder with this name already exists. Equal names do not prove the same person or business.",
   dupConfirm: "Register anyway",
-  conflict: "This holder changed since you opened the screen. Reload and review before saving.",
+  conflict:
+    "This holder changed since you opened the screen. Reload and review before saving.",
   genericError: "Could not save. Nothing was changed.",
   reload: "Reload"
 };
 
-const L = String(LANG || "").toLowerCase().startsWith("en") ? EN : PT;
+const L = String(LANG || "")
+  .toLowerCase()
+  .startsWith("en")
+  ? EN
+  : PT;
 export default L;
