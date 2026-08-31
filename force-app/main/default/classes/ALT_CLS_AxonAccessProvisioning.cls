@@ -75,7 +75,9 @@ public with sharing class ALT_CLS_AxonAccessProvisioning {
     Tier.PARTICIPANTE => 'Axon_Participante'
   };
 
-  private static final Set<String> ALL_AXON_PSG_NAMES = new Set<String>(PSG_BY_LEVEL.values());
+  private static final Set<String> ALL_AXON_PSG_NAMES = new Set<String>(
+    PSG_BY_LEVEL.values()
+  );
 
   // User license names that cannot carry Axon custom permission sets.
   private static final Set<String> INCOMPATIBLE_LICENSES = new Set<String>{
@@ -147,7 +149,8 @@ public with sharing class ALT_CLS_AxonAccessProvisioning {
     if (!target.IsActive) {
       return fail(r, Outcome.FAILED, MSG_USER_INACTIVE);
     }
-    String licenseName = target.Profile != null && target.Profile.UserLicense != null
+    String licenseName = target.Profile != null &&
+      target.Profile.UserLicense != null
       ? target.Profile.UserLicense.Name
       : null;
     if (licenseName != null && INCOMPATIBLE_LICENSES.contains(licenseName)) {
@@ -163,7 +166,9 @@ public with sharing class ALT_CLS_AxonAccessProvisioning {
       return fail(r, Outcome.PENDING, MSG_GROUP_RECALCULATING);
     }
 
-    Map<Id, PermissionSetAssignment> axonPsgAssignments = currentAxonPsgAssignments(userId);
+    Map<Id, PermissionSetAssignment> axonPsgAssignments = currentAxonPsgAssignments(
+      userId
+    );
     Boolean roleAlready = target.UserRoleId == role.Id;
     Boolean psgAlready = axonPsgAssignments.containsKey(targetPsg.Id);
     Boolean hasOtherAxonPsg = false;
@@ -205,13 +210,20 @@ public with sharing class ALT_CLS_AxonAccessProvisioning {
     for (Tier lvl : PSG_BY_LEVEL.keySet()) {
       levelByPsgName.put(PSG_BY_LEVEL.get(lvl), lvl);
     }
+    // Reading Permission Set Group assignments is a privileged, display/decision-only
+    // concern (the caller authority is already checked upstream). USER_MODE here fails
+    // for a Gestor on the "Minimum Access" base profile, which has no read on the setup
+    // objects — see AXF-7 id 10229. SYSTEM_MODE keeps the read working without widening
+    // any user-facing access.
+    Set<String> axonPsgNames = ALL_AXON_PSG_NAMES;
     for (PermissionSetAssignment psa : [
       SELECT AssigneeId, PermissionSetGroup.DeveloperName
       FROM PermissionSetAssignment
-      WHERE AssigneeId IN :userIds
-      AND PermissionSetGroupId != NULL
-      AND PermissionSetGroup.DeveloperName IN :ALL_AXON_PSG_NAMES
-      WITH USER_MODE
+      WHERE
+        AssigneeId IN :userIds
+        AND PermissionSetGroupId != NULL
+        AND PermissionSetGroup.DeveloperName IN :axonPsgNames
+      WITH SYSTEM_MODE
     ]) {
       Tier lvl = levelByPsgName.get(psa.PermissionSetGroup.DeveloperName);
       if (lvl != null) {
@@ -261,15 +273,22 @@ public with sharing class ALT_CLS_AxonAccessProvisioning {
 
   // ---- helpers ----
 
-  private Map<Id, PermissionSetAssignment> currentAxonPsgAssignments(Id userId) {
+  private Map<Id, PermissionSetAssignment> currentAxonPsgAssignments(
+    Id userId
+  ) {
     Map<Id, PermissionSetAssignment> byPsg = new Map<Id, PermissionSetAssignment>();
+    // Privileged read of the current PSG assignment state, used for idempotency and the
+    // level switch. SYSTEM_MODE for the same reason as currentLevels(): the base profile
+    // has no read on setup objects. Assignment mutation stays in applyPrivileged().
+    Set<String> axonPsgNames = ALL_AXON_PSG_NAMES;
     for (PermissionSetAssignment psa : [
       SELECT Id, PermissionSetGroupId, PermissionSetGroup.DeveloperName
       FROM PermissionSetAssignment
-      WHERE AssigneeId = :userId
-      AND PermissionSetGroupId != NULL
-      AND PermissionSetGroup.DeveloperName IN :ALL_AXON_PSG_NAMES
-      WITH USER_MODE
+      WHERE
+        AssigneeId = :userId
+        AND PermissionSetGroupId != NULL
+        AND PermissionSetGroup.DeveloperName IN :axonPsgNames
+      WITH SYSTEM_MODE
     ]) {
       byPsg.put(psa.PermissionSetGroupId, psa);
     }
