@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="UTF-8" ?>
 <PermissionSet xmlns="http://soap.sforce.com/2006/04/metadata">
     <label>Axon - Gestor Financeiro (componente)</label>
-    <description>Componente do PSG AXF_PSG_GestorFinanceiro. Consultar, cadastrar e editar titulares (Account/Contact); sem Delete; sem ViewAll/ModifyAll. Concede AXF_CanConfigure e o acesso a configuracao de niveis. Perms do dominio vem por US. AXF-7.</description>
+    <description>Componente do PSG AXF_PSG_GestorFinanceiro. Consultar, cadastrar e editar titulares (Account/Contact); sem Delete; sem ViewAll/ModifyAll. Concede AXF_CanConfigure e o acesso a configuracao de niveis. Perms do dominio vem por US. AXF-7 / AXF-80.</description>
     <hasActivationRequired>false</hasActivationRequired>
     <customPermissions>
         <enabled>true</enabled>
@@ -9,6 +9,14 @@
     </customPermissions>
     <classAccesses>
         <apexClass>AXF_CLS_CTRL_AccessLevelConfig</apexClass>
+        <enabled>true</enabled>
+    </classAccesses>
+    <classAccesses>
+        <apexClass>AXF_CLS_CTRL_Holder</apexClass>
+        <enabled>true</enabled>
+    </classAccesses>
+    <classAccesses>
+        <apexClass>ALT_CLS_AxonHolder</apexClass>
         <enabled>true</enabled>
     </classAccesses>
     <objectPermissions>
@@ -31,4 +39,14 @@
         <viewAllFields>false</viewAllFields>
         <viewAllRecords>false</viewAllRecords>
     </objectPermissions>
+    <!-- Account.AXF_Person (Person Account RT) nao e enderecavel pela Metadata API;
+         a visibilidade do RT de pessoa e passo manual de instalacao (AXF-77). -->
+    <recordTypeVisibilities>
+        <recordType>Account.AXF_Business</recordType>
+        <visible>true</visible>
+    </recordTypeVisibilities>
+    <tabSettings>
+        <tab>AXF_Holders</tab>
+        <visibility>Visible</visibility>
+    </tabSettings>
 </PermissionSet>
