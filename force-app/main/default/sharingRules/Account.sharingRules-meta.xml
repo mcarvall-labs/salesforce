@@ -3,7 +3,12 @@
     <sharingOwnerRules>
         <fullName>AXF_Account_GestorParaGestor</fullName>
         <accessLevel>Edit</accessLevel>
-        <description>Registros de Account cujo owner tem o papel Axon - Gestor Financeiro sao compartilhados em Leitura/Edicao com o mesmo papel (sem subordinados). Cobre Gestores pares; a hierarquia cobre os Participantes abaixo. Sem Apex. Exige OWD de Account = Private. AXF-7 / G2.</description>
+        <accountSettings>
+            <caseAccessLevel>None</caseAccessLevel>
+            <contactAccessLevel>Edit</contactAccessLevel>
+            <opportunityAccessLevel>None</opportunityAccessLevel>
+        </accountSettings>
+        <description>Registros de Account cujo owner tem o papel Axon - Gestor Financeiro sao compartilhados em Leitura/Gravacao com o mesmo papel (sem subordinados). AXF-7 / G2.</description>
         <label>AXF Account - Gestor para Gestor</label>
         <sharedTo>
             <role>Axon_Gestor_Financeiro</role>
