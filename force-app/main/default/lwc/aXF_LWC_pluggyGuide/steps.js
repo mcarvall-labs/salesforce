@@ -1,15 +1,16 @@
 /**
  * Structure of the Pluggy setup mini-wizard (AXF-89). Language-neutral:
- * ids, which steps carry media / an animation / an inline action, the official
- * external link, and a schematic `figure` (a fake window title + the ordered
- * external controls the user clicks). All prose lives in labels.js.
+ * ids, the official external link, and — for the five tutorial steps — the base
+ * name of an anonymised MP4 demonstration held in the `AXF_pluggyGuideMedia`
+ * static resource (`<base>.mp4` + `<base>-poster.png`). All prose lives in
+ * labels.js.
  *
- * The figure renders as an inline SVG diagram with fictitious data — NOT a real
- * screenshot. It is marked "ilustração esquemática — substituível por tela real"
- * (D-87); photo-real sanitised captures replace it as a later content task.
- *
- * `figure.controls` entries are external MeuPluggy / Pluggy dashboard button and
- * menu names — kept verbatim, never translated, so they match what the user sees.
+ * The MP4s and posters were produced in the UX design phase from screenshots
+ * supplied by the product owner, anonymised with fictitious data (person "Ana",
+ * accounts DEMO-001…, Item UUID 0000…0002, app badge "Axon Exemplo"). Source:
+ * _bmad-output/planning-artifacts/ux-designs/.../pluggy-tutoriais-v2 and
+ * pluggy-item-id-v2. Photo-real captures can replace them by swapping the
+ * static resource — no code change.
  */
 export const OFFICIAL_LINKS = {
   meupluggy: "https://meupluggy.com.br/",
@@ -17,116 +18,44 @@ export const OFFICIAL_LINKS = {
 };
 
 export const STEPS = [
-  { id: "intro", media: false, animation: false, action: null, link: null },
-  {
-    id: "meupluggyAccount",
-    media: true,
-    animation: false,
-    action: null,
-    link: "meupluggy",
-    figure: {
-      window: "meupluggy.com.br",
-      controls: ["Criar conta", "Entrar"]
-    }
-  },
+  { id: "intro", link: null, action: null, media: null },
+  { id: "meupluggyAccount", link: "meupluggy", action: null, media: null },
   {
     id: "meupluggyConnect",
-    media: true,
-    animation: false,
-    action: null,
     link: "meupluggy",
-    help: true,
-    figure: {
-      window: "MeuPluggy",
-      controls: [
-        "Conexões",
-        "Nova conexão",
-        "Continuar",
-        "Instituição",
-        "Autorizar no banco"
-      ]
-    }
+    action: null,
+    media: "meu-pluggy",
+    help: true
   },
   {
     id: "dashboardApp",
-    media: true,
-    animation: false,
-    action: null,
     link: "dashboard",
-    figure: {
-      window: "dashboard.pluggy.ai",
-      controls: ["Dashboard", "Aplicações", "Criar ou selecionar aplicação"]
-    }
+    action: null,
+    media: "criar-aplicacao"
   },
   {
     id: "dashboardConnect",
-    media: true,
-    animation: false,
-    action: null,
     link: "dashboard",
-    help: true,
-    figure: {
-      window: "Aplicação",
-      controls: [
-        "Iniciar demonstração",
-        "Conectar Conta",
-        "Continuar",
-        "MeuPluggy",
-        "Conectar",
-        "Autorizar a conexão"
-      ]
-    }
+    action: null,
+    media: "aplicacao",
+    help: true
   },
   {
     id: "credentials",
-    media: true,
-    animation: false,
-    action: "openSecureForm",
     link: "dashboard",
-    help: true,
-    figure: {
-      window: "Aplicação",
-      controls: ["Client ID", "Client Secret", "Copiar"]
-    }
+    action: "openSecureForm",
+    media: "credenciais",
+    help: true
   },
   {
     id: "itemId",
-    media: true,
-    animation: true,
-    action: null,
     link: "dashboard",
-    help: true,
-    figure: {
-      window: "dashboard.pluggy.ai",
-      controls: [
-        "Aplicações",
-        "▶ da aplicação",
-        "Selecionar Item",
-        "Menu ⋮",
-        "Copiar Item ID"
-      ]
-    }
-  },
-  {
-    id: "historyPeriod",
-    media: false,
-    animation: false,
     action: null,
-    link: null
+    media: "copiar-item-id",
+    help: true
   },
-  {
-    id: "backgroundImport",
-    media: false,
-    animation: false,
-    action: null,
-    link: null
-  },
-  {
-    id: "limitations",
-    media: false,
-    animation: false,
-    action: null,
-    link: null
-  },
-  { id: "done", media: false, animation: false, action: null, link: null }
+  { id: "historyPeriod", link: null, action: null, media: null },
+  { id: "backgroundImport", link: null, action: null, media: null },
+  { id: "limitations", link: null, action: null, media: null },
+  { id: "done", link: null, action: null, media: null }
 ];

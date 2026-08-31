@@ -20,16 +20,11 @@ const PT = {
     openHelp: "Ver mais ajuda",
     closeHelp: "Ocultar ajuda",
     openLink: "Abrir site oficial",
-    mediaPlaceholder: "Imagem ilustrativa — será substituída por telas reais",
-    figureTag:
-      "Ilustração esquemática com dados fictícios — substituível por captura real do MeuPluggy / Pluggy.",
-    play: "Reproduzir",
-    pause: "Pausar",
-    replay: "Repetir",
-    animationStaticNote:
-      "A animação apenas repete os passos descritos acima. O texto é a versão completa.",
+    mediaFictitious: "Demonstração com dados fictícios, sem som.",
+    mediaStaticNote:
+      "O vídeo repete os passos escritos acima. Use os controles para pausar; a primeira imagem e o texto são a versão completa.",
     reducedMotionNote:
-      "Movimento reduzido está ativo: a animação não inicia sozinha. Use Reproduzir se quiser vê-la."
+      "Movimento reduzido está ativo: o vídeo não inicia sozinho. Use o controle de play para vê-lo."
   },
   steps: {
     intro: {
@@ -156,16 +151,11 @@ const EN = {
     openHelp: "More help",
     closeHelp: "Hide help",
     openLink: "Open official site",
-    mediaPlaceholder: "Illustrative image — will be replaced with real screens",
-    figureTag:
-      "Schematic illustration with fictitious data — replaceable with a real MeuPluggy / Pluggy capture.",
-    play: "Play",
-    pause: "Pause",
-    replay: "Replay",
-    animationStaticNote:
-      "The animation only repeats the steps described above. The text is the full version.",
+    mediaFictitious: "Demonstration with fictitious data, no sound.",
+    mediaStaticNote:
+      "The video repeats the written steps above. Use the controls to pause; the first frame and the text are the full version.",
     reducedMotionNote:
-      "Reduced motion is on: the animation does not start on its own. Use Play to watch it."
+      "Reduced motion is on: the video does not start on its own. Use the play control to watch it."
   },
   steps: {
     intro: {
