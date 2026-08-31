@@ -2,6 +2,20 @@ import { createElement } from "lwc";
 import Guide from "c/aXF_LWC_pluggyGuide";
 import { STEPS } from "../steps";
 
+jest.mock(
+  "@salesforce/resourceUrl/AXF_pluggyGuideMedia",
+  () => ({ default: "/resource/AXF_pluggyGuideMedia" }),
+  { virtual: true }
+);
+
+// jsdom has no media element playback — stub so renderedCallback is safe.
+beforeAll(() => {
+  window.HTMLMediaElement.prototype.play = jest
+    .fn()
+    .mockResolvedValue(undefined);
+  window.HTMLMediaElement.prototype.pause = jest.fn();
+});
+
 function build() {
   const el = createElement("c-a-x-f_-l-w-c_pluggy-guide", { is: Guide });
   document.body.appendChild(el);
@@ -29,16 +43,11 @@ async function advanceTo(el, predicate) {
   return target;
 }
 
-beforeEach(() => {
-  jest.useFakeTimers();
-});
-
 afterEach(() => {
-  jest.clearAllTimers();
-  jest.useRealTimers();
   while (document.body.firstChild) {
     document.body.removeChild(document.body.firstChild);
   }
+  jest.clearAllMocks();
 });
 
 describe("c-aXF_LWC_pluggyGuide", () => {
@@ -117,39 +126,55 @@ describe("c-aXF_LWC_pluggyGuide", () => {
     expect(el.shadowRoot.querySelector(".guide__help-list")).not.toBeNull();
   });
 
-  it("does not autoplay the animation and exposes Play/Replay", async () => {
+  it("renders the tutorial video from the static resource, muted/looping and NOT autoplaying", async () => {
     const el = build();
-    await advanceTo(el, (s) => s.animation);
+    const target = await advanceTo(el, (s) => s.media);
+    const video = el.shadowRoot.querySelector("video.guide__video");
 
-    const controls = [...el.shadowRoot.querySelectorAll(".guide__anim-btn")];
-    expect(controls).toHaveLength(2);
-    expect(controls[0].getAttribute("aria-pressed")).toBe("false");
+    expect(video).not.toBeNull();
+    expect(video.getAttribute("src")).toBe(
+      `/resource/AXF_pluggyGuideMedia/${STEPS[target].media}.mp4`
+    );
+    expect(video.getAttribute("poster")).toBe(
+      `/resource/AXF_pluggyGuideMedia/${STEPS[target].media}-poster.png`
+    );
+    expect(video.getAttribute("aria-label").length).toBeGreaterThan(0);
+    expect(video.hasAttribute("autoplay")).toBe(false);
+    expect(video.hasAttribute("muted")).toBe(true);
+    expect(video.hasAttribute("loop")).toBe(true);
+    expect(video.hasAttribute("controls")).toBe(true);
 
-    controls[0].click();
-    await flush();
-    expect(
-      el.shadowRoot
-        .querySelector(".guide__anim-btn")
-        .getAttribute("aria-pressed")
-    ).toBe("true");
+    // every media step points at a real base name
+    for (const s of STEPS.filter((x) => x.media)) {
+      expect(typeof s.media).toBe("string");
+    }
   });
 
-  it("resets animation playing state when leaving the step", async () => {
+  it("keeps a static + textual alternative next to the video", async () => {
     const el = build();
-    await advanceTo(el, (s) => s.animation);
-    el.shadowRoot.querySelector(".guide__anim-btn").click();
-    await flush();
+    await advanceTo(el, (s) => s.media);
+    expect(
+      el.shadowRoot.querySelector(".guide__media-caption").textContent.trim()
+        .length
+    ).toBeGreaterThan(0);
+    expect(
+      el.shadowRoot.querySelector(".guide__note").textContent.trim().length
+    ).toBeGreaterThan(0);
+    // body paragraphs (the written steps) are still present
+    expect(
+      el.shadowRoot.querySelectorAll(".guide__text").length
+    ).toBeGreaterThan(0);
+  });
 
-    back(el).click();
-    await flush();
+  it("pauses the video when leaving the step", async () => {
+    const el = build();
+    await advanceTo(el, (s) => s.media);
+    const pauseSpy = window.HTMLMediaElement.prototype.pause;
+    pauseSpy.mockClear();
+
     next(el).click();
     await flush();
-
-    expect(
-      el.shadowRoot
-        .querySelector(".guide__anim-btn")
-        .getAttribute("aria-pressed")
-    ).toBe("false");
+    expect(pauseSpy).toHaveBeenCalled();
   });
 
   it("renders official external links that open in a new tab safely", async () => {
@@ -163,45 +188,20 @@ describe("c-aXF_LWC_pluggyGuide", () => {
     expect(link.getAttribute("rel")).toContain("noopener");
   });
 
-  it("renders a labelled schematic figure with one chip per external control", async () => {
-    const el = build();
-    const target = await advanceTo(el, (s) => s.media);
-    const svg = el.shadowRoot.querySelector("svg.guide__figure");
-    expect(svg).not.toBeNull();
-    expect(svg.getAttribute("role")).toBe("img");
-    expect(svg.getAttribute("aria-label").length).toBeGreaterThan(0);
-
-    const chips = el.shadowRoot.querySelectorAll(
-      "svg.guide__figure .guide__chip"
-    );
-    expect(chips).toHaveLength(STEPS[target].figure.controls.length);
-    // no real screenshot — the illustration is tagged replaceable
-    expect(
-      el.shadowRoot.querySelector(".guide__figure-tag").textContent.length
-    ).toBeGreaterThan(0);
-  });
-
-  it("highlights one chip at a time only while the animation plays", async () => {
-    const el = build();
-    await advanceTo(el, (s) => s.animation);
-
-    expect(el.shadowRoot.querySelector(".guide__chip_active")).toBeNull();
-
-    el.shadowRoot.querySelector(".guide__anim-btn").click();
-    await flush();
-    expect(el.shadowRoot.querySelectorAll(".guide__chip_active")).toHaveLength(
-      1
-    );
-
-    jest.advanceTimersByTime(1400);
-    await flush();
-    expect(el.shadowRoot.querySelectorAll(".guide__chip_active")).toHaveLength(
-      1
-    );
-
-    // pause -> highlight cleared
-    el.shadowRoot.querySelector(".guide__anim-btn").click();
-    await flush();
-    expect(el.shadowRoot.querySelector(".guide__chip_active")).toBeNull();
+  it("shows the reduced-motion note when the user prefers reduced motion", async () => {
+    const original = window.matchMedia;
+    window.matchMedia = jest
+      .fn()
+      .mockReturnValue({ matches: true, addEventListener() {} });
+    try {
+      const el = build();
+      await advanceTo(el, (s) => s.media);
+      const notes = [...el.shadowRoot.querySelectorAll(".guide__note")].map(
+        (n) => n.textContent
+      );
+      expect(notes.some((t) => /reduzid|reduced/i.test(t))).toBe(true);
+    } finally {
+      window.matchMedia = original;
+    }
   });
 });
