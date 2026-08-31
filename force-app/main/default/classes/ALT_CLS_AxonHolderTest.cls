@@ -13,7 +13,10 @@ private class ALT_CLS_AxonHolderTest {
     return new ALT_CLS_AxonHolder();
   }
 
-  private static ALT_CLS_AxonHolder.SaveInput personInput(String first, String last) {
+  private static ALT_CLS_AxonHolder.SaveInput personInput(
+    String first,
+    String last
+  ) {
     ALT_CLS_AxonHolder.SaveInput si = new ALT_CLS_AxonHolder.SaveInput();
     si.type = 'PERSON';
     si.firstName = first;
@@ -34,22 +37,38 @@ private class ALT_CLS_AxonHolderTest {
     ALT_CLS_AxonHolder svc = authorizedService();
 
     Test.startTest();
-    ALT_CLS_AxonHolder.SaveResult r = svc.saveHolder(personInput('Ana', 'Souza'));
+    ALT_CLS_AxonHolder.SaveResult r = svc.saveHolder(
+      personInput('Ana', 'Souza')
+    );
     Test.stopTest();
 
     System.assertEquals('SUCCEEDED', r.outcome, r.message);
     System.assertNotEquals(null, r.accountId, 'holder Id returned');
 
     Account saved = [
-      SELECT Id, IsPersonAccount, FirstName, LastName, OwnerId, RecordType.DeveloperName
+      SELECT
+        Id,
+        IsPersonAccount,
+        FirstName,
+        LastName,
+        OwnerId,
+        RecordType.DeveloperName
       FROM Account
       WHERE Id = :r.accountId
     ];
     System.assertEquals(true, saved.IsPersonAccount, 'pessoa = Person Account');
     System.assertEquals('AXF_Person', saved.RecordType.DeveloperName);
     System.assertEquals('Souza', saved.LastName);
-    System.assertEquals(UserInfo.getUserId(), saved.OwnerId, 'owner = configurador');
-    System.assertEquals(usersBefore, [SELECT COUNT() FROM User], 'no user created');
+    System.assertEquals(
+      UserInfo.getUserId(),
+      saved.OwnerId,
+      'owner = configurador'
+    );
+    System.assertEquals(
+      usersBefore,
+      [SELECT COUNT() FROM User],
+      'no user created'
+    );
   }
 
   @IsTest
@@ -57,12 +76,16 @@ private class ALT_CLS_AxonHolderTest {
     ALT_CLS_AxonHolder svc = authorizedService();
 
     Test.startTest();
-    ALT_CLS_AxonHolder.SaveResult r = svc.saveHolder(businessInput('Padaria do Bairro LTDA'));
+    ALT_CLS_AxonHolder.SaveResult r = svc.saveHolder(
+      businessInput('Padaria do Bairro LTDA')
+    );
     Test.stopTest();
 
     System.assertEquals('SUCCEEDED', r.outcome, r.message);
     Account saved = [
-      SELECT IsPersonAccount, Name, RecordType.DeveloperName FROM Account WHERE Id = :r.accountId
+      SELECT IsPersonAccount, Name, RecordType.DeveloperName
+      FROM Account
+      WHERE Id = :r.accountId
     ];
     System.assertEquals(false, saved.IsPersonAccount);
     System.assertEquals('AXF_Business', saved.RecordType.DeveloperName);
@@ -74,10 +97,16 @@ private class ALT_CLS_AxonHolderTest {
     ALT_CLS_AxonHolder.canConfigureOverride = false;
     ALT_CLS_AxonHolder svc = new ALT_CLS_AxonHolder();
 
-    ALT_CLS_AxonHolder.SaveResult r = svc.saveHolder(personInput('Bruno', 'Lima'));
+    ALT_CLS_AxonHolder.SaveResult r = svc.saveHolder(
+      personInput('Bruno', 'Lima')
+    );
 
     System.assertEquals('FORBIDDEN', r.outcome);
-    System.assertEquals(0, [SELECT COUNT() FROM Account WHERE LastName = 'Lima'], 'nothing created');
+    System.assertEquals(
+      0,
+      [SELECT COUNT() FROM Account WHERE LastName = 'Lima'],
+      'nothing created'
+    );
   }
 
   @IsTest
@@ -97,7 +126,9 @@ private class ALT_CLS_AxonHolderTest {
   static void rejectsPersonWithoutLastName() {
     ALT_CLS_AxonHolder svc = authorizedService();
 
-    ALT_CLS_AxonHolder.SaveResult r = svc.saveHolder(personInput('Só Nome', '   '));
+    ALT_CLS_AxonHolder.SaveResult r = svc.saveHolder(
+      personInput('Só Nome', '   ')
+    );
 
     System.assertEquals('INVALID', r.outcome);
     System.assert(r.invalidFields.contains('lastName'));
@@ -118,8 +149,14 @@ private class ALT_CLS_AxonHolderTest {
     ALT_CLS_AxonHolder svc = authorizedService();
     svc.saveHolder(businessInput('Mercado Central'));
 
-    ALT_CLS_AxonHolder.SaveResult warn = svc.saveHolder(businessInput('  mercado   central '));
-    System.assertEquals('DUPLICATE_WARNING', warn.outcome, 'same normalized name warns');
+    ALT_CLS_AxonHolder.SaveResult warn = svc.saveHolder(
+      businessInput('  mercado   central ')
+    );
+    System.assertEquals(
+      'DUPLICATE_WARNING',
+      warn.outcome,
+      'same normalized name warns'
+    );
     System.assertEquals(1, warn.possibleDuplicates.size());
     System.assertEquals(null, warn.accountId, 'not created yet');
 
@@ -127,13 +164,19 @@ private class ALT_CLS_AxonHolderTest {
     confirmed.confirmedDespiteDuplicates = true;
     ALT_CLS_AxonHolder.SaveResult ok = svc.saveHolder(confirmed);
     System.assertEquals('SUCCEEDED', ok.outcome);
-    System.assertEquals(2, [SELECT COUNT() FROM Account WHERE Name = 'Mercado Central'], 'no auto-merge');
+    System.assertEquals(
+      2,
+      [SELECT COUNT() FROM Account WHERE Name = 'Mercado Central'],
+      'no auto-merge'
+    );
   }
 
   @IsTest
   static void editsDescriptiveDataKeepingOwnership() {
     ALT_CLS_AxonHolder svc = authorizedService();
-    ALT_CLS_AxonHolder.SaveResult created = svc.saveHolder(personInput('Carla', 'Dias'));
+    ALT_CLS_AxonHolder.SaveResult created = svc.saveHolder(
+      personInput('Carla', 'Dias')
+    );
     ALT_CLS_AxonHolder.HolderView v = svc.getHolder(created.accountId);
     Id ownerBefore = v.ownerId;
 
@@ -146,7 +189,11 @@ private class ALT_CLS_AxonHolderTest {
     Test.stopTest();
 
     System.assertEquals('SUCCEEDED', r.outcome, r.message);
-    Account after = [SELECT LastName, OwnerId FROM Account WHERE Id = :created.accountId];
+    Account after = [
+      SELECT LastName, OwnerId
+      FROM Account
+      WHERE Id = :created.accountId
+    ];
     System.assertEquals('Dias Nogueira', after.LastName);
     System.assertEquals(ownerBefore, after.OwnerId, 'edit never changes owner');
   }
@@ -154,7 +201,9 @@ private class ALT_CLS_AxonHolderTest {
   @IsTest
   static void rejectsStaleEdit() {
     ALT_CLS_AxonHolder svc = authorizedService();
-    ALT_CLS_AxonHolder.SaveResult created = svc.saveHolder(businessInput('Oficina X'));
+    ALT_CLS_AxonHolder.SaveResult created = svc.saveHolder(
+      businessInput('Oficina X')
+    );
 
     ALT_CLS_AxonHolder.SaveInput edit = businessInput('Oficina Y');
     edit.accountId = created.accountId;
@@ -163,13 +212,18 @@ private class ALT_CLS_AxonHolderTest {
     ALT_CLS_AxonHolder.SaveResult r = svc.saveHolder(edit);
 
     System.assertEquals('CONFLICT', r.outcome);
-    System.assertEquals('Oficina X', [SELECT Name FROM Account WHERE Id = :created.accountId].Name);
+    System.assertEquals(
+      'Oficina X',
+      [SELECT Name FROM Account WHERE Id = :created.accountId].Name
+    );
   }
 
   @IsTest
   static void rejectsEditWithoutExpectedTimestamp() {
     ALT_CLS_AxonHolder svc = authorizedService();
-    ALT_CLS_AxonHolder.SaveResult created = svc.saveHolder(businessInput('Loja A'));
+    ALT_CLS_AxonHolder.SaveResult created = svc.saveHolder(
+      businessInput('Loja A')
+    );
 
     ALT_CLS_AxonHolder.SaveInput edit = businessInput('Loja B');
     edit.accountId = created.accountId; // expectedLastModifiedDate left null
@@ -210,8 +264,14 @@ private class ALT_CLS_AxonHolderTest {
 
     System.runAs(standard) {
       ALT_CLS_AxonHolder svc = new ALT_CLS_AxonHolder(); // no override => real permission check
-      ALT_CLS_AxonHolder.SaveResult r = svc.saveHolder(personInput('Edu', 'Faria'));
-      System.assertEquals('FORBIDDEN', r.outcome, 'no AXF_CanConfigure => denied');
+      ALT_CLS_AxonHolder.SaveResult r = svc.saveHolder(
+        personInput('Edu', 'Faria')
+      );
+      System.assertEquals(
+        'FORBIDDEN',
+        r.outcome,
+        'no AXF_CanConfigure => denied'
+      );
     }
   }
 
@@ -221,7 +281,9 @@ private class ALT_CLS_AxonHolderTest {
       ProfileId = p.Id,
       LastName = 'Tester',
       Email = 'axf80.tester@example.com',
-      Username = 'axf80.tester.' + Crypto.getRandomInteger() + '@example.com.invalid',
+      Username = 'axf80.tester.' +
+        Crypto.getRandomInteger() +
+        '@example.com.invalid',
       Alias = 'axf80t',
       TimeZoneSidKey = 'America/Sao_Paulo',
       LocaleSidKey = 'pt_BR',

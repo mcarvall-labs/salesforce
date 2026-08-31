@@ -9,10 +9,27 @@
  */
 @IsTest(isParallel=false)
 private class AXF_CLS_HolderAccessTest {
-  private static User buildUser(String lastName, String alias, String roleDevName, String psgDevName) {
+  private static User buildUser(
+    String lastName,
+    String alias,
+    String roleDevName,
+    String psgDevName
+  ) {
     Profile p = [SELECT Id FROM Profile WHERE Name = 'Standard User' LIMIT 1];
-    Id roleId = [SELECT Id FROM UserRole WHERE DeveloperName = :roleDevName LIMIT 1].Id;
-    Id psgId = [SELECT Id FROM PermissionSetGroup WHERE DeveloperName = :psgDevName LIMIT 1].Id;
+    Id roleId = [
+      SELECT Id
+      FROM UserRole
+      WHERE DeveloperName = :roleDevName
+      LIMIT 1
+    ]
+    .Id;
+    Id psgId = [
+      SELECT Id
+      FROM PermissionSetGroup
+      WHERE DeveloperName = :psgDevName
+      LIMIT 1
+    ]
+    .Id;
     String uniq = alias + Crypto.getRandomInteger();
     User u = new User(
       ProfileId = p.Id,
@@ -28,12 +45,18 @@ private class AXF_CLS_HolderAccessTest {
     );
     System.runAs(new User(Id = UserInfo.getUserId())) {
       insert u;
-      insert new PermissionSetAssignment(AssigneeId = u.Id, PermissionSetGroupId = psgId);
+      insert new PermissionSetAssignment(
+        AssigneeId = u.Id,
+        PermissionSetGroupId = psgId
+      );
     }
     return u;
   }
 
-  private static ALT_CLS_AxonHolder.SaveInput person(String first, String last) {
+  private static ALT_CLS_AxonHolder.SaveInput person(
+    String first,
+    String last
+  ) {
     ALT_CLS_AxonHolder.SaveInput si = new ALT_CLS_AxonHolder.SaveInput();
     si.type = 'PERSON';
     si.firstName = first;
@@ -50,7 +73,12 @@ private class AXF_CLS_HolderAccessTest {
 
   @IsTest
   static void gestorCanRegisterAndEditButNotDelete() {
-    User gestor = buildUser('Gestor AXF', 'axfg', 'Axon_Gestor_Financeiro', 'AXF_PSG_GestorFinanceiro');
+    User gestor = buildUser(
+      'Gestor AXF',
+      'axfg',
+      'Axon_Gestor_Financeiro',
+      'AXF_PSG_GestorFinanceiro'
+    );
 
     Test.startTest();
     System.runAs(gestor) {
@@ -65,14 +93,20 @@ private class AXF_CLS_HolderAccessTest {
       // ALT_CLS_AxonHolderTest (rodando como SysAdmin). Aqui validamos autoridade
       // de cadastro/edicao com Business Account.
       ALT_CLS_AxonHolder svc = new ALT_CLS_AxonHolder();
-      ALT_CLS_AxonHolder.SaveResult b = svc.saveHolder(business('Mercearia AXF'));
+      ALT_CLS_AxonHolder.SaveResult b = svc.saveHolder(
+        business('Mercearia AXF')
+      );
       System.assertEquals('SUCCEEDED', b.outcome, b.message);
 
       ALT_CLS_AxonHolder.HolderView v = svc.getHolder(b.accountId);
       ALT_CLS_AxonHolder.SaveInput edit = business('Mercearia AXF 2');
       edit.accountId = b.accountId;
       edit.expectedLastModifiedDate = v.lastModifiedDate;
-      System.assertEquals('SUCCEEDED', svc.saveHolder(edit).outcome, 'Gestor edita');
+      System.assertEquals(
+        'SUCCEEDED',
+        svc.saveHolder(edit).outcome,
+        'Gestor edita'
+      );
       // Nota: a funcionalidade AXF-80 nunca expoe Delete; o "sem Delete" no nivel
       // de objeto depende do profile base do configurador (passo de instalacao).
     }
@@ -81,12 +115,24 @@ private class AXF_CLS_HolderAccessTest {
 
   @IsTest
   static void participanteCanReadButNotRegisterOrEdit() {
-    User gestor = buildUser('Gestor AXF', 'axfg', 'Axon_Gestor_Financeiro', 'AXF_PSG_GestorFinanceiro');
-    User part = buildUser('Part AXF', 'axfp', 'Axon_Participante', 'AXF_PSG_Participante');
+    User gestor = buildUser(
+      'Gestor AXF',
+      'axfg',
+      'Axon_Gestor_Financeiro',
+      'AXF_PSG_GestorFinanceiro'
+    );
+    User part = buildUser(
+      'Part AXF',
+      'axfp',
+      'Axon_Participante',
+      'AXF_PSG_Participante'
+    );
 
     Id holderId;
     System.runAs(gestor) {
-      holderId = new ALT_CLS_AxonHolder().saveHolder(business('Visível AXF')).accountId;
+      holderId = new ALT_CLS_AxonHolder()
+        .saveHolder(business('Visível AXF'))
+        .accountId;
     }
 
     Test.startTest();
@@ -107,25 +153,46 @@ private class AXF_CLS_HolderAccessTest {
       ALT_CLS_AxonHolder.SaveInput edit = business('Renomear AXF');
       edit.accountId = holderId;
       edit.expectedLastModifiedDate = Datetime.now();
-      System.assertEquals('FORBIDDEN', svc.saveHolder(edit).outcome, 'Participante nao edita pela funcionalidade');
+      System.assertEquals(
+        'FORBIDDEN',
+        svc.saveHolder(edit).outcome,
+        'Participante nao edita pela funcionalidade'
+      );
     }
     Test.stopTest();
   }
 
   @IsTest
   static void gestorSharesHoldersWithOtherGestor() {
-    User g1 = buildUser('Gestor Um AXF', 'axfg1', 'Axon_Gestor_Financeiro', 'AXF_PSG_GestorFinanceiro');
-    User g2 = buildUser('Gestor Dois AXF', 'axfg2', 'Axon_Gestor_Financeiro', 'AXF_PSG_GestorFinanceiro');
+    User g1 = buildUser(
+      'Gestor Um AXF',
+      'axfg1',
+      'Axon_Gestor_Financeiro',
+      'AXF_PSG_GestorFinanceiro'
+    );
+    User g2 = buildUser(
+      'Gestor Dois AXF',
+      'axfg2',
+      'Axon_Gestor_Financeiro',
+      'AXF_PSG_GestorFinanceiro'
+    );
 
     Id holderId;
     System.runAs(g1) {
-      holderId = new ALT_CLS_AxonHolder().saveHolder(business('Compartilhada AXF')).accountId;
+      holderId = new ALT_CLS_AxonHolder()
+        .saveHolder(business('Compartilhada AXF'))
+        .accountId;
     }
 
     Test.startTest();
     System.runAs(g2) {
-      ALT_CLS_AxonHolder.HolderView v = new ALT_CLS_AxonHolder().getHolder(holderId);
-      System.assertNotEquals(null, v, 'regra owner-based Gestor->Gestor compartilha o titular');
+      ALT_CLS_AxonHolder.HolderView v = new ALT_CLS_AxonHolder()
+        .getHolder(holderId);
+      System.assertNotEquals(
+        null,
+        v,
+        'regra owner-based Gestor->Gestor compartilha o titular'
+      );
       System.assertEquals('Compartilhada AXF', v.name);
     }
     Test.stopTest();
@@ -134,14 +201,24 @@ private class AXF_CLS_HolderAccessTest {
   @IsTest
   static void systemAdministratorSeesAllHolders() {
     // Running user is a System Administrator (ModifyAllData / ViewAllData).
-    User gestor = buildUser('Gestor AXF', 'axfg', 'Axon_Gestor_Financeiro', 'AXF_PSG_GestorFinanceiro');
+    User gestor = buildUser(
+      'Gestor AXF',
+      'axfg',
+      'Axon_Gestor_Financeiro',
+      'AXF_PSG_GestorFinanceiro'
+    );
     System.runAs(gestor) {
       new ALT_CLS_AxonHolder().saveHolder(business('Admin Vê AXF Um'));
       new ALT_CLS_AxonHolder().saveHolder(business('Admin Vê AXF Dois'));
     }
 
     ALT_CLS_AxonHolder.canConfigureOverride = true;
-    List<ALT_CLS_AxonHolder.HolderView> all = new ALT_CLS_AxonHolder().listHolders(null);
-    System.assertEquals(2, all.size(), 'SysAdmin enxerga os titulares de outro owner');
+    List<ALT_CLS_AxonHolder.HolderView> all = new ALT_CLS_AxonHolder()
+      .listHolders(null);
+    System.assertEquals(
+      2,
+      all.size(),
+      'SysAdmin enxerga os titulares de outro owner'
+    );
   }
 }

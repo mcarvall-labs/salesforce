@@ -37,7 +37,9 @@ public with sharing class AXF_CLS_CTRL_Holder {
   }
 
   @AuraEnabled
-  public static ALT_CLS_AxonHolder.SaveResult saveHolder(ALT_CLS_AxonHolder.SaveInput input) {
+  public static ALT_CLS_AxonHolder.SaveResult saveHolder(
+    ALT_CLS_AxonHolder.SaveInput input
+  ) {
     return new ALT_CLS_AxonHolder().saveHolder(input);
   }
 }

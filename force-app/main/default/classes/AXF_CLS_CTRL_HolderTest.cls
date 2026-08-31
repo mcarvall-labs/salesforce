@@ -31,10 +31,14 @@ private class AXF_CLS_CTRL_HolderTest {
 
     System.assertEquals('SUCCEEDED', saved.outcome, saved.message);
 
-    List<ALT_CLS_AxonHolder.HolderView> rows = AXF_CLS_CTRL_Holder.listHolders('Gomes');
+    List<ALT_CLS_AxonHolder.HolderView> rows = AXF_CLS_CTRL_Holder.listHolders(
+      'Gomes'
+    );
     System.assertEquals(1, rows.size());
 
-    ALT_CLS_AxonHolder.HolderView v = AXF_CLS_CTRL_Holder.getHolder(saved.accountId);
+    ALT_CLS_AxonHolder.HolderView v = AXF_CLS_CTRL_Holder.getHolder(
+      saved.accountId
+    );
     System.assertEquals('PERSON', v.type);
     System.assertEquals('Gomes', v.lastName);
   }
