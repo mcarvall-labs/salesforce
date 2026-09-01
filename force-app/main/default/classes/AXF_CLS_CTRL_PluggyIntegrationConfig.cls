@@ -1,0 +1,106 @@
+/**
+ * @description Dedicated controller for aXF_LWC_pluggyIntegrationConfig (PROJECT_RULES §3).
+ * Thin entry point: validates authority, delegates to the Pluggy services, returns typed
+ * DTOs, never returns a secret or a stack trace. AXF-11.
+ *
+ * Entering the Client ID / Secret themselves is done through the native Setup UI for
+ * External Credentials (install step) — this screen never receives or stores a secret. It
+ * drives testing, rotation (slot-pointer flip) and global pause.
+ */
+public with sharing class AXF_CLS_CTRL_PluggyIntegrationConfig {
+  @TestVisible
+  private static Boolean canConfigureOverride;
+
+  private static Boolean callerCanConfigure() {
+    if (canConfigureOverride != null) {
+      return canConfigureOverride;
+    }
+    return FeatureManagement.checkPermission('AXF_CanConfigure');
+  }
+
+  public class StatusDTO {
+    @AuraEnabled
+    public Boolean canConfigure;
+    @AuraEnabled
+    public String activeSlot;
+    @AuraEnabled
+    public String rotationState;
+    @AuraEnabled
+    public String primarySlotTestResult;
+    @AuraEnabled
+    public Datetime primarySlotTestedAt;
+    @AuraEnabled
+    public String candidateSlotTestResult;
+    @AuraEnabled
+    public Datetime candidateSlotTestedAt;
+    @AuraEnabled
+    public Boolean collectionGloballyPaused;
+    @AuraEnabled
+    public Boolean webhookEnabled;
+    @AuraEnabled
+    public Integer cacheTtlSeconds;
+    @AuraEnabled
+    public Integer connectionCount;
+    @AuraEnabled
+    public Integer blockedConnectionCount;
+  }
+
+  @AuraEnabled(cacheable=true)
+  public static Boolean canConfigure() {
+    return callerCanConfigure();
+  }
+
+  @AuraEnabled(cacheable=true)
+  public static StatusDTO getStatus() {
+    StatusDTO d = new StatusDTO();
+    d.canConfigure = callerCanConfigure();
+    if (!d.canConfigure) {
+      return d; // UI renders FORBIDDEN cleanly
+    }
+    AXF_PluggyIntegrationConfig__c cfg = AXF_PluggyIntegrationConfig__c.getOrgDefaults();
+    d.activeSlot = AXF_CLS_PluggySettings.activeSlot();
+    d.rotationState = AXF_CLS_PluggySettings.rotationState();
+    d.collectionGloballyPaused = AXF_CLS_PluggySettings.collectionGloballyPaused();
+    d.webhookEnabled = AXF_CLS_PluggySettings.webhookEnabled();
+    d.cacheTtlSeconds = AXF_CLS_PluggySettings.apiKeyCacheTtlSeconds();
+    if (cfg != null) {
+      d.primarySlotTestResult = cfg.AXF_PIC_TXT_PrimarySlotTestResult__c;
+      d.primarySlotTestedAt = cfg.AXF_PIC_DT_PrimarySlotTestedAt__c;
+      d.candidateSlotTestResult = cfg.AXF_PIC_TXT_CandidateSlotTestResult__c;
+      d.candidateSlotTestedAt = cfg.AXF_PIC_DT_CandidateSlotTestedAt__c;
+    }
+    d.connectionCount = [
+      SELECT COUNT()
+      FROM AXF_OBJ_PluggyConnection__c
+      WITH USER_MODE
+    ];
+    d.blockedConnectionCount = new AXF_CLS_PluggyCollectionControlService()
+      .revalidatePending();
+    return d;
+  }
+
+  @AuraEnabled
+  public static AXF_CLS_PluggyCredentialRotationService.RotationResult testCandidate() {
+    return new AXF_CLS_PluggyCredentialRotationService().testCandidate();
+  }
+
+  @AuraEnabled
+  public static AXF_CLS_PluggyCredentialRotationService.RotationResult promoteCandidate() {
+    return new AXF_CLS_PluggyCredentialRotationService().promote();
+  }
+
+  @AuraEnabled
+  public static AXF_CLS_PluggyCredentialRotationService.RotationResult rollbackRotation() {
+    return new AXF_CLS_PluggyCredentialRotationService().rollback();
+  }
+
+  @AuraEnabled
+  public static void pauseGlobally() {
+    new AXF_CLS_PluggyCollectionControlService().pauseGlobally();
+  }
+
+  @AuraEnabled
+  public static void resumeGlobally() {
+    new AXF_CLS_PluggyCollectionControlService().resumeGlobally();
+  }
+}

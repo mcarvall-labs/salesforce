@@ -1,0 +1,204 @@
+# AXF-11 — Configurar credenciais e controlar o consentimento Pluggy
+
+- **Jira:** https://axon-personal-finances.atlassian.net/browse/AXF-11
+- **Épico:** AXF-10 — Fontes financeiras confiáveis e recuperáveis
+- **Branch:** `feature/AXF-11-pluggy-credentials-consent` (base: `reconciled/base`)
+- **Gates:** G1/G2/G4/G6/G7 fase de definição fechada (30/08/2026). Contrato regente:
+  `ARCHITECTURE-SPINE.md` §"Fechamento G4 — credenciais e integração";
+  `AXF-11-G4-investigacao-2026-08-28.md`; decisão "pausa local, sem DELETE Pluggy" (28/08/2026).
+- **Baseline:** greenfield (`reconciled/base`). O código Pluggy legado do `develop` antigo
+  (`AXF_CLS_PluggyAuthService`, `AXF_NC_Pluggy_API`, `AXF_EXC_Pluggy`) foi **portado com
+  regressão** — ver §"Regressão do legado".
+
+> Esta definição não autoriza deploy em UAT/PROD, exclusão, nem acesso a produção.
+> Nenhum segredo real foi usado; os testes usam mocks.
+
+---
+
+## 1. Escopo entregue
+
+| Entrega                                                                                        | Componente                                                                                                                                                                         |
+| ---------------------------------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Configuração inicial segura de credenciais (Client ID / Secret) pelo mecanismo nativo          | `AXF_EXC_Pluggy` + `AXF_NC_Pluggy_API`; `AXF_CLS_CTRL_PluggyIntegrationConfig.setPrincipalCredential` (trânsito transitório → `ConnectApi.NamedCredentials`, sem persistência/log) |
+| Obtenção server-side do `apiKey` com cache de TTL curto                                        | `AXF_CLS_PluggyAuthService` (Platform Cache `AXF_PluggyCache`, TTL de `AXF_PluggyIntegrationConfig__c.ApiKeyCacheTtlSeconds__c`, default 5400s)                                    |
+| Rotação: testar candidata antes de promover, preservar a ativa em falha                        | `AXF_EXC_Pluggy_Candidate` + `AXF_NC_Pluggy_API_Candidate`; `AXF_CLS_PluggyCredentialRotationService` (`CANDIDATE→TESTING→PROMOTED`/`ROLLED_BACK`)                                 |
+| Consentimento: instituição, contas, escopo, finalidade, início, expiração, versão              | `AXF_OBJ_PluggyConnection__c` (campos `AXF_CON_*`); `AXF_CLS_PluggyConsentService`                                                                                                 |
+| Bloqueio antes da unidade material quando consentimento ausente/expirado/revogado/incompatível | `AXF_CLS_PluggyCollectionControlService.assertCollectionAllowed` + `AXF_CON_PKL_ConsentState__c`                                                                                   |
+| Pausa/retomada local autorizada; revogação externa detectada                                   | `AXF_CLS_PluggyCollectionControlService` (por conexão e global); `AXF_PluggyIntegrationConfig__c.CollectionGloballyPaused__c`                                                      |
+| Idempotência / resultado externo incerto                                                       | `AXF_CLS_PluggyHttpClient` (correlationId, sem retry cego); rotação e pausa por estado confirmado                                                                                  |
+| "Saúde das fontes" (desktop/mobile, WCAG 2.2 AA)                                               | `aXF_LWC_sourceHealth` + `AXF_CLS_CTRL_SourceHealth`; tab `AXF_SourceHealth`                                                                                                       |
+| Webhook com validação de assinatura antes de aceitar                                           | `AXF_CLS_PluggyWebhookResource` (`/services/apexrest/pluggy/webhook`), `AXF_CLS_PluggyWebhookSignature` (HMAC-SHA256 constant-time); `AXF_EXC_PluggyWebhook` guarda o segredo      |
+| Sem vazamento de segredo em logs/respostas                                                     | Regressão de `AXF_CLS_PluggyAuthService` (removidos `System.debug` de request/response); sanitização central em `AXF_CLS_PluggyHttpClient`                                         |
+| Acesso restrito ao NC / principal                                                              | `AXF_PS_PluggyIntegration` (só usuário de serviço); `AXF_CanConfigure` no servidor para configurar/rotacionar/pausar                                                               |
+
+### Fora de escopo (recortes próprios)
+
+- Descoberta de contas/cartões — **AXF-84**.
+- Sincronização, `IntegrationRun`, cursores, lotes — **AXF-12**.
+- Unicidade / identidade externa em reprocessamento — **AXF-13**.
+- Guia ilustrado — **AXF-89** (já em `reconciled/base`).
+- `DELETE /items` (revogação remota automática) — adiado (decisão 28/08/2026).
+- Exposição pública do endpoint de webhook (Site / guest user) — passo manual de instalação (AXF-77).
+
+---
+
+## 2. Modelo de dados — `AXF_OBJ_PluggyConnection__c` / `CON`
+
+OWD **Private** (custódia do Gestor; acesso efetivo é G2/AXF-12). Criado por esta US com os
+campos que ela usa; AXF-12/AXF-84 acrescentam os seus (`SyncStatus`, `ExecutionStatus`, `IntegrationRun`).
+
+| Campo                                                | Tipo / regra                                                                                                          | Origem             |
+| ---------------------------------------------------- | --------------------------------------------------------------------------------------------------------------------- | ------------------ |
+| `AXF_CON_EXI_PluggyItemId__c`                        | Text(64), ExternalId, **Unique**, caseSensitive, obrigatório — **chave de operação** (Item ID da aplicação/Dashboard) | G4-4 / D-85        |
+| `AXF_CON_TXT_ObservedItemId__c`                      | Text(64) — Item ID observado na resposta da API; **nunca vira chave**                                                 | G4-4               |
+| `AXF_CON_PKL_ConsentState__c`                        | Picklist restrita `ACTIVE\|STALE\|REVOKED`, default `ACTIVE`                                                          | G4-5 / dicionário  |
+| `AXF_CON_PKL_CollectionState__c`                     | Picklist restrita `ACTIVE\|PAUSED`, default `ACTIVE` — pausa local por conexão                                        | Decisão 28/08      |
+| `AXF_CON_TXT_InstitutionName__c`                     | Text(255) — instituição/conector                                                                                      | AC3, AC7           |
+| `AXF_CON_TXT_ConnectorId__c`                         | Text(40)                                                                                                              | AC3                |
+| `AXF_CON_TXT_ConsentId__c`                           | Text(64) — id do consentimento (`GET /consents`)                                                                      | AC3                |
+| `AXF_CON_TXT_ConsentObservedItemId__c`               | Text(64) — `Consent.itemId` (pode diferir do consultado — D-85)                                                       | Investigação 28/08 |
+| `AXF_CON_TAL_ConsentScope__c`                        | LongTextArea(4096) — produtos/permissões concedidos (texto, sem segredo)                                              | AC3                |
+| `AXF_CON_TXT_ConsentPurpose__c`                      | Text(255) — finalidade apresentada pelo Axon                                                                          | AC3                |
+| `AXF_CON_DT_ConsentGivenAt__c`                       | DateTime — início                                                                                                     | AC3                |
+| `AXF_CON_DT_ConsentExpiresAt__c`                     | DateTime, nulo permitido (nulo = sem expiração definida, **não** eterno)                                              | AC3 / investigação |
+| `AXF_CON_TXT_ConsentVersion__c`                      | Text(40)                                                                                                              | AC3                |
+| `AXF_CON_DT_ConsentCheckedAt__c`                     | DateTime — última revalidação                                                                                         | AC4                |
+| `AXF_CON_DT_PausedAt__c` / `AXF_CON_LKP_PausedBy__c` | DateTime / Lookup(User) SetNull                                                                                       | AC5, AC7           |
+| `AXF_CON_DT_LastSuccessAt__c`                        | DateTime — último sucesso de coleta (preenchido por AXF-12; exibido na Saúde)                                         | AC7                |
+| `AXF_CON_TXT_LastStatusCode__c`                      | Text(40) — código sanitizado (`OUTDATED`, `LOGIN_ERROR`, …)                                                           | AC7                |
+| `AXF_CON_TXT_LastStatusDetail__c`                    | Text(255) — detalhe sanitizado, sem segredo/PII                                                                       | AC7, AC8           |
+| Name                                                 | AutoNumber `CON-{00000}`                                                                                              | —                  |
+
+Segredos (`clientId`, `clientSecret`, `apiKey`, webhook secret) **nunca** entram neste objeto,
+em Custom Metadata desprotegida, em logs, em URLs ou em evidências.
+
+---
+
+## 3. Credenciais e principal (G4-1)
+
+- **Protocolo:** API-key da Pluggy (`POST /auth` → `apiKey`, header `X-API-KEY`, TTL ~2h). **Não é OAuth.**
+- `AXF_EXC_Pluggy`: `authenticationProtocol = Custom`, `NamedPrincipal` com `clientId` / `clientSecret`.
+- `AXF_NC_Pluggy_API`: `SecuredEndpoint`, `https://api.pluggy.ai`, merge fields **só no body**.
+- `apiKey` obtido **server-side** por `AXF_CLS_PluggyAuthService`, em Platform Cache
+  (`AXF_PluggyCache`) com TTL curto configurável (default 5400s, < expiração real, com margem).
+- Acesso ao NC/principal via `AXF_PS_PluggyIntegration`, atribuído **apenas** ao usuário de
+  serviço (G3, `AXF_PS_Provisioning`). Ownership de integração não concede acesso financeiro (G2).
+- **Configuração inicial (AC1):** `setPrincipalCredential(clientId, clientSecret)` no controller
+  valida `AXF_CanConfigure` + `ManageNamedCredentials` no servidor, encaminha os valores
+  **em memória** para `ConnectApi.NamedCredentials.createCredential/updateCredential` e descarta.
+  Não grava em objeto, resposta, log ou storage do navegador. O caminho alternativo aprovado é
+  a UI de Setup de External Credentials.
+
+## 4. Rotação sem destruir a ativa (G4-2)
+
+Dois conjuntos NC/EC pré-instalados: **ativo** (`AXF_EXC_Pluggy`) e **candidato**
+(`AXF_EXC_Pluggy_Candidate`). A configuração guarda apenas `RotationState__c` + timestamp.
+
+1. `stageCandidate(clientId, clientSecret)` → grava só no principal do **candidato**; estado `CANDIDATE`.
+2. `testCandidate()` → estado `TESTING`: `POST /auth` no candidato **e** `GET /connectors` (leitura leve)
+   **e** verificação de que cada `AXF_OBJ_PluggyConnection__c` ativa continua acessível
+   (`GET /items/<id>` retornando 200 com consent válido). Falha → `ROLLED_BACK`, ativa preservada,
+   erro sanitizado.
+3. `promote()` → só se **todas** as verificações passaram: copia os valores do candidato para o
+   principal ativo via `ConnectApi`, limpa o candidato, estado `PROMOTED`. Cache de `apiKey` invalidado.
+4. Concorrência: `RotationState__c` funciona como token; segunda tentativa em `TESTING` recebe `CONFLICT`.
+5. `RESULT_UNKNOWN` (timeout na promoção) bloqueia repetição; reconciliação manual pelo estado.
+
+Nunca apagar a credencial ativa para descobrir se a candidata funciona.
+
+## 5. Consentimento (G4-5, AC3/AC4)
+
+`AXF_CLS_PluggyConsentService.refresh(connectionId)`:
+
+- `GET /items/<PluggyItemId>` → conector, status, `AXF_CON_TXT_ObservedItemId__c`.
+- `GET /consents?itemId=<PluggyItemId>` → `id`, `itemId` (preservado à parte — pode ser o item de
+  origem, D-85), `products`, `createdAt`, `expiresAt`, `revokedAt`.
+- Mapeia para os campos `AXF_CON_*`. `expiresAt` nulo é gravado como nulo e **não** tratado como erro
+  nem como "eterno"; ausência de consentimento / erro de consulta ≠ "sem expiração".
+- Transição de `AXF_CON_PKL_ConsentState__c`:
+  - consent válido, não expirado, não revogado → `ACTIVE`.
+  - `revokedAt` presente **ou** item com erro de login/consent → `REVOKED`.
+  - `expiresAt` no passado **ou** status de item desatualizado → `STALE`.
+- `STALE`/`REVOKED`: dados coletados permanecem visíveis marcados como **desatualizados**; nova
+  coleta bloqueada até reautorização. Token/segredo remanescente descartado.
+- **Não** inventa finalidade/versão/lista de contas ausente; não assume que login no MeuPluggy
+  autoriza a aplicação do Dashboard.
+
+## 6. Bloqueio da coleta (AC4, AC5)
+
+`AXF_CLS_PluggyCollectionControlService.assertCollectionAllowed(connectionId)` — chamada **antes**
+de enfileirar job, executar callout ou publicar dados (usada por AXF-12). Lança
+`AXF_CLS_PluggyCollectionBlockedException` (com motivo sanitizado) quando:
+
+- `CollectionGloballyPaused__c = true` (pausa global), ou
+- `AXF_CON_PKL_CollectionState__c = PAUSED` (pausa local da conexão), ou
+- `AXF_CON_PKL_ConsentState__c ∈ {STALE, REVOKED}`.
+
+`revalidatePending()` reavalia conexões e é o ponto onde jobs pendentes de AXF-12 devem checar o
+estado antes de cada nova unidade. Pausa **não** revoga consentimento nem apaga histórico; retenção
+e conexões/acessos independentes preservados. Retomada (`resume*`) exige `AXF_CanConfigure` e uma
+revalidação de consentimento bem-sucedida.
+
+Revogação externa: o Axon **detecta** indisponibilidade/`REVOKED` e orienta reautorização no
+provedor; **não** afirma sucesso remoto e **não** chama `DELETE /items`.
+
+## 7. Webhook (G4-3)
+
+`AXF_CLS_PluggyWebhookResource` (`@RestResource urlMapping='/pluggy/webhook'`):
+
+1. Lê o corpo cru e o header de assinatura.
+2. `AXF_CLS_PluggyWebhookSignature.isValid(body, signature, secret)` — HMAC-SHA256 do corpo com o
+   webhook secret (`AXF_EXC_PluggyWebhook`), comparação **constant-time**. Inválida → HTTP 401,
+   nada processado, nada logado além de status/correlationId.
+3. Válida → enfileira `AXF_CLS_PluggyWebhookQueueable`, que **só dispara busca** (revalida
+   consentimento/estado da conexão via `AXF_CLS_PluggyConsentService`). O payload **nunca** é
+   gravado direto como fato.
+4. Varredura periódica idempotente para eventos perdidos → **AXF-12** (aqui fica só o gancho).
+
+> Tornar o endpoint público (Force.com Site + guest user, ou Connected App client-credentials) é
+> passo manual de instalação — ver lista AXF-77. A classe, a validação e os testes são a entrega.
+
+## 8. Regressão do legado
+
+`AXF_CLS_PluggyAuthService` (portado de `develop`):
+
+- **Removidos** todos os `System.debug` de endpoint, headers, corpo da requisição e corpo da
+  resposta (vazavam o `apiKey` no log — AC8).
+- TTL de cache deixa de ser fixo em 7200s; passa a `AXF_PluggyIntegrationConfig__c.ApiKeyCacheTtlSeconds__c`
+  (default 5400s), sempre < expiração real com margem de renovação.
+- Erros sanitizados: mensagem cita endpoint/status/correlationId, nunca credencial, token ou corpo cru.
+- Suporte a NC alternativo (candidato) para o teste de rotação, sem tocar o cache da ativa.
+- `AXF_EXC_Pluggy` / `AXF_NC_Pluggy_API` portados sem alteração estrutural (baseline ratificado em G4-1);
+  `allowMergeFieldsInHeader=false`, `generateAuthorizationHeader` desligado (a auth é no body).
+
+Componentes legados de **sincronização** (`AXF_CLS_PluggyTxSync_Service`, `*Queueable`, etc.) **não**
+foram portados: pertencem a AXF-12 e serão avaliados/regredidos lá.
+
+## 9. Testes
+
+| Classe de teste                                                   | Cobre                                                                                                                                                  |
+| ----------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| `AXF_CLS_PluggyAuthServiceTest`                                   | auth OK / 401 / 5xx / cache hit / apiKey ausente / TTL do Custom Setting; **assert de que nenhum debug/erro contém o apiKey**                          |
+| `AXF_CLS_PluggyWebhookSignatureTest`                              | assinatura válida / inválida / tamanho diferente / vazia; constant-time                                                                                |
+| `AXF_CLS_PluggyWebhookResourceTest`                               | 401 sem assinatura / com assinatura ruim; 200 + enqueue com assinatura boa; corpo não vira fato                                                        |
+| `AXF_CLS_PluggyConsentServiceTest`                                | consent ACTIVE / expirado→STALE / revogado→REVOKED / `expiresAt` nulo / itemId divergente preservado / consulta 403                                    |
+| `AXF_CLS_PluggyCredentialRotationServiceTest`                     | candidata válida promove / candidata inválida → ROLLED_BACK preservando ativa / concorrência → CONFLICT / permissão negada                             |
+| `AXF_CLS_PluggyCollectionControlServiceTest`                      | pausa local / pausa global / STALE bloqueia / REVOKED bloqueia / retomada exige consent válido / pausa repetida idempotente / revalidação de pendentes |
+| `AXF_CLS_CTRL_PluggyIntegrationConfigTest`                        | `AXF_CanConfigure` negado → FORBIDDEN limpo; status; setPrincipalCredential encaminha e não persiste                                                   |
+| `AXF_CLS_CTRL_SourceHealthTest`                                   | lista instituição/contas/consentimento/último sucesso/impacto/ação; sem segredo no DTO                                                                 |
+| `aXF_LWC_pluggyIntegrationConfig` / `aXF_LWC_sourceHealth` (Jest) | estados loading/forbidden/ready/error; sem cor/toast como único sinal; erro associado ao campo                                                         |
+| `AXF_CLS_PluggyHttpCalloutMock`                                   | utilitário de mock compartilhado                                                                                                                       |
+
+Deploy: `--target-org AXON_DEV` com `NoTestRun` (regra do projeto); suíte AXF-11 executada
+localmente antes do PR.
+
+## 10. Passos manuais de instalação (para AXF-77)
+
+| Passo                                                                                                            | Motivo                                                                     |
+| ---------------------------------------------------------------------------------------------------------------- | -------------------------------------------------------------------------- |
+| Preencher o principal de `AXF_EXC_Pluggy` (Client ID / Secret reais) no Setup ou pela tela de configuração       | segredo de org, nunca em metadata                                          |
+| Preencher o segredo de `AXF_EXC_PluggyWebhook`                                                                   | idem                                                                       |
+| Atribuir `AXF_PS_PluggyIntegration` ao usuário de serviço (`AXF_PS_Provisioning`)                                | principal mínimo                                                           |
+| Alocar capacidade ao Platform Cache partition `AXF_PluggyCache` (mín. 1 MB)                                      | Developer Edition não aloca por padrão; sem isso o serviço segue sem cache |
+| Expor `/services/apexrest/pluggy/webhook` publicamente (Site + guest user) e cadastrar a URL no Dashboard Pluggy | inbound não autenticado                                                    |
+| Registrar o webhook secret no Dashboard Pluggy e no `AXF_EXC_PluggyWebhook`                                      | pareamento HMAC                                                            |

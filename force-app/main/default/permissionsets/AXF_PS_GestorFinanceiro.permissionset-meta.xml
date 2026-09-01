@@ -1,8 +1,7 @@
 <?xml version="1.0" encoding="UTF-8" ?>
 <PermissionSet xmlns="http://soap.sforce.com/2006/04/metadata">
     <label>Axon - Gestor Financeiro (componente)</label>
-    <description
-  >Componente do PSG AXF_PSG_GestorFinanceiro. Consultar, cadastrar e editar titulares (Account/Contact); sem Delete; sem ViewAll/ModifyAll. Concede AXF_CanConfigure e o acesso a configuracao de niveis. Perms do dominio vem por US. AXF-7 / AXF-80 / AXF-82.</description>
+    <description>Componente do PSG AXF_PSG_GestorFinanceiro. Titulares (Account/Contact): consultar, cadastrar, editar; sem Delete; sem ViewAll/ModifyAll. Concede AXF_CanConfigure (niveis de acesso, provisionamento de usuarios e integracao Pluggy). AXF-7 / AXF-80 / AXF-82 / AXF-11.</description>
     <hasActivationRequired>false</hasActivationRequired>
     <customPermissions>
         <enabled>true</enabled>
@@ -28,6 +27,82 @@
         <apexClass>ALT_CLS_AxonUserProvisioning</apexClass>
         <enabled>true</enabled>
     </classAccesses>
+    <classAccesses>
+        <apexClass>AXF_CLS_CTRL_PluggyIntegrationConfig</apexClass>
+        <enabled>true</enabled>
+    </classAccesses>
+    <classAccesses>
+        <apexClass>AXF_CLS_CTRL_SourceHealth</apexClass>
+        <enabled>true</enabled>
+    </classAccesses>
+    <classAccesses>
+        <apexClass>AXF_CLS_PluggyAuthService</apexClass>
+        <enabled>true</enabled>
+    </classAccesses>
+    <classAccesses>
+        <apexClass>AXF_CLS_PluggyHttpClient</apexClass>
+        <enabled>true</enabled>
+    </classAccesses>
+    <classAccesses>
+        <apexClass>AXF_CLS_PluggyConsentService</apexClass>
+        <enabled>true</enabled>
+    </classAccesses>
+    <classAccesses>
+        <apexClass>AXF_CLS_PluggyCollectionControlService</apexClass>
+        <enabled>true</enabled>
+    </classAccesses>
+    <classAccesses>
+        <apexClass>AXF_CLS_PluggyCredentialRotationService</apexClass>
+        <enabled>true</enabled>
+    </classAccesses>
+    <externalCredentialPrincipalAccesses>
+        <externalCredentialPrincipal>AXF_EXC_Pluggy-AXF_Pluggy_Principal</externalCredentialPrincipal>
+        <enabled>true</enabled>
+    </externalCredentialPrincipalAccesses>
+    <externalCredentialPrincipalAccesses>
+        <externalCredentialPrincipal>AXF_EXC_Pluggy_Candidate-AXF_Pluggy_Principal_Cand</externalCredentialPrincipal>
+        <enabled>true</enabled>
+    </externalCredentialPrincipalAccesses>
+    <objectPermissions>
+        <allowCreate>true</allowCreate>
+        <allowDelete>false</allowDelete>
+        <allowEdit>true</allowEdit>
+        <allowRead>true</allowRead>
+        <modifyAllRecords>false</modifyAllRecords>
+        <object>Contact</object>
+        <viewAllFields>false</viewAllFields>
+        <viewAllRecords>false</viewAllRecords>
+    </objectPermissions>
+    <objectPermissions>
+        <allowCreate>true</allowCreate>
+        <allowDelete>false</allowDelete>
+        <allowEdit>true</allowEdit>
+        <allowRead>true</allowRead>
+        <modifyAllRecords>false</modifyAllRecords>
+        <object>Account</object>
+        <viewAllFields>false</viewAllFields>
+        <viewAllRecords>false</viewAllRecords>
+    </objectPermissions>
+    <objectPermissions>
+        <allowCreate>true</allowCreate>
+        <allowDelete>false</allowDelete>
+        <allowEdit>true</allowEdit>
+        <allowRead>true</allowRead>
+        <modifyAllRecords>false</modifyAllRecords>
+        <object>AXF_OBJ_AccessProvisioning__c</object>
+        <viewAllFields>false</viewAllFields>
+        <viewAllRecords>false</viewAllRecords>
+    </objectPermissions>
+    <objectPermissions>
+        <allowCreate>true</allowCreate>
+        <allowDelete>false</allowDelete>
+        <allowEdit>true</allowEdit>
+        <allowRead>true</allowRead>
+        <modifyAllRecords>false</modifyAllRecords>
+        <object>AXF_OBJ_PluggyConnection__c</object>
+        <viewAllFields>false</viewAllFields>
+        <viewAllRecords>false</viewAllRecords>
+    </objectPermissions>
     <fieldPermissions>
         <editable>true</editable>
         <field>AXF_OBJ_AccessProvisioning__c.AXF_APV_CHK_OwnerSynced__c</field>
@@ -58,36 +133,86 @@
         <field>AXF_OBJ_AccessProvisioning__c.AXF_APV_TXT_TargetName__c</field>
         <readable>true</readable>
     </fieldPermissions>
-    <objectPermissions>
-        <allowCreate>true</allowCreate>
-        <allowDelete>false</allowDelete>
-        <allowEdit>true</allowEdit>
-        <allowRead>true</allowRead>
-        <modifyAllRecords>false</modifyAllRecords>
-        <object>AXF_OBJ_AccessProvisioning__c</object>
-        <viewAllFields>false</viewAllFields>
-        <viewAllRecords>false</viewAllRecords>
-    </objectPermissions>
-    <objectPermissions>
-        <allowCreate>true</allowCreate>
-        <allowDelete>false</allowDelete>
-        <allowEdit>true</allowEdit>
-        <allowRead>true</allowRead>
-        <modifyAllRecords>false</modifyAllRecords>
-        <object>Contact</object>
-        <viewAllFields>false</viewAllFields>
-        <viewAllRecords>false</viewAllRecords>
-    </objectPermissions>
-    <objectPermissions>
-        <allowCreate>true</allowCreate>
-        <allowDelete>false</allowDelete>
-        <allowEdit>true</allowEdit>
-        <allowRead>true</allowRead>
-        <modifyAllRecords>false</modifyAllRecords>
-        <object>Account</object>
-        <viewAllFields>false</viewAllFields>
-        <viewAllRecords>false</viewAllRecords>
-    </objectPermissions>
+    <fieldPermissions>
+        <editable>true</editable>
+        <field>AXF_OBJ_PluggyConnection__c.AXF_CON_TXT_ObservedItemId__c</field>
+        <readable>true</readable>
+    </fieldPermissions>
+    <fieldPermissions>
+        <editable>true</editable>
+        <field>AXF_OBJ_PluggyConnection__c.AXF_CON_TXT_InstitutionName__c</field>
+        <readable>true</readable>
+    </fieldPermissions>
+    <fieldPermissions>
+        <editable>true</editable>
+        <field>AXF_OBJ_PluggyConnection__c.AXF_CON_TXT_ConnectorId__c</field>
+        <readable>true</readable>
+    </fieldPermissions>
+    <fieldPermissions>
+        <editable>true</editable>
+        <field>AXF_OBJ_PluggyConnection__c.AXF_CON_TXT_ConsentId__c</field>
+        <readable>true</readable>
+    </fieldPermissions>
+    <fieldPermissions>
+        <editable>true</editable>
+        <field>AXF_OBJ_PluggyConnection__c.AXF_CON_TXT_ConsentObservedItemId__c</field>
+        <readable>true</readable>
+    </fieldPermissions>
+    <fieldPermissions>
+        <editable>true</editable>
+        <field>AXF_OBJ_PluggyConnection__c.AXF_CON_TAL_ConsentScope__c</field>
+        <readable>true</readable>
+    </fieldPermissions>
+    <fieldPermissions>
+        <editable>true</editable>
+        <field>AXF_OBJ_PluggyConnection__c.AXF_CON_TXT_ConsentPurpose__c</field>
+        <readable>true</readable>
+    </fieldPermissions>
+    <fieldPermissions>
+        <editable>true</editable>
+        <field>AXF_OBJ_PluggyConnection__c.AXF_CON_DT_ConsentGivenAt__c</field>
+        <readable>true</readable>
+    </fieldPermissions>
+    <fieldPermissions>
+        <editable>true</editable>
+        <field>AXF_OBJ_PluggyConnection__c.AXF_CON_DT_ConsentExpiresAt__c</field>
+        <readable>true</readable>
+    </fieldPermissions>
+    <fieldPermissions>
+        <editable>true</editable>
+        <field>AXF_OBJ_PluggyConnection__c.AXF_CON_TXT_ConsentVersion__c</field>
+        <readable>true</readable>
+    </fieldPermissions>
+    <fieldPermissions>
+        <editable>true</editable>
+        <field>AXF_OBJ_PluggyConnection__c.AXF_CON_DT_ConsentCheckedAt__c</field>
+        <readable>true</readable>
+    </fieldPermissions>
+    <fieldPermissions>
+        <editable>true</editable>
+        <field>AXF_OBJ_PluggyConnection__c.AXF_CON_DT_PausedAt__c</field>
+        <readable>true</readable>
+    </fieldPermissions>
+    <fieldPermissions>
+        <editable>true</editable>
+        <field>AXF_OBJ_PluggyConnection__c.AXF_CON_LKP_PausedBy__c</field>
+        <readable>true</readable>
+    </fieldPermissions>
+    <fieldPermissions>
+        <editable>true</editable>
+        <field>AXF_OBJ_PluggyConnection__c.AXF_CON_DT_LastSuccessAt__c</field>
+        <readable>true</readable>
+    </fieldPermissions>
+    <fieldPermissions>
+        <editable>true</editable>
+        <field>AXF_OBJ_PluggyConnection__c.AXF_CON_TXT_LastStatusCode__c</field>
+        <readable>true</readable>
+    </fieldPermissions>
+    <fieldPermissions>
+        <editable>true</editable>
+        <field>AXF_OBJ_PluggyConnection__c.AXF_CON_TXT_LastStatusDetail__c</field>
+        <readable>true</readable>
+    </fieldPermissions>
     <!-- Account.AXF_Person (Person Account RT) nao e enderecavel pela Metadata API;
          a visibilidade do RT de pessoa e passo manual de instalacao (AXF-77). -->
     <recordTypeVisibilities>
@@ -100,6 +225,14 @@
     </tabSettings>
     <tabSettings>
         <tab>AXF_AddPersonAccess</tab>
+        <visibility>Visible</visibility>
+    </tabSettings>
+    <tabSettings>
+        <tab>AXF_SourceHealth</tab>
+        <visibility>Visible</visibility>
+    </tabSettings>
+    <tabSettings>
+        <tab>AXF_PluggyConfig</tab>
         <visibility>Visible</visibility>
     </tabSettings>
 </PermissionSet>

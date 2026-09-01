@@ -1,0 +1,17 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<CustomField xmlns="http://soap.sforce.com/2006/04/metadata">
+    <fullName>AXF_CON_PKL_ConsentState__c</fullName>
+    <label>Estado do consentimento</label>
+    <type>Picklist</type>
+    <description>ACTIVE|STALE|REVOKED. STALE/REVOKED bloqueiam nova coleta e marcam dados como desatualizados (D-45).</description>
+    <required>true</required>
+    <valueSet>
+        <restricted>true</restricted>
+        <valueSetDefinition>
+            <sorted>false</sorted>
+            <value><fullName>ACTIVE</fullName><default>true</default><label>Ativo</label></value>
+            <value><fullName>STALE</fullName><default>false</default><label>Desatualizado</label></value>
+            <value><fullName>REVOKED</fullName><default>false</default><label>Revogado</label></value>
+        </valueSetDefinition>
+    </valueSet>
+</CustomField>
