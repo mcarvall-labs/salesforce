@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<CustomField xmlns="http://soap.sforce.com/2006/04/metadata">
+    <fullName>AXF_OST_TXT_EvidenceRef__c</fullName>
+    <label>Referência de evidência</label>
+    <description
+  >Referência mínima que comprova a etapa: normalmente o Id de um registro efetivo (ex.: Item ID persistido, Person Account, PermissionSetAssignment). Nunca um segredo, token, senha ou chave de API — o servidor rejeita valores com aparência de segredo. AXF-88 / AC1, AC5.</description>
+    <type>Text</type>
+    <length>255</length>
+    <required>false</required>
+</CustomField>

@@ -1,0 +1,13 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<CustomField xmlns="http://soap.sforce.com/2006/04/metadata">
+    <fullName>AXF_ONB_LKP_RunningUser__c</fullName>
+    <label>Usuário que avançou</label>
+    <description
+  >Último usuário que avançou o onboarding. Informativo — a autoridade é verificada por AXF_CanConfigure a cada operação, não por este campo.</description>
+    <type>Lookup</type>
+    <referenceTo>User</referenceTo>
+    <relationshipLabel>Progressos do Onboarding</relationshipLabel>
+    <relationshipName>AXF_OnboardingProgress</relationshipName>
+    <deleteConstraint>SetNull</deleteConstraint>
+    <required>false</required>
+</CustomField>

@@ -1,0 +1,30 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<CustomField xmlns="http://soap.sforce.com/2006/04/metadata">
+    <fullName>AXF_ONB_PKL_CurrentStep__c</fullName>
+    <label>Etapa atual</label>
+    <description
+  >Próxima ação: primeira etapa ainda não confirmada/pulada na ordem canônica, ou REVIEW/DONE. Derivada — nunca é fonte de autoridade acima do estado efetivo de cada etapa.</description>
+    <type>Picklist</type>
+    <required>true</required>
+    <valueSet><restricted>true</restricted><valueSetDefinition><sorted
+      >false</sorted>
+      <value><fullName>WELCOME_PREFS</fullName><default>true</default><label
+        >WELCOME_PREFS</label></value>
+      <value><fullName>PLUGGY_CREDENTIALS</fullName><default>false</default><label
+        >PLUGGY_CREDENTIALS</label></value>
+      <value><fullName>PLUGGY_DISCOVERY</fullName><default>false</default><label
+        >PLUGGY_DISCOVERY</label></value>
+      <value><fullName>ACCOUNT_HOLDERS</fullName><default>false</default><label
+        >ACCOUNT_HOLDERS</label></value>
+      <value><fullName>PEOPLE_ACCESS</fullName><default>false</default><label
+        >PEOPLE_ACCESS</label></value>
+      <value><fullName>MANUAL_SOURCES</fullName><default>false</default><label
+        >MANUAL_SOURCES</label></value>
+      <value><fullName>CURRENCY_PREF</fullName><default>false</default><label
+        >CURRENCY_PREF</label></value>
+      <value><fullName>REVIEW</fullName><default>false</default><label
+        >REVIEW</label></value>
+      <value><fullName>DONE</fullName><default>false</default><label
+        >DONE</label></value>
+    </valueSetDefinition></valueSet>
+</CustomField>
