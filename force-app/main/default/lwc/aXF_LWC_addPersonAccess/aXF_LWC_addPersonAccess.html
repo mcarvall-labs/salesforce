@@ -10,7 +10,23 @@
       <template lwc:if={canEdit}>
         <!-- FORM -->
         <template lwc:if={isForm}>
-          <lightning-progress-indicator current-step={stepIndex} type="base">
+          <h2
+            class="slds-text-heading_small slds-var-m-bottom_xx-small"
+            tabindex="-1"
+            data-step-heading
+          >
+            {stepTitle}
+          </h2>
+          <p
+            class="slds-text-body_small slds-text-color_weak slds-var-m-bottom_x-small"
+          >
+            {stepOfLabel}
+          </p>
+          <lightning-progress-indicator
+            current-step={stepIndex}
+            type="base"
+            aria-hidden="true"
+          >
             <lightning-progress-step
               label={labels.stepPerson}
               value="0"
@@ -108,11 +124,13 @@
                 <dt class="slds-dl_horizontal__label">{labels.personLabel}</dt>
                 <dd class="slds-dl_horizontal__detail">{form.name}</dd>
                 <dt class="slds-dl_horizontal__label">{labels.modeLabel}</dt>
-                <dd class="slds-dl_horizontal__detail">{form.mode}</dd>
-                <dt class="slds-dl_horizontal__label">{labels.emailLabel}</dt>
-                <dd class="slds-dl_horizontal__detail">{form.email}</dd>
+                <dd class="slds-dl_horizontal__detail">{modeLabelText}</dd>
+                <template lwc:if={isCreate}>
+                  <dt class="slds-dl_horizontal__label">{labels.emailLabel}</dt>
+                  <dd class="slds-dl_horizontal__detail">{form.email}</dd>
+                </template>
                 <dt class="slds-dl_horizontal__label">{labels.scopeLabel}</dt>
-                <dd class="slds-dl_horizontal__detail">{form.scope}</dd>
+                <dd class="slds-dl_horizontal__detail">{scopeLabelText}</dd>
               </dl>
             </template>
           </div>
@@ -145,7 +163,7 @@
 
         <!-- RUNNING / DONE / FAILED -->
         <template lwc:if={isRunning}>
-          <div role="status" aria-live="polite">
+          <div role="status" aria-live="polite" tabindex="-1" data-feedback>
             <lightning-spinner
               size="small"
               alternative-text={labels.running}
@@ -161,7 +179,14 @@
         </template>
 
         <template lwc:if={isDone}>
-          <p class="slds-text-color_success" role="status">{feedback}</p>
+          <p
+            class="slds-text-color_success"
+            role="status"
+            tabindex="-1"
+            data-feedback
+          >
+            {feedback}
+          </p>
           <lightning-button
             label={labels.cancel}
             onclick={handleCancel}
@@ -169,7 +194,14 @@
         </template>
 
         <template lwc:if={isFailed}>
-          <p class="slds-text-color_error" role="alert">{feedback}</p>
+          <p
+            class="slds-text-color_error"
+            role="alert"
+            tabindex="-1"
+            data-feedback
+          >
+            {feedback}
+          </p>
           <lightning-button
             variant="brand"
             label={labels.retry}
