@@ -15,13 +15,10 @@ public with sharing class AXF_CLS_PluggySettings {
   public static final String NC_PRIMARY = 'AXF_NC_Pluggy_API';
   public static final String NC_CANDIDATE = 'AXF_NC_Pluggy_API_Candidate';
 
-  static final Integer DEFAULT_CACHE_TTL_SECONDS = 5400;
-
   @TestVisible
   private static AXF_PluggyIntegrationConfig__c overrideForTests;
 
   private static AXF_PluggyIntegrationConfig__c working;
-  private static Boolean persisted = false;
 
   private AXF_CLS_PluggySettings() {
   }
@@ -35,7 +32,6 @@ public with sharing class AXF_CLS_PluggySettings {
         SELECT
           Id,
           AXF_PIC_TXT_ActiveSlot__c,
-          AXF_PIC_NUM_ApiKeyCacheTtlSeconds__c,
           AXF_PIC_BOL_CollectionGloballyPaused__c,
           AXF_PIC_DT_GlobalPauseAt__c,
           AXF_PIC_BOL_WebhookEnabled__c,
@@ -53,10 +49,8 @@ public with sharing class AXF_CLS_PluggySettings {
         working = new AXF_PluggyIntegrationConfig__c(
           SetupOwnerId = UserInfo.getOrganizationId()
         );
-        persisted = false;
       } else {
         working = rows[0];
-        persisted = true;
       }
     }
     return working;
@@ -77,25 +71,20 @@ public with sharing class AXF_CLS_PluggySettings {
     return SLOT_CANDIDATE.equalsIgnoreCase(s) ? SLOT_CANDIDATE : SLOT_PRIMARY;
   }
 
-  public static Integer apiKeyCacheTtlSeconds() {
-    Decimal ttl = record().AXF_PIC_NUM_ApiKeyCacheTtlSeconds__c;
-    if (ttl == null || ttl <= 0) {
-      return DEFAULT_CACHE_TTL_SECONDS;
-    }
-    return (Integer) ttl;
-  }
-
   public static Boolean collectionGloballyPaused() {
     return record().AXF_PIC_BOL_CollectionGloballyPaused__c == true;
   }
 
+  /**
+   * @description Whether a verified webhook enqueues a fetch. Absent setting => enabled
+   * (the signature is still verified before anything is accepted either way).
+   */
   public static Boolean webhookEnabled() {
-    // Absent setting => enabled (safe default: still validates signature before acting).
     AXF_PluggyIntegrationConfig__c r = record();
-    if (r.Id == null && !persisted && overrideForTests == null) {
+    if (r.Id == null && overrideForTests == null) {
       return true;
     }
-    return r.AXF_PIC_BOL_WebhookEnabled__c == true;
+    return r.AXF_PIC_BOL_WebhookEnabled__c != false;
   }
 
   public static String rotationState() {
@@ -116,7 +105,6 @@ public with sharing class AXF_CLS_PluggySettings {
   public static void save(AXF_PluggyIntegrationConfig__c mutated) {
     upsert mutated;
     working = mutated;
-    persisted = true;
     overrideForTests = null;
   }
 }

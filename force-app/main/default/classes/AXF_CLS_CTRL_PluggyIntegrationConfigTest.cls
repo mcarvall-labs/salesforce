@@ -33,7 +33,63 @@ private class AXF_CLS_CTRL_PluggyIntegrationConfigTest {
     System.assertEquals('CANDIDATE', d.activeSlot);
     System.assertEquals(true, d.collectionGloballyPaused);
     System.assertEquals(1, d.connectionCount);
-    System.assertEquals(5400, d.cacheTtlSeconds);
+  }
+
+  @IsTest
+  static void setPrincipalCredentialForbiddenWithoutAuthority() {
+    AXF_CLS_CTRL_PluggyIntegrationConfig.canConfigureOverride = false;
+    AXF_CLS_PluggyCredentialWriter.Result r = AXF_CLS_CTRL_PluggyIntegrationConfig.setPrincipalCredential(
+      'cid',
+      'csecret'
+    );
+    System.assertEquals(false, r.applied);
+    System.assert(r.message.containsIgnoreCase('autoriza'));
+  }
+
+  @IsTest
+  static void setPrincipalCredentialForwardsToNativeMechanism() {
+    AXF_CLS_CTRL_PluggyIntegrationConfig.canConfigureOverride = true;
+    AXF_CLS_PluggyCredentialWriter.Result r = AXF_CLS_CTRL_PluggyIntegrationConfig.setPrincipalCredential(
+      'cid',
+      'csecret'
+    );
+    System.assertEquals(true, r.applied);
+    System.assertEquals(
+      'AXF_EXC_Pluggy',
+      AXF_CLS_PluggyCredentialWriter.lastExternalCredentialForTests
+    );
+    System.assertEquals(
+      true,
+      AXF_CLS_PluggyCredentialWriter.lastHadSecretForTests
+    );
+  }
+
+  @IsTest
+  static void setPrincipalCredentialRejectsBlank() {
+    AXF_CLS_CTRL_PluggyIntegrationConfig.canConfigureOverride = true;
+    AXF_CLS_PluggyCredentialWriter.Result r = AXF_CLS_CTRL_PluggyIntegrationConfig.setPrincipalCredential(
+      'cid',
+      ''
+    );
+    System.assertEquals(false, r.applied);
+  }
+
+  @IsTest
+  static void stageCandidateCredentialTargetsCandidateSlot() {
+    AXF_CLS_PluggyTestData.config(false, 'PRIMARY', 'NONE');
+    AXF_CLS_CTRL_PluggyIntegrationConfig.canConfigureOverride = true;
+    AXF_CLS_PluggyCredentialRotationService.canConfigureOverride = true;
+
+    AXF_CLS_PluggyCredentialWriter.Result r = AXF_CLS_CTRL_PluggyIntegrationConfig.stageCandidateCredential(
+      'cid',
+      'csecret'
+    );
+    System.assertEquals(true, r.applied);
+    System.assertEquals(
+      'AXF_EXC_Pluggy_Candidate',
+      AXF_CLS_PluggyCredentialWriter.lastExternalCredentialForTests
+    );
+    System.assertEquals('CANDIDATE', AXF_CLS_PluggySettings.rotationState());
   }
 
   @IsTest

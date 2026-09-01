@@ -28,13 +28,46 @@
           {labels.SECRET_HINT}
         </p>
 
+        <lightning-input
+          type="text"
+          label={labels.CLIENT_ID}
+          value={clientId}
+          onchange={handleClientIdChange}
+          autocomplete="off"
+        ></lightning-input>
+        <lightning-input
+          type="password"
+          label={labels.CLIENT_SECRET}
+          value={clientSecret}
+          onchange={handleClientSecretChange}
+          autocomplete="off"
+        ></lightning-input>
+
+        <div
+          class="slds-m-top_x-small slds-grid slds-wrap slds-gutters_x-small"
+        >
+          <lightning-button
+            class="slds-m-around_xx-small"
+            variant="brand"
+            label={labels.SAVE_ACTIVE}
+            disabled={credentialButtonsDisabled}
+            onclick={handleSaveActive}
+          ></lightning-button>
+          <lightning-button
+            class="slds-m-around_xx-small"
+            label={labels.STAGE_CANDIDATE}
+            disabled={credentialButtonsDisabled}
+            onclick={handleStageCandidate}
+          ></lightning-button>
+        </div>
+
+        <hr class="slds-m-vertical_small" />
+
         <dl class="slds-dl_horizontal">
           <dt class="slds-dl_horizontal__label">{labels.ACTIVE_SLOT}</dt>
           <dd class="slds-dl_horizontal__detail">{status.activeSlot}</dd>
           <dt class="slds-dl_horizontal__label">{labels.ROTATION_STATE}</dt>
           <dd class="slds-dl_horizontal__detail">{status.rotationState}</dd>
-          <dt class="slds-dl_horizontal__label">{labels.CACHE_TTL}</dt>
-          <dd class="slds-dl_horizontal__detail">{status.cacheTtlSeconds}</dd>
           <dt class="slds-dl_horizontal__label">{labels.CONNECTIONS}</dt>
           <dd class="slds-dl_horizontal__detail">{status.connectionCount}</dd>
           <dt class="slds-dl_horizontal__label">{labels.BLOCKED}</dt>
@@ -51,9 +84,7 @@
           </dd>
         </dl>
 
-        <p class="slds-m-top_small" role="status">
-          {globalStateText} · {webhookText}
-        </p>
+        <p class="slds-m-top_small" role="status">{globalStateText}</p>
 
         <div class="slds-m-top_medium slds-grid slds-wrap slds-gutters_x-small">
           <lightning-button

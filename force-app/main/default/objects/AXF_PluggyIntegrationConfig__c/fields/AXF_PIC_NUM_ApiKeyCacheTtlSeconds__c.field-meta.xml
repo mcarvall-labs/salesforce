@@ -1,9 +1,0 @@
-<?xml version="1.0" encoding="UTF-8"?>
-<CustomField xmlns="http://soap.sforce.com/2006/04/metadata">
-    <fullName>AXF_PIC_NUM_ApiKeyCacheTtlSeconds__c</fullName>
-    <label>TTL do cache do apiKey (s)</label>
-    <type>Number</type>
-    <precision>7</precision>
-    <scale>0</scale>
-    <description>TTL curto do apiKey em Platform Cache. Default de codigo 5400s (menor que 2h reais, com margem).</description>
-</CustomField>

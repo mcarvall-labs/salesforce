@@ -2,10 +2,10 @@
  * @description Credential rotation without destroying the active credential. AXF-11 AC2,
  * Fechamento G4-2 and the "two pre-installed NC/EC sets" design from the G4 investigation.
  *
- * The active and candidate secrets both live in External Credentials, populated by an admin
- * through the native Setup UI (install step). This service only:
+ * The active and candidate secrets both live in External Credentials. This service:
+ *   0. stages a candidate secret into the inactive slot's External Credential (ConnectApi);
  *   1. tests the candidate slot end to end (auth + light read + existing connections still
- *      reachable) WITHOUT touching the active slot or its apiKey cache;
+ *      reachable) WITHOUT touching the active slot or its apiKey;
  *   2. promotes by flipping the active-slot pointer (pure DML) once every check passed;
  *   3. rolls back / preserves the active slot on any failure.
  *
@@ -50,6 +50,40 @@ public with sharing class AXF_CLS_PluggyCredentialRotationService {
     return AXF_CLS_PluggySettings.activeSlot() == 'PRIMARY'
       ? AXF_CLS_PluggySettings.NC_CANDIDATE
       : AXF_CLS_PluggySettings.NC_PRIMARY;
+  }
+
+  private String candidateExternalCredential() {
+    return AXF_CLS_PluggySettings.activeSlot() == 'PRIMARY'
+      ? 'AXF_EXC_Pluggy_Candidate'
+      : 'AXF_EXC_Pluggy';
+  }
+
+  private String candidatePrincipal() {
+    return AXF_CLS_PluggySettings.activeSlot() == 'PRIMARY'
+      ? 'AXF_Pluggy_Principal_Cand'
+      : 'AXF_Pluggy_Principal';
+  }
+
+  /**
+   * @description Writes a candidate secret into the inactive slot's External Credential and
+   * marks the rotation CANDIDATE. Never touches the active slot. Requires AXF_CanConfigure.
+   */
+  public AXF_CLS_PluggyCredentialWriter.Result stageCandidate(
+    String clientId,
+    String clientSecret
+  ) {
+    requireAuthority();
+    AXF_CLS_PluggyCredentialWriter.Result r = new AXF_CLS_PluggyCredentialWriter()
+      .write(
+        candidateExternalCredential(),
+        candidatePrincipal(),
+        clientId,
+        clientSecret
+      );
+    if (r.applied) {
+      setRotationState('CANDIDATE', true);
+    }
+    return r;
   }
 
   private AXF_CLS_PluggyHttpClient candidateClient() {

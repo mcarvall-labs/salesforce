@@ -5,6 +5,33 @@
 @IsTest
 private class AXF_CLS_PluggyCredentialRotationSvcTest {
   @IsTest
+  static void stageCandidateWritesInactiveSlotAndMarksCandidate() {
+    AXF_CLS_PluggyTestData.config(false, 'PRIMARY', 'NONE');
+    AXF_CLS_PluggyCredentialRotationService.canConfigureOverride = true;
+
+    AXF_CLS_PluggyCredentialWriter.Result r = new AXF_CLS_PluggyCredentialRotationService()
+      .stageCandidate('cid', 'csecret');
+
+    System.assertEquals(true, r.applied);
+    System.assertEquals(
+      'AXF_EXC_Pluggy_Candidate',
+      AXF_CLS_PluggyCredentialWriter.lastExternalCredentialForTests
+    );
+    System.assertEquals('CANDIDATE', AXF_CLS_PluggySettings.rotationState());
+  }
+
+  @IsTest
+  static void stageCandidateRequiresAuthority() {
+    AXF_CLS_PluggyCredentialRotationService.canConfigureOverride = false;
+    try {
+      new AXF_CLS_PluggyCredentialRotationService().stageCandidate('c', 's');
+      System.assert(false, 'unauthorized stage must fail');
+    } catch (AXF_CLS_PluggyConfigException e) {
+      // expected
+    }
+  }
+
+  @IsTest
   static void healthyCandidateCanBePromoted() {
     AXF_CLS_PluggyTestData.connection('ITEM_A');
     AXF_CLS_PluggyTestData.config(false, 'PRIMARY', 'NONE');

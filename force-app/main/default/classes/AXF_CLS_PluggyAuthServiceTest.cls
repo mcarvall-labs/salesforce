@@ -1,6 +1,7 @@
 /**
- * @description AXF-11 AC1/AC8. Auth success/failure/cache, TTL from the custom setting, and
- * the regression guard: no debug log or error message ever contains the apiKey.
+ * @description AXF-11 AC1/AC8. Auth success/failure and the regression guard: no debug log
+ * or error message ever contains the apiKey. The apiKey is held only for the current Apex
+ * transaction (no persistent cache).
  */
 @IsTest
 private class AXF_CLS_PluggyAuthServiceTest {
@@ -72,23 +73,28 @@ private class AXF_CLS_PluggyAuthServiceTest {
   }
 
   @IsTest
-  static void ttlComesFromCustomSetting() {
-    insert new AXF_PluggyIntegrationConfig__c(
-      SetupOwnerId = UserInfo.getOrganizationId(),
-      AXF_PIC_NUM_ApiKeyCacheTtlSeconds__c = 900
-    );
-    System.assertEquals(900, AXF_CLS_PluggySettings.apiKeyCacheTtlSeconds());
-  }
+  static void transactionCacheReturnsSameKeyWithoutSecondCallout() {
+    AXF_CLS_PluggyHttpCalloutMock mock = new AXF_CLS_PluggyHttpCalloutMock();
+    mock.apiKey = 'k1';
+    Test.setMock(HttpCalloutMock.class, mock);
 
-  @IsTest
-  static void ttlDefaultsWhenUnset() {
-    System.assertEquals(5400, AXF_CLS_PluggySettings.apiKeyCacheTtlSeconds());
-  }
-
-  @IsTest
-  static void invalidateCacheIsSafeWithoutPartition() {
     Test.startTest();
-    AXF_CLS_PluggyAuthService.invalidateCache(); // must not throw even with no cache capacity
+    String a = AXF_CLS_PluggyAuthService.getValidApiKey();
+    String b = AXF_CLS_PluggyAuthService.getValidApiKey();
+    Test.stopTest();
+
+    System.assertEquals(a, b);
+    System.assertEquals(
+      1,
+      mock.requestedPaths.size(),
+      'one POST /auth per transaction'
+    );
+  }
+
+  @IsTest
+  static void invalidateCacheIsSafe() {
+    Test.startTest();
+    AXF_CLS_PluggyAuthService.invalidateCache(); // must not throw
     Test.stopTest();
   }
 

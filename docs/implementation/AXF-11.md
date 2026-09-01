@@ -15,6 +15,30 @@
 
 ---
 
+## Revisão 31/08/2026 (decisões do Michel)
+
+- **Entrada de credencial in-app:** o wizard/tela é executado por um **SysAdmin** (org
+  configurator), então `AXF_CLS_CTRL_PluggyIntegrationConfig.setPrincipalCredential` /
+  `stageCandidateCredential` encaminham Client ID/Secret direto ao mecanismo nativo via
+  `AXF_CLS_PluggyCredentialWriter` → `ConnectApi.NamedCredentials.updateCredential/createCredential`
+  (trânsito em memória, nunca gravado/logado). Não é mais passo de Setup. O SysAdmin já tem
+  "Manage Named Credentials" pelo profile; nenhum PSG do Axon ganha essa permissão.
+  A chamada ConnectApi é pulada sob `Test.isRunningTest()` e **precisa de um smoke test em org real** antes do 1º uso.
+- **Platform Cache removido:** `AXF_CLS_PluggyAuthService` agora mantém o `apiKey` só na
+  transação Apex corrente (1 `POST /auth` por transação, recomendação da investigação G4).
+  Sem partition, sem `AXF_PIC_NUM_ApiKeyCacheTtlSeconds__c`.
+- **Segredo do webhook:** Custom Metadata **protegida** `AXF_PluggyWebhookConfig__mdt.AXF_PWC_TXT_Secret__c`
+  (não `AXF_EXC_PluggyWebhook`; valores de EC não são legíveis em Apex para HMAC local — G4-3 permite CMT protegida).
+- **`AXF_PS_GestorFinanceiro` perdeu o acesso ao principal das ECs.** "Saúde das fontes" para
+  o Gestor = leitura + pausa local (DML, sem callout). Resume/reautorizar (que fazem callout)
+  funcionam para quem tem `AXF_PS_PluggyIntegration` (o SysAdmin configurador).
+- **Webhook fica no MVP.** Novo `AXF_PS_PluggyWebhookGuest` para o Guest User do Salesforce
+  Site. Setup manual: registrar Site → criar Site → atribuir `AXF_PS_PluggyWebhookGuest` ao
+  guest user → URL `https://<site>/services/apexrest/pluggy/webhook` no Dashboard Pluggy →
+  colar o secret na CMT `AXF Pluggy Webhook Config / Default`.
+
+---
+
 ## 1. Escopo entregue
 
 | Entrega                                                                                        | Componente                                                                                                                                                                         |

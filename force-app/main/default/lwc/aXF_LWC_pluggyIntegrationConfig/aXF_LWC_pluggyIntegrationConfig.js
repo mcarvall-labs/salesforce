@@ -2,6 +2,8 @@ import { LightningElement, wire } from "lwc";
 import { refreshApex } from "@salesforce/apex";
 import canConfigure from "@salesforce/apex/AXF_CLS_CTRL_PluggyIntegrationConfig.canConfigure";
 import getStatus from "@salesforce/apex/AXF_CLS_CTRL_PluggyIntegrationConfig.getStatus";
+import setPrincipalCredential from "@salesforce/apex/AXF_CLS_CTRL_PluggyIntegrationConfig.setPrincipalCredential";
+import stageCandidateCredential from "@salesforce/apex/AXF_CLS_CTRL_PluggyIntegrationConfig.stageCandidateCredential";
 import testCandidate from "@salesforce/apex/AXF_CLS_CTRL_PluggyIntegrationConfig.testCandidate";
 import promoteCandidate from "@salesforce/apex/AXF_CLS_CTRL_PluggyIntegrationConfig.promoteCandidate";
 import rollbackRotation from "@salesforce/apex/AXF_CLS_CTRL_PluggyIntegrationConfig.rollbackRotation";
@@ -18,7 +20,11 @@ const L = {
   ACTIVE_SLOT: "Slot de credencial ativo",
   ROTATION_STATE: "Estado da rotação",
   SECRET_HINT:
-    "O Client ID e o Client Secret são informados apenas pelo Setup de Credenciais Externas do Salesforce. Esta tela nunca recebe nem armazena o segredo.",
+    "O Client ID e o Client Secret são encaminhados direto para a Credencial Externa nativa e descartados. Nunca são gravados nem exibidos aqui.",
+  CLIENT_ID: "Client ID",
+  CLIENT_SECRET: "Client Secret",
+  SAVE_ACTIVE: "Salvar credencial ativa",
+  STAGE_CANDIDATE: "Preparar candidata (rotação)",
   TEST_CANDIDATE: "Testar credencial candidata",
   PROMOTE: "Promover candidata",
   ROLLBACK: "Reverter rotação",
@@ -26,14 +32,12 @@ const L = {
   RESUME_GLOBAL: "Retomar coleta global",
   GLOBAL_PAUSED: "A coleta Pluggy está pausada globalmente.",
   GLOBAL_ACTIVE: "A coleta Pluggy está ativa.",
-  WEBHOOK_ON: "Webhook habilitado",
-  WEBHOOK_OFF: "Webhook desabilitado",
-  CACHE_TTL: "TTL do cache do apiKey (s)",
   CONNECTIONS: "Conexões",
   BLOCKED: "Conexões bloqueadas",
   PRIMARY_TEST: "Último teste — slot primário",
   CANDIDATE_TEST: "Último teste — slot candidato",
   BUSY: "Processando…",
+  FILL_BOTH: "Informe o Client ID e o Client Secret.",
   GENERIC_FAIL: "A operação não foi concluída. Nada foi alterado."
 };
 
@@ -51,6 +55,8 @@ export default class AxfPluggyIntegrationConfig extends LightningElement {
   busy = false;
   feedback;
   feedbackVariant = "info";
+  clientId = "";
+  clientSecret = "";
   _wired;
 
   @wire(canConfigure)
@@ -99,10 +105,8 @@ export default class AxfPluggyIntegrationConfig extends LightningElement {
   get globalStateText() {
     return this.globalPaused ? L.GLOBAL_PAUSED : L.GLOBAL_ACTIVE;
   }
-  get webhookText() {
-    return this.status && this.status.webhookEnabled
-      ? L.WEBHOOK_ON
-      : L.WEBHOOK_OFF;
+  get credentialButtonsDisabled() {
+    return this.busy || !this.clientId || !this.clientSecret;
   }
   get promoteDisabled() {
     return (
@@ -117,15 +121,44 @@ export default class AxfPluggyIntegrationConfig extends LightningElement {
     );
   }
 
-  async run(fn) {
+  handleClientIdChange(event) {
+    this.clientId = event.target.value;
+  }
+  handleClientSecretChange(event) {
+    this.clientSecret = event.target.value;
+  }
+
+  clearCredentialInputs() {
+    this.clientId = "";
+    this.clientSecret = "";
+    const inputs = this.template.querySelectorAll("lightning-input");
+    inputs.forEach((i) => {
+      i.value = "";
+    });
+  }
+
+  async run(fn, { clearCreds = false } = {}) {
     this.busy = true;
     this.feedback = undefined;
     try {
       const res = await fn();
       const msg = res && res.message ? res.message : "Operação concluída.";
+      const ok =
+        !res ||
+        res.applied === true ||
+        res.candidateHealthy === true ||
+        res.state === "PROMOTED" ||
+        res.state === "ROLLED_BACK";
       const variant =
-        res && res.candidateHealthy === false ? "warning" : "success";
+        res && (res.applied === false || res.candidateHealthy === false)
+          ? "warning"
+          : ok
+            ? "success"
+            : "info";
       this.setFeedback(msg, variant);
+      if (clearCreds) {
+        this.clearCredentialInputs();
+      }
       this.refresh();
     } catch (e) {
       this.setFeedback(this.extractMessage(e), "error");
@@ -142,6 +175,34 @@ export default class AxfPluggyIntegrationConfig extends LightningElement {
     }
   }
 
+  handleSaveActive() {
+    if (!this.clientId || !this.clientSecret) {
+      this.setFeedback(L.FILL_BOTH, "warning");
+      return;
+    }
+    this.run(
+      () =>
+        setPrincipalCredential({
+          clientId: this.clientId,
+          clientSecret: this.clientSecret
+        }),
+      { clearCreds: true }
+    );
+  }
+  handleStageCandidate() {
+    if (!this.clientId || !this.clientSecret) {
+      this.setFeedback(L.FILL_BOTH, "warning");
+      return;
+    }
+    this.run(
+      () =>
+        stageCandidateCredential({
+          clientId: this.clientId,
+          clientSecret: this.clientSecret
+        }),
+      { clearCreds: true }
+    );
+  }
   handleTest() {
     this.run(() => testCandidate());
   }
@@ -154,13 +215,13 @@ export default class AxfPluggyIntegrationConfig extends LightningElement {
   handlePauseGlobal() {
     this.run(async () => {
       await pauseGlobally();
-      return { message: "Coleta pausada globalmente." };
+      return { message: "Coleta pausada globalmente.", applied: true };
     });
   }
   handleResumeGlobal() {
     this.run(async () => {
       await resumeGlobally();
-      return { message: "Coleta global retomada." };
+      return { message: "Coleta global retomada.", applied: true };
     });
   }
   handleRetry() {

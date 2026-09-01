@@ -1,59 +1,42 @@
 /**
- * @description Obtains and caches the Pluggy apiKey server-side. Ported from the legacy
- * develop baseline and regressed for AXF-11 (G4-1 / AC8):
+ * @description Obtains the Pluggy apiKey server-side. Ported from the legacy develop
+ * baseline and regressed for AXF-11 (G4-1 / AC8):
  *  - every System.debug of the request/response/apiKey was removed (they leaked the key);
- *  - the cache TTL is short and configurable (AXF_PluggySettings), never the raw ~2h;
+ *  - no persistent cache: the apiKey is held only for the current Apex transaction
+ *    (one POST /auth per transaction, as the G4 investigation recommended);
  *  - error messages are sanitized: endpoint + HTTP status + correlation id only;
  *  - the Named Credential is resolved from the active rotation slot, and an explicit
- *    Named Credential can be passed to test a candidate without touching the live cache.
+ *    Named Credential can be passed to test a candidate without touching the live key.
  *
  * Secrets (clientId/clientSecret) live only in AXF_EXC_Pluggy(_Candidate); the apiKey lives
- * only in Platform Cache and in-memory here. Neither is ever returned to a client, written
- * to a record, a log, a URL or an error.
+ * only in the in-memory map below for the duration of one request. Neither is ever returned
+ * to a client, written to a record, a log, a URL or an error.
  */
 public with sharing class AXF_CLS_PluggyAuthService {
-  @TestVisible
-  private static final String CACHE_PARTITION = 'local.AXFPluggyCache';
-  @TestVisible
-  private static final String CACHE_KEY_PRIMARY = 'apiKey_PRIMARY';
-  @TestVisible
-  private static final String CACHE_KEY_CANDIDATE = 'apiKey_CANDIDATE';
+  private static final Map<String, String> APIKEY_BY_NC = new Map<String, String>();
 
-  /** @description apiKey for the currently active credential slot (cached). */
+  /** @description apiKey for the currently active credential slot. */
   public static String getValidApiKey() {
     return getValidApiKey(AXF_CLS_PluggySettings.activeNamedCredential());
   }
 
   /**
    * @description apiKey for a specific Named Credential. Used by rotation to test the
-   * candidate slot. The candidate result is cached under its own key so a passing test
-   * never overwrites the live apiKey.
+   * candidate slot without disturbing the live key.
    */
   public static String getValidApiKey(String namedCredential) {
-    String cacheKey = AXF_CLS_PluggySettings.NC_CANDIDATE.equals(
-        namedCredential
-      )
-      ? CACHE_KEY_CANDIDATE
-      : CACHE_KEY_PRIMARY;
-
-    String cached = fromCache(cacheKey);
+    String cached = APIKEY_BY_NC.get(namedCredential);
     if (String.isNotBlank(cached)) {
       return cached;
     }
     String apiKey = requestNewApiKey(namedCredential);
-    toCache(cacheKey, apiKey);
+    APIKEY_BY_NC.put(namedCredential, apiKey);
     return apiKey;
   }
 
-  /** @description Drops the cached apiKey for both slots (e.g. after a promotion). */
+  /** @description Forgets the current-transaction apiKey (e.g. after a promotion). */
   public static void invalidateCache() {
-    try {
-      Cache.OrgPartition p = Cache.Org.getPartition(CACHE_PARTITION);
-      p.remove(CACHE_KEY_PRIMARY);
-      p.remove(CACHE_KEY_CANDIDATE);
-    } catch (Cache.Org.OrgCacheException e) {
-      // No partition capacity: nothing cached, nothing to drop.
-    }
+    APIKEY_BY_NC.clear();
   }
 
   private static String requestNewApiKey(String namedCredential) {
@@ -119,28 +102,5 @@ public with sharing class AXF_CLS_PluggyAuthService {
     return AXF_CLS_PluggySettings.NC_CANDIDATE.equals(namedCredential)
       ? 'AXF_EXC_Pluggy_Candidate'
       : 'AXF_EXC_Pluggy';
-  }
-
-  private static String fromCache(String key) {
-    try {
-      Cache.OrgPartition p = Cache.Org.getPartition(CACHE_PARTITION);
-      if (p != null && p.contains(key)) {
-        return (String) p.get(key);
-      }
-    } catch (Cache.Org.OrgCacheException e) {
-      // No partition capacity allocated: proceed without cache.
-    }
-    return null;
-  }
-
-  private static void toCache(String key, String apiKey) {
-    try {
-      Cache.OrgPartition p = Cache.Org.getPartition(CACHE_PARTITION);
-      if (p != null) {
-        p.put(key, apiKey, AXF_CLS_PluggySettings.apiKeyCacheTtlSeconds());
-      }
-    } catch (Cache.Org.OrgCacheException e) {
-      // No partition capacity allocated: apiKey will be re-fetched next call.
-    }
   }
 }
