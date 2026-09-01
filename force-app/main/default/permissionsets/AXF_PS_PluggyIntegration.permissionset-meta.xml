@@ -39,7 +39,7 @@
         <enabled>true</enabled>
     </classAccesses>
     <classAccesses>
-        <apexClass>AXF_CLS_PluggyWebhookQueueable</apexClass>
+        <apexClass>AXF_CLS_PluggyWebhookEventHandler</apexClass>
         <enabled>true</enabled>
     </classAccesses>
     <objectPermissions>
@@ -49,6 +49,15 @@
         <allowRead>true</allowRead>
         <modifyAllRecords>false</modifyAllRecords>
         <object>AXF_OBJ_PluggyConnection__c</object>
+        <viewAllRecords>false</viewAllRecords>
+    </objectPermissions>
+    <objectPermissions>
+        <allowCreate>true</allowCreate>
+        <allowDelete>false</allowDelete>
+        <allowEdit>false</allowEdit>
+        <allowRead>true</allowRead>
+        <modifyAllRecords>false</modifyAllRecords>
+        <object>AXF_PluggyWebhookEvent__e</object>
         <viewAllRecords>false</viewAllRecords>
     </objectPermissions>
     <fieldPermissions>

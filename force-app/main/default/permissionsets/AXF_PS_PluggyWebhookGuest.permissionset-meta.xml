@@ -2,13 +2,8 @@
 <PermissionSet xmlns="http://soap.sforce.com/2006/04/metadata">
     <label>Axon - Webhook Pluggy (guest)</label>
     <description
-  >Atribuir ao Guest User do Salesforce Site que expoe /services/apexrest/pluggy/webhook. Permite validar a assinatura HMAC e disparar a revalidacao de consentimento. Nao le segredo, nao escreve transacao. AXF-11 / G4-3.</description>
+  >Guest User do Site que expoe /services/apexrest/pluggy/webhook. Valida o HMAC e publica AXF_PluggyWebhookEvent__e; a revalidacao roda fora do contexto guest. Nao le segredo, nao escreve na Conexao, nao faz callout. AXF-11 / G4-3.</description>
     <hasActivationRequired>false</hasActivationRequired>
-    <externalCredentialPrincipalAccesses>
-        <externalCredentialPrincipal
-    >AXF_EXC_Pluggy-AXF_Pluggy_Principal</externalCredentialPrincipal>
-        <enabled>true</enabled>
-    </externalCredentialPrincipalAccesses>
     <classAccesses>
         <apexClass>AXF_CLS_PluggyWebhookResource</apexClass>
         <enabled>true</enabled>
@@ -18,19 +13,7 @@
         <enabled>true</enabled>
     </classAccesses>
     <classAccesses>
-        <apexClass>AXF_CLS_PluggyWebhookQueueable</apexClass>
-        <enabled>true</enabled>
-    </classAccesses>
-    <classAccesses>
-        <apexClass>AXF_CLS_PluggyConsentService</apexClass>
-        <enabled>true</enabled>
-    </classAccesses>
-    <classAccesses>
         <apexClass>AXF_CLS_PluggyHttpClient</apexClass>
-        <enabled>true</enabled>
-    </classAccesses>
-    <classAccesses>
-        <apexClass>AXF_CLS_PluggyAuthService</apexClass>
         <enabled>true</enabled>
     </classAccesses>
     <classAccesses>
@@ -38,82 +21,12 @@
         <enabled>true</enabled>
     </classAccesses>
     <objectPermissions>
-        <allowCreate>false</allowCreate>
+        <allowCreate>true</allowCreate>
         <allowDelete>false</allowDelete>
-        <allowEdit>true</allowEdit>
+        <allowEdit>false</allowEdit>
         <allowRead>true</allowRead>
         <modifyAllRecords>false</modifyAllRecords>
-        <object>AXF_OBJ_PluggyConnection__c</object>
+        <object>AXF_PluggyWebhookEvent__e</object>
         <viewAllRecords>false</viewAllRecords>
     </objectPermissions>
-    <fieldPermissions>
-        <editable>true</editable>
-        <field>AXF_OBJ_PluggyConnection__c.AXF_CON_TXT_ObservedItemId__c</field>
-        <readable>true</readable>
-    </fieldPermissions>
-    <fieldPermissions>
-        <editable>true</editable>
-        <field
-    >AXF_OBJ_PluggyConnection__c.AXF_CON_TXT_InstitutionName__c</field>
-        <readable>true</readable>
-    </fieldPermissions>
-    <fieldPermissions>
-        <editable>true</editable>
-        <field>AXF_OBJ_PluggyConnection__c.AXF_CON_TXT_ConnectorId__c</field>
-        <readable>true</readable>
-    </fieldPermissions>
-    <fieldPermissions>
-        <editable>true</editable>
-        <field>AXF_OBJ_PluggyConnection__c.AXF_CON_TXT_ConsentId__c</field>
-        <readable>true</readable>
-    </fieldPermissions>
-    <fieldPermissions>
-        <editable>true</editable>
-        <field
-    >AXF_OBJ_PluggyConnection__c.AXF_CON_TXT_ConsentObservedItemId__c</field>
-        <readable>true</readable>
-    </fieldPermissions>
-    <fieldPermissions>
-        <editable>true</editable>
-        <field>AXF_OBJ_PluggyConnection__c.AXF_CON_TAL_ConsentScope__c</field>
-        <readable>true</readable>
-    </fieldPermissions>
-    <fieldPermissions>
-        <editable>true</editable>
-        <field>AXF_OBJ_PluggyConnection__c.AXF_CON_TXT_ConsentPurpose__c</field>
-        <readable>true</readable>
-    </fieldPermissions>
-    <fieldPermissions>
-        <editable>true</editable>
-        <field>AXF_OBJ_PluggyConnection__c.AXF_CON_DT_ConsentGivenAt__c</field>
-        <readable>true</readable>
-    </fieldPermissions>
-    <fieldPermissions>
-        <editable>true</editable>
-        <field
-    >AXF_OBJ_PluggyConnection__c.AXF_CON_DT_ConsentExpiresAt__c</field>
-        <readable>true</readable>
-    </fieldPermissions>
-    <fieldPermissions>
-        <editable>true</editable>
-        <field>AXF_OBJ_PluggyConnection__c.AXF_CON_TXT_ConsentVersion__c</field>
-        <readable>true</readable>
-    </fieldPermissions>
-    <fieldPermissions>
-        <editable>true</editable>
-        <field
-    >AXF_OBJ_PluggyConnection__c.AXF_CON_DT_ConsentCheckedAt__c</field>
-        <readable>true</readable>
-    </fieldPermissions>
-    <fieldPermissions>
-        <editable>true</editable>
-        <field>AXF_OBJ_PluggyConnection__c.AXF_CON_TXT_LastStatusCode__c</field>
-        <readable>true</readable>
-    </fieldPermissions>
-    <fieldPermissions>
-        <editable>true</editable>
-        <field
-    >AXF_OBJ_PluggyConnection__c.AXF_CON_TXT_LastStatusDetail__c</field>
-        <readable>true</readable>
-    </fieldPermissions>
 </PermissionSet>

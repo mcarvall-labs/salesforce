@@ -1,6 +1,7 @@
 /**
  * @description AXF-11 / G4-3. Signature is checked before anything is accepted; invalid =>
- * 401 and nothing processed; valid => 200 and a fetch job enqueued; payload never stored.
+ * 401 and nothing processed; valid => 200 and AXF_PluggyWebhookEvent__e published (the
+ * revalidation runs out of the guest context); payload never stored.
  */
 @IsTest
 private class AXF_CLS_PluggyWebhookResourceTest {
@@ -58,18 +59,22 @@ private class AXF_CLS_PluggyWebhookResourceTest {
   }
 
   @IsTest
-  static void acceptsValidSignatureAndEnqueues() {
+  static void acceptsValidSignatureAndPublishesEvent() {
     AXF_CLS_PluggyWebhookResource.secretOverrideForTests = SECRET;
+    // A connection exists so deliver() drives the whole trigger -> handler -> service path.
+    AXF_CLS_PluggyTestData.connection('ITEM_A');
     Test.setMock(HttpCalloutMock.class, new AXF_CLS_PluggyHttpCalloutMock());
     buildRequest(BODY, sign(BODY));
 
     Test.startTest();
     AXF_CLS_PluggyWebhookResource.handlePost();
+    Test.getEventBus().deliver(); // runs AXF_TRG_PluggyWebhookEvent
     Test.stopTest();
 
     System.assertEquals(200, RestContext.response.statusCode);
     System.assert(
-      RestContext.response.responseBody.toString().contains('"queued":true')
+      RestContext.response.responseBody.toString().contains('"queued":true'),
+      RestContext.response.responseBody.toString()
     );
   }
 

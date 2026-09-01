@@ -3,8 +3,12 @@
  *   - the HMAC signature of the raw body is verified BEFORE anything is accepted;
  *   - an invalid signature returns 401 and nothing is processed or logged (only status +
  *     correlation id);
- *   - a valid payload ONLY triggers a fetch (AXF_CLS_PluggyWebhookQueueable); it is never
- *     written directly as a fact.
+ *   - a valid payload ONLY publishes AXF_PluggyWebhookEvent__e (handled out of the guest
+ *     context by AXF_TRG_PluggyWebhookEvent); the payload is never written as a fact.
+ *
+ * This runs as the Site guest user, whose license forbids writing to
+ * AXF_OBJ_PluggyConnection__c and using the External Credential — so the guest only
+ * verifies + publishes, and AXF_CLS_PluggyWebhookEventHandler does the callout + write.
  *
  * Exposing this at a public URL (Site + guest user, or a Connected App) is a manual install
  * step (AXF-77). The class, the verification and the tests are the deliverable.
@@ -63,15 +67,23 @@ global with sharing class AXF_CLS_PluggyWebhookResource {
       itemId = null;
     }
 
+    Boolean queued = false;
     if (String.isNotBlank(itemId)) {
-      // Only triggers a fetch; the payload itself is discarded.
-      System.enqueueJob(new AXF_CLS_PluggyWebhookQueueable(itemId));
+      // Only triggers a fetch; the payload itself is discarded. The revalidation runs out
+      // of the guest-user context via AXF_TRG_PluggyWebhookEvent.
+      Database.SaveResult published = EventBus.publish(
+        new AXF_PluggyWebhookEvent__e(
+          AXF_PWE_TXT_ObservedItemId__c = itemId,
+          AXF_PWE_TXT_CorrelationId__c = correlationId
+        )
+      );
+      queued = published != null && published.isSuccess();
     }
 
     res.statusCode = 200;
     res.responseBody = Blob.valueOf(
       '{"accepted":true,"queued":' +
-        String.valueOf(String.isNotBlank(itemId)) +
+        String.valueOf(queued) +
         ',"ref":"' +
         correlationId +
         '"}'

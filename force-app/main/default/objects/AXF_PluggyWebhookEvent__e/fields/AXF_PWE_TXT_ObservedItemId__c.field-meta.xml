@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<CustomField xmlns="http://soap.sforce.com/2006/04/metadata">
+    <fullName>AXF_PWE_TXT_ObservedItemId__c</fullName>
+    <label>Observed Item Id</label>
+    <description
+  >Pluggy Item ID carried by a verified inbound webhook. Used to resolve the affected AXF_OBJ_PluggyConnection__c for consent revalidation. Not a secret. AXF-11.</description>
+    <type>Text</type>
+    <length>64</length>
+    <required>true</required>
+</CustomField>

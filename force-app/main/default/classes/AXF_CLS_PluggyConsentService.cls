@@ -69,7 +69,65 @@ public with sharing class AXF_CLS_PluggyConsentService {
       WITH USER_MODE
       LIMIT 1
     ];
+    ConsentSnapshot out = applyRefresh(conn);
+    update as user conn;
+    return out;
+  }
 
+  /**
+   * @description Revalidates every connection tied to any of the given observed Pluggy
+   * Item IDs. Runs ALL callouts first and persists with a SINGLE DML at the end, so a
+   * batch (a platform-event trigger delivering several webhooks) never trips a
+   * callout-after-DML. Idempotent. Throws only on an unknown/transient integration
+   * result, so the caller can ask the event bus for a retry.
+   */
+  public void refreshByItemIds(Set<String> pluggyItemIds) {
+    if (pluggyItemIds == null || pluggyItemIds.isEmpty()) {
+      return;
+    }
+    List<AXF_OBJ_PluggyConnection__c> conns = [
+      SELECT
+        Id,
+        AXF_CON_EXI_PluggyItemId__c,
+        AXF_CON_TXT_ObservedItemId__c,
+        AXF_CON_PKL_ConsentState__c,
+        AXF_CON_PKL_CollectionState__c,
+        AXF_CON_TXT_InstitutionName__c,
+        AXF_CON_TXT_ConnectorId__c,
+        AXF_CON_TXT_ConsentId__c,
+        AXF_CON_TXT_ConsentObservedItemId__c,
+        AXF_CON_TAL_ConsentScope__c,
+        AXF_CON_TXT_ConsentPurpose__c,
+        AXF_CON_DT_ConsentGivenAt__c,
+        AXF_CON_DT_ConsentExpiresAt__c,
+        AXF_CON_TXT_ConsentVersion__c
+      FROM AXF_OBJ_PluggyConnection__c
+      WHERE
+        AXF_CON_EXI_PluggyItemId__c IN :pluggyItemIds
+        OR AXF_CON_TXT_ObservedItemId__c IN :pluggyItemIds
+      WITH USER_MODE
+    ];
+    if (conns.isEmpty()) {
+      return;
+    }
+    for (AXF_OBJ_PluggyConnection__c c : conns) {
+      applyRefresh(c); // callouts + in-memory mutation, NO DML
+    }
+    update as user conns; // single DML, after every callout
+  }
+
+  /** @description Revalidates the connection(s) tied to one observed Pluggy Item ID. */
+  public void refreshByItemId(String pluggyItemId) {
+    refreshByItemIds(new Set<String>{ pluggyItemId });
+  }
+
+  /**
+   * @description Runs the /items + /consents callouts for one connection and mutates it
+   * in memory (consent fields, state, checkedAt). Does NO DML — the caller persists — so
+   * a batch can finish every callout before the first update.
+   */
+  @TestVisible
+  private ConsentSnapshot applyRefresh(AXF_OBJ_PluggyConnection__c conn) {
     String itemId = conn.AXF_CON_EXI_PluggyItemId__c;
     String newState = conn.AXF_CON_PKL_ConsentState__c;
     String message;
@@ -147,7 +205,6 @@ public with sharing class AXF_CLS_PluggyConsentService {
 
     conn.AXF_CON_PKL_ConsentState__c = newState;
     conn.AXF_CON_DT_ConsentCheckedAt__c = Datetime.now();
-    update as user conn;
 
     ConsentSnapshot out = new ConsentSnapshot();
     out.connectionId = conn.Id;
@@ -162,21 +219,6 @@ public with sharing class AXF_CLS_PluggyConsentService {
       !AXF_CLS_PluggySettings.collectionGloballyPaused();
     out.message = message;
     return out;
-  }
-
-  /** @description Revalidates the connection tied to an observed Pluggy Item ID. */
-  public void refreshByItemId(String pluggyItemId) {
-    for (AXF_OBJ_PluggyConnection__c c : [
-      SELECT Id
-      FROM AXF_OBJ_PluggyConnection__c
-      WHERE
-        AXF_CON_EXI_PluggyItemId__c = :pluggyItemId
-        OR AXF_CON_TXT_ObservedItemId__c = :pluggyItemId
-      WITH USER_MODE
-      LIMIT 1
-    ]) {
-      refresh(c.Id);
-    }
   }
 
   private static Map<String, Object> pickApplicableConsent(
