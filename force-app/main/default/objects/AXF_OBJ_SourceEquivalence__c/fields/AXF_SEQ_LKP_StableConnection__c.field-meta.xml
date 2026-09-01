@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<CustomField xmlns="http://soap.sforce.com/2006/04/metadata">
+    <fullName>AXF_SEQ_LKP_StableConnection__c</fullName>
+    <label>Conexao estavel</label>
+    <type>Lookup</type>
+    <referenceTo>AXF_OBJ_PluggyConnection__c</referenceTo>
+    <relationshipName>SourceEquivalences</relationshipName>
+    <relationshipLabel>Equivalencias de Fonte</relationshipLabel>
+    <deleteConstraint>Restrict</deleteConstraint>
+    <required>true</required>
+    <description>Alias aponta sempre para uma conexao estavel, nunca para outra equivalencia (sem cadeias/ciclos).</description>
+</CustomField>

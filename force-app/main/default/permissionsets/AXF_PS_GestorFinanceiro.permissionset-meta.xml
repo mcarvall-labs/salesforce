@@ -210,8 +210,6 @@
     >AXF_OBJ_PluggyConnection__c.AXF_CON_TXT_LastStatusDetail__c</field>
         <readable>true</readable>
     </fieldPermissions>
-    <!-- Account.AXF_Person (Person Account RT) nao e enderecavel pela Metadata API;
-         a visibilidade do RT de pessoa e passo manual de instalacao (AXF-77). -->
     <recordTypeVisibilities>
         <recordType>Account.AXF_Business</recordType>
         <visible>true</visible>

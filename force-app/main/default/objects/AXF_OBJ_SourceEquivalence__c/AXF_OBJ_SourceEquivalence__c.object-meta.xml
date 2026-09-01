@@ -1,0 +1,21 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<CustomObject xmlns="http://soap.sforce.com/2006/04/metadata">
+    <deploymentStatus>Deployed</deploymentStatus>
+    <description>Equivalencia comprovada entre uma identidade transitoria de reconexao Pluggy e uma conexao estavel. Nunca renumera a identidade economica publicada; nao mescla nada automaticamente. OWD Private. AXF-13 / Fechamento G6.</description>
+    <enableActivities>false</enableActivities>
+    <enableBulkApi>true</enableBulkApi>
+    <enableHistory>true</enableHistory>
+    <enableReports>true</enableReports>
+    <enableSearch>true</enableSearch>
+    <enableSharing>true</enableSharing>
+    <enableStreamingApi>true</enableStreamingApi>
+    <label>Equivalencia de Fonte</label>
+    <pluralLabel>Equivalencias de Fonte</pluralLabel>
+    <nameField>
+        <displayFormat>SEQ-{00000}</displayFormat>
+        <label>Numero</label>
+        <type>AutoNumber</type>
+    </nameField>
+    <sharingModel>Private</sharingModel>
+    <visibility>Public</visibility>
+</CustomObject>

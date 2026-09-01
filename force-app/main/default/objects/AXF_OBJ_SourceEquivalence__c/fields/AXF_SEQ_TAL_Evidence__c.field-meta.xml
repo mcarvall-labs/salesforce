@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<CustomField xmlns="http://soap.sforce.com/2006/04/metadata">
+    <fullName>AXF_SEQ_TAL_Evidence__c</fullName>
+    <label>Evidencia</label>
+    <type>LongTextArea</type>
+    <length>4096</length>
+    <visibleLines>4</visibleLines>
+    <required>false</required>
+    <description>Evidencia da equivalencia (server-side). Sem segredo, sem PII crua, sem payload do provedor.</description>
+</CustomField>
