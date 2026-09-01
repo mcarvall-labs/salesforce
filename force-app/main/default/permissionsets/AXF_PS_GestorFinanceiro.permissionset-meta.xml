@@ -1,7 +1,8 @@
 <?xml version="1.0" encoding="UTF-8" ?>
 <PermissionSet xmlns="http://soap.sforce.com/2006/04/metadata">
     <label>Axon - Gestor Financeiro (componente)</label>
-    <description>Componente do PSG AXF_PSG_GestorFinanceiro. Titulares (Account/Contact): consultar, cadastrar, editar; sem Delete; sem ViewAll/ModifyAll. Concede AXF_CanConfigure (niveis de acesso, provisionamento de usuarios e integracao Pluggy). AXF-7 / AXF-80 / AXF-82 / AXF-11.</description>
+    <description
+  >Componente do PSG AXF_PSG_GestorFinanceiro. Titulares (Account/Contact): consultar, cadastrar, editar; sem Delete; sem ViewAll/ModifyAll. Concede AXF_CanConfigure (niveis de acesso, provisionamento de usuarios e integracao Pluggy). AXF-7 / AXF-80 / AXF-82 / AXF-11.</description>
     <hasActivationRequired>false</hasActivationRequired>
     <customPermissions>
         <enabled>true</enabled>
@@ -56,11 +57,13 @@
         <enabled>true</enabled>
     </classAccesses>
     <externalCredentialPrincipalAccesses>
-        <externalCredentialPrincipal>AXF_EXC_Pluggy-AXF_Pluggy_Principal</externalCredentialPrincipal>
+        <externalCredentialPrincipal
+    >AXF_EXC_Pluggy-AXF_Pluggy_Principal</externalCredentialPrincipal>
         <enabled>true</enabled>
     </externalCredentialPrincipalAccesses>
     <externalCredentialPrincipalAccesses>
-        <externalCredentialPrincipal>AXF_EXC_Pluggy_Candidate-AXF_Pluggy_Principal_Cand</externalCredentialPrincipal>
+        <externalCredentialPrincipal
+    >AXF_EXC_Pluggy_Candidate-AXF_Pluggy_Principal_Cand</externalCredentialPrincipal>
         <enabled>true</enabled>
     </externalCredentialPrincipalAccesses>
     <objectPermissions>
@@ -140,7 +143,8 @@
     </fieldPermissions>
     <fieldPermissions>
         <editable>true</editable>
-        <field>AXF_OBJ_PluggyConnection__c.AXF_CON_TXT_InstitutionName__c</field>
+        <field
+    >AXF_OBJ_PluggyConnection__c.AXF_CON_TXT_InstitutionName__c</field>
         <readable>true</readable>
     </fieldPermissions>
     <fieldPermissions>
@@ -155,7 +159,8 @@
     </fieldPermissions>
     <fieldPermissions>
         <editable>true</editable>
-        <field>AXF_OBJ_PluggyConnection__c.AXF_CON_TXT_ConsentObservedItemId__c</field>
+        <field
+    >AXF_OBJ_PluggyConnection__c.AXF_CON_TXT_ConsentObservedItemId__c</field>
         <readable>true</readable>
     </fieldPermissions>
     <fieldPermissions>
@@ -175,7 +180,8 @@
     </fieldPermissions>
     <fieldPermissions>
         <editable>true</editable>
-        <field>AXF_OBJ_PluggyConnection__c.AXF_CON_DT_ConsentExpiresAt__c</field>
+        <field
+    >AXF_OBJ_PluggyConnection__c.AXF_CON_DT_ConsentExpiresAt__c</field>
         <readable>true</readable>
     </fieldPermissions>
     <fieldPermissions>
@@ -185,7 +191,8 @@
     </fieldPermissions>
     <fieldPermissions>
         <editable>true</editable>
-        <field>AXF_OBJ_PluggyConnection__c.AXF_CON_DT_ConsentCheckedAt__c</field>
+        <field
+    >AXF_OBJ_PluggyConnection__c.AXF_CON_DT_ConsentCheckedAt__c</field>
         <readable>true</readable>
     </fieldPermissions>
     <fieldPermissions>
@@ -210,7 +217,8 @@
     </fieldPermissions>
     <fieldPermissions>
         <editable>true</editable>
-        <field>AXF_OBJ_PluggyConnection__c.AXF_CON_TXT_LastStatusDetail__c</field>
+        <field
+    >AXF_OBJ_PluggyConnection__c.AXF_CON_TXT_LastStatusDetail__c</field>
         <readable>true</readable>
     </fieldPermissions>
     <!-- Account.AXF_Person (Person Account RT) nao e enderecavel pela Metadata API;
