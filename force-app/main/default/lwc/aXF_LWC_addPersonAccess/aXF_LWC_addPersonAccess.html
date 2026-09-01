@@ -1,0 +1,191 @@
+<template>
+  <lightning-card title={labels.title} icon-name="standard:user">
+    <div class="slds-var-p-horizontal_medium slds-var-p-bottom_medium">
+      <p
+        class="slds-text-body_small slds-text-color_weak slds-var-m-bottom_small"
+      >
+        {labels.subtitle}
+      </p>
+
+      <template lwc:if={canEdit}>
+        <!-- FORM -->
+        <template lwc:if={isForm}>
+          <lightning-progress-indicator current-step={stepIndex} type="base">
+            <lightning-progress-step
+              label={labels.stepPerson}
+              value="0"
+            ></lightning-progress-step>
+            <lightning-progress-step
+              label={labels.stepUser}
+              value="1"
+            ></lightning-progress-step>
+            <lightning-progress-step
+              label={labels.stepScope}
+              value="2"
+            ></lightning-progress-step>
+            <lightning-progress-step
+              label={labels.stepReview}
+              value="3"
+            ></lightning-progress-step>
+          </lightning-progress-indicator>
+
+          <div class="slds-var-m-top_medium">
+            <template lwc:if={onPerson}>
+              <lightning-record-picker
+                label={labels.personLabel}
+                placeholder={labels.personLabel}
+                object-api-name="Account"
+                onchange={handlePerson}
+              ></lightning-record-picker>
+              <lightning-input
+                label={labels.nameLabel}
+                data-field="name"
+                value={form.name}
+                onchange={handleField}
+                class="slds-var-m-top_small"
+              ></lightning-input>
+            </template>
+
+            <template lwc:if={onUser}>
+              <lightning-radio-group
+                label={labels.modeLabel}
+                type="radio"
+                options={modeOptions}
+                value={form.mode}
+                data-field="mode"
+                onchange={handleField}
+              ></lightning-radio-group>
+
+              <template lwc:if={isCreate}>
+                <lightning-input
+                  type="email"
+                  label={labels.emailLabel}
+                  data-field="email"
+                  value={form.email}
+                  onchange={handleField}
+                  required
+                  class="slds-var-m-top_small"
+                ></lightning-input>
+                <template lwc:if={licenseBlocked}>
+                  <p class="slds-text-color_error" role="alert">
+                    {labels.licenseWarn}
+                  </p>
+                </template>
+              </template>
+
+              <template lwc:if={isLink}>
+                <lightning-input
+                  type="search"
+                  label={labels.searchUser}
+                  value={userSearch}
+                  onchange={handleUserSearch}
+                  class="slds-var-m-top_small"
+                ></lightning-input>
+                <lightning-radio-group
+                  label={labels.modeLink}
+                  type="radio"
+                  options={userOptions}
+                  value={form.existingUserId}
+                  data-field="existingUserId"
+                  onchange={handleField}
+                ></lightning-radio-group>
+              </template>
+            </template>
+
+            <template lwc:if={onScope}>
+              <lightning-radio-group
+                label={labels.scopeLabel}
+                type="radio"
+                options={scopeOptions}
+                value={form.scope}
+                data-field="scope"
+                onchange={handleField}
+              ></lightning-radio-group>
+            </template>
+
+            <template lwc:if={onReview}>
+              <dl class="slds-dl_horizontal">
+                <dt class="slds-dl_horizontal__label">{labels.personLabel}</dt>
+                <dd class="slds-dl_horizontal__detail">{form.name}</dd>
+                <dt class="slds-dl_horizontal__label">{labels.modeLabel}</dt>
+                <dd class="slds-dl_horizontal__detail">{form.mode}</dd>
+                <dt class="slds-dl_horizontal__label">{labels.emailLabel}</dt>
+                <dd class="slds-dl_horizontal__detail">{form.email}</dd>
+                <dt class="slds-dl_horizontal__label">{labels.scopeLabel}</dt>
+                <dd class="slds-dl_horizontal__detail">{form.scope}</dd>
+              </dl>
+            </template>
+          </div>
+
+          <div class="slds-var-m-top_medium">
+            <lightning-button
+              label={labels.back}
+              onclick={handleBack}
+              disabled={isFirstStep}
+            ></lightning-button>
+            <template lwc:if={isLastStep}>
+              <lightning-button
+                class="slds-var-m-left_x-small"
+                variant="brand"
+                label={labels.confirm}
+                onclick={handleConfirm}
+              ></lightning-button>
+            </template>
+            <template lwc:else>
+              <lightning-button
+                class="slds-var-m-left_x-small"
+                variant="brand"
+                label={labels.next}
+                onclick={handleNext}
+                disabled={canAdvanceDisabled}
+              ></lightning-button>
+            </template>
+          </div>
+        </template>
+
+        <!-- RUNNING / DONE / FAILED -->
+        <template lwc:if={isRunning}>
+          <div role="status" aria-live="polite">
+            <lightning-spinner
+              size="small"
+              alternative-text={labels.running}
+            ></lightning-spinner>
+            <p class="slds-var-m-top_small">{feedback}</p>
+            <template lwc:if={status}>
+              <p class="slds-text-body_small slds-text-color_weak">
+                {labels.statusStep}: {status.currentStep} ·
+                {labels.statusState}: {status.status}
+              </p>
+            </template>
+          </div>
+        </template>
+
+        <template lwc:if={isDone}>
+          <p class="slds-text-color_success" role="status">{feedback}</p>
+          <lightning-button
+            label={labels.cancel}
+            onclick={handleCancel}
+          ></lightning-button>
+        </template>
+
+        <template lwc:if={isFailed}>
+          <p class="slds-text-color_error" role="alert">{feedback}</p>
+          <lightning-button
+            variant="brand"
+            label={labels.retry}
+            onclick={handleRetry}
+          ></lightning-button>
+          <lightning-button
+            class="slds-var-m-left_x-small"
+            label={labels.cancel}
+            onclick={handleCancel}
+          ></lightning-button>
+        </template>
+      </template>
+
+      <template lwc:else>
+        <p role="status">{labels.forbidden}</p>
+      </template>
+    </div>
+  </lightning-card>
+</template>
