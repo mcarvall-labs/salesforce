@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<CustomField xmlns="http://soap.sforce.com/2006/04/metadata">
+    <fullName>AXF_ONB_TXT_Notice__c</fullName>
+    <label>Aviso sanitizado</label>
+    <description
+  >Mensagem de estado sanitizada para exibição na retomada (ex.: "estado obsoleto detectado", "etapa aguardando reconciliação"). Nunca contém segredo, token, senha, dado bancário ou financeiro. AXF-88 / AC5, AC6.</description>
+    <type>Text</type>
+    <length>255</length>
+    <required>false</required>
+</CustomField>

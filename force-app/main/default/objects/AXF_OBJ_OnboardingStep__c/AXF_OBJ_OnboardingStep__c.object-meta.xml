@@ -1,0 +1,22 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<CustomObject xmlns="http://soap.sforce.com/2006/04/metadata">
+    <label>Etapa do Onboarding</label>
+    <pluralLabel>Etapas do Onboarding</pluralLabel>
+    <nameField>
+        <label>Número da Etapa</label>
+        <type>AutoNumber</type>
+        <displayFormat>OST-{0000000}</displayFormat>
+    </nameField>
+    <deploymentStatus>Deployed</deploymentStatus>
+    <sharingModel>ControlledByParent</sharingModel>
+    <enableActivities>false</enableActivities>
+    <enableReports>true</enableReports>
+    <enableHistory>true</enableHistory>
+    <enableBulkApi>true</enableBulkApi>
+    <enableStreamingApi>true</enableStreamingApi>
+    <enableSharing>true</enableSharing>
+    <enableFeeds>false</enableFeeds>
+    <description
+  >Estado efetivo, por etapa, do onboarding (filho de AXF_OBJ_OnboardingProgress__c). Navegar, marcar localmente ou clicar não conta como confirmação — só a gravação no servidor com evidência mínima. AXF-88 / G5-1, AC2.</description>
+    <visibility>Public</visibility>
+</CustomObject>
