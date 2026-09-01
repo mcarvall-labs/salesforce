@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<CustomField xmlns="http://soap.sforce.com/2006/04/metadata">
+    <fullName>AXF_APV_PKL_Mode__c</fullName>
+    <label>Modo</label>
+    <type>Picklist</type>
+    <required>true</required>
+    <valueSet><restricted>true</restricted><valueSetDefinition><sorted
+      >false</sorted>
+      <value><fullName>CREATE</fullName><default>false</default><label
+        >Criar novo usuário</label></value>
+      <value><fullName>LINK</fullName><default>false</default><label
+        >Vincular usuário existente</label></value>
+    </valueSetDefinition></valueSet>
+</CustomField>

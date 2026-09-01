@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<CustomField xmlns="http://soap.sforce.com/2006/04/metadata">
+    <fullName>AXF_APV_TAL_StepLog__c</fullName>
+    <label>Histórico de etapas (JSON)</label>
+    <type>LongTextArea</type>
+    <length>32768</length>
+    <visibleLines>6</visibleLines>
+    <required>false</required>
+</CustomField>

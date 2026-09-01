@@ -1,7 +1,8 @@
 <?xml version="1.0" encoding="UTF-8" ?>
 <PermissionSet xmlns="http://soap.sforce.com/2006/04/metadata">
     <label>Axon - Gestor Financeiro (componente)</label>
-    <description>Componente do PSG AXF_PSG_GestorFinanceiro. Consultar, cadastrar e editar titulares (Account/Contact); sem Delete; sem ViewAll/ModifyAll. Concede AXF_CanConfigure e o acesso a configuracao de niveis. Perms do dominio vem por US. AXF-7 / AXF-80.</description>
+    <description
+  >Componente do PSG AXF_PSG_GestorFinanceiro. Consultar, cadastrar e editar titulares (Account/Contact); sem Delete; sem ViewAll/ModifyAll. Concede AXF_CanConfigure e o acesso a configuracao de niveis. Perms do dominio vem por US. AXF-7 / AXF-80 / AXF-82.</description>
     <hasActivationRequired>false</hasActivationRequired>
     <customPermissions>
         <enabled>true</enabled>
@@ -19,6 +20,54 @@
         <apexClass>ALT_CLS_AxonHolder</apexClass>
         <enabled>true</enabled>
     </classAccesses>
+    <classAccesses>
+        <apexClass>AXF_CLS_CTRL_UserProvisioning</apexClass>
+        <enabled>true</enabled>
+    </classAccesses>
+    <classAccesses>
+        <apexClass>ALT_CLS_AxonUserProvisioning</apexClass>
+        <enabled>true</enabled>
+    </classAccesses>
+    <fieldPermissions>
+        <editable>true</editable>
+        <field>AXF_OBJ_AccessProvisioning__c.AXF_APV_CHK_OwnerSynced__c</field>
+        <readable>true</readable>
+    </fieldPermissions>
+    <fieldPermissions>
+        <editable>true</editable>
+        <field>AXF_OBJ_AccessProvisioning__c.AXF_APV_LKP_User__c</field>
+        <readable>true</readable>
+    </fieldPermissions>
+    <fieldPermissions>
+        <editable>true</editable>
+        <field>AXF_OBJ_AccessProvisioning__c.AXF_APV_TAL_StepLog__c</field>
+        <readable>true</readable>
+    </fieldPermissions>
+    <fieldPermissions>
+        <editable>true</editable>
+        <field>AXF_OBJ_AccessProvisioning__c.AXF_APV_TXT_Message__c</field>
+        <readable>true</readable>
+    </fieldPermissions>
+    <fieldPermissions>
+        <editable>true</editable>
+        <field>AXF_OBJ_AccessProvisioning__c.AXF_APV_TXT_TargetEmail__c</field>
+        <readable>true</readable>
+    </fieldPermissions>
+    <fieldPermissions>
+        <editable>true</editable>
+        <field>AXF_OBJ_AccessProvisioning__c.AXF_APV_TXT_TargetName__c</field>
+        <readable>true</readable>
+    </fieldPermissions>
+    <objectPermissions>
+        <allowCreate>true</allowCreate>
+        <allowDelete>false</allowDelete>
+        <allowEdit>true</allowEdit>
+        <allowRead>true</allowRead>
+        <modifyAllRecords>false</modifyAllRecords>
+        <object>AXF_OBJ_AccessProvisioning__c</object>
+        <viewAllFields>false</viewAllFields>
+        <viewAllRecords>false</viewAllRecords>
+    </objectPermissions>
     <objectPermissions>
         <allowCreate>true</allowCreate>
         <allowDelete>false</allowDelete>
@@ -47,6 +96,10 @@
     </recordTypeVisibilities>
     <tabSettings>
         <tab>AXF_Holders</tab>
+        <visibility>Visible</visibility>
+    </tabSettings>
+    <tabSettings>
+        <tab>AXF_AddPersonAccess</tab>
         <visibility>Visible</visibility>
     </tabSettings>
 </PermissionSet>
