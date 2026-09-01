@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<CustomField xmlns="http://soap.sforce.com/2006/04/metadata">
+    <fullName>AXF_INR_EXI_RunKey__c</fullName>
+    <label>Chave da execucao</label>
+    <type>Text</type>
+    <length>64</length>
+    <required>true</required>
+    <unique>true</unique>
+    <caseSensitive>true</caseSensitive>
+    <externalId>true</externalId>
+    <description>sha256(frame(connectionId, product)) - uma execucao por (conexao, produto); replay reutiliza.</description>
+</CustomField>

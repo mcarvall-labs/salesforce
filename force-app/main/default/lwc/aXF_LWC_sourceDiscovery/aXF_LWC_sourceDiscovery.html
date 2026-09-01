@@ -1,0 +1,95 @@
+<template>
+  <lightning-card title={labels.TITLE} icon-name="standard:multi_picklist">
+    <div class="slds-p-horizontal_medium slds-p-bottom_medium">
+      <template lwc:if={isLoading}>
+        <lightning-spinner
+          alternative-text="Carregando"
+          size="small"
+        ></lightning-spinner>
+      </template>
+
+      <template lwc:if={isError}>
+        <p class="slds-text-color_error" role="alert">{labels.LOAD_ERROR}</p>
+        <lightning-button
+          label={labels.RETRY}
+          onclick={handleRetry}
+          class="slds-m-top_x-small"
+        ></lightning-button>
+      </template>
+
+      <template lwc:if={isReady}>
+        <p
+          class="slds-text-body_small slds-text-color_weak slds-m-bottom_small"
+        >
+          {labels.HELP}
+        </p>
+
+        <lightning-button
+          label={startLabel}
+          variant="brand"
+          disabled={startDisabled}
+          onclick={handleStart}
+        ></lightning-button>
+
+        <template lwc:if={running}>
+          <p class="slds-m-top_small slds-text-color_weak" role="status">
+            {labels.BUSY}
+          </p>
+        </template>
+
+        <template lwc:if={statusMessage}>
+          <div class="slds-m-top_small" role="status" aria-live="polite">
+            <lightning-formatted-text
+              value={statusMessage}
+            ></lightning-formatted-text>
+          </div>
+        </template>
+
+        <template lwc:if={isRetryable}>
+          <p class="slds-m-top_x-small slds-text-color_weak" role="note">
+            {labels.INCOMPLETE}
+          </p>
+        </template>
+        <template lwc:if={isTerminal}>
+          <p class="slds-m-top_x-small slds-text-color_error" role="alert">
+            {labels.INCOMPLETE}
+          </p>
+        </template>
+        <template lwc:if={hasNoSources}>
+          <p class="slds-m-top_x-small" role="status">{labels.NONE}</p>
+        </template>
+
+        <template lwc:if={showSources}>
+          <table class="slds-table slds-table_bordered slds-m-top_small">
+            <thead>
+              <tr class="slds-line-height_reset">
+                <th scope="col">{labels.COL_KIND}</th>
+                <th scope="col">{labels.COL_INSTITUTION}</th>
+                <th scope="col">{labels.COL_CURRENCY}</th>
+                <th scope="col">{labels.COL_STATUS}</th>
+              </tr>
+            </thead>
+            <tbody>
+              <template for:each={sources} for:item="s">
+                <tr key={s.key}>
+                  <td>{s.kindLabel}</td>
+                  <td>{s.institution}</td>
+                  <td>{s.currencyIsoCode}</td>
+                  <td>{s.statusLabel}</td>
+                </tr>
+              </template>
+            </tbody>
+          </table>
+        </template>
+
+        <template lwc:if={feedback}>
+          <div class="slds-m-top_small" role="status" aria-live="polite">
+            <lightning-formatted-text
+              value={feedback}
+            ></lightning-formatted-text>
+          </div>
+        </template>
+      </template>
+    </div>
+  </lightning-card>
+</template>

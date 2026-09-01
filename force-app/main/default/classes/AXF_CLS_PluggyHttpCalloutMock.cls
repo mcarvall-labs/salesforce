@@ -1,7 +1,7 @@
 /**
- * @description Shared HttpCalloutMock for the AXF-11 Pluggy tests. Routes by the endpoint
- * suffix so a single instance can answer /auth, /connectors, /items/<id> and /consents.
- * Never carries a real secret.
+ * @description Shared HttpCalloutMock for the Pluggy tests. Routes by the endpoint suffix so
+ * a single instance can answer /auth, /connectors, /items/<id>, /consents and /accounts
+ * (AXF-84). Never carries a real secret.
  */
 @IsTest
 public class AXF_CLS_PluggyHttpCalloutMock implements HttpCalloutMock {
@@ -15,6 +15,12 @@ public class AXF_CLS_PluggyHttpCalloutMock implements HttpCalloutMock {
   public String consentExpiresAt = null;
   public String consentItemId = 'ITEM_ORIGIN_A';
   public Boolean throwCallout = false;
+
+  // --- /accounts (AXF-84 discovery) ---
+  public Integer accountsStatus = 200;
+  public Integer accountsTotalPages = 1;
+  public String accountsBodyJson; // full override; when null a default 1 bank + 1 card is returned
+  public Boolean throwOnAccounts = false;
 
   public List<String> requestedPaths = new List<String>();
 
@@ -62,6 +68,29 @@ public class AXF_CLS_PluggyHttpCalloutMock implements HttpCalloutMock {
       } else {
         res.setBody('{"message":"forbidden"}');
       }
+      return res;
+    }
+    if (ep.contains('/accounts')) {
+      if (throwOnAccounts) {
+        throw new System.CalloutException('simulated accounts timeout');
+      }
+      res.setStatusCode(accountsStatus);
+      if (accountsStatus != 200) {
+        res.setBody('{"message":"forbidden"}');
+        return res;
+      }
+      if (accountsBodyJson != null) {
+        res.setBody(accountsBodyJson);
+        return res;
+      }
+      res.setBody(
+        '{"total":2,"totalPages":' +
+          accountsTotalPages +
+          ',"page":1,"results":[' +
+          '{"id":"ACC-1","type":"BANK","subtype":"CHECKING_ACCOUNT","name":"Conta","number":"12345678","balance":100.55,"currencyCode":"BRL"},' +
+          '{"id":"ACC-2","type":"CREDIT","name":"Cartao","number":"9999","balance":-50,"currencyCode":"BRL","creditData":{"brand":"VISA","level":"GOLD","creditLimit":5000,"availableCreditLimit":4950}}' +
+          ']}'
+      );
       return res;
     }
     if (ep.contains('/items/')) {

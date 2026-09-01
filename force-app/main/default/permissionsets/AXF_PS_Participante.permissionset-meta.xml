@@ -1,7 +1,8 @@
 <?xml version="1.0" encoding="UTF-8" ?>
 <PermissionSet xmlns="http://soap.sforce.com/2006/04/metadata">
     <label>Axon - Participante (componente)</label>
-    <description>Componente do PSG AXF_PSG_Participante. Consultar e editar titulares (Account/Contact) no proprio escopo; sem cadastro; sem Delete; sem ViewAll/ModifyAll; sem configuracao. Perms do dominio vem por US. AXF-7 / AXF-80.</description>
+    <description
+  >Componente do PSG AXF_PSG_Participante. Consultar e editar titulares (Account/Contact) no proprio escopo; sem cadastro; sem Delete; sem ViewAll/ModifyAll; sem configuracao. Perms do dominio vem por US. AXF-7 / AXF-80.</description>
     <hasActivationRequired>false</hasActivationRequired>
     <classAccesses>
         <apexClass>AXF_CLS_CTRL_Holder</apexClass>
