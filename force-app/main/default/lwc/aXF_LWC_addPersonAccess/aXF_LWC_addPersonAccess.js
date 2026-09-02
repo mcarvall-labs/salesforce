@@ -130,6 +130,34 @@ export default class AxfLwcAddPersonAccess extends LightningElement {
     return !this.canAdvance;
   }
 
+  // ---- accessibility helpers ----
+  get stepTitle() {
+    return [L.stepPerson, L.stepUser, L.stepScope, L.stepReview][
+      this.stepIndex
+    ];
+  }
+  get stepOfLabel() {
+    return String(L.stepOf)
+      .replace("{0}", this.stepIndex + 1)
+      .replace("{1}", "4");
+  }
+  get modeLabelText() {
+    return this.isCreate ? L.modeCreate : L.modeLink;
+  }
+  get scopeLabelText() {
+    return this.form.scope === "ALL_DATA" ? L.scopeAll : L.scopeOwn;
+  }
+
+  moveFocus(selector) {
+    // eslint-disable-next-line @lwc/lwc/no-async-operation
+    window.requestAnimationFrame(() => {
+      const el = this.template.querySelector(selector);
+      if (el) {
+        el.focus();
+      }
+    });
+  }
+
   // ---- form handlers ----
   handlePerson(event) {
     this.form = { ...this.form, personId: event.detail.recordId || null };
@@ -147,20 +175,24 @@ export default class AxfLwcAddPersonAccess extends LightningElement {
   handleBack() {
     if (this.stepIndex > 0) {
       this.stepIndex -= 1;
+      this.moveFocus("[data-step-heading]");
     }
   }
   handleNext() {
     if (this.stepIndex < 3) {
       this.stepIndex += 1;
+      this.moveFocus("[data-step-heading]");
     }
   }
   handleCancel() {
     this.reset();
+    this.moveFocus("[data-step-heading]");
   }
 
   async handleConfirm() {
     this.stage = STAGE.RUNNING;
     this.feedback = L.starting;
+    this.moveFocus("[data-feedback]");
     try {
       const r = await startProvisioning({ input: this.form });
       this.provisioningId = r.provisioningId;
@@ -169,12 +201,14 @@ export default class AxfLwcAddPersonAccess extends LightningElement {
     } catch (e) {
       this.stage = STAGE.FAILED;
       this.feedback = (e && e.body && e.body.message) || L.failed;
+      this.moveFocus("[data-feedback]");
     }
   }
 
   async handleRetry() {
     this.stage = STAGE.RUNNING;
     this.feedback = L.running;
+    this.moveFocus("[data-feedback]");
     try {
       const r = await resumeProvisioning({
         provisioningId: this.provisioningId
@@ -184,6 +218,7 @@ export default class AxfLwcAddPersonAccess extends LightningElement {
     } catch (e) {
       this.stage = STAGE.FAILED;
       this.feedback = (e && e.body && e.body.message) || L.failed;
+      this.moveFocus("[data-feedback]");
     }
   }
 
@@ -219,6 +254,7 @@ export default class AxfLwcAddPersonAccess extends LightningElement {
   applyResult(r) {
     this.status = r;
     this.feedback = r.message;
+    const wasStage = this.stage;
     if (r.currentStep === "DONE" || r.status === "SUCCEEDED") {
       this.stage = STAGE.DONE;
       this.feedback = L.done;
@@ -235,6 +271,9 @@ export default class AxfLwcAddPersonAccess extends LightningElement {
       this.clearPoll();
     } else {
       this.stage = STAGE.RUNNING;
+    }
+    if (this.stage !== wasStage) {
+      this.moveFocus("[data-feedback]");
     }
   }
 

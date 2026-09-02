@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<CustomField xmlns="http://soap.sforce.com/2006/04/metadata">
+    <fullName>AXF_OST_MDR_Progress__c</fullName>
+    <label>Progresso do Onboarding</label>
+    <type>MasterDetail</type>
+    <referenceTo>AXF_OBJ_OnboardingProgress__c</referenceTo>
+    <relationshipLabel>Etapas</relationshipLabel>
+    <relationshipName>Steps</relationshipName>
+    <relationshipOrder>0</relationshipOrder>
+    <reparentableMasterDetail>false</reparentableMasterDetail>
+    <writeRequiresMasterRead>false</writeRequiresMasterRead>
+</CustomField>

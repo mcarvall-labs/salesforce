@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<CustomField xmlns="http://soap.sforce.com/2006/04/metadata">
+    <fullName>AXF_OST_NUM_Attempt__c</fullName>
+    <label>Tentativa</label>
+    <description>Contador de confirmações/retomadas desta etapa. Diagnóstico — não autoriza repetir efeito material. AXF-88 / AC3.</description>
+    <type>Number</type>
+    <precision>9</precision>
+    <scale>0</scale>
+    <required>true</required>
+    <defaultValue>0</defaultValue>
+</CustomField>
