@@ -79,6 +79,14 @@
         <apexClass>ALT_CLS_AxonCompanyResponsible</apexClass>
         <enabled>true</enabled>
     </classAccesses>
+    <classAccesses>
+        <apexClass>AXF_CLS_CTRL_AuthorizedContext</apexClass>
+        <enabled>true</enabled>
+    </classAccesses>
+    <classAccesses>
+        <apexClass>AXF_CLS_AuthorizedContextService</apexClass>
+        <enabled>true</enabled>
+    </classAccesses>
     <objectPermissions>
         <allowCreate>true</allowCreate>
         <allowDelete>false</allowDelete>
@@ -540,6 +548,10 @@
     </tabSettings>
     <tabSettings>
         <tab>AXF_SourceDiscovery</tab>
+        <visibility>Visible</visibility>
+    </tabSettings>
+    <tabSettings>
+        <tab>AXF_AuthorizedContext</tab>
         <visibility>Visible</visibility>
     </tabSettings>
 </PermissionSet>

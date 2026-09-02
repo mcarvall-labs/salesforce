@@ -11,6 +11,14 @@
         <apexClass>ALT_CLS_AxonHolder</apexClass>
         <enabled>true</enabled>
     </classAccesses>
+    <classAccesses>
+        <apexClass>AXF_CLS_CTRL_AuthorizedContext</apexClass>
+        <enabled>true</enabled>
+    </classAccesses>
+    <classAccesses>
+        <apexClass>AXF_CLS_AuthorizedContextService</apexClass>
+        <enabled>true</enabled>
+    </classAccesses>
     <objectPermissions>
         <allowCreate>false</allowCreate>
         <allowDelete>false</allowDelete>
@@ -39,6 +47,10 @@
     </recordTypeVisibilities>
     <tabSettings>
         <tab>AXF_Holders</tab>
+        <visibility>Visible</visibility>
+    </tabSettings>
+    <tabSettings>
+        <tab>AXF_AuthorizedContext</tab>
         <visibility>Visible</visibility>
     </tabSettings>
 </PermissionSet>
