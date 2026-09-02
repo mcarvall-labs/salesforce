@@ -1,7 +1,7 @@
 # AXF-84 — Descobrir contas e cartões autorizados na aplicação Pluggy
 
 - **Jira:** https://axon-personal-finances.atlassian.net/browse/AXF-84 (Epic AXF-10)
-- **Branch:** `feature/AXF-84-pluggy-source-discovery` — **empilhada sobre** `feature/AXF-13-pluggy-external-identity` (que por sua vez está sobre `feature/AXF-11-...`). Merge #44 → #45 → esta.
+- **Branch:** `feature/AXF-84-pluggy-source-discovery`, synchronized with `reconciled/base` after AXF-11 and AXF-13 were finalized.
 - **Gates:** G1/G2/G4/G5/G6/G7 fase de definição fechada. Contrato: `ARCHITECTURE-SPINE.md` §"Fechamento G5"; comentários Jira 10117 (Item ID da aplicação), 10164 (D-39/40/79/85), 10203 (G5).
 - **Predecessoras:** AXF-11 (credenciais/consentimento/pausa), AXF-13 (identidade externa).
 
@@ -43,4 +43,7 @@ Sincronização completa de transações (AXF-12), atribuição de titular (AXF-
 
 ## Validação
 
-**12 testes Apex (100%) + 7 Jest (100%)** para AXF-84; suíte Pluggy completa (AXF-11+13+84) = **101 Apex + 30 Jest, 100% verdes**. Cobertura 85% (service) / 96% (controller). Deploy `NoTestRun` em AXON_DEV.
+Post-restack validation: **12/12 specified Apex tests** and **7/7 Jest tests** passed.
+Check-only deployment `0Afaj00000iq2dvCAA` validated all 55 components against
+`AXON_DEV`, with 87% coverage for `AXF_CLS_PluggyDiscoveryService` and 96% for
+`AXF_CLS_CTRL_SourceDiscovery`. No persistent feature-branch deployment was made.

@@ -66,16 +66,6 @@
         <apexClass>AXF_CLS_CTRL_SourceDiscovery</apexClass>
         <enabled>true</enabled>
     </classAccesses>
-    <externalCredentialPrincipalAccesses>
-        <externalCredentialPrincipal
-    >AXF_EXC_Pluggy-AXF_Pluggy_Principal</externalCredentialPrincipal>
-        <enabled>true</enabled>
-    </externalCredentialPrincipalAccesses>
-    <externalCredentialPrincipalAccesses>
-        <externalCredentialPrincipal
-    >AXF_EXC_Pluggy_Candidate-AXF_Pluggy_Principal_Cand</externalCredentialPrincipal>
-        <enabled>true</enabled>
-    </externalCredentialPrincipalAccesses>
     <objectPermissions>
         <allowCreate>true</allowCreate>
         <allowDelete>false</allowDelete>
