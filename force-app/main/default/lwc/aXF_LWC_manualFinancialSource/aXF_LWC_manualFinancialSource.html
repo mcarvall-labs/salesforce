@@ -1,0 +1,85 @@
+<template>
+  <lightning-card title={labels.title}>
+    <div class="slds-var-p-around_medium">
+      <template lwc:if={message}
+        ><div class={messageClass} role="status" tabindex="-1" data-message>
+          {message}
+        </div></template
+      >
+      <lightning-combobox
+        name="kind"
+        label={labels.kind}
+        value={form.kind}
+        options={kindOptions}
+        onchange={handleChange}
+        required
+        disabled={isEdit}
+      ></lightning-combobox>
+      <lightning-record-picker
+        label={labels.holder}
+        object-api-name="Account"
+        value={form.holderId}
+        onchange={handleHolder}
+        required
+        disabled={isEdit}
+      ></lightning-record-picker>
+      <lightning-input
+        name="currencyIsoCode"
+        label={labels.currency}
+        value={form.currencyIsoCode}
+        maxlength="3"
+        onchange={handleChange}
+        required
+        disabled={isEdit}
+      ></lightning-input>
+      <lightning-input
+        name="institutionName"
+        label={labels.institution}
+        value={form.institutionName}
+        onchange={handleChange}
+        required
+      ></lightning-input>
+      <lightning-input
+        name="maskedNumber"
+        label={labels.masked}
+        value={form.maskedNumber}
+        onchange={handleChange}
+      ></lightning-input>
+      <lightning-input
+        name="sourceType"
+        label={labels.type}
+        value={form.sourceType}
+        onchange={handleChange}
+        lwc:if={isBank}
+      ></lightning-input>
+      <lightning-input
+        name="brand"
+        label={labels.brand}
+        value={form.brand}
+        onchange={handleChange}
+        lwc:if={isCard}
+      ></lightning-input>
+      <div class="slds-var-m-top_medium">
+        <lightning-button
+          variant="brand"
+          label={labels.save}
+          onclick={handleSave}
+          disabled={saving}
+        ></lightning-button>
+        <lightning-button
+          class="slds-var-m-left_small"
+          label={labels.skip}
+          onclick={handleSkip}
+          disabled={saving}
+          lwc:if={allowSkip}
+        ></lightning-button>
+      </div>
+    </div>
+    <template lwc:if={saving}
+      ><lightning-spinner
+        alternative-text={labels.saving}
+        size="small"
+      ></lightning-spinner
+    ></template>
+  </lightning-card>
+</template>

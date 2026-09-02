@@ -1,9 +1,10 @@
-<?xml version="1.0" encoding="UTF-8"?>
+<?xml version="1.0" encoding="UTF-8" ?>
 <CustomField xmlns="http://soap.sforce.com/2006/04/metadata">
     <fullName>AXF_BA_TXT_NumberMasked__c</fullName>
     <label>Numero (mascarado)</label>
     <type>Text</type>
     <length>40</length>
     <required>false</required>
-    <description>Numero mascarado; digitos completos nunca sao persistidos nem retornados.</description>
+    <description
+  >Numero mascarado; digitos completos nunca sao persistidos nem retornados.</description>
 </CustomField>

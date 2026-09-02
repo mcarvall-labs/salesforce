@@ -1,4 +1,4 @@
-<?xml version="1.0" encoding="UTF-8"?>
+<?xml version="1.0" encoding="UTF-8" ?>
 <CustomField xmlns="http://soap.sforce.com/2006/04/metadata">
     <fullName>AXF_BA_EXI_PluggyAccountId__c</fullName>
     <label>Pluggy Account ID</label>
@@ -8,5 +8,6 @@
     <unique>true</unique>
     <caseSensitive>false</caseSensitive>
     <required>false</required>
-    <description>ID da conta na Pluggy. Chave de upsert (AXF-13). Manual/CSV usa FallbackKey - AXF-86.</description>
+    <description
+  >ID da conta na Pluggy. Chave de upsert (AXF-13). Manual/CSV usa FallbackKey - AXF-86.</description>
 </CustomField>

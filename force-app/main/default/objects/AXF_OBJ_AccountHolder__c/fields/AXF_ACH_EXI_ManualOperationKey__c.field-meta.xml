@@ -1,0 +1,13 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<CustomField xmlns="http://soap.sforce.com/2006/04/metadata">
+    <fullName>AXF_ACH_EXI_ManualOperationKey__c</fullName>
+    <caseSensitive>false</caseSensitive>
+    <description
+  >Shared atomic registry for a manual create UUID across bank accounts and cards.</description>
+    <externalId>true</externalId>
+    <label>Chave da operação manual</label>
+    <length>36</length>
+    <required>false</required>
+    <type>Text</type>
+    <unique>true</unique>
+</CustomField>
