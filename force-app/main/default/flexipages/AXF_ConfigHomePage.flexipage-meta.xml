@@ -3,14 +3,14 @@
     <flexiPageRegions>
         <itemInstances>
             <componentInstance>
-                <componentName>c:aXF_LWC_axonConfiguration</componentName>
-                <identifier>axf_confighome_hub</identifier>
+                <componentName>c:aXF_LWC_onboardingWizard</componentName>
+                <identifier>axf_confighome_wizard</identifier>
             </componentInstance>
         </itemInstances>
         <name>main</name>
         <type>Region</type>
     </flexiPageRegions>
-    <masterLabel>AXON - Configuration - Início</masterLabel>
+    <masterLabel>AXON - Configuration - Primeiro acesso</masterLabel>
     <template>
         <name>flexipage:defaultAppHomeTemplate</name>
     </template>

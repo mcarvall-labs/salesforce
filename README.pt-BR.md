@@ -39,7 +39,21 @@ sf project deploy start --source-dir force-app --target-org AxonFinance
 sf org assign permset --name AXF_PS_User --target-org AxonFinance
 ```
 
-Depois da implantação, conclua a configuração da Pluggy descrita abaixo. Os segredos são específicos de cada organização e, de propósito, não fazem parte do repositório nem da implantação.
+Depois da implantação, conclua o **Primeiro acesso** e a **Configuração da Pluggy** descritos abaixo. Os segredos são específicos de cada organização e, de propósito, não fazem parte do repositório nem da implantação.
+
+## Primeiro acesso
+
+> Passos de Setup que **não** saem por metadata — a pessoa que instala o Axon (papel técnico, uma vez) faz na organização recém-criada.
+
+1. **Person Accounts** — Setup → *Person Accounts* → habilitar (irreversível). Requer o OWD de `Account` em **Private** (Setup → *Sharing Settings*) antes de habilitar.
+2. **Record Types de `Account`** — criar `AXF_Person` (Pessoa, Person Account) e `AXF_Business` (Empresa). O RT de pessoa não sai por metadata.
+3. **Contacts to Multiple Accounts** — Setup → *Account Settings* → marcar "Allow users to relate a contact to multiple accounts".
+4. **Account Teams** — Setup → *Account Teams* → habilitar; em *Team Roles*, adicionar **`Responsável Financeiro`**.
+5. **1ª Sharing Rule de `Account`** — criar uma regra qualquer no Setup (a Metadata API não cria a primeira; as regras do Axon são implantadas depois dela).
+6. **Perfil base** — todos os usuários do Axon no perfil padrão **`Minimum Access - Salesforce`**; todo acesso vem pelos Permission Set Groups.
+7. **Designar o primeiro configurador** — Setup → *Permission Set Groups* → **`AXF_PSG_GestorFinanceiro`** → *Manage Assignments* → *Add Assignment* → seu usuário. Sem isso, nenhum app ou aba do Axon aparece. Colaboradores comuns recebem **`AXF_PSG_Participante`**.
+
+Feito isso, abra o **App Launcher** → **AXON - Configuration**. Ele já abre no **wizard de primeiro acesso** (etapa por vez: boas-vindas, Pluggy, contas e titulares, pessoas e acessos opcionais, moeda, revisão). O wizard persiste cada etapa confirmada no servidor e retoma de onde parou; o menu **AXON - Configuration** permite abrir qualquer área isoladamente depois. O aplicativo **Axon Finance** é o de uso diário.
 
 ## Configuração da Pluggy
 
