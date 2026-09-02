@@ -92,4 +92,32 @@ describe("c-aXF_LWC_contextBar", () => {
       element.shadowRoot.querySelector("[role='alert']").textContent,
     ).toMatch(/Não foi possível carregar/);
   });
+
+  it("clears the selected context before revalidating on reconnect", async () => {
+    const element = build();
+    getContexts.emit(contexts);
+    await flush();
+    const picker = element.shadowRoot.querySelector("lightning-combobox");
+    picker.dispatchEvent(
+      new CustomEvent("change", { detail: { value: contexts[0].accountId } }),
+    );
+    await flush();
+    jest.clearAllMocks();
+
+    window.dispatchEvent(new CustomEvent("online"));
+    await flush();
+
+    expect(element.shadowRoot.querySelector("lightning-combobox")).toBeNull();
+    expect(publish).toHaveBeenCalledWith(
+      undefined,
+      CONTEXT_CHANGED,
+      expect.objectContaining({
+        accountId: contexts[0].accountId,
+        changeReason: "AUTHORIZATION_REVALIDATION",
+      }),
+    );
+    expect(
+      element.shadowRoot.querySelector("[aria-live='polite']").textContent,
+    ).toMatch(/Revalidando/);
+  });
 });

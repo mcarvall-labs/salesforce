@@ -1,0 +1,139 @@
+<template>
+  <article class="slds-card">
+    <div class="slds-card__header slds-grid">
+      <header class="slds-media slds-media_center slds-has-flexi-truncate">
+        <div class="slds-media__body">
+          <h2 class="slds-card__header-title">{labels.title}</h2>
+        </div>
+      </header>
+    </div>
+
+    <div class="slds-card__body slds-card__body_inner">
+      <template if:true={isForbidden}>
+        <p class="slds-text-color_weak" role="status">{labels.forbidden}</p>
+      </template>
+
+      <template if:true={hasNoBusiness}>
+        <p class="slds-text-color_weak" role="status">{labels.noBusiness}</p>
+      </template>
+
+      <template if:true={isLoading}>
+        <lightning-spinner
+          alternative-text={labels.working}
+          size="small"
+        ></lightning-spinner>
+      </template>
+
+      <template if:true={hasError}>
+        <p class="slds-text-color_error" role="alert">{labels.error}</p>
+      </template>
+
+      <template if:true={isEmpty}>
+        <p class="slds-text-color_weak" role="status">{labels.empty}</p>
+      </template>
+
+      <template if:true={isReady}>
+        <p
+          class="slds-m-bottom_small slds-text-body_small slds-text-color_weak"
+        >
+          {labels.subtitle}
+        </p>
+        <table
+          class="slds-table slds-table_bordered slds-table_cell-buffer"
+          aria-label={labels.title}
+        >
+          <thead>
+            <tr class="slds-line-height_reset">
+              <th scope="col">{labels.colPerson}</th>
+              <th scope="col">{labels.colRole}</th>
+              <th scope="col">{labels.colStatus}</th>
+              <th scope="col">{labels.colWhen}</th>
+              <th scope="col">{labels.colAction}</th>
+            </tr>
+          </thead>
+          <tbody>
+            <template for:each={rows} for:item="row">
+              <tr key={row.craId}>
+                <th scope="row">{row.personName}</th>
+                <td>{row.roleText}</td>
+                <td>
+                  <span class={row.badgeClass}>{row.statusText}</span>
+                </td>
+                <td>{row.whenText}</td>
+                <td>
+                  <template if:true={row.actionLabel}>
+                    <lightning-button
+                      label={row.actionLabel}
+                      data-id={row.craId}
+                      data-action-id={row.craId}
+                      variant="destructive-text"
+                      onclick={handleAction}
+                    ></lightning-button>
+                  </template>
+                  <template if:false={row.actionLabel}>
+                    <span class="slds-text-color_weak">{row.hint}</span>
+                  </template>
+                  <template if:true={row.actionLabel}>
+                    <p class="slds-text-body_small slds-text-color_weak">
+                      {row.hint}
+                    </p>
+                  </template>
+                </td>
+              </tr>
+            </template>
+          </tbody>
+        </table>
+      </template>
+
+      <div
+        data-feedback
+        tabindex="-1"
+        role="status"
+        aria-live="polite"
+        class="slds-m-top_small slds-text-body_small"
+      >
+        {feedback}
+      </div>
+    </div>
+  </article>
+
+  <template if:true={pendingRevoke}>
+    <section
+      role="alertdialog"
+      tabindex="-1"
+      aria-modal="true"
+      aria-labelledby="cra-confirm-title"
+      aria-describedby="cra-confirm-body"
+      class="slds-modal slds-fade-in-open"
+      onkeydown={handleDialogKey}
+    >
+      <div class="slds-modal__container">
+        <div class="slds-modal__header">
+          <h2 id="cra-confirm-title" class="slds-modal__title">
+            {labels.confirmTitle}
+          </h2>
+        </div>
+        <div class="slds-modal__content slds-p-around_medium">
+          <p id="cra-confirm-body">{labels.confirmBody}</p>
+          <p class="slds-m-top_x-small slds-text-title_caps">{confirmName}</p>
+        </div>
+        <div class="slds-modal__footer">
+          <lightning-button
+            label={labels.confirmNo}
+            data-confirm-cancel
+            onclick={cancelRevoke}
+            disabled={busy}
+          ></lightning-button>
+          <lightning-button
+            label={labels.confirmYes}
+            variant="destructive"
+            class="slds-m-left_x-small"
+            onclick={confirmRevoke}
+            disabled={busy}
+          ></lightning-button>
+        </div>
+      </div>
+    </section>
+    <div class="slds-backdrop slds-backdrop_open"></div>
+  </template>
+</template>

@@ -350,6 +350,16 @@ private class ALT_CLS_AxonCompanyResponsibleTest {
 
     System.assertEquals('REVOKED', r.outcome);
     System.assertEquals('REVOKED', r.status);
+    System.assertNotEquals(
+      null,
+      r.revokedAt,
+      'AXF-8 admin view: the revoke instant is surfaced'
+    );
+    System.assertEquals(
+      null,
+      r.lastError,
+      'a verified revoke clears any prior error'
+    );
     System.assertEquals(
       0,
       [SELECT COUNT() FROM AccountTeamMember WHERE AccountId = :b.Id],
@@ -413,8 +423,48 @@ private class ALT_CLS_AxonCompanyResponsibleTest {
     for (ALT_CLS_AxonCompanyResponsible.ResponsibilityView v : rows) {
       roles.add(v.role);
       System.assertNotEquals(null, v.personName);
+      System.assertNotEquals(
+        null,
+        v.status,
+        'AXF-8 admin view needs the effective status per row'
+      );
     }
     System.assert(roles.contains('PARTNER') && roles.contains('MANAGER'));
+  }
+
+  @IsTest
+  static void listSurfacesFailedReasonAndRevokedInstant() {
+    allow();
+    Account b = business('Consolidada');
+    Account pFail = person('Falha Lista');
+    linkUser(pFail.Id, 'fl');
+    ALT_CLS_AxonCompanyResponsible.teamRole = 'Papel Inexistente Lista';
+    svc().confirmResponsibility(input(b.Id, pFail.Id, 'PARTNER', null));
+    ALT_CLS_AxonCompanyResponsible.teamRole = 'Responsável Financeiro';
+
+    Account pRevoked = person('Revogada Lista');
+    User u2 = linkUser(pRevoked.Id, 'rl');
+    ALT_CLS_AxonCompanyResponsible.ResponsibilityView g = svc()
+      .confirmResponsibility(input(b.Id, pRevoked.Id, 'MANAGER', null));
+    svc().revokeResponsibility(g.craId, g.version);
+
+    Test.startTest();
+    List<ALT_CLS_AxonCompanyResponsible.ResponsibilityView> rows = svc()
+      .getResponsibilities(b.Id);
+    Test.stopTest();
+
+    Boolean sawFailedReason = false;
+    Boolean sawRevokedInstant = false;
+    for (ALT_CLS_AxonCompanyResponsible.ResponsibilityView v : rows) {
+      if (v.status == 'FAILED') {
+        sawFailedReason = String.isNotBlank(v.lastError);
+      }
+      if (v.status == 'REVOKED') {
+        sawRevokedInstant = v.revokedAt != null;
+      }
+    }
+    System.assert(sawFailedReason, 'FAILED row carries the sanitized reason');
+    System.assert(sawRevokedInstant, 'REVOKED row carries the revoke instant');
   }
 
   @IsTest

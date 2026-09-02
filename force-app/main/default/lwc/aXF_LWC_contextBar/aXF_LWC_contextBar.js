@@ -12,6 +12,7 @@ const L = {
   ERROR: "Não foi possível carregar os contextos autorizados.",
   RETRY: "Tentar novamente",
   CHANGED: "Contexto alterado para",
+  REVALIDATING: "Revalidando seu acesso.",
 };
 
 export default class AxfContextBar extends LightningElement {
@@ -23,6 +24,34 @@ export default class AxfContextBar extends LightningElement {
   announcement;
   selectionVersion = 0;
   wiredResult;
+
+  constructor() {
+    super();
+    this.handleWindowRevalidation = this.revalidateAuthorization.bind(this);
+    this.handleVisibilityRevalidation = () => {
+      if (document.visibilityState === "visible") {
+        this.revalidateAuthorization();
+      }
+    };
+  }
+
+  connectedCallback() {
+    window.addEventListener("focus", this.handleWindowRevalidation);
+    window.addEventListener("online", this.handleWindowRevalidation);
+    document.addEventListener(
+      "visibilitychange",
+      this.handleVisibilityRevalidation,
+    );
+  }
+
+  disconnectedCallback() {
+    window.removeEventListener("focus", this.handleWindowRevalidation);
+    window.removeEventListener("online", this.handleWindowRevalidation);
+    document.removeEventListener(
+      "visibilitychange",
+      this.handleVisibilityRevalidation,
+    );
+  }
 
   @wire(MessageContext) messageContext;
 
@@ -84,8 +113,29 @@ export default class AxfContextBar extends LightningElement {
   }
 
   handleRetry() {
+    this.revalidateAuthorization();
+  }
+
+  revalidateAuthorization() {
+    const invalidatedAccountId = this.selectedId;
     this.loading = true;
     this.error = false;
+    this.contexts = [];
+    this.selectedId = undefined;
+    this.announcement = L.REVALIDATING;
+    this.selectionVersion += 1;
+
+    const detail = {
+      accountId: invalidatedAccountId,
+      contextType: undefined,
+      label: undefined,
+      presentationCurrency: undefined,
+      selectionVersion: this.selectionVersion,
+      changeReason: "AUTHORIZATION_REVALIDATION",
+    };
+    publish(this.messageContext, CONTEXT_CHANGED, detail);
+    this.dispatchEvent(new CustomEvent("contextinvalidated", { detail }));
+
     Promise.resolve(refreshApex(this.wiredResult)).catch(() => {
       this.loading = false;
       this.error = true;
