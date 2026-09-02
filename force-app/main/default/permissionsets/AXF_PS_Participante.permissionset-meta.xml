@@ -4,6 +4,18 @@
     <description>Componente do PSG AXF_PSG_Participante. Consultar e editar titulares (Account/Contact) no proprio escopo; sem cadastro; sem Delete; sem ViewAll/ModifyAll; sem configuracao. Perms do dominio vem por US. AXF-7 / AXF-80.</description>
     <hasActivationRequired>false</hasActivationRequired>
     <classAccesses>
+        <apexClass>AXF_CLS_CTRL_AxonConfig</apexClass>
+        <enabled>true</enabled>
+    </classAccesses>
+    <classAccesses>
+        <apexClass>AXF_CLS_CTRL_ReportCurrencyPref</apexClass>
+        <enabled>true</enabled>
+    </classAccesses>
+    <classAccesses>
+        <apexClass>AXF_CLS_ReportCurrencyService</apexClass>
+        <enabled>true</enabled>
+    </classAccesses>
+    <classAccesses>
         <apexClass>AXF_CLS_CTRL_Holder</apexClass>
         <enabled>true</enabled>
     </classAccesses>
@@ -51,6 +63,14 @@
     </tabSettings>
     <tabSettings>
         <tab>AXF_AuthorizedContext</tab>
+        <visibility>Visible</visibility>
+    </tabSettings>
+    <tabSettings>
+        <tab>AXF_Configuration</tab>
+        <visibility>Visible</visibility>
+    </tabSettings>
+    <tabSettings>
+        <tab>AXF_ReportCurrency</tab>
         <visibility>Visible</visibility>
     </tabSettings>
 </PermissionSet>
