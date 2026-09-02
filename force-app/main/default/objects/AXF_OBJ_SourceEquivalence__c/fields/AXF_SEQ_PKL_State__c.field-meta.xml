@@ -1,0 +1,17 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<CustomField xmlns="http://soap.sforce.com/2006/04/metadata">
+    <fullName>AXF_SEQ_PKL_State__c</fullName>
+    <label>Estado</label>
+    <type>Picklist</type>
+    <required>true</required>
+    <valueSet>
+        <restricted>true</restricted>
+        <valueSetDefinition>
+            <sorted>false</sorted>
+            <value><fullName>PENDING</fullName><default>true</default><label>Pendente de revisao</label></value>
+            <value><fullName>VERIFIED</fullName><default>false</default><label>Verificada</label></value>
+            <value><fullName>REJECTED</fullName><default>false</default><label>Rejeitada</label></value>
+        </valueSetDefinition>
+    </valueSet>
+    <description>Similaridade nao verifica sozinha: PENDING exige revisao humana. Apenas VERIFIED participa da resolucao.</description>
+</CustomField>
