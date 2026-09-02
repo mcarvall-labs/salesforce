@@ -1,0 +1,84 @@
+<template>
+  <lightning-card title={labels.title} icon-name="standard:settings">
+    <div class="slds-var-p-around_medium">
+      <template lwc:if={loading}>
+        <lightning-spinner size="small"></lightning-spinner>
+      </template>
+
+      <template lwc:elseif={inMenu}>
+        <p
+          class="slds-text-body_small slds-text-color_weak slds-var-m-bottom_small"
+          data-focus
+          tabindex="-1"
+        >
+          {labels.subtitle}
+        </p>
+        <div class="slds-grid slds-wrap slds-gutters_x-small">
+          <template for:each={areas} for:item="a">
+            <div
+              key={a.key}
+              class="slds-col slds-size_1-of-1 slds-medium-size_1-of-2 slds-var-p-vertical_xx-small"
+            >
+              <button
+                type="button"
+                class="slds-button slds-button_neutral slds-button_stretch"
+                data-area={a.key}
+                onclick={handleOpen}
+              >
+                {a.label}
+              </button>
+            </div>
+          </template>
+        </div>
+      </template>
+
+      <template lwc:else>
+        <div class="slds-var-m-bottom_small">
+          <lightning-button
+            label={labels.back}
+            icon-name="utility:back"
+            onclick={handleBack}
+          ></lightning-button>
+        </div>
+        <h2
+          class="slds-text-heading_small slds-var-m-bottom_small"
+          data-focus
+          tabindex="-1"
+        >
+          {openLabel}
+        </h2>
+
+        <template lwc:if={showCurrency}>
+          <c-a-x-f_-l-w-c_report-currency-preference></c-a-x-f_-l-w-c_report-currency-preference>
+        </template>
+        <template lwc:if={showPluggy}>
+          <c-a-x-f_-l-w-c_pluggy-integration-config></c-a-x-f_-l-w-c_pluggy-integration-config>
+        </template>
+        <template lwc:if={showHealth}>
+          <c-a-x-f_-l-w-c_source-health></c-a-x-f_-l-w-c_source-health>
+        </template>
+        <template lwc:if={showHolders}>
+          <c-a-x-f_-l-w-c_holders></c-a-x-f_-l-w-c_holders>
+        </template>
+        <template lwc:if={showSourceHolders}>
+          <c-a-x-f_-l-w-c_confirm-source-holders></c-a-x-f_-l-w-c_confirm-source-holders>
+        </template>
+        <template lwc:if={showResponsibles}>
+          <c-a-x-f_-l-w-c_company-responsible-access></c-a-x-f_-l-w-c_company-responsible-access>
+        </template>
+        <template lwc:if={showPeople}>
+          <c-a-x-f_-l-w-c_add-person-access></c-a-x-f_-l-w-c_add-person-access>
+        </template>
+        <template lwc:if={showLevel}>
+          <c-a-x-f_-l-w-c_access-level-config></c-a-x-f_-l-w-c_access-level-config>
+        </template>
+        <template lwc:if={showManual}>
+          <c-a-x-f_-l-w-c_manual-financial-source></c-a-x-f_-l-w-c_manual-financial-source>
+        </template>
+        <template lwc:if={showResume}>
+          <c-a-x-f_-l-w-c_onboarding-wizard></c-a-x-f_-l-w-c_onboarding-wizard>
+        </template>
+      </template>
+    </div>
+  </lightning-card>
+</template>

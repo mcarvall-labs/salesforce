@@ -9,6 +9,10 @@
         <name>AXF_CanConfigure</name>
     </customPermissions>
     <classAccesses>
+        <apexClass>AXF_CLS_CTRL_AxonConfig</apexClass>
+        <enabled>true</enabled>
+    </classAccesses>
+    <classAccesses>
         <apexClass>AXF_CLS_CTRL_AccessLevelConfig</apexClass>
         <enabled>true</enabled>
     </classAccesses>
@@ -620,6 +624,10 @@
     </tabSettings>
     <tabSettings>
         <tab>AXF_OnboardingWizard</tab>
+        <visibility>Visible</visibility>
+    </tabSettings>
+    <tabSettings>
+        <tab>AXF_Configuration</tab>
         <visibility>Visible</visibility>
     </tabSettings>
     <tabSettings>
