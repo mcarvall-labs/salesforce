@@ -39,7 +39,21 @@ sf project deploy start --source-dir force-app --target-org AxonFinance
 sf org assign permset --name AXF_PS_User --target-org AxonFinance
 ```
 
-After deployment, complete the Pluggy configuration below. Secrets are organization-specific and are intentionally not included in the repository or deployment.
+After deployment, complete **First access** and **Configure Pluggy** below. Secrets are organization-specific and are intentionally not included in the repository or deployment.
+
+## First access
+
+> Setup steps that are **not** deployable as metadata — the person installing Axon (a technical role, once) performs them in the newly created org.
+
+1. **Person Accounts** — Setup → *Person Accounts* → enable (irreversible). Requires `Account` OWD set to **Private** (Setup → *Sharing Settings*) first.
+2. **`Account` Record Types** — create `AXF_Person` (Person Account) and `AXF_Business` (Business Account). The person-type RT is not deployable.
+3. **Contacts to Multiple Accounts** — Setup → *Account Settings* → check "Allow users to relate a contact to multiple accounts".
+4. **Account Teams** — Setup → *Account Teams* → enable; under *Team Roles*, add **`Responsável Financeiro`**.
+5. **First `Account` sharing rule** — create any rule in Setup (the Metadata API cannot create the first one; Axon's rules deploy after it).
+6. **Base profile** — every Axon user on the stock **`Minimum Access - Salesforce`** profile; all access comes through the Permission Set Groups.
+7. **Assign the first configurator** — Setup → *Permission Set Groups* → **`AXF_PSG_GestorFinanceiro`** → *Manage Assignments* → *Add Assignment* → your user. Without this, no Axon app or tab is visible. Regular collaborators get **`AXF_PSG_Participante`**.
+
+Then open the **App Launcher** → **AXON - Configuration**. It opens directly on the **first-access wizard** (one step at a time: welcome, Pluggy, accounts & holders, optional people & access, currency, review). The wizard persists every confirmed step on the server and resumes where you left off; the **AXON - Configuration** menu lets you open any area on its own later. The **Axon Finance** app is for day-to-day use.
 
 ## Configure Pluggy
 

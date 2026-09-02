@@ -9,7 +9,6 @@
     <navType>Standard</navType>
     <tabs>AXF_ConfigHome</tabs>
     <tabs>AXF_Configuration</tabs>
-    <tabs>AXF_OnboardingWizard</tabs>
     <tabs>AXF_PluggyConfig</tabs>
     <tabs>AXF_PluggyGuide</tabs>
     <tabs>AXF_AddPersonAccess</tabs>
