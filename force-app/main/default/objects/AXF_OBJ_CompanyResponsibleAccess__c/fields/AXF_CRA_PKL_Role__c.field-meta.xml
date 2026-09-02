@@ -1,0 +1,17 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<CustomField xmlns="http://soap.sforce.com/2006/04/metadata">
+    <fullName>AXF_CRA_PKL_Role__c</fullName>
+    <label>Papel de negócio</label>
+    <description
+  >Papel da pessoa na empresa: PARTNER (sócia) ou MANAGER (administradora). Papel de negócio no Axon — não é Role Salesforce nem System Administrator. AXF-83 / AC1.</description>
+    <type>Picklist</type>
+    <trackHistory>true</trackHistory>
+    <required>true</required>
+    <valueSet><restricted>true</restricted><valueSetDefinition><sorted
+      >false</sorted>
+      <value><fullName>PARTNER</fullName><default>true</default><label
+        >PARTNER</label></value>
+      <value><fullName>MANAGER</fullName><default>false</default><label
+        >MANAGER</label></value>
+    </valueSetDefinition></valueSet>
+</CustomField>
