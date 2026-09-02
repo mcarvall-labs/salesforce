@@ -76,7 +76,12 @@ reason before disclosure (AC6); there is no optimistic TTL and no reauthorizing 
 - ESLint + Prettier clean.
 - Deploy to `AXON_DEV` with `NoTestRun` (project rule); tests run separately.
 
-## Manual step
+## Page placement
 
-Add `aXF_LWC_companyResponsibleAccess` to the Business Account (`AXF_Business`) Lightning record
-page (or an App page) — component placement is an admin action, not metadata in this US.
+`AXF_Account_Record_Page.flexipage` (new, in this PR) is an Account record page carrying
+`c:aXF_LWC_companyResponsibleAccess` with a visibility rule `RecordType.DeveloperName = AXF_Business`
+(plus the standard highlights + detail panels). It is the first FlexiPage in the greenfield line.
+
+**One manual step:** activate it in Setup → Object Manager → Account → Lightning Record Pages →
+_Axon - Account Record Page_ → **Activation** → _Assign as Org Default_ (Desktop). FlexiPage
+activation is not deployable metadata; the page itself is.

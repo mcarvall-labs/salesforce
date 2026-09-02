@@ -45,7 +45,15 @@ revocation/grant state (AC5).
 - Sanitized scope only (person / role / instant); no financial content is shown to or about a
   revoked user.
 
+## Page placement
+
+- **`AXF_Account_Record_Page.flexipage`** (new) — Account record page carrying
+  `c:aXF_LWC_companyResponsibleAccess`, visibility-ruled to `RecordType.DeveloperName = AXF_Business`,
+  plus the standard highlights + detail panels. First FlexiPage in the greenfield line.
+- One manual step remains: **activate** it as the Account org-default desktop page in Setup
+  (FlexiPage activation is not deployable metadata).
+
 ## Related work
 
 https://axon-personal-finances.atlassian.net/browse/AXF-8 — predecessors AXF-83 / AXF-7 / AXF-3
-(merged). Component placement on the Business Account record page is a documented admin step.
+(merged).
