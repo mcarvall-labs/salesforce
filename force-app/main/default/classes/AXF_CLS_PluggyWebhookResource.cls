@@ -1,23 +1,37 @@
 /**
  * @description Inbound Pluggy webhook endpoint. Fechamento G4-3:
- *   - the HMAC signature of the raw body is verified BEFORE anything is accepted;
- *   - an invalid signature returns 401 and nothing is processed or logged (only status +
+ *   - a shared secret carried in a request header is verified BEFORE anything is accepted.
+ *     Pluggy does not sign its webhooks (no HMAC); it forwards the custom headers you
+ *     register with the webhook, so the shared secret is registered there and matched here
+ *     against the protected CMT AXF_PluggyWebhookConfig__mdt (constant-time);
+ *   - a missing/wrong secret returns 401 and nothing is processed or logged (only status +
  *     correlation id);
- *   - a valid payload ONLY triggers a fetch (AXF_CLS_PluggyWebhookQueueable); it is never
- *     written directly as a fact.
+ *   - a valid payload ONLY publishes AXF_PluggyWebhookEvent__e (handled out of the guest
+ *     context by AXF_TRG_PluggyWebhookEvent); the payload is never written as a fact.
  *
- * Exposing this at a public URL (Site + guest user, or a Connected App) is a manual install
- * step (AXF-77). The class, the verification and the tests are the deliverable.
+ * This runs as the Site guest user, whose license forbids writing to
+ * AXF_OBJ_PluggyConnection__c and using the External Credential — so the guest only
+ * verifies + publishes, and AXF_CLS_PluggyWebhookEventHandler does the callout + write.
+ *
+ * Exposing this at a public URL (Site + guest user) and registering the header on the
+ * Pluggy webhook are manual install steps (AXF-77). The class, the verification and the
+ * tests are the deliverable.
  */
 @RestResource(urlMapping='/pluggy/webhook')
 global with sharing class AXF_CLS_PluggyWebhookResource {
+  // Header names accepted for the shared secret. Register one of these on the Pluggy
+  // webhook's `headers` object; "X-Webhook-Token" is the documented default.
   @TestVisible
-  private static final List<String> SIGNATURE_HEADERS = new List<String>{
-    'X-Signature',
-    'X-Webhook-Signature',
-    'X-Hub-Signature-256'
+  private static final List<String> AUTH_HEADERS = new List<String>{
+    'X-Webhook-Token',
+    'X-Webhook-Secret',
+    'Authorization'
   };
 
+  @TestVisible
+  private static String secretOverrideForTests;
+
+  /** Processes an authenticated Pluggy webhook notification. */
   @HttpPost
   global static void handlePost() {
     RestRequest req = RestContext.request;
@@ -28,24 +42,13 @@ global with sharing class AXF_CLS_PluggyWebhookResource {
     String rawBody = (req.requestBody == null)
       ? null
       : req.requestBody.toString();
-    String signature = firstHeader(req);
+    String presented = presentedSecret(req);
     String secret = webhookSecret();
 
-    if (
-      String.isBlank(secret) ||
-      !AXF_CLS_PluggyWebhookSignature.isValid(rawBody, signature, secret)
-    ) {
+    if (!AXF_CLS_PluggyWebhookAuth.isAuthorized(presented, secret)) {
       res.statusCode = 401;
       res.responseBody = Blob.valueOf(
         '{"accepted":false,"ref":"' + correlationId + '"}'
-      );
-      return;
-    }
-
-    if (!AXF_CLS_PluggySettings.webhookEnabled()) {
-      res.statusCode = 202;
-      res.responseBody = Blob.valueOf(
-        '{"accepted":true,"queued":false,"ref":"' + correlationId + '"}'
       );
       return;
     }
@@ -63,35 +66,40 @@ global with sharing class AXF_CLS_PluggyWebhookResource {
       itemId = null;
     }
 
+    Boolean queued = false;
     if (String.isNotBlank(itemId)) {
-      // Only triggers a fetch; the payload itself is discarded.
-      System.enqueueJob(new AXF_CLS_PluggyWebhookQueueable(itemId));
+      // Only triggers a fetch; the payload itself is discarded. The revalidation runs out
+      // of the guest-user context via AXF_TRG_PluggyWebhookEvent.
+      Database.SaveResult published = EventBus.publish(
+        new AXF_PluggyWebhookEvent__e(
+          AXF_PWE_TXT_ObservedItemId__c = itemId,
+          AXF_PWE_TXT_CorrelationId__c = correlationId
+        )
+      );
+      queued = published != null && published.isSuccess();
     }
 
     res.statusCode = 200;
     res.responseBody = Blob.valueOf(
       '{"accepted":true,"queued":' +
-        String.valueOf(String.isNotBlank(itemId)) +
+        String.valueOf(queued) +
         ',"ref":"' +
         correlationId +
         '"}'
     );
   }
 
-  private static String firstHeader(RestRequest req) {
+  private static String presentedSecret(RestRequest req) {
     if (req.headers == null) {
       return null;
     }
-    for (String h : SIGNATURE_HEADERS) {
+    for (String h : AUTH_HEADERS) {
       if (req.headers.containsKey(h) && String.isNotBlank(req.headers.get(h))) {
         return req.headers.get(h);
       }
     }
     return null;
   }
-
-  @TestVisible
-  private static String secretOverrideForTests;
 
   private static String webhookSecret() {
     if (Test.isRunningTest() && secretOverrideForTests != null) {

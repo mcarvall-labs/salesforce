@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<CustomField xmlns="http://soap.sforce.com/2006/04/metadata">
+    <fullName>AXF_OST_CHK_Optional__c</fullName>
+    <label>Opcional</label>
+    <description
+  >Etapa que pode ser pulada sem registros vazios (ex.: PEOPLE_ACCESS, MANUAL_SOURCES). A conclusão do onboarding não exige etapas opcionais. AXF-88 / AC referente a AXF-90 AC4.</description>
+    <type>Checkbox</type>
+    <defaultValue>false</defaultValue>
+</CustomField>

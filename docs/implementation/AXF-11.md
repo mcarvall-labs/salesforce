@@ -28,32 +28,35 @@
   transação Apex corrente (1 `POST /auth` por transação, recomendação da investigação G4).
   Sem partition, sem `AXF_PIC_NUM_ApiKeyCacheTtlSeconds__c`.
 - **Segredo do webhook:** Custom Metadata **protegida** `AXF_PluggyWebhookConfig__mdt.AXF_PWC_TXT_Secret__c`
-  (não `AXF_EXC_PluggyWebhook`; valores de EC não são legíveis em Apex para HMAC local — G4-3 permite CMT protegida).
+  (não `AXF_EXC_PluggyWebhook`; valores de EC não são legíveis em Apex para a comparação local — G4-3 permite CMT protegida).
 - **`AXF_PS_GestorFinanceiro` perdeu o acesso ao principal das ECs.** "Saúde das fontes" para
   o Gestor = leitura + pausa local (DML, sem callout). Resume/reautorizar (que fazem callout)
   funcionam para quem tem `AXF_PS_PluggyIntegration` (o SysAdmin configurador).
-- **Webhook fica no MVP.** Novo `AXF_PS_PluggyWebhookGuest` para o Guest User do Salesforce
-  Site. Setup manual: registrar Site → criar Site → atribuir `AXF_PS_PluggyWebhookGuest` ao
-  guest user → URL `https://<site>/services/apexrest/pluggy/webhook` no Dashboard Pluggy →
-  colar o secret na CMT `AXF Pluggy Webhook Config / Default`.
+- **Webhook fica no MVP, via platform event.** O Guest User do Site (licença sem `Edit` em
+  objeto e sem uso de Credencial Externa) só valida o segredo compartilhado (header) e **publica `AXF_PluggyWebhookEvent__e`**;
+  `AXF_TRG_PluggyWebhookEvent` → `AXF_CLS_PluggyWebhookEventHandler` faz a revalidação como
+  usuário Automated Process. `AXF_PS_PluggyWebhookGuest` foi reduzida (só `Create` no evento +
+  4 classes). Setup manual: registrar/criar Site → `AXF_PS_PluggyWebhookGuest` no guest user →
+  `AXF_PS_PluggyIntegration` no Automated Process → URL no Dashboard Pluggy → secret na CMT
+  `AXF Pluggy Webhook Config / Default`. Ver §10.
 
 ---
 
 ## 1. Escopo entregue
 
-| Entrega                                                                                        | Componente                                                                                                                                                                         |
-| ---------------------------------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| Configuração inicial segura de credenciais (Client ID / Secret) pelo mecanismo nativo          | `AXF_EXC_Pluggy` + `AXF_NC_Pluggy_API`; `AXF_CLS_CTRL_PluggyIntegrationConfig.setPrincipalCredential` (trânsito transitório → `ConnectApi.NamedCredentials`, sem persistência/log) |
-| Obtenção server-side do `apiKey` com cache de TTL curto                                        | `AXF_CLS_PluggyAuthService` (Platform Cache `AXF_PluggyCache`, TTL de `AXF_PluggyIntegrationConfig__c.ApiKeyCacheTtlSeconds__c`, default 5400s)                                    |
-| Rotação: testar candidata antes de promover, preservar a ativa em falha                        | `AXF_EXC_Pluggy_Candidate` + `AXF_NC_Pluggy_API_Candidate`; `AXF_CLS_PluggyCredentialRotationService` (`CANDIDATE→TESTING→PROMOTED`/`ROLLED_BACK`)                                 |
-| Consentimento: instituição, contas, escopo, finalidade, início, expiração, versão              | `AXF_OBJ_PluggyConnection__c` (campos `AXF_CON_*`); `AXF_CLS_PluggyConsentService`                                                                                                 |
-| Bloqueio antes da unidade material quando consentimento ausente/expirado/revogado/incompatível | `AXF_CLS_PluggyCollectionControlService.assertCollectionAllowed` + `AXF_CON_PKL_ConsentState__c`                                                                                   |
-| Pausa/retomada local autorizada; revogação externa detectada                                   | `AXF_CLS_PluggyCollectionControlService` (por conexão e global); `AXF_PluggyIntegrationConfig__c.CollectionGloballyPaused__c`                                                      |
-| Idempotência / resultado externo incerto                                                       | `AXF_CLS_PluggyHttpClient` (correlationId, sem retry cego); rotação e pausa por estado confirmado                                                                                  |
-| "Saúde das fontes" (desktop/mobile, WCAG 2.2 AA)                                               | `aXF_LWC_sourceHealth` + `AXF_CLS_CTRL_SourceHealth`; tab `AXF_SourceHealth`                                                                                                       |
-| Webhook com validação de assinatura antes de aceitar                                           | `AXF_CLS_PluggyWebhookResource` (`/services/apexrest/pluggy/webhook`), `AXF_CLS_PluggyWebhookSignature` (HMAC-SHA256 constant-time); `AXF_EXC_PluggyWebhook` guarda o segredo      |
-| Sem vazamento de segredo em logs/respostas                                                     | Regressão de `AXF_CLS_PluggyAuthService` (removidos `System.debug` de request/response); sanitização central em `AXF_CLS_PluggyHttpClient`                                         |
-| Acesso restrito ao NC / principal                                                              | `AXF_PS_PluggyIntegration` (só usuário de serviço); `AXF_CanConfigure` no servidor para configurar/rotacionar/pausar                                                               |
+| Entrega                                                                                        | Componente                                                                                                                                                                                                                                                                                                                                                                                                   |
+| ---------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| Configuração inicial segura de credenciais (Client ID / Secret) pelo mecanismo nativo          | `AXF_EXC_Pluggy` + `AXF_NC_Pluggy_API`; `AXF_CLS_CTRL_PluggyIntegrationConfig.setPrincipalCredential` (trânsito transitório → `ConnectApi.NamedCredentials`, sem persistência/log)                                                                                                                                                                                                                           |
+| Obtenção server-side do `apiKey`                                                               | `AXF_CLS_PluggyAuthService` (`apiKey` só em memória, um `POST /auth` por transação; sem Platform Cache — ver Revisão 31/08)                                                                                                                                                                                                                                                                                  |
+| Rotação: testar candidata antes de promover, preservar a ativa em falha                        | `AXF_EXC_Pluggy_Candidate` + `AXF_NC_Pluggy_API_Candidate`; `AXF_CLS_PluggyCredentialRotationService` (`CANDIDATE→TESTING→PROMOTED`/`ROLLED_BACK`)                                                                                                                                                                                                                                                           |
+| Consentimento: instituição, contas, escopo, finalidade, início, expiração, versão              | `AXF_OBJ_PluggyConnection__c` (campos `AXF_CON_*`); `AXF_CLS_PluggyConsentService`                                                                                                                                                                                                                                                                                                                           |
+| Bloqueio antes da unidade material quando consentimento ausente/expirado/revogado/incompatível | `AXF_CLS_PluggyCollectionControlService.assertCollectionAllowed` + `AXF_CON_PKL_ConsentState__c`                                                                                                                                                                                                                                                                                                             |
+| Pausa/retomada local autorizada; revogação externa detectada                                   | `AXF_CLS_PluggyCollectionControlService` (por conexão e global); `AXF_PluggyIntegrationConfig__c.CollectionGloballyPaused__c`                                                                                                                                                                                                                                                                                |
+| Idempotência / resultado externo incerto                                                       | `AXF_CLS_PluggyHttpClient` (correlationId, sem retry cego); rotação e pausa por estado confirmado                                                                                                                                                                                                                                                                                                            |
+| "Saúde das fontes" (desktop/mobile, WCAG 2.2 AA)                                               | `aXF_LWC_sourceHealth` + `AXF_CLS_CTRL_SourceHealth`; tab `AXF_SourceHealth`                                                                                                                                                                                                                                                                                                                                 |
+| Webhook com validação de segredo antes de aceitar                                              | `AXF_CLS_PluggyWebhookResource` (`/services/apexrest/pluggy/webhook`) + `AXF_CLS_PluggyWebhookAuth` (compara segredo compartilhado do header, constant-time — Pluggy **não assina** os webhooks); segredo em `AXF_PluggyWebhookConfig__mdt` (CMT protegida). Válido → publica `AXF_PluggyWebhookEvent__e`; `AXF_TRG_PluggyWebhookEvent`/`AXF_CLS_PluggyWebhookEventHandler` revalidam fora do contexto guest |
+| Sem vazamento de segredo em logs/respostas                                                     | Regressão de `AXF_CLS_PluggyAuthService` (removidos `System.debug` de request/response); sanitização central em `AXF_CLS_PluggyHttpClient`                                                                                                                                                                                                                                                                   |
+| Acesso restrito ao NC / principal                                                              | `AXF_PS_PluggyIntegration` (só usuário de serviço); `AXF_CanConfigure` no servidor para configurar/rotacionar/pausar                                                                                                                                                                                                                                                                                         |
 
 ### Fora de escopo (recortes próprios)
 
@@ -62,7 +65,7 @@
 - Unicidade / identidade externa em reprocessamento — **AXF-13**.
 - Guia ilustrado — **AXF-89** (já em `reconciled/base`).
 - `DELETE /items` (revogação remota automática) — adiado (decisão 28/08/2026).
-- Exposição pública do endpoint de webhook (Site / guest user) — passo manual de instalação (AXF-77).
+- Exposição pública do endpoint de webhook (Site / guest user) + `PermissionSetAssignment` no Automated Process — passos manuais de instalação (§10 / AXF-77).
 
 ---
 
@@ -103,8 +106,8 @@ em Custom Metadata desprotegida, em logs, em URLs ou em evidências.
 - **Protocolo:** API-key da Pluggy (`POST /auth` → `apiKey`, header `X-API-KEY`, TTL ~2h). **Não é OAuth.**
 - `AXF_EXC_Pluggy`: `authenticationProtocol = Custom`, `NamedPrincipal` com `clientId` / `clientSecret`.
 - `AXF_NC_Pluggy_API`: `SecuredEndpoint`, `https://api.pluggy.ai`, merge fields **só no body**.
-- `apiKey` obtido **server-side** por `AXF_CLS_PluggyAuthService`, em Platform Cache
-  (`AXF_PluggyCache`) com TTL curto configurável (default 5400s, < expiração real, com margem).
+- `apiKey` obtido **server-side** por `AXF_CLS_PluggyAuthService` e mantido **só em memória**
+  pela duração da transação Apex (um `POST /auth` por transação; sem Platform Cache — Revisão 31/08).
 - Acesso ao NC/principal via `AXF_PS_PluggyIntegration`, atribuído **apenas** ao usuário de
   serviço (G3, `AXF_PS_Provisioning`). Ownership de integração não concede acesso financeiro (G2).
 - **Configuração inicial (AC1):** `setPrincipalCredential(clientId, clientSecret)` no controller
@@ -168,19 +171,32 @@ provedor; **não** afirma sucesso remoto e **não** chama `DELETE /items`.
 
 ## 7. Webhook (G4-3)
 
-`AXF_CLS_PluggyWebhookResource` (`@RestResource urlMapping='/pluggy/webhook'`):
+`AXF_CLS_PluggyWebhookResource` (`@RestResource urlMapping='/pluggy/webhook'`), executando
+como o **Guest User** do Salesforce Site:
 
-1. Lê o corpo cru e o header de assinatura.
-2. `AXF_CLS_PluggyWebhookSignature.isValid(body, signature, secret)` — HMAC-SHA256 do corpo com o
-   webhook secret (`AXF_EXC_PluggyWebhook`), comparação **constant-time**. Inválida → HTTP 401,
-   nada processado, nada logado além de status/correlationId.
-3. Válida → enfileira `AXF_CLS_PluggyWebhookQueueable`, que **só dispara busca** (revalida
-   consentimento/estado da conexão via `AXF_CLS_PluggyConsentService`). O payload **nunca** é
-   gravado direto como fato.
-4. Varredura periódica idempotente para eventos perdidos → **AXF-12** (aqui fica só o gancho).
+1. Lê o header do segredo compartilhado (`X-Webhook-Token`, `X-Webhook-Secret` ou `Authorization: Bearer`).
+   **Pluggy não assina os webhooks** (sem HMAC) — só repassa os headers customizados que você registra
+   no webhook (`headers` na criação via API). O segredo é registrado ali.
+2. `AXF_CLS_PluggyWebhookAuth.isAuthorized(presented, secret)` — compara o header com o
+   webhook secret (CMT protegida `AXF_PluggyWebhookConfig__mdt.AXF_PWC_TXT_Secret__c`), comparação
+   **constant-time**. Sem match → HTTP 401, nada processado, nada logado além de status/correlationId.
+   Defesa em profundidade: o handler (fora do guest) só faz uma revalidação **idempotente** via API
+   autenticada — o payload nunca vira fato — então mesmo um POST forjado não injeta dado.
+3. Válida → **publica `AXF_PluggyWebhookEvent__e`** (o guest só pode `Create`; a licença de guest
+   user proíbe escrever na Conexao e usar a Credencial Externa). O payload **nunca** é gravado como fato.
+4. `AXF_TRG_PluggyWebhookEvent` → `AXF_CLS_PluggyWebhookEventHandler` roda **fora do contexto guest**
+   (usuário Automated Process, portando `AXF_PS_PluggyIntegration`): revalida consentimento/estado via
+   `AXF_CLS_PluggyConsentService.refreshByItemIds` (**bulk** — todos os callouts antes do único DML, um
+   lote de eventos nunca cai em callout-after-DML). Idempotente — replay do evento é seguro.
+   Resultado desconhecido/transitório → `EventBus.RetryableException` (o bus reentrega); resultado
+   terminal → engolido. `publishBehavior = PublishImmediately`: uma notificação verificada dispara a
+   revalidação mesmo que o resto do request falhe (perder o sinal é pior que uma revalidação duplicada,
+   que é inócua).
+5. Varredura periódica idempotente para eventos perdidos → **AXF-12** (aqui fica só o gancho).
 
-> Tornar o endpoint público (Force.com Site + guest user, ou Connected App client-credentials) é
-> passo manual de instalação — ver lista AXF-77. A classe, a validação e os testes são a entrega.
+> Tornar o endpoint público (Salesforce Site + guest user) e **atribuir `AXF_PS_PluggyIntegration`
+> ao usuário Automated Process** são passos manuais de instalação — ver §10 / lista AXF-77. As
+> classes, o platform event, o trigger, a validação e os testes são a entrega.
 
 ## 8. Regressão do legado
 
@@ -200,29 +216,42 @@ foram portados: pertencem a AXF-12 e serão avaliados/regredidos lá.
 
 ## 9. Testes
 
-| Classe de teste                                                   | Cobre                                                                                                                                                  |
-| ----------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------ |
-| `AXF_CLS_PluggyAuthServiceTest`                                   | auth OK / 401 / 5xx / cache hit / apiKey ausente / TTL do Custom Setting; **assert de que nenhum debug/erro contém o apiKey**                          |
-| `AXF_CLS_PluggyWebhookSignatureTest`                              | assinatura válida / inválida / tamanho diferente / vazia; constant-time                                                                                |
-| `AXF_CLS_PluggyWebhookResourceTest`                               | 401 sem assinatura / com assinatura ruim; 200 + enqueue com assinatura boa; corpo não vira fato                                                        |
-| `AXF_CLS_PluggyConsentServiceTest`                                | consent ACTIVE / expirado→STALE / revogado→REVOKED / `expiresAt` nulo / itemId divergente preservado / consulta 403                                    |
-| `AXF_CLS_PluggyCredentialRotationServiceTest`                     | candidata válida promove / candidata inválida → ROLLED_BACK preservando ativa / concorrência → CONFLICT / permissão negada                             |
-| `AXF_CLS_PluggyCollectionControlServiceTest`                      | pausa local / pausa global / STALE bloqueia / REVOKED bloqueia / retomada exige consent válido / pausa repetida idempotente / revalidação de pendentes |
-| `AXF_CLS_CTRL_PluggyIntegrationConfigTest`                        | `AXF_CanConfigure` negado → FORBIDDEN limpo; status; setPrincipalCredential encaminha e não persiste                                                   |
-| `AXF_CLS_CTRL_SourceHealthTest`                                   | lista instituição/contas/consentimento/último sucesso/impacto/ação; sem segredo no DTO                                                                 |
-| `aXF_LWC_pluggyIntegrationConfig` / `aXF_LWC_sourceHealth` (Jest) | estados loading/forbidden/ready/error; sem cor/toast como único sinal; erro associado ao campo                                                         |
-| `AXF_CLS_PluggyHttpCalloutMock`                                   | utilitário de mock compartilhado                                                                                                                       |
+| Classe de teste                                                   | Cobre                                                                                                                                                             |
+| ----------------------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `AXF_CLS_PluggyAuthServiceTest`                                   | auth OK / 401 / 5xx / cache hit / apiKey ausente / TTL do Custom Setting; **assert de que nenhum debug/erro contém o apiKey**                                     |
+| `AXF_CLS_PluggyWebhookAuthTest`                                   | segredo exato / prefixo `Bearer` / segredo errado / tamanho diferente / vazio; constant-time                                                                      |
+| `AXF_CLS_PluggyWebhookResourceTest`                               | 401 sem token / com token errado; 200 + publica `AXF_PluggyWebhookEvent__e` com token bom (e prefixo `Bearer`); corpo não vira fato                              |
+| `AXF_CLS_PluggyWebhookEventHandlerTest`                           | evento publicado revalida a conexão; configuração desabilitada impede revalidação fora do guest; replay idempotente; falha transitória → retry                  |
+| `AXF_CLS_PluggyConsentServiceTest`                                | consent ACTIVE / expirado→STALE / revogado→REVOKED / `expiresAt` nulo / itemId divergente preservado / consulta 403                                               |
+| `AXF_CLS_PluggyCredentialRotationServiceTest`                     | candidata válida promove / candidata inválida → ROLLED_BACK preservando ativa / concorrência → CONFLICT / permissão negada                                        |
+| `AXF_CLS_PluggyCollectionControlServiceTest`                      | pausa local / pausa global / STALE bloqueia / REVOKED bloqueia / retomada exige consent válido / pausa repetida idempotente / revalidação de pendentes            |
+| `AXF_CLS_CTRL_PluggyIntegrationConfigTest`                        | `AXF_CanConfigure` negado → FORBIDDEN limpo; status; setPrincipalCredential encaminha e não persiste                                                              |
+| `AXF_CLS_CTRL_SourceHealthTest`                                   | lista instituição/contas/consentimento/último sucesso/impacto/ação; sem segredo no DTO                                                                            |
+| `aXF_LWC_pluggyIntegrationConfig` / `aXF_LWC_sourceHealth` (Jest) | estados loading/forbidden/ready/error; sem cor/toast como único sinal; erro associado ao campo                                                                    |
+| `AXF_CLS_PluggyHttpCalloutMock`                                   | utilitário de mock compartilhado                                                                                                                                  |
 
 Deploy: `--target-org AXON_DEV` com `NoTestRun` (regra do projeto); suíte AXF-11 executada
 localmente antes do PR.
 
 ## 10. Passos manuais de instalação (para AXF-77)
 
-| Passo                                                                                                            | Motivo                                                                     |
-| ---------------------------------------------------------------------------------------------------------------- | -------------------------------------------------------------------------- |
-| Preencher o principal de `AXF_EXC_Pluggy` (Client ID / Secret reais) no Setup ou pela tela de configuração       | segredo de org, nunca em metadata                                          |
-| Preencher o segredo de `AXF_EXC_PluggyWebhook`                                                                   | idem                                                                       |
-| Atribuir `AXF_PS_PluggyIntegration` ao usuário de serviço (`AXF_PS_Provisioning`)                                | principal mínimo                                                           |
-| Alocar capacidade ao Platform Cache partition `AXF_PluggyCache` (mín. 1 MB)                                      | Developer Edition não aloca por padrão; sem isso o serviço segue sem cache |
-| Expor `/services/apexrest/pluggy/webhook` publicamente (Site + guest user) e cadastrar a URL no Dashboard Pluggy | inbound não autenticado                                                    |
-| Registrar o webhook secret no Dashboard Pluggy e no `AXF_EXC_PluggyWebhook`                                      | pareamento HMAC                                                            |
+| Passo                                                                                                                                                           | Motivo                                                                                                                 |
+| --------------------------------------------------------------------------------------------------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------- |
+| Preencher o principal de `AXF_EXC_Pluggy` (Client ID / Secret reais) no Setup ou pela tela de configuração                                                      | segredo de org, nunca em metadata                                                                                      |
+| Atribuir `AXF_PS_PluggyIntegration` ao usuário de serviço (`AXF_PS_Provisioning`)                                                                               | principal mínimo da integração                                                                                         |
+| Registrar o domínio de Salesforce Sites e criar um Site ativo (home page = `UnderConstruction`)                                                                 | expõe `/services/apexrest/pluggy/webhook` sem autenticação                                                             |
+| Atribuir `AXF_PS_PluggyWebhookGuest` ao Guest User do Site                                                                                                      | guest valida o segredo do header e publica o platform event (só `Create`)                                              |
+| **Atribuir `AXF_PS_PluggyIntegration` ao usuário Automated Process** (via API/Data Loader — `PermissionSetAssignment`)                                          | o trigger de `AXF_PluggyWebhookEvent__e` roda como Automated Process e precisa do principal da EC + escrita na Conexao |
+| Criar o webhook Pluggy (via API `POST /webhooks`) com `url` = `https://<site>/services/apexrest/pluggy/webhook` e `headers` = `{"X-Webhook-Token":"<segredo>"}` | Pluggy não assina; o header é a única auth que ele repassa. O Dashboard não expõe `headers` — usar a API               |
+| Gravar o mesmo `<segredo>` em `AXF Pluggy Webhook Config / Default` (`AXF_PWC_TXT_Secret__c`, CMT protegida)                                                    | par do header; EC não é legível em Apex, CMT protegida sim (G4-3)                                                      |
+
+## 11. Evidência final — 01/09/2026
+
+- Layout da Custom Metadata recuperado e versionado com `AXF_PWC_TXT_Secret__c` editável.
+- Webhook Pluggy configurado com `X-Webhook-Token`; teste manual retornou
+  `accepted=true` e `queued=true`, sem expor o segredo.
+- A leitura de `AXF_PluggyIntegrationConfig__c` foi movida do contexto público do Site para
+  o handler do Platform Event (Automated Process), preservando o menor privilégio do guest.
+- Deploy de correção em `AXON_DEV`: `0Afaj00000ipUfSCAU` (`NoTestRun`).
+- Testes finais direcionados: 12/12 aprovados, execução `707aj00001CJbPW`;
+  `AXF_CLS_PluggyWebhookResource` 88% e `AXF_CLS_PluggyWebhookEventHandler` 93%.

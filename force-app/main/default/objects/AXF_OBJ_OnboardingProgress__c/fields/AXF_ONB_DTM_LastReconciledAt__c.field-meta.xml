@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<CustomField xmlns="http://soap.sforce.com/2006/04/metadata">
+    <fullName>AXF_ONB_DTM_LastReconciledAt__c</fullName>
+    <label>Última reconciliação</label>
+    <description
+  >Quando uma etapa em RESULT_UNKNOWN foi resolvida por reconciliação (nunca por repetição cega). AXF-88 / G5-4, AC3.</description>
+    <type>DateTime</type>
+    <required>false</required>
+</CustomField>

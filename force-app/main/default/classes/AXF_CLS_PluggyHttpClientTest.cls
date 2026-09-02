@@ -54,33 +54,6 @@ private class AXF_CLS_PluggyHttpClientTest {
   }
 
   @IsTest
-  static void webhookQueueableRevalidatesConnection() {
-    AXF_OBJ_PluggyConnection__c c = AXF_CLS_PluggyTestData.connection('ITEM_A');
-    Test.setMock(HttpCalloutMock.class, new AXF_CLS_PluggyHttpCalloutMock());
-
-    Test.startTest();
-    System.enqueueJob(new AXF_CLS_PluggyWebhookQueueable('ITEM_A'));
-    Test.stopTest();
-
-    System.assertNotEquals(
-      null,
-      [
-        SELECT AXF_CON_DT_ConsentCheckedAt__c
-        FROM AXF_OBJ_PluggyConnection__c
-        WHERE Id = :c.Id
-      ]
-      .AXF_CON_DT_ConsentCheckedAt__c
-    );
-  }
-
-  @IsTest
-  static void webhookQueueableIgnoresBlankItem() {
-    Test.startTest();
-    new AXF_CLS_PluggyWebhookQueueable('').execute(null);
-    Test.stopTest();
-  }
-
-  @IsTest
   static void settingsWebhookEnabledDefaultsTrue() {
     System.assertEquals(true, AXF_CLS_PluggySettings.webhookEnabled());
     System.assertEquals('NONE', AXF_CLS_PluggySettings.rotationState());

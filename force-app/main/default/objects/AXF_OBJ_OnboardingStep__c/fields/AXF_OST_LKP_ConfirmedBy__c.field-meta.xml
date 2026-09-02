@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<CustomField xmlns="http://soap.sforce.com/2006/04/metadata">
+    <fullName>AXF_OST_LKP_ConfirmedBy__c</fullName>
+    <label>Confirmada por</label>
+    <type>Lookup</type>
+    <referenceTo>User</referenceTo>
+    <relationshipLabel>Etapas do Onboarding confirmadas</relationshipLabel>
+    <relationshipName>AXF_OnboardingStepsConfirmed</relationshipName>
+    <deleteConstraint>SetNull</deleteConstraint>
+    <required>false</required>
+</CustomField>

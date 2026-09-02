@@ -1,8 +1,7 @@
 <?xml version="1.0" encoding="UTF-8" ?>
 <PermissionSet xmlns="http://soap.sforce.com/2006/04/metadata">
     <label>Axon - Gestor Financeiro (componente)</label>
-    <description
-  >Componente do PSG AXF_PSG_GestorFinanceiro. Titulares (Account/Contact): consultar/cadastrar/editar; sem Delete/ViewAll/ModifyAll. Concede AXF_CanConfigure. AXF-7 / AXF-80 / AXF-82 / AXF-11.</description>
+    <description>Componente do PSG AXF_PSG_GestorFinanceiro. Titulares (Account/Contact): consultar/cadastrar/editar; sem Delete/ViewAll/ModifyAll. Concede AXF_CanConfigure. AXF-7 / AXF-80 / AXF-82 / AXF-88 / AXF-11.</description>
     <hasActivationRequired>false</hasActivationRequired>
     <customPermissions>
         <enabled>true</enabled>
@@ -57,6 +56,14 @@
         <enabled>true</enabled>
     </classAccesses>
     <classAccesses>
+        <apexClass>AXF_CLS_CTRL_OnboardingProgress</apexClass>
+        <enabled>true</enabled>
+    </classAccesses>
+    <classAccesses>
+        <apexClass>ALT_CLS_AxonOnboardingProgress</apexClass>
+        <enabled>true</enabled>
+    </classAccesses>
+    <classAccesses>
         <apexClass>AXF_CLS_CTRL_SourceDiscovery</apexClass>
         <enabled>true</enabled>
     </classAccesses>
@@ -101,6 +108,26 @@
         <allowRead>true</allowRead>
         <modifyAllRecords>false</modifyAllRecords>
         <object>AXF_OBJ_PluggyConnection__c</object>
+        <viewAllFields>false</viewAllFields>
+        <viewAllRecords>false</viewAllRecords>
+    </objectPermissions>
+    <objectPermissions>
+        <allowCreate>true</allowCreate>
+        <allowDelete>false</allowDelete>
+        <allowEdit>true</allowEdit>
+        <allowRead>true</allowRead>
+        <modifyAllRecords>false</modifyAllRecords>
+        <object>AXF_OBJ_OnboardingProgress__c</object>
+        <viewAllFields>false</viewAllFields>
+        <viewAllRecords>false</viewAllRecords>
+    </objectPermissions>
+    <objectPermissions>
+        <allowCreate>true</allowCreate>
+        <allowDelete>false</allowDelete>
+        <allowEdit>true</allowEdit>
+        <allowRead>true</allowRead>
+        <modifyAllRecords>false</modifyAllRecords>
+        <object>AXF_OBJ_OnboardingStep__c</object>
         <viewAllFields>false</viewAllFields>
         <viewAllRecords>false</viewAllRecords>
     </objectPermissions>
@@ -159,6 +186,56 @@
     <fieldPermissions>
         <editable>true</editable>
         <field>AXF_OBJ_AccessProvisioning__c.AXF_APV_TXT_TargetName__c</field>
+        <readable>true</readable>
+    </fieldPermissions>
+    <fieldPermissions>
+        <editable>true</editable>
+        <field>AXF_OBJ_OnboardingProgress__c.AXF_ONB_DTM_CompletedAt__c</field>
+        <readable>true</readable>
+    </fieldPermissions>
+    <fieldPermissions>
+        <editable>true</editable>
+        <field>AXF_OBJ_OnboardingProgress__c.AXF_ONB_DTM_LastReconciledAt__c</field>
+        <readable>true</readable>
+    </fieldPermissions>
+    <fieldPermissions>
+        <editable>true</editable>
+        <field>AXF_OBJ_OnboardingProgress__c.AXF_ONB_LKP_RunningUser__c</field>
+        <readable>true</readable>
+    </fieldPermissions>
+    <fieldPermissions>
+        <editable>true</editable>
+        <field>AXF_OBJ_OnboardingProgress__c.AXF_ONB_TXT_Notice__c</field>
+        <readable>true</readable>
+    </fieldPermissions>
+    <fieldPermissions>
+        <editable>true</editable>
+        <field>AXF_OBJ_OnboardingStep__c.AXF_OST_CHK_Optional__c</field>
+        <readable>true</readable>
+    </fieldPermissions>
+    <fieldPermissions>
+        <editable>true</editable>
+        <field>AXF_OBJ_OnboardingStep__c.AXF_OST_DTM_ConfirmedAt__c</field>
+        <readable>true</readable>
+    </fieldPermissions>
+    <fieldPermissions>
+        <editable>true</editable>
+        <field>AXF_OBJ_OnboardingStep__c.AXF_OST_LKP_ConfirmedBy__c</field>
+        <readable>true</readable>
+    </fieldPermissions>
+    <fieldPermissions>
+        <editable>true</editable>
+        <field>AXF_OBJ_OnboardingStep__c.AXF_OST_TXT_CorrelationId__c</field>
+        <readable>true</readable>
+    </fieldPermissions>
+    <fieldPermissions>
+        <editable>true</editable>
+        <field>AXF_OBJ_OnboardingStep__c.AXF_OST_TXT_EvidenceRef__c</field>
+        <readable>true</readable>
+    </fieldPermissions>
+    <fieldPermissions>
+        <editable>true</editable>
+        <field>AXF_OBJ_OnboardingStep__c.AXF_OST_TXT_Note__c</field>
         <readable>true</readable>
     </fieldPermissions>
     <fieldPermissions>
@@ -246,6 +323,8 @@
     >AXF_OBJ_PluggyConnection__c.AXF_CON_TXT_LastStatusDetail__c</field>
         <readable>true</readable>
     </fieldPermissions>
+    <!-- Account.AXF_Person (Person Account RT) nao e enderecavel pela Metadata API;
+         a visibilidade do RT de pessoa e passo manual de instalacao (AXF-77). -->
     <fieldPermissions>
         <editable>true</editable>
         <field>AXF_OBJ_IntegrationRun__c.AXF_INR_DT_Watermark__c</field>

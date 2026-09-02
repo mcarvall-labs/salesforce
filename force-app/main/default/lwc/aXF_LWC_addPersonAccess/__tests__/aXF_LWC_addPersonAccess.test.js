@@ -147,5 +147,56 @@ describe("c-aXF_LWC_addPersonAccess", () => {
 
     expect(startProvisioning).toHaveBeenCalledTimes(1);
     expect(el.shadowRoot.querySelector("lightning-spinner")).not.toBeNull();
+    // the running region is focusable so focus lands on the status update
+    expect(
+      el.shadowRoot.querySelector("[data-feedback]").getAttribute("tabindex")
+    ).toBe("-1");
+  });
+
+  it("has a focusable step heading and a 'step X of 4' announcement", async () => {
+    const el = build(true);
+    await flush();
+    const heading = el.shadowRoot.querySelector("[data-step-heading]");
+    expect(heading).not.toBeNull();
+    expect(heading.getAttribute("tabindex")).toBe("-1");
+    expect(heading.textContent.trim().length).toBeGreaterThan(0);
+    expect(el.shadowRoot.textContent).toMatch(/1 (de|of) 4/);
+
+    // advancing updates the heading + the announcement
+    el.shadowRoot
+      .querySelector("lightning-record-picker")
+      .dispatchEvent(
+        new CustomEvent("change", { detail: { recordId: "001x" } })
+      );
+    await flush();
+    btn(el, /Próximo|Next/).click();
+    await flush();
+    expect(el.shadowRoot.textContent).toMatch(/2 (de|of) 4/);
+  });
+
+  it("shows human-readable labels on the review step", async () => {
+    const el = build(true, 3);
+    await flush();
+    el.shadowRoot
+      .querySelector("lightning-record-picker")
+      .dispatchEvent(
+        new CustomEvent("change", { detail: { recordId: "001x" } })
+      );
+    await flush();
+    btn(el, /Próximo|Next/).click();
+    await flush();
+    const email = el.shadowRoot.querySelector("[data-field='email']");
+    email.value = "x@example.com";
+    email.dispatchEvent(new CustomEvent("change"));
+    await flush();
+    btn(el, /Próximo|Next/).click();
+    await flush();
+    btn(el, /Próximo|Next/).click();
+    await flush();
+
+    const review = el.shadowRoot.querySelector("dl").textContent;
+    expect(review).not.toMatch(/CREATE|OWN_DATA/);
+    expect(review).toMatch(/Criar novo usuário|Create a new user/);
+    expect(review).toMatch(/Participante|Participant/);
   });
 });
