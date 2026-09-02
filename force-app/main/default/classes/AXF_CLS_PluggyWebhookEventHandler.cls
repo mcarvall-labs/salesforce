@@ -16,6 +16,11 @@
  */
 public with sharing class AXF_CLS_PluggyWebhookEventHandler {
   public static void handle(List<AXF_PluggyWebhookEvent__e> events) {
+    // Configuration is deliberately evaluated here, in the Automated Process context,
+    // never by the public Site guest user.
+    if (!AXF_CLS_PluggySettings.webhookEnabled()) {
+      return;
+    }
     Set<String> observedItemIds = new Set<String>();
     for (AXF_PluggyWebhookEvent__e evt : events) {
       if (String.isNotBlank(evt.AXF_PWE_TXT_ObservedItemId__c)) {

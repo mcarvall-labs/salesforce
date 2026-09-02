@@ -88,6 +88,36 @@ private class AXF_CLS_PluggyWebhookEventHandlerTest {
   }
 
   @IsTest
+  static void disabledWebhookSkipsRevalidationOutsideGuestContext() {
+    AXF_OBJ_PluggyConnection__c connection = AXF_CLS_PluggyTestData.connection(
+      'ITEM_A'
+    );
+    insert new AXF_PluggyIntegrationConfig__c(
+      SetupOwnerId = UserInfo.getOrganizationId(),
+      AXF_PIC_BOL_WebhookEnabled__c = false
+    );
+
+    Test.startTest();
+    AXF_CLS_PluggyWebhookEventHandler.handle(
+      new List<AXF_PluggyWebhookEvent__e>{
+        new AXF_PluggyWebhookEvent__e(AXF_PWE_TXT_ObservedItemId__c = 'ITEM_A')
+      }
+    );
+    Test.stopTest();
+
+    connection = [
+      SELECT AXF_CON_DT_ConsentCheckedAt__c
+      FROM AXF_OBJ_PluggyConnection__c
+      WHERE Id = :connection.Id
+    ];
+    System.assertEquals(
+      null,
+      connection.AXF_CON_DT_ConsentCheckedAt__c,
+      'disabled webhook processing must not revalidate the connection'
+    );
+  }
+
+  @IsTest
   static void transientFailureAsksEventBusToRetry() {
     AXF_CLS_PluggyTestData.connection('ITEM_A');
     AXF_CLS_PluggyHttpCalloutMock mock = new AXF_CLS_PluggyHttpCalloutMock();

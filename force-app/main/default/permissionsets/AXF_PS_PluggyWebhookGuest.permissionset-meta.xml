@@ -2,14 +2,14 @@
 <PermissionSet xmlns="http://soap.sforce.com/2006/04/metadata">
     <label>Axon - Webhook Pluggy (guest)</label>
     <description
-  >Guest User do Site que expoe /services/apexrest/pluggy/webhook. Valida o HMAC e publica AXF_PluggyWebhookEvent__e; a revalidacao roda fora do contexto guest. Nao le segredo, nao escreve na Conexao, nao faz callout. AXF-11 / G4-3.</description>
+  >Guest User do Site que expoe /services/apexrest/pluggy/webhook. Valida o segredo compartilhado e publica AXF_PluggyWebhookEvent__e; a revalidacao roda fora do contexto guest. Nao escreve na Conexao nem faz callout. AXF-11 / G4-3.</description>
     <hasActivationRequired>false</hasActivationRequired>
     <classAccesses>
         <apexClass>AXF_CLS_PluggyWebhookResource</apexClass>
         <enabled>true</enabled>
     </classAccesses>
     <classAccesses>
-        <apexClass>AXF_CLS_PluggyWebhookSignature</apexClass>
+        <apexClass>AXF_CLS_PluggyWebhookAuth</apexClass>
         <enabled>true</enabled>
     </classAccesses>
     <classAccesses>
