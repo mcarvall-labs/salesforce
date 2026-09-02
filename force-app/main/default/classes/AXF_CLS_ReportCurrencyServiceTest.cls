@@ -55,6 +55,43 @@ private class AXF_CLS_ReportCurrencyServiceTest {
   }
 
   @IsTest
+  static void nonAdminCanPersistOwnHierarchySettingRow() {
+    seedCurrencies();
+    Profile standardProfile = [
+      SELECT Id
+      FROM Profile
+      WHERE UserType = 'Standard'
+      LIMIT 1
+    ];
+    User participant = new User(
+      Alias = 'axfpart',
+      Email = 'axf87-participant@example.invalid',
+      EmailEncodingKey = 'UTF-8',
+      LastName = 'AXF87 Participant',
+      LanguageLocaleKey = 'pt_BR',
+      LocaleSidKey = 'pt_BR',
+      ProfileId = standardProfile.Id,
+      TimeZoneSidKey = 'America/Sao_Paulo',
+      Username = 'axf87-participant-' +
+        System.now().getTime() +
+        '@example.invalid'
+    );
+    insert participant;
+
+    System.runAs(participant) {
+      AXF_CLS_ReportCurrencyService service = new AXF_CLS_ReportCurrencyService();
+      service.setForCurrentUser('USD', false);
+
+      AXF_ReportCurrencyPref__c stored = AXF_ReportCurrencyPref__c.getValues(
+        UserInfo.getUserId()
+      );
+      System.assertNotEquals(null, stored, 'personal hierarchy row must exist');
+      System.assertEquals('USD', stored.AXF_RCP_TXT_IsoCode__c);
+      System.assertEquals('USD', service.effectivePreference());
+    }
+  }
+
+  @IsTest
   static void inactiveCurrencyIsRejected() {
     seedCurrencies();
     try {

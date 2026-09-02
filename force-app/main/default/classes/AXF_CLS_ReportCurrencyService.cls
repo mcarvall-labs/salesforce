@@ -131,7 +131,7 @@ public with sharing class AXF_CLS_ReportCurrencyService {
       ? existing
       : new AXF_ReportCurrencyPref__c(SetupOwnerId = userId);
     row.AXF_RCP_TXT_IsoCode__c = iso;
-    upsert row;
+    Database.upsert(row, AccessLevel.SYSTEM_MODE);
   }
 
   private Set<String> activeIsoCodes() {

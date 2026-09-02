@@ -13,13 +13,13 @@
 
 ## O que entrega
 
-| Área                                       | Componente                                                                                                                                                                                                                                                                |
-| ------------------------------------------ | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| Moedas habilitadas (sem multimoeda na org) | `AXF_ReportCurrency__mdt` — registros BRL (sugerida), USD, EUR, GBP, ARS; `Active` + `SuggestedDefault`                                                                                                                                                                   |
-| Preferência pessoal persistida no servidor | `AXF_ReportCurrencyPref__c` — **Custom Setting hierárquico** (por usuário; a linha da org = default corporativo). `getInstance()` resolve usuário → profile → org. Um campo: `AXF_RCP_TXT_IsoCode__c`                                                                     |
-| Serviço                                    | `AXF_CLS_ReportCurrencyService` — `activeCurrencies()` (sugerida primeiro), `suggestedDefault()`, `effectivePreference()`, `hasPersonalPreference()`, `setForCurrentUser(iso, overwrite)`, `setForUser(userId, iso, overwrite)` (admin, gated por `AXF_CanConfigure`)     |
-| Controller / LWC                           | `AXF_CLS_CTRL_ReportCurrencyPref` + `aXF_LWC_reportCurrencyPreference` — combobox de moedas ativas, marca a sugerida, salva; diálogo de confirmação ao substituir uma preferência existente; estados loading/ready/error; WCAG (role=status/alert/alertdialog, aria-live) |
-| Acesso                                     | `AXF_PS_ReportCurrency` (componente adicionado aos PSGs Gestor e Participante — qualquer usuário do Axon define a própria); admin path exige `AXF_CanConfigure`                                                                                                           |
+| Área                                       | Componente                                                                                                                                                                                                                                                                                                                              |
+| ------------------------------------------ | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Moedas habilitadas (sem multimoeda na org) | `AXF_ReportCurrency__mdt` — registros BRL (sugerida), USD, EUR, GBP, ARS; `Active` + `SuggestedDefault`                                                                                                                                                                                                                                 |
+| Preferência pessoal persistida no servidor | `AXF_ReportCurrencyPref__c` — **Custom Setting hierárquico** (por usuário; a linha da org = default corporativo). `getInstance()` resolve usuário → profile → org. Um campo: `AXF_RCP_TXT_IsoCode__c`                                                                                                                                   |
+| Serviço                                    | `AXF_CLS_ReportCurrencyService` — `activeCurrencies()` (sugerida primeiro), `suggestedDefault()`, `effectivePreference()`, `hasPersonalPreference()`, `setForCurrentUser(iso, overwrite)`, `setForUser(userId, iso, overwrite)` (admin, gated por `AXF_CanConfigure`); somente o `upsert` do Hierarchy Custom Setting usa `SYSTEM_MODE` |
+| Controller / LWC                           | `AXF_CLS_CTRL_ReportCurrencyPref` + `aXF_LWC_reportCurrencyPreference` — combobox de moedas ativas, marca a sugerida, salva; diálogo de confirmação ao substituir uma preferência existente; estados loading/ready/error; WCAG (role=status/alert/alertdialog, aria-live)                                                               |
+| Acesso                                     | `AXF_PS_ReportCurrency` (componente adicionado aos PSGs Gestor e Participante — qualquer usuário do Axon define a própria); admin path exige `AXF_CanConfigure`                                                                                                                                                                         |
 
 ## ACs → implementação
 
@@ -36,16 +36,12 @@ Provider/cotação (D-55/AXF-92), consolidação convertida, ativar multimoeda n
 
 ## Testes
 
-| Classe                                    | Cobre                                                                                                                                                                                           |
-| ----------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `AXF_CLS_ReportCurrencyServiceTest`       | ativas excluem inativa + sugerida primeiro; grava e retoma; inativa rejeitada; não substitui silenciosamente + confirma; mesmo valor = no-op; admin path gated + set inicial + usuário inválido |
-| `AXF_CLS_CTRL_ReportCurrencyPrefTest`     | state expõe opções/sugestão; salva → confirma → confirmado; inativa rejeitada                                                                                                                   |
-| `aXF_LWC_reportCurrencyPreference` (Jest) | lista ativas + marca sugerida + pré-seleciona; texto "só apresentação"; salva; diálogo de confirmação ao substituir; erro + retry                                                               |
+| Classe                                    | Cobre                                                                                                                                                                                                                                         |
+| ----------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `AXF_CLS_ReportCurrencyServiceTest`       | ativas excluem inativa + sugerida primeiro; participante não-admin grava a própria linha; grava e retoma; inativa rejeitada; não substitui silenciosamente + confirma; mesmo valor = no-op; admin path gated + set inicial + usuário inválido |
+| `AXF_CLS_CTRL_ReportCurrencyPrefTest`     | state expõe opções/sugestão; salva → confirma → confirmado; inativa rejeitada                                                                                                                                                                 |
+| `aXF_LWC_reportCurrencyPreference` (Jest) | lista ativas + marca sugerida + pré-seleciona; texto "só apresentação"; salva; diálogo de confirmação ao substituir; erro + retry                                                                                                             |
 
-11 Apex + 6 Jest, 100% verdes. Deploy `NoTestRun` em AXON_DEV.
-
-## Smoke test pendente (org real)
-
-Confirmar que um usuário **não-admin** consegue `upsert` a própria linha do Custom Setting
-hierárquico `AXF_ReportCurrencyPref__c` via a tela (Apex). Custom Settings `Public` são
-graváveis por Apex sem "Customize Application", mas vale validar com um usuário Participante.
+12 Apex + 6 Jest, 100% verdes. Validação check-only `0Afaj00000iqXY1CAM`: 22/22
+componentes, 12/12 testes Apex; controller 100% e serviço 95% de cobertura. O cenário antes
+pendente de participante não-admin passou a ser coberto por teste automatizado.
