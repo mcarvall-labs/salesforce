@@ -1,7 +1,7 @@
-# AXF-13 — Garantir identidade externa Pluggy em reprocessamentos e reconexões
+# AXF-13 — Pluggy external identity across reprocessing and reconnections
 
 - **Jira:** https://axon-personal-finances.atlassian.net/browse/AXF-13 (Epic AXF-10)
-- **Branch:** `feature/AXF-13-pluggy-external-identity` — **empilhada sobre** `feature/AXF-11-pluggy-credentials-consent` (usa `AXF_OBJ_PluggyConnection__c`).
+- **Branch:** `feature/AXF-13-pluggy-external-identity`, synchronized with `reconciled/base` after AXF-11 was finalized (uses `AXF_OBJ_PluggyConnection__c`).
 - **Gates:** G6 fase de definição fechada (30/08). Contrato regente: `ARCHITECTURE-SPINE.md`
   §"Fechamento G6"; `IMPLEMENTATION-CONTRACTS.md` (SourceIdentity/alias — versão simplificada
   do G6 prevalece); comentário Jira 10202 (30/08).
@@ -97,4 +97,8 @@ Por objeto de fato (`CCT`, `BAT`, `FTX`, `CCI`, …):
 | `AXF_CLS_PluggyFactIdentityTest`       | id do provedor verbatim; replay estável; mesmo dado local + pai diferente ⇒ chave diferente; sinal/escala do valor; exige pai/data/valor; ISO date zero-padded              |
 | `AXF_CLS_SourceEquivalenceServiceTest` | `record` PENDING e idempotente; `verify` gated + idempotente + resolve; um VERIFIED por escopo ⇒ `CONFLICT`; rejeitada não verifica; conexão inexistente negada sem revelar |
 
-Deploy `NoTestRun` em AXON_DEV; testes rodados à parte.
+Post-restack validation used a check-only deployment against `AXON_DEV`; no persistent
+feature-branch deployment was made. Validation job `0Afaj00000ipUqkCAE` passed with all
+26 specified Apex tests green. Coverage was 94% for `AXF_CLS_IdentityFraming`, 97% for
+`AXF_CLS_PluggyFactIdentity`, 97% for `AXF_CLS_TextNormalization`, and 99% for
+`AXF_CLS_SourceEquivalenceService`.

@@ -1,9 +1,9 @@
-<!-- PR: AXF-13: feature/AXF-11-pluggy-credentials-consent -->
+<!-- PR: AXF-13: reconciled/base -->
 
 ## Related work
 
 - Jira: https://axon-personal-finances.atlassian.net/browse/AXF-13 — *Garantir identidade externa Pluggy em reprocessamentos e reconexões* (Epic AXF-10)
-- **Stacked on** `feature/AXF-11-pluggy-credentials-consent` (PR #44) — uses `AXF_OBJ_PluggyConnection__c`. Merge #44 first.
+- Synchronized with `reconciled/base` after AXF-11 (PR #44) was finalized; uses `AXF_OBJ_PluggyConnection__c`.
 - Local record: `docs/implementation/AXF-13.md`
 
 ## Contract
@@ -33,5 +33,4 @@ Reconciliation matching / smart dedup (Deferred); physical identity migration = 
 
 ## Validation
 
-26 Apex tests, all green; 94–97% coverage on the new classes. Deployed to `AXON_DEV` with `NoTestRun`.
-
+Check-only validation against `AXON_DEV` passed in job `0Afaj00000ipUqkCAE`: 26/26 specified Apex tests green. Coverage: `AXF_CLS_IdentityFraming` 94%, `AXF_CLS_PluggyFactIdentity` 97%, `AXF_CLS_TextNormalization` 97%, and `AXF_CLS_SourceEquivalenceService` 99%. No persistent feature-branch deployment was made during the restack.
