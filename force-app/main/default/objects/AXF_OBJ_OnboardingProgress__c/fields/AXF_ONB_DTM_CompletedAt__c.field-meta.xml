@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<CustomField xmlns="http://soap.sforce.com/2006/04/metadata">
+    <fullName>AXF_ONB_DTM_CompletedAt__c</fullName>
+    <label>Concluído em</label>
+    <description
+  >Quando o onboarding foi concluído de forma verificável (todas as etapas obrigatórias confirmadas/puladas, pendências reconhecidas). AXF-88 / G5-6.</description>
+    <type>DateTime</type>
+    <required>false</required>
+</CustomField>

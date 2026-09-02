@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<CustomField xmlns="http://soap.sforce.com/2006/04/metadata">
+    <fullName>AXF_SEQ_TXT_TransientIdentityHash__c</fullName>
+    <label>Hash da identidade transitoria</label>
+    <type>Text</type>
+    <length>64</length>
+    <required>true</required>
+    <externalId>true</externalId>
+    <description>SHA-256 da identidade transitoria normalizada observada na reconexao.</description>
+</CustomField>

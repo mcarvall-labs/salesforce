@@ -1,0 +1,112 @@
+<template>
+  <lightning-card title={labels.TITLE} icon-name="standard:health_check">
+    <div class="slds-p-horizontal_medium slds-p-bottom_medium">
+      <template lwc:if={isLoading}>
+        <lightning-spinner
+          alternative-text="Carregando"
+          size="small"
+        ></lightning-spinner>
+      </template>
+
+      <template lwc:if={isError}>
+        <p class="slds-text-color_error" role="alert">{labels.LOAD_ERROR}</p>
+        <lightning-button
+          label={labels.RETRY}
+          onclick={handleRetry}
+          class="slds-m-top_x-small"
+        ></lightning-button>
+      </template>
+
+      <template lwc:if={isEmpty}>
+        <p class="slds-text-color_weak" role="status">{labels.EMPTY}</p>
+      </template>
+
+      <template lwc:if={isReady}>
+        <ul class="slds-has-dividers_bottom-space">
+          <template for:each={rows} for:item="row">
+            <li
+              key={row.connectionId}
+              class="slds-item slds-p-vertical_x-small"
+            >
+              <div class="slds-grid slds-wrap slds-gutters_x-small">
+                <div class="slds-col slds-size_1-of-1 slds-large-size_3-of-12">
+                  <span class="slds-text-title_caps"
+                    >{labels.COL_INSTITUTION}</span
+                  >
+                  <p class="slds-text-body_regular">{row.institution}</p>
+                  <p class="slds-text-body_small slds-text-color_weak">
+                    {row.name}
+                  </p>
+                </div>
+                <div class="slds-col slds-size_1-of-2 slds-large-size_2-of-12">
+                  <span class="slds-text-title_caps">{labels.COL_CONSENT}</span>
+                  <p>{row.consentLabel}</p>
+                </div>
+                <div class="slds-col slds-size_1-of-2 slds-large-size_2-of-12">
+                  <span class="slds-text-title_caps"
+                    >{labels.COL_COLLECTION}</span
+                  >
+                  <p>{row.collectionLabel}</p>
+                </div>
+                <div class="slds-col slds-size_1-of-1 slds-large-size_3-of-12">
+                  <span class="slds-text-title_caps"
+                    >{labels.COL_LAST_SUCCESS}</span
+                  >
+                  <p>{row.lastSuccessLabel}</p>
+                  <template lwc:if={row.lastStatusDetail}>
+                    <p class="slds-text-body_small slds-text-color_weak">
+                      {row.lastStatusDetail}
+                    </p>
+                  </template>
+                </div>
+                <div
+                  class="slds-col slds-size_1-of-1 slds-large-size_2-of-12 slds-text-align_right"
+                >
+                  <template lwc:if={row.canManage}>
+                    <template lwc:if={row.isPause}>
+                      <lightning-button
+                        label={labels.PAUSE}
+                        data-id={row.connectionId}
+                        disabled={row.rowBusy}
+                        onclick={handlePause}
+                      ></lightning-button>
+                    </template>
+                    <template lwc:if={row.isResume}>
+                      <lightning-button
+                        label={labels.RESUME}
+                        variant="success"
+                        data-id={row.connectionId}
+                        disabled={row.rowBusy}
+                        onclick={handleResume}
+                      ></lightning-button>
+                    </template>
+                    <template lwc:if={row.isReauthorize}>
+                      <lightning-button
+                        label={labels.REAUTHORIZE}
+                        variant="destructive-text"
+                        data-id={row.connectionId}
+                        disabled={row.rowBusy}
+                        onclick={handleRefresh}
+                      ></lightning-button>
+                    </template>
+                  </template>
+                </div>
+                <div class="slds-col slds-size_1-of-1">
+                  <p class="slds-text-body_small" role="note">{row.impact}</p>
+                </div>
+              </div>
+            </li>
+          </template>
+        </ul>
+
+        <template lwc:if={feedback}>
+          <div class="slds-m-top_small" role="status" aria-live="polite">
+            <lightning-formatted-text
+              value={feedback}
+            ></lightning-formatted-text>
+          </div>
+        </template>
+      </template>
+    </div>
+  </lightning-card>
+</template>

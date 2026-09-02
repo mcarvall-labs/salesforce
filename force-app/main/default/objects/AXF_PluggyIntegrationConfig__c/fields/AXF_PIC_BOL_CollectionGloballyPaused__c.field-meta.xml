@@ -1,0 +1,8 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<CustomField xmlns="http://soap.sforce.com/2006/04/metadata">
+    <fullName>AXF_PIC_BOL_CollectionGloballyPaused__c</fullName>
+    <label>Coleta pausada globalmente</label>
+    <type>Checkbox</type>
+    <defaultValue>false</defaultValue>
+    <description>Pausa global de toda coleta Pluggy. Nao revoga consentimento nem apaga historico.</description>
+</CustomField>

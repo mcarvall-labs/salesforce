@@ -1,0 +1,22 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<CustomObject xmlns="http://soap.sforce.com/2006/04/metadata">
+    <label>Progresso do Onboarding</label>
+    <pluralLabel>Progressos do Onboarding</pluralLabel>
+    <nameField>
+        <label>Número do Progresso</label>
+        <type>AutoNumber</type>
+        <displayFormat>ONB-{0000000}</displayFormat>
+    </nameField>
+    <deploymentStatus>Deployed</deploymentStatus>
+    <sharingModel>Private</sharingModel>
+    <enableActivities>false</enableActivities>
+    <enableReports>true</enableReports>
+    <enableHistory>true</enableHistory>
+    <enableBulkApi>true</enableBulkApi>
+    <enableStreamingApi>true</enableStreamingApi>
+    <enableSharing>true</enableSharing>
+    <enableFeeds>false</enableFeeds>
+    <description
+  >Autoridade durável, no servidor, do progresso do onboarding do Axon: qual etapa foi confirmada e qual é a próxima ação (AXF-88 / G5-1, G5-6). Escopo org/usuário. Sem segredo, sem PII sensível, sem dados financeiros — apenas status sanitizado e a referência mínima de evidência de cada etapa. Não concede acesso aos registros referenciados.</description>
+    <visibility>Public</visibility>
+</CustomObject>

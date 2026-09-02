@@ -1,0 +1,145 @@
+<template>
+  <lightning-card title={labels.TITLE} icon-name="standard:connected_apps">
+    <div class="slds-p-horizontal_medium slds-p-bottom_medium">
+      <template lwc:if={isLoading}>
+        <lightning-spinner
+          alternative-text="Carregando"
+          size="small"
+        ></lightning-spinner>
+      </template>
+
+      <template lwc:if={isForbidden}>
+        <p class="slds-text-color_weak" role="status">{labels.FORBIDDEN}</p>
+      </template>
+
+      <template lwc:if={isError}>
+        <p class="slds-text-color_error" role="alert">{labels.LOAD_ERROR}</p>
+        <lightning-button
+          label={labels.RETRY}
+          onclick={handleRetry}
+          class="slds-m-top_x-small"
+        ></lightning-button>
+      </template>
+
+      <template lwc:if={isReady}>
+        <p
+          class="slds-text-body_small slds-text-color_weak slds-m-bottom_small"
+        >
+          {labels.SECRET_HINT}
+        </p>
+
+        <lightning-input
+          type="text"
+          label={labels.CLIENT_ID}
+          value={clientId}
+          onchange={handleClientIdChange}
+          autocomplete="off"
+        ></lightning-input>
+        <lightning-input
+          type="password"
+          label={labels.CLIENT_SECRET}
+          value={clientSecret}
+          onchange={handleClientSecretChange}
+          autocomplete="off"
+        ></lightning-input>
+
+        <div
+          class="slds-m-top_x-small slds-grid slds-wrap slds-gutters_x-small"
+        >
+          <lightning-button
+            class="slds-m-around_xx-small"
+            variant="brand"
+            label={labels.SAVE_ACTIVE}
+            disabled={credentialButtonsDisabled}
+            onclick={handleSaveActive}
+          ></lightning-button>
+          <lightning-button
+            class="slds-m-around_xx-small"
+            label={labels.STAGE_CANDIDATE}
+            disabled={credentialButtonsDisabled}
+            onclick={handleStageCandidate}
+          ></lightning-button>
+        </div>
+
+        <hr class="slds-m-vertical_small" />
+
+        <dl class="slds-dl_horizontal">
+          <dt class="slds-dl_horizontal__label">{labels.ACTIVE_SLOT}</dt>
+          <dd class="slds-dl_horizontal__detail">{status.activeSlot}</dd>
+          <dt class="slds-dl_horizontal__label">{labels.ROTATION_STATE}</dt>
+          <dd class="slds-dl_horizontal__detail">{status.rotationState}</dd>
+          <dt class="slds-dl_horizontal__label">{labels.CONNECTIONS}</dt>
+          <dd class="slds-dl_horizontal__detail">{status.connectionCount}</dd>
+          <dt class="slds-dl_horizontal__label">{labels.BLOCKED}</dt>
+          <dd class="slds-dl_horizontal__detail">
+            {status.blockedConnectionCount}
+          </dd>
+          <dt class="slds-dl_horizontal__label">{labels.PRIMARY_TEST}</dt>
+          <dd class="slds-dl_horizontal__detail">
+            {status.primarySlotTestResult}
+          </dd>
+          <dt class="slds-dl_horizontal__label">{labels.CANDIDATE_TEST}</dt>
+          <dd class="slds-dl_horizontal__detail">
+            {status.candidateSlotTestResult}
+          </dd>
+        </dl>
+
+        <p class="slds-m-top_small" role="status">{globalStateText}</p>
+
+        <div class="slds-m-top_medium slds-grid slds-wrap slds-gutters_x-small">
+          <lightning-button
+            class="slds-m-around_xx-small"
+            label={labels.TEST_CANDIDATE}
+            disabled={busy}
+            onclick={handleTest}
+          ></lightning-button>
+          <lightning-button
+            class="slds-m-around_xx-small"
+            variant="brand"
+            label={labels.PROMOTE}
+            disabled={promoteDisabled}
+            onclick={handlePromote}
+          ></lightning-button>
+          <lightning-button
+            class="slds-m-around_xx-small"
+            label={labels.ROLLBACK}
+            disabled={rollbackDisabled}
+            onclick={handleRollback}
+          ></lightning-button>
+          <template lwc:if={globalPaused}>
+            <lightning-button
+              class="slds-m-around_xx-small"
+              variant="success"
+              label={labels.RESUME_GLOBAL}
+              disabled={busy}
+              onclick={handleResumeGlobal}
+            ></lightning-button>
+          </template>
+          <template lwc:else>
+            <lightning-button
+              class="slds-m-around_xx-small"
+              variant="destructive-text"
+              label={labels.PAUSE_GLOBAL}
+              disabled={busy}
+              onclick={handlePauseGlobal}
+            ></lightning-button>
+          </template>
+        </div>
+
+        <template lwc:if={busy}>
+          <p class="slds-m-top_small slds-text-color_weak" role="status">
+            {labels.BUSY}
+          </p>
+        </template>
+
+        <template lwc:if={feedback}>
+          <div class="slds-m-top_small" role="status" aria-live="polite">
+            <lightning-formatted-text
+              value={feedback}
+            ></lightning-formatted-text>
+          </div>
+        </template>
+      </template>
+    </div>
+  </lightning-card>
+</template>
