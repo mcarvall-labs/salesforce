@@ -3,5 +3,6 @@
     <label>Axon - Gestor Financeiro</label>
     <description>Nivel Gestor Financeiro: consultar/cadastrar/editar o dominio; sem Delete; sem ViewAll/ModifyAll; concede AXF_CanConfigure. AXF-7.</description>
     <permissionSets>AXF_PS_GestorFinanceiro</permissionSets>
+    <permissionSets>AXF_PS_ReportCurrency</permissionSets>
     <status>Updated</status>
 </PermissionSetGroup>

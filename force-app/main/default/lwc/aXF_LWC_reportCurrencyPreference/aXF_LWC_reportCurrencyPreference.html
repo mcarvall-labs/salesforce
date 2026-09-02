@@ -1,0 +1,77 @@
+<template>
+  <lightning-card title={labels.TITLE} icon-name="standard:currency">
+    <div class="slds-p-horizontal_medium slds-p-bottom_medium">
+      <template lwc:if={isLoading}>
+        <lightning-spinner
+          alternative-text="Carregando"
+          size="small"
+        ></lightning-spinner>
+      </template>
+
+      <template lwc:if={isError}>
+        <p class="slds-text-color_error" role="alert">{labels.LOAD_ERROR}</p>
+        <lightning-button
+          label={labels.RETRY}
+          onclick={handleRetry}
+          class="slds-m-top_x-small"
+        ></lightning-button>
+      </template>
+
+      <template lwc:if={isReady}>
+        <p
+          class="slds-text-body_small slds-text-color_weak slds-m-bottom_small"
+        >
+          {labels.HELP}
+        </p>
+
+        <lightning-combobox
+          name="reportCurrency"
+          label={labels.LABEL}
+          placeholder={labels.PLACEHOLDER}
+          options={options}
+          value={selected}
+          onchange={handleChange}
+        ></lightning-combobox>
+
+        <div class="slds-m-top_small">
+          <lightning-button
+            label={labels.SAVE}
+            variant="brand"
+            disabled={saveDisabled}
+            onclick={handleSave}
+          ></lightning-button>
+        </div>
+
+        <template lwc:if={showConfirm}>
+          <div
+            class="slds-box slds-box_x-small slds-m-top_small"
+            role="alertdialog"
+            aria-live="assertive"
+          >
+            <p>{confirmMessage}</p>
+            <div class="slds-m-top_x-small">
+              <lightning-button
+                label={labels.CONFIRM_YES}
+                variant="brand"
+                onclick={handleConfirmYes}
+                class="slds-m-right_x-small"
+              ></lightning-button>
+              <lightning-button
+                label={labels.CONFIRM_NO}
+                onclick={handleConfirmNo}
+              ></lightning-button>
+            </div>
+          </div>
+        </template>
+
+        <template lwc:if={feedback}>
+          <div class="slds-m-top_small" role="status" aria-live="polite">
+            <lightning-formatted-text
+              value={feedback}
+            ></lightning-formatted-text>
+          </div>
+        </template>
+      </template>
+    </div>
+  </lightning-card>
+</template>

@@ -3,5 +3,6 @@
     <label>Axon - Participante</label>
     <description>Nivel Participante: consultar/editar no proprio escopo; cadastro so de lancamentos e categorias; sem Delete; sem ViewAll/ModifyAll; sem configuracao. AXF-7.</description>
     <permissionSets>AXF_PS_Participante</permissionSets>
+    <permissionSets>AXF_PS_ReportCurrency</permissionSets>
     <status>Updated</status>
 </PermissionSetGroup>
