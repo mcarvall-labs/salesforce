@@ -1,0 +1,152 @@
+<template>
+  <lightning-card title={labels.title} icon-name="standard:setup">
+    <div class="slds-var-p-around_medium">
+      <template lwc:if={loading}>
+        <lightning-spinner size="small"></lightning-spinner>
+      </template>
+
+      <template lwc:elseif={forbidden}>
+        <p role="status">{labels.forbidden}</p>
+      </template>
+
+      <template lwc:elseif={onDone}>
+        <div role="status">
+          <h2 class="slds-text-heading_small slds-text-color_success">
+            {labels.done}
+          </h2>
+          <p class="slds-text-body_small slds-var-m-top_x-small">
+            {labels.doneHint}
+          </p>
+        </div>
+        <ul class="slds-var-m-top_small slds-list_dotted">
+          <template for:each={stepRows} for:item="r">
+            <li key={r.stepKey}>
+              {r.label} — {r.status}
+              <template lwc:if={r.done}>
+                <lightning-button
+                  variant="base"
+                  label={labels.reopen}
+                  data-step={r.stepKey}
+                  onclick={handleReopen}
+                ></lightning-button>
+              </template>
+            </li>
+          </template>
+        </ul>
+      </template>
+
+      <template lwc:else>
+        <p
+          class="slds-text-body_small slds-text-color_weak slds-var-m-bottom_xx-small"
+        >
+          {stepNumberLabel}
+        </p>
+        <h2
+          class="slds-text-heading_small slds-var-m-bottom_small"
+          tabindex="-1"
+          data-heading
+        >
+          {stepTitle}
+        </h2>
+
+        <template lwc:if={message}>
+          <div
+            class="slds-var-m-bottom_small slds-text-color_error"
+            role="alert"
+            data-message
+          >
+            {message}
+          </div>
+        </template>
+        <template lwc:if={staleDetected}>
+          <div
+            class="slds-var-m-bottom_small slds-text-color_weak"
+            role="status"
+          >
+            {labels.stale}
+          </div>
+        </template>
+
+        <!-- ================= step content ================= -->
+        <template lwc:if={onReview}>
+          <ul class="slds-list_dotted">
+            <template for:each={stepRows} for:item="r">
+              <li key={r.stepKey} data-review-row>{r.label} — {r.status}</li>
+            </template>
+          </ul>
+          <template lwc:if={requiredPending}>
+            <lightning-input
+              type="checkbox"
+              label={labels.ackPending}
+              checked={acknowledge}
+              onchange={handleAck}
+              class="slds-var-m-top_small"
+            ></lightning-input>
+          </template>
+        </template>
+
+        <template lwc:else>
+          <div class="slds-box slds-box_x-small slds-var-m-bottom_medium">
+            <template lwc:if={showWelcome}>
+              <p>{labels.welcome}</p>
+            </template>
+            <template lwc:if={showPluggyGuide}>
+              <c-a-x-f_-l-w-c_pluggy-guide></c-a-x-f_-l-w-c_pluggy-guide>
+              <c-a-x-f_-l-w-c_pluggy-integration-config></c-a-x-f_-l-w-c_pluggy-integration-config>
+            </template>
+            <template lwc:if={showDiscovery}>
+              <c-a-x-f_-l-w-c_source-discovery></c-a-x-f_-l-w-c_source-discovery>
+            </template>
+            <template lwc:if={showHolders}>
+              <c-a-x-f_-l-w-c_confirm-source-holders></c-a-x-f_-l-w-c_confirm-source-holders>
+            </template>
+            <template lwc:if={showPeopleAccess}>
+              <c-a-x-f_-l-w-c_add-person-access></c-a-x-f_-l-w-c_add-person-access>
+            </template>
+            <template lwc:if={showManualSources}>
+              <c-a-x-f_-l-w-c_manual-financial-source
+                allow-skip
+              ></c-a-x-f_-l-w-c_manual-financial-source>
+            </template>
+            <template lwc:if={showCurrency}>
+              <c-a-x-f_-l-w-c_report-currency-preference></c-a-x-f_-l-w-c_report-currency-preference>
+            </template>
+          </div>
+        </template>
+
+        <!-- ================= navigation ================= -->
+        <div class="slds-grid slds-grid_align-spread">
+          <lightning-button
+            label={labels.back}
+            onclick={handleBack}
+            disabled={isFirst}
+          ></lightning-button>
+          <div>
+            <template lwc:if={isOptional}>
+              <lightning-button
+                label={labels.skip}
+                onclick={handleSkip}
+                class="slds-var-m-right_x-small"
+              ></lightning-button>
+            </template>
+            <template lwc:if={onReview}>
+              <lightning-button
+                variant="brand"
+                label={labels.finish}
+                onclick={handleFinish}
+                disabled={finishDisabled}
+              ></lightning-button>
+            </template>
+            <template lwc:else>
+              <lightning-button
+                variant="brand"
+                label={labels.next}
+                onclick={handleNext}
+              ></lightning-button>
+            </template>
+          </div>
+        </div>
+      </template>
+    </div>
+  </lightning-card>
+</template>
