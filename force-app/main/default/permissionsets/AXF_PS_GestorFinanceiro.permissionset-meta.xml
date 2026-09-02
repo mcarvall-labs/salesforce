@@ -619,6 +619,10 @@
         <visibility>Visible</visibility>
     </tabSettings>
     <tabSettings>
+        <tab>AXF_OnboardingWizard</tab>
+        <visibility>Visible</visibility>
+    </tabSettings>
+    <tabSettings>
         <tab>AXF_AuthorizedContext</tab>
         <visibility>Visible</visibility>
     </tabSettings>
