@@ -1,9 +1,10 @@
-<?xml version="1.0" encoding="UTF-8"?>
+<?xml version="1.0" encoding="UTF-8" ?>
 <CustomField xmlns="http://soap.sforce.com/2006/04/metadata">
     <fullName>AXF_BA_TXT_CurrencyIsoCode__c</fullName>
     <label>Moeda (ISO)</label>
     <type>Text</type>
     <length>3</length>
     <required>false</required>
-    <description>Moeda original da conta conforme a API. Imutavel; a preferencia pessoal (AXF-87) nao altera.</description>
+    <description
+  >Moeda original da conta conforme a API. Imutavel; a preferencia pessoal (AXF-87) nao altera.</description>
 </CustomField>

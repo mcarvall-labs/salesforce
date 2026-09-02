@@ -1,0 +1,5 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<ValidationRule xmlns="http://soap.sforce.com/2006/04/metadata"><fullName
+  >AXF_ACH_ValidPeriod</fullName><active>true</active><errorConditionFormula
+  >AND(NOT(ISBLANK(AXF_ACH_DAT_ValidTo__c)), AXF_ACH_DAT_ValidTo__c &lt; AXF_ACH_DAT_ValidFrom__c)</errorConditionFormula><errorMessage
+  >A data final não pode ser anterior à data inicial.</errorMessage></ValidationRule>

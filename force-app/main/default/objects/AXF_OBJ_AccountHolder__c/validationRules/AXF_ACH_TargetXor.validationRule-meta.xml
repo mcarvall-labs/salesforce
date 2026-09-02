@@ -1,0 +1,5 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<ValidationRule xmlns="http://soap.sforce.com/2006/04/metadata"><fullName
+  >AXF_ACH_TargetXor</fullName><active>true</active><errorConditionFormula
+  >OR(AND(ISBLANK(AXF_ACH_LKP_BankAccount__c), ISBLANK(AXF_ACH_LKP_CreditCard__c)), AND(NOT(ISBLANK(AXF_ACH_LKP_BankAccount__c)), NOT(ISBLANK(AXF_ACH_LKP_CreditCard__c))))</errorConditionFormula><errorMessage
+  >Informe exatamente uma fonte financeira.</errorMessage></ValidationRule>

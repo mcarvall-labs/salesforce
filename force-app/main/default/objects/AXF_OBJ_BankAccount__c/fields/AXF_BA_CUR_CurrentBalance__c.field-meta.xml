@@ -1,9 +1,10 @@
-<?xml version="1.0" encoding="UTF-8"?>
+<?xml version="1.0" encoding="UTF-8" ?>
 <CustomField xmlns="http://soap.sforce.com/2006/04/metadata">
     <fullName>AXF_BA_CUR_CurrentBalance__c</fullName>
     <label>Saldo atual</label>
     <type>Currency</type>
     <precision>18</precision>
     <scale>2</scale>
-    <description>Saldo conforme a API no momento da descoberta. Esta US nao declara saldo final.</description>
+    <description
+  >Saldo conforme a API no momento da descoberta. Esta US nao declara saldo final.</description>
 </CustomField>

@@ -1,0 +1,8 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<CustomField xmlns="http://soap.sforce.com/2006/04/metadata"><fullName
+  >AXF_ACH_LKP_Account__c</fullName><deleteConstraint
+  >Restrict</deleteConstraint><label>Titular</label><referenceTo
+  >Account</referenceTo><relationshipLabel
+  >Fontes financeiras</relationshipLabel><relationshipName
+  >AXF_AccountHolders</relationshipName><required>true</required><type
+  >Lookup</type></CustomField>
