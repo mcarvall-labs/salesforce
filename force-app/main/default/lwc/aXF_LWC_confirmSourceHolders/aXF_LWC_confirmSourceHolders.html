@@ -1,0 +1,66 @@
+<template>
+  <lightning-card title={labels.title} icon-name="standard:account">
+    <div class="slds-var-p-horizontal_medium slds-var-p-bottom_medium">
+      <p
+        class="slds-text-body_small slds-text-color_weak slds-var-m-bottom_small"
+      >
+        {labels.subtitle}
+      </p>
+
+      <template lwc:if={forbidden}>
+        <p role="status">{labels.forbidden}</p>
+      </template>
+
+      <template lwc:else>
+        <p
+          data-status
+          tabindex="-1"
+          role="status"
+          aria-live="polite"
+          class="slds-var-m-bottom_small slds-text-body_small"
+        >
+          {message}
+        </p>
+
+        <h2 class="slds-text-heading_small slds-var-m-bottom_x-small">
+          {labels.pending}
+        </h2>
+        <template lwc:if={hasPending}>
+          <template for:each={pending} for:item="s">
+            <div key={s.sourceId} class={s.rowClass}>
+              <p class="slds-text-title_caps slds-text-color_weak">
+                {s.kindLabel} · {s.institutionName} · {s.maskedNumber} ·
+                {s.currencyIsoCode}
+              </p>
+              <lightning-record-picker
+                label={labels.holder}
+                placeholder={labels.holder}
+                object-api-name="Account"
+                data-source={s.sourceId}
+                onchange={handleHolder}
+                class="slds-var-m-vertical_x-small"
+              ></lightning-record-picker>
+              <lightning-button
+                label={labels.confirm}
+                variant="brand"
+                data-source={s.sourceId}
+                data-kind={s.kind}
+                data-version={s.version}
+                onclick={handleConfirm}
+              ></lightning-button>
+            </div>
+          </template>
+        </template>
+        <template lwc:else>
+          <p class="slds-text-body_small">{labels.allDone}</p>
+        </template>
+
+        <p
+          class="slds-text-body_small slds-text-color_weak slds-var-m-top_small"
+        >
+          {labels.released}: {releasedCount}
+        </p>
+      </template>
+    </div>
+  </lightning-card>
+</template>
