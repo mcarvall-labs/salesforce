@@ -3,6 +3,10 @@
     <label>Axon - Participante (componente)</label>
     <description>Componente do PSG AXF_PSG_Participante. Consultar e editar titulares (Account/Contact) no proprio escopo; sem cadastro; sem Delete; sem ViewAll/ModifyAll; sem configuracao. Perms do dominio vem por US. AXF-7 / AXF-80.</description>
     <hasActivationRequired>false</hasActivationRequired>
+    <applicationVisibilities>
+        <application>AXF_CA_AxonFinance</application>
+        <visible>true</visible>
+    </applicationVisibilities>
     <classAccesses>
         <apexClass>AXF_CLS_CTRL_AxonConfig</apexClass>
         <enabled>true</enabled>
@@ -71,6 +75,10 @@
     </tabSettings>
     <tabSettings>
         <tab>AXF_ReportCurrency</tab>
+        <visibility>Visible</visibility>
+    </tabSettings>
+    <tabSettings>
+        <tab>AXF_Home</tab>
         <visibility>Visible</visibility>
     </tabSettings>
 </PermissionSet>

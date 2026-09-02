@@ -1,0 +1,17 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<CustomApplication xmlns="http://soap.sforce.com/2006/04/metadata">
+    <description
+  >Axon — uso diário: posição, contexto autorizado, fontes, titulares e preferências.</description>
+    <formFactors>Large</formFactors>
+    <formFactors>Small</formFactors>
+    <isNavAutoTempTabsDisabled>false</isNavAutoTempTabsDisabled>
+    <isNavPersonalizationDisabled>false</isNavPersonalizationDisabled>
+    <label>Axon Finance</label>
+    <navType>Standard</navType>
+    <tabs>AXF_Home</tabs>
+    <tabs>AXF_AuthorizedContext</tabs>
+    <tabs>AXF_SourceHealth</tabs>
+    <tabs>AXF_Holders</tabs>
+    <tabs>AXF_ReportCurrency</tabs>
+    <uiType>Lightning</uiType>
+</CustomApplication>

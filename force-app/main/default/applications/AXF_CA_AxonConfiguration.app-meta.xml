@@ -1,0 +1,20 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<CustomApplication xmlns="http://soap.sforce.com/2006/04/metadata">
+    <description
+  >AXON - Configuration — instalar e manter o Axon: onboarding, credenciais Pluggy, titulares, acessos e responsáveis.</description>
+    <formFactors>Large</formFactors>
+    <isNavAutoTempTabsDisabled>false</isNavAutoTempTabsDisabled>
+    <isNavPersonalizationDisabled>false</isNavPersonalizationDisabled>
+    <label>AXON - Configuration</label>
+    <navType>Standard</navType>
+    <tabs>AXF_ConfigHome</tabs>
+    <tabs>AXF_Configuration</tabs>
+    <tabs>AXF_OnboardingWizard</tabs>
+    <tabs>AXF_PluggyConfig</tabs>
+    <tabs>AXF_PluggyGuide</tabs>
+    <tabs>AXF_AddPersonAccess</tabs>
+    <tabs>AXF_ConfirmHolders</tabs>
+    <tabs>AXF_SourceDiscovery</tabs>
+    <tabs>AXF_SourceHealth</tabs>
+    <uiType>Lightning</uiType>
+</CustomApplication>
