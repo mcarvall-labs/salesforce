@@ -1,0 +1,8 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<CustomObject xmlns="http://soap.sforce.com/2006/04/metadata">
+    <customSettingsType>Hierarchy</customSettingsType>
+    <description>Configuracao da integracao Pluggy gravavel em runtime (sem deploy): TTL do cache do apiKey, pausa global de coleta, estado da rotacao de credencial, webhook ligado. Sem segredos. AXF-11.</description>
+    <enableFeeds>false</enableFeeds>
+    <label>AXF Pluggy Integration Config</label>
+    <visibility>Public</visibility>
+</CustomObject>

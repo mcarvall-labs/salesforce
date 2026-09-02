@@ -1,0 +1,8 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<CustomField xmlns="http://soap.sforce.com/2006/04/metadata">
+    <fullName>AXF_CON_DT_ConsentGivenAt__c</fullName>
+    <label>Consentimento em</label>
+    <type>DateTime</type>
+    <required>false</required>
+    <description>Inicio do consentimento (createdAt).</description>
+</CustomField>

@@ -1,0 +1,8 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<CustomField xmlns="http://soap.sforce.com/2006/04/metadata">
+    <fullName>AXF_PIC_TXT_ActiveSlot__c</fullName>
+    <label>Slot de credencial ativo</label>
+    <type>Text</type>
+    <length>20</length>
+    <description>PRIMARY|CANDIDATE. Qual Named Credential o AXF_CLS_PluggyAuthService usa. Promover/reverter apenas troca este ponteiro; os segredos ficam nas Credenciais Externas.</description>
+</CustomField>

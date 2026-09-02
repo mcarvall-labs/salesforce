@@ -1,0 +1,8 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<CustomField xmlns="http://soap.sforce.com/2006/04/metadata">
+    <fullName>AXF_CON_DT_ConsentExpiresAt__c</fullName>
+    <label>Consentimento expira em</label>
+    <type>DateTime</type>
+    <required>false</required>
+    <description>Nulo = sem expiracao definida (nao eterno). Ausencia/erro de consulta nao equivale a sem expiracao.</description>
+</CustomField>
