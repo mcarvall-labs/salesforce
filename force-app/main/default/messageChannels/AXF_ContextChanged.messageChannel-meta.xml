@@ -1,0 +1,21 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<LightningMessageChannel xmlns="http://soap.sforce.com/2006/04/metadata">
+    <masterLabel>Axon Context Changed</masterLabel>
+    <description>Announces an authorized holder context selection. Consumers must clear stale state and refetch.</description>
+    <isExposed>true</isExposed>
+    <lightningMessageFields>
+        <fieldName>accountId</fieldName>
+    </lightningMessageFields>
+    <lightningMessageFields>
+        <fieldName>contextType</fieldName>
+    </lightningMessageFields>
+    <lightningMessageFields>
+        <fieldName>label</fieldName>
+    </lightningMessageFields>
+    <lightningMessageFields>
+        <fieldName>presentationCurrency</fieldName>
+    </lightningMessageFields>
+    <lightningMessageFields>
+        <fieldName>selectionVersion</fieldName>
+    </lightningMessageFields>
+</LightningMessageChannel>
