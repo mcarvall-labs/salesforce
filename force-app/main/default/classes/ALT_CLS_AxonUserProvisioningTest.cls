@@ -405,4 +405,91 @@ private class ALT_CLS_AxonUserProvisioningTest {
       );
     }
   }
+
+  @IsTest
+  static void createdParticipantHasScopedEffectiveAccess() {
+    User cfg = configurator();
+    licenseFree(true);
+    Id foreignAccId;
+    Id ownPersonId;
+    Id linkedUserId;
+
+    Test.startTest();
+    System.runAs(cfg) {
+      foreignAccId = personAccount('Estranho'); // stays owned by the configurator
+      ownPersonId = personAccount('DonoNovo');
+      ALT_CLS_AxonUserProvisioning.Result r = new ALT_CLS_AxonUserProvisioning()
+        .start(createInput(ownPersonId, 'OWN_DATA'));
+      ALT_CLS_AxonUserProvisioning.driveSync(r.provisioningId);
+      linkedUserId = ALT_CLS_AxonUserProvisioning.readApv(r.provisioningId)
+        .AXF_APV_LKP_User__c;
+    }
+    Test.stopTest();
+
+    System.assertNotEquals(null, linkedUserId, 'user created');
+    User participant = [SELECT Id FROM User WHERE Id = :linkedUserId];
+    System.runAs(participant) {
+      System.assertEquals(
+        false,
+        FeatureManagement.checkPermission('AXF_CanConfigure'),
+        'Participante nao recebe autoridade de configuracao'
+      );
+      List<Account> mine = [
+        SELECT Id
+        FROM Account
+        WHERE Id = :ownPersonId
+        WITH USER_MODE
+      ];
+      System.assertEquals(
+        1,
+        mine.size(),
+        've o proprio Person Account (owner sincronizado)'
+      );
+
+      List<Account> foreign = [
+        SELECT Id
+        FROM Account
+        WHERE Id = :foreignAccId
+        WITH USER_MODE
+      ];
+      System.assertEquals(
+        0,
+        foreign.size(),
+        'nao ve titular de outro dono (OWD Private)'
+      );
+    }
+  }
+
+  @IsTest
+  static void createdGestorHasConfigAuthority() {
+    User cfg = configurator();
+    licenseFree(true);
+    Id ownPersonId;
+    Id linkedUserId;
+
+    Test.startTest();
+    System.runAs(cfg) {
+      ownPersonId = personAccount('GestorDono');
+      ALT_CLS_AxonUserProvisioning.Result r = new ALT_CLS_AxonUserProvisioning()
+        .start(createInput(ownPersonId, 'ALL_DATA'));
+      ALT_CLS_AxonUserProvisioning.driveSync(r.provisioningId);
+      linkedUserId = ALT_CLS_AxonUserProvisioning.readApv(r.provisioningId)
+        .AXF_APV_LKP_User__c;
+    }
+    Test.stopTest();
+
+    User gestor = [SELECT Id FROM User WHERE Id = :linkedUserId];
+    System.runAs(gestor) {
+      System.assertEquals(
+        true,
+        FeatureManagement.checkPermission('AXF_CanConfigure'),
+        'Gestor criado carrega AXF_CanConfigure pelo PSG'
+      );
+      System.assertEquals(
+        1,
+        [SELECT COUNT() FROM Account WHERE Id = :ownPersonId],
+        've o proprio titular'
+      );
+    }
+  }
 }

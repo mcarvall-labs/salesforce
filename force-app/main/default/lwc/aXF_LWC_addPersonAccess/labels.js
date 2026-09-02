@@ -31,7 +31,8 @@ const PT = {
   failed: "Não foi possível concluir. Veja a mensagem e retome.",
   retry: "Retomar",
   statusStep: "Etapa",
-  statusState: "Situação"
+  statusState: "Situação",
+  stepOf: "Etapa {0} de {1}"
 };
 
 const EN = {
@@ -65,7 +66,8 @@ const EN = {
   failed: "Could not finish. Read the message and resume.",
   retry: "Resume",
   statusStep: "Step",
-  statusState: "State"
+  statusState: "State",
+  stepOf: "Step {0} of {1}"
 };
 
 const L = String(LANG || "")

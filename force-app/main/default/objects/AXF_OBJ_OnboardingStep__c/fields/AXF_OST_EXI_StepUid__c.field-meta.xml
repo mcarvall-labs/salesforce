@@ -1,0 +1,13 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<CustomField xmlns="http://soap.sforce.com/2006/04/metadata">
+    <fullName>AXF_OST_EXI_StepUid__c</fullName>
+    <label>UID da etapa</label>
+    <description
+  >ScopeKey + ":" + StepKey. Unique/externalId — o upsert por este campo garante exatamente uma linha por (progresso, etapa); retomar ou repetir não duplica. AXF-88 / AC2.</description>
+    <type>Text</type>
+    <length>80</length>
+    <required>true</required>
+    <unique>true</unique>
+    <externalId>true</externalId>
+    <caseSensitive>true</caseSensitive>
+</CustomField>
