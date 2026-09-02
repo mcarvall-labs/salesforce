@@ -1,7 +1,20 @@
 <?xml version="1.0" encoding="UTF-8" ?>
-<CustomField xmlns="http://soap.sforce.com/2006/04/metadata"><fullName
-  >AXF_ACH_PKL_Role__c</fullName><label>Papel</label><required
-  >true</required><type>Picklist</type><valueSet><restricted
-    >true</restricted><valueSetDefinition><sorted>false</sorted><value><fullName
-        >PRIMARY</fullName><default>true</default><label
-        >Principal</label></value></valueSetDefinition></valueSet></CustomField>
+<CustomField xmlns="http://soap.sforce.com/2006/04/metadata">
+    <fullName>AXF_ACH_PKL_Role__c</fullName>
+    <label>Papel</label>
+    <required>true</required>
+    <type>Picklist</type>
+    <description
+  >Papel do titular na fonte (G1-4). No máximo um PRIMARY ativo por conta/cartão. SECOND/THIRD (conta conjunta) e ADDITIONAL (cartão adicional) são projeção de acesso G2 — fora do escopo da confirmação inicial (AXF-85).</description>
+    <valueSet><restricted>true</restricted><valueSetDefinition><sorted
+      >false</sorted>
+      <value><fullName>PRIMARY</fullName><default>true</default><label
+        >Principal</label></value>
+      <value><fullName>SECOND</fullName><default>false</default><label
+        >Segundo titular</label></value>
+      <value><fullName>THIRD</fullName><default>false</default><label
+        >Terceiro titular</label></value>
+      <value><fullName>ADDITIONAL</fullName><default>false</default><label
+        >Adicional</label></value>
+    </valueSetDefinition></valueSet>
+</CustomField>

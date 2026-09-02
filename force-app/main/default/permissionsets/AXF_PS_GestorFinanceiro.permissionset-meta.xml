@@ -77,6 +77,14 @@
         <enabled>true</enabled>
     </classAccesses>
     <classAccesses>
+        <apexClass>AXF_CLS_CTRL_SourceHolderConfirmation</apexClass>
+        <enabled>true</enabled>
+    </classAccesses>
+    <classAccesses>
+        <apexClass>ALT_CLS_SourceHolderConfirmation</apexClass>
+        <enabled>true</enabled>
+    </classAccesses>
+    <classAccesses>
         <apexClass>AXF_CLS_PluggyDiscoveryService</apexClass>
         <enabled>true</enabled>
     </classAccesses>
@@ -216,6 +224,11 @@
     <fieldPermissions>
         <editable>true</editable>
         <field>AXF_OBJ_AccessProvisioning__c.AXF_APV_CHK_OwnerSynced__c</field>
+        <readable>true</readable>
+    </fieldPermissions>
+    <fieldPermissions>
+        <editable>true</editable>
+        <field>AXF_OBJ_AccountHolder__c.AXF_ACH_TXT_Note__c</field>
         <readable>true</readable>
     </fieldPermissions>
     <fieldPermissions>
@@ -599,6 +612,10 @@
     </tabSettings>
     <tabSettings>
         <tab>AXF_SourceDiscovery</tab>
+        <visibility>Visible</visibility>
+    </tabSettings>
+    <tabSettings>
+        <tab>AXF_ConfirmHolders</tab>
         <visibility>Visible</visibility>
     </tabSettings>
     <tabSettings>
