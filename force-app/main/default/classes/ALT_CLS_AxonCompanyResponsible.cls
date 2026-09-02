@@ -142,6 +142,11 @@ public with sharing class ALT_CLS_AxonCompanyResponsible {
     @AuraEnabled
     public Datetime grantedAt;
     @AuraEnabled
+    public Datetime revokedAt;
+    // Sanitized: only ever one of the MSG_* constants, never provider/PII text.
+    @AuraEnabled
+    public String lastError;
+    @AuraEnabled
     public String outcome;
     @AuraEnabled
     public String message;
@@ -393,6 +398,8 @@ public with sharing class ALT_CLS_AxonCompanyResponsible {
         : null;
       v.version = asInt(cra.AXF_CRA_NUM_Version__c);
       v.grantedAt = cra.AXF_CRA_DT_GrantedAt__c;
+      v.revokedAt = cra.AXF_CRA_DT_RevokedAt__c;
+      v.lastError = cra.AXF_CRA_TXT_LastError__c;
       out.add(v);
     }
     return out;
@@ -848,7 +855,9 @@ public with sharing class ALT_CLS_AxonCompanyResponsible {
           AXF_CRA_PKL_Role__c,
           AXF_CRA_PKL_Status__c,
           AXF_CRA_NUM_Version__c,
-          AXF_CRA_DT_GrantedAt__c
+          AXF_CRA_DT_GrantedAt__c,
+          AXF_CRA_DT_RevokedAt__c,
+          AXF_CRA_TXT_LastError__c
         FROM AXF_OBJ_CompanyResponsibleAccess__c
         WHERE AXF_CRA_LKP_Business__c = :businessId
         WITH SYSTEM_MODE
@@ -976,6 +985,8 @@ public with sharing class ALT_CLS_AxonCompanyResponsible {
     v.grantedUserId = visibleUserId(cra.AXF_CRA_LKP_GrantedUser__c);
     v.version = asInt(cra.AXF_CRA_NUM_Version__c);
     v.grantedAt = cra.AXF_CRA_DT_GrantedAt__c;
+    v.revokedAt = cra.AXF_CRA_DT_RevokedAt__c;
+    v.lastError = cra.AXF_CRA_TXT_LastError__c;
     return v;
   }
 
