@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<CustomField xmlns="http://soap.sforce.com/2006/04/metadata">
+    <fullName>AXF_INR_PKL_State__c</fullName>
+    <label>Estado</label>
+    <type>Picklist</type>
+    <required>true</required>
+    <valueSet><restricted>true</restricted><valueSetDefinition><sorted>false</sorted>
+        <value><fullName>PENDING</fullName><default>true</default><label>Pendente</label></value>
+        <value><fullName>RUNNING</fullName><default>false</default><label>Em execucao</label></value>
+        <value><fullName>SUCCEEDED</fullName><default>false</default><label>Concluida</label></value>
+        <value><fullName>FAILED_RETRYABLE</fullName><default>false</default><label>Falha (repetivel)</label></value>
+        <value><fullName>FAILED_TERMINAL</fullName><default>false</default><label>Falha (terminal)</label></value>
+        <value><fullName>RESULT_UNKNOWN</fullName><default>false</default><label>Resultado desconhecido</label></value>
+    </valueSetDefinition></valueSet>
+</CustomField>

@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<CustomField xmlns="http://soap.sforce.com/2006/04/metadata">
+    <fullName>AXF_INR_TXT_CorrelationId__c</fullName>
+    <label>Correlation ID</label>
+    <type>Text</type>
+    <length>40</length>
+    <required>false</required>
+    <description>Correlacao sanitizada da execucao.</description>
+</CustomField>

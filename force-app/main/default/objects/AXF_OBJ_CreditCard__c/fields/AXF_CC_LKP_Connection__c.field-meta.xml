@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<CustomField xmlns="http://soap.sforce.com/2006/04/metadata">
+    <fullName>AXF_CC_LKP_Connection__c</fullName>
+    <label>Conexao Pluggy</label>
+    <type>Lookup</type>
+    <referenceTo>AXF_OBJ_PluggyConnection__c</referenceTo>
+    <relationshipName>CreditCards</relationshipName>
+    <deleteConstraint>Restrict</deleteConstraint>
+    <required>false</required>
+</CustomField>
