@@ -1,10 +1,14 @@
-import { LightningElement, track, wire } from "lwc";
+﻿import { LightningElement, track, wire } from "lwc";
 import getAuthorizedEntities from "@salesforce/apex/AXF_CLS_CTRL_ContractManagement.getAuthorizedEntities";
 import getActiveRelationships from "@salesforce/apex/AXF_CLS_CTRL_ContractManagement.getActiveRelationships";
 import getContracts from "@salesforce/apex/AXF_CLS_CTRL_ContractManagement.getContracts";
 import getContractDetail from "@salesforce/apex/AXF_CLS_CTRL_ContractManagement.getContractDetail";
 import createDraftContract from "@salesforce/apex/AXF_CLS_CTRL_ContractManagement.createDraftContract";
 import updateDraftContract from "@salesforce/apex/AXF_CLS_CTRL_ContractManagement.updateDraftContract";
+import getTermVersions from "@salesforce/apex/AXF_CLS_CTRL_ContractManagement.getTermVersions";
+import saveDraftTermVersion from "@salesforce/apex/AXF_CLS_CTRL_ContractManagement.saveDraftTermVersion";
+import calculateSchedulePreview from "@salesforce/apex/AXF_CLS_CTRL_ContractManagement.calculateSchedulePreview";
+import activateTermVersion from "@salesforce/apex/AXF_CLS_CTRL_ContractManagement.activateTermVersion";
 import { ShowToastEvent } from "lightning/platformShowToastEvent";
 
 export default class AXF_LWC_contractManagement extends LightningElement {
@@ -19,6 +23,28 @@ export default class AXF_LWC_contractManagement extends LightningElement {
   @track errorMessage = "";
   @track isModalOpen = false;
   @track isEditing = false;
+
+  // Estados para Termos e Remuneracao (AXF-54)
+  @track termVersions = [];
+  @track isTermModalOpen = false;
+  @track schedulePreview = null;
+  @track termForm = {
+    termVersionId: null,
+    contractId: null,
+    accountId: "",
+    remunerationModel: "MONTHLY",
+    currencyIsoCode: "BRL",
+    effectiveFrom: null,
+    effectiveTo: null,
+    rate: null,
+    hoursQuantity: null,
+    contractedAmount: null,
+    installments: null,
+    proportionalityPolicy: "CALENDAR_DAYS",
+    timeZone: "America/Sao_Paulo",
+    calendarPolicy: "STANDARD_CALENDAR",
+    version: 0
+  };
 
   @track form = {
     contractId: null,
@@ -39,6 +65,52 @@ export default class AXF_LWC_contractManagement extends LightningElement {
     { label: "Receita", value: "REVENUE" },
     { label: "Despesa", value: "EXPENSE" }
   ];
+
+  modelOptions = [
+    { label: "Mensal (MONTHLY)", value: "MONTHLY" },
+    { label: "Por Hora (HOURLY)", value: "HOURLY" },
+    { label: "Fixo por Marcos/Parcelas (FIXED)", value: "FIXED" }
+  ];
+
+  prorationOptions = [
+    { label: "Dias Corridos (CALENDAR_DAYS)", value: "CALENDAR_DAYS" },
+    { label: "Dias Uteis (BUSINESS_DAYS)", value: "BUSINESS_DAYS" },
+    { label: "Base 30 Dias (FIXED_30)", value: "FIXED_30" },
+    { label: "Sem Proporcionalidade (NONE)", value: "NONE" }
+  ];
+
+  calendarOptions = [
+    { label: "Calendario Padrao Contratado (STANDARD_CALENDAR)", value: "STANDARD_CALENDAR" },
+    { label: "Dias Corridos (CALENDAR_DAYS)", value: "CALENDAR_DAYS" },
+    { label: "Dias Uteis Brasil (BUSINESS_DAYS_BRAZIL)", value: "BUSINESS_DAYS_BRAZIL" },
+    { label: "Regra Nao Contratada / Feriado Local (LOCAL_CUSTOM_HOLIDAYS)", value: "LOCAL_CUSTOM_HOLIDAYS" }
+  ];
+
+  get isModelMonthly() {
+    return this.termForm.remunerationModel === "MONTHLY";
+  }
+
+  get isModelHourly() {
+    return this.termForm.remunerationModel === "HOURLY";
+  }
+
+  get isModelFixed() {
+    return this.termForm.remunerationModel === "FIXED";
+  }
+
+  get hasContracts() {
+    return this.contracts && this.contracts.length > 0;
+  }
+
+  get hasTermVersions() {
+    return this.termVersions && this.termVersions.length > 0;
+  }
+
+  get modalTitle() {
+    return this.isEditing
+      ? "Editar Rascunho de Contrato"
+      : "Novo Contrato em Rascunho";
+  }
 
   @wire(getAuthorizedEntities)
   wiredEntities({ error, data }) {
@@ -63,6 +135,7 @@ export default class AXF_LWC_contractManagement extends LightningElement {
     this.selectedAccountId = event.detail.value;
     this.selectedContractId = null;
     this.selectedDetail = null;
+    this.termVersions = [];
     this.loadContracts();
     this.loadActiveRelationships();
   }
@@ -113,11 +186,29 @@ export default class AXF_LWC_contractManagement extends LightningElement {
         contractId: contractId,
         accountId: this.selectedAccountId
       });
+      await this.loadTermVersions(contractId);
     } catch (err) {
       this.showToast("Erro", this.extractErrorMessage(err), "error");
       this.selectedDetail = null;
     } finally {
       this.isLoading = false;
+    }
+  }
+
+  async loadTermVersions(contractId) {
+    try {
+      const terms = await getTermVersions({
+        contractId: contractId,
+        accountId: this.selectedAccountId
+      });
+      this.termVersions = terms.map((tv) => ({
+        ...tv,
+        isActive: tv.status === "ACTIVE",
+        isBlocked: tv.status === "BLOCKED",
+        canActivate: tv.status !== "ACTIVE"
+      }));
+    } catch (err) {
+      this.termVersions = [];
     }
   }
 
@@ -129,7 +220,7 @@ export default class AXF_LWC_contractManagement extends LightningElement {
     if (this.activeRelationships.length === 0) {
       this.showToast(
         "Aviso",
-        "Não há relações ativas com contrapartes cadastradas para esta entidade.",
+        "Nao ha relacoes ativas com contrapartes cadastradas para esta entidade.",
         "warning"
       );
       return;
@@ -222,10 +313,123 @@ export default class AXF_LWC_contractManagement extends LightningElement {
     }
   }
 
+  // --- METODOS DE TERMO E REMUNERACAO (AXF-54) ---
+
+  handleOpenTermModal() {
+    if (!this.selectedDetail) return;
+    this.schedulePreview = null;
+    this.termForm = {
+      termVersionId: null,
+      contractId: this.selectedDetail.contractId,
+      accountId: this.selectedAccountId,
+      remunerationModel: "MONTHLY",
+      currencyIsoCode: this.selectedDetail.currencyIsoCode || "BRL",
+      effectiveFrom: this.selectedDetail.startDate || new Date().toISOString().split("T")[0],
+      effectiveTo: this.selectedDetail.endDate,
+      rate: 5000,
+      hoursQuantity: null,
+      contractedAmount: null,
+      installments: null,
+      proportionalityPolicy: "CALENDAR_DAYS",
+      timeZone: "America/Sao_Paulo",
+      calendarPolicy: "STANDARD_CALENDAR",
+      version: 0
+    };
+    this.isTermModalOpen = true;
+  }
+
+  handleCloseTermModal() {
+    this.isTermModalOpen = false;
+    this.schedulePreview = null;
+  }
+
+  handleTermFormChange(event) {
+    const field = event.target.name;
+    const value = event.target.value;
+    this.termForm[field] = value;
+
+    if (field === "remunerationModel") {
+      this.schedulePreview = null;
+      if (value === "MONTHLY") {
+        this.termForm.rate = 5000;
+        this.termForm.proportionalityPolicy = "CALENDAR_DAYS";
+        this.termForm.hoursQuantity = null;
+        this.termForm.installments = null;
+        this.termForm.contractedAmount = null;
+      } else if (value === "HOURLY") {
+        this.termForm.rate = 50;
+        this.termForm.hoursQuantity = 160;
+        this.termForm.proportionalityPolicy = null;
+        this.termForm.installments = null;
+        this.termForm.contractedAmount = null;
+      } else if (value === "FIXED") {
+        this.termForm.contractedAmount = 100;
+        this.termForm.installments = 3;
+        this.termForm.rate = null;
+        this.termForm.hoursQuantity = null;
+        this.termForm.proportionalityPolicy = null;
+      }
+    }
+  }
+
+  async handleCalculateSchedule() {
+    this.isSaving = true;
+    try {
+      const payload = { ...this.termForm };
+      this.schedulePreview = await calculateSchedulePreview({ payload });
+      this.showToast(
+        "Calculo Concluido",
+        "Cronograma calculado com conservacao estrita e residual explicito (GF-04).",
+        "success"
+      );
+    } catch (err) {
+      this.showToast("Erro no Calculo", this.extractErrorMessage(err), "error");
+    } finally {
+      this.isSaving = false;
+    }
+  }
+
+  async handleSaveTerm() {
+    this.isSaving = true;
+    try {
+      const payload = { ...this.termForm };
+      await saveDraftTermVersion({ payload });
+      this.showToast("Sucesso", "Rascunho do termo contratual salvo com sucesso.", "success");
+      this.isTermModalOpen = false;
+      await this.loadTermVersions(this.selectedDetail.contractId);
+    } catch (err) {
+      this.showToast("Erro ao Salvar Termo", this.extractErrorMessage(err), "error");
+    } finally {
+      this.isSaving = false;
+    }
+  }
+
+  async handleActivateTerm(event) {
+    const termId = event.target.dataset.id;
+    this.isLoading = true;
+    try {
+      const res = await activateTermVersion({
+        termVersionId: termId,
+        accountId: this.selectedAccountId
+      });
+      if (res.success) {
+        this.showToast("Ativado", "Versao de termo ativada com sucesso.", "success");
+      } else {
+        this.showToast("Bloqueado (BLOCKED)", res.message, "error");
+      }
+      await this.loadTermVersions(this.selectedDetail.contractId);
+    } catch (err) {
+      this.showToast("Erro na Ativacao", this.extractErrorMessage(err), "error");
+      await this.loadTermVersions(this.selectedDetail.contractId);
+    } finally {
+      this.isLoading = false;
+    }
+  }
+
   handleLifecycleAttempt() {
     this.showToast(
-      "Ação Bloqueada",
-      "Transição de ciclo de vida bloqueada: operação canônica de término, cancelamento, ativação ou substituição ainda não disponível (AXF-52).",
+      "Acao Bloqueada",
+      "Transicao de ciclo de vida bloqueada: operacao canonica de termino, cancelamento, ativacao ou substituicao ainda nao disponivel (AXF-52).",
       "warning"
     );
   }
@@ -233,36 +437,24 @@ export default class AXF_LWC_contractManagement extends LightningElement {
   validateForm() {
     if (!this.form.contractCode || !this.form.contractCode.trim()) {
       this.showToast(
-        "Validação",
-        "O código do contrato é obrigatório.",
+        "Validacao",
+        "O codigo do contrato e obrigatorio.",
         "error"
       );
       return false;
     }
     if (!this.form.title || !this.form.title.trim()) {
       this.showToast(
-        "Validação",
-        "O título do contrato é obrigatório.",
+        "Validacao",
+        "O titulo do contrato e obrigatorio.",
         "error"
       );
       return false;
     }
     if (!this.form.relationshipId) {
       this.showToast(
-        "Validação",
-        "A relação com contraparte é obrigatória.",
-        "error"
-      );
-      return false;
-    }
-    if (
-      this.form.startDate &&
-      this.form.endDate &&
-      this.form.endDate < this.form.startDate
-    ) {
-      this.showToast(
-        "Validação",
-        "A data de término não pode ser anterior à data de início.",
+        "Validacao",
+        "A relacao contratual com contraparte e obrigatoria.",
         "error"
       );
       return false;
@@ -270,27 +462,21 @@ export default class AXF_LWC_contractManagement extends LightningElement {
     return true;
   }
 
-  extractErrorMessage(error) {
-    if (error && error.body && error.body.message) {
-      return error.body.message;
-    }
-    if (error && error.message) {
-      return error.message;
-    }
-    return "Ocorreu um erro desconhecido.";
-  }
-
   showToast(title, message, variant) {
-    this.dispatchEvent(new ShowToastEvent({ title, message, variant }));
+    this.dispatchEvent(
+      new ShowToastEvent({
+        title,
+        message,
+        variant
+      })
+    );
   }
 
-  get modalTitle() {
-    return this.isEditing
-      ? "Editar Rascunho do Contrato"
-      : "Novo Contrato em Rascunho";
-  }
-
-  get hasContracts() {
-    return this.contracts && this.contracts.length > 0;
+  extractErrorMessage(error) {
+    if (!error) return "Erro desconhecido";
+    if (typeof error === "string") return error;
+    if (error.body && error.body.message) return error.body.message;
+    if (error.message) return error.message;
+    return JSON.stringify(error);
   }
 }

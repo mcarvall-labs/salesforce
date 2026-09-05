@@ -1,0 +1,12 @@
+﻿<?xml version="1.0" encoding="UTF-8"?>
+<CustomField xmlns="http://soap.sforce.com/2006/04/metadata">
+    <fullName>AXF_CTV_LKP_PreferredBankAccount__c</fullName>
+    <deleteConstraint>SetNull</deleteConstraint>
+    <description>Conta bancaria preferencial sugerida para liquidacao do termo.</description>
+    <label>Conta Bancaria Preferencial</label>
+    <referenceTo>AXF_OBJ_BankAccount__c</referenceTo>
+    <relationshipLabel>Versoes de Termos Contratuais</relationshipLabel>
+    <relationshipName>ContractTermVersions</relationshipName>
+    <required>false</required>
+    <type>Lookup</type>
+</CustomField>

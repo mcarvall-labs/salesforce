@@ -1,6 +1,6 @@
 <template>
   <div class="slds-card slds-p-around_medium">
-    <!-- Cabeçalho com Seletor de Entidade e Ações -->
+    <!-- Cabecalho com Seletor de Entidade e Acoes -->
     <div class="slds-page-header slds-m-bottom_medium">
       <div class="slds-page-header__row">
         <div class="slds-page-header__col-title">
@@ -15,13 +15,12 @@
             <div class="slds-media__body">
               <h1
                 class="slds-page-header__title slds-truncate"
-                title="Gestão de Contratos"
+                title="Gestao de Contratos"
               >
-                Gestão de Contratos (Rascunho)
+                Gestao de Contratos e Remuneracao
               </h1>
               <p class="slds-text-body_small slds-line-height_reset">
-                Governança de receitas e despesas contratuais por entidade
-                titular (AXF-52)
+                Governanca de receitas, despesas e termos contratuais por entidade titular (AXF-52, AXF-54)
               </p>
             </div>
           </div>
@@ -88,10 +87,10 @@
               <thead>
                 <tr class="slds-line-height_reset">
                   <th scope="col">
-                    <div class="slds-truncate" title="Código">Código</div>
+                    <div class="slds-truncate" title="Codigo">Codigo</div>
                   </th>
                   <th scope="col">
-                    <div class="slds-truncate" title="Título">Título</div>
+                    <div class="slds-truncate" title="Titulo">Titulo</div>
                   </th>
                   <th scope="col">
                     <div class="slds-truncate" title="Contraparte">
@@ -99,49 +98,51 @@
                     </div>
                   </th>
                   <th scope="col">
-                    <div class="slds-truncate" title="Tipo">Tipo</div>
-                  </th>
-                  <th scope="col">
-                    <div class="slds-truncate" title="Lifecycle">
+                    <div class="slds-truncate" title="Ciclo de Vida">
                       Ciclo de Vida
                     </div>
                   </th>
                   <th scope="col">
-                    <div class="slds-truncate" title="Ação">Ação</div>
+                    <div class="slds-truncate" title="Tipo">Tipo</div>
+                  </th>
+                  <th scope="col">
+                    <div class="slds-truncate" title="Acoes">Acoes</div>
                   </th>
                 </tr>
               </thead>
               <tbody>
-                <template for:each={contracts} for:item="ctr">
-                  <tr key={ctr.contractId} class="slds-hint-parent">
+                <template for:each={contracts} for:item="c">
+                  <tr
+                    key={c.contractId}
+                    class="slds-hint-parent"
+                    data-id={c.contractId}
+                    onclick={handleSelectContract}
+                    style="cursor: pointer;"
+                  >
                     <td>
                       <div class="slds-truncate font-weight-bold">
-                        {ctr.contractCode}
+                        {c.contractCode}
                       </div>
                     </td>
                     <td>
-                      <div class="slds-truncate" title={ctr.title}>
-                        {ctr.title}
-                      </div>
+                      <div class="slds-truncate">{c.title}</div>
                     </td>
                     <td>
-                      <div class="slds-truncate">{ctr.counterpartyName}</div>
-                    </td>
-                    <td>
-                      <lightning-badge
-                        label={ctr.contractType}
-                      ></lightning-badge>
+                      <div class="slds-truncate">{c.counterpartyName}</div>
                     </td>
                     <td>
                       <span class="slds-badge slds-theme_warning"
-                        >{ctr.lifecycle}</span
+                        >{c.lifecycle}</span
                       >
                     </td>
                     <td>
+                      <div class="slds-truncate">{c.contractType}</div>
+                    </td>
+                    <td>
                       <lightning-button
-                        label="Ver"
+                        data-id={c.contractId}
+                        label="Ver Detalhes"
                         variant="base"
-                        data-id={ctr.contractId}
                         onclick={handleSelectContract}
                       >
                       </lightning-button>
@@ -178,7 +179,7 @@
 
             <div class="slds-form slds-form_stacked">
               <div class="slds-form-element">
-                <label class="slds-form-element__label">Código Canônico</label>
+                <label class="slds-form-element__label">Codigo Canonico</label>
                 <div class="slds-form-element__control font-weight-bold">
                   {selectedDetail.contractCode}
                 </div>
@@ -192,14 +193,14 @@
                 </div>
               </div>
               <div class="slds-form-element">
-                <label class="slds-form-element__label">Papel na Relação</label>
+                <label class="slds-form-element__label">Papel na Relacao</label>
                 <div class="slds-form-element__control">
                   {selectedDetail.relationshipRole}
                 </div>
               </div>
               <div class="slds-form-element">
                 <label class="slds-form-element__label"
-                  >Ciclo de Vida Canônico</label
+                  >Ciclo de Vida Canonico</label
                 >
                 <div class="slds-form-element__control">
                   <span class="slds-badge slds-theme_warning"
@@ -216,15 +217,15 @@
               </div>
               <div class="slds-form-element">
                 <label class="slds-form-element__label"
-                  >Vigência Prevista</label
+                  >Vigencia Prevista</label
                 >
                 <div class="slds-form-element__control">
-                  {selectedDetail.startDate} até {selectedDetail.endDate}
+                  {selectedDetail.startDate} ate {selectedDetail.endDate}
                 </div>
               </div>
               <div class="slds-form-element">
                 <label class="slds-form-element__label"
-                  >Versão (expectedVersion)</label
+                  >Versao (expectedVersion)</label
                 >
                 <div class="slds-form-element__control">
                   {selectedDetail.version}
@@ -232,7 +233,7 @@
               </div>
               <div class="slds-form-element">
                 <label class="slds-form-element__label"
-                  >Descrição do Objeto</label
+                  >Descricao do Objeto</label
                 >
                 <div class="slds-form-element__control slds-text-longform">
                   {selectedDetail.description}
@@ -240,11 +241,78 @@
               </div>
             </div>
 
+            <!-- Secao de Termos e Remuneracao (AXF-54) -->
+            <div class="slds-m-top_medium slds-border_top slds-p-top_small">
+              <div class="slds-grid slds-grid_align-spread slds-m-bottom_x-small">
+                <h3 class="slds-text-heading_small">Modelos de Remuneracao (AXF-54)</h3>
+                <lightning-button
+                  data-testid="new-term-btn"
+                  label="Novo Termo"
+                  icon-name="utility:new"
+                  variant="brand-outline"
+                  onclick={handleOpenTermModal}
+                >
+                </lightning-button>
+              </div>
+
+              <template lwc:if={hasTermVersions}>
+                <template for:each={termVersions} for:item="tv">
+                  <div key={tv.termVersionId} class="slds-box slds-box_x-small slds-m-bottom_x-small slds-theme_shade">
+                    <div class="slds-grid slds-grid_align-spread">
+                      <div>
+                        <strong>{tv.termNumber}</strong> (Rev. {tv.revision}) -
+                        <span class="slds-badge slds-m-left_xx-small">{tv.remunerationModel}</span>
+                        <template lwc:if={tv.isBlocked}>
+                          <span class="slds-badge slds-theme_error slds-m-left_xx-small">BLOQUEADO</span>
+                        </template>
+                        <template lwc:elseif={tv.isActive}>
+                          <span class="slds-badge slds-theme_success slds-m-left_xx-small">ATIVO</span>
+                        </template>
+                        <template lwc:else>
+                          <span class="slds-badge slds-theme_warning slds-m-left_xx-small">{tv.status}</span>
+                        </template>
+                      </div>
+                      <template lwc:if={tv.canActivate}>
+                        <lightning-button
+                          data-testid="activate-term-btn"
+                          data-id={tv.termVersionId}
+                          label="Ativar"
+                          variant="success"
+                          onclick={handleActivateTerm}
+                        >
+                        </lightning-button>
+                      </template>
+                    </div>
+                    <div class="slds-text-body_small slds-m-top_xx-small">
+                      <template lwc:if={tv.contractedAmount}>
+                        Valor Total Fixo: {tv.currencyIsoCode} {tv.contractedAmount} ({tv.installments} parcelas) |
+                      </template>
+                      <template lwc:if={tv.rate}>
+                        Taxa: {tv.currencyIsoCode} {tv.rate} |
+                      </template>
+                      <template lwc:if={tv.hoursQuantity}>
+                        Horas: {tv.hoursQuantity}h |
+                      </template>
+                      Calendario: {tv.calendarPolicy} ({tv.timeZone})
+                    </div>
+                    <template lwc:if={tv.blockedReason}>
+                      <div class="slds-text-color_error slds-text-body_small slds-m-top_xx-small font-weight-bold">
+                        {tv.blockedReason}
+                      </div>
+                    </template>
+                  </div>
+                </template>
+              </template>
+              <template lwc:else>
+                <p class="slds-text-body_small slds-text-color_weak">Nenhuma versao de termo configurada para este contrato.</p>
+              </template>
+            </div>
+
             <div class="slds-m-top_medium slds-border_top slds-p-top_small">
               <p
                 class="slds-text-body_small slds-text-color_weak slds-m-bottom_x-small"
               >
-                Operações canônicas de ciclo de vida (AC 3):
+                Operacoes canonicas de ciclo de vida (AC 3):
               </p>
               <lightning-button
                 label="Cancelar / Encerrar Contrato"
@@ -266,7 +334,7 @@
       </div>
     </div>
 
-    <!-- Modal de Criação / Edição de Rascunho -->
+    <!-- Modal de Criacao / Edicao de Rascunho de Contrato -->
     <template lwc:if={isModalOpen}>
       <section
         role="dialog"
@@ -302,7 +370,7 @@
               >
                 <lightning-input
                   name="contractCode"
-                  label="Código do Contrato"
+                  label="Codigo do Contrato"
                   value={form.contractCode}
                   disabled={isEditing}
                   required
@@ -313,24 +381,11 @@
               <div
                 class="slds-col slds-size_1-of-1 slds-medium-size_1-of-2 slds-m-bottom_small"
               >
-                <lightning-input
-                  name="title"
-                  label="Título do Contrato"
-                  value={form.title}
-                  required
-                  onchange={handleFormChange}
-                >
-                </lightning-input>
-              </div>
-              <div
-                class="slds-col slds-size_1-of-1 slds-medium-size_1-of-2 slds-m-bottom_small"
-              >
                 <lightning-combobox
                   name="relationshipId"
-                  label="Relação Contratual com Contraparte"
+                  label="Relacao Contratual com Contraparte"
                   value={form.relationshipId}
                   options={activeRelationships}
-                  disabled={isEditing}
                   required
                   onchange={handleFormChange}
                 >
@@ -338,6 +393,18 @@
               </div>
               <div
                 class="slds-col slds-size_1-of-1 slds-medium-size_1-of-2 slds-m-bottom_small"
+              >
+                <lightning-input
+                  name="title"
+                  label="Titulo do Contrato"
+                  value={form.title}
+                  required
+                  onchange={handleFormChange}
+                >
+                </lightning-input>
+              </div>
+              <div
+                class="slds-col slds-size_1-of-1 slds-medium-size_1-of-4 slds-m-bottom_small"
               >
                 <lightning-combobox
                   name="contractType"
@@ -350,36 +417,37 @@
                 </lightning-combobox>
               </div>
               <div
-                class="slds-col slds-size_1-of-1 slds-medium-size_1-of-3 slds-m-bottom_small"
+                class="slds-col slds-size_1-of-1 slds-medium-size_1-of-4 slds-m-bottom_small"
               >
                 <lightning-input
                   name="currencyIsoCode"
-                  label="Moeda (ISO)"
+                  label="Moeda"
                   value={form.currencyIsoCode}
-                  maxlength="3"
+                  required
+                  max-length="3"
                   onchange={handleFormChange}
                 >
                 </lightning-input>
               </div>
               <div
-                class="slds-col slds-size_1-of-1 slds-medium-size_1-of-3 slds-m-bottom_small"
+                class="slds-col slds-size_1-of-1 slds-medium-size_1-of-2 slds-m-bottom_small"
               >
                 <lightning-input
                   name="startDate"
                   type="date"
-                  label="Data de Início"
+                  label="Data de Inicio"
                   value={form.startDate}
                   onchange={handleFormChange}
                 >
                 </lightning-input>
               </div>
               <div
-                class="slds-col slds-size_1-of-1 slds-medium-size_1-of-3 slds-m-bottom_small"
+                class="slds-col slds-size_1-of-1 slds-medium-size_1-of-2 slds-m-bottom_small"
               >
                 <lightning-input
                   name="endDate"
                   type="date"
-                  label="Data de Término"
+                  label="Data de Termino"
                   value={form.endDate}
                   onchange={handleFormChange}
                 >
@@ -388,7 +456,7 @@
               <div class="slds-col slds-size_1-of-1 slds-m-bottom_small">
                 <lightning-textarea
                   name="description"
-                  label="Descrição / Objeto Contratual"
+                  label="Descricao / Objeto Contratual"
                   value={form.description}
                   onchange={handleFormChange}
                 >
@@ -402,16 +470,286 @@
               variant="neutral"
               onclick={handleCloseModal}
               class="slds-m-right_small"
-            ></lightning-button>
+            >
+            </lightning-button>
             <lightning-button
               label="Salvar Rascunho"
               variant="brand"
               onclick={handleSaveContract}
-            ></lightning-button>
+            >
+            </lightning-button>
           </footer>
         </div>
       </section>
-      <div class="slds-backdrop slds-fade-in-open"></div>
+      <div class="slds-backdrop slds-backdrop_open"></div>
+    </template>
+
+    <!-- Modal de Configuracao de Termo / Remuneracao (AXF-54) -->
+    <template lwc:if={isTermModalOpen}>
+      <section
+        role="dialog"
+        tabindex="-1"
+        class="slds-modal slds-fade-in-open slds-modal_large"
+        aria-modal="true"
+      >
+        <div class="slds-modal__container">
+          <header class="slds-modal__header">
+            <button
+              class="slds-button slds-button_icon slds-modal__close slds-button_icon-inverse"
+              title="Fechar"
+              onclick={handleCloseTermModal}
+            >
+              <lightning-icon
+                icon-name="utility:close"
+                alternative-text="Fechar"
+                size="small"
+              ></lightning-icon>
+            </button>
+            <h2 class="slds-modal__title slds-hyphenate">Configurar Termo e Modelo de Remuneracao (AXF-54)</h2>
+          </header>
+          <div class="slds-modal__content slds-p-around_medium">
+            <template lwc:if={isSaving}>
+              <lightning-spinner alternative-text="Processando..." size="medium"></lightning-spinner>
+            </template>
+
+            <div class="slds-grid slds-gutters slds-wrap">
+              <!-- Modelo de Remuneracao -->
+              <div class="slds-col slds-size_1-of-1 slds-medium-size_1-of-3 slds-m-bottom_small">
+                <lightning-combobox
+                  name="remunerationModel"
+                  label="Modelo de Remuneracao"
+                  value={termForm.remunerationModel}
+                  options={modelOptions}
+                  required
+                  onchange={handleTermFormChange}
+                >
+                </lightning-combobox>
+              </div>
+
+              <!-- Moeda -->
+              <div class="slds-col slds-size_1-of-1 slds-medium-size_1-of-3 slds-m-bottom_small">
+                <lightning-input
+                  name="currencyIsoCode"
+                  label="Moeda"
+                  value={termForm.currencyIsoCode}
+                  required
+                  max-length="3"
+                  onchange={handleTermFormChange}
+                >
+                </lightning-input>
+              </div>
+
+              <!-- Vigencia Inicial -->
+              <div class="slds-col slds-size_1-of-1 slds-medium-size_1-of-3 slds-m-bottom_small">
+                <lightning-input
+                  name="effectiveFrom"
+                  type="date"
+                  label="Vigencia Inicial"
+                  value={termForm.effectiveFrom}
+                  required
+                  onchange={handleTermFormChange}
+                >
+                </lightning-input>
+              </div>
+
+              <!-- Vigencia Final -->
+              <div class="slds-col slds-size_1-of-1 slds-medium-size_1-of-3 slds-m-bottom_small">
+                <lightning-input
+                  name="effectiveTo"
+                  type="date"
+                  label="Vigencia Final"
+                  value={termForm.effectiveTo}
+                  onchange={handleTermFormChange}
+                >
+                </lightning-input>
+              </div>
+
+              <!-- Fuso Horario -->
+              <div class="slds-col slds-size_1-of-1 slds-medium-size_1-of-3 slds-m-bottom_small">
+                <lightning-input
+                  name="timeZone"
+                  label="Fuso Horario (IANA)"
+                  value={termForm.timeZone}
+                  required
+                  onchange={handleTermFormChange}
+                >
+                </lightning-input>
+              </div>
+
+              <!-- Politica de Calendario -->
+              <div class="slds-col slds-size_1-of-1 slds-medium-size_1-of-3 slds-m-bottom_small">
+                <lightning-combobox
+                  name="calendarPolicy"
+                  label="Politica de Calendario"
+                  value={termForm.calendarPolicy}
+                  options={calendarOptions}
+                  required
+                  onchange={handleTermFormChange}
+                >
+                </lightning-combobox>
+              </div>
+
+              <!-- CAMPOS APLICAVEIS: MONTHLY -->
+              <template lwc:if={isModelMonthly}>
+                <div class="slds-col slds-size_1-of-1 slds-medium-size_1-of-2 slds-m-bottom_small">
+                  <lightning-input
+                    name="rate"
+                    type="number"
+                    formatter="currency"
+                    step="0.01"
+                    label="Valor / Taxa Mensal"
+                    value={termForm.rate}
+                    required
+                    onchange={handleTermFormChange}
+                  >
+                  </lightning-input>
+                </div>
+                <div class="slds-col slds-size_1-of-1 slds-medium-size_1-of-2 slds-m-bottom_small">
+                  <lightning-combobox
+                    name="proportionalityPolicy"
+                    label="Politica de Proporcionalidade"
+                    value={termForm.proportionalityPolicy}
+                    options={prorationOptions}
+                    required
+                    onchange={handleTermFormChange}
+                  >
+                  </lightning-combobox>
+                </div>
+              </template>
+
+              <!-- CAMPOS APLICAVEIS: HOURLY -->
+              <template lwc:if={isModelHourly}>
+                <div class="slds-col slds-size_1-of-1 slds-medium-size_1-of-2 slds-m-bottom_small">
+                  <lightning-input
+                    name="rate"
+                    type="number"
+                    formatter="currency"
+                    step="0.01"
+                    label="Taxa por Hora"
+                    value={termForm.rate}
+                    required
+                    onchange={handleTermFormChange}
+                  >
+                  </lightning-input>
+                </div>
+                <div class="slds-col slds-size_1-of-1 slds-medium-size_1-of-2 slds-m-bottom_small">
+                  <lightning-input
+                    name="hoursQuantity"
+                    type="number"
+                    step="0.5"
+                    label="Quantidade de Horas (Estimada / Teto)"
+                    value={termForm.hoursQuantity}
+                    required
+                    onchange={handleTermFormChange}
+                  >
+                  </lightning-input>
+                </div>
+              </template>
+
+              <!-- CAMPOS APLICAVEIS: FIXED -->
+              <template lwc:if={isModelFixed}>
+                <div class="slds-col slds-size_1-of-1 slds-medium-size_1-of-2 slds-m-bottom_small">
+                  <lightning-input
+                    name="contractedAmount"
+                    type="number"
+                    formatter="currency"
+                    step="0.01"
+                    label="Valor Total Contratado (Fixo)"
+                    value={termForm.contractedAmount}
+                    required
+                    onchange={handleTermFormChange}
+                  >
+                  </lightning-input>
+                </div>
+                <div class="slds-col slds-size_1-of-1 slds-medium-size_1-of-2 slds-m-bottom_small">
+                  <lightning-input
+                    name="installments"
+                    type="number"
+                    step="1"
+                    min="1"
+                    label="Numero de Parcelas / Marcos"
+                    value={termForm.installments}
+                    required
+                    onchange={handleTermFormChange}
+                  >
+                  </lightning-input>
+                </div>
+              </template>
+            </div>
+
+            <!-- Preview do Cronograma Calculado (GF-04) -->
+            <div class="slds-m-top_medium slds-border_top slds-p-top_small">
+              <div class="slds-grid slds-grid_align-spread slds-m-bottom_x-small">
+                <h3 class="slds-text-heading_small">Calculo do Cronograma e Conservacao (GF-04)</h3>
+                <lightning-button
+                  data-testid="calculate-schedule-btn"
+                  label="Calcular Cronograma"
+                  icon-name="utility:table"
+                  variant="neutral"
+                  onclick={handleCalculateSchedule}
+                >
+                </lightning-button>
+              </div>
+
+              <template lwc:if={schedulePreview}>
+                <div class="slds-box slds-theme_default slds-m-bottom_small">
+                  <div class="slds-grid slds-grid_align-spread slds-m-bottom_xx-small">
+                    <div>
+                      <strong>Total Contratado Conservado:</strong> {schedulePreview.currencyIsoCode} {schedulePreview.totalAmount}
+                    </div>
+                    <div>
+                      <strong>Residual Canonico:</strong> {schedulePreview.currencyIsoCode} {schedulePreview.totalResidual}
+                    </div>
+                  </div>
+                  <table class="slds-table slds-table_cell-buffer slds-table_bordered slds-table_striped">
+                    <thead>
+                      <tr class="slds-line-height_reset">
+                        <th>Parcela / Competencia</th>
+                        <th>Vencimento</th>
+                        <th>Valor</th>
+                        <th>Residual</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      <template for:each={schedulePreview.scheduleItems} for:item="item">
+                        <tr key={item.installmentNumber}>
+                          <td>{item.periodLabel}</td>
+                          <td>{item.dueDate}</td>
+                          <td>{item.currencyIsoCode} {item.amount}</td>
+                          <td>
+                            <template lwc:if={item.roundingResidual}>
+                              <span class="slds-badge slds-theme_warning">+{item.roundingResidual}</span>
+                            </template>
+                            <template lwc:else>
+                              0.00
+                            </template>
+                          </td>
+                        </tr>
+                      </template>
+                    </tbody>
+                  </table>
+                </div>
+              </template>
+            </div>
+          </div>
+          <footer class="slds-modal__footer">
+            <lightning-button
+              label="Cancelar"
+              variant="neutral"
+              onclick={handleCloseTermModal}
+              class="slds-m-right_small"
+            >
+            </lightning-button>
+            <lightning-button
+              label="Salvar Rascunho do Termo"
+              variant="brand"
+              onclick={handleSaveTerm}
+            >
+            </lightning-button>
+          </footer>
+        </div>
+      </section>
+      <div class="slds-backdrop slds-backdrop_open"></div>
     </template>
   </div>
 </template>

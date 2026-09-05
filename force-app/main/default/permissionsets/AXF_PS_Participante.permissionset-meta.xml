@@ -68,6 +68,20 @@
         <apexClass>AXF_CLS_ContractException</apexClass>
         <enabled>true</enabled>
     </classAccesses>
+    <classAccesses>
+        <apexClass>ALT_CLS_ContractRemunerationService</apexClass>
+        <enabled>true</enabled>
+    </classAccesses>
+    <objectPermissions>
+        <allowCreate>false</allowCreate>
+        <allowDelete>false</allowDelete>
+        <allowEdit>false</allowEdit>
+        <allowRead>true</allowRead>
+        <modifyAllRecords>false</modifyAllRecords>
+        <object>AXF_OBJ_ContractTermVersion__c</object>
+        <viewAllFields>false</viewAllFields>
+        <viewAllRecords>false</viewAllRecords>
+    </objectPermissions>
     <objectPermissions>
         <allowCreate>false</allowCreate>
         <allowDelete>false</allowDelete>
@@ -229,6 +243,61 @@
     <fieldPermissions>
         <editable>false</editable>
         <field>AXF_OBJ_Contract__c.AXF_CTR_LKP_SuccessorContract__c</field>
+        <readable>true</readable>
+    </fieldPermissions>
+    <fieldPermissions>
+        <editable>false</editable>
+        <field>AXF_OBJ_ContractTermVersion__c.AXF_CTV_CUR_ContractedAmount__c</field>
+        <readable>true</readable>
+    </fieldPermissions>
+    <fieldPermissions>
+        <editable>false</editable>
+        <field>AXF_OBJ_ContractTermVersion__c.AXF_CTV_CUR_Rate__c</field>
+        <readable>true</readable>
+    </fieldPermissions>
+    <fieldPermissions>
+        <editable>false</editable>
+        <field>AXF_OBJ_ContractTermVersion__c.AXF_CTV_DAT_EffectiveTo__c</field>
+        <readable>true</readable>
+    </fieldPermissions>
+    <fieldPermissions>
+        <editable>false</editable>
+        <field>AXF_OBJ_ContractTermVersion__c.AXF_CTV_EXI_TermKey__c</field>
+        <readable>true</readable>
+    </fieldPermissions>
+    <fieldPermissions>
+        <editable>false</editable>
+        <field>AXF_OBJ_ContractTermVersion__c.AXF_CTV_LKP_PreferredBankAccount__c</field>
+        <readable>true</readable>
+    </fieldPermissions>
+    <fieldPermissions>
+        <editable>false</editable>
+        <field>AXF_OBJ_ContractTermVersion__c.AXF_CTV_NUM_HoursQuantity__c</field>
+        <readable>true</readable>
+    </fieldPermissions>
+    <fieldPermissions>
+        <editable>false</editable>
+        <field>AXF_OBJ_ContractTermVersion__c.AXF_CTV_NUM_Installments__c</field>
+        <readable>true</readable>
+    </fieldPermissions>
+    <fieldPermissions>
+        <editable>false</editable>
+        <field>AXF_OBJ_ContractTermVersion__c.AXF_CTV_PKL_ProportionalityPolicy__c</field>
+        <readable>true</readable>
+    </fieldPermissions>
+    <fieldPermissions>
+        <editable>false</editable>
+        <field>AXF_OBJ_ContractTermVersion__c.AXF_CTV_TXT_BlockedReason__c</field>
+        <readable>true</readable>
+    </fieldPermissions>
+    <fieldPermissions>
+        <editable>false</editable>
+        <field>AXF_OBJ_ContractTermVersion__c.AXF_CTV_TXT_CalendarPolicy__c</field>
+        <readable>true</readable>
+    </fieldPermissions>
+    <fieldPermissions>
+        <editable>false</editable>
+        <field>AXF_OBJ_ContractTermVersion__c.AXF_CTV_TXT_TimeZone__c</field>
         <readable>true</readable>
     </fieldPermissions>
     <!-- AXF_BA_PKL_AvailabilityState__c e obrigatorio; campos obrigatorios ja ficam
