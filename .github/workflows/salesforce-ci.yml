@@ -133,5 +133,8 @@ jobs:
             const {data} = await github.rest.actions.listWorkflowRunArtifacts({...context.repo, run_id: context.runId});
             const ref = context.payload.pull_request.base.ref;
             const target = ref === 'main' ? 'AXON_PROD' : (ref === 'uat' ? 'AXON_UAT' : 'AXON_DEV');
+            const artifactLinks = data.artifacts.length
+              ? data.artifacts.map(a => `- [${a.name}](${runUrl})`).join('\n')
+              : '_No evidence artifact uploaded._';
             await github.rest.issues.createComment({...context.repo, issue_number: context.issue.number,
-              body: `## Salesforce PR validation: ${target}\n\n**Validation job:** ${process.env.VALIDATION_RESULT}\n**Quality checks:** ${process.env.QUALITY_RESULT}\n**Validated merge SHA:** \`${process.env.VALIDATED_SHA}\`\n\n${process.env.SF_SUMMARY || 'Validation did not produce a report.'}\n\n[Validation summary and logs](${runUrl})\n\n### Evidence\n${evidence}\n\nValidation uses dry-run: no metadata is persisted.`});
+              body: `## Salesforce PR validation: ${target}\n\n**Validation job:** ${process.env.VALIDATION_RESULT}\n**Quality checks:** ${process.env.QUALITY_RESULT}\n**Validated merge SHA:** \`${process.env.VALIDATED_SHA}\`\n\n${process.env.SF_SUMMARY || 'Validation did not produce a report.'}\n\n[Validation summary and logs](${runUrl})\n\n### Evidence\n${artifactLinks}\n\nValidation uses dry-run: no metadata is persisted.`});
