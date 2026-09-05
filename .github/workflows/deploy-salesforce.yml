@@ -72,7 +72,10 @@ jobs:
             const {data: prs} = await github.rest.repos.listPullRequestsAssociatedWithCommit({...context.repo, commit_sha: context.sha});
             const {data} = await github.rest.actions.listWorkflowRunArtifacts({...context.repo, run_id: context.runId});
             const environment = context.ref === 'refs/heads/main' ? 'AXON_PROD' : (context.ref === 'refs/heads/uat' ? 'AXON_UAT' : 'AXON_DEV');
+            const artifactLinks = data.artifacts.length
+              ? data.artifacts.map(a => `- [${a.name}](${runUrl})`).join('\n')
+              : '_No evidence artifact uploaded._';
             for (const pr of prs.filter(p => p.merged_at && p.merge_commit_sha === context.sha)) {
               await github.rest.issues.createComment({...context.repo, issue_number: pr.number,
-                body: `## Salesforce deployment: ${environment}\n\n**Job result:** ${process.env.DEPLOY_RESULT}\n**Commit:** \`${context.sha}\`\n\n${process.env.SF_SUMMARY || 'Deployment did not produce a report.'}\n\n[Deployment summary and logs](${runUrl})\n\n### Evidence\n${evidence}`});
+                body: `## Salesforce deployment: ${environment}\n\n**Job result:** ${process.env.DEPLOY_RESULT}\n**Commit:** \`${context.sha}\`\n\n${process.env.SF_SUMMARY || 'Deployment did not produce a report.'}\n\n[Deployment summary and logs](${runUrl})\n\n### Evidence\n${artifactLinks}`});
             }
