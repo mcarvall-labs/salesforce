@@ -1,0 +1,162 @@
+<template>
+  <lightning-card title="Importar CSV Contabilizei.bank">
+    <div class="slds-var-p-around_medium">
+      <h2
+        data-id="step-heading"
+        tabindex="-1"
+        class="slds-text-heading_small slds-var-m-bottom_small"
+      >
+        {stepLabel}
+      </h2>
+
+      <template if:true={policyError}>
+        <div
+          class="slds-notify slds-notify_alert slds-theme_alert-texture slds-theme_error"
+          role="alert"
+        >
+          {policyError}
+        </div>
+      </template>
+
+      <template if:true={errorMessage}>
+        <div
+          class="slds-notify slds-notify_alert slds-theme_alert-texture slds-theme_warning"
+          role="alert"
+        >
+          {errorMessage}
+        </div>
+      </template>
+
+      <template if:true={isFileStep}>
+        <p class="slds-var-m-bottom_small">
+          Envie um arquivo {acceptedFormats} exportado do Contabilizei.bank.
+          Esta etapa apenas mostra uma prévia: nenhum lançamento é publicado
+          aqui.
+        </p>
+        <div class="slds-form-element">
+          <label class="slds-form-element__label" for="csv-file-input"
+            >Arquivo CSV</label
+          >
+          <div class="slds-form-element__control">
+            <input
+              type="file"
+              id="csv-file-input"
+              accept={acceptedFormats}
+              disabled={disableUpload}
+              onchange={handleFileChange}
+            />
+          </div>
+        </div>
+        <template if:true={loading}>
+          <lightning-spinner
+            alternative-text="Processando arquivo"
+            size="small"
+          ></lightning-spinner>
+        </template>
+      </template>
+
+      <template if:true={isPreviewStep}>
+        <p class="slds-var-m-bottom_small">
+          Prévia gerada. <strong>Nenhum lançamento foi publicado.</strong>
+        </p>
+        <template if:true={previewResult.targetAccountLabel}>
+          <p>Conta: {previewResult.targetAccountLabel}</p>
+        </template>
+        <p>Versão do analisador: {previewResult.parseResult.parserVersion}</p>
+        <template if:true={summaryCounts}>
+          <ul class="slds-list_horizontal slds-var-m-vertical_small">
+            <li class="slds-var-p-right_medium">
+              Linhas: {summaryCounts.total}
+            </li>
+            <li class="slds-var-p-right_medium">
+              Válidas: {summaryCounts.valid}
+            </li>
+            <li>Rejeitadas: {summaryCounts.rejected}</li>
+          </ul>
+        </template>
+
+        <table
+          class="slds-table slds-table_bordered"
+          aria-label="Amostra de linhas processadas"
+        >
+          <thead>
+            <tr>
+              <th scope="col">Linha</th>
+              <th scope="col">Data</th>
+              <th scope="col">Descrição</th>
+              <th scope="col">Entrada</th>
+              <th scope="col">Saída</th>
+              <th scope="col">Saldo</th>
+            </tr>
+          </thead>
+          <tbody>
+            <template for:each={sampleRows} for:item="row">
+              <tr key={row.lineNumber}>
+                <td data-label="Linha">{row.lineNumber}</td>
+                <td data-label="Data">{row.parsedDate}</td>
+                <td data-label="Descrição">{row.description}</td>
+                <td data-label="Entrada">{row.inflow}</td>
+                <td data-label="Saída">{row.outflow}</td>
+                <td data-label="Saldo">{row.balance}</td>
+              </tr>
+            </template>
+          </tbody>
+        </table>
+
+        <div class="slds-var-m-top_medium">
+          <lightning-button
+            label="Voltar"
+            onclick={handleBackToFile}
+          ></lightning-button>
+          <template if:true={hasRejections}>
+            <lightning-button
+              variant="brand"
+              label="Ver linhas rejeitadas"
+              onclick={handleGoToReview}
+              class="slds-var-m-left_small"
+            ></lightning-button>
+          </template>
+        </div>
+      </template>
+
+      <template if:true={isReviewStep}>
+        <p aria-live="polite" class="slds-var-m-bottom_small">
+          {rejectionRows.length} linha(s) rejeitada(s). Corrija o arquivo de
+          origem e envie novamente.
+        </p>
+        <table
+          class="slds-table slds-table_bordered"
+          aria-label="Linhas rejeitadas"
+        >
+          <thead>
+            <tr>
+              <th scope="col">Linha</th>
+              <th scope="col">Descrição</th>
+              <th scope="col">Motivo</th>
+            </tr>
+          </thead>
+          <tbody>
+            <template for:each={rejectionRows} for:item="row">
+              <tr key={row.lineNumber}>
+                <td data-label="Linha">{row.lineNumber}</td>
+                <td data-label="Descrição">{row.description}</td>
+                <td data-label="Motivo">{row.errorText}</td>
+              </tr>
+            </template>
+          </tbody>
+        </table>
+        <div class="slds-var-m-top_medium">
+          <lightning-button
+            label="Voltar à prévia"
+            onclick={handleBackToPreview}
+          ></lightning-button>
+          <lightning-button
+            label="Enviar outro arquivo"
+            onclick={handleBackToFile}
+            class="slds-var-m-left_small"
+          ></lightning-button>
+        </div>
+      </template>
+    </div>
+  </lightning-card>
+</template>

@@ -1,0 +1,24 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<CustomMetadata
+  xmlns="http://soap.sforce.com/2006/04/metadata"
+  xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+  xmlns:xsd="http://www.w3.org/2001/XMLSchema"
+>
+    <label>Default</label>
+    <protected>false</protected>
+    <values><field>AXF_CIP_TXT_AllowedExtensions__c</field><value
+      xsi:type="xsd:string"
+    >csv</value></values>
+    <values><field>AXF_CIP_TXT_RequiredEncoding__c</field><value
+      xsi:type="xsd:string"
+    >UTF-8</value></values>
+    <values><field>AXF_CIP_NUM_MaxFileSizeBytes__c</field><value
+      xsi:type="xsd:double"
+    >2097152</value></values>
+    <values><field>AXF_CIP_NUM_MaxRows__c</field><value
+      xsi:type="xsd:double"
+    >5000</value></values>
+    <values><field>AXF_CIP_NUM_MaxProcessingSeconds__c</field><value
+      xsi:type="xsd:double"
+    >10</value></values>
+</CustomMetadata>
