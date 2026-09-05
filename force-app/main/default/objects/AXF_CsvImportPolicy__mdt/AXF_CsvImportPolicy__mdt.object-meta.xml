@@ -1,0 +1,8 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<CustomObject xmlns="http://soap.sforce.com/2006/04/metadata">
+    <label>AXF Csv Import Policy</label>
+    <pluralLabel>AXF Csv Import Policies</pluralLabel>
+    <visibility>Public</visibility>
+    <description
+  >Limites aprovados para upload/parse de CSV (tipo, tamanho, linhas, tempo). Ausencia de registro bloqueia a funcionalidade em vez de usar default inventado. AXF-14.</description>
+</CustomObject>
