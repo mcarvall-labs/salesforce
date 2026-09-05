@@ -137,3 +137,24 @@ test("DEV environment enforces develop branch matching", async () => {
     fs.rmSync(dir, { recursive: true, force: true });
   }
 });
+
+test("UAT environment rejects develop branch", async () => {
+  const dir = fs.mkdtempSync(path.join(os.tmpdir(), "axon-delivery-test-"));
+  const previous = { ...process.env };
+  const previousExit = process.exitCode;
+  try {
+    process.env.EVIDENCE_DIR = dir;
+    process.env.TARGET_ENV = "UAT";
+    process.env.TARGET_BRANCH = "develop";
+    process.env.OPERATION = "validate";
+    await run();
+    const report = JSON.parse(fs.readFileSync(path.join(dir, "result.json")));
+    assert.equal(report.outcome, "Failed");
+    assert.match(report.error, /Branch\/environment mismatch/);
+    assert.equal(process.exitCode, 1);
+  } finally {
+    process.env = previous;
+    process.exitCode = previousExit;
+    fs.rmSync(dir, { recursive: true, force: true });
+  }
+});

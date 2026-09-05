@@ -232,7 +232,11 @@ export async function run() {
       "60",
       "--json"
     ];
-    if (e.OPERATION === "validate") args.push("--dry-run");
+    // DEV PRs do a real deploy (no --dry-run) so devs can visually validate the
+    // org before approving the merge. UAT and PROD PRs keep --dry-run to avoid
+    // unintended side-effects before the merge is confirmed.
+    if (e.OPERATION === "validate" && e.TARGET_ENV !== "DEV")
+      args.push("--dry-run");
     for (const file of report.paths) args.push("--source-dir", file);
     let result = spawnSync("sf", args, {
       encoding: "utf8",
