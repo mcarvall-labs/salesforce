@@ -1,0 +1,417 @@
+<template>
+  <div class="slds-card slds-p-around_medium">
+    <!-- Cabeçalho com Seletor de Entidade e Ações -->
+    <div class="slds-page-header slds-m-bottom_medium">
+      <div class="slds-page-header__row">
+        <div class="slds-page-header__col-title">
+          <div class="slds-media">
+            <div class="slds-media__figure">
+              <lightning-icon
+                icon-name="custom:custom55"
+                size="medium"
+                alternative-text="Contratos"
+              ></lightning-icon>
+            </div>
+            <div class="slds-media__body">
+              <h1
+                class="slds-page-header__title slds-truncate"
+                title="Gestão de Contratos"
+              >
+                Gestão de Contratos (Rascunho)
+              </h1>
+              <p class="slds-text-body_small slds-line-height_reset">
+                Governança de receitas e despesas contratuais por entidade
+                titular (AXF-52)
+              </p>
+            </div>
+          </div>
+        </div>
+        <div class="slds-page-header__col-actions">
+          <lightning-button
+            data-testid="new-contract-btn"
+            label="Novo Contrato em Rascunho"
+            icon-name="utility:add"
+            variant="brand"
+            onclick={handleNewContract}
+          >
+          </lightning-button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Filtro de Entidade Titular -->
+    <div class="slds-grid slds-gutters slds-m-bottom_medium">
+      <div class="slds-col slds-size_1-of-1 slds-medium-size_1-of-3">
+        <lightning-combobox
+          name="entitySelector"
+          label="Entidade Titular (Account)"
+          value={selectedAccountId}
+          options={entities}
+          onchange={handleEntityChange}
+          placeholder="Selecione uma entidade"
+        >
+        </lightning-combobox>
+      </div>
+    </div>
+
+    <!-- Loading Spinner -->
+    <template lwc:if={isLoading}>
+      <lightning-spinner
+        alternative-text="Carregando..."
+        size="medium"
+      ></lightning-spinner>
+    </template>
+
+    <!-- Mensagem de Erro Geral -->
+    <template lwc:if={errorMessage}>
+      <div
+        class="slds-notify slds-notify_alert slds-theme_error slds-m-bottom_medium"
+        role="alert"
+      >
+        <span class="slds-assistive-text">Erro</span>
+        <h2>{errorMessage}</h2>
+      </div>
+    </template>
+
+    <!-- Layout Mestre-Detalhe -->
+    <div class="slds-grid slds-gutters">
+      <!-- Lista de Contratos -->
+      <div class="slds-col slds-size_1-of-1 slds-medium-size_7-of-12">
+        <div class="slds-box slds-theme_default">
+          <h2 class="slds-text-heading_small slds-m-bottom_small">
+            Contratos Cadastrados
+          </h2>
+          <template lwc:if={hasContracts}>
+            <table
+              class="slds-table slds-table_cell-buffer slds-table_bordered slds-table_striped"
+            >
+              <thead>
+                <tr class="slds-line-height_reset">
+                  <th scope="col">
+                    <div class="slds-truncate" title="Código">Código</div>
+                  </th>
+                  <th scope="col">
+                    <div class="slds-truncate" title="Título">Título</div>
+                  </th>
+                  <th scope="col">
+                    <div class="slds-truncate" title="Contraparte">
+                      Contraparte
+                    </div>
+                  </th>
+                  <th scope="col">
+                    <div class="slds-truncate" title="Tipo">Tipo</div>
+                  </th>
+                  <th scope="col">
+                    <div class="slds-truncate" title="Lifecycle">
+                      Ciclo de Vida
+                    </div>
+                  </th>
+                  <th scope="col">
+                    <div class="slds-truncate" title="Ação">Ação</div>
+                  </th>
+                </tr>
+              </thead>
+              <tbody>
+                <template for:each={contracts} for:item="ctr">
+                  <tr key={ctr.contractId} class="slds-hint-parent">
+                    <td>
+                      <div class="slds-truncate font-weight-bold">
+                        {ctr.contractCode}
+                      </div>
+                    </td>
+                    <td>
+                      <div class="slds-truncate" title={ctr.title}>
+                        {ctr.title}
+                      </div>
+                    </td>
+                    <td>
+                      <div class="slds-truncate">{ctr.counterpartyName}</div>
+                    </td>
+                    <td>
+                      <lightning-badge
+                        label={ctr.contractType}
+                      ></lightning-badge>
+                    </td>
+                    <td>
+                      <span class="slds-badge slds-theme_warning"
+                        >{ctr.lifecycle}</span
+                      >
+                    </td>
+                    <td>
+                      <lightning-button
+                        label="Ver"
+                        variant="base"
+                        data-id={ctr.contractId}
+                        onclick={handleSelectContract}
+                      >
+                      </lightning-button>
+                    </td>
+                  </tr>
+                </template>
+              </tbody>
+            </table>
+          </template>
+          <template lwc:else>
+            <div
+              class="slds-p-around_medium slds-text-align_center slds-text-color_weak"
+            >
+              Nenhum contrato encontrado para esta entidade.
+            </div>
+          </template>
+        </div>
+      </div>
+
+      <!-- Detalhes do Contrato Selecionado -->
+      <div class="slds-col slds-size_1-of-1 slds-medium-size_5-of-12">
+        <template lwc:if={selectedDetail}>
+          <div class="slds-box slds-theme_default">
+            <div class="slds-grid slds-grid_align-spread slds-m-bottom_small">
+              <h2 class="slds-text-heading_small">{selectedDetail.title}</h2>
+              <lightning-button
+                label="Editar Rascunho"
+                icon-name="utility:edit"
+                variant="neutral"
+                onclick={handleEditDraft}
+              >
+              </lightning-button>
+            </div>
+
+            <div class="slds-form slds-form_stacked">
+              <div class="slds-form-element">
+                <label class="slds-form-element__label">Código Canônico</label>
+                <div class="slds-form-element__control font-weight-bold">
+                  {selectedDetail.contractCode}
+                </div>
+              </div>
+              <div class="slds-form-element">
+                <label class="slds-form-element__label"
+                  >Contraparte Vinculada</label
+                >
+                <div class="slds-form-element__control">
+                  {selectedDetail.counterpartyName}
+                </div>
+              </div>
+              <div class="slds-form-element">
+                <label class="slds-form-element__label">Papel na Relação</label>
+                <div class="slds-form-element__control">
+                  {selectedDetail.relationshipRole}
+                </div>
+              </div>
+              <div class="slds-form-element">
+                <label class="slds-form-element__label"
+                  >Ciclo de Vida Canônico</label
+                >
+                <div class="slds-form-element__control">
+                  <span class="slds-badge slds-theme_warning"
+                    >{selectedDetail.lifecycle}</span
+                  >
+                </div>
+              </div>
+              <div class="slds-form-element">
+                <label class="slds-form-element__label">Tipo / Moeda</label>
+                <div class="slds-form-element__control">
+                  {selectedDetail.contractType} -
+                  {selectedDetail.currencyIsoCode}
+                </div>
+              </div>
+              <div class="slds-form-element">
+                <label class="slds-form-element__label"
+                  >Vigência Prevista</label
+                >
+                <div class="slds-form-element__control">
+                  {selectedDetail.startDate} até {selectedDetail.endDate}
+                </div>
+              </div>
+              <div class="slds-form-element">
+                <label class="slds-form-element__label"
+                  >Versão (expectedVersion)</label
+                >
+                <div class="slds-form-element__control">
+                  {selectedDetail.version}
+                </div>
+              </div>
+              <div class="slds-form-element">
+                <label class="slds-form-element__label"
+                  >Descrição do Objeto</label
+                >
+                <div class="slds-form-element__control slds-text-longform">
+                  {selectedDetail.description}
+                </div>
+              </div>
+            </div>
+
+            <div class="slds-m-top_medium slds-border_top slds-p-top_small">
+              <p
+                class="slds-text-body_small slds-text-color_weak slds-m-bottom_x-small"
+              >
+                Operações canônicas de ciclo de vida (AC 3):
+              </p>
+              <lightning-button
+                label="Cancelar / Encerrar Contrato"
+                variant="destructive-text"
+                onclick={handleLifecycleAttempt}
+              >
+              </lightning-button>
+            </div>
+          </div>
+        </template>
+        <template lwc:else>
+          <div
+            class="slds-box slds-theme_default slds-text-align_center slds-text-color_weak slds-p-around_large"
+          >
+            Selecione um contrato na tabela para visualizar detalhes e editar o
+            rascunho.
+          </div>
+        </template>
+      </div>
+    </div>
+
+    <!-- Modal de Criação / Edição de Rascunho -->
+    <template lwc:if={isModalOpen}>
+      <section
+        role="dialog"
+        tabindex="-1"
+        class="slds-modal slds-fade-in-open slds-modal_medium"
+        aria-modal="true"
+      >
+        <div class="slds-modal__container">
+          <header class="slds-modal__header">
+            <button
+              class="slds-button slds-button_icon slds-modal__close slds-button_icon-inverse"
+              title="Fechar"
+              onclick={handleCloseModal}
+            >
+              <lightning-icon
+                icon-name="utility:close"
+                alternative-text="Fechar"
+                size="small"
+              ></lightning-icon>
+            </button>
+            <h2 class="slds-modal__title slds-hyphenate">{modalTitle}</h2>
+          </header>
+          <div class="slds-modal__content slds-p-around_medium">
+            <template lwc:if={isSaving}>
+              <lightning-spinner
+                alternative-text="Salvando..."
+                size="medium"
+              ></lightning-spinner>
+            </template>
+            <div class="slds-grid slds-gutters slds-wrap">
+              <div
+                class="slds-col slds-size_1-of-1 slds-medium-size_1-of-2 slds-m-bottom_small"
+              >
+                <lightning-input
+                  name="contractCode"
+                  label="Código do Contrato"
+                  value={form.contractCode}
+                  disabled={isEditing}
+                  required
+                  onchange={handleFormChange}
+                >
+                </lightning-input>
+              </div>
+              <div
+                class="slds-col slds-size_1-of-1 slds-medium-size_1-of-2 slds-m-bottom_small"
+              >
+                <lightning-input
+                  name="title"
+                  label="Título do Contrato"
+                  value={form.title}
+                  required
+                  onchange={handleFormChange}
+                >
+                </lightning-input>
+              </div>
+              <div
+                class="slds-col slds-size_1-of-1 slds-medium-size_1-of-2 slds-m-bottom_small"
+              >
+                <lightning-combobox
+                  name="relationshipId"
+                  label="Relação Contratual com Contraparte"
+                  value={form.relationshipId}
+                  options={activeRelationships}
+                  disabled={isEditing}
+                  required
+                  onchange={handleFormChange}
+                >
+                </lightning-combobox>
+              </div>
+              <div
+                class="slds-col slds-size_1-of-1 slds-medium-size_1-of-2 slds-m-bottom_small"
+              >
+                <lightning-combobox
+                  name="contractType"
+                  label="Tipo de Contrato"
+                  value={form.contractType}
+                  options={typeOptions}
+                  required
+                  onchange={handleFormChange}
+                >
+                </lightning-combobox>
+              </div>
+              <div
+                class="slds-col slds-size_1-of-1 slds-medium-size_1-of-3 slds-m-bottom_small"
+              >
+                <lightning-input
+                  name="currencyIsoCode"
+                  label="Moeda (ISO)"
+                  value={form.currencyIsoCode}
+                  maxlength="3"
+                  onchange={handleFormChange}
+                >
+                </lightning-input>
+              </div>
+              <div
+                class="slds-col slds-size_1-of-1 slds-medium-size_1-of-3 slds-m-bottom_small"
+              >
+                <lightning-input
+                  name="startDate"
+                  type="date"
+                  label="Data de Início"
+                  value={form.startDate}
+                  onchange={handleFormChange}
+                >
+                </lightning-input>
+              </div>
+              <div
+                class="slds-col slds-size_1-of-1 slds-medium-size_1-of-3 slds-m-bottom_small"
+              >
+                <lightning-input
+                  name="endDate"
+                  type="date"
+                  label="Data de Término"
+                  value={form.endDate}
+                  onchange={handleFormChange}
+                >
+                </lightning-input>
+              </div>
+              <div class="slds-col slds-size_1-of-1 slds-m-bottom_small">
+                <lightning-textarea
+                  name="description"
+                  label="Descrição / Objeto Contratual"
+                  value={form.description}
+                  onchange={handleFormChange}
+                >
+                </lightning-textarea>
+              </div>
+            </div>
+          </div>
+          <footer class="slds-modal__footer">
+            <lightning-button
+              label="Cancelar"
+              variant="neutral"
+              onclick={handleCloseModal}
+              class="slds-m-right_small"
+            ></lightning-button>
+            <lightning-button
+              label="Salvar Rascunho"
+              variant="brand"
+              onclick={handleSaveContract}
+            ></lightning-button>
+          </footer>
+        </div>
+      </section>
+      <div class="slds-backdrop slds-fade-in-open"></div>
+    </template>
+  </div>
+</template>

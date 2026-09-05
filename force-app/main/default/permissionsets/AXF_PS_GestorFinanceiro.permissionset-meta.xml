@@ -136,6 +136,28 @@
         <apexClass>AXF_CLS_CounterpartyException</apexClass>
         <enabled>true</enabled>
     </classAccesses>
+    <classAccesses>
+        <apexClass>ALT_CLS_ContractService</apexClass>
+        <enabled>true</enabled>
+    </classAccesses>
+    <classAccesses>
+        <apexClass>AXF_CLS_CTRL_ContractManagement</apexClass>
+        <enabled>true</enabled>
+    </classAccesses>
+    <classAccesses>
+        <apexClass>AXF_CLS_ContractException</apexClass>
+        <enabled>true</enabled>
+    </classAccesses>
+    <objectPermissions>
+        <allowCreate>true</allowCreate>
+        <allowDelete>false</allowDelete>
+        <allowEdit>true</allowEdit>
+        <allowRead>true</allowRead>
+        <modifyAllRecords>false</modifyAllRecords>
+        <object>AXF_OBJ_Contract__c</object>
+        <viewAllFields>false</viewAllFields>
+        <viewAllRecords>false</viewAllRecords>
+    </objectPermissions>
     <objectPermissions>
         <allowCreate>true</allowCreate>
         <allowDelete>false</allowDelete>
@@ -654,43 +676,100 @@
     </fieldPermissions>
     <fieldPermissions>
         <editable>true</editable>
-        <field>AXF_OBJ_CounterpartyEntityRelationship__c.AXF_CER_DAT_ValidFrom__c</field>
+        <field
+    >AXF_OBJ_CounterpartyEntityRelationship__c.AXF_CER_DAT_ValidFrom__c</field>
         <readable>true</readable>
     </fieldPermissions>
     <fieldPermissions>
         <editable>true</editable>
-        <field>AXF_OBJ_CounterpartyEntityRelationship__c.AXF_CER_DAT_ValidTo__c</field>
+        <field
+    >AXF_OBJ_CounterpartyEntityRelationship__c.AXF_CER_DAT_ValidTo__c</field>
         <readable>true</readable>
     </fieldPermissions>
     <fieldPermissions>
         <editable>true</editable>
-        <field>AXF_OBJ_CounterpartyEntityRelationship__c.AXF_CER_EML_Email__c</field>
+        <field
+    >AXF_OBJ_CounterpartyEntityRelationship__c.AXF_CER_EML_Email__c</field>
         <readable>true</readable>
     </fieldPermissions>
     <fieldPermissions>
         <editable>true</editable>
-        <field>AXF_OBJ_CounterpartyEntityRelationship__c.AXF_CER_PHN_Phone__c</field>
+        <field
+    >AXF_OBJ_CounterpartyEntityRelationship__c.AXF_CER_PHN_Phone__c</field>
         <readable>true</readable>
     </fieldPermissions>
     <fieldPermissions>
         <editable>true</editable>
-        <field>AXF_OBJ_CounterpartyEntityRelationship__c.AXF_CER_TAL_AddressSnapshot__c</field>
+        <field
+    >AXF_OBJ_CounterpartyEntityRelationship__c.AXF_CER_TAL_AddressSnapshot__c</field>
         <readable>true</readable>
     </fieldPermissions>
     <fieldPermissions>
         <editable>true</editable>
-        <field>AXF_OBJ_CounterpartyEntityRelationship__c.AXF_CER_TXT_ContactName__c</field>
+        <field
+    >AXF_OBJ_CounterpartyEntityRelationship__c.AXF_CER_TXT_ContactName__c</field>
         <readable>true</readable>
     </fieldPermissions>
     <fieldPermissions>
         <editable>true</editable>
-        <field>AXF_OBJ_CounterpartyEntityRelationship__c.AXF_CER_TXT_EntitySpecificDisplay__c</field>
+        <field
+    >AXF_OBJ_CounterpartyEntityRelationship__c.AXF_CER_TXT_EntitySpecificDisplay__c</field>
+        <readable>true</readable>
+    </fieldPermissions>
+    <fieldPermissions>
+        <editable>false</editable>
+        <field>AXF_OBJ_Contract__c.AXF_CTR_EXI_ContractKey__c</field>
+        <readable>true</readable>
+    </fieldPermissions>
+    <fieldPermissions>
+        <editable>true</editable>
+        <field>AXF_OBJ_Contract__c.AXF_CTR_TXT_CurrencyIsoCode__c</field>
+        <readable>true</readable>
+    </fieldPermissions>
+    <fieldPermissions>
+        <editable>true</editable>
+        <field>AXF_OBJ_Contract__c.AXF_CTR_DAT_StartDate__c</field>
+        <readable>true</readable>
+    </fieldPermissions>
+    <fieldPermissions>
+        <editable>true</editable>
+        <field>AXF_OBJ_Contract__c.AXF_CTR_DAT_EndDate__c</field>
+        <readable>true</readable>
+    </fieldPermissions>
+    <fieldPermissions>
+        <editable>true</editable>
+        <field
+    >AXF_OBJ_Contract__c.AXF_CTR_DAT_TerminationEffectiveDate__c</field>
+        <readable>true</readable>
+    </fieldPermissions>
+    <fieldPermissions>
+        <editable>true</editable>
+        <field>AXF_OBJ_Contract__c.AXF_CTR_TAL_Description__c</field>
+        <readable>true</readable>
+    </fieldPermissions>
+    <fieldPermissions>
+        <editable>true</editable>
+        <field>AXF_OBJ_Contract__c.AXF_CTR_EXI_ClientRequestId__c</field>
+        <readable>true</readable>
+    </fieldPermissions>
+    <fieldPermissions>
+        <editable>true</editable>
+        <field>AXF_OBJ_Contract__c.AXF_CTR_LKP_PredecessorContract__c</field>
+        <readable>true</readable>
+    </fieldPermissions>
+    <fieldPermissions>
+        <editable>true</editable>
+        <field>AXF_OBJ_Contract__c.AXF_CTR_LKP_SuccessorContract__c</field>
         <readable>true</readable>
     </fieldPermissions>
     <recordTypeVisibilities>
         <recordType>Account.AXF_Business</recordType>
         <visible>true</visible>
     </recordTypeVisibilities>
+    <tabSettings>
+        <tab>AXF_Contracts</tab>
+        <visibility>Visible</visibility>
+    </tabSettings>
     <tabSettings>
         <tab>AXF_Counterparties</tab>
         <visibility>Visible</visibility>

@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<CustomField xmlns="http://soap.sforce.com/2006/04/metadata">
+    <fullName>AXF_CTR_LKP_Account__c</fullName>
+    <deleteConstraint>Restrict</deleteConstraint>
+    <description>Entidade titular (Account) dona do contrato.</description>
+    <label>Entidade Titular</label>
+    <referenceTo>Account</referenceTo>
+    <relationshipLabel>Contratos</relationshipLabel>
+    <relationshipName>AXF_Contracts</relationshipName>
+    <required>true</required>
+    <type>Lookup</type>
+</CustomField>

@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<CustomField xmlns="http://soap.sforce.com/2006/04/metadata">
+    <fullName>AXF_CTR_TAL_Description__c</fullName>
+    <description>Descrição do objeto contratual, escopo e condições gerais não financeiras.</description>
+    <label>Descrição do Contrato</label>
+    <length>32768</length>
+    <type>LongTextArea</type>
+    <visibleLines>4</visibleLines>
+</CustomField>
