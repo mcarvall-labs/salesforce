@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<CustomObject xmlns="http://soap.sforce.com/2006/04/metadata">
+    <label>Lançamento Financeiro</label>
+    <pluralLabel>Lançamentos Financeiros</pluralLabel>
+    <nameField>
+        <type>AutoNumber</type>
+        <label>Número do Lançamento</label>
+        <displayFormat>FTX-{00000}</displayFormat>
+    </nameField>
+    <deploymentStatus>Deployed</deploymentStatus>
+    <sharingModel>Private</sharingModel>
+    <description
+  >Lançamento financeiro planejado/confirmado por wizard guiado (AXF-19). Papel de plano — não é o fato de origem importado (esse é AXF-12/CCT/BAT). Fechamento G1-3.</description>
+</CustomObject>

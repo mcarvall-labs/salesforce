@@ -1,0 +1,190 @@
+<template>
+  <article class="slds-card slds-p-around_medium">
+    <h1
+      data-step-heading
+      tabindex="-1"
+      class="slds-text-heading_medium slds-m-bottom_x-small"
+    >
+      {labels.title}
+    </h1>
+
+    <template if:true={isForm}>
+      <p class="slds-text-body_small slds-text-color_weak slds-m-bottom_small">
+        {stepOfLabel} — {stepTitle}
+      </p>
+
+      <div
+        data-feedback
+        tabindex="-1"
+        role="alert"
+        class="slds-text-color_error slds-m-bottom_small"
+      >
+        {feedback}
+      </div>
+
+      <template if:true={onContext}>
+        <template if:true={hasNoContext}>
+          <p role="status">{labels.noContext}</p>
+        </template>
+        <template if:false={hasNoContext}>
+          <lightning-combobox
+            label={labels.contextLabel}
+            placeholder={labels.contextPlaceholder}
+            options={contextOptions}
+            value={form.accountId}
+            data-field="accountId"
+            onchange={handleField}
+          ></lightning-combobox>
+        </template>
+      </template>
+
+      <template if:true={onDetails}>
+        <lightning-radio-group
+          label={labels.natureLabel}
+          options={natureOptions}
+          value={form.direction}
+          data-field="direction"
+          onchange={handleField}
+          type="radio"
+        ></lightning-radio-group>
+        <lightning-input
+          type="number"
+          formatter="currency"
+          step="0.01"
+          label={labels.amountLabel}
+          value={form.magnitude}
+          data-field="magnitude"
+          onchange={handleField}
+        ></lightning-input>
+        <lightning-input
+          label={labels.currencyLabel}
+          value={form.currencyIsoCode}
+          maxlength="3"
+          data-field="currencyIsoCode"
+          onchange={handleField}
+        ></lightning-input>
+        <lightning-input
+          type="date"
+          label={labels.purchaseDateLabel}
+          value={form.purchaseDate}
+          data-field="purchaseDate"
+          onchange={handleField}
+        ></lightning-input>
+        <lightning-input
+          type="date"
+          label={labels.dueDateLabel}
+          value={form.dueDate}
+          data-field="dueDate"
+          onchange={handleField}
+        ></lightning-input>
+      </template>
+
+      <template if:true={onSource}>
+        <lightning-radio-group
+          label={labels.sourceLabel}
+          options={sourceKindOptions}
+          value={form.sourceKind}
+          onchange={handleSourceKind}
+          type="radio"
+        ></lightning-radio-group>
+        <template if:true={isSourceBank}>
+          <template if:true={hasNoSources}>
+            <p role="status">{labels.noSources}</p>
+          </template>
+          <template if:false={hasNoSources}>
+            <lightning-combobox
+              label={labels.sourceOptionLabel}
+              options={bankAccountOptions}
+              value={form.bankAccountId}
+              data-field="bankAccountId"
+              onchange={handleField}
+            ></lightning-combobox>
+          </template>
+        </template>
+        <template if:true={isSourceCard}>
+          <template if:true={hasNoSources}>
+            <p role="status">{labels.noSources}</p>
+          </template>
+          <template if:false={hasNoSources}>
+            <lightning-combobox
+              label={labels.sourceOptionLabel}
+              options={creditCardOptions}
+              value={form.creditCardId}
+              data-field="creditCardId"
+              onchange={handleField}
+            ></lightning-combobox>
+          </template>
+        </template>
+      </template>
+
+      <template if:true={onReview}>
+        <h2 class="slds-text-heading_small">{labels.reviewTitle}</h2>
+        <dl>
+          <dt>{labels.reviewNature}</dt>
+          <dd>{natureText}</dd>
+          <dt>{labels.reviewAmount}</dt>
+          <dd>{form.magnitude} {form.currencyIsoCode}</dd>
+          <dt>{labels.reviewDate}</dt>
+          <dd>{form.purchaseDate}</dd>
+          <dt>{labels.reviewSource}</dt>
+          <dd>{sourceText}</dd>
+        </dl>
+      </template>
+
+      <div class="slds-m-top_medium">
+        <lightning-button
+          label={labels.cancel}
+          onclick={handleCancel}
+        ></lightning-button>
+        <template if:false={isFirstStep}>
+          <lightning-button
+            label={labels.back}
+            class="slds-m-left_x-small"
+            onclick={handleBack}
+          ></lightning-button>
+        </template>
+        <template if:false={onReview}>
+          <lightning-button
+            label={labels.next}
+            variant="brand"
+            class="slds-m-left_x-small"
+            disabled={canAdvanceDisabled}
+            onclick={handleNext}
+          ></lightning-button>
+        </template>
+        <template if:true={onReview}>
+          <lightning-button
+            label={labels.confirm}
+            variant="brand"
+            class="slds-m-left_x-small"
+            onclick={handleConfirm}
+          ></lightning-button>
+        </template>
+      </div>
+    </template>
+
+    <template if:true={isConfirming}>
+      <lightning-spinner
+        alternative-text={labels.confirming}
+        size="small"
+      ></lightning-spinner>
+    </template>
+
+    <template if:true={isDone}>
+      <div
+        data-feedback
+        tabindex="-1"
+        role="status"
+        class="slds-text-color_success"
+      >
+        {feedback}
+      </div>
+      <lightning-button
+        label={labels.newEntry}
+        variant="brand"
+        class="slds-m-top_small"
+        onclick={handleNewEntry}
+      ></lightning-button>
+    </template>
+  </article>
+</template>

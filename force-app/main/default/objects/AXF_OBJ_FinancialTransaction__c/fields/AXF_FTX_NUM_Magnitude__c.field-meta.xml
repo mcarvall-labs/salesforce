@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<CustomField xmlns="http://soap.sforce.com/2006/04/metadata">
+    <fullName>AXF_FTX_NUM_Magnitude__c</fullName>
+    <label>Valor</label>
+    <type>Number</type>
+    <precision>16</precision>
+    <scale>2</scale>
+    <required>true</required>
+    <description
+  >Magnitude sempre não negativa (Money contract §1); a direção econômica vem de AXF_FTX_PKL_Direction__c. Number (não Currency) porque a moeda original é rastreada por ISO code próprio, não pela moeda default da org.</description>
+</CustomField>

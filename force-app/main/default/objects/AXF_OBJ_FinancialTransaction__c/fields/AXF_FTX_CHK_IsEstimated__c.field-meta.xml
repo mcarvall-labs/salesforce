@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<CustomField xmlns="http://soap.sforce.com/2006/04/metadata">
+    <fullName>AXF_FTX_CHK_IsEstimated__c</fullName>
+    <label>É Estimativa</label>
+    <type>Checkbox</type>
+    <defaultValue>false</defaultValue>
+    <description
+  >Sempre false nesta US (só lançamento confirmado à vista); reservado para AXF-20/21 (parcelas/previsão) — G1-3.</description>
+</CustomField>

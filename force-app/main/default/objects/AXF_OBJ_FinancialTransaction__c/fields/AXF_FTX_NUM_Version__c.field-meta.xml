@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<CustomField xmlns="http://soap.sforce.com/2006/04/metadata">
+    <fullName>AXF_FTX_NUM_Version__c</fullName>
+    <label>Versão</label>
+    <type>Number</type>
+    <precision>18</precision>
+    <scale>0</scale>
+    <defaultValue>0</defaultValue>
+    <description
+  >Lock otimista para mutação material (G6-7) — reservado para edição futura; a criação por wizard sempre inicia em 0.</description>
+</CustomField>
