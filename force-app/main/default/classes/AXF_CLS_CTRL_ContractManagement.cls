@@ -198,4 +198,112 @@ public with sharing class AXF_CLS_CTRL_ContractManagement {
       throw new AuraHandledException(e.getMessage());
     }
   }
+
+  /**
+   * @description Consulta os registros de trabalho vinculados a um contrato (AXF-56).
+   */
+  @AuraEnabled(cacheable=true)
+  public static List<ALT_CLS_WorkRecordService.WorkRecordDetailDTO> getWorkRecords(Id contractId) {
+    try {
+      if (contractId == null) {
+        throw new AuraHandledException('ID do Contrato e obrigatorio.');
+      }
+      ALT_CLS_WorkRecordService service = new ALT_CLS_WorkRecordService();
+      return service.getWorkRecordsByContract(contractId);
+    } catch (AuraHandledException ahe) {
+      throw ahe;
+    } catch (Exception e) {
+      throw new AuraHandledException(e.getMessage());
+    }
+  }
+
+  /**
+   * @description Registra ou importa um novo registro de trabalho (AXF-56).
+   */
+  @AuraEnabled
+  public static ALT_CLS_WorkRecordService.WorkRecordDetailDTO registerWorkRecord(ALT_CLS_WorkRecordService.WorkRecordInputDTO payload) {
+    try {
+      if (payload == null) {
+        throw new AuraHandledException('Dados do registro de trabalho nao foram informados.');
+      }
+      ALT_CLS_WorkRecordService service = new ALT_CLS_WorkRecordService();
+      return service.registerWorkRecord(payload);
+    } catch (AuraHandledException ahe) {
+      throw ahe;
+    } catch (Exception e) {
+      throw new AuraHandledException(e.getMessage());
+    }
+  }
+
+  /**
+   * @description Submete um registro de trabalho para aprovacao (DRAFT -> SUBMITTED) (AXF-56).
+   */
+  @AuraEnabled
+  public static ALT_CLS_WorkRecordService.WorkRecordDetailDTO submitWorkRecord(Id workRecordId) {
+    try {
+      if (workRecordId == null) {
+        throw new AuraHandledException('ID do registro de trabalho e obrigatorio.');
+      }
+      ALT_CLS_WorkRecordService service = new ALT_CLS_WorkRecordService();
+      return service.submitWorkRecord(workRecordId);
+    } catch (AuraHandledException ahe) {
+      throw ahe;
+    } catch (Exception e) {
+      throw new AuraHandledException(e.getMessage());
+    }
+  }
+
+  /**
+   * @description Avalia e decide (aprova ou rejeita) um registro de trabalho submetido (AXF-56).
+   */
+  @AuraEnabled
+  public static ALT_CLS_WorkRecordService.WorkRecordDetailDTO decideWorkRecord(Id workRecordId, Boolean approved, String reason) {
+    try {
+      if (workRecordId == null) {
+        throw new AuraHandledException('ID do registro de trabalho e obrigatorio.');
+      }
+      ALT_CLS_WorkRecordService service = new ALT_CLS_WorkRecordService();
+      return service.decideWorkRecord(workRecordId, approved, reason);
+    } catch (AuraHandledException ahe) {
+      throw ahe;
+    } catch (Exception e) {
+      throw new AuraHandledException(e.getMessage());
+    }
+  }
+
+  /**
+   * @description Corrige um registro de trabalho aprovado atraves de reversao e substituicao (AXF-56).
+   */
+  @AuraEnabled
+  public static ALT_CLS_WorkRecordService.WorkRecordDetailDTO correctApprovedWorkRecord(Id approvedWorkRecordId, ALT_CLS_WorkRecordService.WorkRecordInputDTO replacementPayload, String correctionReason) {
+    try {
+      if (approvedWorkRecordId == null) {
+        throw new AuraHandledException('ID do registro aprovado e obrigatorio.');
+      }
+      ALT_CLS_WorkRecordService service = new ALT_CLS_WorkRecordService();
+      return service.correctApprovedWorkRecord(approvedWorkRecordId, replacementPayload, correctionReason);
+    } catch (AuraHandledException ahe) {
+      throw ahe;
+    } catch (Exception e) {
+      throw new AuraHandledException(e.getMessage());
+    }
+  }
+
+  /**
+   * @description Avalia se as horas/quantidades de um periodo estao aprovadas e completas (AXF-56 AC 4).
+   */
+  @AuraEnabled(cacheable=true)
+  public static ALT_CLS_WorkRecordService.WorkRecordAssessmentDTO assessContractWorkRecords(Id contractId, Date periodStart, Date periodEnd) {
+    try {
+      if (contractId == null) {
+        throw new AuraHandledException('ID do Contrato e obrigatorio.');
+      }
+      ALT_CLS_WorkRecordService service = new ALT_CLS_WorkRecordService();
+      return service.assessContractWorkRecords(contractId, periodStart, periodEnd);
+    } catch (AuraHandledException ahe) {
+      throw ahe;
+    } catch (Exception e) {
+      throw new AuraHandledException(e.getMessage());
+    }
+  }
 }

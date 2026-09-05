@@ -232,4 +232,100 @@ private class AXF_CLS_CTRL_ContractManagementTest {
       Assert.isNotNull(e);
     }
   }
+
+  @IsTest
+  static void testWorkRecordsViaController() {
+    Account acc = createTestAccount('Entidade WR Controller');
+    AXF_OBJ_Counterparty__c cpty = createTestCounterparty('Contraparte WR Controller');
+    AXF_OBJ_CounterpartyEntityRelationship__c rel = createTestRelationship(cpty.Id, acc.Id, 'ACTIVE');
+
+    ALT_CLS_ContractService.ContractInputDTO ctrInput = new ALT_CLS_ContractService.ContractInputDTO();
+    ctrInput.accountId = acc.Id;
+    ctrInput.relationshipId = rel.Id;
+    ctrInput.contractCode = 'CTR-WR-CTRL';
+    ctrInput.title = 'Contrato WR Controller';
+    ctrInput.contractType = 'EXPENSE';
+    ctrInput.currencyIsoCode = 'BRL';
+    ctrInput.startDate = Date.newInstance(2026, 7, 1);
+    ALT_CLS_ContractService.OperationResultDTO ctrRes = AXF_CLS_CTRL_ContractManagement.createDraftContract(ctrInput);
+
+    ALT_CLS_WorkRecordService.WorkRecordInputDTO wrInput = new ALT_CLS_WorkRecordService.WorkRecordInputDTO();
+    wrInput.contractId = ctrRes.contractId;
+    wrInput.startDate = Date.newInstance(2026, 7, 1);
+    wrInput.endDate = Date.newInstance(2026, 7, 31);
+    wrInput.quantity = 15.0;
+    wrInput.rate = 180.0;
+    wrInput.currencyIsoCode = 'BRL';
+    wrInput.source = 'MANUAL';
+
+    Test.startTest();
+    // 1. Registra
+    ALT_CLS_WorkRecordService.WorkRecordDetailDTO wr = AXF_CLS_CTRL_ContractManagement.registerWorkRecord(wrInput);
+    Assert.isNotNull(wr.workRecordId, 'Deve registrar');
+
+    // 2. Consulta
+    List<ALT_CLS_WorkRecordService.WorkRecordDetailDTO> listWr = AXF_CLS_CTRL_ContractManagement.getWorkRecords(ctrRes.contractId);
+    Assert.areEqual(1, listWr.size(), 'Deve listar 1 registro');
+
+    // 3. Submete
+    ALT_CLS_WorkRecordService.WorkRecordDetailDTO submitted = AXF_CLS_CTRL_ContractManagement.submitWorkRecord(wr.workRecordId);
+    Assert.areEqual('SUBMITTED', submitted.status);
+
+    // 4. Decide (Aprova)
+    ALT_CLS_WorkRecordService.WorkRecordDetailDTO approved = AXF_CLS_CTRL_ContractManagement.decideWorkRecord(wr.workRecordId, true, 'Aprovado OK');
+    Assert.areEqual('APPROVED', approved.status);
+
+    // 5. Avalia apuracao
+    ALT_CLS_WorkRecordService.WorkRecordAssessmentDTO assessment = AXF_CLS_CTRL_ContractManagement.assessContractWorkRecords(ctrRes.contractId, Date.newInstance(2026, 7, 1), Date.newInstance(2026, 7, 31));
+    Assert.isTrue(assessment.isApprovedAndComplete, 'Deve estar aprovado e completo');
+
+    // 6. Corrige
+    wrInput.quantity = 12.0;
+    ALT_CLS_WorkRecordService.WorkRecordDetailDTO corrected = AXF_CLS_CTRL_ContractManagement.correctApprovedWorkRecord(approved.workRecordId, wrInput, 'Horas retificadas');
+    Assert.isNotNull(corrected.workRecordId);
+    Test.stopTest();
+
+    // Casos de falha
+    try {
+      AXF_CLS_CTRL_ContractManagement.getWorkRecords(null);
+      Assert.fail('Deveria falhar');
+    } catch (AuraHandledException e) {
+      Assert.isNotNull(e);
+    }
+
+    try {
+      AXF_CLS_CTRL_ContractManagement.registerWorkRecord(null);
+      Assert.fail('Deveria falhar');
+    } catch (AuraHandledException e) {
+      Assert.isNotNull(e);
+    }
+
+    try {
+      AXF_CLS_CTRL_ContractManagement.submitWorkRecord(null);
+      Assert.fail('Deveria falhar');
+    } catch (AuraHandledException e) {
+      Assert.isNotNull(e);
+    }
+
+    try {
+      AXF_CLS_CTRL_ContractManagement.decideWorkRecord(null, true, null);
+      Assert.fail('Deveria falhar');
+    } catch (AuraHandledException e) {
+      Assert.isNotNull(e);
+    }
+
+    try {
+      AXF_CLS_CTRL_ContractManagement.correctApprovedWorkRecord(null, null, null);
+      Assert.fail('Deveria falhar');
+    } catch (AuraHandledException e) {
+      Assert.isNotNull(e);
+    }
+
+    try {
+      AXF_CLS_CTRL_ContractManagement.assessContractWorkRecords(null, null, null);
+      Assert.fail('Deveria falhar');
+    } catch (AuraHandledException e) {
+      Assert.isNotNull(e);
+    }
+  }
 }

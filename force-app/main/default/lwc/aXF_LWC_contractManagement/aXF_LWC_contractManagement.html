@@ -319,7 +319,117 @@
               </template>
             </div>
 
-            <div class="slds-m-top_medium slds-border_top slds-p-top_small">
+            
+            <!-- Secao de Registros de Trabalho (AXF-56) -->
+            <div class="slds-m-top_medium slds-border_top slds-p-top_small" data-testid="work-records-section">
+              <div class="slds-grid slds-grid_align-spread slds-m-bottom_x-small">
+                <div>
+                  <h3 class="slds-text-heading_small">Registros de Trabalho (AXF-56)</h3>
+                  <p class="slds-text-body_small slds-text-color_weak">Apuracao e aprovacao auditavel de horas/quantidades</p>
+                </div>
+                <lightning-button
+                  data-testid="new-work-record-btn"
+                  label="Apontar Horas/Trabalho"
+                  icon-name="utility:clock"
+                  variant="brand-outline"
+                  onclick={handleOpenWorkRecordModal}
+                >
+                </lightning-button>
+              </div>
+
+              <template lwc:if={hasWorkRecords}>
+                <template for:each={workRecords} for:item="wr">
+                  <div key={wr.workRecordId} class="slds-box slds-box_x-small slds-m-bottom_x-small slds-theme_shade" data-testid="work-record-item">
+                    <div class="slds-grid slds-grid_align-spread">
+                      <div>
+                        <strong>{wr.recordNumber}</strong>: {wr.quantity}h/unid a {wr.currencyIsoCode} {wr.rate} = <strong>{wr.currencyIsoCode} {wr.totalAmount}</strong>
+                        <template lwc:if={wr.isApproved}>
+                          <span class="slds-badge slds-theme_success slds-m-left_xx-small">APROVADO</span>
+                        </template>
+                        <template lwc:elseif={wr.isSubmitted}>
+                          <span class="slds-badge slds-theme_info slds-m-left_xx-small">SUBMETIDO</span>
+                        </template>
+                        <template lwc:elseif={wr.isRejected}>
+                          <span class="slds-badge slds-theme_error slds-m-left_xx-small">REJEITADO</span>
+                        </template>
+                        <template lwc:elseif={wr.isSuperseded}>
+                          <span class="slds-badge slds-theme_inverse slds-m-left_xx-small">SUBSTITUIDO</span>
+                        </template>
+                        <template lwc:else>
+                          <span class="slds-badge slds-theme_warning slds-m-left_xx-small">{wr.status}</span>
+                        </template>
+                      </div>
+
+                      <!-- Acoes de ciclo de vida do WorkRecord -->
+                      <div class="slds-button-group">
+                        <template lwc:if={wr.canSubmit}>
+                          <lightning-button
+                            data-testid="submit-wr-btn"
+                            data-id={wr.workRecordId}
+                            label="Submeter"
+                            variant="neutral"
+                            onclick={handleSubmitWorkRecord}
+                            class="slds-m-right_xx-small"
+                          >
+                          </lightning-button>
+                        </template>
+                        <template lwc:if={wr.canReview}>
+                          <lightning-button
+                            data-testid="approve-wr-btn"
+                            data-id={wr.workRecordId}
+                            label="Aprovar"
+                            variant="success"
+                            onclick={handleApproveWorkRecord}
+                            class="slds-m-right_xx-small"
+                          >
+                          </lightning-button>
+                          <lightning-button
+                            data-testid="reject-wr-btn"
+                            data-id={wr.workRecordId}
+                            label="Rejeitar"
+                            variant="destructive"
+                            onclick={handleRejectWorkRecord}
+                            class="slds-m-right_xx-small"
+                          >
+                          </lightning-button>
+                        </template>
+                        <template lwc:if={wr.canCorrect}>
+                          <lightning-button
+                            data-testid="correct-wr-btn"
+                            data-id={wr.workRecordId}
+                            label="Corrigir/Reverter"
+                            variant="destructive-text"
+                            onclick={handleOpenCorrectionModal}
+                          >
+                          </lightning-button>
+                        </template>
+                      </div>
+                    </div>
+
+                    <div class="slds-text-body_small slds-m-top_xx-small">
+                      Periodo: {wr.startDate} ate {wr.endDate} | Origem: {wr.source}
+                      <template lwc:if={wr.description}>
+                        | {wr.description}
+                      </template>
+                    </div>
+                    <template lwc:if={wr.decidedByName}>
+                      <div class="slds-text-body_small slds-text-color_weak slds-m-top_xx-small">
+                        Decidido por: {wr.decidedByName} ({wr.decisionReason})
+                      </div>
+                    </template>
+                    <template lwc:if={wr.replacedWorkRecordNumber}>
+                      <div class="slds-text-body_small slds-text-color_weak">
+                        Substitui o registro original: {wr.replacedWorkRecordNumber}
+                      </div>
+                    </template>
+                  </div>
+                </template>
+              </template>
+              <template lwc:else>
+                <p class="slds-text-body_small slds-text-color_weak">Nenhum registro de trabalho apontado para este contrato.</p>
+              </template>
+            </div>
+<div class="slds-m-top_medium slds-border_top slds-p-top_small">
               <p
                 class="slds-text-body_small slds-text-color_weak slds-m-bottom_x-small"
               >
@@ -868,6 +978,128 @@
       </section>
       <div class="slds-backdrop slds-backdrop_open"></div>
     </template>
-  </div>
+  
+    <!-- Modal de Apontamento / Correcao de WorkRecord (AXF-56) -->
+    <template lwc:if={isWorkRecordModalOpen}>
+      <section
+        role="dialog"
+        tabindex="-1"
+        class="slds-modal slds-fade-in-open slds-modal_small"
+        aria-modal="true"
+        data-testid="work-record-modal"
+      >
+        <div class="slds-modal__container">
+          <header class="slds-modal__header">
+            <button
+              class="slds-button slds-button_icon slds-modal__close slds-button_icon-inverse"
+              title="Fechar"
+              onclick={handleCloseWorkRecordModal}
+            >
+              <lightning-icon
+                icon-name="utility:close"
+                alternative-text="fechar"
+                variant="inverse"
+                size="small"
+              ></lightning-icon>
+            </button>
+            <h2 class="slds-text-heading_medium">
+              <template lwc:if={isCorrectionMode}>
+                Corrigir Registro de Trabalho Aprovado (AC 3)
+              </template>
+              <template lwc:else>
+                Novo Registro de Trabalho (AXF-56)
+              </template>
+            </h2>
+          </header>
+          <div class="slds-modal__content slds-p-around_medium">
+            <template lwc:if={isCorrectionMode}>
+              <div class="slds-notify slds-notify_alert slds-theme_warning slds-m-bottom_medium">
+                Este apontamento substituira o registro original de forma auditavel. O original passara para SUPERSEDED.
+              </div>
+              <lightning-input
+                data-testid="correction-reason-input"
+                label="Motivo Obrigatorio da Correcao"
+                value={correctionReason}
+                onchange={handleCorrectionReasonChange}
+                required
+                class="slds-m-bottom_small"
+              >
+              </lightning-input>
+            </template>
+
+            <div class="slds-grid slds-wrap slds-gutters">
+              <div class="slds-col slds-size_1-of-2">
+                <lightning-input
+                  type="date"
+                  label="Data de Inicio"
+                  value={wrForm.startDate}
+                  onchange={handleWrStartDateChange}
+                  required
+                >
+                </lightning-input>
+              </div>
+              <div class="slds-col slds-size_1-of-2">
+                <lightning-input
+                  type="date"
+                  label="Data de Fim"
+                  value={wrForm.endDate}
+                  onchange={handleWrEndDateChange}
+                  required
+                >
+                </lightning-input>
+              </div>
+              <div class="slds-col slds-size_1-of-2 slds-m-top_small">
+                <lightning-input
+                  type="number"
+                  step="0.01"
+                  label="Quantidade (Horas/Unid)"
+                  value={wrForm.quantity}
+                  onchange={handleWrQuantityChange}
+                  required
+                >
+                </lightning-input>
+              </div>
+              <div class="slds-col slds-size_1-of-2 slds-m-top_small">
+                <lightning-input
+                  type="number"
+                  step="0.01"
+                  label="Taxa Unitaria"
+                  value={wrForm.rate}
+                  onchange={handleWrRateChange}
+                  required
+                >
+                </lightning-input>
+              </div>
+              <div class="slds-col slds-size_1-of-1 slds-m-top_small">
+                <lightning-input
+                  label="Descricao das Atividades"
+                  value={wrForm.description}
+                  onchange={handleWrDescriptionChange}
+                >
+                </lightning-input>
+              </div>
+            </div>
+          </div>
+          <footer class="slds-modal__footer">
+            <lightning-button
+              label="Cancelar"
+              variant="neutral"
+              onclick={handleCloseWorkRecordModal}
+              class="slds-m-right_small"
+            >
+            </lightning-button>
+            <lightning-button
+              data-testid="save-wr-btn"
+              label="Salvar Apontamento"
+              variant="brand"
+              onclick={handleSaveWorkRecord}
+            >
+            </lightning-button>
+          </footer>
+        </div>
+      </section>
+      <div class="slds-backdrop slds-backdrop_open"></div>
+    </template>
+</div>
 </template>
 

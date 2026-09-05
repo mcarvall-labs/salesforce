@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<CustomField xmlns="http://soap.sforce.com/2006/04/metadata">
+    <fullName>AXF_WR_LKP_DecidedBy__c</fullName>
+    <deleteConstraint>SetNull</deleteConstraint>
+    <description>Usuario revisor que aprovou ou rejeitou a submissao.</description>
+    <label>Decidido Por</label>
+    <referenceTo>User</referenceTo>
+    <relationshipName>DecidedWorkRecords</relationshipName>
+    <required>false</required>
+    <type>Lookup</type>
+</CustomField>

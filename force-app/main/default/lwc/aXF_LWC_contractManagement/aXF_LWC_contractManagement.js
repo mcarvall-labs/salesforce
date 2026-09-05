@@ -1,4 +1,4 @@
-﻿import { LightningElement, track, wire } from "lwc";
+import { LightningElement, track, wire } from "lwc";
 import getAuthorizedEntities from "@salesforce/apex/AXF_CLS_CTRL_ContractManagement.getAuthorizedEntities";
 import getActiveRelationships from "@salesforce/apex/AXF_CLS_CTRL_ContractManagement.getActiveRelationships";
 import getContracts from "@salesforce/apex/AXF_CLS_CTRL_ContractManagement.getContracts";
@@ -10,6 +10,13 @@ import saveDraftTermVersion from "@salesforce/apex/AXF_CLS_CTRL_ContractManageme
 import calculateSchedulePreview from "@salesforce/apex/AXF_CLS_CTRL_ContractManagement.calculateSchedulePreview";
 import activateTermVersion from "@salesforce/apex/AXF_CLS_CTRL_ContractManagement.activateTermVersion";
 import getTermVersionReview from "@salesforce/apex/AXF_CLS_CTRL_ContractManagement.getTermVersionReview";
+import getWorkRecords from "@salesforce/apex/AXF_CLS_CTRL_ContractManagement.getWorkRecords";
+import registerWorkRecord from "@salesforce/apex/AXF_CLS_CTRL_ContractManagement.registerWorkRecord";
+import submitWorkRecord from "@salesforce/apex/AXF_CLS_CTRL_ContractManagement.submitWorkRecord";
+import decideWorkRecord from "@salesforce/apex/AXF_CLS_CTRL_ContractManagement.decideWorkRecord";
+import correctApprovedWorkRecord from "@salesforce/apex/AXF_CLS_CTRL_ContractManagement.correctApprovedWorkRecord";
+import assessContractWorkRecords from "@salesforce/apex/AXF_CLS_CTRL_ContractManagement.assessContractWorkRecords";
+
 import { ShowToastEvent } from "lightning/platformShowToastEvent";
 
 export default class AXF_LWC_contractManagement extends LightningElement {
@@ -190,6 +197,7 @@ export default class AXF_LWC_contractManagement extends LightningElement {
         accountId: this.selectedAccountId
       });
       await this.loadTermVersions(contractId);
+      await this.loadWorkRecords(contractId);
     } catch (err) {
       this.showToast("Erro", this.extractErrorMessage(err), "error");
       this.selectedDetail = null;
@@ -538,4 +546,216 @@ export default class AXF_LWC_contractManagement extends LightningElement {
       this.isLoading = false;
     }
   }
+
+  // Estados para Registros de Trabalho (AXF-56)
+  @track workRecords = [];
+  @track isWorkRecordModalOpen = false;
+  @track isCorrectionMode = false;
+  @track correctionTargetId = null;
+  @track correctionReason = "";
+  @track wrForm = {
+    workRecordId: null,
+    contractId: null,
+    termVersionId: null,
+    startDate: null,
+    endDate: null,
+    quantity: null,
+    rate: null,
+    currencyIsoCode: "BRL",
+    source: "MANUAL",
+    description: ""
+  };
+
+  get hasWorkRecords() {
+    return this.workRecords && this.workRecords.length > 0;
+  }
+
+  async loadWorkRecords(contractId) {
+    const cId = contractId || this.selectedContractId;
+    if (!cId) {
+      this.workRecords = [];
+      return;
+    }
+    try {
+      const data = await getWorkRecords({ contractId: cId });
+      this.workRecords = (data || []).map((wr) => ({
+        ...wr,
+        isDraft: wr.status === "DRAFT",
+        isSubmitted: wr.status === "SUBMITTED",
+        isApproved: wr.status === "APPROVED",
+        isRejected: wr.status === "REJECTED",
+        isSuperseded: wr.status === "SUPERSEDED",
+        canSubmit: wr.status === "DRAFT" || wr.status === "REJECTED",
+        canReview: wr.status === "SUBMITTED",
+        canCorrect: wr.status === "APPROVED"
+      }));
+    } catch (error) {
+      this.workRecords = [];
+      this.errorMessage = error.body ? error.body.message : error.message;
+    }
+  }
+
+  handleOpenWorkRecordModal() {
+    this.isCorrectionMode = false;
+    this.correctionTargetId = null;
+    this.correctionReason = "";
+    this.wrForm = {
+      workRecordId: null,
+      contractId: this.selectedContractId,
+      termVersionId: null,
+      startDate: new Date().toISOString().slice(0, 10),
+      endDate: new Date().toISOString().slice(0, 10),
+      quantity: 8,
+      rate: 100,
+      currencyIsoCode: this.selectedDetail ? this.selectedDetail.currencyIsoCode : "BRL",
+      source: "MANUAL",
+      description: ""
+    };
+    this.isWorkRecordModalOpen = true;
+  }
+
+  handleCloseWorkRecordModal() {
+    this.isWorkRecordModalOpen = false;
+  }
+
+  handleWrStartDateChange(e) {
+    this.wrForm.startDate = e.target.value;
+  }
+
+  handleWrEndDateChange(e) {
+    this.wrForm.endDate = e.target.value;
+  }
+
+  handleWrQuantityChange(e) {
+    this.wrForm.quantity = parseFloat(e.target.value);
+  }
+
+  handleWrRateChange(e) {
+    this.wrForm.rate = parseFloat(e.target.value);
+  }
+
+  handleWrDescriptionChange(e) {
+    this.wrForm.description = e.target.value;
+  }
+
+  handleCorrectionReasonChange(e) {
+    this.correctionReason = e.target.value;
+  }
+
+  handleSaveWorkRecord() {
+    if (!this.wrForm.startDate || !this.wrForm.endDate || !this.wrForm.quantity || !this.wrForm.rate) {
+      this.errorMessage = "Preencha todos os campos obrigatorios do registro de trabalho.";
+      return;
+    }
+
+    this.isLoading = true;
+    if (this.isCorrectionMode) {
+      if (!this.correctionReason) {
+        this.errorMessage = "Motivo da correcao e obrigatorio.";
+        this.isLoading = false;
+        return;
+      }
+      correctApprovedWorkRecord({
+        approvedWorkRecordId: this.correctionTargetId,
+        replacementPayload: this.wrForm,
+        correctionReason: this.correctionReason
+      })
+        .then(() => {
+          this.isWorkRecordModalOpen = false;
+          this.loadWorkRecords();
+          this.dispatchEvent(new ShowToastEvent({ title: "Sucesso", message: "Registro de trabalho corrigido por substituicao.", variant: "success" }));
+        })
+        .catch((error) => {
+          this.errorMessage = error.body ? error.body.message : error.message;
+        })
+        .finally(() => {
+          this.isLoading = false;
+        });
+    } else {
+      registerWorkRecord({ payload: this.wrForm })
+        .then(() => {
+          this.isWorkRecordModalOpen = false;
+          this.loadWorkRecords();
+          this.dispatchEvent(new ShowToastEvent({ title: "Sucesso", message: "Registro de trabalho salvo com sucesso.", variant: "success" }));
+        })
+        .catch((error) => {
+          this.errorMessage = error.body ? error.body.message : error.message;
+        })
+        .finally(() => {
+          this.isLoading = false;
+        });
+    }
+  }
+
+  handleSubmitWorkRecord(e) {
+    const wrId = e.target.dataset.id;
+    this.isLoading = true;
+    submitWorkRecord({ workRecordId: wrId })
+      .then(() => {
+        this.loadWorkRecords();
+        this.dispatchEvent(new ShowToastEvent({ title: "Sucesso", message: "Registro submetido para aprovacao.", variant: "info" }));
+      })
+      .catch((error) => {
+        this.errorMessage = error.body ? error.body.message : error.message;
+      })
+      .finally(() => {
+        this.isLoading = false;
+      });
+  }
+
+  handleApproveWorkRecord(e) {
+    const wrId = e.target.dataset.id;
+    this.isLoading = true;
+    decideWorkRecord({ workRecordId: wrId, approved: true, reason: "Aprovado pelo gestor" })
+      .then(() => {
+        this.loadWorkRecords();
+        this.dispatchEvent(new ShowToastEvent({ title: "Aprovado", message: "Registro de trabalho aprovado.", variant: "success" }));
+      })
+      .catch((error) => {
+        this.errorMessage = error.body ? error.body.message : error.message;
+      })
+      .finally(() => {
+        this.isLoading = false;
+      });
+  }
+
+  handleRejectWorkRecord(e) {
+    const wrId = e.target.dataset.id;
+    this.isLoading = true;
+    decideWorkRecord({ workRecordId: wrId, approved: false, reason: "Rejeitado para revisao" })
+      .then(() => {
+        this.loadWorkRecords();
+        this.dispatchEvent(new ShowToastEvent({ title: "Rejeitado", message: "Registro de trabalho rejeitado.", variant: "warning" }));
+      })
+      .catch((error) => {
+        this.errorMessage = error.body ? error.body.message : error.message;
+      })
+      .finally(() => {
+        this.isLoading = false;
+      });
+  }
+
+  handleOpenCorrectionModal(e) {
+    const wrId = e.target.dataset.id;
+    const wr = this.workRecords.find((r) => r.workRecordId === wrId);
+    if (!wr) return;
+
+    this.isCorrectionMode = true;
+    this.correctionTargetId = wrId;
+    this.correctionReason = "";
+    this.wrForm = {
+      workRecordId: null,
+      contractId: this.selectedContractId,
+      termVersionId: wr.termVersionId,
+      startDate: wr.startDate,
+      endDate: wr.endDate,
+      quantity: wr.quantity,
+      rate: wr.rate,
+      currencyIsoCode: wr.currencyIsoCode,
+      source: "MANUAL",
+      description: wr.description
+    };
+    this.isWorkRecordModalOpen = true;
+  }
+
 }

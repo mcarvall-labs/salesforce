@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<CustomField xmlns="http://soap.sforce.com/2006/04/metadata">
+    <fullName>AXF_WR_NUM_Quantity__c</fullName>
+    <description>Quantidade trabalhada (horas, dias ou entregaveis).</description>
+    <label>Quantidade</label>
+    <precision>18</precision>
+    <scale>2</scale>
+    <required>true</required>
+    <type>Number</type>
+</CustomField>

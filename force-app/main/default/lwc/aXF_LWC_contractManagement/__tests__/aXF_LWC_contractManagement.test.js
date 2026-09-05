@@ -11,6 +11,42 @@ import saveDraftTermVersion from "@salesforce/apex/AXF_CLS_CTRL_ContractManageme
 import calculateSchedulePreview from "@salesforce/apex/AXF_CLS_CTRL_ContractManagement.calculateSchedulePreview";
 import activateTermVersion from "@salesforce/apex/AXF_CLS_CTRL_ContractManagement.activateTermVersion";
 import getTermVersionReview from "@salesforce/apex/AXF_CLS_CTRL_ContractManagement.getTermVersionReview";
+import getWorkRecords from "@salesforce/apex/AXF_CLS_CTRL_ContractManagement.getWorkRecords";
+import registerWorkRecord from "@salesforce/apex/AXF_CLS_CTRL_ContractManagement.registerWorkRecord";
+import submitWorkRecord from "@salesforce/apex/AXF_CLS_CTRL_ContractManagement.submitWorkRecord";
+import decideWorkRecord from "@salesforce/apex/AXF_CLS_CTRL_ContractManagement.decideWorkRecord";
+import correctApprovedWorkRecord from "@salesforce/apex/AXF_CLS_CTRL_ContractManagement.correctApprovedWorkRecord";
+
+jest.mock(
+  "@salesforce/apex/AXF_CLS_CTRL_ContractManagement.getWorkRecords",
+  () => ({ default: jest.fn() }),
+  { virtual: true }
+);
+
+jest.mock(
+  "@salesforce/apex/AXF_CLS_CTRL_ContractManagement.registerWorkRecord",
+  () => ({ default: jest.fn() }),
+  { virtual: true }
+);
+
+jest.mock(
+  "@salesforce/apex/AXF_CLS_CTRL_ContractManagement.submitWorkRecord",
+  () => ({ default: jest.fn() }),
+  { virtual: true }
+);
+
+jest.mock(
+  "@salesforce/apex/AXF_CLS_CTRL_ContractManagement.decideWorkRecord",
+  () => ({ default: jest.fn() }),
+  { virtual: true }
+);
+
+jest.mock(
+  "@salesforce/apex/AXF_CLS_CTRL_ContractManagement.correctApprovedWorkRecord",
+  () => ({ default: jest.fn() }),
+  { virtual: true }
+);
+
 
 jest.mock(
   "@salesforce/apex/AXF_CLS_CTRL_ContractManagement.getAuthorizedEntities",
@@ -387,5 +423,93 @@ describe("c-a-x-f-_-l-w-c_contract-management", () => {
       expectedContractVersion: 1,
       expectedTermVersion: 1
     });
+  });
+
+  it("renders work records section and allows submitting and approving a work record", async () => {
+    getActiveRelationships.mockResolvedValue(MOCK_RELATIONSHIPS);
+    getContracts.mockResolvedValue(MOCK_CONTRACTS);
+    getContractDetail.mockResolvedValue(MOCK_DETAIL);
+    getTermVersions.mockResolvedValue([]);
+    getWorkRecords.mockResolvedValue([
+      {
+        workRecordId: "a07000000000001AAA",
+        recordNumber: "WR-00000001",
+        quantity: 10,
+        rate: 100,
+        totalAmount: 1000,
+        currencyIsoCode: "BRL",
+        status: "DRAFT",
+        startDate: "2026-03-01",
+        endDate: "2026-03-31",
+        source: "MANUAL"
+      }
+    ]);
+    submitWorkRecord.mockResolvedValue({});
+
+    const element = createElement("c-axf-lwc-contract-management", {
+      is: AXF_LWC_contractManagement
+    });
+    document.body.appendChild(element);
+
+    getAuthorizedEntities.emit(MOCK_ENTITIES);
+    await Promise.resolve();
+    await new Promise(process.nextTick);
+    await new Promise(process.nextTick);
+
+    const selectRow = element.shadowRoot.querySelector("tr[data-id='a03000000000001AAA']");
+    selectRow.click();
+    await new Promise(process.nextTick);
+    await new Promise(process.nextTick);
+    await new Promise(process.nextTick);
+    await new Promise(process.nextTick);
+
+    const wrSection = element.shadowRoot.querySelector('[data-testid="work-records-section"]');
+    expect(wrSection).not.toBeNull();
+
+    const submitBtn = element.shadowRoot.querySelector('lightning-button[data-testid="submit-wr-btn"]');
+    expect(submitBtn).not.toBeNull();
+    submitBtn.click();
+    await new Promise(process.nextTick);
+    await new Promise(process.nextTick);
+
+    expect(submitWorkRecord).toHaveBeenCalledWith({ workRecordId: "a07000000000001AAA" });
+  });
+
+  it("opens work record modal and registers a new work record", async () => {
+    getContracts.mockResolvedValue(MOCK_CONTRACTS);
+    getContractDetail.mockResolvedValue(MOCK_DETAIL);
+    getTermVersions.mockResolvedValue([]);
+    getWorkRecords.mockResolvedValue([]);
+    registerWorkRecord.mockResolvedValue({});
+
+    const element = createElement("c-a-x-f-l-w-c-contract-management", {
+      is: AXF_LWC_contractManagement
+    });
+    document.body.appendChild(element);
+
+    getAuthorizedEntities.emit(MOCK_ENTITIES);
+    await Promise.resolve();
+    await Promise.resolve();
+
+    const row = element.shadowRoot.querySelector('tr[data-id="a03000000000001AAA"]');
+    row.click();
+    await Promise.resolve();
+    await Promise.resolve();
+
+    const newWrBtn = element.shadowRoot.querySelector('[data-testid="new-work-record-btn"]');
+    expect(newWrBtn).not.toBeNull();
+    newWrBtn.click();
+    await Promise.resolve();
+    await Promise.resolve();
+
+    const wrModal = element.shadowRoot.querySelector('[data-testid="work-record-modal"]');
+    expect(wrModal).not.toBeNull();
+
+    const saveBtn = element.shadowRoot.querySelector('[data-testid="save-wr-btn"]');
+    saveBtn.click();
+    await Promise.resolve();
+    await Promise.resolve();
+
+    expect(registerWorkRecord).toHaveBeenCalled();
   });
 });
