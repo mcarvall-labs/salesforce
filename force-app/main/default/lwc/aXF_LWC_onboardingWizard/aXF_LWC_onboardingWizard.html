@@ -44,12 +44,12 @@
           <template for:each={stepperItems} for:item="st">
             <div key={st.key} class={st.cssClass}>
               <div class="wizard__step-row">
-                <div class="wizard__step-line wizard__step-line_leading"></div>
+                <div class={st.leadingClass}></div>
                 <div class="wizard__step-dot">
                   <template lwc:if={st.isDone}>✓</template>
                   <template lwc:else>{st.num}</template>
                 </div>
-                <div class="wizard__step-line wizard__step-line_trailing"></div>
+                <div class={st.trailingClass}></div>
               </div>
               <span class="wizard__step-label">{st.label}</span>
             </div>

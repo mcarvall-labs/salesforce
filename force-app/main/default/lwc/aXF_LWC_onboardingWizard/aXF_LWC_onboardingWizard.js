@@ -160,12 +160,16 @@ export default class AxfLwcOnboardingWizard extends LightningElement {
     const idx = this.stepIndex;
     return keys.map((k, i) => {
       const state = i < idx ? "done" : i === idx ? "current" : "upcoming";
+      const lead = "wizard__step-line wizard__step-line_leading";
+      const trail = "wizard__step-line wizard__step-line_trailing";
       return {
         key: k,
         label: L.steps[k] || k,
         num: i + 1,
         isDone: state === "done",
-        cssClass: `wizard__step wizard__step_${state}`
+        cssClass: `wizard__step wizard__step_${state}`,
+        leadingClass: i <= idx ? `${lead} wizard__step-line_done` : lead,
+        trailingClass: i < idx ? `${trail} wizard__step-line_done` : trail
       };
     });
   }
