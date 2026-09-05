@@ -57,6 +57,20 @@ public inherited sharing class ALT_CLS_ContabilizeiCsvParser {
   }
 
   public static ParseResult parse(String rawCsv, Integer maxRows) {
+    return parse(rawCsv, maxRows, SAMPLE_LIMIT);
+  }
+
+  /**
+   * @param sampleLimit cap on how many rows land in `sample` / `rejections`.
+   *        AXF-14 preview passes the default; AXF-15 confirmation passes a large
+   *        value to get every valid row back for publication.
+   */
+  public static ParseResult parse(
+    String rawCsv,
+    Integer maxRows,
+    Integer sampleLimit
+  ) {
+    Integer cap = sampleLimit == null ? SAMPLE_LIMIT : sampleLimit;
     ParseResult result = new ParseResult();
     if (String.isBlank(rawCsv)) {
       result.structureErrorCodes.add('EMPTY_FILE');
@@ -110,10 +124,10 @@ public inherited sharing class ALT_CLS_ContabilizeiCsvParser {
         result.validRows++;
       } else {
         result.rejectedRows++;
-        if (result.rejections.size() < SAMPLE_LIMIT)
+        if (result.rejections.size() < cap)
           result.rejections.add(row);
       }
-      if (result.sample.size() < SAMPLE_LIMIT)
+      if (result.sample.size() < cap)
         result.sample.add(row);
     }
     return result;

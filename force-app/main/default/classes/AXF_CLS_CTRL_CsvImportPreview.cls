@@ -175,4 +175,12 @@ public with sharing class AXF_CLS_CTRL_CsvImportPreview {
     out.message = message;
     return out;
   }
+
+  /** AXF-15 — publish the reviewed batch. Thin delegate to the confirm service. */
+  @AuraEnabled
+  public static AXF_CLS_CsvImportConfirmService.ConfirmResult confirmCsv(
+    AXF_CLS_CsvImportConfirmService.ConfirmInput input
+  ) {
+    return new AXF_CLS_CsvImportConfirmService().confirm(input);
+  }
 }

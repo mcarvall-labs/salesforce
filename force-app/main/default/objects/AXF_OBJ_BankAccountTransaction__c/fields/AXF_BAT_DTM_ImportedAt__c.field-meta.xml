@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<CustomField xmlns="http://soap.sforce.com/2006/04/metadata">
+    <fullName>AXF_BAT_DTM_ImportedAt__c</fullName>
+    <label>Importado em</label>
+    <type>DateTime</type>
+    <required>false</required>
+    <description
+  >Carimbo tecnico de quando a linha foi publicada (UTC).</description>
+</CustomField>

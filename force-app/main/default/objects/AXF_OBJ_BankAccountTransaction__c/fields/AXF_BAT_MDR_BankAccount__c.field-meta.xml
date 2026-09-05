@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<CustomField xmlns="http://soap.sforce.com/2006/04/metadata">
+    <fullName>AXF_BAT_MDR_BankAccount__c</fullName>
+    <label>Conta Bancaria</label>
+    <type>MasterDetail</type>
+    <referenceTo>AXF_OBJ_BankAccount__c</referenceTo>
+    <relationshipLabel>Transacoes Bancarias</relationshipLabel>
+    <relationshipName>Transactions</relationshipName>
+    <relationshipOrder>0</relationshipOrder>
+    <reparentableMasterDetail>false</reparentableMasterDetail>
+    <writeRequiresMasterRead>false</writeRequiresMasterRead>
+</CustomField>

@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<CustomField xmlns="http://soap.sforce.com/2006/04/metadata">
+    <fullName>AXF_BAT_TXT_NormalizedDescription__c</fullName>
+    <label>Descricao Normalizada</label>
+    <type>Text</type>
+    <length>255</length>
+    <required>false</required>
+    <description
+  >Forma normalizada derivada (AXF_CLS_TextNormalization) para matching/exibicao; D-62.</description>
+</CustomField>
