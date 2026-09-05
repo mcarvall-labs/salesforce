@@ -1,7 +1,9 @@
-<?xml version="1.0" encoding="UTF-8"?>
+<?xml version="1.0" encoding="UTF-8" ?>
 <PermissionSetGroup xmlns="http://soap.sforce.com/2006/04/metadata">
     <label>Axon - Participante</label>
-    <description>Nivel Participante: consultar/editar no proprio escopo; cadastro so de lancamentos e categorias; sem Delete; sem ViewAll/ModifyAll; sem configuracao. AXF-7.</description>
+    <description
+  >Nivel Participante: consultar/editar no proprio escopo; cadastro so de lancamentos e categorias; sem Delete; sem ViewAll/ModifyAll; sem configuracao. AXF-7.</description>
+    <permissionSets>AXF_PS_FinancialEntry</permissionSets>
     <permissionSets>AXF_PS_Participante</permissionSets>
     <permissionSets>AXF_PS_ReportCurrency</permissionSets>
     <status>Updated</status>

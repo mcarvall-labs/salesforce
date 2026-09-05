@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<CustomField xmlns="http://soap.sforce.com/2006/04/metadata">
+    <fullName>AXF_FTX_DAT_DueDate__c</fullName>
+    <label>Vencimento</label>
+    <type>Date</type>
+    <required>false</required>
+    <description
+  >Opcional — só relevante quando o lançamento ainda não foi liquidado. D-60. G1-3.</description>
+</CustomField>

@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<CustomField xmlns="http://soap.sforce.com/2006/04/metadata">
+    <fullName>AXF_FTX_TXT_CurrencyIsoCode__c</fullName>
+    <label>Moeda (ISO 4217)</label>
+    <type>Text</type>
+    <length>3</length>
+    <required>true</required>
+    <defaultValue>&quot;BRL&quot;</defaultValue>
+    <description
+  >Moeda original do lançamento; nunca reescrita (Money contract §1). Campo de texto próprio — a org não usa multi-moeda nativa (AXF-87 já resolveu preferência de apresentação separadamente).</description>
+</CustomField>

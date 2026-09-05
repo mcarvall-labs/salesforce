@@ -1,0 +1,13 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<CustomField xmlns="http://soap.sforce.com/2006/04/metadata">
+    <fullName>AXF_FTX_EXI_ClientRequestId__c</fullName>
+    <label>Chave de Idempotência do Cliente</label>
+    <type>Text</type>
+    <length>36</length>
+    <unique>true</unique>
+    <externalId>true</externalId>
+    <caseSensitive>true</caseSensitive>
+    <required>true</required>
+    <description
+  >UUID v4 gerado uma vez pelo wizard por intenção de confirmação; reenvio (retry de rede/duplo clique) faz upsert e reaproveita o mesmo registro em vez de duplicar (G6-7 — idempotency key, sem CommandExecution universal).</description>
+</CustomField>
