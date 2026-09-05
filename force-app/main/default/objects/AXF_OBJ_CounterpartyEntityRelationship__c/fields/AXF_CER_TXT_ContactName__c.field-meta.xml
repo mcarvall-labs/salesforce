@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<CustomField xmlns="http://soap.sforce.com/2006/04/metadata">
+    <fullName>AXF_CER_TXT_ContactName__c</fullName>
+    <description>Nome da pessoa de contato específica para esta relação com a entidade (protegido por acesso à relação).</description>
+    <externalId>false</externalId>
+    <label>Nome do Contato</label>
+    <length>255</length>
+    <required>false</required>
+    <type>Text</type>
+    <unique>false</unique>
+</CustomField>

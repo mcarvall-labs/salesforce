@@ -1,0 +1,8 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<CustomField xmlns="http://soap.sforce.com/2006/04/metadata">
+    <fullName>AXF_CER_PHN_Phone__c</fullName>
+    <description>Telefone de contato específico para esta relação com a entidade (protegido por acesso à relação).</description>
+    <label>Telefone de Contato</label>
+    <required>false</required>
+    <type>Phone</type>
+</CustomField>

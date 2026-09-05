@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<CustomField xmlns="http://soap.sforce.com/2006/04/metadata">
+    <fullName>AXF_CPTY_TXT_LegalName__c</fullName>
+    <description>Razão social ou nome legal canônico da contraparte. Identidade mínima sem dados relacionais.</description>
+    <externalId>false</externalId>
+    <label>Nome Legal</label>
+    <length>255</length>
+    <required>true</required>
+    <type>Text</type>
+    <unique>false</unique>
+</CustomField>

@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<CustomField xmlns="http://soap.sforce.com/2006/04/metadata">
+    <fullName>AXF_CPTY_EXI_CounterpartyKey__c</fullName>
+    <caseSensitive>true</caseSensitive>
+    <description>Chave externa única por organização gerada pelo algoritmo de framing canônico (G1-2, G6, AD-30).</description>
+    <externalId>true</externalId>
+    <label>Chave da Contraparte</label>
+    <length>255</length>
+    <required>true</required>
+    <type>Text</type>
+    <unique>true</unique>
+</CustomField>

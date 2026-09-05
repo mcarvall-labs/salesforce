@@ -1,0 +1,29 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<CustomField xmlns="http://soap.sforce.com/2006/04/metadata">
+    <fullName>AXF_CER_PKL_Status__c</fullName>
+    <description>Status da relação contratual com esta entidade.</description>
+    <label>Status da Relação</label>
+    <required>true</required>
+    <type>Picklist</type>
+    <valueSet>
+        <restricted>true</restricted>
+        <valueSetDefinition>
+            <sorted>false</sorted>
+            <value>
+                <fullName>ACTIVE</fullName>
+                <default>true</default>
+                <label>Ativa</label>
+            </value>
+            <value>
+                <fullName>INACTIVE</fullName>
+                <default>false</default>
+                <label>Inativa</label>
+            </value>
+            <value>
+                <fullName>TERMINATED</fullName>
+                <default>false</default>
+                <label>Encerrada</label>
+            </value>
+        </valueSetDefinition>
+    </valueSet>
+</CustomField>

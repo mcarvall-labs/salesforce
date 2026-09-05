@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<CustomField xmlns="http://soap.sforce.com/2006/04/metadata">
+    <fullName>AXF_CTID_TXT_MaskedIdentifier__c</fullName>
+    <description>Identificador fiscal estritamente mascarado (ex.: •••.456.789-•• ou NIF ••••••••). Valor reversível permanece proibido (AD-30, GF-24).</description>
+    <externalId>false</externalId>
+    <label>Identificador Mascarado</label>
+    <length>50</length>
+    <required>true</required>
+    <type>Text</type>
+    <unique>false</unique>
+</CustomField>

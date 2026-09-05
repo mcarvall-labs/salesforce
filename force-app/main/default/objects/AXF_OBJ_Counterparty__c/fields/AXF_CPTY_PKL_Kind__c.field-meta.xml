@@ -1,0 +1,24 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<CustomField xmlns="http://soap.sforce.com/2006/04/metadata">
+    <fullName>AXF_CPTY_PKL_Kind__c</fullName>
+    <description>Natureza da contraparte: Pessoa física ou pessoa jurídica (ORGANIZATION).</description>
+    <label>Tipo de Contraparte</label>
+    <required>true</required>
+    <type>Picklist</type>
+    <valueSet>
+        <restricted>true</restricted>
+        <valueSetDefinition>
+            <sorted>false</sorted>
+            <value>
+                <fullName>ORGANIZATION</fullName>
+                <default>true</default>
+                <label>Pessoa jurídica</label>
+            </value>
+            <value>
+                <fullName>PERSON</fullName>
+                <default>false</default>
+                <label>Pessoa física</label>
+            </value>
+        </valueSetDefinition>
+    </valueSet>
+</CustomField>

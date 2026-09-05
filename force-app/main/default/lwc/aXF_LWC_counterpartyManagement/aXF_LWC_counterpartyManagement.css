@@ -1,0 +1,108 @@
+.layout-container {
+  display: grid;
+  grid-template-columns: 340px 1fr;
+  gap: 1.25rem;
+  min-height: 520px;
+}
+
+.left-panel {
+  border-right: 1px solid #dddbda;
+  padding-right: 1rem;
+}
+
+.counterparty-list {
+  max-height: 480px;
+  overflow-y: auto;
+}
+
+.counterparty-item {
+  display: block;
+  padding: 0.75rem 1rem;
+  border: 1px solid #e5e5e5;
+  border-radius: 4px;
+  margin-bottom: 0.5rem;
+  cursor: pointer;
+  transition: background-color 0.15s ease-in-out, border-color 0.15s ease-in-out;
+  text-decoration: none;
+  color: inherit;
+}
+
+.counterparty-item:hover,
+.counterparty-item:focus {
+  background-color: #f3f3f3;
+  border-color: #0b5cab;
+  outline: none;
+}
+
+.counterparty-item.active {
+  background-color: #eaf5fe;
+  border-left: 4px solid #0b5cab;
+  border-color: #0b5cab;
+}
+
+.detail-card {
+  padding: 1.5rem;
+  background-color: #ffffff;
+  border: 1px solid #c9c9c9;
+  border-radius: 6px;
+}
+
+.facts-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: 1rem;
+  margin-top: 1.5rem;
+}
+
+.fact-box {
+  padding: 1rem;
+  background-color: #f7f7f7;
+  border-radius: 4px;
+  border: 1px solid #e5e5e5;
+}
+
+.fact-label {
+  display: block;
+  font-size: 0.75rem;
+  text-transform: uppercase;
+  color: #5c5c5c;
+  font-weight: 700;
+  margin-bottom: 0.25rem;
+}
+
+.fact-value {
+  font-size: 0.95rem;
+  color: #181818;
+}
+
+.protected-badge {
+  display: inline-block;
+  font-size: 0.75rem;
+  padding: 0.15rem 0.5rem;
+  background-color: #e0f2fe;
+  color: #0369a1;
+  border-radius: 12px;
+  margin-left: 0.5rem;
+}
+
+.notice-box {
+  margin-top: 1.5rem;
+  padding: 1rem;
+  border-left: 4px solid #0b5cab;
+  background-color: #eaf5fe;
+  border-radius: 0 4px 4px 0;
+  font-size: 0.85rem;
+  color: #1e3a8a;
+}
+
+@media (max-width: 768px) {
+  .layout-container {
+    grid-template-columns: 1fr;
+  }
+  .left-panel {
+    border-right: none;
+    border-bottom: 1px solid #dddbda;
+    padding-right: 0;
+    padding-bottom: 1rem;
+  }
+}

@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<CustomField xmlns="http://soap.sforce.com/2006/04/metadata">
+    <fullName>AXF_CER_LKP_Account__c</fullName>
+    <deleteConstraint>Restrict</deleteConstraint>
+    <description>Entidade titular (Account - Person ou Business Account) titular desta relação contratual (G1-1, G2, AXF-51).</description>
+    <label>Entidade Titular</label>
+    <referenceTo>Account</referenceTo>
+    <relationshipLabel>Relações com Contrapartes</relationshipLabel>
+    <relationshipName>AXF_CounterpartyEntityRelationships</relationshipName>
+    <required>true</required>
+    <type>Lookup</type>
+</CustomField>

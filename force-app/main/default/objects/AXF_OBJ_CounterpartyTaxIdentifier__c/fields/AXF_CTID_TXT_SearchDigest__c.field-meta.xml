@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<CustomField xmlns="http://soap.sforce.com/2006/04/metadata">
+    <fullName>AXF_CTID_TXT_SearchDigest__c</fullName>
+    <description>Digest SHA-256 / HMAC versionado para pesquisa exata e detecção de duplicidade sem exposição de PII (AD-30, G7).</description>
+    <externalId>false</externalId>
+    <label>Digest de Busca</label>
+    <length>255</length>
+    <required>true</required>
+    <type>Text</type>
+    <unique>false</unique>
+</CustomField>
