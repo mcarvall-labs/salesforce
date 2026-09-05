@@ -1,6 +1,6 @@
 <template>
-  <lightning-card title={labels.title} icon-name="standard:setup">
-    <div class="wizard">
+  <lightning-card>
+    <div class="wizard" role="region" aria-label={labels.title}>
       <template lwc:if={loading}>
         <div class="wizard__status">
           <lightning-spinner size="medium"></lightning-spinner>
@@ -106,8 +106,14 @@
                 <p class="wizard__welcome">{labels.welcome}</p>
               </template>
               <template lwc:if={showPluggyGuide}>
-                <c-a-x-f_-l-w-c_pluggy-guide></c-a-x-f_-l-w-c_pluggy-guide>
-                <c-a-x-f_-l-w-c_pluggy-integration-config></c-a-x-f_-l-w-c_pluggy-integration-config>
+                <div class="wizard__split">
+                  <div class="wizard__split-main">
+                    <c-a-x-f_-l-w-c_pluggy-integration-config></c-a-x-f_-l-w-c_pluggy-integration-config>
+                  </div>
+                  <aside class="wizard__split-aside">
+                    <c-a-x-f_-l-w-c_pluggy-guide></c-a-x-f_-l-w-c_pluggy-guide>
+                  </aside>
+                </div>
               </template>
               <template lwc:if={showDiscovery}>
                 <c-a-x-f_-l-w-c_source-discovery></c-a-x-f_-l-w-c_source-discovery>

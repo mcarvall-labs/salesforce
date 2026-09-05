@@ -167,6 +167,43 @@
   color: var(--slds-g-color-neutral-base-20, #2e2e2e);
 }
 
+/* Pluggy step: the setup form is the main column, the illustrated guide is a
+   side panel on the right so the step fits without a page scrollbar. */
+.wizard__split {
+  display: flex;
+  align-items: flex-start;
+  gap: 1.5rem;
+}
+
+.wizard__split-main {
+  flex: 1 1 auto;
+  min-width: 0;
+}
+
+.wizard__split-aside {
+  flex: 0 0 22rem;
+  max-width: 22rem;
+  position: sticky;
+  top: 0.5rem;
+  max-height: calc(100vh - 11rem);
+  overflow: auto;
+}
+
+@media (max-width: 60rem) {
+  .wizard__split {
+    flex-direction: column;
+  }
+  .wizard__split-aside {
+    order: -1;
+    flex-basis: auto;
+    width: 100%;
+    max-width: none;
+    position: static;
+    max-height: none;
+    overflow: visible;
+  }
+}
+
 /* review list */
 .wizard__review-list {
   margin: 0;

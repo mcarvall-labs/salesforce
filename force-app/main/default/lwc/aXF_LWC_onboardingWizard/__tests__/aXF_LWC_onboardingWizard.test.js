@@ -106,7 +106,7 @@ describe("c-aXF_LWC_onboardingWizard", () => {
     await flush();
     await flush();
     expect(confirmStep).toHaveBeenCalledTimes(1);
-    expect(confirmStep.mock.calls[0][0].input).toEqual({
+    expect(confirmStep.mock.calls[0][0]).toEqual({
       stepKey: "PLUGGY_CREDENTIALS",
       expectedVersion: 2,
       evidenceRef: "wizard"

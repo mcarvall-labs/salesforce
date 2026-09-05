@@ -256,11 +256,9 @@ export default class AxfLwcOnboardingWizard extends LightningElement {
         mode === "skip"
           ? await skipStep({ stepKey: key, expectedVersion: this.version })
           : await confirmStep({
-              input: {
-                stepKey: key,
-                expectedVersion: this.version,
-                evidenceRef: "wizard"
-              }
+              stepKey: key,
+              expectedVersion: this.version,
+              evidenceRef: "wizard"
             });
       if (s.outcome === "CONFLICT") {
         this.message = L.conflict;
