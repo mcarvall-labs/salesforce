@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<CustomField xmlns="http://soap.sforce.com/2006/04/metadata">
+    <fullName>AXF_BAT_TXT_ParserVersion__c</fullName>
+    <label>Versao do Parser</label>
+    <type>Text</type>
+    <length>40</length>
+    <required>false</required>
+    <description
+  >Versao do parser CSV que produziu esta linha (rastreabilidade de reprocesso).</description>
+</CustomField>

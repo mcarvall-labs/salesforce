@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<CustomField xmlns="http://soap.sforce.com/2006/04/metadata">
+    <fullName>AXF_BAT_TXT_CurrencyIsoCode__c</fullName>
+    <label>Moeda (ISO)</label>
+    <type>Text</type>
+    <length>3</length>
+    <required>true</required>
+    <description
+  >Moeda original. CSV herda a moeda da conta; nunca convertida silenciosamente (AC3).</description>
+</CustomField>

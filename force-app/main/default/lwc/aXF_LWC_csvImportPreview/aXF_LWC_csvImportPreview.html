@@ -110,19 +110,25 @@
           ></lightning-button>
           <template if:true={hasRejections}>
             <lightning-button
-              variant="brand"
               label="Ver linhas rejeitadas"
               onclick={handleGoToReview}
               class="slds-var-m-left_small"
             ></lightning-button>
           </template>
+          <lightning-button
+            variant="brand"
+            label="Confirmar importação"
+            onclick={handleGoToConfirm}
+            class="slds-var-m-left_small"
+          ></lightning-button>
         </div>
       </template>
 
       <template if:true={isReviewStep}>
         <p aria-live="polite" class="slds-var-m-bottom_small">
-          {rejectionRows.length} linha(s) rejeitada(s). Corrija o arquivo de
-          origem e envie novamente.
+          {rejectionRows.length} linha(s) rejeitada(s). Corrija o arquivo e
+          envie novamente, ou siga para a confirmação para publicar apenas as
+          válidas.
         </p>
         <table
           class="slds-table slds-table_bordered"
@@ -154,6 +160,87 @@
             label="Enviar outro arquivo"
             onclick={handleBackToFile}
             class="slds-var-m-left_small"
+          ></lightning-button>
+          <lightning-button
+            variant="brand"
+            label="Confirmar importação"
+            onclick={handleGoToConfirm}
+            class="slds-var-m-left_small"
+          ></lightning-button>
+        </div>
+      </template>
+
+      <template if:true={isConfirmStep}>
+        <p class="slds-var-m-bottom_small">
+          Esta ação publica os lançamentos válidos na conta
+          <strong>{previewResult.targetAccountLabel}</strong> e não pode ser
+          desfeita por aqui. Reenviar o mesmo arquivo depois não duplica nada.
+        </p>
+        <template if:true={summaryCounts}>
+          <ul class="slds-list_horizontal slds-var-m-vertical_small">
+            <li class="slds-var-p-right_medium">
+              A publicar: {summaryCounts.valid}
+            </li>
+            <li>A ignorar: {summaryCounts.rejected}</li>
+          </ul>
+        </template>
+        <template if:true={hasRejections}>
+          <div class="slds-form-element slds-var-m-vertical_small">
+            <lightning-input
+              type="checkbox"
+              label="Estou ciente de que as linhas rejeitadas não serão importadas."
+              checked={acknowledge}
+              onchange={handleAcknowledgeChange}
+            ></lightning-input>
+          </div>
+        </template>
+        <div class="slds-var-m-top_medium">
+          <lightning-button
+            label="Voltar"
+            onclick={handleBackToPreview}
+          ></lightning-button>
+          <lightning-button
+            variant="brand"
+            label="Publicar lançamentos"
+            onclick={handleConfirm}
+            disabled={confirmDisabled}
+            class="slds-var-m-left_small"
+          ></lightning-button>
+        </div>
+        <template if:true={loading}>
+          <lightning-spinner
+            alternative-text="Publicando lançamentos"
+            size="small"
+          ></lightning-spinner>
+        </template>
+      </template>
+
+      <template if:true={isResultStep}>
+        <p aria-live="polite" class="slds-var-m-bottom_small">
+          <strong>{confirmResult.message}</strong>
+        </p>
+        <ul class="slds-list_horizontal slds-var-m-vertical_small">
+          <li class="slds-var-p-right_medium">
+            Publicados: {confirmResult.publishedCount}
+          </li>
+          <li class="slds-var-p-right_medium">
+            Já existentes: {confirmResult.alreadyPresentCount}
+          </li>
+          <li>Rejeitados: {confirmResult.rejectedCount}</li>
+        </ul>
+        <template if:true={confirmResult.firstDate}>
+          <p>
+            Período coberto: {confirmResult.firstDate} a
+            {confirmResult.lastDate}
+          </p>
+        </template>
+        <p class="slds-text-body_small slds-text-color_weak">
+          Referência: {confirmResult.correlationId}
+        </p>
+        <div class="slds-var-m-top_medium">
+          <lightning-button
+            label="Importar outro arquivo"
+            onclick={handleBackToFile}
           ></lightning-button>
         </div>
       </template>

@@ -8,12 +8,12 @@ private class AXF_CLS_CTRL_CsvImportPreviewTest {
   private static final String HEADER = 'Data;Descricao;Entrada;Saida;Saldo';
 
   private static User configurator() {
-    Profile admin = [
-      SELECT Id
-      FROM Profile
-      WHERE Name = 'System Administrator'
-      LIMIT 1
-    ];
+    Id adminProfileId = [
+      SELECT ProfileId
+      FROM User
+      WHERE Id = :UserInfo.getUserId()
+    ]
+    .ProfileId;
     PermissionSetGroup psg = [
       SELECT Id, Status
       FROM PermissionSetGroup
@@ -24,7 +24,7 @@ private class AXF_CLS_CTRL_CsvImportPreviewTest {
       Test.calculatePermissionSetGroup(psg.Id);
     }
     User u = new User(
-      ProfileId = admin.Id,
+      ProfileId = adminProfileId,
       LastName = 'Cfg AXF14',
       Email = 'axf14.cfg@example.com',
       Username = 'axf14.cfg.' +

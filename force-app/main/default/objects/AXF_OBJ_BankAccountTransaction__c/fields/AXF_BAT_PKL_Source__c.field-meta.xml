@@ -1,0 +1,17 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<CustomField xmlns="http://soap.sforce.com/2006/04/metadata">
+    <fullName>AXF_BAT_PKL_Source__c</fullName>
+    <label>Origem</label>
+    <type>Picklist</type>
+    <required>true</required>
+    <valueSet>
+        <restricted>true</restricted>
+        <valueSetDefinition>
+            <sorted>false</sorted>
+            <value><fullName>PLUGGY</fullName><default>false</default><label
+        >Pluggy</label></value>
+            <value><fullName>CSV</fullName><default>false</default><label
+        >CSV Contabilizei.bank</label></value>
+        </valueSetDefinition>
+    </valueSet>
+</CustomField>

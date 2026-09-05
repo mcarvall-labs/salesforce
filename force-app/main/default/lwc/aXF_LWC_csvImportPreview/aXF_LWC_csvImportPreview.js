@@ -1,6 +1,7 @@
 import { LightningElement, api } from "lwc";
 import getPolicy from "@salesforce/apex/AXF_CLS_CTRL_CsvImportPreview.getPolicy";
 import previewCsv from "@salesforce/apex/AXF_CLS_CTRL_CsvImportPreview.previewCsv";
+import confirmCsv from "@salesforce/apex/AXF_CLS_CTRL_CsvImportPreview.confirmCsv";
 
 const ERROR_LABELS = {
   EMPTY_FILE: "O arquivo está vazio.",
@@ -17,9 +18,11 @@ const ERROR_LABELS = {
 };
 
 const STEP_LABELS = {
-  FILE: "Etapa 1 de 3: Arquivo",
-  PREVIEW: "Etapa 2 de 3: Prévia",
-  REVIEW: "Etapa 3 de 3: Revisão"
+  FILE: "Etapa 1 de 5: Arquivo",
+  PREVIEW: "Etapa 2 de 5: Prévia",
+  REVIEW: "Etapa 3 de 5: Revisão",
+  CONFIRM: "Etapa 4 de 5: Confirmação",
+  RESULT: "Etapa 5 de 5: Resultado"
 };
 
 export default class AXF_LWC_csvImportPreview extends LightningElement {
@@ -32,6 +35,10 @@ export default class AXF_LWC_csvImportPreview extends LightningElement {
   errorMessage;
   loading = false;
   previewResult;
+  confirmResult;
+  acknowledge = false;
+  pendingContent;
+  pendingFileName;
   focusStepHeading = false;
 
   connectedCallback() {
@@ -72,6 +79,14 @@ export default class AXF_LWC_csvImportPreview extends LightningElement {
 
   get isReviewStep() {
     return this.step === "REVIEW";
+  }
+
+  get isConfirmStep() {
+    return this.step === "CONFIRM";
+  }
+
+  get isResultStep() {
+    return this.step === "RESULT";
   }
 
   get acceptedFormats() {
@@ -118,6 +133,10 @@ export default class AXF_LWC_csvImportPreview extends LightningElement {
     };
   }
 
+  get confirmDisabled() {
+    return this.loading || (this.hasRejections && !this.acknowledge);
+  }
+
   decorateRow(row) {
     return {
       ...row,
@@ -155,6 +174,8 @@ export default class AXF_LWC_csvImportPreview extends LightningElement {
       });
       this.previewResult = result;
       if (result.outcome === "OK") {
+        this.pendingContent = base64Content;
+        this.pendingFileName = file.name;
         this.goToStep("PREVIEW");
       } else {
         this.errorMessage =
@@ -178,14 +199,60 @@ export default class AXF_LWC_csvImportPreview extends LightningElement {
     this.goToStep("REVIEW");
   }
 
+  handleGoToConfirm() {
+    this.errorMessage = undefined;
+    this.goToStep("CONFIRM");
+  }
+
+  handleAcknowledgeChange(event) {
+    this.acknowledge = event.target.checked;
+  }
+
   handleBackToFile() {
     this.previewResult = undefined;
+    this.confirmResult = undefined;
+    this.pendingContent = undefined;
+    this.acknowledge = false;
     this.errorMessage = undefined;
     this.goToStep("FILE");
   }
 
   handleBackToPreview() {
+    this.errorMessage = undefined;
     this.goToStep("PREVIEW");
+  }
+
+  async handleConfirm() {
+    this.errorMessage = undefined;
+    this.loading = true;
+    try {
+      const result = await confirmCsv({
+        input: {
+          accountId: this.recordId,
+          fileName: this.pendingFileName,
+          base64Content: this.pendingContent,
+          expectedParserVersion: this.previewResult.parseResult.parserVersion,
+          acknowledgeRejections: this.acknowledge
+        }
+      });
+      this.confirmResult = result;
+      if (result.outcome === "PUBLISHED") {
+        this.goToStep("RESULT");
+      } else if (result.outcome === "NEEDS_ACKNOWLEDGE") {
+        this.errorMessage = result.message;
+      } else if (result.outcome === "STALE_PREVIEW") {
+        this.errorMessage = result.message;
+        this.goToStep("FILE");
+      } else {
+        this.errorMessage =
+          result.message || "Não foi possível concluir a importação.";
+      }
+    } catch (e) {
+      this.errorMessage =
+        (e.body && e.body.message) || "Não foi possível concluir a importação.";
+    } finally {
+      this.loading = false;
+    }
   }
 
   goToStep(step) {
