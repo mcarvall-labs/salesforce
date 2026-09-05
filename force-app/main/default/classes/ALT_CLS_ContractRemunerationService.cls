@@ -1,5 +1,5 @@
 /**
- * @description Servico de dominio para modelos de remuneracao contratual e termos (AXF-54).
+ * @description Servico de dominio para modelos de remuneracao contratual e termos (AXF-54, AXF-53).
  *
  * Principios e Criterios de Aceite:
  * 1. Modelos MONTHLY, HOURLY e FIXED (FR-53, AD-31):
@@ -13,9 +13,16 @@
  * 3. Politica de Calendario e Ausencia:
  *    - Se regra de calendario/ausencia nao for contratada, ativacao e BLOQUEADA (BLOCKED).
  *    - Nao inventa formula ou feriado local.
- * 4. Imutabilidade e Concorrencia:
- *    - Termo ACTIVE e imutavel (AD-31).
- *    - Concorrencia otimista via expectedVersion (G6).
+ * 4. Revisao de TermVersion em Rascunho (AXF-53, AC 1):
+ *    - Mostra intervalo [inicio, fim), moeda, remuneracao, calendario, fuso, renovacao, confianca e conta sugerida.
+ *    - Timeline e delta nao dependem de cor.
+ * 5. Ativacao Valida e Imutabilidade (AXF-53, AC 2, AC 3):
+ *    - Bloqueia e ativa Contract root (vincula ActiveTermVersion__c).
+ *    - Fecha predecessora na fronteira exclusiva [inicio, fim) e ativa sucessora sem sobreposicao.
+ *    - Versao ativa torna-se read-only e nao deletavel.
+ *    - Rejeita sobreposicao, retroatividade proibida ou versao concorrente com falha atomica.
+ * 6. Conta Preferencial (AXF-53, AC 4):
+ *    - Sugestao revisavel; nao sobrescreve escolha ou valor informado.
  */
 public with sharing class ALT_CLS_ContractRemunerationService {
 
@@ -33,6 +40,14 @@ public with sharing class ALT_CLS_ContractRemunerationService {
   public static final String PRORATION_BUSINESS_DAYS = 'BUSINESS_DAYS';
   public static final String PRORATION_FIXED_30 = 'FIXED_30';
   public static final String PRORATION_NONE = 'NONE';
+
+  public static final String RENEWAL_MANUAL = 'MANUAL';
+  public static final String RENEWAL_AUTOMATIC = 'AUTOMATIC';
+  public static final String RENEWAL_NONE = 'NONE';
+
+  public static final String CONFIDENCE_HIGH = 'HIGH';
+  public static final String CONFIDENCE_MEDIUM = 'MEDIUM';
+  public static final String CONFIDENCE_LOW = 'LOW';
 
   public static final String SHARING_ROW_CAUSE = 'AXF_TermVersionAccess__c';
 
@@ -63,8 +78,11 @@ public with sharing class ALT_CLS_ContractRemunerationService {
     @AuraEnabled public String proportionalityPolicy;
     @AuraEnabled public String timeZone;
     @AuraEnabled public String calendarPolicy;
+    @AuraEnabled public String renewalPolicy;
+    @AuraEnabled public String confidence;
     @AuraEnabled public Id preferredBankAccountId;
     @AuraEnabled public Long version;
+    @AuraEnabled public Long expectedContractVersion;
   }
 
   public class TermVersionDetailDTO {
@@ -79,6 +97,7 @@ public with sharing class ALT_CLS_ContractRemunerationService {
     @AuraEnabled public String currencyIsoCode;
     @AuraEnabled public Date effectiveFrom;
     @AuraEnabled public Date effectiveTo;
+    @AuraEnabled public String intervalLabel;
     @AuraEnabled public Decimal contractedAmount;
     @AuraEnabled public Decimal rate;
     @AuraEnabled public Decimal hoursQuantity;
@@ -86,11 +105,48 @@ public with sharing class ALT_CLS_ContractRemunerationService {
     @AuraEnabled public String proportionalityPolicy;
     @AuraEnabled public String timeZone;
     @AuraEnabled public String calendarPolicy;
+    @AuraEnabled public String renewalPolicy;
+    @AuraEnabled public String confidence;
     @AuraEnabled public Id preferredBankAccountId;
+    @AuraEnabled public String preferredBankAccountName;
+    @AuraEnabled public Id predecessorTermVersionId;
+    @AuraEnabled public Id successorTermVersionId;
     @AuraEnabled public String blockedReason;
     @AuraEnabled public Long version;
     @AuraEnabled public Datetime createdDate;
     @AuraEnabled public Datetime lastModifiedDate;
+  }
+
+  public class TermVersionReviewDTO {
+    @AuraEnabled public Id termVersionId;
+    @AuraEnabled public String termNumber;
+    @AuraEnabled public Id contractId;
+    @AuraEnabled public String contractCode;
+    @AuraEnabled public Long contractVersion;
+    @AuraEnabled public Long revision;
+    @AuraEnabled public String status;
+    @AuraEnabled public String intervalLabel;
+    @AuraEnabled public Date effectiveFrom;
+    @AuraEnabled public Date effectiveTo;
+    @AuraEnabled public String currencyIsoCode;
+    @AuraEnabled public String remunerationModel;
+    @AuraEnabled public String remunerationSummary;
+    @AuraEnabled public Decimal rate;
+    @AuraEnabled public Decimal contractedAmount;
+    @AuraEnabled public Decimal hoursQuantity;
+    @AuraEnabled public Integer installments;
+    @AuraEnabled public String proportionalityPolicy;
+    @AuraEnabled public String calendarPolicy;
+    @AuraEnabled public String timeZone;
+    @AuraEnabled public String renewalPolicy;
+    @AuraEnabled public String confidence;
+    @AuraEnabled public Id preferredBankAccountId;
+    @AuraEnabled public String preferredBankAccountName;
+    @AuraEnabled public Long version;
+    @AuraEnabled public Id predecessorTermVersionId;
+    @AuraEnabled public Long predecessorRevision;
+    @AuraEnabled public String deltaDescription;
+    @AuraEnabled public List<String> timelineLabels;
   }
 
   public class ScheduleItemDTO {
@@ -155,8 +211,8 @@ public with sharing class ALT_CLS_ContractRemunerationService {
     if (input.effectiveFrom == null) {
       throw new AXF_CLS_ContractException('A data de vigencia inicial e obrigatoria.');
     }
-    if (input.effectiveTo != null && input.effectiveTo < input.effectiveFrom) {
-      throw new AXF_CLS_ContractException('A data de vigencia final nao pode ser anterior a vigencia inicial.');
+    if (input.effectiveTo != null && input.effectiveTo <= input.effectiveFrom) {
+      throw new AXF_CLS_ContractException('A data de vigencia final deve ser posterior a vigencia inicial.');
     }
 
     String model = input.remunerationModel.trim().toUpperCase();
@@ -306,6 +362,8 @@ public with sharing class ALT_CLS_ContractRemunerationService {
     tv.AXF_CTV_DAT_EffectiveTo__c = input.effectiveTo;
     tv.AXF_CTV_TXT_TimeZone__c = input.timeZone;
     tv.AXF_CTV_TXT_CalendarPolicy__c = input.calendarPolicy;
+    tv.AXF_CTV_PKL_RenewalPolicy__c = String.isNotBlank(input.renewalPolicy) ? input.renewalPolicy : RENEWAL_MANUAL;
+    tv.AXF_CTV_PKL_Confidence__c = String.isNotBlank(input.confidence) ? input.confidence : CONFIDENCE_HIGH;
     tv.AXF_CTV_LKP_PreferredBankAccount__c = input.preferredBankAccountId;
 
     if (model == MODEL_MONTHLY) {
@@ -380,7 +438,6 @@ public with sharing class ALT_CLS_ContractRemunerationService {
     Integer n = input.installments;
     Date baseDate = (input.effectiveFrom != null) ? input.effectiveFrom : Date.today();
 
-    // Divisao base arredondada para 2 casas
     Decimal baseInstallment = (totalAmount / n).setScale(2, System.RoundingMode.HALF_UP);
     Decimal allocatedPrior = 0.00;
     Decimal totalResidual = 0.00;
@@ -398,7 +455,6 @@ public with sharing class ALT_CLS_ContractRemunerationService {
         item.periodLabel = 'Parcela ' + i + '/' + n;
         allocatedPrior += baseInstallment;
       } else {
-        // Ultima parcela recebe a diferenca indivisivel residual
         item.amount = (totalAmount - allocatedPrior).setScale(2, System.RoundingMode.HALF_UP);
         item.roundingResidual = (item.amount - baseInstallment).setScale(2, System.RoundingMode.HALF_UP);
         item.isLast = true;
@@ -411,7 +467,6 @@ public with sharing class ALT_CLS_ContractRemunerationService {
 
     result.totalAmount = allocatedPrior;
     result.totalResidual = totalResidual;
-    // Conservacao estrita: soma das parcelas DEVE ser identica ao total informado
     result.isConserved = (allocatedPrior == totalAmount);
   }
 
@@ -455,7 +510,6 @@ public with sharing class ALT_CLS_ContractRemunerationService {
         item.amount = (rate * factor).setScale(2, System.RoundingMode.HALF_UP);
         item.periodLabel = 'Competencia ' + month + '/' + year + ' (' + activeDays + '/30 dias - Base 30)';
       } else {
-        // CALENDAR_DAYS ou BUSINESS_DAYS default
         Decimal factor = ((Decimal) activeDays) / ((Decimal) daysInMonth);
         item.amount = (rate * factor).setScale(2, System.RoundingMode.HALF_UP);
         item.periodLabel = 'Competencia ' + month + '/' + year + ' (' + activeDays + '/' + daysInMonth + ' dias corridos)';
@@ -498,21 +552,23 @@ public with sharing class ALT_CLS_ContractRemunerationService {
   }
 
   /**
-   * @description Tenta ativar uma versao de termo contratual (AC 3).
-   * Se regra de calendario/ausencia nao estiver explicitamente contratada, transiciona para BLOCKED
-   * e bloqueia a ativacao sem inventar formulas ou feriados locais.
+   * @description Gera dados de revisao formal de uma TermVersion (AXF-53, AC 1).
+   * Explicita intervalo [inicio, fim), moeda, remuneracao, calendario, fuso, renovacao, confianca e conta sugerida.
+   * Assegura que timeline e delta nao dependem de cor.
    */
-  public OperationResultDTO activateTermVersion(Id termVersionId, Id accountId) {
+  public TermVersionReviewDTO getTermVersionReview(Id termVersionId, Id accountId) {
     if (termVersionId == null) {
-      throw new AXF_CLS_ContractException('ID da versao de termo e obrigatorio para ativacao.');
+      throw new AXF_CLS_ContractException('ID da versao de termo e obrigatorio.');
     }
 
-    List<AXF_OBJ_ContractTermVersion__c> terms = [
+    AXF_OBJ_ContractTermVersion__c tv = [
       SELECT
         Id,
         Name,
         AXF_CTV_LKP_Contract__c,
+        AXF_CTV_LKP_Contract__r.AXF_CTR_TXT_ContractCode__c,
         AXF_CTV_LKP_Contract__r.AXF_CTR_LKP_Account__c,
+        AXF_CTV_LKP_Contract__r.AXF_CTR_NUM_Version__c,
         AXF_CTV_NUM_Revision__c,
         AXF_CTV_PKL_Status__c,
         AXF_CTV_PKL_RemunerationModel__c,
@@ -526,6 +582,125 @@ public with sharing class ALT_CLS_ContractRemunerationService {
         AXF_CTV_PKL_ProportionalityPolicy__c,
         AXF_CTV_TXT_TimeZone__c,
         AXF_CTV_TXT_CalendarPolicy__c,
+        AXF_CTV_PKL_RenewalPolicy__c,
+        AXF_CTV_PKL_Confidence__c,
+        AXF_CTV_LKP_PreferredBankAccount__c,
+        AXF_CTV_LKP_PreferredBankAccount__r.Name,
+        AXF_CTV_LKP_PredecessorTermVersion__c,
+        AXF_CTV_NUM_Version__c
+      FROM AXF_OBJ_ContractTermVersion__c
+      WHERE Id = :termVersionId
+      LIMIT 1
+    ];
+
+    if (accountId != null && tv.AXF_CTV_LKP_Contract__r.AXF_CTR_LKP_Account__c != accountId) {
+      throw new AXF_CLS_ContractException('Acesso negado: o termo pertence a outra Entidade.');
+    }
+
+    TermVersionReviewDTO review = new TermVersionReviewDTO();
+    review.termVersionId = tv.Id;
+    review.termNumber = tv.Name;
+    review.contractId = tv.AXF_CTV_LKP_Contract__c;
+    review.contractCode = tv.AXF_CTV_LKP_Contract__r.AXF_CTR_TXT_ContractCode__c;
+    review.contractVersion = (tv.AXF_CTV_LKP_Contract__r.AXF_CTR_NUM_Version__c != null)
+      ? tv.AXF_CTV_LKP_Contract__r.AXF_CTR_NUM_Version__c.longValue() : 1;
+    review.revision = (tv.AXF_CTV_NUM_Revision__c != null) ? tv.AXF_CTV_NUM_Revision__c.longValue() : 1;
+    review.status = tv.AXF_CTV_PKL_Status__c;
+    review.effectiveFrom = tv.AXF_CTV_DAT_EffectiveFrom__c;
+    review.effectiveTo = tv.AXF_CTV_DAT_EffectiveTo__c;
+    review.currencyIsoCode = tv.AXF_CTV_TXT_CurrencyIsoCode__c;
+    review.remunerationModel = tv.AXF_CTV_PKL_RemunerationModel__c;
+    review.rate = tv.AXF_CTV_CUR_Rate__c;
+    review.contractedAmount = tv.AXF_CTV_CUR_ContractedAmount__c;
+    review.hoursQuantity = tv.AXF_CTV_NUM_HoursQuantity__c;
+    review.installments = (tv.AXF_CTV_NUM_Installments__c != null) ? tv.AXF_CTV_NUM_Installments__c.intValue() : null;
+    review.proportionalityPolicy = tv.AXF_CTV_PKL_ProportionalityPolicy__c;
+    review.calendarPolicy = tv.AXF_CTV_TXT_CalendarPolicy__c;
+    review.timeZone = tv.AXF_CTV_TXT_TimeZone__c;
+    review.renewalPolicy = (String.isNotBlank(tv.AXF_CTV_PKL_RenewalPolicy__c)) ? tv.AXF_CTV_PKL_RenewalPolicy__c : RENEWAL_MANUAL;
+    review.confidence = (String.isNotBlank(tv.AXF_CTV_PKL_Confidence__c)) ? tv.AXF_CTV_PKL_Confidence__c : CONFIDENCE_HIGH;
+    review.preferredBankAccountId = tv.AXF_CTV_LKP_PreferredBankAccount__c;
+    review.preferredBankAccountName = tv.AXF_CTV_LKP_PreferredBankAccount__r.Name;
+    review.version = (tv.AXF_CTV_NUM_Version__c != null) ? tv.AXF_CTV_NUM_Version__c.longValue() : 1;
+
+    review.intervalLabel = formatInterval(tv.AXF_CTV_DAT_EffectiveFrom__c, tv.AXF_CTV_DAT_EffectiveTo__c);
+    review.remunerationSummary = buildRemunerationSummary(tv);
+
+    List<AXF_OBJ_ContractTermVersion__c> currentActive = [
+      SELECT Id, AXF_CTV_NUM_Revision__c, AXF_CTV_DAT_EffectiveFrom__c, AXF_CTV_DAT_EffectiveTo__c
+      FROM AXF_OBJ_ContractTermVersion__c
+      WHERE AXF_CTV_LKP_Contract__c = :tv.AXF_CTV_LKP_Contract__c
+        AND AXF_CTV_PKL_Status__c = :STATUS_ACTIVE
+        AND Id != :tv.Id
+      LIMIT 1
+    ];
+
+    review.timelineLabels = new List<String>();
+    if (!currentActive.isEmpty()) {
+      AXF_OBJ_ContractTermVersion__c pred = currentActive[0];
+      review.predecessorTermVersionId = pred.Id;
+      review.predecessorRevision = (pred.AXF_CTV_NUM_Revision__c != null) ? pred.AXF_CTV_NUM_Revision__c.longValue() : 1;
+      review.deltaDescription = '[SUBSTITUICAO] Esta ativacao substituira a Revisao ' + review.predecessorRevision +
+        ' na fronteira semiaberta [' + formatDate(pred.AXF_CTV_DAT_EffectiveFrom__c) + ', ' +
+        formatDate(tv.AXF_CTV_DAT_EffectiveFrom__c) + '). A predecessora sera encerrada e esta versao passara a vigorar ' +
+        review.intervalLabel + ' sem sobreposicao.';
+      review.timelineLabels.add('[PASSADO/SUBSTITUIDO] Revisao ' + review.predecessorRevision + ' (Encerrada em ' + formatDate(tv.AXF_CTV_DAT_EffectiveFrom__c) + ')');
+      review.timelineLabels.add('[NOVO/ATIVO] Revisao ' + review.revision + ' ' + review.intervalLabel);
+    } else {
+      review.predecessorTermVersionId = null;
+      review.predecessorRevision = null;
+      review.deltaDescription = '[PRIMEIRA ATIVACAO] Primeira versao ativa do contrato. O ciclo de vida do Contrato sera promovido para ACTIVE com vigencia ' + review.intervalLabel + '.';
+      review.timelineLabels.add('[NOVO/ATIVO] Revisao ' + review.revision + ' ' + review.intervalLabel);
+    }
+
+    return review;
+  }
+
+  /**
+   * @description Sobrecarga simples para ativacao sem parametros de concorrencia.
+   */
+  public OperationResultDTO activateTermVersion(Id termVersionId, Id accountId) {
+    return activateTermVersion(termVersionId, accountId, null, null);
+  }
+
+  /**
+   * @description Tenta ativar uma versao de termo contratual (AXF-54, AXF-53).
+   * Valida:
+   * - Bloqueia se regra de calendario/fuso nao for contratada (status BLOCKED).
+   * - Concorrencia otimista (expectedContractVersion e expectedTermVersion).
+   * - Retroatividade proibida e sobreposicao de intervalos.
+   * - Transicao atomica com Savepoint: fecha predecessora na fronteira semiaberta [inicio, fim),
+   *   ativa sucessora e vincula ActiveTermVersion no Contract aggregate root.
+   */
+  public OperationResultDTO activateTermVersion(Id termVersionId, Id accountId, Long expectedContractVersion, Long expectedTermVersion) {
+    if (termVersionId == null) {
+      throw new AXF_CLS_ContractException('ID da versao de termo e obrigatorio para ativacao.');
+    }
+
+    List<AXF_OBJ_ContractTermVersion__c> terms = [
+      SELECT
+        Id,
+        Name,
+        AXF_CTV_LKP_Contract__c,
+        AXF_CTV_LKP_Contract__r.AXF_CTR_LKP_Account__c,
+        AXF_CTV_LKP_Contract__r.AXF_CTR_PKL_Lifecycle__c,
+        AXF_CTV_LKP_Contract__r.AXF_CTR_NUM_Version__c,
+        AXF_CTV_NUM_Revision__c,
+        AXF_CTV_PKL_Status__c,
+        AXF_CTV_PKL_RemunerationModel__c,
+        AXF_CTV_TXT_CurrencyIsoCode__c,
+        AXF_CTV_DAT_EffectiveFrom__c,
+        AXF_CTV_DAT_EffectiveTo__c,
+        AXF_CTV_CUR_ContractedAmount__c,
+        AXF_CTV_CUR_Rate__c,
+        AXF_CTV_NUM_HoursQuantity__c,
+        AXF_CTV_NUM_Installments__c,
+        AXF_CTV_PKL_ProportionalityPolicy__c,
+        AXF_CTV_TXT_TimeZone__c,
+        AXF_CTV_TXT_CalendarPolicy__c,
+        AXF_CTV_PKL_RenewalPolicy__c,
+        AXF_CTV_PKL_Confidence__c,
+        AXF_CTV_LKP_PreferredBankAccount__c,
         AXF_CTV_NUM_Version__c
       FROM AXF_OBJ_ContractTermVersion__c
       WHERE Id = :termVersionId
@@ -542,7 +717,14 @@ public with sharing class ALT_CLS_ContractRemunerationService {
       throw new AXF_CLS_ContractException('Acesso negado: o termo pertence a outra Entidade.');
     }
 
-    // Valida modelo de remuneracao antes de ativar
+    if (tv.AXF_CTV_PKL_Status__c == STATUS_ACTIVE) {
+      throw new AXF_CLS_ContractException('Esta versao de termo ja esta ativa.');
+    }
+    if (tv.AXF_CTV_PKL_Status__c == STATUS_SUPERSEDED) {
+      throw new AXF_CLS_ContractException('Termos com status SUPERSEDED sao historicos e nao podem ser reativados.');
+    }
+
+    // 1. Validacao de campos conforme o modelo de remuneracao
     TermVersionInputDTO input = new TermVersionInputDTO();
     input.contractId = tv.AXF_CTV_LKP_Contract__c;
     input.remunerationModel = tv.AXF_CTV_PKL_RemunerationModel__c;
@@ -556,8 +738,7 @@ public with sharing class ALT_CLS_ContractRemunerationService {
     input.proportionalityPolicy = tv.AXF_CTV_PKL_ProportionalityPolicy__c;
     validateDraftTermVersion(input);
 
-    // GATE CANONICO DE CALENDARIO E AUSENCIA (AC 3):
-    // Se regra de calendario ou ausencia nao contratada -> BLOCKED (nao inventa formula ou feriado local)
+    // 2. Gating de Calendario e Ausencia (AC 3, AXF-54):
     Boolean isCalendarContracted = isContractedCalendarPolicy(tv.AXF_CTV_TXT_CalendarPolicy__c);
     Boolean isValidTimeZone = isContractedTimeZone(tv.AXF_CTV_TXT_TimeZone__c);
 
@@ -579,28 +760,90 @@ public with sharing class ALT_CLS_ContractRemunerationService {
       return blockedResult;
     }
 
-    // Ativacao canonica: fecha predecessora ativa sem sobreposicao (AD-31)
-    List<AXF_OBJ_ContractTermVersion__c> activePredecessors = [
-      SELECT Id, AXF_CTV_DAT_EffectiveTo__c, AXF_CTV_PKL_Status__c, AXF_CTV_NUM_Version__c
+    // 3. Concorrencia Otimista (AC 3, G6)
+    if (expectedTermVersion != null && tv.AXF_CTV_NUM_Version__c != expectedTermVersion) {
+      throw new AXF_CLS_ContractException('Conflito de concorrencia: a versao do termo foi alterada por outro usuario.');
+    }
+    Long currentContractVer = (tv.AXF_CTV_LKP_Contract__r.AXF_CTR_NUM_Version__c != null)
+      ? tv.AXF_CTV_LKP_Contract__r.AXF_CTR_NUM_Version__c.longValue() : 1;
+    if (expectedContractVersion != null && currentContractVer != expectedContractVersion) {
+      throw new AXF_CLS_ContractException('Conflito de concorrencia: o contrato foi alterado por outro usuario.');
+    }
+
+    // 4. Valida Retroatividade e Sobreposicao (AC 3)
+    List<AXF_OBJ_ContractTermVersion__c> historicalTerms = [
+      SELECT
+        Id,
+        AXF_CTV_NUM_Revision__c,
+        AXF_CTV_PKL_Status__c,
+        AXF_CTV_DAT_EffectiveFrom__c,
+        AXF_CTV_DAT_EffectiveTo__c,
+        AXF_CTV_NUM_Version__c
       FROM AXF_OBJ_ContractTermVersion__c
       WHERE AXF_CTV_LKP_Contract__c = :tv.AXF_CTV_LKP_Contract__c
-        AND AXF_CTV_PKL_Status__c = :STATUS_ACTIVE
+        AND AXF_CTV_PKL_Status__c IN (:STATUS_ACTIVE, :STATUS_SUPERSEDED)
         AND Id != :tv.Id
+      ORDER BY AXF_CTV_DAT_EffectiveFrom__c DESC
     ];
 
-    for (AXF_OBJ_ContractTermVersion__c pred : activePredecessors) {
-      pred.AXF_CTV_PKL_Status__c = STATUS_SUPERSEDED;
-      pred.AXF_CTV_DAT_EffectiveTo__c = tv.AXF_CTV_DAT_EffectiveFrom__c;
-      pred.AXF_CTV_NUM_Version__c = pred.AXF_CTV_NUM_Version__c + 1;
-    }
-    if (!activePredecessors.isEmpty()) {
-      update activePredecessors;
+    for (AXF_OBJ_ContractTermVersion__c term : historicalTerms) {
+      if (term.AXF_CTV_DAT_EffectiveFrom__c > tv.AXF_CTV_DAT_EffectiveFrom__c) {
+        throw new AXF_CLS_ContractException('Retroatividade proibida: a data de inicio da nova versao (' +
+          formatDate(tv.AXF_CTV_DAT_EffectiveFrom__c) + ') nao pode ser anterior a termos vigentes ou historicos (' +
+          formatDate(term.AXF_CTV_DAT_EffectiveFrom__c) + ').');
+      }
+      if (term.AXF_CTV_PKL_Status__c == STATUS_ACTIVE && term.AXF_CTV_DAT_EffectiveFrom__c == tv.AXF_CTV_DAT_EffectiveFrom__c) {
+        throw new AXF_CLS_ContractException('Sobreposicao proibida: a nova versao nao pode ter a mesma data de inicio da versao ativa vigente.');
+      }
     }
 
-    tv.AXF_CTV_PKL_Status__c = STATUS_ACTIVE;
-    tv.AXF_CTV_TXT_BlockedReason__c = null;
-    tv.AXF_CTV_NUM_Version__c = tv.AXF_CTV_NUM_Version__c + 1;
-    update tv;
+    // 5. Execucao Atomica com Savepoint (AC 2, AC 3)
+    Savepoint sp = Database.setSavepoint();
+    try {
+      // Fecha predecessora ativa na fronteira semiaberta [inicio_antigo, inicio_novo)
+      List<AXF_OBJ_ContractTermVersion__c> activePredecessors = [
+        SELECT Id, AXF_CTV_DAT_EffectiveTo__c, AXF_CTV_PKL_Status__c, AXF_CTV_NUM_Version__c, AXF_CTV_LKP_SuccessorTermVersion__c
+        FROM AXF_OBJ_ContractTermVersion__c
+        WHERE AXF_CTV_LKP_Contract__c = :tv.AXF_CTV_LKP_Contract__c
+          AND AXF_CTV_PKL_Status__c = :STATUS_ACTIVE
+          AND Id != :tv.Id
+      ];
+
+      for (AXF_OBJ_ContractTermVersion__c pred : activePredecessors) {
+        pred.AXF_CTV_PKL_Status__c = STATUS_SUPERSEDED;
+        pred.AXF_CTV_DAT_EffectiveTo__c = tv.AXF_CTV_DAT_EffectiveFrom__c;
+        pred.AXF_CTV_LKP_SuccessorTermVersion__c = tv.Id;
+        pred.AXF_CTV_NUM_Version__c = pred.AXF_CTV_NUM_Version__c + 1;
+      }
+      if (!activePredecessors.isEmpty()) {
+        update activePredecessors;
+        tv.AXF_CTV_LKP_PredecessorTermVersion__c = activePredecessors[0].Id;
+      }
+
+      // Ativa a nova versao
+      tv.AXF_CTV_PKL_Status__c = STATUS_ACTIVE;
+      tv.AXF_CTV_TXT_BlockedReason__c = null;
+      tv.AXF_CTV_NUM_Version__c = tv.AXF_CTV_NUM_Version__c + 1;
+      update tv;
+
+      // Atualiza e bloqueia o Contract aggregate root
+      AXF_OBJ_Contract__c contract = [
+        SELECT Id, AXF_CTR_PKL_Lifecycle__c, AXF_CTR_NUM_Version__c, AXF_CTR_LKP_ActiveTermVersion__c
+        FROM AXF_OBJ_Contract__c
+        WHERE Id = :tv.AXF_CTV_LKP_Contract__c
+        LIMIT 1
+      ];
+      contract.AXF_CTR_LKP_ActiveTermVersion__c = tv.Id;
+      if (contract.AXF_CTR_PKL_Lifecycle__c == 'DRAFT') {
+        contract.AXF_CTR_PKL_Lifecycle__c = 'ACTIVE';
+      }
+      contract.AXF_CTR_NUM_Version__c = contract.AXF_CTR_NUM_Version__c + 1;
+      update contract;
+
+    } catch (Exception e) {
+      Database.rollback(sp);
+      throw e;
+    }
 
     OperationResultDTO result = new OperationResultDTO();
     result.success = true;
@@ -640,7 +883,12 @@ public with sharing class ALT_CLS_ContractRemunerationService {
         AXF_CTV_PKL_ProportionalityPolicy__c,
         AXF_CTV_TXT_TimeZone__c,
         AXF_CTV_TXT_CalendarPolicy__c,
+        AXF_CTV_PKL_RenewalPolicy__c,
+        AXF_CTV_PKL_Confidence__c,
         AXF_CTV_LKP_PreferredBankAccount__c,
+        AXF_CTV_LKP_PreferredBankAccount__r.Name,
+        AXF_CTV_LKP_PredecessorTermVersion__c,
+        AXF_CTV_LKP_SuccessorTermVersion__c,
         AXF_CTV_TXT_BlockedReason__c,
         AXF_CTV_NUM_Version__c,
         CreatedDate,
@@ -667,6 +915,7 @@ public with sharing class ALT_CLS_ContractRemunerationService {
       dto.currencyIsoCode = tv.AXF_CTV_TXT_CurrencyIsoCode__c;
       dto.effectiveFrom = tv.AXF_CTV_DAT_EffectiveFrom__c;
       dto.effectiveTo = tv.AXF_CTV_DAT_EffectiveTo__c;
+      dto.intervalLabel = formatInterval(tv.AXF_CTV_DAT_EffectiveFrom__c, tv.AXF_CTV_DAT_EffectiveTo__c);
       dto.contractedAmount = tv.AXF_CTV_CUR_ContractedAmount__c;
       dto.rate = tv.AXF_CTV_CUR_Rate__c;
       dto.hoursQuantity = tv.AXF_CTV_NUM_HoursQuantity__c;
@@ -674,7 +923,12 @@ public with sharing class ALT_CLS_ContractRemunerationService {
       dto.proportionalityPolicy = tv.AXF_CTV_PKL_ProportionalityPolicy__c;
       dto.timeZone = tv.AXF_CTV_TXT_TimeZone__c;
       dto.calendarPolicy = tv.AXF_CTV_TXT_CalendarPolicy__c;
+      dto.renewalPolicy = tv.AXF_CTV_PKL_RenewalPolicy__c;
+      dto.confidence = tv.AXF_CTV_PKL_Confidence__c;
       dto.preferredBankAccountId = tv.AXF_CTV_LKP_PreferredBankAccount__c;
+      dto.preferredBankAccountName = tv.AXF_CTV_LKP_PreferredBankAccount__r.Name;
+      dto.predecessorTermVersionId = tv.AXF_CTV_LKP_PredecessorTermVersion__c;
+      dto.successorTermVersionId = tv.AXF_CTV_LKP_SuccessorTermVersion__c;
       dto.blockedReason = tv.AXF_CTV_TXT_BlockedReason__c;
       dto.version = (tv.AXF_CTV_NUM_Version__c != null) ? tv.AXF_CTV_NUM_Version__c.longValue() : 0;
       dto.createdDate = tv.CreatedDate;
@@ -682,6 +936,42 @@ public with sharing class ALT_CLS_ContractRemunerationService {
       dtos.add(dto);
     }
     return dtos;
+  }
+
+  /**
+   * @description Formata intervalo semiaberto [inicio, fim).
+   */
+  public static String formatInterval(Date fromDate, Date toDate) {
+    String fromStr = formatDate(fromDate);
+    String toStr = (toDate != null) ? formatDate(toDate) : 'indefinido';
+    return '[' + fromStr + ', ' + toStr + ')';
+  }
+
+  /**
+   * @description Formata data como YYYY-MM-DD.
+   */
+  public static String formatDate(Date d) {
+    if (d == null) {
+      return '';
+    }
+    String m = (d.month() < 10) ? '0' + d.month() : String.valueOf(d.month());
+    String day = (d.day() < 10) ? '0' + d.day() : String.valueOf(d.day());
+    return d.year() + '-' + m + '-' + day;
+  }
+
+  /**
+   * @description Constrói resumo textual do modelo de remuneração.
+   */
+  public static String buildRemunerationSummary(AXF_OBJ_ContractTermVersion__c tv) {
+    String curr = String.isNotBlank(tv.AXF_CTV_TXT_CurrencyIsoCode__c) ? tv.AXF_CTV_TXT_CurrencyIsoCode__c : 'BRL';
+    if (tv.AXF_CTV_PKL_RemunerationModel__c == MODEL_MONTHLY) {
+      return curr + ' ' + tv.AXF_CTV_CUR_Rate__c + ' / mes (Politica: ' + tv.AXF_CTV_PKL_ProportionalityPolicy__c + ')';
+    } else if (tv.AXF_CTV_PKL_RemunerationModel__c == MODEL_HOURLY) {
+      return curr + ' ' + tv.AXF_CTV_CUR_Rate__c + ' / hora (' + tv.AXF_CTV_NUM_HoursQuantity__c + 'h estimadas)';
+    } else if (tv.AXF_CTV_PKL_RemunerationModel__c == MODEL_FIXED) {
+      return curr + ' ' + tv.AXF_CTV_CUR_ContractedAmount__c + ' fixo em ' + tv.AXF_CTV_NUM_Installments__c + ' parcelas';
+    }
+    return tv.AXF_CTV_PKL_RemunerationModel__c;
   }
 
   /**
@@ -703,7 +993,6 @@ public with sharing class ALT_CLS_ContractRemunerationService {
     }
     try {
       TimeZone resolved = TimeZone.getTimeZone(tz.trim());
-      // No Apex, getTimeZone retorna GMT se for desconhecido
       if (resolved.getID().equalsIgnoreCase('GMT') && !tz.trim().equalsIgnoreCase('GMT') && !tz.trim().equalsIgnoreCase('UTC')) {
         return false;
       }

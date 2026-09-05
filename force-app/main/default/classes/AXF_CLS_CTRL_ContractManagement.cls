@@ -164,16 +164,34 @@ public with sharing class AXF_CLS_CTRL_ContractManagement {
   }
 
   /**
-   * @description Tenta ativar uma versao de termo contratual (AXF-54).
+   * @description Consulta dados de revisao formal de uma versao de termo (AXF-53, AC 1).
    */
-  @AuraEnabled
-  public static ALT_CLS_ContractRemunerationService.OperationResultDTO activateTermVersion(Id termVersionId, Id accountId) {
+  @AuraEnabled(cacheable=true)
+  public static ALT_CLS_ContractRemunerationService.TermVersionReviewDTO getTermVersionReview(Id termVersionId, Id accountId) {
     try {
       if (termVersionId == null) {
         throw new AuraHandledException('ID da versao de termo e obrigatorio.');
       }
       ALT_CLS_ContractRemunerationService service = new ALT_CLS_ContractRemunerationService();
-      return service.activateTermVersion(termVersionId, accountId);
+      return service.getTermVersionReview(termVersionId, accountId);
+    } catch (AuraHandledException ahe) {
+      throw ahe;
+    } catch (Exception e) {
+      throw new AuraHandledException(e.getMessage());
+    }
+  }
+
+  /**
+   * @description Tenta ativar uma versao de termo contratual com validacao de concorrencia e retroatividade (AXF-54, AXF-53).
+   */
+  @AuraEnabled
+  public static ALT_CLS_ContractRemunerationService.OperationResultDTO activateTermVersion(Id termVersionId, Id accountId, Long expectedContractVersion, Long expectedTermVersion) {
+    try {
+      if (termVersionId == null) {
+        throw new AuraHandledException('ID da versao de termo e obrigatorio.');
+      }
+      ALT_CLS_ContractRemunerationService service = new ALT_CLS_ContractRemunerationService();
+      return service.activateTermVersion(termVersionId, accountId, expectedContractVersion, expectedTermVersion);
     } catch (AuraHandledException ahe) {
       throw ahe;
     } catch (Exception e) {

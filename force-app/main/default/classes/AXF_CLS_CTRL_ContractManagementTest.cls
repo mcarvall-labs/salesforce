@@ -155,8 +155,13 @@ private class AXF_CLS_CTRL_ContractManagementTest {
     Assert.isTrue(preview.success, 'Calculo de preview com sucesso');
     Assert.areEqual(3, preview.scheduleItems.size(), '3 parcelas calculadas');
 
-    // 4. Ativa termo
-    ALT_CLS_ContractRemunerationService.OperationResultDTO actRes = AXF_CLS_CTRL_ContractManagement.activateTermVersion(saveTvRes.termVersionId, acc.Id);
+    // 4. Consulta revisao formal (AXF-53, AC 1)
+    ALT_CLS_ContractRemunerationService.TermVersionReviewDTO review = AXF_CLS_CTRL_ContractManagement.getTermVersionReview(saveTvRes.termVersionId, acc.Id);
+    Assert.isNotNull(review, 'Review nao pode ser nula');
+    Assert.isNotNull(review.intervalLabel, 'Intervalo deve estar formatado');
+
+    // 5. Ativa termo com controle de concorrencia (AXF-53, AC 2)
+    ALT_CLS_ContractRemunerationService.OperationResultDTO actRes = AXF_CLS_CTRL_ContractManagement.activateTermVersion(saveTvRes.termVersionId, acc.Id, 1, 1);
     Assert.isTrue(actRes.success, 'Ativacao com sucesso');
     Assert.areEqual('ACTIVE', actRes.status);
     Test.stopTest();
@@ -214,7 +219,14 @@ private class AXF_CLS_CTRL_ContractManagementTest {
     }
 
     try {
-      AXF_CLS_CTRL_ContractManagement.activateTermVersion(null, null);
+      AXF_CLS_CTRL_ContractManagement.getTermVersionReview(null, null);
+      Assert.fail('Deveria falhar');
+    } catch (AuraHandledException e) {
+      Assert.isNotNull(e);
+    }
+
+    try {
+      AXF_CLS_CTRL_ContractManagement.activateTermVersion(null, null, null, null);
       Assert.fail('Deveria falhar');
     } catch (AuraHandledException e) {
       Assert.isNotNull(e);

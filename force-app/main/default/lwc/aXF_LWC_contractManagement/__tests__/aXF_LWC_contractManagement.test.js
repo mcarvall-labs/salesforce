@@ -10,6 +10,7 @@ import getTermVersions from "@salesforce/apex/AXF_CLS_CTRL_ContractManagement.ge
 import saveDraftTermVersion from "@salesforce/apex/AXF_CLS_CTRL_ContractManagement.saveDraftTermVersion";
 import calculateSchedulePreview from "@salesforce/apex/AXF_CLS_CTRL_ContractManagement.calculateSchedulePreview";
 import activateTermVersion from "@salesforce/apex/AXF_CLS_CTRL_ContractManagement.activateTermVersion";
+import getTermVersionReview from "@salesforce/apex/AXF_CLS_CTRL_ContractManagement.getTermVersionReview";
 
 jest.mock(
   "@salesforce/apex/AXF_CLS_CTRL_ContractManagement.getAuthorizedEntities",
@@ -69,6 +70,12 @@ jest.mock(
 );
 
 jest.mock(
+  "@salesforce/apex/AXF_CLS_CTRL_ContractManagement.getTermVersionReview",
+  () => ({ default: jest.fn() }),
+  { virtual: true }
+);
+
+jest.mock(
   "@salesforce/apex/AXF_CLS_CTRL_ContractManagement.activateTermVersion",
   () => ({ default: jest.fn() }),
   { virtual: true }
@@ -121,6 +128,32 @@ const MOCK_DETAIL = {
   endDate: "2027-08-31",
   version: 1,
   description: "Descricao detalhada"
+};
+
+
+const MOCK_REVIEW = {
+  termVersionId: "a04000000000001AAA",
+  termNumber: "CTV-001",
+  contractId: "a03000000000001AAA",
+  contractCode: "CTR-001",
+  contractVersion: 1,
+  revision: 1,
+  status: "DRAFT",
+  intervalLabel: "[2026-09-01, 2027-08-31)",
+  currencyIsoCode: "BRL",
+  remunerationModel: "MONTHLY",
+  remunerationSummary: "BRL 5000 / mes (Politica: CALENDAR_DAYS)",
+  rate: 5000,
+  calendarPolicy: "BUSINESS_DAYS_BRAZIL",
+  timeZone: "America/Sao_Paulo",
+  renewalPolicy: "AUTOMATIC",
+  confidence: "HIGH",
+  preferredBankAccountName: "Banco Itau - Conta Corrente",
+  version: 1,
+  deltaDescription: "[PRIMEIRA ATIVACAO] Primeira versao ativa do contrato.",
+  timelineLabels: [
+    "[NOVO/ATIVO] Revisao 1 [2026-09-01, 2027-08-31)"
+  ]
 };
 
 const MOCK_TERMS = [
@@ -260,6 +293,99 @@ describe("c-a-x-f-_-l-w-c_contract-management", () => {
     expect(activateTermVersion).toHaveBeenCalledWith({
       termVersionId: "a04000000000001AAA",
       accountId: "001000000000001AAA"
+    });
+  });
+  it("handles formal review modal opening and displays non-color timeline and delta", async () => {
+    getActiveRelationships.mockResolvedValue(MOCK_RELATIONSHIPS);
+    getContracts.mockResolvedValue(MOCK_CONTRACTS);
+    getContractDetail.mockResolvedValue(MOCK_DETAIL);
+    getTermVersions.mockResolvedValue(MOCK_TERMS);
+    getTermVersionReview.mockResolvedValue(MOCK_REVIEW);
+
+    const element = createElement("c-axf-lwc-contract-management", {
+      is: AXF_LWC_contractManagement
+    });
+    document.body.appendChild(element);
+
+    getAuthorizedEntities.emit(MOCK_ENTITIES);
+    await Promise.resolve();
+    await new Promise(process.nextTick);
+    await new Promise(process.nextTick);
+
+    const selectRow = element.shadowRoot.querySelector("tr[data-id='a03000000000001AAA']");
+    selectRow.click();
+    await new Promise(process.nextTick);
+    await new Promise(process.nextTick);
+    await new Promise(process.nextTick);
+
+    const reviewBtn = element.shadowRoot.querySelector("lightning-button[data-testid='review-term-btn']");
+    expect(reviewBtn).not.toBeNull();
+    reviewBtn.click();
+    await new Promise(process.nextTick);
+    await new Promise(process.nextTick);
+
+    expect(getTermVersionReview).toHaveBeenCalledWith({
+      termVersionId: "a04000000000001AAA",
+      accountId: "001000000000001AAA"
+    });
+
+    const modal = element.shadowRoot.querySelector("section[data-testid='review-modal']");
+    expect(modal).not.toBeNull();
+
+    const intervalBadge = element.shadowRoot.querySelector("[data-testid='review-interval-badge']");
+    expect(intervalBadge.textContent).toContain("[2026-09-01, 2027-08-31)");
+
+    const deltaDesc = element.shadowRoot.querySelector("[data-testid='review-delta-desc']");
+    expect(deltaDesc.textContent).toContain("PRIMEIRA ATIVACAO");
+
+    const timelineList = element.shadowRoot.querySelector("[data-testid='review-timeline-list']");
+    expect(timelineList).not.toBeNull();
+  });
+
+  it("confirms activation from review modal with concurrency checks", async () => {
+    getActiveRelationships.mockResolvedValue(MOCK_RELATIONSHIPS);
+    getContracts.mockResolvedValue(MOCK_CONTRACTS);
+    getContractDetail.mockResolvedValue(MOCK_DETAIL);
+    getTermVersions.mockResolvedValue(MOCK_TERMS);
+    getTermVersionReview.mockResolvedValue(MOCK_REVIEW);
+    activateTermVersion.mockResolvedValue({
+      success: true,
+      status: "ACTIVE",
+      message: "Versao de termo ativada com sucesso."
+    });
+
+    const element = createElement("c-axf-lwc-contract-management", {
+      is: AXF_LWC_contractManagement
+    });
+    document.body.appendChild(element);
+
+    getAuthorizedEntities.emit(MOCK_ENTITIES);
+    await Promise.resolve();
+    await new Promise(process.nextTick);
+    await new Promise(process.nextTick);
+
+    const selectRow = element.shadowRoot.querySelector("tr[data-id='a03000000000001AAA']");
+    selectRow.click();
+    await new Promise(process.nextTick);
+    await new Promise(process.nextTick);
+    await new Promise(process.nextTick);
+
+    const reviewBtn = element.shadowRoot.querySelector("lightning-button[data-testid='review-term-btn']");
+    reviewBtn.click();
+    await new Promise(process.nextTick);
+    await new Promise(process.nextTick);
+
+    const confirmBtn = element.shadowRoot.querySelector("lightning-button[data-testid='confirm-activation-btn']");
+    expect(confirmBtn).not.toBeNull();
+    confirmBtn.click();
+    await new Promise(process.nextTick);
+    await new Promise(process.nextTick);
+
+    expect(activateTermVersion).toHaveBeenCalledWith({
+      termVersionId: "a04000000000001AAA",
+      accountId: "001000000000001AAA",
+      expectedContractVersion: 1,
+      expectedTermVersion: 1
     });
   });
 });

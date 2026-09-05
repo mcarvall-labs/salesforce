@@ -9,6 +9,7 @@ import getTermVersions from "@salesforce/apex/AXF_CLS_CTRL_ContractManagement.ge
 import saveDraftTermVersion from "@salesforce/apex/AXF_CLS_CTRL_ContractManagement.saveDraftTermVersion";
 import calculateSchedulePreview from "@salesforce/apex/AXF_CLS_CTRL_ContractManagement.calculateSchedulePreview";
 import activateTermVersion from "@salesforce/apex/AXF_CLS_CTRL_ContractManagement.activateTermVersion";
+import getTermVersionReview from "@salesforce/apex/AXF_CLS_CTRL_ContractManagement.getTermVersionReview";
 import { ShowToastEvent } from "lightning/platformShowToastEvent";
 
 export default class AXF_LWC_contractManagement extends LightningElement {
@@ -28,6 +29,8 @@ export default class AXF_LWC_contractManagement extends LightningElement {
   @track termVersions = [];
   @track isTermModalOpen = false;
   @track schedulePreview = null;
+  @track isReviewModalOpen = false;
+  @track reviewData = null;
   @track termForm = {
     termVersionId: null,
     contractId: null,
@@ -478,5 +481,61 @@ export default class AXF_LWC_contractManagement extends LightningElement {
     if (error.body && error.body.message) return error.body.message;
     if (error.message) return error.message;
     return JSON.stringify(error);
+  }
+  // --- METODOS DE REVISAO FORMAL E ATIVACAO (AXF-53) ---
+
+  async handleOpenReviewModal(event) {
+    const termVersionId = event.target.dataset.id;
+    if (!termVersionId) return;
+
+    this.isLoading = true;
+    try {
+      const data = await getTermVersionReview({
+        termVersionId: termVersionId,
+        accountId: this.selectedAccountId
+      });
+      this.reviewData = data;
+      this.isReviewModalOpen = true;
+    } catch (error) {
+      const msg = error.body ? error.body.message : error.message;
+      this.showToast("Erro ao carregar revisao", msg, "error");
+    } finally {
+      this.isLoading = false;
+    }
+  }
+
+  handleCloseReviewModal() {
+    this.isReviewModalOpen = false;
+    this.reviewData = null;
+  }
+
+  async handleConfirmReviewActivation() {
+    if (!this.reviewData) return;
+
+    this.isLoading = true;
+    try {
+      const result = await activateTermVersion({
+        termVersionId: this.reviewData.termVersionId,
+        accountId: this.selectedAccountId,
+        expectedContractVersion: this.reviewData.contractVersion,
+        expectedTermVersion: this.reviewData.version
+      });
+
+      if (result.success) {
+        this.showToast("Sucesso", result.message, "success");
+        this.handleCloseReviewModal();
+        await this.loadTermVersions(this.selectedContractId);
+        await this.loadContractDetail(this.selectedContractId);
+      } else {
+        this.showToast("Ativacao Bloqueada", result.message, "warning");
+        this.handleCloseReviewModal();
+        await this.loadTermVersions(this.selectedContractId);
+      }
+    } catch (error) {
+      const msg = error.body ? error.body.message : error.message;
+      this.showToast("Erro na ativacao", msg, "error");
+    } finally {
+      this.isLoading = false;
+    }
   }
 }

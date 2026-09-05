@@ -831,6 +831,31 @@
         <field>AXF_OBJ_ContractTermVersion__c.AXF_CTV_TXT_TimeZone__c</field>
         <readable>true</readable>
     </fieldPermissions>
+    <fieldPermissions>
+        <editable>true</editable>
+        <field>AXF_OBJ_ContractTermVersion__c.AXF_CTV_PKL_RenewalPolicy__c</field>
+        <readable>true</readable>
+    </fieldPermissions>
+    <fieldPermissions>
+        <editable>true</editable>
+        <field>AXF_OBJ_ContractTermVersion__c.AXF_CTV_PKL_Confidence__c</field>
+        <readable>true</readable>
+    </fieldPermissions>
+    <fieldPermissions>
+        <editable>true</editable>
+        <field>AXF_OBJ_ContractTermVersion__c.AXF_CTV_LKP_PredecessorTermVersion__c</field>
+        <readable>true</readable>
+    </fieldPermissions>
+    <fieldPermissions>
+        <editable>true</editable>
+        <field>AXF_OBJ_ContractTermVersion__c.AXF_CTV_LKP_SuccessorTermVersion__c</field>
+        <readable>true</readable>
+    </fieldPermissions>
+    <fieldPermissions>
+        <editable>true</editable>
+        <field>AXF_OBJ_Contract__c.AXF_CTR_LKP_ActiveTermVersion__c</field>
+        <readable>true</readable>
+    </fieldPermissions>
     <recordTypeVisibilities>
         <recordType>Account.AXF_Business</recordType>
         <visible>true</visible>

@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<CustomField xmlns="http://soap.sforce.com/2006/04/metadata">
+    <fullName>AXF_CTR_LKP_ActiveTermVersion__c</fullName>
+    <deleteConstraint>SetNull</deleteConstraint>
+    <description>Versao de termo contratual autoritativa e ativa atualmente no contrato.</description>
+    <label>Versao de Termo Ativa</label>
+    <referenceTo>AXF_OBJ_ContractTermVersion__c</referenceTo>
+    <relationshipLabel>Contratos Com Esta Versao Ativa</relationshipLabel>
+    <relationshipName>ActiveContracts</relationshipName>
+    <required>false</required>
+    <type>Lookup</type>
+</CustomField>

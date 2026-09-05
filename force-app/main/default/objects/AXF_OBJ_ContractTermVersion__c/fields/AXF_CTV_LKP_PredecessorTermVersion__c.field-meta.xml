@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<CustomField xmlns="http://soap.sforce.com/2006/04/metadata">
+    <fullName>AXF_CTV_LKP_PredecessorTermVersion__c</fullName>
+    <deleteConstraint>SetNull</deleteConstraint>
+    <description>Versao de termo predecessora imediata que foi substituida por esta.</description>
+    <label>Versao Predecessora</label>
+    <referenceTo>AXF_OBJ_ContractTermVersion__c</referenceTo>
+    <relationshipLabel>Versoes Sucessoras</relationshipLabel>
+    <relationshipName>SuccessorTermVersions</relationshipName>
+    <required>false</required>
+    <type>Lookup</type>
+</CustomField>

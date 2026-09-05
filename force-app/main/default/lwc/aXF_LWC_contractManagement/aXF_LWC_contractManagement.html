@@ -273,14 +273,25 @@
                         </template>
                       </div>
                       <template lwc:if={tv.canActivate}>
-                        <lightning-button
-                          data-testid="activate-term-btn"
-                          data-id={tv.termVersionId}
-                          label="Ativar"
-                          variant="success"
-                          onclick={handleActivateTerm}
-                        >
-                        </lightning-button>
+                        <div class="slds-button-group">
+                          <lightning-button
+                            data-testid="review-term-btn"
+                            data-id={tv.termVersionId}
+                            label="Revisar e Ativar"
+                            variant="brand"
+                            onclick={handleOpenReviewModal}
+                            class="slds-m-right_xx-small"
+                          >
+                          </lightning-button>
+                          <lightning-button
+                            data-testid="activate-term-btn"
+                            data-id={tv.termVersionId}
+                            label="Ativar Direto"
+                            variant="neutral"
+                            onclick={handleActivateTerm}
+                          >
+                          </lightning-button>
+                        </div>
                       </template>
                     </div>
                     <div class="slds-text-body_small slds-m-top_xx-small">
@@ -751,5 +762,112 @@
       </section>
       <div class="slds-backdrop slds-backdrop_open"></div>
     </template>
+    <!-- Modal de Revisao Formal e Ativacao de TermVersion (AXF-53) -->
+    <template lwc:if={isReviewModalOpen}>
+      <section
+        role="dialog"
+        tabindex="-1"
+        class="slds-modal slds-fade-in-open slds-modal_medium"
+        aria-modal="true"
+        data-testid="review-modal"
+      >
+        <div class="slds-modal__container">
+          <header class="slds-modal__header">
+            <button
+              class="slds-button slds-button_icon slds-modal__close slds-button_icon-inverse"
+              title="Fechar"
+              onclick={handleCloseReviewModal}
+            >
+              <lightning-icon icon-name="utility:close" alternative-text="Fechar" size="small"></lightning-icon>
+            </button>
+            <h2 class="slds-modal__title slds-hyphenate">
+              Revisao Formal e Ativacao de Termo (AXF-53)
+            </h2>
+            <p class="slds-m-top_x-small slds-text-color_weak">
+              Termo: {reviewData.termNumber} (Revisao {reviewData.revision}) | Contrato: {reviewData.contractCode}
+            </p>
+          </header>
+          <div class="slds-modal__content slds-p-around_medium">
+            <template lwc:if={reviewData}>
+              <!-- Card de Parametros e Vigencia -->
+              <div class="slds-box slds-box_small slds-m-bottom_medium slds-theme_shade">
+                <div class="slds-grid slds-grid_align-spread slds-m-bottom_small">
+                  <h3 class="slds-text-heading_small">1. Condicoes e Vigencia Contratual</h3>
+                  <span class="slds-badge slds-theme_default font-weight-bold" data-testid="review-interval-badge">
+                    Vigencia: {reviewData.intervalLabel}
+                  </span>
+                </div>
+                <div class="slds-grid slds-wrap slds-gutters">
+                  <div class="slds-col slds-size_1-of-2 slds-m-bottom_x-small">
+                    <strong>Modelo:</strong> {reviewData.remunerationModel} ({reviewData.currencyIsoCode})
+                  </div>
+                  <div class="slds-col slds-size_1-of-2 slds-m-bottom_x-small">
+                    <strong>Remuneracao:</strong> {reviewData.remunerationSummary}
+                  </div>
+                  <div class="slds-col slds-size_1-of-2 slds-m-bottom_x-small">
+                    <strong>Calendario:</strong> {reviewData.calendarPolicy}
+                  </div>
+                  <div class="slds-col slds-size_1-of-2 slds-m-bottom_x-small">
+                    <strong>Fuso Horario:</strong> {reviewData.timeZone}
+                  </div>
+                  <div class="slds-col slds-size_1-of-2 slds-m-bottom_x-small">
+                    <strong>Renovacao:</strong> {reviewData.renewalPolicy}
+                  </div>
+                  <div class="slds-col slds-size_1-of-2 slds-m-bottom_x-small">
+                    <strong>Confianca:</strong> {reviewData.confidence}
+                  </div>
+                  <div class="slds-col slds-size_1-of-1 slds-m-bottom_x-small">
+                    <strong>Conta Bancaria Sugerida (AC 4):</strong>
+                    <template lwc:if={reviewData.preferredBankAccountName}>
+                      {reviewData.preferredBankAccountName} (Sugestao revisavel - nao altera escolhas informadas)
+                    </template>
+                    <template lwc:else>
+                      Nenhuma conta sugerida (padrao do titular)
+                    </template>
+                  </div>
+                </div>
+              </div>
+
+              <!-- Card de Timeline e Delta (AC 1, AC 2) -->
+              <div class="slds-box slds-box_small slds-m-bottom_medium">
+                <h3 class="slds-text-heading_small slds-m-bottom_small">2. Impacto e Linha do Tempo (Delta)</h3>
+                <div class="slds-m-bottom_small slds-p-around_x-small slds-theme_info">
+                  <p class="font-weight-bold" data-testid="review-delta-desc">{reviewData.deltaDescription}</p>
+                </div>
+                <div class="slds-m-bottom_small">
+                  <strong>Linha do Tempo (sem dependencia de cor):</strong>
+                  <ul class="slds-list_dotted slds-m-left_medium slds-m-top_xx-small" data-testid="review-timeline-list">
+                    <template for:each={reviewData.timelineLabels} for:item="lbl">
+                      <li key={lbl} class="slds-m-bottom_xx-small">{lbl}</li>
+                    </template>
+                  </ul>
+                </div>
+                <div class="slds-text-body_small slds-text-color_weak slds-border_top slds-p-top_x-small">
+                  <strong>Regras de Imutabilidade (AD-31):</strong> Ao confirmar a ativacao, o Contrato sera vinculado a esta versao ativa. Esta versao tornar-se-a estritamente somente leitura (read-only) e protegida contra delecao no banco de dados.
+                </div>
+              </div>
+            </template>
+          </div>
+          <footer class="slds-modal__footer">
+            <lightning-button
+              label="Cancelar"
+              variant="neutral"
+              onclick={handleCloseReviewModal}
+              class="slds-m-right_small"
+            >
+            </lightning-button>
+            <lightning-button
+              data-testid="confirm-activation-btn"
+              label="Confirmar Ativacao"
+              variant="brand"
+              onclick={handleConfirmReviewActivation}
+            >
+            </lightning-button>
+          </footer>
+        </div>
+      </section>
+      <div class="slds-backdrop slds-backdrop_open"></div>
+    </template>
   </div>
 </template>
+
