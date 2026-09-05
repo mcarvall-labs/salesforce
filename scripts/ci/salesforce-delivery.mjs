@@ -118,12 +118,17 @@ export async function run() {
   };
   let authFile;
   try {
+    const validEnvs = {
+      DEV: "develop",
+      UAT: "uat",
+      PROD: "main"
+    };
     if (
-      !["UAT", "PROD"].includes(e.TARGET_ENV) ||
+      !Object.keys(validEnvs).includes(e.TARGET_ENV) ||
       !["validate", "deploy"].includes(e.OPERATION)
     )
-      throw new Error("Only UAT/PROD pipeline operations are allowed");
-    const branch = e.TARGET_ENV === "UAT" ? "develop" : "main";
+      throw new Error("Only DEV/UAT/PROD pipeline operations are allowed");
+    const branch = validEnvs[e.TARGET_ENV];
     if (e.TARGET_BRANCH !== branch)
       throw new Error("Branch/environment mismatch");
     if (
@@ -214,6 +219,7 @@ export async function run() {
         "Authenticated Org ID does not match the configured target"
       );
     report.orgId = org.result.id;
+    const testLevel = e.TARGET_ENV === "DEV" ? "NoTestRun" : "RunLocalTests";
     const args = [
       "project",
       "deploy",
@@ -221,7 +227,7 @@ export async function run() {
       "--target-org",
       alias,
       "--test-level",
-      "RunLocalTests",
+      testLevel,
       "--wait",
       "60",
       "--json"

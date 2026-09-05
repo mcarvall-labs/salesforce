@@ -2,7 +2,7 @@ name: Salesforce CI
 
 on:
   pull_request:
-    branches: [develop, main]
+    branches: [develop, uat, main]
 
 permissions:
   contents: read
@@ -71,7 +71,7 @@ jobs:
     timeout-minutes: 150
     outputs:
       summary: ${{ steps.operation.outputs.summary }}
-    environment: ${{ needs.scope.outputs.has_metadata != 'true' && 'CI' || (github.base_ref == 'main' && 'PROD-VALIDATION' || 'UAT-VALIDATION') }}
+    environment: ${{ needs.scope.outputs.has_metadata != 'true' && 'CI' || (github.base_ref == 'main' && 'PROD-VALIDATION' || (github.base_ref == 'uat' && 'UAT-VALIDATION' || 'DEV-VALIDATION')) }}
     permissions:
       contents: read
       actions: read
@@ -95,10 +95,10 @@ jobs:
         env:
           GH_TOKEN: ${{ github.token }}
           OPERATION: validate
-          TARGET_ENV: ${{ github.base_ref == 'main' && 'PROD' || 'UAT' }}
+          TARGET_ENV: ${{ github.base_ref == 'main' && 'PROD' || (github.base_ref == 'uat' && 'UAT' || 'DEV') }}
           TARGET_BRANCH: ${{ github.base_ref }}
           PR_BASE_SHA: ${{ github.event.pull_request.base.sha }}
-          SALESFORCE_AUTH_URL: ${{ needs.scope.outputs.has_metadata == 'true' && secrets.SALESFORCE_AUTH_URL || '' }}
+          SALESFORCE_AUTH_URL: ${{ needs.scope.outputs.has_metadata == 'true' && (secrets.SALESFORCE_AUTH_URL || secrets.SALESFORCE_DEV_AUTH_URL || secrets.SALESFORCE_PROD_AUTH_URL) || '' }}
           EXPECTED_ORG_ID: ${{ vars.SALESFORCE_ORG_ID }}
           INITIAL_BASE_SHA: ${{ vars.SALESFORCE_BASE_SHA }}
           EVIDENCE_DIR: ${{ runner.temp }}/salesforce-evidence
@@ -131,7 +131,7 @@ jobs:
           script: |
             const runUrl = `${context.serverUrl}/${context.repo.owner}/${context.repo.repo}/actions/runs/${context.runId}`;
             const {data} = await github.rest.actions.listWorkflowRunArtifacts({...context.repo, run_id: context.runId});
-            const evidence = data.artifacts.filter(a => !a.expired).map(a => `[${a.name}](${runUrl}/artifacts/${a.id})`).join('\n') || 'No artifact was produced; inspect the workflow logs.';
-            const target = context.payload.pull_request.base.ref === 'main' ? 'AXON_PROD' : 'AXON_UAT';
+            const ref = context.payload.pull_request.base.ref;
+            const target = ref === 'main' ? 'AXON_PROD' : (ref === 'uat' ? 'AXON_UAT' : 'AXON_DEV');
             await github.rest.issues.createComment({...context.repo, issue_number: context.issue.number,
               body: `## Salesforce PR validation: ${target}\n\n**Validation job:** ${process.env.VALIDATION_RESULT}\n**Quality checks:** ${process.env.QUALITY_RESULT}\n**Validated merge SHA:** \`${process.env.VALIDATED_SHA}\`\n\n${process.env.SF_SUMMARY || 'Validation did not produce a report.'}\n\n[Validation summary and logs](${runUrl})\n\n### Evidence\n${evidence}\n\nValidation uses dry-run: no metadata is persisted.`});
