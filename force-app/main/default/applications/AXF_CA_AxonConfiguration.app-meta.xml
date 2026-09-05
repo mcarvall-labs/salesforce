@@ -5,7 +5,7 @@
     <brand>
         <headerColor>#021B39</headerColor>
         <logo>AxonAppLogo</logo>
-        <logoVersion>2</logoVersion>
+        <logoVersion>3</logoVersion>
         <shouldOverrideOrgTheme>true</shouldOverrideOrgTheme>
     </brand>
     <formFactors>Large</formFactors>
