@@ -7,7 +7,7 @@
   box-sizing: border-box;
   max-width: 60rem;
   margin: 0 auto;
-  padding: 0.25rem 1.5rem 2.5rem;
+  padding: 0.25rem 1.5rem 1rem;
 }
 
 /* ================= stepper ================= */
@@ -15,7 +15,7 @@
   display: flex;
   align-items: flex-start;
   gap: 0;
-  margin: 1.25rem 0 2rem;
+  margin: 1rem 0 1.25rem;
   overflow-x: auto;
   -ms-overflow-style: none;
   scrollbar-width: none;
@@ -110,7 +110,7 @@
 }
 
 .wizard__title {
-  margin: 0.25rem 0 1.25rem;
+  margin: 0.25rem 0 0.85rem;
   font-size: 1.5rem;
   font-weight: 700;
   line-height: 1.3;
@@ -147,6 +147,14 @@
 
 /* ================= content ================= */
 .wizard__card {
+  display: flex;
+  flex-direction: column;
+  /* keep the whole step (incl. the Back/Next footer) within the viewport so
+     the page itself never gets a scrollbar; long content scrolls in the body.
+     ~30rem ≈ the fixed chrome above the card (Lightning header + page header +
+     stepper + step title) — it stays roughly constant as the viewport grows. */
+  max-height: calc(100vh - 30rem);
+  min-height: 16rem;
   border: 1px solid var(--slds-g-color-border-base-1, #e5e5e5);
   border-radius: 0.75rem;
   background: var(--slds-g-color-neutral-base-100, #fff);
@@ -157,6 +165,9 @@
 }
 
 .wizard__body {
+  flex: 1 1 auto;
+  min-height: 0;
+  overflow-y: auto;
   padding: 1.75rem 2rem;
 }
 
@@ -184,9 +195,7 @@
   flex: 0 0 22rem;
   max-width: 22rem;
   position: sticky;
-  top: 0.5rem;
-  max-height: calc(100vh - 11rem);
-  overflow: auto;
+  top: 0;
 }
 
 @media (max-width: 60rem) {
@@ -267,7 +276,7 @@
 
 @media (max-width: 48rem) {
   .wizard {
-    padding: 0.25rem 1rem 2rem;
+    padding: 0.25rem 1rem 1rem;
   }
   .wizard__body,
   .wizard__nav {
