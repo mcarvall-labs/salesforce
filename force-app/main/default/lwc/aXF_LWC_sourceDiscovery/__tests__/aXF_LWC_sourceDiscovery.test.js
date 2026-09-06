@@ -52,6 +52,14 @@ describe("c-aXF_LWC_sourceDiscovery", () => {
     expect(el.shadowRoot.querySelector("lightning-spinner")).not.toBeNull();
   });
 
+  it("shows guidance instead of an endless spinner when no connection is set", async () => {
+    const el = createElement("c-a-x-f_-l-w-c_source-discovery", { is: Disc });
+    document.body.appendChild(el);
+    await flush();
+    expect(el.shadowRoot.querySelector("lightning-spinner")).toBeNull();
+    expect(el.shadowRoot.textContent).toMatch(/Nenhuma conexão Pluggy registrada/i);
+  });
+
   it("offers 'Descobrir agora' and explains no history / no holder", async () => {
     const el = build();
     getStatus.emit({ state: null, complete: false });

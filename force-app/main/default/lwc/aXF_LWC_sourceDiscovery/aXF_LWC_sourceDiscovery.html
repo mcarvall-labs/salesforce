@@ -1,6 +1,15 @@
 <template>
   <lightning-card title={labels.TITLE} icon-name="standard:multi_picklist">
     <div class="slds-p-horizontal_medium slds-p-bottom_medium">
+      <template lwc:if={isNoConnection}>
+        <p
+          class="slds-text-body_regular slds-text-color_weak"
+          role="status"
+        >
+          {labels.NO_CONNECTION}
+        </p>
+      </template>
+
       <template lwc:if={isLoading}>
         <lightning-spinner
           alternative-text="Carregando"

@@ -23,7 +23,9 @@ const L = {
   AVAILABLE: "Disponível",
   BANK: "Conta",
   CARD: "Cartão",
-  GENERIC_FAIL: "A descoberta não foi concluída."
+  GENERIC_FAIL: "A descoberta não foi concluída.",
+  NO_CONNECTION:
+    "Nenhuma conexão Pluggy registrada ainda. Gere o Item ID no painel da Pluggy (use o guia da etapa anterior) e registre a conexão bancária para habilitar a descoberta de contas e cartões. Você pode avançar e concluir esta etapa depois."
 };
 
 const STATE = { LOADING: "LOADING", READY: "READY", ERROR: "ERROR" };
@@ -76,8 +78,16 @@ export default class AxfSourceDiscovery extends LightningElement {
     }));
   }
 
+  get hasConnection() {
+    return !!this.connectionId;
+  }
+  get isNoConnection() {
+    return !this.connectionId;
+  }
   get isLoading() {
-    return this.uiState === STATE.LOADING;
+    // Without a connectionId the wires never fire, so never sit on the spinner —
+    // render the "no connection registered" guidance instead (AXF-84 AC4).
+    return this.uiState === STATE.LOADING && this.hasConnection;
   }
   get isError() {
     return this.uiState === STATE.ERROR;
