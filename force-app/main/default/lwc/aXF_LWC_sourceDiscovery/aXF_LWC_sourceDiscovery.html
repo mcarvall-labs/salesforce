@@ -1,13 +1,14 @@
 <template>
   <lightning-card title={labels.TITLE} icon-name="standard:multi_picklist">
     <div class="slds-p-horizontal_medium slds-p-bottom_medium">
-      <template lwc:if={isNoConnection}>
+      <template lwc:if={multiMode}>
         <p
-          class="slds-text-body_regular slds-text-color_weak slds-m-bottom_small"
+          class="slds-text-body_small slds-text-color_weak slds-m-bottom_small"
           role="status"
         >
-          {labels.NO_CONNECTION}
+          {labels.MULTI_INTRO}
         </p>
+
         <lightning-input
           type="text"
           label={labels.ITEM_ID_LABEL}
@@ -19,7 +20,7 @@
         ></lightning-input>
         <lightning-button
           label={labels.REGISTER}
-          variant="brand"
+          variant="brand-outline"
           disabled={registerDisabled}
           onclick={handleRegister}
         ></lightning-button>
@@ -28,6 +29,59 @@
             {labels.REGISTERING}
           </p>
         </template>
+
+        <template lwc:if={hasConnections}>
+          <table
+            class="slds-table slds-table_bordered slds-m-top_medium slds-m-bottom_small"
+          >
+            <thead>
+              <tr class="slds-line-height_reset">
+                <th scope="col">{labels.COL_CONN}</th>
+                <th scope="col">{labels.COL_CONSENT}</th>
+                <th scope="col">{labels.COL_STATUS}</th>
+                <th scope="col">{labels.COL_FOUND}</th>
+              </tr>
+            </thead>
+            <tbody>
+              <template for:each={connections} for:item="c">
+                <tr key={c.key}>
+                  <td>
+                    {c.name}
+                    <span class="slds-text-color_weak">({c.itemIdHint})</span>
+                  </td>
+                  <td>
+                    <template lwc:if={c.consentWarn}>
+                      <span class="slds-text-color_error"
+                        >{c.consentLabel}</span
+                      >
+                    </template>
+                    <template lwc:else>{c.consentLabel}</template>
+                  </td>
+                  <td>{c.runLabel}</td>
+                  <td>{c.found}</td>
+                </tr>
+              </template>
+            </tbody>
+          </table>
+
+          <lightning-button
+            label={labels.DISCOVER_ALL}
+            variant="brand"
+            disabled={discoverAllDisabled}
+            onclick={handleDiscoverAll}
+          ></lightning-button>
+          <template lwc:if={running}>
+            <p class="slds-m-top_x-small slds-text-color_weak" role="status">
+              {labels.DISCOVERING}
+            </p>
+          </template>
+        </template>
+        <template lwc:else>
+          <p class="slds-m-top_small slds-text-color_weak" role="status">
+            {labels.NO_CONNECTIONS_YET}
+          </p>
+        </template>
+
         <template lwc:if={feedback}>
           <div class="slds-m-top_small" role="status" aria-live="polite">
             <lightning-formatted-text

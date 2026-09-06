@@ -17,11 +17,27 @@ export const OFFICIAL_LINKS = {
   dashboard: "https://dashboard.pluggy.ai/"
 };
 
+/**
+ * `phase` splits the guide in two (AXF-89 revisão / AXF-98):
+ *  - "credentials" — shown on the wizard's Pluggy credentials step: create the
+ *    MeuPluggy account, connect the banks via Open Finance, create the Pluggy
+ *    application, copy Client ID + Client Secret.
+ *  - "discovery" — shown on the wizard's "find accounts and cards" step: copy the
+ *    Item ID of EACH connection, history period, background import, limitations.
+ * The component renders only the steps of its current `phase`.
+ */
 export const STEPS = [
-  { id: "intro", link: null, action: null, media: null },
-  { id: "meupluggyAccount", link: "meupluggy", action: null, media: null },
+  { id: "intro", phase: "credentials", link: null, action: null, media: null },
+  {
+    id: "meupluggyAccount",
+    phase: "credentials",
+    link: "meupluggy",
+    action: null,
+    media: null
+  },
   {
     id: "meupluggyConnect",
+    phase: "credentials",
     link: "meupluggy",
     action: null,
     media: "meu-pluggy",
@@ -29,12 +45,14 @@ export const STEPS = [
   },
   {
     id: "dashboardApp",
+    phase: "credentials",
     link: "dashboard",
     action: null,
     media: "criar-aplicacao"
   },
   {
     id: "dashboardConnect",
+    phase: "credentials",
     link: "dashboard",
     action: null,
     media: "aplicacao",
@@ -42,20 +60,53 @@ export const STEPS = [
   },
   {
     id: "credentials",
+    phase: "credentials",
     link: "dashboard",
     action: "openSecureForm",
     media: "credenciais",
     help: true
   },
   {
+    id: "discoveryIntro",
+    phase: "discovery",
+    link: null,
+    action: null,
+    media: null
+  },
+  {
     id: "itemId",
+    phase: "discovery",
     link: "dashboard",
     action: null,
     media: "copiar-item-id",
     help: true
   },
-  { id: "historyPeriod", link: null, action: null, media: null },
-  { id: "backgroundImport", link: null, action: null, media: null },
-  { id: "limitations", link: null, action: null, media: null },
-  { id: "done", link: null, action: null, media: null }
+  {
+    id: "historyPeriod",
+    phase: "discovery",
+    link: null,
+    action: null,
+    media: null
+  },
+  {
+    id: "backgroundImport",
+    phase: "discovery",
+    link: null,
+    action: null,
+    media: null
+  },
+  {
+    id: "limitations",
+    phase: "discovery",
+    link: null,
+    action: null,
+    media: null
+  },
+  { id: "done", phase: "discovery", link: null, action: null, media: null }
 ];
+
+/** The ordered step list for one phase. */
+export function stepsForPhase(phase) {
+  const p = phase === "discovery" ? "discovery" : "credentials";
+  return STEPS.filter((s) => s.phase === p);
+}

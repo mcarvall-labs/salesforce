@@ -110,7 +110,7 @@
               <template lwc:if={showWelcome}>
                 <p class="wizard__welcome">{labels.welcome}</p>
               </template>
-              <template lwc:if={showPluggyGuide}>
+              <template lwc:if={showGuideBar}>
                 <div class="wizard__guide-bar">
                   <lightning-button
                     variant="brand-outline"
@@ -120,39 +120,42 @@
                     onclick={openGuide}
                   ></lightning-button>
                 </div>
+              </template>
+              <template lwc:if={showPluggyGuide}>
                 <c-a-x-f_-l-w-c_pluggy-integration-config
                   onstatuschange={handlePluggyStatusChange}
                 ></c-a-x-f_-l-w-c_pluggy-integration-config>
-
-                <template lwc:if={guideOpen}>
-                  <section
-                    class="wizard__modal"
-                    role="dialog"
-                    aria-modal="true"
-                    aria-label={labels.guideOpen}
-                    onclick={handleGuideBackdrop}
-                    onkeydown={handleGuideKeydown}
-                  >
-                    <div class="wizard__modal-box">
-                      <button
-                        class="wizard__modal-close"
-                        type="button"
-                        title={labels.guideClose}
-                        aria-label={labels.guideClose}
-                        onclick={closeGuide}
-                      >
-                        &times;
-                      </button>
-                      <c-a-x-f_-l-w-c_pluggy-guide
-                        onguidecomplete={closeGuide}
-                        onopensecureform={closeGuide}
-                      ></c-a-x-f_-l-w-c_pluggy-guide>
-                    </div>
-                  </section>
-                </template>
               </template>
               <template lwc:if={showDiscovery}>
                 <c-a-x-f_-l-w-c_source-discovery></c-a-x-f_-l-w-c_source-discovery>
+              </template>
+
+              <template lwc:if={guideOpen}>
+                <section
+                  class="wizard__modal"
+                  role="dialog"
+                  aria-modal="true"
+                  aria-label={labels.guideOpen}
+                  onclick={handleGuideBackdrop}
+                  onkeydown={handleGuideKeydown}
+                >
+                  <div class="wizard__modal-box">
+                    <button
+                      class="wizard__modal-close"
+                      type="button"
+                      title={labels.guideClose}
+                      aria-label={labels.guideClose}
+                      onclick={closeGuide}
+                    >
+                      &times;
+                    </button>
+                    <c-a-x-f_-l-w-c_pluggy-guide
+                      phase={guidePhase}
+                      onguidecomplete={closeGuide}
+                      onopensecureform={closeGuide}
+                    ></c-a-x-f_-l-w-c_pluggy-guide>
+                  </div>
+                </section>
               </template>
               <template lwc:if={showHolders}>
                 <c-a-x-f_-l-w-c_confirm-source-holders></c-a-x-f_-l-w-c_confirm-source-holders>

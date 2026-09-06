@@ -327,6 +327,89 @@ public with sharing class AXF_CLS_PluggyDiscoveryService {
     return r;
   }
 
+  public class ConnectionOverviewDTO {
+    @AuraEnabled
+    public Id connectionId;
+    @AuraEnabled
+    public String itemIdHint; // masked tail only — never the full operation key
+    @AuraEnabled
+    public String institution;
+    @AuraEnabled
+    public String consentState;
+    @AuraEnabled
+    public String runState;
+    @AuraEnabled
+    public Integer accountsFound;
+    @AuraEnabled
+    public Integer cardsFound;
+    @AuraEnabled
+    public Boolean discovered;
+  }
+
+  /**
+   * @description Every registered Pluggy connection with its discovery run state, for the
+   * wizard's Step 3 list (AXF-98). Read-only. The caller runs discovery one connection at a
+   * time (one Apex transaction each) so a callout is never issued after a DML.
+   */
+  public List<ConnectionOverviewDTO> overview() {
+    Map<Id, ConnectionOverviewDTO> byId = new Map<Id, ConnectionOverviewDTO>();
+    Map<String, Id> keyToConn = new Map<String, Id>();
+    for (AXF_OBJ_PluggyConnection__c c : [
+      SELECT
+        Id,
+        AXF_CON_EXI_PluggyItemId__c,
+        AXF_CON_TXT_InstitutionName__c,
+        AXF_CON_PKL_ConsentState__c
+      FROM AXF_OBJ_PluggyConnection__c
+      WITH USER_MODE
+      ORDER BY CreatedDate
+    ]) {
+      ConnectionOverviewDTO d = new ConnectionOverviewDTO();
+      d.connectionId = c.Id;
+      d.institution = c.AXF_CON_TXT_InstitutionName__c;
+      d.consentState = c.AXF_CON_PKL_ConsentState__c;
+      String iid = c.AXF_CON_EXI_PluggyItemId__c;
+      d.itemIdHint = (iid != null &&
+        iid.length() > 6)
+        ? '…' + iid.substring(iid.length() - 6)
+        : iid;
+      d.accountsFound = 0;
+      d.cardsFound = 0;
+      d.discovered = false;
+      byId.put(c.Id, d);
+      keyToConn.put(
+        AXF_CLS_IdentityFraming.key(
+          new List<Object>{ 'inr-v1', c.Id, 'ACCOUNTS' }
+        ),
+        c.Id
+      );
+    }
+    if (!keyToConn.isEmpty()) {
+      for (AXF_OBJ_IntegrationRun__c run : [
+        SELECT
+          AXF_INR_EXI_RunKey__c,
+          AXF_INR_PKL_State__c,
+          AXF_INR_NUM_AccountsFound__c,
+          AXF_INR_NUM_CardsFound__c
+        FROM AXF_OBJ_IntegrationRun__c
+        WHERE AXF_INR_EXI_RunKey__c IN :keyToConn.keySet()
+        WITH USER_MODE
+      ]) {
+        ConnectionOverviewDTO d = byId.get(
+          keyToConn.get(run.AXF_INR_EXI_RunKey__c)
+        );
+        if (d == null) {
+          continue;
+        }
+        d.runState = run.AXF_INR_PKL_State__c;
+        d.accountsFound = (Integer) run.AXF_INR_NUM_AccountsFound__c;
+        d.cardsFound = (Integer) run.AXF_INR_NUM_CardsFound__c;
+        d.discovered = run.AXF_INR_PKL_State__c == 'SUCCEEDED';
+      }
+    }
+    return byId.values();
+  }
+
   /** @description Sources discovered for a connection, with real per-source status (AC7). */
   public List<DiscoveredSourceDTO> discovered(Id connectionId) {
     List<DiscoveredSourceDTO> out = new List<DiscoveredSourceDTO>();
