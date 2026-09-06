@@ -129,11 +129,8 @@ export default class AxfPluggySyncHealth extends LightningElement {
     } finally {
       this.busy = false;
     }
-    try {
-      await refreshApex(this._wired);
-    } catch (e) {
-      // a stale board is not worth overriding the action feedback
-    }
+    // a stale board is not worth overriding the action feedback
+    await refreshApex(this._wired).catch(() => undefined);
   }
 
   handleRetry() {
