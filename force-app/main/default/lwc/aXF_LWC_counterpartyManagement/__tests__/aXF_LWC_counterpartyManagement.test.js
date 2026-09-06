@@ -3,7 +3,6 @@ import AXF_LWC_counterpartyManagement from "c/aXF_LWC_counterpartyManagement";
 import getAuthorizedEntities from "@salesforce/apex/AXF_CLS_CTRL_CounterpartyManagement.getAuthorizedEntities";
 import getCounterparties from "@salesforce/apex/AXF_CLS_CTRL_CounterpartyManagement.getCounterparties";
 import getCounterpartyDetail from "@salesforce/apex/AXF_CLS_CTRL_CounterpartyManagement.getCounterpartyDetail";
-import saveCounterparty from "@salesforce/apex/AXF_CLS_CTRL_CounterpartyManagement.saveCounterparty";
 
 jest.mock(
   "@salesforce/apex/AXF_CLS_CTRL_CounterpartyManagement.getAuthorizedEntities",
@@ -156,24 +155,25 @@ describe("c-a-x-f_-l-w-c_counterparty-management", () => {
 
     getAuthorizedEntities.emit(MOCK_ENTITIES);
     await flush();
+    await flush();
+    await flush();
 
-    const newBtn = element.shadowRoot.querySelector(
-      'lightning-button[label="Nova contraparte ou relação"]'
-    );
-    if (newBtn) {
-      newBtn.click();
-      await flush();
-      expect(element.shadowRoot.querySelector(".modal-card")).not.toBeNull();
-
-      const cancelBtn = element.shadowRoot.querySelector(
-        'lightning-button[label="Cancelar"]'
+    const btnByLabel = (re) =>
+      [...element.shadowRoot.querySelectorAll("lightning-button")].find((b) =>
+        re.test(b.label)
       );
-      if (cancelBtn) {
-        cancelBtn.click();
-        await flush();
-        expect(element.shadowRoot.querySelector(".modal-card")).toBeNull();
-      }
-    }
+    const newBtn = btnByLabel(/Nova contraparte/);
+    expect(newBtn).toBeDefined();
+    newBtn.click();
+    await flush();
+    expect(element.shadowRoot.querySelector('[role="dialog"]')).not.toBeNull();
+
+    const cancelBtn = btnByLabel(/Cancelar/);
+    expect(cancelBtn).toBeDefined();
+    cancelBtn.click();
+    await flush();
+    await flush();
+    expect(element.shadowRoot.querySelector('[role="dialog"]')).toBeNull();
   });
 
   it("handles search input and reloads counterparties", async () => {
@@ -186,20 +186,21 @@ describe("c-a-x-f_-l-w-c_counterparty-management", () => {
 
     getAuthorizedEntities.emit(MOCK_ENTITIES);
     await flush();
+    await flush();
+    await flush();
 
-    const searchInput = element.shadowRoot.querySelector(
-      'lightning-input[type="search"]'
+    const searchInput = [
+      ...element.shadowRoot.querySelectorAll("lightning-input")
+    ].find((i) => i.type === "search");
+    expect(searchInput).toBeDefined();
+    searchInput.dispatchEvent(
+      new CustomEvent("change", { detail: { value: "Beta" } })
     );
-    if (searchInput) {
-      searchInput.dispatchEvent(
-        new CustomEvent("change", { detail: { value: "Beta" } })
-      );
-      await flush();
+    await flush();
 
-      expect(getCounterparties).toHaveBeenCalledWith({
-        accountId: "001000000000001AAA",
-        searchKey: "Beta"
-      });
-    }
+    expect(getCounterparties).toHaveBeenCalledWith({
+      accountId: "001000000000001AAA",
+      searchKey: "Beta"
+    });
   });
 });

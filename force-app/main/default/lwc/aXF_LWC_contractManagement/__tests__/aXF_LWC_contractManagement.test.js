@@ -4,18 +4,13 @@ import getAuthorizedEntities from "@salesforce/apex/AXF_CLS_CTRL_ContractManagem
 import getActiveRelationships from "@salesforce/apex/AXF_CLS_CTRL_ContractManagement.getActiveRelationships";
 import getContracts from "@salesforce/apex/AXF_CLS_CTRL_ContractManagement.getContracts";
 import getContractDetail from "@salesforce/apex/AXF_CLS_CTRL_ContractManagement.getContractDetail";
-import createDraftContract from "@salesforce/apex/AXF_CLS_CTRL_ContractManagement.createDraftContract";
-import updateDraftContract from "@salesforce/apex/AXF_CLS_CTRL_ContractManagement.updateDraftContract";
 import getTermVersions from "@salesforce/apex/AXF_CLS_CTRL_ContractManagement.getTermVersions";
-import saveDraftTermVersion from "@salesforce/apex/AXF_CLS_CTRL_ContractManagement.saveDraftTermVersion";
 import calculateSchedulePreview from "@salesforce/apex/AXF_CLS_CTRL_ContractManagement.calculateSchedulePreview";
 import activateTermVersion from "@salesforce/apex/AXF_CLS_CTRL_ContractManagement.activateTermVersion";
 import getTermVersionReview from "@salesforce/apex/AXF_CLS_CTRL_ContractManagement.getTermVersionReview";
 import getWorkRecords from "@salesforce/apex/AXF_CLS_CTRL_ContractManagement.getWorkRecords";
 import registerWorkRecord from "@salesforce/apex/AXF_CLS_CTRL_ContractManagement.registerWorkRecord";
 import submitWorkRecord from "@salesforce/apex/AXF_CLS_CTRL_ContractManagement.submitWorkRecord";
-import decideWorkRecord from "@salesforce/apex/AXF_CLS_CTRL_ContractManagement.decideWorkRecord";
-import correctApprovedWorkRecord from "@salesforce/apex/AXF_CLS_CTRL_ContractManagement.correctApprovedWorkRecord";
 
 jest.mock(
   "@salesforce/apex/AXF_CLS_CTRL_ContractManagement.getWorkRecords",

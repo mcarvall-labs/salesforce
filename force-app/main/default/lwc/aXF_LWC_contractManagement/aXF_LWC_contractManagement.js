@@ -15,7 +15,6 @@ import registerWorkRecord from "@salesforce/apex/AXF_CLS_CTRL_ContractManagement
 import submitWorkRecord from "@salesforce/apex/AXF_CLS_CTRL_ContractManagement.submitWorkRecord";
 import decideWorkRecord from "@salesforce/apex/AXF_CLS_CTRL_ContractManagement.decideWorkRecord";
 import correctApprovedWorkRecord from "@salesforce/apex/AXF_CLS_CTRL_ContractManagement.correctApprovedWorkRecord";
-import assessContractWorkRecords from "@salesforce/apex/AXF_CLS_CTRL_ContractManagement.assessContractWorkRecords";
 
 import { ShowToastEvent } from "lightning/platformShowToastEvent";
 
@@ -229,6 +228,7 @@ export default class AXF_LWC_contractManagement extends LightningElement {
       }));
     } catch (err) {
       this.termVersions = [];
+      this.errorMessage = this.extractErrorMessage(err);
     }
   }
 
