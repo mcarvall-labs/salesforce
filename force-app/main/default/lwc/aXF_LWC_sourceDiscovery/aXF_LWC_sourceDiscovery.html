@@ -3,11 +3,38 @@
     <div class="slds-p-horizontal_medium slds-p-bottom_medium">
       <template lwc:if={isNoConnection}>
         <p
-          class="slds-text-body_regular slds-text-color_weak"
+          class="slds-text-body_regular slds-text-color_weak slds-m-bottom_small"
           role="status"
         >
           {labels.NO_CONNECTION}
         </p>
+        <lightning-input
+          type="text"
+          label={labels.ITEM_ID_LABEL}
+          field-level-help={labels.ITEM_ID_HELP}
+          value={itemId}
+          onchange={handleItemIdChange}
+          max-length="64"
+          class="slds-m-bottom_x-small"
+        ></lightning-input>
+        <lightning-button
+          label={labels.REGISTER}
+          variant="brand"
+          disabled={registerDisabled}
+          onclick={handleRegister}
+        ></lightning-button>
+        <template lwc:if={registering}>
+          <p class="slds-m-top_x-small slds-text-color_weak" role="status">
+            {labels.REGISTERING}
+          </p>
+        </template>
+        <template lwc:if={feedback}>
+          <div class="slds-m-top_small" role="status" aria-live="polite">
+            <lightning-formatted-text
+              value={feedback}
+            ></lightning-formatted-text>
+          </div>
+        </template>
       </template>
 
       <template lwc:if={isLoading}>

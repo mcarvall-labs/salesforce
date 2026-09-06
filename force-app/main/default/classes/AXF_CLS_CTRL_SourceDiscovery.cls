@@ -11,6 +11,18 @@ public with sharing class AXF_CLS_CTRL_SourceDiscovery {
     return new AXF_CLS_PluggyDiscoveryService().status(connectionId);
   }
 
+  @AuraEnabled
+  public static AXF_CLS_PluggyDiscoveryService.RegisterResult registerConnection(
+    String pluggyItemId
+  ) {
+    try {
+      return new AXF_CLS_PluggyDiscoveryService()
+        .registerConnection(pluggyItemId);
+    } catch (AXF_CLS_PluggyDiscoveryException e) {
+      throw new AuraHandledException(e.getMessage());
+    }
+  }
+
   @AuraEnabled(cacheable=true)
   public static List<AXF_CLS_PluggyDiscoveryService.DiscoveredSourceDTO> getDiscovered(
     Id connectionId

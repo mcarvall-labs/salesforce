@@ -3,6 +3,7 @@ import { refreshApex } from "@salesforce/apex";
 import getStatus from "@salesforce/apex/AXF_CLS_CTRL_SourceDiscovery.getStatus";
 import getDiscovered from "@salesforce/apex/AXF_CLS_CTRL_SourceDiscovery.getDiscovered";
 import startDiscovery from "@salesforce/apex/AXF_CLS_CTRL_SourceDiscovery.startDiscovery";
+import registerConnection from "@salesforce/apex/AXF_CLS_CTRL_SourceDiscovery.registerConnection";
 
 // PT-BR literals for the MVP (D-86). Move to Custom Labels when i18n infra exists.
 const L = {
@@ -25,7 +26,12 @@ const L = {
   CARD: "Cartão",
   GENERIC_FAIL: "A descoberta não foi concluída.",
   NO_CONNECTION:
-    "Nenhuma conexão Pluggy registrada ainda. Gere o Item ID no painel da Pluggy (use o guia da etapa anterior) e registre a conexão bancária para habilitar a descoberta de contas e cartões. Você pode avançar e concluir esta etapa depois."
+    "Nenhuma conexão Pluggy registrada ainda. Gere o Item ID no painel da Pluggy (use o guia da etapa anterior), cole abaixo e registre a conexão para descobrir contas e cartões. Você também pode avançar e concluir esta etapa depois.",
+  ITEM_ID_LABEL: "Item ID da Pluggy",
+  ITEM_ID_HELP:
+    "Copie dentro da aplicação configurada no Dashboard da Pluggy: Aplicações → ▶ → conexão → ⋮ → Copiar Item ID. Não use o link do MeuPluggy.",
+  REGISTER: "Registrar e descobrir",
+  REGISTERING: "Registrando a conexão…"
 };
 
 const STATE = { LOADING: "LOADING", READY: "READY", ERROR: "ERROR" };
@@ -34,14 +40,20 @@ export default class AxfSourceDiscovery extends LightningElement {
   @api recordId;
   @api connectionIdOverride;
 
+  _registeredConnectionId;
+
   get connectionId() {
-    return this.connectionIdOverride || this.recordId;
+    return (
+      this._registeredConnectionId || this.connectionIdOverride || this.recordId
+    );
   }
   labels = L;
   uiState = STATE.LOADING;
   status;
   sources = [];
   running = false;
+  registering = false;
+  itemId = "";
   feedback;
   feedbackVariant = "info";
   _wiredStatus;
@@ -126,6 +138,27 @@ export default class AxfSourceDiscovery extends LightningElement {
   }
   get statusMessage() {
     return this.status && this.status.message;
+  }
+
+  get registerDisabled() {
+    return this.registering || !this.itemId || this.itemId.trim().length < 3;
+  }
+  handleItemIdChange(event) {
+    this.itemId = event.target.value;
+  }
+  async handleRegister() {
+    this.registering = true;
+    this.feedback = undefined;
+    try {
+      const res = await registerConnection({ pluggyItemId: this.itemId });
+      this._registeredConnectionId = res.connectionId;
+      this.uiState = STATE.LOADING;
+      this.setFeedback(res.message, "success");
+    } catch (e) {
+      this.setFeedback(this.extractMessage(e), "error");
+    } finally {
+      this.registering = false;
+    }
   }
 
   async handleStart() {
