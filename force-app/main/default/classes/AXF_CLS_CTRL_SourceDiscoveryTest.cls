@@ -172,6 +172,20 @@ private class AXF_CLS_CTRL_SourceDiscoveryTest {
   }
 
   @IsTest
+  static void getConnectionsListsRegisteredConnectionsWithMaskedItemId() {
+    AXF_CLS_PluggyDiscoveryService.canDiscoverOverride = true;
+    List<AXF_CLS_PluggyDiscoveryService.ConnectionOverviewDTO> rows = AXF_CLS_CTRL_SourceDiscovery.getConnections();
+    // @TestSetup seeded exactly one connection (ITEM_DUP)
+    System.assertEquals(1, rows.size());
+    System.assertEquals(
+      '…EM_DUP',
+      rows[0].itemIdHint,
+      'only the tail is exposed'
+    );
+    System.assertEquals(false, rows[0].discovered);
+  }
+
+  @IsTest
   static void unauthorizedReturnsRetryableDto() {
     AXF_OBJ_PluggyConnection__c c = conn();
     AXF_CLS_PluggyDiscoveryService.canDiscoverOverride = false;

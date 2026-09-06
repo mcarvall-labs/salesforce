@@ -1,4 +1,7 @@
 import { createElement } from "lwc";
+jest.mock("@salesforce/i18n/lang", () => ({ default: "pt-BR" }), {
+  virtual: true
+});
 import ManualSource from "c/aXF_LWC_manualFinancialSource";
 import save from "@salesforce/apex/AXF_CLS_CTRL_ManualFinancialSource.save";
 jest.mock(

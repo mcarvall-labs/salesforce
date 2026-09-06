@@ -24,6 +24,11 @@ public with sharing class AXF_CLS_CTRL_SourceDiscovery {
   }
 
   @AuraEnabled(cacheable=true)
+  public static List<AXF_CLS_PluggyDiscoveryService.ConnectionOverviewDTO> getConnections() {
+    return new AXF_CLS_PluggyDiscoveryService().overview();
+  }
+
+  @AuraEnabled(cacheable=true)
   public static List<AXF_CLS_PluggyDiscoveryService.DiscoveredSourceDTO> getDiscovered(
     Id connectionId
   ) {

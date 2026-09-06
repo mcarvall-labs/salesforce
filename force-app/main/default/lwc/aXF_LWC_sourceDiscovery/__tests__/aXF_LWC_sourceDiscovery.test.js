@@ -30,7 +30,20 @@ jest.mock(
   () => ({ default: jest.fn() }),
   { virtual: true }
 );
+jest.mock(
+  "@salesforce/apex/AXF_CLS_CTRL_SourceDiscovery.getConnections",
+  () => {
+    const { createApexTestWireAdapter } = require("@salesforce/sfdx-lwc-jest");
+    return { default: createApexTestWireAdapter(jest.fn()) };
+  },
+  { virtual: true }
+);
 import registerConnection from "@salesforce/apex/AXF_CLS_CTRL_SourceDiscovery.registerConnection";
+import getConnections from "@salesforce/apex/AXF_CLS_CTRL_SourceDiscovery.getConnections";
+
+jest.mock("@salesforce/i18n/lang", () => ({ default: "pt-BR" }), {
+  virtual: true
+});
 
 const flush = () => Promise.resolve();
 const button = (el, re) =>
@@ -58,27 +71,26 @@ describe("c-aXF_LWC_sourceDiscovery", () => {
     expect(el.shadowRoot.querySelector("lightning-spinner")).not.toBeNull();
   });
 
-  it("shows guidance instead of an endless spinner when no connection is set", async () => {
+  it("wizard mode: no spinner, shows the Item ID form and the empty-list note", async () => {
     const el = createElement("c-a-x-f_-l-w-c_source-discovery", { is: Disc });
     document.body.appendChild(el);
+    getConnections.emit([]);
     await flush();
     expect(el.shadowRoot.querySelector("lightning-spinner")).toBeNull();
-    expect(el.shadowRoot.textContent).toMatch(
-      /Nenhuma conexão Pluggy registrada/i
-    );
     expect(el.shadowRoot.querySelector("lightning-input")).not.toBeNull();
+    expect(el.shadowRoot.textContent).toMatch(/Nenhuma conexão cadastrada/i);
   });
 
-  it("registers a connection from an Item ID then runs the status wire", async () => {
+  it("wizard mode: registers an Item ID and lists the connection", async () => {
     registerConnection.mockResolvedValue({
       connectionId: "a01000000000009",
-      consentState: "ACTIVE",
       institution: "Banco X",
       created: true,
       message: "Conexão registrada."
     });
     const el = createElement("c-a-x-f_-l-w-c_source-discovery", { is: Disc });
     document.body.appendChild(el);
+    getConnections.emit([]);
     await flush();
 
     const input = el.shadowRoot.querySelector("lightning-input");
@@ -86,17 +98,62 @@ describe("c-aXF_LWC_sourceDiscovery", () => {
     input.dispatchEvent(new CustomEvent("change"));
     await flush();
 
-    button(el, /Registrar e descobrir/).click();
+    button(el, /Registrar conexão/).click();
     await flush();
     await flush();
-
     expect(registerConnection).toHaveBeenCalledWith({
       pluggyItemId: "abc123def456"
     });
-    getStatus.emit({ state: null, complete: false });
-    getDiscovered.emit([]);
+
+    getConnections.emit([
+      {
+        connectionId: "a01000000000009",
+        institution: "Banco X",
+        itemIdHint: "…def456",
+        consentState: "ACTIVE",
+        runState: null,
+        accountsFound: 0,
+        cardsFound: 0,
+        discovered: false
+      }
+    ]);
     await flush();
+    expect(el.shadowRoot.textContent).toMatch(/Banco X/);
     expect(button(el, /Descobrir agora/)).toBeDefined();
+  });
+
+  it("wizard mode: 'Descobrir agora' runs discovery for every connection", async () => {
+    startDiscovery.mockResolvedValue({
+      state: "SUCCEEDED",
+      complete: true,
+      accountsFound: 1,
+      cardsFound: 0
+    });
+    const el = createElement("c-a-x-f_-l-w-c_source-discovery", { is: Disc });
+    document.body.appendChild(el);
+    getConnections.emit([
+      {
+        connectionId: "c1",
+        institution: "Banco A",
+        itemIdHint: "…1",
+        consentState: "ACTIVE"
+      },
+      {
+        connectionId: "c2",
+        institution: "Banco B",
+        itemIdHint: "…2",
+        consentState: "ACTIVE"
+      }
+    ]);
+    await flush();
+
+    button(el, /Descobrir agora/).click();
+    await flush();
+    await flush();
+    await flush();
+
+    expect(startDiscovery).toHaveBeenCalledWith({ connectionId: "c1" });
+    expect(startDiscovery).toHaveBeenCalledWith({ connectionId: "c2" });
   });
 
   it("offers 'Descobrir agora' and explains no history / no holder", async () => {

@@ -1,6 +1,10 @@
 import { createElement } from "lwc";
 import Guide from "c/aXF_LWC_pluggyGuide";
-import { STEPS } from "../steps";
+import { stepsForPhase } from "../steps";
+
+// The default phase is "credentials"; these tests drive that phase unless noted.
+const STEPS = stepsForPhase("credentials");
+const DISCOVERY_STEPS = stepsForPhase("discovery");
 
 jest.mock(
   "@salesforce/resourceUrl/AXF_pluggyGuideMedia",
@@ -70,7 +74,7 @@ describe("c-aXF_LWC_pluggyGuide", () => {
     const el = build();
     const list = el.shadowRoot.querySelector(".guide__list");
     expect(list).not.toBeNull();
-    expect(list.querySelectorAll("li").length).toBe(2);
+    expect(list.querySelectorAll("li").length).toBe(4);
     // the surrounding lead-in and closing sentences are still paragraphs
     expect(
       el.shadowRoot.querySelectorAll("p.guide__text").length
@@ -197,6 +201,33 @@ describe("c-aXF_LWC_pluggyGuide", () => {
     expect(link.getAttribute("href")).toMatch(/^https:\/\//);
     expect(link.getAttribute("target")).toBe("_blank");
     expect(link.getAttribute("rel")).toContain("noopener");
+  });
+
+  it("renders only the discovery-phase steps when phase='discovery'", async () => {
+    const el = createElement("c-a-x-f_-l-w-c_pluggy-guide", { is: Guide });
+    el.phase = "discovery";
+    document.body.appendChild(el);
+    await flush();
+
+    const pb = el.shadowRoot.querySelector("[role='progressbar']");
+    expect(pb.getAttribute("aria-valuemax")).toBe(
+      String(DISCOVERY_STEPS.length)
+    );
+    expect(
+      el.shadowRoot.querySelector("[data-step-heading]").textContent.trim()
+        .length
+    ).toBeGreaterThan(0);
+
+    // walking to the last discovery step and finishing fires guidecomplete
+    const handler = jest.fn();
+    el.addEventListener("guidecomplete", handler);
+    for (let i = 1; i < DISCOVERY_STEPS.length; i++) {
+      next(el).click();
+      // eslint-disable-next-line no-await-in-loop
+      await flush();
+    }
+    next(el).click();
+    expect(handler).toHaveBeenCalledTimes(1);
   });
 
   it("shows the reduced-motion note when the user prefers reduced motion", async () => {

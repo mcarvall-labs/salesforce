@@ -9,10 +9,11 @@ import promoteCandidate from "@salesforce/apex/AXF_CLS_CTRL_PluggyIntegrationCon
 import rollbackRotation from "@salesforce/apex/AXF_CLS_CTRL_PluggyIntegrationConfig.rollbackRotation";
 import pauseGlobally from "@salesforce/apex/AXF_CLS_CTRL_PluggyIntegrationConfig.pauseGlobally";
 import resumeGlobally from "@salesforce/apex/AXF_CLS_CTRL_PluggyIntegrationConfig.resumeGlobally";
+import LANG from "@salesforce/i18n/lang";
 
-// PT-BR literals for the MVP (D-86: PT-BR only). Move to Custom Labels + Translation
-// Workbench when that i18n infrastructure is set up (same convention as aXF_LWC_accessLevelConfig).
-const L = {
+// Component-local i18n (org has no Translation Workbench). Axon ships PT-BR + EN
+// only; the language follows the Salesforce user profile (@salesforce/i18n/lang).
+const PT = {
   TITLE: "Credenciais e consentimento Pluggy",
   FORBIDDEN: "Você não tem autorização para configurar a integração Pluggy.",
   LOAD_ERROR: "Não foi possível carregar a configuração da integração.",
@@ -63,8 +64,74 @@ const L = {
   FILL_BOTH: "Informe o Client ID e o Client Secret.",
   GENERIC_FAIL: "A operação não foi concluída. Nada foi alterado.",
   CREDENTIAL_ACTIVE: "Credencial configurada — coleta ativa",
-  CREDENTIAL_NONE: "Nenhuma credencial configurada ainda"
+  CREDENTIAL_NONE: "Nenhuma credencial configurada ainda",
+  ROT_CANDIDATE: "Candidata preparada — aguardando teste",
+  ROT_TESTING: "Testando candidata…",
+  ROT_TESTED_OK: "✅ Candidata aprovada — pronta para promover"
 };
+
+const EN = {
+  TITLE: "Pluggy credentials and consent",
+  FORBIDDEN: "You are not authorized to configure the Pluggy integration.",
+  LOAD_ERROR: "Could not load the integration configuration.",
+  RETRY: "Try again",
+  ACTIVE_SLOT: "Active credential slot",
+  ROTATION_STATE: "State",
+  SECRET_HINT:
+    "The Client ID and Client Secret are sent straight to the native External Credential and discarded. They are never stored or shown here.",
+  CLIENT_ID: "Client ID",
+  CLIENT_SECRET: "Client Secret",
+
+  SAVE_ACTIVE: "Save active credential",
+  SAVE_ACTIVE_TITLE:
+    "Saves the Client ID and Client Secret as the Pluggy integration's primary credential. Use it on first setup or when renewing expired credentials. The previous credential is replaced immediately.",
+
+  STAGE_CANDIDATE: "Start credential rotation",
+  STAGE_CANDIDATE_TITLE:
+    "Prepares a new credential without disabling the current one — the integration keeps working. After preparing it you can test it and only then activate it. Use it to rotate credentials without interrupting collection.",
+
+  TEST_CANDIDATE: "Test new credential",
+  TEST_CANDIDATE_TITLE:
+    "Checks whether the new credential can authenticate with Pluggy and reach every existing connection. Run it before activating. If the test fails, the current credential stays active.",
+
+  PROMOTE: "Activate new credential",
+  PROMOTE_TITLE:
+    "Activates the new credential as the primary one. Only available after a successful test. The previous credential is kept as a backup but is no longer used.",
+
+  ROLLBACK: "Cancel rotation",
+  ROLLBACK_TITLE:
+    "Abandons the credential rotation in progress. The new credential is discarded and the active credential is left unchanged. Use it if you give up the swap or want to restart with different credentials.",
+
+  PAUSE_GLOBAL: "Pause data collection",
+  PAUSE_GLOBAL_TITLE:
+    "Temporarily pauses the automatic sync of every user's accounts and cards. Use it during maintenance or a credential swap. No data is lost — collection resumes from where it stopped.",
+
+  RESUME_GLOBAL: "Resume data collection",
+  RESUME_GLOBAL_TITLE:
+    "Re-enables the automatic sync after a pause. Connections are refreshed on the next scheduled run.",
+
+  GLOBAL_PAUSED: "⏸ Data collection paused.",
+  GLOBAL_ACTIVE: "▶ Data collection active.",
+  CONNECTIONS: "Connections",
+  BLOCKED: "Blocked connections",
+  ACTIVE_TEST: "Last test — active credential",
+  CANDIDATE_TEST: "Last test — candidate",
+  ROTATION_IN_PROGRESS: "Rotation in progress",
+  BUSY: "Working…",
+  FILL_BOTH: "Enter the Client ID and the Client Secret.",
+  GENERIC_FAIL: "The operation did not complete. Nothing was changed.",
+  CREDENTIAL_ACTIVE: "Credential configured — collection active",
+  CREDENTIAL_NONE: "No credential configured yet",
+  ROT_CANDIDATE: "Candidate prepared — waiting for test",
+  ROT_TESTING: "Testing candidate…",
+  ROT_TESTED_OK: "✅ Candidate approved — ready to promote"
+};
+
+const L = String(LANG || "")
+  .toLowerCase()
+  .startsWith("en")
+  ? EN
+  : PT;
 
 const STATE = {
   LOADING: "LOADING",
@@ -202,9 +269,9 @@ export default class AxfPluggyIntegrationConfig extends LightningElement {
   get rotationStateLabel() {
     if (!this.status) return "";
     const labels = {
-      CANDIDATE: "Candidata preparada — aguardando teste",
-      TESTING: "Testando candidata…",
-      TESTED_OK: "✅ Candidata aprovada — pronta para promover"
+      CANDIDATE: L.ROT_CANDIDATE,
+      TESTING: L.ROT_TESTING,
+      TESTED_OK: L.ROT_TESTED_OK
     };
     return labels[this.status.rotationState] || "";
   }

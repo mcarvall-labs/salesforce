@@ -238,6 +238,15 @@ export default class AxfLwcOnboardingWizard extends LightningElement {
   get showDiscovery() {
     return this.current === "PLUGGY_DISCOVERY";
   }
+  get showGuideBar() {
+    return (
+      this.current === "PLUGGY_CREDENTIALS" ||
+      this.current === "PLUGGY_DISCOVERY"
+    );
+  }
+  get guidePhase() {
+    return this.current === "PLUGGY_DISCOVERY" ? "discovery" : "credentials";
+  }
   get showHolders() {
     return this.current === "ACCOUNT_HOLDERS";
   }

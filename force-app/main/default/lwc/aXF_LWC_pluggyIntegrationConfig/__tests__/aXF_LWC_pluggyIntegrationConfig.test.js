@@ -1,4 +1,7 @@
 import { createElement } from "lwc";
+jest.mock("@salesforce/i18n/lang", () => ({ default: "pt-BR" }), {
+  virtual: true
+});
 import Config from "c/aXF_LWC_pluggyIntegrationConfig";
 import canConfigure from "@salesforce/apex/AXF_CLS_CTRL_PluggyIntegrationConfig.canConfigure";
 import getStatus from "@salesforce/apex/AXF_CLS_CTRL_PluggyIntegrationConfig.getStatus";
