@@ -160,12 +160,23 @@
         <apexClass>AXF_CLS_WorkRecordTriggerHandler</apexClass>
         <enabled>true</enabled>
     </classAccesses>
+    <classAccesses>
+        <apexClass>AXF_CLS_CTRL_PluggySync</apexClass>
+        <enabled>true</enabled>
+    </classAccesses>
+    <classAccesses>
+        <apexClass>AXF_CLS_PluggySyncService</apexClass>
+        <enabled>true</enabled>
+    </classAccesses>
+    <classAccesses>
+        <apexClass>AXF_CLS_PluggySyncScheduler</apexClass>
+        <enabled>true</enabled>
+    </classAccesses>
     <customPermissions>
         <enabled>true</enabled>
         <name>AXF_CanConfigure</name>
     </customPermissions>
-    
-<fieldPermissions>
+    <fieldPermissions>
         <editable>true</editable>
         <field>AXF_OBJ_AccessProvisioning__c.AXF_APV_CHK_OwnerSynced__c</field>
         <readable>true</readable>
@@ -619,6 +630,11 @@
     </fieldPermissions>
     <fieldPermissions>
         <editable>true</editable>
+        <field>AXF_OBJ_IntegrationRun__c.AXF_INR_TXT_Cursor__c</field>
+        <readable>true</readable>
+    </fieldPermissions>
+    <fieldPermissions>
+        <editable>true</editable>
         <field>AXF_OBJ_IntegrationRun__c.AXF_INR_TXT_Message__c</field>
         <readable>true</readable>
     </fieldPermissions>
@@ -803,103 +819,80 @@
         <field>AccountContactRelation.AXF_ACR_PKL_AxonRole__c</field>
         <readable>true</readable>
     </fieldPermissions>
-    
-    
-    
     <fieldPermissions>
-        <editable>true</editable>
-        <field>AXF_OBJ_ContractApplicationSnapshot__c.AXF_CAS_LKP_PredecessorSnapshot__c</field>
-        <readable>true</readable>
-    </fieldPermissions>
-    
-    
-    <fieldPermissions>
-        <editable>true</editable>
-        <field>AXF_OBJ_ContractApplicationSnapshot__c.AXF_CAS_CUR_AppliedAmount__c</field>
+        <editable>false</editable>
+        <field
+    >AXF_OBJ_CreditCardTransaction__c.AXF_CCT_DTM_ImportedAt__c</field>
         <readable>true</readable>
     </fieldPermissions>
     <fieldPermissions>
-        <editable>true</editable>
-        <field>AXF_OBJ_ContractApplicationSnapshot__c.AXF_CAS_TXT_CurrencyIsoCode__c</field>
+        <editable>false</editable>
+        <field
+    >AXF_OBJ_CreditCardTransaction__c.AXF_CCT_PKL_ReconciliationStatus__c</field>
         <readable>true</readable>
     </fieldPermissions>
     <fieldPermissions>
-        <editable>true</editable>
-        <field>AXF_OBJ_ContractApplicationSnapshot__c.AXF_CAS_PKL_RemunerationModel__c</field>
+        <editable>false</editable>
+        <field>AXF_OBJ_CreditCardTransaction__c.AXF_CCT_PKL_Status__c</field>
         <readable>true</readable>
     </fieldPermissions>
     <fieldPermissions>
-        <editable>true</editable>
-        <field>AXF_OBJ_ContractApplicationSnapshot__c.AXF_CAS_NUM_HoursQuantity__c</field>
+        <editable>false</editable>
+        <field
+    >AXF_OBJ_CreditCardTransaction__c.AXF_CCT_TXT_BillForecastPeriod__c</field>
         <readable>true</readable>
     </fieldPermissions>
     <fieldPermissions>
-        <editable>true</editable>
-        <field>AXF_OBJ_ContractApplicationSnapshot__c.AXF_CAS_NUM_Installments__c</field>
+        <editable>false</editable>
+        <field
+    >AXF_OBJ_CreditCardTransaction__c.AXF_CCT_TXT_BillReference__c</field>
         <readable>true</readable>
     </fieldPermissions>
     <fieldPermissions>
-        <editable>true</editable>
-        <field>AXF_OBJ_ContractApplicationSnapshot__c.AXF_CAS_TXT_CalendarPolicyVersion__c</field>
+        <editable>false</editable>
+        <field
+    >AXF_OBJ_CreditCardTransaction__c.AXF_CCT_TXT_CorrelationId__c</field>
         <readable>true</readable>
     </fieldPermissions>
     <fieldPermissions>
-        <editable>true</editable>
-        <field>AXF_OBJ_ContractApplicationSnapshot__c.AXF_CAS_TXT_TimeZone__c</field>
+        <editable>false</editable>
+        <field
+    >AXF_OBJ_CreditCardTransaction__c.AXF_CCT_TXT_Description__c</field>
         <readable>true</readable>
     </fieldPermissions>
     <fieldPermissions>
-        <editable>true</editable>
-        <field>AXF_OBJ_ContractApplicationSnapshot__c.AXF_CAS_TXT_SourceTermRevision__c</field>
+        <editable>false</editable>
+        <field
+    >AXF_OBJ_CreditCardTransaction__c.AXF_CCT_TXT_EvidenceRef__c</field>
         <readable>true</readable>
     </fieldPermissions>
     <fieldPermissions>
-        <editable>true</editable>
-        <field>AXF_OBJ_ContractApplicationSnapshot__c.AXF_CAS_EXI_SourceTermHash__c</field>
+        <editable>false</editable>
+        <field
+    >AXF_OBJ_CreditCardTransaction__c.AXF_CCT_TXT_NormalizedDescription__c</field>
         <readable>true</readable>
     </fieldPermissions>
     <fieldPermissions>
-        <editable>true</editable>
-        <field>AXF_OBJ_ContractApplicationSnapshot__c.AXF_CAS_TAL_FieldProvenance__c</field>
-        <readable>true</readable>
-    </fieldPermissions>
-    <fieldPermissions>
-        <editable>true</editable>
-        <field>AXF_OBJ_ContractApplicationSnapshot__c.AXF_CAS_TAL_OverrideReason__c</field>
+        <editable>false</editable>
+        <field>AXF_OBJ_BankAccountTransaction__c.AXF_BAT_PKL_Status__c</field>
         <readable>true</readable>
     </fieldPermissions>
     <fieldPermissions>
         <editable>true</editable>
-        <field>AXF_OBJ_ContractApplicationSnapshot__c.AXF_CAS_LKP_OverriddenByUser__c</field>
+        <field>AXF_OBJ_IntegrationRun__c.AXF_INR_DT_CompleteThrough__c</field>
         <readable>true</readable>
     </fieldPermissions>
     <fieldPermissions>
         <editable>true</editable>
-        <field>AXF_OBJ_ContractApplicationSnapshot__c.AXF_CAS_DT_OverriddenAt__c</field>
-        <readable>true</readable>
-    </fieldPermissions>
-    
-    <fieldPermissions>
-        <editable>true</editable>
-        <field>AXF_OBJ_FinancialTransaction__c.AXF_FTX_EXI_PlanIdentityHash__c</field>
+        <field>AXF_OBJ_IntegrationRun__c.AXF_INR_DT_LastSuccessAt__c</field>
         <readable>true</readable>
     </fieldPermissions>
     <fieldPermissions>
         <editable>true</editable>
-        <field>AXF_OBJ_FinancialTransaction__c.AXF_FTX_LKP_Contract__c</field>
+        <field>AXF_OBJ_IntegrationRun__c.AXF_INR_NUM_RecordsWritten__c</field>
         <readable>true</readable>
     </fieldPermissions>
-    <fieldPermissions>
-        <editable>true</editable>
-        <field>AXF_OBJ_FinancialTransaction__c.AXF_FTX_LKP_ContractTermVersion__c</field>
-        <readable>true</readable>
-    </fieldPermissions>
-    <fieldPermissions>
-        <editable>true</editable>
-        <field>AXF_OBJ_FinancialTransaction__c.AXF_FTX_LKP_ContractApplicationSnapshot__c</field>
-        <readable>true</readable>
-    </fieldPermissions>
-<objectPermissions>
+    <objectPermissions>
         <allowCreate>true</allowCreate>
         <allowDelete>false</allowDelete>
         <allowEdit>true</allowEdit>
@@ -1061,7 +1054,16 @@
         <object>Contact</object>
         <viewAllRecords>false</viewAllRecords>
     </objectPermissions>
-<objectPermissions>
+    <objectPermissions>
+        <allowCreate>true</allowCreate>
+        <allowDelete>false</allowDelete>
+        <allowEdit>false</allowEdit>
+        <allowRead>true</allowRead>
+        <modifyAllRecords>false</modifyAllRecords>
+        <object>AXF_OBJ_CreditCardTransaction__c</object>
+        <viewAllRecords>false</viewAllRecords>
+    </objectPermissions>
+    <objectPermissions>
         <allowCreate>true</allowCreate>
         <allowDelete>false</allowDelete>
         <allowEdit>true</allowEdit>
@@ -1126,9 +1128,4 @@
         <tab>AXF_SourceHealth</tab>
         <visibility>Visible</visibility>
     </tabSettings>
-    
-    
-
 </PermissionSet>
-
-

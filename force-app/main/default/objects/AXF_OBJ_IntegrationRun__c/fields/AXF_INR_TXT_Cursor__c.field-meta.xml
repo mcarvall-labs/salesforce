@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<CustomField xmlns="http://soap.sforce.com/2006/04/metadata">
+    <fullName>AXF_INR_TXT_Cursor__c</fullName>
+    <label>Cursor (opaco)</label>
+    <type>Text</type>
+    <length>255</length>
+    <required>false</required>
+    <description
+  >Cursor opaco de paginacao devolvido pelo provedor (campo "next" do GET /v2/transactions da Pluggy). Persistido a cada checkpoint para retomar a sincronizacao de TRANSACTIONS/BILLS de onde parou. AXF_INR_NUM_Cursor__c continua para os produtos paginados por numero de pagina (ACCOUNTS/CARDS - AXF-84).</description>
+</CustomField>

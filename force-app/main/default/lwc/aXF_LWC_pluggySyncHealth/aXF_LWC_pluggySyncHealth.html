@@ -1,0 +1,83 @@
+<template>
+  <lightning-card title={labels.TITLE} icon-name="standard:sync">
+    <lightning-button
+      slot="actions"
+      label={labels.SYNC_NOW}
+      onclick={handleSyncNow}
+      disabled={syncDisabled}
+    ></lightning-button>
+
+    <div class="slds-p-horizontal_medium slds-p-bottom_medium">
+      <p class="slds-text-body_small slds-text-color_weak slds-m-bottom_small">
+        {labels.HELP}
+      </p>
+
+      <template lwc:if={busy}>
+        <lightning-spinner
+          alternative-text={labels.BUSY}
+          size="small"
+        ></lightning-spinner>
+      </template>
+
+      <template lwc:if={loadError}>
+        <p class="slds-text-color_error" role="alert">{labels.LOAD_ERROR}</p>
+        <lightning-button
+          label={labels.RETRY}
+          onclick={handleRetry}
+          class="slds-m-top_x-small"
+        ></lightning-button>
+      </template>
+
+      <template lwc:if={isEmpty}>
+        <p class="slds-text-color_weak" role="status">{labels.EMPTY}</p>
+      </template>
+
+      <template lwc:if={hasRows}>
+        <ul class="slds-has-dividers_bottom-space">
+          <template for:each={rows} for:item="row">
+            <li key={row.key} class="slds-item slds-p-vertical_x-small">
+              <div class="slds-grid slds-wrap slds-gutters_x-small">
+                <div class="slds-col slds-size_1-of-2 slds-medium-size_3-of-12">
+                  <span class="slds-text-title_caps">{labels.COL_SCOPE}</span>
+                  <p class="slds-text-body_regular">{row.scopeLabel}</p>
+                </div>
+                <div class="slds-col slds-size_1-of-2 slds-medium-size_2-of-12">
+                  <span class="slds-text-title_caps">{labels.COL_STATE}</span>
+                  <p>{row.stateLabel}</p>
+                </div>
+                <div class="slds-col slds-size_1-of-2 slds-medium-size_2-of-12">
+                  <span class="slds-text-title_caps">{labels.COL_THROUGH}</span>
+                  <p>{row.completeThrough}</p>
+                </div>
+                <div class="slds-col slds-size_1-of-2 slds-medium-size_2-of-12">
+                  <span class="slds-text-title_caps">{labels.COL_LAST}</span>
+                  <p>{row.lastSuccessAt}</p>
+                </div>
+                <div class="slds-col slds-size_1-of-1 slds-medium-size_3-of-12">
+                  <span class="slds-text-title_caps">{labels.COL_NEXT}</span>
+                  <p class="slds-text-body_small">{row.nextAction}</p>
+                </div>
+                <template lwc:if={row.cause}>
+                  <div class="slds-col slds-size_1-of-1">
+                    <p
+                      class="slds-text-body_small slds-text-color_weak"
+                      role="note"
+                    >
+                      {row.cause}
+                    </p>
+                  </div>
+                </template>
+              </div>
+            </li>
+          </template>
+        </ul>
+      </template>
+
+      <template lwc:if={feedback}>
+        <div class="slds-m-top_small" role="status" aria-live="polite">
+          <lightning-formatted-text value={feedback}></lightning-formatted-text>
+        </div>
+      </template>
+    </div>
+  </lightning-card>
+</template>

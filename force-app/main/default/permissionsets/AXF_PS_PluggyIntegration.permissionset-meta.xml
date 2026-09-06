@@ -1,4 +1,4 @@
-<?xml version="1.0" encoding="UTF-8" ?>
+<?xml version='1.0' encoding='UTF-8' ?>
 <PermissionSet xmlns="http://soap.sforce.com/2006/04/metadata">
     <label>Axon - Integracao Pluggy (servico)</label>
     <description
@@ -66,6 +66,26 @@
         <apexClass>AXF_CLS_CTRL_SourceDiscovery</apexClass>
         <enabled>true</enabled>
     </classAccesses>
+    <classAccesses>
+        <apexClass>AXF_CLS_PluggySyncPolicy</apexClass>
+        <enabled>true</enabled>
+    </classAccesses>
+    <classAccesses>
+        <apexClass>AXF_CLS_PluggySyncService</apexClass>
+        <enabled>true</enabled>
+    </classAccesses>
+    <classAccesses>
+        <apexClass>AXF_CLS_PluggySyncQueueable</apexClass>
+        <enabled>true</enabled>
+    </classAccesses>
+    <classAccesses>
+        <apexClass>AXF_CLS_PluggySyncScheduler</apexClass>
+        <enabled>true</enabled>
+    </classAccesses>
+    <classAccesses>
+        <apexClass>AXF_CLS_CTRL_PluggySync</apexClass>
+        <enabled>true</enabled>
+    </classAccesses>
     <objectPermissions>
         <allowCreate>true</allowCreate>
         <allowDelete>false</allowDelete>
@@ -118,6 +138,24 @@
         <allowRead>true</allowRead>
         <modifyAllRecords>false</modifyAllRecords>
         <object>AXF_OBJ_CreditCard__c</object>
+        <viewAllRecords>false</viewAllRecords>
+    </objectPermissions>
+    <objectPermissions>
+        <allowCreate>true</allowCreate>
+        <allowDelete>false</allowDelete>
+        <allowEdit>true</allowEdit>
+        <allowRead>true</allowRead>
+        <modifyAllRecords>false</modifyAllRecords>
+        <object>AXF_OBJ_BankAccountTransaction__c</object>
+        <viewAllRecords>false</viewAllRecords>
+    </objectPermissions>
+    <objectPermissions>
+        <allowCreate>true</allowCreate>
+        <allowDelete>false</allowDelete>
+        <allowEdit>true</allowEdit>
+        <allowRead>true</allowRead>
+        <modifyAllRecords>false</modifyAllRecords>
+        <object>AXF_OBJ_CreditCardTransaction__c</object>
         <viewAllRecords>false</viewAllRecords>
     </objectPermissions>
     <fieldPermissions>
@@ -263,6 +301,11 @@
     </fieldPermissions>
     <fieldPermissions>
         <editable>true</editable>
+        <field>AXF_OBJ_IntegrationRun__c.AXF_INR_TXT_Cursor__c</field>
+        <readable>true</readable>
+    </fieldPermissions>
+    <fieldPermissions>
+        <editable>true</editable>
         <field>AXF_OBJ_IntegrationRun__c.AXF_INR_TXT_Message__c</field>
         <readable>true</readable>
     </fieldPermissions>
@@ -384,6 +427,127 @@
     <fieldPermissions>
         <editable>true</editable>
         <field>AXF_OBJ_CreditCard__c.AXF_CC_TXT_Level__c</field>
+        <readable>true</readable>
+    </fieldPermissions>
+    <fieldPermissions>
+        <editable>true</editable>
+        <field
+    >AXF_OBJ_CreditCardTransaction__c.AXF_CCT_DTM_ImportedAt__c</field>
+        <readable>true</readable>
+    </fieldPermissions>
+    <fieldPermissions>
+        <editable>true</editable>
+        <field
+    >AXF_OBJ_CreditCardTransaction__c.AXF_CCT_PKL_ReconciliationStatus__c</field>
+        <readable>true</readable>
+    </fieldPermissions>
+    <fieldPermissions>
+        <editable>true</editable>
+        <field>AXF_OBJ_CreditCardTransaction__c.AXF_CCT_PKL_Status__c</field>
+        <readable>true</readable>
+    </fieldPermissions>
+    <fieldPermissions>
+        <editable>true</editable>
+        <field
+    >AXF_OBJ_CreditCardTransaction__c.AXF_CCT_TXT_BillForecastPeriod__c</field>
+        <readable>true</readable>
+    </fieldPermissions>
+    <fieldPermissions>
+        <editable>true</editable>
+        <field
+    >AXF_OBJ_CreditCardTransaction__c.AXF_CCT_TXT_BillReference__c</field>
+        <readable>true</readable>
+    </fieldPermissions>
+    <fieldPermissions>
+        <editable>true</editable>
+        <field
+    >AXF_OBJ_CreditCardTransaction__c.AXF_CCT_TXT_CorrelationId__c</field>
+        <readable>true</readable>
+    </fieldPermissions>
+    <fieldPermissions>
+        <editable>true</editable>
+        <field
+    >AXF_OBJ_CreditCardTransaction__c.AXF_CCT_TXT_Description__c</field>
+        <readable>true</readable>
+    </fieldPermissions>
+    <fieldPermissions>
+        <editable>true</editable>
+        <field
+    >AXF_OBJ_CreditCardTransaction__c.AXF_CCT_TXT_EvidenceRef__c</field>
+        <readable>true</readable>
+    </fieldPermissions>
+    <fieldPermissions>
+        <editable>true</editable>
+        <field
+    >AXF_OBJ_CreditCardTransaction__c.AXF_CCT_TXT_NormalizedDescription__c</field>
+        <readable>true</readable>
+    </fieldPermissions>
+    <fieldPermissions>
+        <editable>true</editable>
+        <field
+    >AXF_OBJ_BankAccountTransaction__c.AXF_BAT_DTM_ImportedAt__c</field>
+        <readable>true</readable>
+    </fieldPermissions>
+    <fieldPermissions>
+        <editable>true</editable>
+        <field
+    >AXF_OBJ_BankAccountTransaction__c.AXF_BAT_NUM_RunningBalance__c</field>
+        <readable>true</readable>
+    </fieldPermissions>
+    <fieldPermissions>
+        <editable>true</editable>
+        <field
+    >AXF_OBJ_BankAccountTransaction__c.AXF_BAT_PKL_ReconciliationStatus__c</field>
+        <readable>true</readable>
+    </fieldPermissions>
+    <fieldPermissions>
+        <editable>true</editable>
+        <field>AXF_OBJ_BankAccountTransaction__c.AXF_BAT_PKL_Status__c</field>
+        <readable>true</readable>
+    </fieldPermissions>
+    <fieldPermissions>
+        <editable>true</editable>
+        <field
+    >AXF_OBJ_BankAccountTransaction__c.AXF_BAT_TXT_CorrelationId__c</field>
+        <readable>true</readable>
+    </fieldPermissions>
+    <fieldPermissions>
+        <editable>true</editable>
+        <field
+    >AXF_OBJ_BankAccountTransaction__c.AXF_BAT_TXT_Description__c</field>
+        <readable>true</readable>
+    </fieldPermissions>
+    <fieldPermissions>
+        <editable>true</editable>
+        <field
+    >AXF_OBJ_BankAccountTransaction__c.AXF_BAT_TXT_EvidenceRef__c</field>
+        <readable>true</readable>
+    </fieldPermissions>
+    <fieldPermissions>
+        <editable>true</editable>
+        <field
+    >AXF_OBJ_BankAccountTransaction__c.AXF_BAT_TXT_NormalizedDescription__c</field>
+        <readable>true</readable>
+    </fieldPermissions>
+    <fieldPermissions>
+        <editable>true</editable>
+        <field
+    >AXF_OBJ_BankAccountTransaction__c.AXF_BAT_TXT_ParserVersion__c</field>
+        <readable>true</readable>
+    </fieldPermissions>
+    <fieldPermissions>
+        <editable>true</editable>
+        <field>AXF_OBJ_IntegrationRun__c.AXF_INR_DT_CompleteThrough__c</field>
+        <readable>true</readable>
+    </fieldPermissions>
+    <fieldPermissions>
+        <editable>true</editable>
+        <field>AXF_OBJ_IntegrationRun__c.AXF_INR_DT_LastSuccessAt__c</field>
+        <readable>true</readable>
+    </fieldPermissions>
+    <fieldPermissions>
+        <editable>true</editable>
+        <field>AXF_OBJ_IntegrationRun__c.AXF_INR_NUM_RecordsWritten__c</field>
         <readable>true</readable>
     </fieldPermissions>
 </PermissionSet>
