@@ -169,9 +169,12 @@ describe("c-aXF_LWC_onboardingWizard", () => {
       STEPS({
         currentStep: "REVIEW",
         version: 9,
-        steps: STEPS().steps.map((s) =>
-          s.stepKey === "CURRENCY_PREF" ? s : { ...s, status: "CONFIRMED" }
-        )
+        steps: STEPS().steps.map((s) => {
+          if (s.stepKey === "CURRENCY_PREF") {
+            return s;
+          }
+          return { ...s, status: "CONFIRMED" };
+        })
       })
     );
     complete.mockResolvedValue(
