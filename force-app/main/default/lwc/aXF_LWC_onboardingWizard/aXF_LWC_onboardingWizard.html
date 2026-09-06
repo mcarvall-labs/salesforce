@@ -120,7 +120,9 @@
                     onclick={openGuide}
                   ></lightning-button>
                 </div>
-                <c-a-x-f_-l-w-c_pluggy-integration-config></c-a-x-f_-l-w-c_pluggy-integration-config>
+                <c-a-x-f_-l-w-c_pluggy-integration-config
+                  onstatuschange={handlePluggyStatusChange}
+                ></c-a-x-f_-l-w-c_pluggy-integration-config>
 
                 <template lwc:if={guideOpen}>
                   <section
@@ -193,11 +195,17 @@
                 ></lightning-button>
               </template>
               <template lwc:else>
+                <template lwc:if={pluggyBlocked}>
+                  <span class="slds-text-body_small slds-text-color_weak slds-var-m-right_small" role="status">
+                    {labels.pluggyNotConfigured}
+                  </span>
+                </template>
                 <lightning-button
                   variant="brand"
                   label={nextLabel}
+                  title={nextTitle}
                   onclick={handleNext}
-                  disabled={busy}
+                  disabled={nextDisabled}
                 ></lightning-button>
               </template>
             </div>

@@ -50,7 +50,9 @@ const PT = {
     REVIEW: "Revisão"
   },
   welcome:
-    "Bem-vindo. Esta configuração é opcional e pode ser retomada a qualquer momento — o Axon já está instalado para a sua família."
+    "Bem-vindo. Esta configuração é opcional e pode ser retomada a qualquer momento — o Axon já está instalado para a sua família.",
+  pluggyNotConfigured:
+    "Configure e salve as credenciais da Pluggy para avançar."
 };
 const EN = {
   title: "Axon setup",
@@ -83,7 +85,9 @@ const EN = {
     REVIEW: "Review"
   },
   welcome:
-    "Welcome. This setup is optional and can be resumed at any time — Axon is already installed for your family."
+    "Welcome. This setup is optional and can be resumed at any time — Axon is already installed for your family.",
+  pluggyNotConfigured:
+    "Configure and save the Pluggy credentials before proceeding."
 };
 const L = String(LANG || "")
   .toLowerCase()
@@ -102,6 +106,7 @@ export default class AxfLwcOnboardingWizard extends LightningElement {
   acknowledge = false;
   busy = false;
   guideOpen = false;
+  pluggyReady = false;
 
   async connectedCallback() {
     this.allowed = (await canConfigure().catch(() => false)) === true;
@@ -160,6 +165,27 @@ export default class AxfLwcOnboardingWizard extends LightningElement {
   }
   get nextLabel() {
     return this.busy ? L.working : L.next;
+  }
+  get pluggyBlocked() {
+    return this.current === "PLUGGY_CREDENTIALS" && !this.pluggyReady;
+  }
+  get nextDisabled() {
+    if (this.busy) {
+      return true;
+    }
+    if (this.pluggyBlocked) {
+      return true;
+    }
+    return false;
+  }
+  get nextTitle() {
+    if (this.pluggyBlocked) {
+      return L.pluggyNotConfigured;
+    }
+    return "";
+  }
+  handlePluggyStatusChange(event) {
+    this.pluggyReady = !!(event.detail && event.detail.hasActiveCredential);
   }
   get stepperItems() {
     const keys = [...ORDER, "REVIEW"];
@@ -267,6 +293,9 @@ export default class AxfLwcOnboardingWizard extends LightningElement {
   }
 
   async handleNext() {
+    if (this.nextDisabled) {
+      return;
+    }
     await this.advance("confirm");
   }
 

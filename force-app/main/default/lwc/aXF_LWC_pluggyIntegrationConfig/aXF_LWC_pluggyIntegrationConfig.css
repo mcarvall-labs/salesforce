@@ -36,3 +36,11 @@
     max-width: none;
   }
 }
+
+/* Credential presence badge */
+.pic__cred-badge {
+  display: flex;
+  align-items: center;
+  font-weight: 700;
+}
+

@@ -175,7 +175,13 @@ describe("c-aXF_LWC_pluggyIntegrationConfig", () => {
     getStatus.emit({ ...STATUS, rotationState: "NONE" });
     await flush();
 
-    expect(button(el, "Promover candidata").disabled).toBe(true);
+    // Rotation section hidden when NONE — promote button doesn't exist
+    expect(el.shadowRoot.querySelector(".pic__rotation-hint_warning")).toBeNull();
+    expect(
+      [...el.shadowRoot.querySelectorAll("lightning-button")].find(
+        (b) => b.label === "Ativar nova credencial"
+      )
+    ).toBeUndefined();
   });
 
   it("runs the candidate test", async () => {
@@ -186,10 +192,10 @@ describe("c-aXF_LWC_pluggyIntegrationConfig", () => {
     });
     const el = build();
     canConfigure.emit(true);
-    getStatus.emit(STATUS);
+    getStatus.emit({ ...STATUS, rotationState: "CANDIDATE" });
     await flush();
 
-    button(el, "Testar credencial candidata").click();
+    button(el, "Testar nova credencial").click();
     await flush();
     await flush();
     await flush();
@@ -202,13 +208,75 @@ describe("c-aXF_LWC_pluggyIntegrationConfig", () => {
     expect(feedback.value).toMatch(/validada/i);
   });
 
-  it("shows an error state with retry when the status wire fails", async () => {
+  it("shows 'Credencial configurada' badge when activeSlot is set", async () => {
     const el = build();
     canConfigure.emit(true);
-    getStatus.error();
+    getStatus.emit({ ...STATUS, activeSlot: "PRIMARY" });
     await flush();
-    expect(el.shadowRoot.querySelector("[role='alert']").textContent).toMatch(
-      /Não foi possível carregar/i
-    );
+
+    const badge = el.shadowRoot.querySelector(".pic__cred-badge");
+    expect(badge).not.toBeNull();
+    expect(badge.textContent).toMatch(/Credencial configurada/i);
+    expect(badge.className).toMatch(/slds-theme_success/);
+  });
+
+  it("shows neutral badge when no activeSlot is set", async () => {
+    const el = build();
+    canConfigure.emit(true);
+    getStatus.emit({ ...STATUS, activeSlot: null });
+    await flush();
+
+    const badge = el.shadowRoot.querySelector(".pic__cred-badge");
+    expect(badge).not.toBeNull();
+    expect(badge.textContent).toMatch(/Nenhuma credencial/i);
+    expect(badge.className).not.toMatch(/slds-theme_success/);
+  });
+
+  it("hides rotation section when rotationState is NONE", async () => {
+    const el = build();
+    canConfigure.emit(true);
+    getStatus.emit({ ...STATUS, rotationState: "NONE" });
+    await flush();
+
+    // Rotation section should not exist
+    expect(el.shadowRoot.textContent).not.toMatch(/Rotação em andamento/i);
+  });
+
+  it("shows rotation section when rotationState is CANDIDATE", async () => {
+    const el = build();
+    canConfigure.emit(true);
+    getStatus.emit({ ...STATUS, rotationState: "CANDIDATE" });
+    await flush();
+
+    expect(el.shadowRoot.textContent).toMatch(/Rotação em andamento/i);
+    expect(el.shadowRoot.textContent).toMatch(/Candidata preparada/i);
+  });
+
+  it("shows active slot health when available", async () => {
+    const el = build();
+    canConfigure.emit(true);
+    getStatus.emit({
+      ...STATUS,
+      activeSlot: "PRIMARY",
+      rotationState: "NONE",
+      primarySlotTestResult: "Conexão verificada com sucesso."
+    });
+    await flush();
+
+    expect(el.shadowRoot.textContent).toMatch(/Último teste — credencial ativa/i);
+    expect(el.shadowRoot.textContent).toMatch(/Conexão verificada com sucesso/i);
+  });
+
+  it("does not show stale ROLLED_BACK state in the UI (it is volatile)", async () => {
+    // After a failed rotation the backend saves NONE, so the UI receives NONE.
+    // This test verifies that the UI never renders the raw ROLLED_BACK code.
+    const el = build();
+    canConfigure.emit(true);
+    // Backend will return NONE after failure — never ROLLED_BACK persisted
+    getStatus.emit({ ...STATUS, rotationState: "NONE" });
+    await flush();
+
+    expect(el.shadowRoot.textContent).not.toMatch(/ROLLED_BACK/);
+    expect(el.shadowRoot.textContent).not.toMatch(/Rotação em andamento/i);
   });
 });

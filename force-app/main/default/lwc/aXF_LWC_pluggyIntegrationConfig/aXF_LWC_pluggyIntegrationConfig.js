@@ -18,27 +18,52 @@ const L = {
   LOAD_ERROR: "Não foi possível carregar a configuração da integração.",
   RETRY: "Tentar novamente",
   ACTIVE_SLOT: "Slot de credencial ativo",
-  ROTATION_STATE: "Estado da rotação",
+  ROTATION_STATE: "Estado",
   SECRET_HINT:
     "O Client ID e o Client Secret são encaminhados direto para a Credencial Externa nativa e descartados. Nunca são gravados nem exibidos aqui.",
   CLIENT_ID: "Client ID",
   CLIENT_SECRET: "Client Secret",
+
   SAVE_ACTIVE: "Salvar credencial ativa",
-  STAGE_CANDIDATE: "Preparar candidata (rotação)",
-  TEST_CANDIDATE: "Testar credencial candidata",
-  PROMOTE: "Promover candidata",
-  ROLLBACK: "Reverter rotação",
-  PAUSE_GLOBAL: "Pausar coleta globalmente",
-  RESUME_GLOBAL: "Retomar coleta global",
-  GLOBAL_PAUSED: "A coleta Pluggy está pausada globalmente.",
-  GLOBAL_ACTIVE: "A coleta Pluggy está ativa.",
+  SAVE_ACTIVE_TITLE:
+    "Salva o Client ID e Client Secret como a credencial principal da integração Pluggy. Use ao configurar pela primeira vez ou ao renovar credenciais expiradas. A credencial anterior é substituída imediatamente.",
+
+  STAGE_CANDIDATE: "Iniciar rotação de credencial",
+  STAGE_CANDIDATE_TITLE:
+    "Prepara uma nova credencial sem desativar a atual — a integração continua funcionando normalmente. Depois de preparar, você pode testá-la e só então ativá-la. Use quando precisar trocar credenciais sem interromper a coleta.",
+
+  TEST_CANDIDATE: "Testar nova credencial",
+  TEST_CANDIDATE_TITLE:
+    "Verifica se a nova credencial consegue se autenticar na Pluggy e acessar todas as conexões existentes. Execute antes de ativar. Se o teste falhar, a credencial atual permanece ativa.",
+
+  PROMOTE: "Ativar nova credencial",
+  PROMOTE_TITLE:
+    "Ativa a nova credencial como principal. Só disponível após um teste bem-sucedido. A credencial anterior permanece armazenada como backup, mas deixa de ser usada.",
+
+  ROLLBACK: "Cancelar rotação",
+  ROLLBACK_TITLE:
+    "Abandona o processo de troca de credencial em andamento. A nova credencial é descartada e a credencial ativa permanece inalterada. Use se desistir da troca ou quiser recomeçar com credenciais diferentes.",
+
+  PAUSE_GLOBAL: "Pausar coleta de dados",
+  PAUSE_GLOBAL_TITLE:
+    "Pausa temporariamente a sincronização automática de contas e cartões de todos os usuários. Use durante manutenção ou ao trocar credenciais. Nenhum dado é perdido — a coleta retoma do ponto onde parou.",
+
+  RESUME_GLOBAL: "Retomar coleta de dados",
+  RESUME_GLOBAL_TITLE:
+    "Reativa a sincronização automática após uma pausa. As conexões serão atualizadas na próxima execução agendada.",
+
+  GLOBAL_PAUSED: "⏸ Coleta de dados pausada.",
+  GLOBAL_ACTIVE: "▶ Coleta de dados ativa.",
   CONNECTIONS: "Conexões",
   BLOCKED: "Conexões bloqueadas",
-  PRIMARY_TEST: "Último teste — slot primário",
-  CANDIDATE_TEST: "Último teste — slot candidato",
+  ACTIVE_TEST: "Último teste — credencial ativa",
+  CANDIDATE_TEST: "Último teste — candidata",
+  ROTATION_IN_PROGRESS: "Rotação em andamento",
   BUSY: "Processando…",
   FILL_BOTH: "Informe o Client ID e o Client Secret.",
-  GENERIC_FAIL: "A operação não foi concluída. Nada foi alterado."
+  GENERIC_FAIL: "A operação não foi concluída. Nada foi alterado.",
+  CREDENTIAL_ACTIVE: "Credencial configurada — coleta ativa",
+  CREDENTIAL_NONE: "Nenhuma credencial configurada ainda"
 };
 
 const STATE = {
@@ -85,6 +110,20 @@ export default class AxfPluggyIntegrationConfig extends LightningElement {
       return;
     }
     this.state = STATE.READY;
+    this.notifyStatusChange();
+  }
+
+  notifyStatusChange() {
+    this.dispatchEvent(
+      new CustomEvent("statuschange", {
+        detail: {
+          hasActiveCredential: this.hasActiveCredential,
+          activeSlot: this.status && this.status.activeSlot
+        },
+        bubbles: true,
+        composed: true
+      })
+    );
   }
 
   get isLoading() {
@@ -114,11 +153,60 @@ export default class AxfPluggyIntegrationConfig extends LightningElement {
     );
   }
   get rollbackDisabled() {
+    // Only makes sense when a rotation is explicitly in progress
     return (
       this.busy ||
       !this.status ||
-      ["NONE", "PROMOTED"].includes(this.status.rotationState)
+      !["CANDIDATE", "TESTED_OK"].includes(this.status.rotationState)
     );
+  }
+  /** True when a credential has been saved (slot pointer is set). */
+  get hasActiveCredential() {
+    return !!(this.status && this.status.activeSlot);
+  }
+  get credentialStatusLabel() {
+    return this.hasActiveCredential ? L.CREDENTIAL_ACTIVE : L.CREDENTIAL_NONE;
+  }
+  get credentialBadgeClass() {
+    const base =
+      "slds-box slds-p-around_x-small slds-text-body_small pic__cred-badge";
+    return this.hasActiveCredential
+      ? `${base} slds-theme_success`
+      : `${base} slds-theme_shade`;
+  }
+  get credentialBadgeIcon() {
+    return this.hasActiveCredential ? "utility:check" : "utility:warning";
+  }
+  /**
+   * The last known health of the **active** slot — shown so the user knows
+   * whether the current credential is reachable, not the candidate's test result.
+   * Only populated after an explicit test action; never shows stale candidate data.
+   */
+  get activeSlotHealth() {
+    if (!this.status) return null;
+    const slot = this.status.activeSlot;
+    if (!slot) return null;
+    return slot === "PRIMARY"
+      ? this.status.primarySlotTestResult
+      : this.status.candidateSlotTestResult;
+  }
+  /**
+   * True only while a rotation is explicitly in progress.
+   * NONE (and the DB-erased ROLLED_BACK/PROMOTED) collapse to false so the
+   * rotation section doesn't appear when there is nothing to act on.
+   */
+  get hasActiveRotation() {
+    const code = this.status && this.status.rotationState;
+    return ["CANDIDATE", "TESTING", "TESTED_OK"].includes(code);
+  }
+  get rotationStateLabel() {
+    if (!this.status) return "";
+    const labels = {
+      CANDIDATE: "Candidata preparada — aguardando teste",
+      TESTING: "Testando candidata…",
+      TESTED_OK: "✅ Candidata aprovada — pronta para promover"
+    };
+    return labels[this.status.rotationState] || "";
   }
 
   handleClientIdChange(event) {
