@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<CustomField xmlns="http://soap.sforce.com/2006/04/metadata">
+    <fullName>AXF_CCT_TXT_BillReference__c</fullName>
+    <label>Referencia de Fatura (Pluggy billId)</label>
+    <type>Text</type>
+    <length>80</length>
+    <required>false</required>
+    <description
+  >billId da Pluggy quando informado; nulo para transacao sem fatura confirmada (esclarecimento aprovado AXF-12). Nao cria fatura ficticia.</description>
+</CustomField>

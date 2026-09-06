@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<CustomField xmlns="http://soap.sforce.com/2006/04/metadata">
+    <fullName>AXF_PSP_NUM_MaxActiveRunsPerScope__c</fullName>
+    <label>Execucoes ativas por (conexao, produto)</label>
+    <type>Number</type>
+    <precision>2</precision>
+    <scale>0</scale>
+    <required>true</required>
+    <description
+  >Concorrencia maxima por escopo; excedente = CONFLICT. Aprovado: 1.</description>
+</CustomField>

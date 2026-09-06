@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<CustomField xmlns="http://soap.sforce.com/2006/04/metadata">
+    <fullName>AXF_PSP_TXT_ScheduleTimeZone__c</fullName>
+    <label>Fuso do agendamento</label>
+    <type>Text</type>
+    <length>40</length>
+    <required>true</required>
+    <description
+  >IANA time zone do agendamento diario. Aprovado: America/Sao_Paulo.</description>
+</CustomField>

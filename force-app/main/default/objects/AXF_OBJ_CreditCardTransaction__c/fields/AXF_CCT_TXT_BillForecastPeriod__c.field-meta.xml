@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<CustomField xmlns="http://soap.sforce.com/2006/04/metadata">
+    <fullName>AXF_CCT_TXT_BillForecastPeriod__c</fullName>
+    <label>Periodo Previsto da Fatura (YYYY-MM)</label>
+    <type>Text</type>
+    <length>7</length>
+    <required>false</required>
+    <description
+  >billForecastDate da Pluggy como periodo YYYY-MM; periodo previsto, nao vencimento nem confirmacao (esclarecimento aprovado AXF-12).</description>
+</CustomField>

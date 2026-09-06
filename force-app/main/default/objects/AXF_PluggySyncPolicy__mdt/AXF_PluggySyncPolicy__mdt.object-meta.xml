@@ -1,0 +1,8 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<CustomObject xmlns="http://soap.sforce.com/2006/04/metadata">
+    <label>AXF Pluggy Sync Policy</label>
+    <pluralLabel>AXF Pluggy Sync Policies</pluralLabel>
+    <visibility>Public</visibility>
+    <description
+  >Parametros conservadores aprovados por Michel (05/09/2026) para a sincronizacao Pluggy (AXF-12 AC8): pagina, checkpoint, backoff, tentativas, concorrencia, agendamento e janela de inatividade. Sujeitos a revisao na prova de volume (G9). Ausencia de registro bloqueia a sincronizacao em vez de usar default inventado.</description>
+</CustomObject>
