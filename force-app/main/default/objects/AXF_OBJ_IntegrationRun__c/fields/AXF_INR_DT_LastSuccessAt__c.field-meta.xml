@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<CustomField xmlns="http://soap.sforce.com/2006/04/metadata">
+    <fullName>AXF_INR_DT_LastSuccessAt__c</fullName>
+    <label>Ultimo sucesso em</label>
+    <type>DateTime</type>
+    <required>false</required>
+    <description
+  >Instante do ultimo slice que terminou em SUCCEEDED para este escopo (conexao, produto). Alimenta o painel de saude (AC6); um sucesso parcial nao atualiza este campo.</description>
+</CustomField>
