@@ -11,16 +11,14 @@
   min-width: 0;
 }
 
-.pic__col_form {
-  flex: 1 1 20rem;
-  max-width: 24rem;
-}
-
+/* The two columns share the width equally. */
+.pic__col_form,
 .pic__col_status {
-  flex: 2 1 26rem;
+  flex: 1 1 0;
 }
 
-/* Keep the credential inputs compact — they hold short ids, not prose. */
+/* Keep the credential inputs compact — they hold short ids, not prose —
+   even though the column around them is now half the section. */
 .pic__field {
   display: block;
   max-width: 22rem;
