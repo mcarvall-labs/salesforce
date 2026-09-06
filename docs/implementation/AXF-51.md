@@ -29,14 +29,14 @@
 
 ## Escopo Entregue
 
-| Área | Componente |
-| --- | --- |
-| Schema | `AXF_OBJ_Counterparty__c`, `AXF_OBJ_CounterpartyEntityRelationship__c`, `AXF_OBJ_CounterpartyTaxIdentifier__c` e Sharing Reasons `AXF_CounterpartyRelationAccess__c`. |
+| Área              | Componente                                                                                                                                                                                                                                                                  |
+| ----------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Schema            | `AXF_OBJ_Counterparty__c`, `AXF_OBJ_CounterpartyEntityRelationship__c`, `AXF_OBJ_CounterpartyTaxIdentifier__c` e Sharing Reasons `AXF_CounterpartyRelationAccess__c`.                                                                                                       |
 | Domínio / Serviço | `ALT_CLS_CounterpartyService` — Enquadramento de chaves (`AXF_CLS_IdentityFraming`), cálculo seguro de máscaras e digests fiscais, queries isoladas por contexto de entidade, CRUD transacional, controle de concorrência otimista (`Version`) e concessão de Apex Sharing. |
-| Controller | `AXF_CLS_CTRL_CounterpartyManagement` — Camada fina @AuraEnabled com sanitização de erros e integração com contextos autorizados. |
-| UI | LWC `aXF_LWC_counterpartyManagement` — Gestão visual em duas colunas (seleção de entidade, busca reativa, listagem de contrapartes, painel de detalhes com identificador mascarado e modal de cadastro/edição). Aba customizada `AXF_Counterparties`. |
-| Segurança | Atualização de `AXF_PS_GestorFinanceiro` (Create/Edit/Read) e `AXF_PS_Participante` (Read-only), com concessões estritas de FLS apenas nos campos relacionais opcionais. |
-| Testes Unitários | `ALT_CLS_CounterpartyServiceTest` e `AXF_CLS_CTRL_CounterpartyManagementTest` cobrindo 100% dos cenários de negócio, isolamento GF-32, proteção fiscal AD-30, concorrência otimista e validações de fronteira. |
+| Controller        | `AXF_CLS_CTRL_CounterpartyManagement` — Camada fina @AuraEnabled com sanitização de erros e integração com contextos autorizados.                                                                                                                                           |
+| UI                | LWC `aXF_LWC_counterpartyManagement` — Gestão visual em duas colunas (seleção de entidade, busca reativa, listagem de contrapartes, painel de detalhes com identificador mascarado e modal de cadastro/edição). Aba customizada `AXF_Counterparties`.                       |
+| Segurança         | Atualização de `AXF_PS_GestorFinanceiro` (Create/Edit/Read) e `AXF_PS_Participante` (Read-only), com concessões estritas de FLS apenas nos campos relacionais opcionais.                                                                                                    |
+| Testes Unitários  | `ALT_CLS_CounterpartyServiceTest` e `AXF_CLS_CTRL_CounterpartyManagementTest` cobrindo 100% dos cenários de negócio, isolamento GF-32, proteção fiscal AD-30, concorrência otimista e validações de fronteira.                                                              |
 
 ## Validação
 

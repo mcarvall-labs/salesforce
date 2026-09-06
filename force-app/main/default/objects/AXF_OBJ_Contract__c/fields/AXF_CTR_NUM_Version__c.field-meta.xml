@@ -2,7 +2,8 @@
 <CustomField xmlns="http://soap.sforce.com/2006/04/metadata">
     <fullName>AXF_CTR_NUM_Version__c</fullName>
     <defaultValue>1</defaultValue>
-    <description>Versão para controle de concorrência otimista (expectedVersion, G6).</description>
+    <description
+  >Versão para controle de concorrência otimista (expectedVersion, G6).</description>
     <label>Versão</label>
     <precision>18</precision>
     <required>true</required>

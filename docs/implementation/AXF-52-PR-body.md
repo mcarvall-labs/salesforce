@@ -5,6 +5,7 @@ Implementação da história **AXF-52: Criar um Contrato em rascunho** (Epic AXF
 Esta entrega estabelece o aggregate root privado de Contratos (`AXF_OBJ_Contract__c`), vinculando-o canonicamente a uma Entidade titular (`Account`) e a uma relação contextual ativa com contraparte (`AXF_OBJ_CounterpartyEntityRelationship__c`).
 
 ### Principais Entregas
+
 - **Schema & Modelo de Dados:**
   - `AXF_OBJ_Contract__c` (CTR): Aggregate root privado com lookups restritos a `Account`, `AXF_OBJ_Counterparty__c` e `AXF_OBJ_CounterpartyEntityRelationship__c`.
   - Chave canônica determinística única: `AXF_CTR_EXI_ContractKey__c` calculada via `AXF_CLS_IdentityFraming` como `sha256Hex(frame('CONTRACT', accountId, contractCode))`.

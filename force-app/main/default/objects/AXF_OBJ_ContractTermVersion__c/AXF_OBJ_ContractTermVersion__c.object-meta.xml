@@ -1,4 +1,4 @@
-﻿<?xml version="1.0" encoding="UTF-8"?>
+﻿<?xml version="1.0" encoding="UTF-8" ?>
 <CustomObject xmlns="http://soap.sforce.com/2006/04/metadata">
     <actionOverrides>
         <actionName>Accept</actionName>
@@ -44,7 +44,8 @@
     <compactLayoutAssignment>SYSTEM</compactLayoutAssignment>
     <deploymentStatus>Deployed</deploymentStatus>
     <deprecated>false</deprecated>
-    <description>Versao de termos contratuais com modelo de remuneracao (MONTHLY, HOURLY, FIXED), parametros, vigencia e regras de calendario.</description>
+    <description
+  >Versao de termos contratuais com modelo de remuneracao (MONTHLY, HOURLY, FIXED), parametros, vigencia e regras de calendario.</description>
     <enableActivities>false</enableActivities>
     <enableBulkApi>true</enableBulkApi>
     <enableFeeds>false</enableFeeds>
@@ -61,7 +62,7 @@
         <type>AutoNumber</type>
     </nameField>
     <pluralLabel>Versoes de Termos Contratuais</pluralLabel>
-    <searchLayouts/>
+    <searchLayouts />
     <sharingModel>Private</sharingModel>
     <visibility>Public</visibility>
 </CustomObject>

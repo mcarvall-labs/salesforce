@@ -9,10 +9,11 @@
  */
 @IsTest
 private class AXF_CLS_CTRL_CounterpartyManagementTest {
-
   private static Account createTestAccount(String name) {
     Account acc = new Account(Name = name);
-    Id bRtId = Schema.SObjectType.Account.getRecordTypeInfosByDeveloperName().get('AXF_Business')?.getRecordTypeId();
+    Id bRtId = Schema.SObjectType.Account.getRecordTypeInfosByDeveloperName()
+      .get('AXF_Business')
+      ?.getRecordTypeId();
     if (bRtId != null) {
       acc.RecordTypeId = bRtId;
     }
@@ -26,7 +27,10 @@ private class AXF_CLS_CTRL_CounterpartyManagementTest {
     List<AXF_CLS_AuthorizedContextService.ContextView> contexts = AXF_CLS_CTRL_CounterpartyManagement.getAuthorizedEntities();
     Test.stopTest();
 
-    Assert.isNotNull(contexts, 'Lista de entidades autorizadas não deve ser nula');
+    Assert.isNotNull(
+      contexts,
+      'Lista de entidades autorizadas não deve ser nula'
+    );
   }
 
   @IsTest
@@ -43,7 +47,10 @@ private class AXF_CLS_CTRL_CounterpartyManagementTest {
     AXF_CLS_CTRL_CounterpartyManagement.saveCounterparty(input);
 
     Test.startTest();
-    List<ALT_CLS_CounterpartyService.CounterpartySummaryDTO> listResult = AXF_CLS_CTRL_CounterpartyManagement.getCounterparties(acc.Id, 'Beta');
+    List<ALT_CLS_CounterpartyService.CounterpartySummaryDTO> listResult = AXF_CLS_CTRL_CounterpartyManagement.getCounterparties(
+      acc.Id,
+      'Beta'
+    );
     Test.stopTest();
 
     Assert.areEqual(1, listResult.size());
@@ -70,10 +77,15 @@ private class AXF_CLS_CTRL_CounterpartyManagementTest {
     input.role = 'CLIENT';
     input.entitySpecificDisplay = 'Gamma - Matriz SP';
 
-    ALT_CLS_CounterpartyService.OperationResultDTO saveRes = AXF_CLS_CTRL_CounterpartyManagement.saveCounterparty(input);
+    ALT_CLS_CounterpartyService.OperationResultDTO saveRes = AXF_CLS_CTRL_CounterpartyManagement.saveCounterparty(
+      input
+    );
 
     Test.startTest();
-    ALT_CLS_CounterpartyService.CounterpartyDetailDTO detail = AXF_CLS_CTRL_CounterpartyManagement.getCounterpartyDetail(saveRes.counterpartyId, acc.Id);
+    ALT_CLS_CounterpartyService.CounterpartyDetailDTO detail = AXF_CLS_CTRL_CounterpartyManagement.getCounterpartyDetail(
+      saveRes.counterpartyId,
+      acc.Id
+    );
     Test.stopTest();
 
     Assert.isNotNull(detail);
@@ -91,7 +103,10 @@ private class AXF_CLS_CTRL_CounterpartyManagementTest {
 
     // Erro: accountId nulo
     try {
-      AXF_CLS_CTRL_CounterpartyManagement.getCounterpartyDetail(saveRes.counterpartyId, null);
+      AXF_CLS_CTRL_CounterpartyManagement.getCounterpartyDetail(
+        saveRes.counterpartyId,
+        null
+      );
       Assert.fail('Deveria lançar AuraHandledException');
     } catch (AuraHandledException e) {
       Assert.isNotNull(e);
@@ -113,7 +128,9 @@ private class AXF_CLS_CTRL_CounterpartyManagementTest {
     invalidDTO.legalName = 'Sem Account';
     try {
       AXF_CLS_CTRL_CounterpartyManagement.saveCounterparty(invalidDTO);
-      Assert.fail('Deveria converter AXF_CLS_CounterpartyException em AuraHandledException');
+      Assert.fail(
+        'Deveria converter AXF_CLS_CounterpartyException em AuraHandledException'
+      );
     } catch (AuraHandledException e) {
       Assert.isNotNull(e);
     }
@@ -121,13 +138,18 @@ private class AXF_CLS_CTRL_CounterpartyManagementTest {
 
   @IsTest
   static void testCounterpartyExceptionAndCatchBlocks() {
-    AXF_CLS_CounterpartyException ex = new AXF_CLS_CounterpartyException('Mensagem de erro de teste');
+    AXF_CLS_CounterpartyException ex = new AXF_CLS_CounterpartyException(
+      'Mensagem de erro de teste'
+    );
     Assert.areEqual('Mensagem de erro de teste', ex.getMessage());
 
     Id fakeAccId = '001000000000001AAA';
     Id fakeCptyId = 'a01000000000001AAA';
     try {
-      AXF_CLS_CTRL_CounterpartyManagement.getCounterpartyDetail(fakeCptyId, fakeAccId);
+      AXF_CLS_CTRL_CounterpartyManagement.getCounterpartyDetail(
+        fakeCptyId,
+        fakeAccId
+      );
       Assert.fail('Deveria lançar AuraHandledException');
     } catch (AuraHandledException e) {
       Assert.isNotNull(e);

@@ -90,10 +90,19 @@ export default class AXF_LWC_contractManagement extends LightningElement {
   ];
 
   calendarOptions = [
-    { label: "Calendario Padrao Contratado (STANDARD_CALENDAR)", value: "STANDARD_CALENDAR" },
+    {
+      label: "Calendario Padrao Contratado (STANDARD_CALENDAR)",
+      value: "STANDARD_CALENDAR"
+    },
     { label: "Dias Corridos (CALENDAR_DAYS)", value: "CALENDAR_DAYS" },
-    { label: "Dias Uteis Brasil (BUSINESS_DAYS_BRAZIL)", value: "BUSINESS_DAYS_BRAZIL" },
-    { label: "Regra Nao Contratada / Feriado Local (LOCAL_CUSTOM_HOLIDAYS)", value: "LOCAL_CUSTOM_HOLIDAYS" }
+    {
+      label: "Dias Uteis Brasil (BUSINESS_DAYS_BRAZIL)",
+      value: "BUSINESS_DAYS_BRAZIL"
+    },
+    {
+      label: "Regra Nao Contratada / Feriado Local (LOCAL_CUSTOM_HOLIDAYS)",
+      value: "LOCAL_CUSTOM_HOLIDAYS"
+    }
   ];
 
   get isModelMonthly() {
@@ -335,7 +344,8 @@ export default class AXF_LWC_contractManagement extends LightningElement {
       accountId: this.selectedAccountId,
       remunerationModel: "MONTHLY",
       currencyIsoCode: this.selectedDetail.currencyIsoCode || "BRL",
-      effectiveFrom: this.selectedDetail.startDate || new Date().toISOString().split("T")[0],
+      effectiveFrom:
+        this.selectedDetail.startDate || new Date().toISOString().split("T")[0],
       effectiveTo: this.selectedDetail.endDate,
       rate: 5000,
       hoursQuantity: null,
@@ -405,11 +415,19 @@ export default class AXF_LWC_contractManagement extends LightningElement {
     try {
       const payload = { ...this.termForm };
       await saveDraftTermVersion({ payload });
-      this.showToast("Sucesso", "Rascunho do termo contratual salvo com sucesso.", "success");
+      this.showToast(
+        "Sucesso",
+        "Rascunho do termo contratual salvo com sucesso.",
+        "success"
+      );
       this.isTermModalOpen = false;
       await this.loadTermVersions(this.selectedDetail.contractId);
     } catch (err) {
-      this.showToast("Erro ao Salvar Termo", this.extractErrorMessage(err), "error");
+      this.showToast(
+        "Erro ao Salvar Termo",
+        this.extractErrorMessage(err),
+        "error"
+      );
     } finally {
       this.isSaving = false;
     }
@@ -424,13 +442,21 @@ export default class AXF_LWC_contractManagement extends LightningElement {
         accountId: this.selectedAccountId
       });
       if (res.success) {
-        this.showToast("Ativado", "Versao de termo ativada com sucesso.", "success");
+        this.showToast(
+          "Ativado",
+          "Versao de termo ativada com sucesso.",
+          "success"
+        );
       } else {
         this.showToast("Bloqueado (BLOCKED)", res.message, "error");
       }
       await this.loadTermVersions(this.selectedDetail.contractId);
     } catch (err) {
-      this.showToast("Erro na Ativacao", this.extractErrorMessage(err), "error");
+      this.showToast(
+        "Erro na Ativacao",
+        this.extractErrorMessage(err),
+        "error"
+      );
       await this.loadTermVersions(this.selectedDetail.contractId);
     } finally {
       this.isLoading = false;
@@ -607,7 +633,9 @@ export default class AXF_LWC_contractManagement extends LightningElement {
       endDate: new Date().toISOString().slice(0, 10),
       quantity: 8,
       rate: 100,
-      currencyIsoCode: this.selectedDetail ? this.selectedDetail.currencyIsoCode : "BRL",
+      currencyIsoCode: this.selectedDetail
+        ? this.selectedDetail.currencyIsoCode
+        : "BRL",
       source: "MANUAL",
       description: ""
     };
@@ -643,8 +671,14 @@ export default class AXF_LWC_contractManagement extends LightningElement {
   }
 
   handleSaveWorkRecord() {
-    if (!this.wrForm.startDate || !this.wrForm.endDate || !this.wrForm.quantity || !this.wrForm.rate) {
-      this.errorMessage = "Preencha todos os campos obrigatorios do registro de trabalho.";
+    if (
+      !this.wrForm.startDate ||
+      !this.wrForm.endDate ||
+      !this.wrForm.quantity ||
+      !this.wrForm.rate
+    ) {
+      this.errorMessage =
+        "Preencha todos os campos obrigatorios do registro de trabalho.";
       return;
     }
 
@@ -663,7 +697,13 @@ export default class AXF_LWC_contractManagement extends LightningElement {
         .then(() => {
           this.isWorkRecordModalOpen = false;
           this.loadWorkRecords();
-          this.dispatchEvent(new ShowToastEvent({ title: "Sucesso", message: "Registro de trabalho corrigido por substituicao.", variant: "success" }));
+          this.dispatchEvent(
+            new ShowToastEvent({
+              title: "Sucesso",
+              message: "Registro de trabalho corrigido por substituicao.",
+              variant: "success"
+            })
+          );
         })
         .catch((error) => {
           this.errorMessage = error.body ? error.body.message : error.message;
@@ -676,7 +716,13 @@ export default class AXF_LWC_contractManagement extends LightningElement {
         .then(() => {
           this.isWorkRecordModalOpen = false;
           this.loadWorkRecords();
-          this.dispatchEvent(new ShowToastEvent({ title: "Sucesso", message: "Registro de trabalho salvo com sucesso.", variant: "success" }));
+          this.dispatchEvent(
+            new ShowToastEvent({
+              title: "Sucesso",
+              message: "Registro de trabalho salvo com sucesso.",
+              variant: "success"
+            })
+          );
         })
         .catch((error) => {
           this.errorMessage = error.body ? error.body.message : error.message;
@@ -693,7 +739,13 @@ export default class AXF_LWC_contractManagement extends LightningElement {
     submitWorkRecord({ workRecordId: wrId })
       .then(() => {
         this.loadWorkRecords();
-        this.dispatchEvent(new ShowToastEvent({ title: "Sucesso", message: "Registro submetido para aprovacao.", variant: "info" }));
+        this.dispatchEvent(
+          new ShowToastEvent({
+            title: "Sucesso",
+            message: "Registro submetido para aprovacao.",
+            variant: "info"
+          })
+        );
       })
       .catch((error) => {
         this.errorMessage = error.body ? error.body.message : error.message;
@@ -706,10 +758,20 @@ export default class AXF_LWC_contractManagement extends LightningElement {
   handleApproveWorkRecord(e) {
     const wrId = e.target.dataset.id;
     this.isLoading = true;
-    decideWorkRecord({ workRecordId: wrId, approved: true, reason: "Aprovado pelo gestor" })
+    decideWorkRecord({
+      workRecordId: wrId,
+      approved: true,
+      reason: "Aprovado pelo gestor"
+    })
       .then(() => {
         this.loadWorkRecords();
-        this.dispatchEvent(new ShowToastEvent({ title: "Aprovado", message: "Registro de trabalho aprovado.", variant: "success" }));
+        this.dispatchEvent(
+          new ShowToastEvent({
+            title: "Aprovado",
+            message: "Registro de trabalho aprovado.",
+            variant: "success"
+          })
+        );
       })
       .catch((error) => {
         this.errorMessage = error.body ? error.body.message : error.message;
@@ -722,10 +784,20 @@ export default class AXF_LWC_contractManagement extends LightningElement {
   handleRejectWorkRecord(e) {
     const wrId = e.target.dataset.id;
     this.isLoading = true;
-    decideWorkRecord({ workRecordId: wrId, approved: false, reason: "Rejeitado para revisao" })
+    decideWorkRecord({
+      workRecordId: wrId,
+      approved: false,
+      reason: "Rejeitado para revisao"
+    })
       .then(() => {
         this.loadWorkRecords();
-        this.dispatchEvent(new ShowToastEvent({ title: "Rejeitado", message: "Registro de trabalho rejeitado.", variant: "warning" }));
+        this.dispatchEvent(
+          new ShowToastEvent({
+            title: "Rejeitado",
+            message: "Registro de trabalho rejeitado.",
+            variant: "warning"
+          })
+        );
       })
       .catch((error) => {
         this.errorMessage = error.body ? error.body.message : error.message;
@@ -757,5 +829,4 @@ export default class AXF_LWC_contractManagement extends LightningElement {
     };
     this.isWorkRecordModalOpen = true;
   }
-
 }

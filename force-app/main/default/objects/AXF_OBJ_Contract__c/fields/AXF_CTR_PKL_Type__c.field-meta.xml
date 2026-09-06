@@ -1,7 +1,8 @@
 <?xml version="1.0" encoding="UTF-8" ?>
 <CustomField xmlns="http://soap.sforce.com/2006/04/metadata">
     <fullName>AXF_CTR_PKL_Type__c</fullName>
-    <description>Natureza financeira do contrato: Receita ou Despesa.</description>
+    <description
+  >Natureza financeira do contrato: Receita ou Despesa.</description>
     <label>Tipo de Contrato</label>
     <required>true</required>
     <type>Picklist</type>

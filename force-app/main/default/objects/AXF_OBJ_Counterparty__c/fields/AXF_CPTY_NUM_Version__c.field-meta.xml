@@ -2,7 +2,8 @@
 <CustomField xmlns="http://soap.sforce.com/2006/04/metadata">
     <fullName>AXF_CPTY_NUM_Version__c</fullName>
     <defaultValue>1</defaultValue>
-    <description>Controle de concorrência otimista e versionamento de mutação (G6, AD-30).</description>
+    <description
+  >Controle de concorrência otimista e versionamento de mutação (G6, AD-30).</description>
     <externalId>false</externalId>
     <label>Versão</label>
     <precision>18</precision>

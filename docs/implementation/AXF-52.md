@@ -38,15 +38,15 @@
 
 ## Escopo Entregue
 
-| Área | Componente |
-| --- | --- |
-| Schema | Objeto customizado `AXF_OBJ_Contract__c`, campos relacionais, chaves canônicas e Apex Sharing Reason `AXF_ContractAccess__c`. Aba customizada `AXF_Contracts`. |
+| Área              | Componente                                                                                                                                                                                                                                                                                                                              |
+| ----------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Schema            | Objeto customizado `AXF_OBJ_Contract__c`, campos relacionais, chaves canônicas e Apex Sharing Reason `AXF_ContractAccess__c`. Aba customizada `AXF_Contracts`.                                                                                                                                                                          |
 | Domínio / Serviço | `ALT_CLS_ContractService` — Validação estrita de titular e relação ativa, enquadramento de chave canônica (`AXF_CLS_IdentityFraming`), criação em `DRAFT`, edição com controle de concorrência otimista (`Version`), replay idempotente (`ClientRequestId`), bloqueio de operações prematuras de lifecycle e concessão de Apex Sharing. |
-| Exceções | `AXF_CLS_ContractException` — Exceção tipada de domínio contratual. |
-| Controller | `AXF_CLS_CTRL_ContractManagement` — Controller fino @AuraEnabled com sanitização de exceções e mapeamento com contextos autorizados. |
-| UI | LWC `aXF_LWC_contractManagement` — Interface completa em conformidade com SLDS para gestão de contratos por entidade titular, tabela com busca/status, visualização detalhada e modal de criação/edição com foco acessível. |
-| Segurança | Atualização de Permission Sets `AXF_PS_GestorFinanceiro` (CRUD completo exceto Delete) e `AXF_PS_Participante` (Read-only), com acesso restrito a campos e classes. |
-| Testes Unitários | `ALT_CLS_ContractServiceTest` e `AXF_CLS_CTRL_ContractManagementTest` cobrindo 15 cenários de negócio, concorrência, idempotência, isolamento cross-entity e invariantes financeiras. |
+| Exceções          | `AXF_CLS_ContractException` — Exceção tipada de domínio contratual.                                                                                                                                                                                                                                                                     |
+| Controller        | `AXF_CLS_CTRL_ContractManagement` — Controller fino @AuraEnabled com sanitização de exceções e mapeamento com contextos autorizados.                                                                                                                                                                                                    |
+| UI                | LWC `aXF_LWC_contractManagement` — Interface completa em conformidade com SLDS para gestão de contratos por entidade titular, tabela com busca/status, visualização detalhada e modal de criação/edição com foco acessível.                                                                                                             |
+| Segurança         | Atualização de Permission Sets `AXF_PS_GestorFinanceiro` (CRUD completo exceto Delete) e `AXF_PS_Participante` (Read-only), com acesso restrito a campos e classes.                                                                                                                                                                     |
+| Testes Unitários  | `ALT_CLS_ContractServiceTest` e `AXF_CLS_CTRL_ContractManagementTest` cobrindo 15 cenários de negócio, concorrência, idempotência, isolamento cross-entity e invariantes financeiras.                                                                                                                                                   |
 
 ## Validação
 

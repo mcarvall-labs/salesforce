@@ -1,71 +1,71 @@
-import { LightningElement, track, wire } from 'lwc';
-import getAuthorizedEntities from '@salesforce/apex/AXF_CLS_CTRL_CounterpartyManagement.getAuthorizedEntities';
-import getCounterparties from '@salesforce/apex/AXF_CLS_CTRL_CounterpartyManagement.getCounterparties';
-import getCounterpartyDetail from '@salesforce/apex/AXF_CLS_CTRL_CounterpartyManagement.getCounterpartyDetail';
-import saveCounterparty from '@salesforce/apex/AXF_CLS_CTRL_CounterpartyManagement.saveCounterparty';
-import { ShowToastEvent } from 'lightning/platformShowToastEvent';
+import { LightningElement, track, wire } from "lwc";
+import getAuthorizedEntities from "@salesforce/apex/AXF_CLS_CTRL_CounterpartyManagement.getAuthorizedEntities";
+import getCounterparties from "@salesforce/apex/AXF_CLS_CTRL_CounterpartyManagement.getCounterparties";
+import getCounterpartyDetail from "@salesforce/apex/AXF_CLS_CTRL_CounterpartyManagement.getCounterpartyDetail";
+import saveCounterparty from "@salesforce/apex/AXF_CLS_CTRL_CounterpartyManagement.saveCounterparty";
+import { ShowToastEvent } from "lightning/platformShowToastEvent";
 
 export default class AXF_LWC_counterpartyManagement extends LightningElement {
-  @track selectedAccountId = '';
+  @track selectedAccountId = "";
   @track entities = [];
   @track counterparties = [];
   @track selectedDetail = null;
   @track selectedCounterpartyId = null;
-  @track searchKey = '';
+  @track searchKey = "";
   @track isLoading = false;
   @track isSaving = false;
-  @track errorMessage = '';
+  @track errorMessage = "";
   @track isModalOpen = false;
 
   @track form = {
     counterpartyId: null,
-    legalName: '',
-    displayName: '',
-    kind: 'ORGANIZATION',
-    country: 'BR',
-    status: 'ACTIVE',
+    legalName: "",
+    displayName: "",
+    kind: "ORGANIZATION",
+    country: "BR",
+    status: "ACTIVE",
     version: null,
     relationshipId: null,
-    role: 'SERVICE_PROVIDER',
-    relationshipStatus: 'ACTIVE',
-    entitySpecificDisplay: '',
+    role: "SERVICE_PROVIDER",
+    relationshipStatus: "ACTIVE",
+    entitySpecificDisplay: "",
     validFrom: null,
     validTo: null,
-    addressSnapshot: '',
-    email: '',
-    phone: '',
-    contactName: '',
+    addressSnapshot: "",
+    email: "",
+    phone: "",
+    contactName: "",
     relationshipVersion: null,
-    taxScheme: 'CNPJ',
-    taxCountry: 'BR',
-    taxRawDocument: ''
+    taxScheme: "CNPJ",
+    taxCountry: "BR",
+    taxRawDocument: ""
   };
 
   kindOptions = [
-    { label: 'Pessoa jurídica', value: 'ORGANIZATION' },
-    { label: 'Pessoa física', value: 'PERSON' }
+    { label: "Pessoa jurídica", value: "ORGANIZATION" },
+    { label: "Pessoa física", value: "PERSON" }
   ];
 
   statusOptions = [
-    { label: 'Ativo', value: 'ACTIVE' },
-    { label: 'Inativo', value: 'INACTIVE' }
+    { label: "Ativo", value: "ACTIVE" },
+    { label: "Inativo", value: "INACTIVE" }
   ];
 
   taxSchemeOptions = [
-    { label: 'CNPJ (Brasil)', value: 'CNPJ' },
-    { label: 'CPF (Brasil)', value: 'CPF' },
-    { label: 'NIF (Portugal / UE)', value: 'NIF' },
-    { label: 'Outro', value: 'OTHER' }
+    { label: "CNPJ (Brasil)", value: "CNPJ" },
+    { label: "CPF (Brasil)", value: "CPF" },
+    { label: "NIF (Portugal / UE)", value: "NIF" },
+    { label: "Outro", value: "OTHER" }
   ];
 
   roleOptions = [
-    { label: 'Prestador de serviços', value: 'SERVICE_PROVIDER' },
-    { label: 'Cliente', value: 'CLIENT' },
-    { label: 'Fornecedor', value: 'SUPPLIER' },
-    { label: 'Parceiro', value: 'PARTNER' },
-    { label: 'Locatário', value: 'TENANT' },
-    { label: 'Locador', value: 'LANDLORD' },
-    { label: 'Outro', value: 'OTHER' }
+    { label: "Prestador de serviços", value: "SERVICE_PROVIDER" },
+    { label: "Cliente", value: "CLIENT" },
+    { label: "Fornecedor", value: "SUPPLIER" },
+    { label: "Parceiro", value: "PARTNER" },
+    { label: "Locatário", value: "TENANT" },
+    { label: "Locador", value: "LANDLORD" },
+    { label: "Outro", value: "OTHER" }
   ];
 
   @wire(getAuthorizedEntities)
@@ -77,7 +77,10 @@ export default class AXF_LWC_counterpartyManagement extends LightningElement {
         this.loadCounterparties();
       }
     } else if (error) {
-      this.showErrorToast('Erro ao carregar entidades autorizadas', error.body ? error.body.message : error);
+      this.showErrorToast(
+        "Erro ao carregar entidades autorizadas",
+        error.body ? error.body.message : error
+      );
     }
   }
 
@@ -86,15 +89,17 @@ export default class AXF_LWC_counterpartyManagement extends LightningElement {
   }
 
   get entityOptions() {
-    return this.entities.map(e => ({
-      label: `${e.label} (${e.contextType === 'PERSON' ? 'Pessoa Física' : 'Pessoa Jurídica'})`,
+    return this.entities.map((e) => ({
+      label: `${e.label} (${e.contextType === "PERSON" ? "Pessoa Física" : "Pessoa Jurídica"})`,
       value: e.accountId
     }));
   }
 
   get currentEntityName() {
-    const found = this.entities.find(e => e.accountId === this.selectedAccountId);
-    return found ? found.label : '';
+    const found = this.entities.find(
+      (e) => e.accountId === this.selectedAccountId
+    );
+    return found ? found.label : "";
   }
 
   get isNewDisabled() {
@@ -106,7 +111,9 @@ export default class AXF_LWC_counterpartyManagement extends LightningElement {
   }
 
   get modalTitle() {
-    return this.form.relationshipId ? 'Editar Relação com Contraparte' : 'Nova Contraparte ou Relação';
+    return this.form.relationshipId
+      ? "Editar Relação com Contraparte"
+      : "Nova Contraparte ou Relação";
   }
 
   handleEntityChange(event) {
@@ -122,7 +129,7 @@ export default class AXF_LWC_counterpartyManagement extends LightningElement {
   }
 
   handleClearError() {
-    this.errorMessage = '';
+    this.errorMessage = "";
   }
 
   async loadCounterparties() {
@@ -131,20 +138,26 @@ export default class AXF_LWC_counterpartyManagement extends LightningElement {
       return;
     }
     this.isLoading = true;
-    this.errorMessage = '';
+    this.errorMessage = "";
     try {
-      const data = await getCounterparties({ accountId: this.selectedAccountId, searchKey: this.searchKey });
-      this.counterparties = data.map(c => ({
+      const data = await getCounterparties({
+        accountId: this.selectedAccountId,
+        searchKey: this.searchKey
+      });
+      this.counterparties = data.map((c) => ({
         ...c,
-        isActive: c.status === 'ACTIVE',
-        cssClass: (c.counterpartyId === this.selectedCounterpartyId)
-          ? 'counterparty-item active'
-          : 'counterparty-item'
+        isActive: c.status === "ACTIVE",
+        cssClass:
+          c.counterpartyId === this.selectedCounterpartyId
+            ? "counterparty-item active"
+            : "counterparty-item"
       }));
 
       // Mantém ou reseta seleção
       if (this.selectedCounterpartyId) {
-        const found = this.counterparties.find(c => c.counterpartyId === this.selectedCounterpartyId);
+        const found = this.counterparties.find(
+          (c) => c.counterpartyId === this.selectedCounterpartyId
+        );
         if (found) {
           await this.loadDetail(this.selectedCounterpartyId);
         } else if (this.counterparties.length > 0) {
@@ -159,7 +172,9 @@ export default class AXF_LWC_counterpartyManagement extends LightningElement {
         this.selectedDetail = null;
       }
     } catch (error) {
-      this.errorMessage = error.body ? error.body.message : (error.message || 'Erro ao carregar contrapartes.');
+      this.errorMessage = error.body
+        ? error.body.message
+        : error.message || "Erro ao carregar contrapartes.";
     } finally {
       this.isLoading = false;
     }
@@ -179,38 +194,50 @@ export default class AXF_LWC_counterpartyManagement extends LightningElement {
   }
 
   updateActiveItemCss() {
-    this.counterparties = this.counterparties.map(c => ({
+    this.counterparties = this.counterparties.map((c) => ({
       ...c,
-      cssClass: (c.counterpartyId === this.selectedCounterpartyId)
-        ? 'counterparty-item active'
-        : 'counterparty-item'
+      cssClass:
+        c.counterpartyId === this.selectedCounterpartyId
+          ? "counterparty-item active"
+          : "counterparty-item"
     }));
   }
 
   async loadDetail(counterpartyId) {
     if (!counterpartyId || !this.selectedAccountId) return;
     try {
-      const detail = await getCounterpartyDetail({ counterpartyId: counterpartyId, accountId: this.selectedAccountId });
+      const detail = await getCounterpartyDetail({
+        counterpartyId: counterpartyId,
+        accountId: this.selectedAccountId
+      });
       this.selectedDetail = {
         ...detail,
-        kindLabel: detail.kind === 'PERSON' ? 'Pessoa física' : 'Pessoa jurídica',
+        kindLabel:
+          detail.kind === "PERSON" ? "Pessoa física" : "Pessoa jurídica",
         roleLabel: this.getRoleLabel(detail.role),
         validityText: this.formatValidity(detail.validFrom, detail.validTo),
-        addressDisplay: detail.addressSnapshot ? detail.addressSnapshot : 'Nenhum endereço informado',
-        contactName: detail.contactName ? detail.contactName : 'Sem contato nominal'
+        addressDisplay: detail.addressSnapshot
+          ? detail.addressSnapshot
+          : "Nenhum endereço informado",
+        contactName: detail.contactName
+          ? detail.contactName
+          : "Sem contato nominal"
       };
     } catch (error) {
-      this.showErrorToast('Erro ao carregar detalhes da contraparte', error.body ? error.body.message : error);
+      this.showErrorToast(
+        "Erro ao carregar detalhes da contraparte",
+        error.body ? error.body.message : error
+      );
     }
   }
 
   getRoleLabel(role) {
-    const opt = this.roleOptions.find(r => r.value === role);
-    return opt ? opt.label : (role || 'Não especificado');
+    const opt = this.roleOptions.find((r) => r.value === role);
+    return opt ? opt.label : role || "Não especificado";
   }
 
   formatValidity(validFrom, validTo) {
-    if (!validFrom && !validTo) return 'Vigência indeterminada';
+    if (!validFrom && !validTo) return "Vigência indeterminada";
     if (validFrom && !validTo) return `Desde ${validFrom} (sem término)`;
     if (!validFrom && validTo) return `Até ${validTo}`;
     return `${validFrom} → ${validTo}`;
@@ -219,26 +246,26 @@ export default class AXF_LWC_counterpartyManagement extends LightningElement {
   handleOpenNewModal() {
     this.form = {
       counterpartyId: null,
-      legalName: '',
-      displayName: '',
-      kind: 'ORGANIZATION',
-      country: 'BR',
-      status: 'ACTIVE',
+      legalName: "",
+      displayName: "",
+      kind: "ORGANIZATION",
+      country: "BR",
+      status: "ACTIVE",
       version: null,
       relationshipId: null,
-      role: 'SERVICE_PROVIDER',
-      relationshipStatus: 'ACTIVE',
-      entitySpecificDisplay: '',
+      role: "SERVICE_PROVIDER",
+      relationshipStatus: "ACTIVE",
+      entitySpecificDisplay: "",
       validFrom: null,
       validTo: null,
-      addressSnapshot: '',
-      email: '',
-      phone: '',
-      contactName: '',
+      addressSnapshot: "",
+      email: "",
+      phone: "",
+      contactName: "",
       relationshipVersion: null,
-      taxScheme: 'CNPJ',
-      taxCountry: 'BR',
-      taxRawDocument: ''
+      taxScheme: "CNPJ",
+      taxCountry: "BR",
+      taxRawDocument: ""
     };
     this.isModalOpen = true;
   }
@@ -264,9 +291,9 @@ export default class AXF_LWC_counterpartyManagement extends LightningElement {
       phone: this.selectedDetail.phone,
       contactName: this.selectedDetail.contactName,
       relationshipVersion: this.selectedDetail.relationshipVersion,
-      taxScheme: this.selectedDetail.taxScheme || 'CNPJ',
+      taxScheme: this.selectedDetail.taxScheme || "CNPJ",
       taxCountry: this.selectedDetail.taxCountry || this.selectedDetail.country,
-      taxRawDocument: ''
+      taxRawDocument: ""
     };
     this.isModalOpen = true;
   }
@@ -284,19 +311,33 @@ export default class AXF_LWC_counterpartyManagement extends LightningElement {
 
   async handleSaveForm() {
     // Validação dos campos do formulário
-    const inputs = [...this.template.querySelectorAll('lightning-input, lightning-combobox, lightning-textarea')];
+    const inputs = [
+      ...this.template.querySelectorAll(
+        "lightning-input, lightning-combobox, lightning-textarea"
+      )
+    ];
     const allValid = inputs.reduce((validSoFar, input) => {
       input.reportValidity();
       return validSoFar && input.checkValidity();
     }, true);
 
     if (!allValid) {
-      this.showErrorToast('Atenção', 'Preencha todos os campos obrigatórios corretamente.');
+      this.showErrorToast(
+        "Atenção",
+        "Preencha todos os campos obrigatórios corretamente."
+      );
       return;
     }
 
-    if (this.form.validFrom && this.form.validTo && this.form.validTo < this.form.validFrom) {
-      this.showErrorToast('Atenção', 'A data de término não pode ser anterior à data de início.');
+    if (
+      this.form.validFrom &&
+      this.form.validTo &&
+      this.form.validTo < this.form.validFrom
+    ) {
+      this.showErrorToast(
+        "Atenção",
+        "A data de término não pode ser anterior à data de início."
+      );
       return;
     }
 
@@ -308,22 +349,32 @@ export default class AXF_LWC_counterpartyManagement extends LightningElement {
       };
 
       const result = await saveCounterparty({ payload: payload });
-      this.showSuccessToast('Sucesso', result.message || 'Contraparte e relação salvas com sucesso.');
+      this.showSuccessToast(
+        "Sucesso",
+        result.message || "Contraparte e relação salvas com sucesso."
+      );
       this.isModalOpen = false;
       this.selectedCounterpartyId = result.counterpartyId;
       await this.loadCounterparties();
     } catch (error) {
-      this.showErrorToast('Erro ao salvar', error.body ? error.body.message : (error.message || 'Erro inesperado'));
+      this.showErrorToast(
+        "Erro ao salvar",
+        error.body ? error.body.message : error.message || "Erro inesperado"
+      );
     } finally {
       this.isSaving = false;
     }
   }
 
   showSuccessToast(title, message) {
-    this.dispatchEvent(new ShowToastEvent({ title, message, variant: 'success' }));
+    this.dispatchEvent(
+      new ShowToastEvent({ title, message, variant: "success" })
+    );
   }
 
   showErrorToast(title, message) {
-    this.dispatchEvent(new ShowToastEvent({ title, message, variant: 'error', mode: 'sticky' }));
+    this.dispatchEvent(
+      new ShowToastEvent({ title, message, variant: "error", mode: "sticky" })
+    );
   }
 }

@@ -1,7 +1,8 @@
 <?xml version="1.0" encoding="UTF-8" ?>
 <CustomField xmlns="http://soap.sforce.com/2006/04/metadata">
     <fullName>AXF_CER_PKL_Role__c</fullName>
-    <description>Papel ou função da contraparte nesta relação contratual específica.</description>
+    <description
+  >Papel ou função da contraparte nesta relação contratual específica.</description>
     <label>Papel na Relação</label>
     <required>true</required>
     <type>Picklist</type>

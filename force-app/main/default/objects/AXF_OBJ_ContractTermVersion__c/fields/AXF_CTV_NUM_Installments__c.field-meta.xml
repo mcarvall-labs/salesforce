@@ -1,7 +1,8 @@
-﻿<?xml version="1.0" encoding="UTF-8"?>
+﻿<?xml version="1.0" encoding="UTF-8" ?>
 <CustomField xmlns="http://soap.sforce.com/2006/04/metadata">
     <fullName>AXF_CTV_NUM_Installments__c</fullName>
-    <description>Numero de parcelas ou marcos de pagamento (aplicavel ao modelo FIXED).</description>
+    <description
+  >Numero de parcelas ou marcos de pagamento (aplicavel ao modelo FIXED).</description>
     <externalId>false</externalId>
     <label>Numero de Parcelas</label>
     <precision>18</precision>

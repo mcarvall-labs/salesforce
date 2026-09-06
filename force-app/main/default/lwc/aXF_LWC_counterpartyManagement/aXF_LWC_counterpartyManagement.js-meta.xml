@@ -3,7 +3,8 @@
     <apiVersion>60.0</apiVersion>
     <isExposed>true</isExposed>
     <masterLabel>Axon - Contrapartes e Contratos</masterLabel>
-    <description>Gestão de Contrapartes e relações contextuais por Entidade (AXF-51).</description>
+    <description
+  >Gestão de Contrapartes e relações contextuais por Entidade (AXF-51).</description>
     <targets>
         <target>lightning__AppPage</target>
         <target>lightning__HomePage</target>

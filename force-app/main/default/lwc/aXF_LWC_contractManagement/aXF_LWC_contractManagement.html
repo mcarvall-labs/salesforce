@@ -20,7 +20,8 @@
                 Gestao de Contratos e Remuneracao
               </h1>
               <p class="slds-text-body_small slds-line-height_reset">
-                Governanca de receitas, despesas e termos contratuais por entidade titular (AXF-52, AXF-54)
+                Governanca de receitas, despesas e termos contratuais por
+                entidade titular (AXF-52, AXF-54)
               </p>
             </div>
           </div>
@@ -117,7 +118,7 @@
                     class="slds-hint-parent"
                     data-id={c.contractId}
                     onclick={handleSelectContract}
-                    style="cursor: pointer;"
+                    style="cursor: pointer"
                   >
                     <td>
                       <div class="slds-truncate font-weight-bold">
@@ -243,8 +244,12 @@
 
             <!-- Secao de Termos e Remuneracao (AXF-54) -->
             <div class="slds-m-top_medium slds-border_top slds-p-top_small">
-              <div class="slds-grid slds-grid_align-spread slds-m-bottom_x-small">
-                <h3 class="slds-text-heading_small">Modelos de Remuneracao (AXF-54)</h3>
+              <div
+                class="slds-grid slds-grid_align-spread slds-m-bottom_x-small"
+              >
+                <h3 class="slds-text-heading_small">
+                  Modelos de Remuneracao (AXF-54)
+                </h3>
                 <lightning-button
                   data-testid="new-term-btn"
                   label="Novo Termo"
@@ -257,19 +262,33 @@
 
               <template lwc:if={hasTermVersions}>
                 <template for:each={termVersions} for:item="tv">
-                  <div key={tv.termVersionId} class="slds-box slds-box_x-small slds-m-bottom_x-small slds-theme_shade">
+                  <div
+                    key={tv.termVersionId}
+                    class="slds-box slds-box_x-small slds-m-bottom_x-small slds-theme_shade"
+                  >
                     <div class="slds-grid slds-grid_align-spread">
                       <div>
                         <strong>{tv.termNumber}</strong> (Rev. {tv.revision}) -
-                        <span class="slds-badge slds-m-left_xx-small">{tv.remunerationModel}</span>
+                        <span class="slds-badge slds-m-left_xx-small"
+                          >{tv.remunerationModel}</span
+                        >
                         <template lwc:if={tv.isBlocked}>
-                          <span class="slds-badge slds-theme_error slds-m-left_xx-small">BLOQUEADO</span>
+                          <span
+                            class="slds-badge slds-theme_error slds-m-left_xx-small"
+                            >BLOQUEADO</span
+                          >
                         </template>
                         <template lwc:elseif={tv.isActive}>
-                          <span class="slds-badge slds-theme_success slds-m-left_xx-small">ATIVO</span>
+                          <span
+                            class="slds-badge slds-theme_success slds-m-left_xx-small"
+                            >ATIVO</span
+                          >
                         </template>
                         <template lwc:else>
-                          <span class="slds-badge slds-theme_warning slds-m-left_xx-small">{tv.status}</span>
+                          <span
+                            class="slds-badge slds-theme_warning slds-m-left_xx-small"
+                            >{tv.status}</span
+                          >
                         </template>
                       </div>
                       <template lwc:if={tv.canActivate}>
@@ -296,7 +315,8 @@
                     </div>
                     <div class="slds-text-body_small slds-m-top_xx-small">
                       <template lwc:if={tv.contractedAmount}>
-                        Valor Total Fixo: {tv.currencyIsoCode} {tv.contractedAmount} ({tv.installments} parcelas) |
+                        Valor Total Fixo: {tv.currencyIsoCode}
+                        {tv.contractedAmount} ({tv.installments} parcelas) |
                       </template>
                       <template lwc:if={tv.rate}>
                         Taxa: {tv.currencyIsoCode} {tv.rate} |
@@ -307,7 +327,9 @@
                       Calendario: {tv.calendarPolicy} ({tv.timeZone})
                     </div>
                     <template lwc:if={tv.blockedReason}>
-                      <div class="slds-text-color_error slds-text-body_small slds-m-top_xx-small font-weight-bold">
+                      <div
+                        class="slds-text-color_error slds-text-body_small slds-m-top_xx-small font-weight-bold"
+                      >
                         {tv.blockedReason}
                       </div>
                     </template>
@@ -315,17 +337,27 @@
                 </template>
               </template>
               <template lwc:else>
-                <p class="slds-text-body_small slds-text-color_weak">Nenhuma versao de termo configurada para este contrato.</p>
+                <p class="slds-text-body_small slds-text-color_weak">
+                  Nenhuma versao de termo configurada para este contrato.
+                </p>
               </template>
             </div>
 
-            
             <!-- Secao de Registros de Trabalho (AXF-56) -->
-            <div class="slds-m-top_medium slds-border_top slds-p-top_small" data-testid="work-records-section">
-              <div class="slds-grid slds-grid_align-spread slds-m-bottom_x-small">
+            <div
+              class="slds-m-top_medium slds-border_top slds-p-top_small"
+              data-testid="work-records-section"
+            >
+              <div
+                class="slds-grid slds-grid_align-spread slds-m-bottom_x-small"
+              >
                 <div>
-                  <h3 class="slds-text-heading_small">Registros de Trabalho (AXF-56)</h3>
-                  <p class="slds-text-body_small slds-text-color_weak">Apuracao e aprovacao auditavel de horas/quantidades</p>
+                  <h3 class="slds-text-heading_small">
+                    Registros de Trabalho (AXF-56)
+                  </h3>
+                  <p class="slds-text-body_small slds-text-color_weak">
+                    Apuracao e aprovacao auditavel de horas/quantidades
+                  </p>
                 </div>
                 <lightning-button
                   data-testid="new-work-record-btn"
@@ -339,24 +371,45 @@
 
               <template lwc:if={hasWorkRecords}>
                 <template for:each={workRecords} for:item="wr">
-                  <div key={wr.workRecordId} class="slds-box slds-box_x-small slds-m-bottom_x-small slds-theme_shade" data-testid="work-record-item">
+                  <div
+                    key={wr.workRecordId}
+                    class="slds-box slds-box_x-small slds-m-bottom_x-small slds-theme_shade"
+                    data-testid="work-record-item"
+                  >
                     <div class="slds-grid slds-grid_align-spread">
                       <div>
-                        <strong>{wr.recordNumber}</strong>: {wr.quantity}h/unid a {wr.currencyIsoCode} {wr.rate} = <strong>{wr.currencyIsoCode} {wr.totalAmount}</strong>
+                        <strong>{wr.recordNumber}</strong>: {wr.quantity}h/unid
+                        a {wr.currencyIsoCode} {wr.rate} =
+                        <strong>{wr.currencyIsoCode} {wr.totalAmount}</strong>
                         <template lwc:if={wr.isApproved}>
-                          <span class="slds-badge slds-theme_success slds-m-left_xx-small">APROVADO</span>
+                          <span
+                            class="slds-badge slds-theme_success slds-m-left_xx-small"
+                            >APROVADO</span
+                          >
                         </template>
                         <template lwc:elseif={wr.isSubmitted}>
-                          <span class="slds-badge slds-theme_info slds-m-left_xx-small">SUBMETIDO</span>
+                          <span
+                            class="slds-badge slds-theme_info slds-m-left_xx-small"
+                            >SUBMETIDO</span
+                          >
                         </template>
                         <template lwc:elseif={wr.isRejected}>
-                          <span class="slds-badge slds-theme_error slds-m-left_xx-small">REJEITADO</span>
+                          <span
+                            class="slds-badge slds-theme_error slds-m-left_xx-small"
+                            >REJEITADO</span
+                          >
                         </template>
                         <template lwc:elseif={wr.isSuperseded}>
-                          <span class="slds-badge slds-theme_inverse slds-m-left_xx-small">SUBSTITUIDO</span>
+                          <span
+                            class="slds-badge slds-theme_inverse slds-m-left_xx-small"
+                            >SUBSTITUIDO</span
+                          >
                         </template>
                         <template lwc:else>
-                          <span class="slds-badge slds-theme_warning slds-m-left_xx-small">{wr.status}</span>
+                          <span
+                            class="slds-badge slds-theme_warning slds-m-left_xx-small"
+                            >{wr.status}</span
+                          >
                         </template>
                       </div>
 
@@ -407,29 +460,35 @@
                     </div>
 
                     <div class="slds-text-body_small slds-m-top_xx-small">
-                      Periodo: {wr.startDate} ate {wr.endDate} | Origem: {wr.source}
+                      Periodo: {wr.startDate} ate {wr.endDate} | Origem:
+                      {wr.source}
                       <template lwc:if={wr.description}>
                         | {wr.description}
                       </template>
                     </div>
                     <template lwc:if={wr.decidedByName}>
-                      <div class="slds-text-body_small slds-text-color_weak slds-m-top_xx-small">
+                      <div
+                        class="slds-text-body_small slds-text-color_weak slds-m-top_xx-small"
+                      >
                         Decidido por: {wr.decidedByName} ({wr.decisionReason})
                       </div>
                     </template>
                     <template lwc:if={wr.replacedWorkRecordNumber}>
                       <div class="slds-text-body_small slds-text-color_weak">
-                        Substitui o registro original: {wr.replacedWorkRecordNumber}
+                        Substitui o registro original:
+                        {wr.replacedWorkRecordNumber}
                       </div>
                     </template>
                   </div>
                 </template>
               </template>
               <template lwc:else>
-                <p class="slds-text-body_small slds-text-color_weak">Nenhum registro de trabalho apontado para este contrato.</p>
+                <p class="slds-text-body_small slds-text-color_weak">
+                  Nenhum registro de trabalho apontado para este contrato.
+                </p>
               </template>
             </div>
-<div class="slds-m-top_medium slds-border_top slds-p-top_small">
+            <div class="slds-m-top_medium slds-border_top slds-p-top_small">
               <p
                 class="slds-text-body_small slds-text-color_weak slds-m-bottom_x-small"
               >
@@ -626,16 +685,23 @@
                 size="small"
               ></lightning-icon>
             </button>
-            <h2 class="slds-modal__title slds-hyphenate">Configurar Termo e Modelo de Remuneracao (AXF-54)</h2>
+            <h2 class="slds-modal__title slds-hyphenate">
+              Configurar Termo e Modelo de Remuneracao (AXF-54)
+            </h2>
           </header>
           <div class="slds-modal__content slds-p-around_medium">
             <template lwc:if={isSaving}>
-              <lightning-spinner alternative-text="Processando..." size="medium"></lightning-spinner>
+              <lightning-spinner
+                alternative-text="Processando..."
+                size="medium"
+              ></lightning-spinner>
             </template>
 
             <div class="slds-grid slds-gutters slds-wrap">
               <!-- Modelo de Remuneracao -->
-              <div class="slds-col slds-size_1-of-1 slds-medium-size_1-of-3 slds-m-bottom_small">
+              <div
+                class="slds-col slds-size_1-of-1 slds-medium-size_1-of-3 slds-m-bottom_small"
+              >
                 <lightning-combobox
                   name="remunerationModel"
                   label="Modelo de Remuneracao"
@@ -648,7 +714,9 @@
               </div>
 
               <!-- Moeda -->
-              <div class="slds-col slds-size_1-of-1 slds-medium-size_1-of-3 slds-m-bottom_small">
+              <div
+                class="slds-col slds-size_1-of-1 slds-medium-size_1-of-3 slds-m-bottom_small"
+              >
                 <lightning-input
                   name="currencyIsoCode"
                   label="Moeda"
@@ -661,7 +729,9 @@
               </div>
 
               <!-- Vigencia Inicial -->
-              <div class="slds-col slds-size_1-of-1 slds-medium-size_1-of-3 slds-m-bottom_small">
+              <div
+                class="slds-col slds-size_1-of-1 slds-medium-size_1-of-3 slds-m-bottom_small"
+              >
                 <lightning-input
                   name="effectiveFrom"
                   type="date"
@@ -674,7 +744,9 @@
               </div>
 
               <!-- Vigencia Final -->
-              <div class="slds-col slds-size_1-of-1 slds-medium-size_1-of-3 slds-m-bottom_small">
+              <div
+                class="slds-col slds-size_1-of-1 slds-medium-size_1-of-3 slds-m-bottom_small"
+              >
                 <lightning-input
                   name="effectiveTo"
                   type="date"
@@ -686,7 +758,9 @@
               </div>
 
               <!-- Fuso Horario -->
-              <div class="slds-col slds-size_1-of-1 slds-medium-size_1-of-3 slds-m-bottom_small">
+              <div
+                class="slds-col slds-size_1-of-1 slds-medium-size_1-of-3 slds-m-bottom_small"
+              >
                 <lightning-input
                   name="timeZone"
                   label="Fuso Horario (IANA)"
@@ -698,7 +772,9 @@
               </div>
 
               <!-- Politica de Calendario -->
-              <div class="slds-col slds-size_1-of-1 slds-medium-size_1-of-3 slds-m-bottom_small">
+              <div
+                class="slds-col slds-size_1-of-1 slds-medium-size_1-of-3 slds-m-bottom_small"
+              >
                 <lightning-combobox
                   name="calendarPolicy"
                   label="Politica de Calendario"
@@ -712,7 +788,9 @@
 
               <!-- CAMPOS APLICAVEIS: MONTHLY -->
               <template lwc:if={isModelMonthly}>
-                <div class="slds-col slds-size_1-of-1 slds-medium-size_1-of-2 slds-m-bottom_small">
+                <div
+                  class="slds-col slds-size_1-of-1 slds-medium-size_1-of-2 slds-m-bottom_small"
+                >
                   <lightning-input
                     name="rate"
                     type="number"
@@ -725,7 +803,9 @@
                   >
                   </lightning-input>
                 </div>
-                <div class="slds-col slds-size_1-of-1 slds-medium-size_1-of-2 slds-m-bottom_small">
+                <div
+                  class="slds-col slds-size_1-of-1 slds-medium-size_1-of-2 slds-m-bottom_small"
+                >
                   <lightning-combobox
                     name="proportionalityPolicy"
                     label="Politica de Proporcionalidade"
@@ -740,7 +820,9 @@
 
               <!-- CAMPOS APLICAVEIS: HOURLY -->
               <template lwc:if={isModelHourly}>
-                <div class="slds-col slds-size_1-of-1 slds-medium-size_1-of-2 slds-m-bottom_small">
+                <div
+                  class="slds-col slds-size_1-of-1 slds-medium-size_1-of-2 slds-m-bottom_small"
+                >
                   <lightning-input
                     name="rate"
                     type="number"
@@ -753,7 +835,9 @@
                   >
                   </lightning-input>
                 </div>
-                <div class="slds-col slds-size_1-of-1 slds-medium-size_1-of-2 slds-m-bottom_small">
+                <div
+                  class="slds-col slds-size_1-of-1 slds-medium-size_1-of-2 slds-m-bottom_small"
+                >
                   <lightning-input
                     name="hoursQuantity"
                     type="number"
@@ -769,7 +853,9 @@
 
               <!-- CAMPOS APLICAVEIS: FIXED -->
               <template lwc:if={isModelFixed}>
-                <div class="slds-col slds-size_1-of-1 slds-medium-size_1-of-2 slds-m-bottom_small">
+                <div
+                  class="slds-col slds-size_1-of-1 slds-medium-size_1-of-2 slds-m-bottom_small"
+                >
                   <lightning-input
                     name="contractedAmount"
                     type="number"
@@ -782,7 +868,9 @@
                   >
                   </lightning-input>
                 </div>
-                <div class="slds-col slds-size_1-of-1 slds-medium-size_1-of-2 slds-m-bottom_small">
+                <div
+                  class="slds-col slds-size_1-of-1 slds-medium-size_1-of-2 slds-m-bottom_small"
+                >
                   <lightning-input
                     name="installments"
                     type="number"
@@ -800,8 +888,12 @@
 
             <!-- Preview do Cronograma Calculado (GF-04) -->
             <div class="slds-m-top_medium slds-border_top slds-p-top_small">
-              <div class="slds-grid slds-grid_align-spread slds-m-bottom_x-small">
-                <h3 class="slds-text-heading_small">Calculo do Cronograma e Conservacao (GF-04)</h3>
+              <div
+                class="slds-grid slds-grid_align-spread slds-m-bottom_x-small"
+              >
+                <h3 class="slds-text-heading_small">
+                  Calculo do Cronograma e Conservacao (GF-04)
+                </h3>
                 <lightning-button
                   data-testid="calculate-schedule-btn"
                   label="Calcular Cronograma"
@@ -814,15 +906,23 @@
 
               <template lwc:if={schedulePreview}>
                 <div class="slds-box slds-theme_default slds-m-bottom_small">
-                  <div class="slds-grid slds-grid_align-spread slds-m-bottom_xx-small">
+                  <div
+                    class="slds-grid slds-grid_align-spread slds-m-bottom_xx-small"
+                  >
                     <div>
-                      <strong>Total Contratado Conservado:</strong> {schedulePreview.currencyIsoCode} {schedulePreview.totalAmount}
+                      <strong>Total Contratado Conservado:</strong>
+                      {schedulePreview.currencyIsoCode}
+                      {schedulePreview.totalAmount}
                     </div>
                     <div>
-                      <strong>Residual Canonico:</strong> {schedulePreview.currencyIsoCode} {schedulePreview.totalResidual}
+                      <strong>Residual Canonico:</strong>
+                      {schedulePreview.currencyIsoCode}
+                      {schedulePreview.totalResidual}
                     </div>
                   </div>
-                  <table class="slds-table slds-table_cell-buffer slds-table_bordered slds-table_striped">
+                  <table
+                    class="slds-table slds-table_cell-buffer slds-table_bordered slds-table_striped"
+                  >
                     <thead>
                       <tr class="slds-line-height_reset">
                         <th>Parcela / Competencia</th>
@@ -832,18 +932,21 @@
                       </tr>
                     </thead>
                     <tbody>
-                      <template for:each={schedulePreview.scheduleItems} for:item="item">
+                      <template
+                        for:each={schedulePreview.scheduleItems}
+                        for:item="item"
+                      >
                         <tr key={item.installmentNumber}>
                           <td>{item.periodLabel}</td>
                           <td>{item.dueDate}</td>
                           <td>{item.currencyIsoCode} {item.amount}</td>
                           <td>
                             <template lwc:if={item.roundingResidual}>
-                              <span class="slds-badge slds-theme_warning">+{item.roundingResidual}</span>
+                              <span class="slds-badge slds-theme_warning"
+                                >+{item.roundingResidual}</span
+                              >
                             </template>
-                            <template lwc:else>
-                              0.00
-                            </template>
+                            <template lwc:else> 0.00 </template>
                           </td>
                         </tr>
                       </template>
@@ -888,31 +991,47 @@
               title="Fechar"
               onclick={handleCloseReviewModal}
             >
-              <lightning-icon icon-name="utility:close" alternative-text="Fechar" size="small"></lightning-icon>
+              <lightning-icon
+                icon-name="utility:close"
+                alternative-text="Fechar"
+                size="small"
+              ></lightning-icon>
             </button>
             <h2 class="slds-modal__title slds-hyphenate">
               Revisao Formal e Ativacao de Termo (AXF-53)
             </h2>
             <p class="slds-m-top_x-small slds-text-color_weak">
-              Termo: {reviewData.termNumber} (Revisao {reviewData.revision}) | Contrato: {reviewData.contractCode}
+              Termo: {reviewData.termNumber} (Revisao {reviewData.revision}) |
+              Contrato: {reviewData.contractCode}
             </p>
           </header>
           <div class="slds-modal__content slds-p-around_medium">
             <template lwc:if={reviewData}>
               <!-- Card de Parametros e Vigencia -->
-              <div class="slds-box slds-box_small slds-m-bottom_medium slds-theme_shade">
-                <div class="slds-grid slds-grid_align-spread slds-m-bottom_small">
-                  <h3 class="slds-text-heading_small">1. Condicoes e Vigencia Contratual</h3>
-                  <span class="slds-badge slds-theme_default font-weight-bold" data-testid="review-interval-badge">
+              <div
+                class="slds-box slds-box_small slds-m-bottom_medium slds-theme_shade"
+              >
+                <div
+                  class="slds-grid slds-grid_align-spread slds-m-bottom_small"
+                >
+                  <h3 class="slds-text-heading_small">
+                    1. Condicoes e Vigencia Contratual
+                  </h3>
+                  <span
+                    class="slds-badge slds-theme_default font-weight-bold"
+                    data-testid="review-interval-badge"
+                  >
                     Vigencia: {reviewData.intervalLabel}
                   </span>
                 </div>
                 <div class="slds-grid slds-wrap slds-gutters">
                   <div class="slds-col slds-size_1-of-2 slds-m-bottom_x-small">
-                    <strong>Modelo:</strong> {reviewData.remunerationModel} ({reviewData.currencyIsoCode})
+                    <strong>Modelo:</strong> {reviewData.remunerationModel}
+                    ({reviewData.currencyIsoCode})
                   </div>
                   <div class="slds-col slds-size_1-of-2 slds-m-bottom_x-small">
-                    <strong>Remuneracao:</strong> {reviewData.remunerationSummary}
+                    <strong>Remuneracao:</strong>
+                    {reviewData.remunerationSummary}
                   </div>
                   <div class="slds-col slds-size_1-of-2 slds-m-bottom_x-small">
                     <strong>Calendario:</strong> {reviewData.calendarPolicy}
@@ -929,7 +1048,8 @@
                   <div class="slds-col slds-size_1-of-1 slds-m-bottom_x-small">
                     <strong>Conta Bancaria Sugerida (AC 4):</strong>
                     <template lwc:if={reviewData.preferredBankAccountName}>
-                      {reviewData.preferredBankAccountName} (Sugestao revisavel - nao altera escolhas informadas)
+                      {reviewData.preferredBankAccountName} (Sugestao revisavel
+                      - nao altera escolhas informadas)
                     </template>
                     <template lwc:else>
                       Nenhuma conta sugerida (padrao do titular)
@@ -940,20 +1060,37 @@
 
               <!-- Card de Timeline e Delta (AC 1, AC 2) -->
               <div class="slds-box slds-box_small slds-m-bottom_medium">
-                <h3 class="slds-text-heading_small slds-m-bottom_small">2. Impacto e Linha do Tempo (Delta)</h3>
-                <div class="slds-m-bottom_small slds-p-around_x-small slds-theme_info">
-                  <p class="font-weight-bold" data-testid="review-delta-desc">{reviewData.deltaDescription}</p>
+                <h3 class="slds-text-heading_small slds-m-bottom_small">
+                  2. Impacto e Linha do Tempo (Delta)
+                </h3>
+                <div
+                  class="slds-m-bottom_small slds-p-around_x-small slds-theme_info"
+                >
+                  <p class="font-weight-bold" data-testid="review-delta-desc">
+                    {reviewData.deltaDescription}
+                  </p>
                 </div>
                 <div class="slds-m-bottom_small">
                   <strong>Linha do Tempo (sem dependencia de cor):</strong>
-                  <ul class="slds-list_dotted slds-m-left_medium slds-m-top_xx-small" data-testid="review-timeline-list">
-                    <template for:each={reviewData.timelineLabels} for:item="lbl">
+                  <ul
+                    class="slds-list_dotted slds-m-left_medium slds-m-top_xx-small"
+                    data-testid="review-timeline-list"
+                  >
+                    <template
+                      for:each={reviewData.timelineLabels}
+                      for:item="lbl"
+                    >
                       <li key={lbl} class="slds-m-bottom_xx-small">{lbl}</li>
                     </template>
                   </ul>
                 </div>
-                <div class="slds-text-body_small slds-text-color_weak slds-border_top slds-p-top_x-small">
-                  <strong>Regras de Imutabilidade (AD-31):</strong> Ao confirmar a ativacao, o Contrato sera vinculado a esta versao ativa. Esta versao tornar-se-a estritamente somente leitura (read-only) e protegida contra delecao no banco de dados.
+                <div
+                  class="slds-text-body_small slds-text-color_weak slds-border_top slds-p-top_x-small"
+                >
+                  <strong>Regras de Imutabilidade (AD-31):</strong> Ao confirmar
+                  a ativacao, o Contrato sera vinculado a esta versao ativa.
+                  Esta versao tornar-se-a estritamente somente leitura
+                  (read-only) e protegida contra delecao no banco de dados.
                 </div>
               </div>
             </template>
@@ -978,7 +1115,7 @@
       </section>
       <div class="slds-backdrop slds-backdrop_open"></div>
     </template>
-  
+
     <!-- Modal de Apontamento / Correcao de WorkRecord (AXF-56) -->
     <template lwc:if={isWorkRecordModalOpen}>
       <section
@@ -1006,15 +1143,16 @@
               <template lwc:if={isCorrectionMode}>
                 Corrigir Registro de Trabalho Aprovado (AC 3)
               </template>
-              <template lwc:else>
-                Novo Registro de Trabalho (AXF-56)
-              </template>
+              <template lwc:else> Novo Registro de Trabalho (AXF-56) </template>
             </h2>
           </header>
           <div class="slds-modal__content slds-p-around_medium">
             <template lwc:if={isCorrectionMode}>
-              <div class="slds-notify slds-notify_alert slds-theme_warning slds-m-bottom_medium">
-                Este apontamento substituira o registro original de forma auditavel. O original passara para SUPERSEDED.
+              <div
+                class="slds-notify slds-notify_alert slds-theme_warning slds-m-bottom_medium"
+              >
+                Este apontamento substituira o registro original de forma
+                auditavel. O original passara para SUPERSEDED.
               </div>
               <lightning-input
                 data-testid="correction-reason-input"
@@ -1100,6 +1238,5 @@
       </section>
       <div class="slds-backdrop slds-backdrop_open"></div>
     </template>
-</div>
+  </div>
 </template>
-

@@ -1,7 +1,8 @@
 <?xml version="1.0" encoding="UTF-8" ?>
 <CustomField xmlns="http://soap.sforce.com/2006/04/metadata">
     <fullName>AXF_CTR_PKL_Lifecycle__c</fullName>
-    <description>Estado do ciclo de vida canônico do contrato (AD-14).</description>
+    <description
+  >Estado do ciclo de vida canônico do contrato (AD-14).</description>
     <label>Ciclo de Vida</label>
     <required>true</required>
     <type>Picklist</type>

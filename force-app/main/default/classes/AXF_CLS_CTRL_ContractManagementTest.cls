@@ -11,10 +11,11 @@
  */
 @IsTest
 private class AXF_CLS_CTRL_ContractManagementTest {
-
   private static Account createTestAccount(String name) {
     Account acc = new Account(Name = name);
-    Id bRtId = Schema.SObjectType.Account.getRecordTypeInfosByDeveloperName().get('AXF_Business')?.getRecordTypeId();
+    Id bRtId = Schema.SObjectType.Account.getRecordTypeInfosByDeveloperName()
+      .get('AXF_Business')
+      ?.getRecordTypeId();
     if (bRtId != null) {
       acc.RecordTypeId = bRtId;
     }
@@ -30,21 +31,29 @@ private class AXF_CLS_CTRL_ContractManagementTest {
       AXF_CPTY_TXT_Country__c = 'BR',
       AXF_CPTY_PKL_Kind__c = 'ORGANIZATION',
       AXF_CPTY_PKL_Status__c = 'ACTIVE',
-      AXF_CPTY_EXI_CounterpartyKey__c = AXF_CLS_IdentityFraming.key(new List<Object>{ 'CPTY', name + ' LTDA', 'BR' }),
+      AXF_CPTY_EXI_CounterpartyKey__c = AXF_CLS_IdentityFraming.key(
+        new List<Object>{ 'CPTY', name + ' LTDA', 'BR' }
+      ),
       AXF_CPTY_NUM_Version__c = 1
     );
     insert cpty;
     return cpty;
   }
 
-  private static AXF_OBJ_CounterpartyEntityRelationship__c createTestRelationship(Id cptyId, Id accId, String status) {
+  private static AXF_OBJ_CounterpartyEntityRelationship__c createTestRelationship(
+    Id cptyId,
+    Id accId,
+    String status
+  ) {
     AXF_OBJ_CounterpartyEntityRelationship__c rel = new AXF_OBJ_CounterpartyEntityRelationship__c(
       AXF_CER_LKP_Counterparty__c = cptyId,
       AXF_CER_LKP_Account__c = accId,
       AXF_CER_PKL_Role__c = 'SUPPLIER',
       AXF_CER_PKL_Status__c = status,
       AXF_CER_TXT_EntitySpecificDisplay__c = 'Fornecedor Teste',
-      AXF_CER_EXI_RelationshipKey__c = AXF_CLS_IdentityFraming.key(new List<Object>{ 'CER', cptyId, accId, 'SUPPLIER' }),
+      AXF_CER_EXI_RelationshipKey__c = AXF_CLS_IdentityFraming.key(
+        new List<Object>{ 'CER', cptyId, accId, 'SUPPLIER' }
+      ),
       AXF_CER_NUM_Version__c = 1
     );
     insert rel;
@@ -63,11 +72,15 @@ private class AXF_CLS_CTRL_ContractManagementTest {
   @IsTest
   static void testGetActiveRelationships() {
     Account acc = createTestAccount('Entidade Controller Rels');
-    AXF_OBJ_Counterparty__c cpty = createTestCounterparty('Contraparte Controller');
+    AXF_OBJ_Counterparty__c cpty = createTestCounterparty(
+      'Contraparte Controller'
+    );
     createTestRelationship(cpty.Id, acc.Id, 'ACTIVE');
 
     Test.startTest();
-    List<ALT_CLS_ContractService.ActiveRelationshipDTO> rels = AXF_CLS_CTRL_ContractManagement.getActiveRelationships(acc.Id);
+    List<ALT_CLS_ContractService.ActiveRelationshipDTO> rels = AXF_CLS_CTRL_ContractManagement.getActiveRelationships(
+      acc.Id
+    );
     Test.stopTest();
 
     Assert.areEqual(1, rels.size(), 'Deve retornar 1 relacao ativa');
@@ -83,8 +96,14 @@ private class AXF_CLS_CTRL_ContractManagementTest {
   @IsTest
   static void testContractsCrudViaController() {
     Account acc = createTestAccount('Entidade Contratos Controller');
-    AXF_OBJ_Counterparty__c cpty = createTestCounterparty('Contraparte Teste Ctr');
-    AXF_OBJ_CounterpartyEntityRelationship__c rel = createTestRelationship(cpty.Id, acc.Id, 'ACTIVE');
+    AXF_OBJ_Counterparty__c cpty = createTestCounterparty(
+      'Contraparte Teste Ctr'
+    );
+    AXF_OBJ_CounterpartyEntityRelationship__c rel = createTestRelationship(
+      cpty.Id,
+      acc.Id,
+      'ACTIVE'
+    );
 
     ALT_CLS_ContractService.ContractInputDTO input = new ALT_CLS_ContractService.ContractInputDTO();
     input.accountId = acc.Id;
@@ -95,13 +114,20 @@ private class AXF_CLS_CTRL_ContractManagementTest {
     input.currencyIsoCode = 'BRL';
 
     Test.startTest();
-    ALT_CLS_ContractService.OperationResultDTO createRes = AXF_CLS_CTRL_ContractManagement.createDraftContract(input);
+    ALT_CLS_ContractService.OperationResultDTO createRes = AXF_CLS_CTRL_ContractManagement.createDraftContract(
+      input
+    );
     Assert.isTrue(createRes.success, 'Criacao com sucesso');
 
-    List<ALT_CLS_ContractService.ContractSummaryDTO> contracts = AXF_CLS_CTRL_ContractManagement.getContracts(acc.Id);
+    List<ALT_CLS_ContractService.ContractSummaryDTO> contracts = AXF_CLS_CTRL_ContractManagement.getContracts(
+      acc.Id
+    );
     Assert.areEqual(1, contracts.size(), 'Deve retornar o contrato criado');
 
-    ALT_CLS_ContractService.ContractDetailDTO detail = AXF_CLS_CTRL_ContractManagement.getContractDetail(createRes.contractId, acc.Id);
+    ALT_CLS_ContractService.ContractDetailDTO detail = AXF_CLS_CTRL_ContractManagement.getContractDetail(
+      createRes.contractId,
+      acc.Id
+    );
     Assert.areEqual('Contrato via Controller', detail.title, 'Titulo coincide');
 
     ALT_CLS_ContractService.ContractInputDTO updateInput = new ALT_CLS_ContractService.ContractInputDTO();
@@ -109,7 +135,9 @@ private class AXF_CLS_CTRL_ContractManagementTest {
     updateInput.title = 'Contrato via Controller - Atualizado';
     updateInput.version = 1;
 
-    ALT_CLS_ContractService.OperationResultDTO updateRes = AXF_CLS_CTRL_ContractManagement.updateDraftContract(updateInput);
+    ALT_CLS_ContractService.OperationResultDTO updateRes = AXF_CLS_CTRL_ContractManagement.updateDraftContract(
+      updateInput
+    );
     Assert.isTrue(updateRes.success, 'Atualizacao com sucesso');
     Assert.areEqual(2, updateRes.version, 'Versao incrementada');
     Test.stopTest();
@@ -119,7 +147,11 @@ private class AXF_CLS_CTRL_ContractManagementTest {
   static void testTermVersionsViaController() {
     Account acc = createTestAccount('Entidade Termos Controller');
     AXF_OBJ_Counterparty__c cpty = createTestCounterparty('Contraparte Termos');
-    AXF_OBJ_CounterpartyEntityRelationship__c rel = createTestRelationship(cpty.Id, acc.Id, 'ACTIVE');
+    AXF_OBJ_CounterpartyEntityRelationship__c rel = createTestRelationship(
+      cpty.Id,
+      acc.Id,
+      'ACTIVE'
+    );
 
     ALT_CLS_ContractService.ContractInputDTO input = new ALT_CLS_ContractService.ContractInputDTO();
     input.accountId = acc.Id;
@@ -128,7 +160,9 @@ private class AXF_CLS_CTRL_ContractManagementTest {
     input.title = 'Contrato para Termos';
     input.contractType = 'EXPENSE';
     input.currencyIsoCode = 'BRL';
-    ALT_CLS_ContractService.OperationResultDTO ctrRes = AXF_CLS_CTRL_ContractManagement.createDraftContract(input);
+    ALT_CLS_ContractService.OperationResultDTO ctrRes = AXF_CLS_CTRL_ContractManagement.createDraftContract(
+      input
+    );
 
     ALT_CLS_ContractRemunerationService.TermVersionInputDTO tvInput = new ALT_CLS_ContractRemunerationService.TermVersionInputDTO();
     tvInput.contractId = ctrRes.contractId;
@@ -143,25 +177,40 @@ private class AXF_CLS_CTRL_ContractManagementTest {
 
     Test.startTest();
     // 1. Salva rascunho de termo
-    ALT_CLS_ContractRemunerationService.OperationResultDTO saveTvRes = AXF_CLS_CTRL_ContractManagement.saveDraftTermVersion(tvInput);
+    ALT_CLS_ContractRemunerationService.OperationResultDTO saveTvRes = AXF_CLS_CTRL_ContractManagement.saveDraftTermVersion(
+      tvInput
+    );
     Assert.isTrue(saveTvRes.success, 'Termo salvo com sucesso');
 
     // 2. Consulta termos do contrato
-    List<ALT_CLS_ContractRemunerationService.TermVersionDetailDTO> terms = AXF_CLS_CTRL_ContractManagement.getTermVersions(ctrRes.contractId, acc.Id);
+    List<ALT_CLS_ContractRemunerationService.TermVersionDetailDTO> terms = AXF_CLS_CTRL_ContractManagement.getTermVersions(
+      ctrRes.contractId,
+      acc.Id
+    );
     Assert.areEqual(1, terms.size(), 'Deve retornar 1 termo');
 
     // 3. Calcula cronograma de preview
-    ALT_CLS_ContractRemunerationService.ScheduleCalculationResultDTO preview = AXF_CLS_CTRL_ContractManagement.calculateSchedulePreview(tvInput);
+    ALT_CLS_ContractRemunerationService.ScheduleCalculationResultDTO preview = AXF_CLS_CTRL_ContractManagement.calculateSchedulePreview(
+      tvInput
+    );
     Assert.isTrue(preview.success, 'Calculo de preview com sucesso');
     Assert.areEqual(3, preview.scheduleItems.size(), '3 parcelas calculadas');
 
     // 4. Consulta revisao formal (AXF-53, AC 1)
-    ALT_CLS_ContractRemunerationService.TermVersionReviewDTO review = AXF_CLS_CTRL_ContractManagement.getTermVersionReview(saveTvRes.termVersionId, acc.Id);
+    ALT_CLS_ContractRemunerationService.TermVersionReviewDTO review = AXF_CLS_CTRL_ContractManagement.getTermVersionReview(
+      saveTvRes.termVersionId,
+      acc.Id
+    );
     Assert.isNotNull(review, 'Review nao pode ser nula');
     Assert.isNotNull(review.intervalLabel, 'Intervalo deve estar formatado');
 
     // 5. Ativa termo com controle de concorrencia (AXF-53, AC 2)
-    ALT_CLS_ContractRemunerationService.OperationResultDTO actRes = AXF_CLS_CTRL_ContractManagement.activateTermVersion(saveTvRes.termVersionId, acc.Id, 1, 1);
+    ALT_CLS_ContractRemunerationService.OperationResultDTO actRes = AXF_CLS_CTRL_ContractManagement.activateTermVersion(
+      saveTvRes.termVersionId,
+      acc.Id,
+      1,
+      1
+    );
     Assert.isTrue(actRes.success, 'Ativacao com sucesso');
     Assert.areEqual('ACTIVE', actRes.status);
     Test.stopTest();
@@ -226,7 +275,12 @@ private class AXF_CLS_CTRL_ContractManagementTest {
     }
 
     try {
-      AXF_CLS_CTRL_ContractManagement.activateTermVersion(null, null, null, null);
+      AXF_CLS_CTRL_ContractManagement.activateTermVersion(
+        null,
+        null,
+        null,
+        null
+      );
       Assert.fail('Deveria falhar');
     } catch (AuraHandledException e) {
       Assert.isNotNull(e);
@@ -236,8 +290,14 @@ private class AXF_CLS_CTRL_ContractManagementTest {
   @IsTest
   static void testWorkRecordsViaController() {
     Account acc = createTestAccount('Entidade WR Controller');
-    AXF_OBJ_Counterparty__c cpty = createTestCounterparty('Contraparte WR Controller');
-    AXF_OBJ_CounterpartyEntityRelationship__c rel = createTestRelationship(cpty.Id, acc.Id, 'ACTIVE');
+    AXF_OBJ_Counterparty__c cpty = createTestCounterparty(
+      'Contraparte WR Controller'
+    );
+    AXF_OBJ_CounterpartyEntityRelationship__c rel = createTestRelationship(
+      cpty.Id,
+      acc.Id,
+      'ACTIVE'
+    );
 
     ALT_CLS_ContractService.ContractInputDTO ctrInput = new ALT_CLS_ContractService.ContractInputDTO();
     ctrInput.accountId = acc.Id;
@@ -247,7 +307,9 @@ private class AXF_CLS_CTRL_ContractManagementTest {
     ctrInput.contractType = 'EXPENSE';
     ctrInput.currencyIsoCode = 'BRL';
     ctrInput.startDate = Date.newInstance(2026, 7, 1);
-    ALT_CLS_ContractService.OperationResultDTO ctrRes = AXF_CLS_CTRL_ContractManagement.createDraftContract(ctrInput);
+    ALT_CLS_ContractService.OperationResultDTO ctrRes = AXF_CLS_CTRL_ContractManagement.createDraftContract(
+      ctrInput
+    );
 
     ALT_CLS_WorkRecordService.WorkRecordInputDTO wrInput = new ALT_CLS_WorkRecordService.WorkRecordInputDTO();
     wrInput.contractId = ctrRes.contractId;
@@ -260,28 +322,49 @@ private class AXF_CLS_CTRL_ContractManagementTest {
 
     Test.startTest();
     // 1. Registra
-    ALT_CLS_WorkRecordService.WorkRecordDetailDTO wr = AXF_CLS_CTRL_ContractManagement.registerWorkRecord(wrInput);
+    ALT_CLS_WorkRecordService.WorkRecordDetailDTO wr = AXF_CLS_CTRL_ContractManagement.registerWorkRecord(
+      wrInput
+    );
     Assert.isNotNull(wr.workRecordId, 'Deve registrar');
 
     // 2. Consulta
-    List<ALT_CLS_WorkRecordService.WorkRecordDetailDTO> listWr = AXF_CLS_CTRL_ContractManagement.getWorkRecords(ctrRes.contractId);
+    List<ALT_CLS_WorkRecordService.WorkRecordDetailDTO> listWr = AXF_CLS_CTRL_ContractManagement.getWorkRecords(
+      ctrRes.contractId
+    );
     Assert.areEqual(1, listWr.size(), 'Deve listar 1 registro');
 
     // 3. Submete
-    ALT_CLS_WorkRecordService.WorkRecordDetailDTO submitted = AXF_CLS_CTRL_ContractManagement.submitWorkRecord(wr.workRecordId);
+    ALT_CLS_WorkRecordService.WorkRecordDetailDTO submitted = AXF_CLS_CTRL_ContractManagement.submitWorkRecord(
+      wr.workRecordId
+    );
     Assert.areEqual('SUBMITTED', submitted.status);
 
     // 4. Decide (Aprova)
-    ALT_CLS_WorkRecordService.WorkRecordDetailDTO approved = AXF_CLS_CTRL_ContractManagement.decideWorkRecord(wr.workRecordId, true, 'Aprovado OK');
+    ALT_CLS_WorkRecordService.WorkRecordDetailDTO approved = AXF_CLS_CTRL_ContractManagement.decideWorkRecord(
+      wr.workRecordId,
+      true,
+      'Aprovado OK'
+    );
     Assert.areEqual('APPROVED', approved.status);
 
     // 5. Avalia apuracao
-    ALT_CLS_WorkRecordService.WorkRecordAssessmentDTO assessment = AXF_CLS_CTRL_ContractManagement.assessContractWorkRecords(ctrRes.contractId, Date.newInstance(2026, 7, 1), Date.newInstance(2026, 7, 31));
-    Assert.isTrue(assessment.isApprovedAndComplete, 'Deve estar aprovado e completo');
+    ALT_CLS_WorkRecordService.WorkRecordAssessmentDTO assessment = AXF_CLS_CTRL_ContractManagement.assessContractWorkRecords(
+      ctrRes.contractId,
+      Date.newInstance(2026, 7, 1),
+      Date.newInstance(2026, 7, 31)
+    );
+    Assert.isTrue(
+      assessment.isApprovedAndComplete,
+      'Deve estar aprovado e completo'
+    );
 
     // 6. Corrige
     wrInput.quantity = 12.0;
-    ALT_CLS_WorkRecordService.WorkRecordDetailDTO corrected = AXF_CLS_CTRL_ContractManagement.correctApprovedWorkRecord(approved.workRecordId, wrInput, 'Horas retificadas');
+    ALT_CLS_WorkRecordService.WorkRecordDetailDTO corrected = AXF_CLS_CTRL_ContractManagement.correctApprovedWorkRecord(
+      approved.workRecordId,
+      wrInput,
+      'Horas retificadas'
+    );
     Assert.isNotNull(corrected.workRecordId);
     Test.stopTest();
 
@@ -315,14 +398,22 @@ private class AXF_CLS_CTRL_ContractManagementTest {
     }
 
     try {
-      AXF_CLS_CTRL_ContractManagement.correctApprovedWorkRecord(null, null, null);
+      AXF_CLS_CTRL_ContractManagement.correctApprovedWorkRecord(
+        null,
+        null,
+        null
+      );
       Assert.fail('Deveria falhar');
     } catch (AuraHandledException e) {
       Assert.isNotNull(e);
     }
 
     try {
-      AXF_CLS_CTRL_ContractManagement.assessContractWorkRecords(null, null, null);
+      AXF_CLS_CTRL_ContractManagement.assessContractWorkRecords(
+        null,
+        null,
+        null
+      );
       Assert.fail('Deveria falhar');
     } catch (AuraHandledException e) {
       Assert.isNotNull(e);

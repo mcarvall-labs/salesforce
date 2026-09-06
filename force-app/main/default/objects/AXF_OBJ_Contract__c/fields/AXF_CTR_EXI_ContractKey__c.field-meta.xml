@@ -2,7 +2,8 @@
 <CustomField xmlns="http://soap.sforce.com/2006/04/metadata">
     <fullName>AXF_CTR_EXI_ContractKey__c</fullName>
     <caseSensitive>false</caseSensitive>
-    <description>Chave canônica única por Entidade e Código: sha256Hex(frame(&apos;CONTRACT&apos;, accountId, contractCode)).</description>
+    <description
+  >Chave canônica única por Entidade e Código: sha256Hex(frame(&apos;CONTRACT&apos;, accountId, contractCode)).</description>
     <externalId>true</externalId>
     <label>Chave Canônica do Contrato</label>
     <length>255</length>

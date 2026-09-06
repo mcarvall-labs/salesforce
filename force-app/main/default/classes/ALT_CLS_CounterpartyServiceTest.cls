@@ -10,10 +10,11 @@
  */
 @IsTest
 private class ALT_CLS_CounterpartyServiceTest {
-
   private static Account createTestAccount(String name) {
     Account acc = new Account(Name = name);
-    Id bRtId = Schema.SObjectType.Account.getRecordTypeInfosByDeveloperName().get('AXF_Business')?.getRecordTypeId();
+    Id bRtId = Schema.SObjectType.Account.getRecordTypeInfosByDeveloperName()
+      .get('AXF_Business')
+      ?.getRecordTypeId();
     if (bRtId != null) {
       acc.RecordTypeId = bRtId;
     }
@@ -24,35 +25,89 @@ private class ALT_CLS_CounterpartyServiceTest {
   @IsTest
   static void testFormatMaskedTaxId() {
     // CPF
-    Assert.areEqual('•••.•••.789-01', ALT_CLS_CounterpartyService.formatMaskedTaxId('12345678901', 'CPF'), 'CPF sem pontuação');
-    Assert.areEqual('•••.•••.789-01', ALT_CLS_CounterpartyService.formatMaskedTaxId('123.456.789-01', 'CPF'), 'CPF com pontuação');
-    Assert.areEqual('•••.•••.123', ALT_CLS_CounterpartyService.formatMaskedTaxId('123', 'CPF'), 'CPF curto');
+    Assert.areEqual(
+      '•••.•••.789-01',
+      ALT_CLS_CounterpartyService.formatMaskedTaxId('12345678901', 'CPF'),
+      'CPF sem pontuação'
+    );
+    Assert.areEqual(
+      '•••.•••.789-01',
+      ALT_CLS_CounterpartyService.formatMaskedTaxId('123.456.789-01', 'CPF'),
+      'CPF com pontuação'
+    );
+    Assert.areEqual(
+      '•••.•••.123',
+      ALT_CLS_CounterpartyService.formatMaskedTaxId('123', 'CPF'),
+      'CPF curto'
+    );
 
     // CNPJ
-    Assert.areEqual('••.•••.•••/0001-90', ALT_CLS_CounterpartyService.formatMaskedTaxId('12345678000190', 'CNPJ'), 'CNPJ sem pontuação');
-    Assert.areEqual('••.•••.•••/0001-90', ALT_CLS_CounterpartyService.formatMaskedTaxId('12.345.678/0001-90', 'CNPJ'), 'CNPJ com pontuação');
+    Assert.areEqual(
+      '••.•••.•••/0001-90',
+      ALT_CLS_CounterpartyService.formatMaskedTaxId('12345678000190', 'CNPJ'),
+      'CNPJ sem pontuação'
+    );
+    Assert.areEqual(
+      '••.•••.•••/0001-90',
+      ALT_CLS_CounterpartyService.formatMaskedTaxId(
+        '12.345.678/0001-90',
+        'CNPJ'
+      ),
+      'CNPJ com pontuação'
+    );
 
     // NIF
-    Assert.areEqual('NIF •••••6789', ALT_CLS_CounterpartyService.formatMaskedTaxId('123456789', 'NIF'), 'NIF 9 dígitos');
+    Assert.areEqual(
+      'NIF •••••6789',
+      ALT_CLS_CounterpartyService.formatMaskedTaxId('123456789', 'NIF'),
+      'NIF 9 dígitos'
+    );
 
     // Outros / Genérico
-    Assert.areEqual('••••••••5678', ALT_CLS_CounterpartyService.formatMaskedTaxId('12345678', 'OTHER'), 'Outro esquema');
-    Assert.areEqual('••••12', ALT_CLS_CounterpartyService.formatMaskedTaxId('12', 'OTHER'), 'Esquema curto');
+    Assert.areEqual(
+      '••••••••5678',
+      ALT_CLS_CounterpartyService.formatMaskedTaxId('12345678', 'OTHER'),
+      'Outro esquema'
+    );
+    Assert.areEqual(
+      '••••12',
+      ALT_CLS_CounterpartyService.formatMaskedTaxId('12', 'OTHER'),
+      'Esquema curto'
+    );
 
     // Casos vazios
-    Assert.areEqual('', ALT_CLS_CounterpartyService.formatMaskedTaxId('', 'CPF'), 'Vazio');
-    Assert.areEqual('', ALT_CLS_CounterpartyService.formatMaskedTaxId(null, 'CPF'), 'Nulo');
-    Assert.areEqual('••••••••', ALT_CLS_CounterpartyService.formatMaskedTaxId('---', 'CPF'), 'Apenas caracteres especiais');
+    Assert.areEqual(
+      '',
+      ALT_CLS_CounterpartyService.formatMaskedTaxId('', 'CPF'),
+      'Vazio'
+    );
+    Assert.areEqual(
+      '',
+      ALT_CLS_CounterpartyService.formatMaskedTaxId(null, 'CPF'),
+      'Nulo'
+    );
+    Assert.areEqual(
+      '••••••••',
+      ALT_CLS_CounterpartyService.formatMaskedTaxId('---', 'CPF'),
+      'Apenas caracteres especiais'
+    );
   }
 
   @IsTest
   static void testTaxDigestAndFramingKeys() {
     Account acc = createTestAccount('Empresa Teste Framing');
 
-    String digest = ALT_CLS_CounterpartyService.computeTaxDigest('123.456.789-01', 'CPF', 'BR');
+    String digest = ALT_CLS_CounterpartyService.computeTaxDigest(
+      '123.456.789-01',
+      'CPF',
+      'BR'
+    );
     Assert.isNotNull(digest, 'Digest gerado');
 
-    String cptyKey = ALT_CLS_CounterpartyService.computeCounterpartyKey('Fornecedor Beta LTDA', 'BR');
+    String cptyKey = ALT_CLS_CounterpartyService.computeCounterpartyKey(
+      'Fornecedor Beta LTDA',
+      'BR'
+    );
     Assert.isNotNull(cptyKey, 'CounterpartyKey gerada');
 
     // Criação manual temporária para obter Id
@@ -68,10 +123,19 @@ private class ALT_CLS_CounterpartyServiceTest {
     );
     insert cpty;
 
-    String relKey = ALT_CLS_CounterpartyService.computeRelationshipKey(cpty.Id, acc.Id, 'SUPPLIER');
+    String relKey = ALT_CLS_CounterpartyService.computeRelationshipKey(
+      cpty.Id,
+      acc.Id,
+      'SUPPLIER'
+    );
     Assert.isNotNull(relKey, 'RelationshipKey gerada');
 
-    String taxKey = ALT_CLS_CounterpartyService.computeTaxIdentifierKey(cpty.Id, 'CPF', 'BR', digest);
+    String taxKey = ALT_CLS_CounterpartyService.computeTaxIdentifierKey(
+      cpty.Id,
+      'CPF',
+      'BR',
+      digest
+    );
     Assert.isNotNull(taxKey, 'TaxIdentifierKey gerada');
 
     // Validações de obrigatoriedade das chaves
@@ -79,21 +143,39 @@ private class ALT_CLS_CounterpartyServiceTest {
       ALT_CLS_CounterpartyService.computeCounterpartyKey('', 'BR');
       Assert.fail('Deveria falhar sem legalName');
     } catch (AXF_CLS_CounterpartyException e) {
-      Assert.isTrue(e.getMessage().contains('obrigatórios'), 'Exceção esperada');
+      Assert.isTrue(
+        e.getMessage().contains('obrigatórios'),
+        'Exceção esperada'
+      );
     }
 
     try {
-      ALT_CLS_CounterpartyService.computeRelationshipKey(null, acc.Id, 'SUPPLIER');
+      ALT_CLS_CounterpartyService.computeRelationshipKey(
+        null,
+        acc.Id,
+        'SUPPLIER'
+      );
       Assert.fail('Deveria falhar sem counterpartyId');
     } catch (AXF_CLS_CounterpartyException e) {
-      Assert.isTrue(e.getMessage().contains('obrigatórios'), 'Exceção esperada');
+      Assert.isTrue(
+        e.getMessage().contains('obrigatórios'),
+        'Exceção esperada'
+      );
     }
 
     try {
-      ALT_CLS_CounterpartyService.computeTaxIdentifierKey(cpty.Id, '', 'BR', digest);
+      ALT_CLS_CounterpartyService.computeTaxIdentifierKey(
+        cpty.Id,
+        '',
+        'BR',
+        digest
+      );
       Assert.fail('Deveria falhar sem scheme');
     } catch (AXF_CLS_CounterpartyException e) {
-      Assert.isTrue(e.getMessage().contains('obrigatórios'), 'Exceção esperada');
+      Assert.isTrue(
+        e.getMessage().contains('obrigatórios'),
+        'Exceção esperada'
+      );
     }
   }
 
@@ -123,7 +205,9 @@ private class ALT_CLS_CounterpartyServiceTest {
     input.taxRawDocument = '12.345.678/0001-90';
 
     Test.startTest();
-    ALT_CLS_CounterpartyService.OperationResultDTO result = service.createOrUpdateCounterpartyAndRelationship(input);
+    ALT_CLS_CounterpartyService.OperationResultDTO result = service.createOrUpdateCounterpartyAndRelationship(
+      input
+    );
     Test.stopTest();
 
     Assert.isTrue(result.success, 'Operação executada com sucesso');
@@ -132,15 +216,25 @@ private class ALT_CLS_CounterpartyServiceTest {
 
     // 1. Valida Contraparte canônica mínima (G1, AD-30)
     AXF_OBJ_Counterparty__c cpty = [
-      SELECT Id, Name, AXF_CPTY_TXT_LegalName__c, AXF_CPTY_TXT_DisplayName__c,
-             AXF_CPTY_PKL_Kind__c, AXF_CPTY_TXT_Country__c, AXF_CPTY_PKL_Status__c,
-             AXF_CPTY_EXI_CounterpartyKey__c, AXF_CPTY_NUM_Version__c
+      SELECT
+        Id,
+        Name,
+        AXF_CPTY_TXT_LegalName__c,
+        AXF_CPTY_TXT_DisplayName__c,
+        AXF_CPTY_PKL_Kind__c,
+        AXF_CPTY_TXT_Country__c,
+        AXF_CPTY_PKL_Status__c,
+        AXF_CPTY_EXI_CounterpartyKey__c,
+        AXF_CPTY_NUM_Version__c
       FROM AXF_OBJ_Counterparty__c
       WHERE Id = :result.counterpartyId
     ];
     Assert.areEqual('Alpha Logística', cpty.Name);
     Assert.areEqual('Alpha Logística', cpty.AXF_CPTY_TXT_DisplayName__c);
-    Assert.areEqual('Alpha Serviços de Logística LTDA', cpty.AXF_CPTY_TXT_LegalName__c);
+    Assert.areEqual(
+      'Alpha Serviços de Logística LTDA',
+      cpty.AXF_CPTY_TXT_LegalName__c
+    );
     Assert.areEqual('BR', cpty.AXF_CPTY_TXT_Country__c);
     Assert.areEqual('ORGANIZATION', cpty.AXF_CPTY_PKL_Kind__c);
     Assert.areEqual('ACTIVE', cpty.AXF_CPTY_PKL_Status__c);
@@ -148,9 +242,14 @@ private class ALT_CLS_CounterpartyServiceTest {
 
     // 2. Valida Identificador Fiscal protegido (AD-30, GF-24)
     List<AXF_OBJ_CounterpartyTaxIdentifier__c> taxList = [
-      SELECT Id, AXF_CTID_PKL_Scheme__c, AXF_CTID_TXT_IssuingCountry__c,
-             AXF_CTID_TXT_MaskedIdentifier__c, AXF_CTID_TXT_SearchDigest__c,
-             AXF_CTID_NUM_KeyVersion__c, AXF_CTID_PKL_Status__c
+      SELECT
+        Id,
+        AXF_CTID_PKL_Scheme__c,
+        AXF_CTID_TXT_IssuingCountry__c,
+        AXF_CTID_TXT_MaskedIdentifier__c,
+        AXF_CTID_TXT_SearchDigest__c,
+        AXF_CTID_NUM_KeyVersion__c,
+        AXF_CTID_PKL_Status__c
       FROM AXF_OBJ_CounterpartyTaxIdentifier__c
       WHERE AXF_CTID_LKP_Counterparty__c = :result.counterpartyId
     ];
@@ -158,26 +257,56 @@ private class ALT_CLS_CounterpartyServiceTest {
     AXF_OBJ_CounterpartyTaxIdentifier__c taxRec = taxList[0];
     Assert.areEqual('CNPJ', taxRec.AXF_CTID_PKL_Scheme__c);
     Assert.areEqual('BR', taxRec.AXF_CTID_TXT_IssuingCountry__c);
-    Assert.areEqual('••.•••.•••/0001-90', taxRec.AXF_CTID_TXT_MaskedIdentifier__c, 'Deve armazenar apenas a máscara');
-    Assert.isNotNull(taxRec.AXF_CTID_TXT_SearchDigest__c, 'Digest SHA-256 enquadrado');
-    Assert.areNotEqual('12.345.678/0001-90', taxRec.AXF_CTID_TXT_MaskedIdentifier__c, 'Nunca deve armazenar o valor bruto');
-    Assert.areNotEqual('12345678000190', taxRec.AXF_CTID_TXT_MaskedIdentifier__c, 'Nunca deve armazenar o valor bruto sem pontuação');
+    Assert.areEqual(
+      '••.•••.•••/0001-90',
+      taxRec.AXF_CTID_TXT_MaskedIdentifier__c,
+      'Deve armazenar apenas a máscara'
+    );
+    Assert.isNotNull(
+      taxRec.AXF_CTID_TXT_SearchDigest__c,
+      'Digest SHA-256 enquadrado'
+    );
+    Assert.areNotEqual(
+      '12.345.678/0001-90',
+      taxRec.AXF_CTID_TXT_MaskedIdentifier__c,
+      'Nunca deve armazenar o valor bruto'
+    );
+    Assert.areNotEqual(
+      '12345678000190',
+      taxRec.AXF_CTID_TXT_MaskedIdentifier__c,
+      'Nunca deve armazenar o valor bruto sem pontuação'
+    );
 
     // 3. Valida Relação estritamente contextualizada (G2, GF-32)
     AXF_OBJ_CounterpartyEntityRelationship__c rel = [
-      SELECT Id, AXF_CER_LKP_Counterparty__c, AXF_CER_LKP_Account__c,
-             AXF_CER_PKL_Role__c, AXF_CER_PKL_Status__c, AXF_CER_TXT_EntitySpecificDisplay__c,
-             AXF_CER_DAT_ValidFrom__c, AXF_CER_DAT_ValidTo__c, AXF_CER_TAL_AddressSnapshot__c,
-             AXF_CER_EML_Email__c, AXF_CER_PHN_Phone__c, AXF_CER_TXT_ContactName__c,
-             AXF_CER_NUM_Version__c
+      SELECT
+        Id,
+        AXF_CER_LKP_Counterparty__c,
+        AXF_CER_LKP_Account__c,
+        AXF_CER_PKL_Role__c,
+        AXF_CER_PKL_Status__c,
+        AXF_CER_TXT_EntitySpecificDisplay__c,
+        AXF_CER_DAT_ValidFrom__c,
+        AXF_CER_DAT_ValidTo__c,
+        AXF_CER_TAL_AddressSnapshot__c,
+        AXF_CER_EML_Email__c,
+        AXF_CER_PHN_Phone__c,
+        AXF_CER_TXT_ContactName__c,
+        AXF_CER_NUM_Version__c
       FROM AXF_OBJ_CounterpartyEntityRelationship__c
       WHERE Id = :result.relationshipId
     ];
     Assert.areEqual(cpty.Id, rel.AXF_CER_LKP_Counterparty__c);
     Assert.areEqual(acc.Id, rel.AXF_CER_LKP_Account__c);
     Assert.areEqual('SUPPLIER', rel.AXF_CER_PKL_Role__c);
-    Assert.areEqual('Alpha Transporte - Contrato 102', rel.AXF_CER_TXT_EntitySpecificDisplay__c);
-    Assert.areEqual('Av. Brigadeiro Faria Lima, 3000, SP', rel.AXF_CER_TAL_AddressSnapshot__c);
+    Assert.areEqual(
+      'Alpha Transporte - Contrato 102',
+      rel.AXF_CER_TXT_EntitySpecificDisplay__c
+    );
+    Assert.areEqual(
+      'Av. Brigadeiro Faria Lima, 3000, SP',
+      rel.AXF_CER_TAL_AddressSnapshot__c
+    );
     Assert.areEqual('contato@alphalog.com', rel.AXF_CER_EML_Email__c);
     Assert.areEqual(1, rel.AXF_CER_NUM_Version__c);
   }
@@ -201,7 +330,9 @@ private class ALT_CLS_CounterpartyServiceTest {
     inputA.addressSnapshot = 'Rua A, 100';
     inputA.email = 'suporte@deltaglobal.com';
 
-    ALT_CLS_CounterpartyService.OperationResultDTO resultA = service.createOrUpdateCounterpartyAndRelationship(inputA);
+    ALT_CLS_CounterpartyService.OperationResultDTO resultA = service.createOrUpdateCounterpartyAndRelationship(
+      inputA
+    );
     Id cptyId = resultA.counterpartyId;
 
     // 2. Vincula a mesma contraparte na Entidade B (como CUSTOMER), com dados contextuais diferentes
@@ -217,33 +348,85 @@ private class ALT_CLS_CounterpartyServiceTest {
     inputB.addressSnapshot = 'Av. B, 500';
     inputB.email = 'comercial@deltaglobal.com';
 
-    ALT_CLS_CounterpartyService.OperationResultDTO resultB = service.createOrUpdateCounterpartyAndRelationship(inputB);
-    Assert.areEqual(cptyId, resultB.counterpartyId, 'Reutiliza a mesma identidade de contraparte');
-    Assert.areNotEqual(resultA.relationshipId, resultB.relationshipId, 'Gera relação distinta para a Entidade B');
+    ALT_CLS_CounterpartyService.OperationResultDTO resultB = service.createOrUpdateCounterpartyAndRelationship(
+      inputB
+    );
+    Assert.areEqual(
+      cptyId,
+      resultB.counterpartyId,
+      'Reutiliza a mesma identidade de contraparte'
+    );
+    Assert.areNotEqual(
+      resultA.relationshipId,
+      resultB.relationshipId,
+      'Gera relação distinta para a Entidade B'
+    );
 
     // 3. Consulta no contexto da Entidade A (GF-32)
-    List<ALT_CLS_CounterpartyService.CounterpartySummaryDTO> listA = service.getCounterpartiesForEntity(entityA.Id, null);
+    List<ALT_CLS_CounterpartyService.CounterpartySummaryDTO> listA = service.getCounterpartiesForEntity(
+      entityA.Id,
+      null
+    );
     Assert.areEqual(1, listA.size(), 'Entidade A visualiza 1 contraparte');
-    Assert.areEqual('SUPPLIER', listA[0].relationshipRole, 'Papel no escopo da Entidade A');
-    Assert.areEqual(resultA.relationshipId, listA[0].relationshipId, 'Relação da Entidade A');
+    Assert.areEqual(
+      'SUPPLIER',
+      listA[0].relationshipRole,
+      'Papel no escopo da Entidade A'
+    );
+    Assert.areEqual(
+      resultA.relationshipId,
+      listA[0].relationshipId,
+      'Relação da Entidade A'
+    );
 
-    ALT_CLS_CounterpartyService.CounterpartyDetailDTO detailA = service.getCounterpartyDetail(cptyId, entityA.Id);
-    Assert.areEqual(entityA.Id, detailA.accountId, 'Contexto retornado pertence a Entidade A');
+    ALT_CLS_CounterpartyService.CounterpartyDetailDTO detailA = service.getCounterpartyDetail(
+      cptyId,
+      entityA.Id
+    );
+    Assert.areEqual(
+      entityA.Id,
+      detailA.accountId,
+      'Contexto retornado pertence a Entidade A'
+    );
     Assert.areEqual('SUPPLIER', detailA.role);
-    Assert.areEqual('Delta - Prestador TI Alpha', detailA.entitySpecificDisplay);
+    Assert.areEqual(
+      'Delta - Prestador TI Alpha',
+      detailA.entitySpecificDisplay
+    );
     Assert.areEqual('Rua A, 100', detailA.addressSnapshot);
     Assert.areEqual('suporte@deltaglobal.com', detailA.email);
 
     // 4. Consulta no contexto da Entidade B (GF-32)
-    List<ALT_CLS_CounterpartyService.CounterpartySummaryDTO> listB = service.getCounterpartiesForEntity(entityB.Id, null);
+    List<ALT_CLS_CounterpartyService.CounterpartySummaryDTO> listB = service.getCounterpartiesForEntity(
+      entityB.Id,
+      null
+    );
     Assert.areEqual(1, listB.size(), 'Entidade B visualiza 1 contraparte');
-    Assert.areEqual('CLIENT', listB[0].relationshipRole, 'Papel no escopo da Entidade B');
-    Assert.areEqual(resultB.relationshipId, listB[0].relationshipId, 'Relação da Entidade B');
+    Assert.areEqual(
+      'CLIENT',
+      listB[0].relationshipRole,
+      'Papel no escopo da Entidade B'
+    );
+    Assert.areEqual(
+      resultB.relationshipId,
+      listB[0].relationshipId,
+      'Relação da Entidade B'
+    );
 
-    ALT_CLS_CounterpartyService.CounterpartyDetailDTO detailB = service.getCounterpartyDetail(cptyId, entityB.Id);
-    Assert.areEqual(entityB.Id, detailB.accountId, 'Contexto retornado pertence a Entidade B');
+    ALT_CLS_CounterpartyService.CounterpartyDetailDTO detailB = service.getCounterpartyDetail(
+      cptyId,
+      entityB.Id
+    );
+    Assert.areEqual(
+      entityB.Id,
+      detailB.accountId,
+      'Contexto retornado pertence a Entidade B'
+    );
     Assert.areEqual('CLIENT', detailB.role);
-    Assert.areEqual('Delta - Cliente Estratégico Beta', detailB.entitySpecificDisplay);
+    Assert.areEqual(
+      'Delta - Cliente Estratégico Beta',
+      detailB.entitySpecificDisplay
+    );
     Assert.areEqual('Av. B, 500', detailB.addressSnapshot);
     Assert.areEqual('comercial@deltaglobal.com', detailB.email);
   }
@@ -269,11 +452,17 @@ private class ALT_CLS_CounterpartyServiceTest {
     in2.role = 'SUPPLIER';
     service.createOrUpdateCounterpartyAndRelationship(in2);
 
-    List<ALT_CLS_CounterpartyService.CounterpartySummaryDTO> searchXPTO = service.getCounterpartiesForEntity(acc.Id, 'XPTO');
+    List<ALT_CLS_CounterpartyService.CounterpartySummaryDTO> searchXPTO = service.getCounterpartiesForEntity(
+      acc.Id,
+      'XPTO'
+    );
     Assert.areEqual(1, searchXPTO.size());
     Assert.areEqual('XPTO Seguros', searchXPTO[0].displayName);
 
-    List<ALT_CLS_CounterpartyService.CounterpartySummaryDTO> searchNone = service.getCounterpartiesForEntity(acc.Id, 'NenhumExiste');
+    List<ALT_CLS_CounterpartyService.CounterpartySummaryDTO> searchNone = service.getCounterpartiesForEntity(
+      acc.Id,
+      'NenhumExiste'
+    );
     Assert.areEqual(0, searchNone.size());
   }
 
@@ -289,7 +478,9 @@ private class ALT_CLS_CounterpartyServiceTest {
     input.country = 'BR';
     input.role = 'PARTNER';
 
-    ALT_CLS_CounterpartyService.OperationResultDTO r1 = service.createOrUpdateCounterpartyAndRelationship(input);
+    ALT_CLS_CounterpartyService.OperationResultDTO r1 = service.createOrUpdateCounterpartyAndRelationship(
+      input
+    );
 
     // Atualização com versão correta
     input.counterpartyId = r1.counterpartyId;
@@ -299,7 +490,9 @@ private class ALT_CLS_CounterpartyServiceTest {
     input.displayName = 'Concorrência Testes Atualizado';
     input.entitySpecificDisplay = 'Parceiro Nível Ouro';
 
-    ALT_CLS_CounterpartyService.OperationResultDTO r2 = service.createOrUpdateCounterpartyAndRelationship(input);
+    ALT_CLS_CounterpartyService.OperationResultDTO r2 = service.createOrUpdateCounterpartyAndRelationship(
+      input
+    );
     Assert.isTrue(r2.success);
 
     AXF_OBJ_Counterparty__c cpty = [
@@ -307,16 +500,25 @@ private class ALT_CLS_CounterpartyServiceTest {
       FROM AXF_OBJ_Counterparty__c
       WHERE Id = :r1.counterpartyId
     ];
-    Assert.areEqual(2, cpty.AXF_CPTY_NUM_Version__c, 'Versão da contraparte incrementada para 2');
+    Assert.areEqual(
+      2,
+      cpty.AXF_CPTY_NUM_Version__c,
+      'Versão da contraparte incrementada para 2'
+    );
 
     // Tentativa de salvar contraparte com versão desatualizada (1 em vez de 2)
     input.version = 1;
     input.relationshipVersion = 2;
     try {
       service.createOrUpdateCounterpartyAndRelationship(input);
-      Assert.fail('Deveria lançar erro de conflito de concorrência na contraparte');
+      Assert.fail(
+        'Deveria lançar erro de conflito de concorrência na contraparte'
+      );
     } catch (AXF_CLS_CounterpartyException e) {
-      Assert.isTrue(e.getMessage().contains('Conflito de concorrência'), 'Mensagem esperada');
+      Assert.isTrue(
+        e.getMessage().contains('Conflito de concorrência'),
+        'Mensagem esperada'
+      );
     }
 
     // Tentativa de salvar relação com versão desatualizada (1 em vez de 2)
@@ -326,7 +528,10 @@ private class ALT_CLS_CounterpartyServiceTest {
       service.createOrUpdateCounterpartyAndRelationship(input);
       Assert.fail('Deveria lançar erro de conflito de concorrência na relação');
     } catch (AXF_CLS_CounterpartyException e) {
-      Assert.isTrue(e.getMessage().contains('Conflito de concorrência'), 'Mensagem esperada');
+      Assert.isTrue(
+        e.getMessage().contains('Conflito de concorrência'),
+        'Mensagem esperada'
+      );
     }
   }
 
@@ -348,7 +553,10 @@ private class ALT_CLS_CounterpartyServiceTest {
       service.createOrUpdateCounterpartyAndRelationship(inDTO);
       Assert.fail('Deveria falhar sem accountId');
     } catch (AXF_CLS_CounterpartyException e) {
-      Assert.isTrue(e.getMessage().contains('Entidade titular'), 'Exceção esperada');
+      Assert.isTrue(
+        e.getMessage().contains('Entidade titular'),
+        'Exceção esperada'
+      );
     }
 
     // País inválido
@@ -390,7 +598,10 @@ private class ALT_CLS_CounterpartyServiceTest {
       service.getCounterpartyDetail(null, acc.Id);
       Assert.fail('Deveria falhar com counterpartyId nulo');
     } catch (AXF_CLS_CounterpartyException e) {
-      Assert.isTrue(e.getMessage().contains('obrigatórios'), 'Exceção esperada');
+      Assert.isTrue(
+        e.getMessage().contains('obrigatórios'),
+        'Exceção esperada'
+      );
     }
   }
 }
