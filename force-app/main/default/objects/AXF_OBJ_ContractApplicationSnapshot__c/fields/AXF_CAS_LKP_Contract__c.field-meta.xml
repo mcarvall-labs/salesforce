@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<CustomField xmlns="http://soap.sforce.com/2006/04/metadata">
+    <fullName>AXF_CAS_LKP_Contract__c</fullName>
+    <label>Contrato</label>
+    <type>Lookup</type>
+    <referenceTo>AXF_OBJ_Contract__c</referenceTo>
+    <relationshipName>AXF_REL_ContractAppSnapshots</relationshipName>
+    <deleteConstraint>Restrict</deleteConstraint>
+    <required>true</required>
+    <description>Contrato de origem do termo aplicado (AXF-57). Consistencia Account do FTX x Account do Contract validada no Application Service.</description>
+</CustomField>

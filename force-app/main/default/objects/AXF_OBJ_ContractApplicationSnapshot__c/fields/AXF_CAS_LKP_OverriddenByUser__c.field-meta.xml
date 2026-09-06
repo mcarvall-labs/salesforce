@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<CustomField xmlns="http://soap.sforce.com/2006/04/metadata">
+    <fullName>AXF_CAS_LKP_OverriddenByUser__c</fullName>
+    <label>Override por Usuario</label>
+    <type>Lookup</type>
+    <referenceTo>User</referenceTo>
+    <relationshipName>AXF_REL_CASOverriddenBy</relationshipName>
+    <deleteConstraint>SetNull</deleteConstraint>
+    <required>false</required>
+    <description>Ator do override manual quando ao menos um campo esta OVERRIDDEN (AXF-57).</description>
+</CustomField>

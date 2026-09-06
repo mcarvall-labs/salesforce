@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<CustomField xmlns="http://soap.sforce.com/2006/04/metadata">
+    <fullName>AXF_FTX_LKP_Contract__c</fullName>
+    <label>Contrato</label>
+    <type>Lookup</type>
+    <referenceTo>AXF_OBJ_Contract__c</referenceTo>
+    <relationshipName>AXF_REL_ContractFinancialTransactions</relationshipName>
+    <deleteConstraint>SetNull</deleteConstraint>
+    <required>false</required>
+    <description>Lookup opcional, preenchido somente em lancamentos gerados por contrato (AXF-57, fechamento G1/G2 06/09). Preenchimento validado por Application Service (cross-account proibido).</description>
+</CustomField>
