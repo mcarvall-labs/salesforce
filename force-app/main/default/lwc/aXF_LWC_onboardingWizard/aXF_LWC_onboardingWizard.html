@@ -1,27 +1,30 @@
 <template>
   <lightning-card title={labels.title} icon-name="standard:setup">
-    <div class="slds-var-p-around_medium">
+    <div class="wizard">
       <template lwc:if={loading}>
-        <lightning-spinner size="small"></lightning-spinner>
+        <div class="wizard__status">
+          <lightning-spinner size="medium"></lightning-spinner>
+        </div>
       </template>
 
       <template lwc:elseif={forbidden}>
-        <p role="status">{labels.forbidden}</p>
+        <div class="wizard__banner wizard__banner_error" role="status">
+          {labels.forbidden}
+        </div>
       </template>
 
       <template lwc:elseif={onDone}>
-        <div role="status">
-          <h2 class="slds-text-heading_small slds-text-color_success">
+        <div class="wizard__status" role="status">
+          <h2 class="wizard__title wizard__done-title slds-text-color_success">
             {labels.done}
           </h2>
-          <p class="slds-text-body_small slds-var-m-top_x-small">
-            {labels.doneHint}
-          </p>
+          <p class="wizard__done-hint">{labels.doneHint}</p>
         </div>
-        <ul class="slds-var-m-top_small slds-list_dotted">
+        <ul class="wizard__review-list">
           <template for:each={stepRows} for:item="r">
-            <li key={r.stepKey}>
-              {r.label} — {r.status}
+            <li key={r.stepKey} class="wizard__review-row">
+              <span>{r.label}</span>
+              <span class="wizard__review-status">{r.status}</span>
               <template lwc:if={r.done}>
                 <lightning-button
                   variant="base"
@@ -36,22 +39,29 @@
       </template>
 
       <template lwc:else>
-        <p
-          class="slds-text-body_small slds-text-color_weak slds-var-m-bottom_xx-small"
-        >
-          {stepNumberLabel}
-        </p>
-        <h2
-          class="slds-text-heading_small slds-var-m-bottom_small"
-          tabindex="-1"
-          data-heading
-        >
-          {stepTitle}
-        </h2>
+        <!-- ================= stepper ================= -->
+        <div class="wizard__stepper">
+          <template for:each={stepperItems} for:item="st">
+            <div key={st.key} class={st.cssClass}>
+              <div class="wizard__step-row">
+                <div class={st.leadingClass}></div>
+                <div class="wizard__step-dot">
+                  <template lwc:if={st.isDone}>✓</template>
+                  <template lwc:else>{st.num}</template>
+                </div>
+                <div class={st.trailingClass}></div>
+              </div>
+              <span class="wizard__step-label">{st.label}</span>
+            </div>
+          </template>
+        </div>
+
+        <p class="wizard__eyebrow">{stepNumberLabel}</p>
+        <h2 class="wizard__title" tabindex="-1" data-heading>{stepTitle}</h2>
 
         <template lwc:if={message}>
           <div
-            class="slds-var-m-bottom_small slds-text-color_error"
+            class="wizard__banner wizard__banner_error"
             role="alert"
             data-message
           >
@@ -59,91 +69,98 @@
           </div>
         </template>
         <template lwc:if={staleDetected}>
-          <div
-            class="slds-var-m-bottom_small slds-text-color_weak"
-            role="status"
-          >
+          <div class="wizard__banner wizard__banner_notice" role="status">
             {labels.stale}
           </div>
         </template>
 
-        <!-- ================= step content ================= -->
-        <template lwc:if={onReview}>
-          <ul class="slds-list_dotted">
-            <template for:each={stepRows} for:item="r">
-              <li key={r.stepKey} data-review-row>{r.label} — {r.status}</li>
+        <div class="wizard__card">
+          <!-- ================= step content ================= -->
+          <div class="wizard__body">
+            <template lwc:if={onReview}>
+              <ul class="wizard__review-list">
+                <template for:each={stepRows} for:item="r">
+                  <li
+                    key={r.stepKey}
+                    class="wizard__review-row"
+                    data-review-row
+                  >
+                    <span>{r.label}</span>
+                    <span class="wizard__review-status">{r.status}</span>
+                  </li>
+                </template>
+              </ul>
+              <template lwc:if={requiredPending}>
+                <lightning-input
+                  type="checkbox"
+                  label={labels.ackPending}
+                  checked={acknowledge}
+                  onchange={handleAck}
+                  class="slds-var-m-top_small"
+                ></lightning-input>
+              </template>
             </template>
-          </ul>
-          <template lwc:if={requiredPending}>
-            <lightning-input
-              type="checkbox"
-              label={labels.ackPending}
-              checked={acknowledge}
-              onchange={handleAck}
-              class="slds-var-m-top_small"
-            ></lightning-input>
-          </template>
-        </template>
 
-        <template lwc:else>
-          <div class="slds-box slds-box_x-small slds-var-m-bottom_medium">
-            <template lwc:if={showWelcome}>
-              <p>{labels.welcome}</p>
-            </template>
-            <template lwc:if={showPluggyGuide}>
-              <c-a-x-f_-l-w-c_pluggy-guide></c-a-x-f_-l-w-c_pluggy-guide>
-              <c-a-x-f_-l-w-c_pluggy-integration-config></c-a-x-f_-l-w-c_pluggy-integration-config>
-            </template>
-            <template lwc:if={showDiscovery}>
-              <c-a-x-f_-l-w-c_source-discovery></c-a-x-f_-l-w-c_source-discovery>
-            </template>
-            <template lwc:if={showHolders}>
-              <c-a-x-f_-l-w-c_confirm-source-holders></c-a-x-f_-l-w-c_confirm-source-holders>
-            </template>
-            <template lwc:if={showPeopleAccess}>
-              <c-a-x-f_-l-w-c_add-person-access></c-a-x-f_-l-w-c_add-person-access>
-            </template>
-            <template lwc:if={showManualSources}>
-              <c-a-x-f_-l-w-c_manual-financial-source
-                allow-skip
-              ></c-a-x-f_-l-w-c_manual-financial-source>
-            </template>
-            <template lwc:if={showCurrency}>
-              <c-a-x-f_-l-w-c_report-currency-preference></c-a-x-f_-l-w-c_report-currency-preference>
+            <template lwc:else>
+              <template lwc:if={showWelcome}>
+                <p class="wizard__welcome">{labels.welcome}</p>
+              </template>
+              <template lwc:if={showPluggyGuide}>
+                <c-a-x-f_-l-w-c_pluggy-guide></c-a-x-f_-l-w-c_pluggy-guide>
+                <c-a-x-f_-l-w-c_pluggy-integration-config></c-a-x-f_-l-w-c_pluggy-integration-config>
+              </template>
+              <template lwc:if={showDiscovery}>
+                <c-a-x-f_-l-w-c_source-discovery></c-a-x-f_-l-w-c_source-discovery>
+              </template>
+              <template lwc:if={showHolders}>
+                <c-a-x-f_-l-w-c_confirm-source-holders></c-a-x-f_-l-w-c_confirm-source-holders>
+              </template>
+              <template lwc:if={showPeopleAccess}>
+                <c-a-x-f_-l-w-c_add-person-access></c-a-x-f_-l-w-c_add-person-access>
+              </template>
+              <template lwc:if={showManualSources}>
+                <c-a-x-f_-l-w-c_manual-financial-source
+                  allow-skip
+                ></c-a-x-f_-l-w-c_manual-financial-source>
+              </template>
+              <template lwc:if={showCurrency}>
+                <c-a-x-f_-l-w-c_report-currency-preference></c-a-x-f_-l-w-c_report-currency-preference>
+              </template>
             </template>
           </div>
-        </template>
 
-        <!-- ================= navigation ================= -->
-        <div class="slds-grid slds-grid_align-spread">
-          <lightning-button
-            label={labels.back}
-            onclick={handleBack}
-            disabled={isFirst}
-          ></lightning-button>
-          <div>
-            <template lwc:if={isOptional}>
-              <lightning-button
-                label={labels.skip}
-                onclick={handleSkip}
-                class="slds-var-m-right_x-small"
-              ></lightning-button>
-            </template>
-            <template lwc:if={onReview}>
-              <lightning-button
-                variant="brand"
-                label={labels.finish}
-                onclick={handleFinish}
-                disabled={finishDisabled}
-              ></lightning-button>
-            </template>
-            <template lwc:else>
-              <lightning-button
-                variant="brand"
-                label={labels.next}
-                onclick={handleNext}
-              ></lightning-button>
-            </template>
+          <!-- ================= navigation ================= -->
+          <div class="wizard__nav">
+            <lightning-button
+              label={labels.back}
+              onclick={handleBack}
+              disabled={isFirst}
+            ></lightning-button>
+            <div class="wizard__nav-secondary">
+              <template lwc:if={isOptional}>
+                <lightning-button
+                  label={labels.skip}
+                  onclick={handleSkip}
+                  disabled={busy}
+                ></lightning-button>
+              </template>
+              <template lwc:if={onReview}>
+                <lightning-button
+                  variant="brand"
+                  label={labels.finish}
+                  onclick={handleFinish}
+                  disabled={finishDisabled}
+                ></lightning-button>
+              </template>
+              <template lwc:else>
+                <lightning-button
+                  variant="brand"
+                  label={nextLabel}
+                  onclick={handleNext}
+                  disabled={busy}
+                ></lightning-button>
+              </template>
+            </div>
           </div>
         </div>
       </template>

@@ -24,6 +24,7 @@ const PT = {
   stepOf: "Etapa {0} de {1}",
   back: "Voltar",
   next: "Próximo",
+  working: "Salvando...",
   skip: "Pular esta etapa",
   reopen: "Reabrir para editar",
   review: "Revisão",
@@ -55,6 +56,7 @@ const EN = {
   stepOf: "Step {0} of {1}",
   back: "Back",
   next: "Next",
+  working: "Saving...",
   skip: "Skip this step",
   reopen: "Reopen to edit",
   review: "Review",
@@ -94,6 +96,7 @@ export default class AxfLwcOnboardingWizard extends LightningElement {
   current = "WELCOME_PREFS";
   message = null;
   acknowledge = false;
+  busy = false;
 
   async connectedCallback() {
     this.allowed = (await canConfigure().catch(() => false)) === true;
@@ -148,6 +151,27 @@ export default class AxfLwcOnboardingWizard extends LightningElement {
   }
   get stepTitle() {
     return L.steps[this.current] || this.current;
+  }
+  get nextLabel() {
+    return this.busy ? L.working : L.next;
+  }
+  get stepperItems() {
+    const keys = [...ORDER, "REVIEW"];
+    const idx = this.stepIndex;
+    return keys.map((k, i) => {
+      const state = i < idx ? "done" : i === idx ? "current" : "upcoming";
+      const lead = "wizard__step-line wizard__step-line_leading";
+      const trail = "wizard__step-line wizard__step-line_trailing";
+      return {
+        key: k,
+        label: L.steps[k] || k,
+        num: i + 1,
+        isDone: state === "done",
+        cssClass: `wizard__step wizard__step_${state}`,
+        leadingClass: i <= idx ? `${lead} wizard__step-line_done` : lead,
+        trailingClass: i < idx ? `${trail} wizard__step-line_done` : trail
+      };
+    });
   }
   get isOptional() {
     return OPTIONAL.has(this.current);
@@ -222,6 +246,10 @@ export default class AxfLwcOnboardingWizard extends LightningElement {
   }
 
   async advance(mode) {
+    if (this.busy) {
+      return;
+    }
+    this.busy = true;
     const key = this.current;
     try {
       const s =
@@ -239,10 +267,17 @@ export default class AxfLwcOnboardingWizard extends LightningElement {
         await this.refresh();
         return;
       }
+      if (s.outcome === "INVALID" || s.outcome === "BLOCKED_UNKNOWN") {
+        // minimal error DTO: no version/steps to apply, keep current state intact
+        this.message = s.message;
+        return;
+      }
       this.applyState(s);
       this.message = s.staleDetected ? L.stale : null;
     } catch (e) {
       this.message = (e && e.body && e.body.message) || String(e);
+    } finally {
+      this.busy = false;
     }
   }
 
