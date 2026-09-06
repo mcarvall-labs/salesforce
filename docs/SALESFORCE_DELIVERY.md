@@ -2,30 +2,30 @@
 
 ## Promotion flow
 
-| Environment | Alias       | Deployment                                     |
-| ----------- | ----------- | ---------------------------------------------- |
-| Development | `AXON_DEV`  | Developer/Codex during authorized User Stories |
-| UAT         | `AXON_UAT`  | Merged PR in `develop`, via delta              |
-| Production  | `AXON_PROD` | Merged PR in `main`, via delta                 |
+| Environment | Alias       | Validation (PR) | Deployment (Merge)     | Test Level      |
+| ----------- | ----------- | --------------- | ---------------------- | --------------- |
+| Development | `AXON_DEV`  | PR to `develop` | Merged PR in `develop` | `NoTestRun`     |
+| UAT         | `AXON_UAT`  | PR to `uat`     | Merged PR in `uat`     | `RunLocalTests` |
+| Production  | `AXON_PROD` | PR to `main`    | Merged PR in `main`    | `RunLocalTests` |
 
-DEV stays empty during pipeline setup. No bootstrap, seed or deploy. User Stories
-will introduce required definitions and dependencies incrementally. No pipeline
-uses DEV or retired org aliases.
+Create feature/bugfix branches from `develop`.
 
-Create Jira issue branches from develop. Obtain owner validation in DEV before
-opening the develop PR. After UAT deployment, obtain acceptance before approving
-promotion to main. Never merge without authorization.
+- Opening a PR against `develop` runs quality checks and validates the delta against `AXON_DEV`.
+- Merging into `develop` deploys the cumulative delta to `AXON_DEV`.
+- Promoting `develop` to `uat` via PR validates against `AXON_UAT`, and merging deploys to `AXON_UAT`.
+- After UAT acceptance, promoting `uat` to `main` via PR validates against `AXON_PROD`, and merging deploys to `AXON_PROD`.
 
 ## Workflows and evidence
 
-- `salesforce-ci.yml`: PR creation, reopening and updates targeting develop/main.
-  Quality checks plus dry-run delta validation against UAT/PROD respectively.
-- `deploy-salesforce.yml`: push to develop/main, requiring a merged PR associated
-  with the exact commit. Direct pushes fail closed. Deploy to UAT/PROD respectively.
+- `salesforce-ci.yml`: PR creation, reopening and updates targeting develop/uat/main.
+  Quality checks plus dry-run delta validation against DEV/UAT/PROD respectively.
+- `deploy-salesforce.yml`: push to develop/uat/main, requiring a merged PR associated
+  with the exact commit. Direct pushes fail closed. Deploy to DEV/UAT/PROD respectively.
 
-Validation and deployment use RunLocalTests. PRs never persist metadata. Deployment
-reruns tests for the actual merged commit rather than quick-deploying a different
-synthetic PR merge. Authenticated Org IDs are checked before metadata operations.
+Validation and deployment use `NoTestRun` for DEV (per development velocity rules) and
+`RunLocalTests` for UAT and PROD. PRs never persist metadata. Deployment reruns tests
+for the actual merged commit rather than quick-deploying a synthetic PR merge.
+Authenticated Org IDs are checked before metadata operations.
 
 Each operation publishes a PR comment and a 30-day artifact containing result.json,
 source-paths.txt and summary.md. Comments include outcome, commit, baseline,
@@ -33,16 +33,18 @@ deployment ID, test counts, initial errors and links to complete evidence.
 Preflight failures may lack a scope file. Runner/setup failures are reported through
 job status and logs even if no artifact could be produced. Auth output is never uploaded.
 Configuration-only PRs report no metadata changes without contacting an org.
-They run in the secret-free `CI` environment; metadata PRs require approval of the
-appropriate validation environment before credentials are released.
+They run in the secret-free `CI` environment; metadata PRs require the appropriate
+validation environment before credentials are released.
 
 ## GitHub environments
 
 | Environment       | Allowed ref         | Org         |
 | ----------------- | ------------------- | ----------- |
+| `DEV-VALIDATION`  | `refs/pull/*/merge` | `AXON_DEV`  |
+| `DEV`             | `develop`           | `AXON_DEV`  |
 | `UAT-VALIDATION`  | `refs/pull/*/merge` | `AXON_UAT`  |
+| `UAT`             | `uat`               | `AXON_UAT`  |
 | `PROD-VALIDATION` | `refs/pull/*/merge` | `AXON_PROD` |
-| `UAT`             | `develop`           | `AXON_UAT`  |
 | `PROD`            | `main`              | `AXON_PROD` |
 
 Configure in each environment:
