@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<CustomField xmlns="http://soap.sforce.com/2006/04/metadata">
+    <fullName>AXF_INR_DT_CompleteThrough__c</fullName>
+    <label>Completo ate</label>
+    <type>DateTime</type>
+    <required>false</required>
+    <description
+  >Data/hora ate a qual os fatos deste escopo estao integralmente importados e verificados. Nunca avanca sobre um intervalo incompleto (AC5). "Dado anterior visivel somente com atualidade correta" (AC6).</description>
+</CustomField>
