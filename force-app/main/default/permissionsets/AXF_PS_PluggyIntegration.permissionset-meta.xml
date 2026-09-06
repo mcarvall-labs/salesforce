@@ -263,6 +263,11 @@
     </fieldPermissions>
     <fieldPermissions>
         <editable>true</editable>
+        <field>AXF_OBJ_IntegrationRun__c.AXF_INR_TXT_Cursor__c</field>
+        <readable>true</readable>
+    </fieldPermissions>
+    <fieldPermissions>
+        <editable>true</editable>
         <field>AXF_OBJ_IntegrationRun__c.AXF_INR_TXT_Message__c</field>
         <readable>true</readable>
     </fieldPermissions>
