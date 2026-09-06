@@ -1,0 +1,13 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<CustomField xmlns="http://soap.sforce.com/2006/04/metadata">
+    <fullName>AXF_CTID_NUM_KeyVersion__c</fullName>
+    <defaultValue>1</defaultValue>
+    <description>Versão da chave de cálculo do digest para suporte a rotação e reindexação (AD-30, G7).</description>
+    <externalId>false</externalId>
+    <label>Versão da Chave</label>
+    <precision>18</precision>
+    <required>true</required>
+    <scale>0</scale>
+    <type>Number</type>
+    <unique>false</unique>
+</CustomField>

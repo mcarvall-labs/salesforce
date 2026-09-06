@@ -1,0 +1,44 @@
+﻿<?xml version="1.0" encoding="UTF-8"?>
+<CustomField xmlns="http://soap.sforce.com/2006/04/metadata">
+    <fullName>AXF_CTV_PKL_Status__c</fullName>
+    <description>Estado da versao do termo (DRAFT, ACTIVE, SUPERSEDED, CANCELLED, EXPIRED, BLOCKED).</description>
+    <label>Status</label>
+    <required>true</required>
+    <type>Picklist</type>
+    <valueSet>
+        <restricted>true</restricted>
+        <valueSetDefinition>
+            <sorted>false</sorted>
+            <value>
+                <fullName>DRAFT</fullName>
+                <default>true</default>
+                <label>Rascunho (DRAFT)</label>
+            </value>
+            <value>
+                <fullName>ACTIVE</fullName>
+                <default>false</default>
+                <label>Ativo (ACTIVE)</label>
+            </value>
+            <value>
+                <fullName>SUPERSEDED</fullName>
+                <default>false</default>
+                <label>Substituido (SUPERSEDED)</label>
+            </value>
+            <value>
+                <fullName>CANCELLED</fullName>
+                <default>false</default>
+                <label>Cancelado (CANCELLED)</label>
+            </value>
+            <value>
+                <fullName>EXPIRED</fullName>
+                <default>false</default>
+                <label>Expirado (EXPIRED)</label>
+            </value>
+            <value>
+                <fullName>BLOCKED</fullName>
+                <default>false</default>
+                <label>Bloqueado (BLOCKED)</label>
+            </value>
+        </valueSetDefinition>
+    </valueSet>
+</CustomField>

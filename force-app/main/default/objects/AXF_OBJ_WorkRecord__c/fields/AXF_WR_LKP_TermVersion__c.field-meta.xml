@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<CustomField xmlns="http://soap.sforce.com/2006/04/metadata">
+    <fullName>AXF_WR_LKP_TermVersion__c</fullName>
+    <deleteConstraint>Restrict</deleteConstraint>
+    <description>Versao de termo contratual vinculada ao trabalho.</description>
+    <label>Versao do Termo</label>
+    <referenceTo>AXF_OBJ_ContractTermVersion__c</referenceTo>
+    <relationshipLabel>Registros de Trabalho</relationshipLabel>
+    <relationshipName>WorkRecords</relationshipName>
+    <required>false</required>
+    <type>Lookup</type>
+</CustomField>

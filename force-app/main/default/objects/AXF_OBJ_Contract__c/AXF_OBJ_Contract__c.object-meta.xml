@@ -1,0 +1,22 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<CustomObject xmlns="http://soap.sforce.com/2006/04/metadata">
+    <deploymentStatus>Deployed</deploymentStatus>
+    <description>Contrato financeiro para governança de receitas ou despesas com contrapartes em uma Entidade titular (Account) (AXF-52, G1, G2, AD-14, AD-30).</description>
+    <enableActivities>false</enableActivities>
+    <enableBulkApi>true</enableBulkApi>
+    <enableFeeds>false</enableFeeds>
+    <enableHistory>true</enableHistory>
+    <enableReports>true</enableReports>
+    <enableSearch>true</enableSearch>
+    <enableSharing>true</enableSharing>
+    <enableStreamingApi>true</enableStreamingApi>
+    <label>Contrato</label>
+    <nameField>
+        <displayFormat>CTR-{000000}</displayFormat>
+        <label>Número do Contrato</label>
+        <type>AutoNumber</type>
+    </nameField>
+    <pluralLabel>Contratos</pluralLabel>
+    <sharingModel>Private</sharingModel>
+    <visibility>Public</visibility>
+</CustomObject>

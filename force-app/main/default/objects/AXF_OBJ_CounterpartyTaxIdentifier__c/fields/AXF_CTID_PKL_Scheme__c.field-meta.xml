@@ -1,0 +1,34 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<CustomField xmlns="http://soap.sforce.com/2006/04/metadata">
+    <fullName>AXF_CTID_PKL_Scheme__c</fullName>
+    <description>Esquema do documento fiscal (CPF, CNPJ, NIF ou OUTRO).</description>
+    <label>Esquema Fiscal</label>
+    <required>true</required>
+    <type>Picklist</type>
+    <valueSet>
+        <restricted>true</restricted>
+        <valueSetDefinition>
+            <sorted>false</sorted>
+            <value>
+                <fullName>CPF</fullName>
+                <default>false</default>
+                <label>CPF (Brasil)</label>
+            </value>
+            <value>
+                <fullName>CNPJ</fullName>
+                <default>false</default>
+                <label>CNPJ (Brasil)</label>
+            </value>
+            <value>
+                <fullName>NIF</fullName>
+                <default>false</default>
+                <label>NIF (Portugal / Europa)</label>
+            </value>
+            <value>
+                <fullName>OTHER</fullName>
+                <default>true</default>
+                <label>Outro</label>
+            </value>
+        </valueSetDefinition>
+    </valueSet>
+</CustomField>

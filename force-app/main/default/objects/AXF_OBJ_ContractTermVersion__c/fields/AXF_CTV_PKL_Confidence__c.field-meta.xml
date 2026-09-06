@@ -1,0 +1,29 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<CustomField xmlns="http://soap.sforce.com/2006/04/metadata">
+    <fullName>AXF_CTV_PKL_Confidence__c</fullName>
+    <description>Nivel de confianca das condicoes pactuadas (HIGH, MEDIUM, LOW).</description>
+    <label>Nivel de Confianca</label>
+    <required>false</required>
+    <type>Picklist</type>
+    <valueSet>
+        <restricted>true</restricted>
+        <valueSetDefinition>
+            <sorted>false</sorted>
+            <value>
+                <fullName>HIGH</fullName>
+                <default>true</default>
+                <label>Alta (HIGH)</label>
+            </value>
+            <value>
+                <fullName>MEDIUM</fullName>
+                <default>false</default>
+                <label>Media (MEDIUM)</label>
+            </value>
+            <value>
+                <fullName>LOW</fullName>
+                <default>false</default>
+                <label>Baixa (LOW)</label>
+            </value>
+        </valueSetDefinition>
+    </valueSet>
+</CustomField>

@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<CustomField xmlns="http://soap.sforce.com/2006/04/metadata">
+    <fullName>AXF_CPTY_TXT_DisplayName__c</fullName>
+    <description>Nome de exibição ou nome fantasia canônico da contraparte. Identidade mínima.</description>
+    <externalId>false</externalId>
+    <label>Nome de Exibição</label>
+    <length>255</length>
+    <required>true</required>
+    <type>Text</type>
+    <unique>false</unique>
+</CustomField>

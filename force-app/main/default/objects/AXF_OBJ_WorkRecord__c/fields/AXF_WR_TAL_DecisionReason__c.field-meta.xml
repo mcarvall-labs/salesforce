@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<CustomField xmlns="http://soap.sforce.com/2006/04/metadata">
+    <fullName>AXF_WR_TAL_DecisionReason__c</fullName>
+    <description>Motivo explicativo informado na decisao de aprovacao ou rejeicao.</description>
+    <label>Motivo da Decisao</label>
+    <length>32768</length>
+    <type>LongTextArea</type>
+    <visibleLines>3</visibleLines>
+</CustomField>

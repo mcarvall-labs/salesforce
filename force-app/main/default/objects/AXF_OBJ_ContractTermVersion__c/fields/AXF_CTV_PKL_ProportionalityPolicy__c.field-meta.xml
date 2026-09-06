@@ -1,0 +1,34 @@
+﻿<?xml version="1.0" encoding="UTF-8"?>
+<CustomField xmlns="http://soap.sforce.com/2006/04/metadata">
+    <fullName>AXF_CTV_PKL_ProportionalityPolicy__c</fullName>
+    <description>Regra de calculo proporcional para meses incompletos (aplicavel ao modelo MONTHLY).</description>
+    <label>Politica de Proporcionalidade</label>
+    <required>false</required>
+    <type>Picklist</type>
+    <valueSet>
+        <restricted>true</restricted>
+        <valueSetDefinition>
+            <sorted>false</sorted>
+            <value>
+                <fullName>CALENDAR_DAYS</fullName>
+                <default>true</default>
+                <label>Dias Corridos (CALENDAR_DAYS)</label>
+            </value>
+            <value>
+                <fullName>BUSINESS_DAYS</fullName>
+                <default>false</default>
+                <label>Dias Uteis (BUSINESS_DAYS)</label>
+            </value>
+            <value>
+                <fullName>FIXED_30</fullName>
+                <default>false</default>
+                <label>Base 30 Dias (FIXED_30)</label>
+            </value>
+            <value>
+                <fullName>NONE</fullName>
+                <default>false</default>
+                <label>Sem Proporcionalidade (NONE)</label>
+            </value>
+        </valueSetDefinition>
+    </valueSet>
+</CustomField>

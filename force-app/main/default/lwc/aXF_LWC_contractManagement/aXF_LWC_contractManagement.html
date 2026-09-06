@@ -1,0 +1,1105 @@
+<template>
+  <div class="slds-card slds-p-around_medium">
+    <!-- Cabecalho com Seletor de Entidade e Acoes -->
+    <div class="slds-page-header slds-m-bottom_medium">
+      <div class="slds-page-header__row">
+        <div class="slds-page-header__col-title">
+          <div class="slds-media">
+            <div class="slds-media__figure">
+              <lightning-icon
+                icon-name="custom:custom55"
+                size="medium"
+                alternative-text="Contratos"
+              ></lightning-icon>
+            </div>
+            <div class="slds-media__body">
+              <h1
+                class="slds-page-header__title slds-truncate"
+                title="Gestao de Contratos"
+              >
+                Gestao de Contratos e Remuneracao
+              </h1>
+              <p class="slds-text-body_small slds-line-height_reset">
+                Governanca de receitas, despesas e termos contratuais por entidade titular (AXF-52, AXF-54)
+              </p>
+            </div>
+          </div>
+        </div>
+        <div class="slds-page-header__col-actions">
+          <lightning-button
+            data-testid="new-contract-btn"
+            label="Novo Contrato em Rascunho"
+            icon-name="utility:add"
+            variant="brand"
+            onclick={handleNewContract}
+          >
+          </lightning-button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Filtro de Entidade Titular -->
+    <div class="slds-grid slds-gutters slds-m-bottom_medium">
+      <div class="slds-col slds-size_1-of-1 slds-medium-size_1-of-3">
+        <lightning-combobox
+          name="entitySelector"
+          label="Entidade Titular (Account)"
+          value={selectedAccountId}
+          options={entities}
+          onchange={handleEntityChange}
+          placeholder="Selecione uma entidade"
+        >
+        </lightning-combobox>
+      </div>
+    </div>
+
+    <!-- Loading Spinner -->
+    <template lwc:if={isLoading}>
+      <lightning-spinner
+        alternative-text="Carregando..."
+        size="medium"
+      ></lightning-spinner>
+    </template>
+
+    <!-- Mensagem de Erro Geral -->
+    <template lwc:if={errorMessage}>
+      <div
+        class="slds-notify slds-notify_alert slds-theme_error slds-m-bottom_medium"
+        role="alert"
+      >
+        <span class="slds-assistive-text">Erro</span>
+        <h2>{errorMessage}</h2>
+      </div>
+    </template>
+
+    <!-- Layout Mestre-Detalhe -->
+    <div class="slds-grid slds-gutters">
+      <!-- Lista de Contratos -->
+      <div class="slds-col slds-size_1-of-1 slds-medium-size_7-of-12">
+        <div class="slds-box slds-theme_default">
+          <h2 class="slds-text-heading_small slds-m-bottom_small">
+            Contratos Cadastrados
+          </h2>
+          <template lwc:if={hasContracts}>
+            <table
+              class="slds-table slds-table_cell-buffer slds-table_bordered slds-table_striped"
+            >
+              <thead>
+                <tr class="slds-line-height_reset">
+                  <th scope="col">
+                    <div class="slds-truncate" title="Codigo">Codigo</div>
+                  </th>
+                  <th scope="col">
+                    <div class="slds-truncate" title="Titulo">Titulo</div>
+                  </th>
+                  <th scope="col">
+                    <div class="slds-truncate" title="Contraparte">
+                      Contraparte
+                    </div>
+                  </th>
+                  <th scope="col">
+                    <div class="slds-truncate" title="Ciclo de Vida">
+                      Ciclo de Vida
+                    </div>
+                  </th>
+                  <th scope="col">
+                    <div class="slds-truncate" title="Tipo">Tipo</div>
+                  </th>
+                  <th scope="col">
+                    <div class="slds-truncate" title="Acoes">Acoes</div>
+                  </th>
+                </tr>
+              </thead>
+              <tbody>
+                <template for:each={contracts} for:item="c">
+                  <tr
+                    key={c.contractId}
+                    class="slds-hint-parent"
+                    data-id={c.contractId}
+                    onclick={handleSelectContract}
+                    style="cursor: pointer;"
+                  >
+                    <td>
+                      <div class="slds-truncate font-weight-bold">
+                        {c.contractCode}
+                      </div>
+                    </td>
+                    <td>
+                      <div class="slds-truncate">{c.title}</div>
+                    </td>
+                    <td>
+                      <div class="slds-truncate">{c.counterpartyName}</div>
+                    </td>
+                    <td>
+                      <span class="slds-badge slds-theme_warning"
+                        >{c.lifecycle}</span
+                      >
+                    </td>
+                    <td>
+                      <div class="slds-truncate">{c.contractType}</div>
+                    </td>
+                    <td>
+                      <lightning-button
+                        data-id={c.contractId}
+                        label="Ver Detalhes"
+                        variant="base"
+                        onclick={handleSelectContract}
+                      >
+                      </lightning-button>
+                    </td>
+                  </tr>
+                </template>
+              </tbody>
+            </table>
+          </template>
+          <template lwc:else>
+            <div
+              class="slds-p-around_medium slds-text-align_center slds-text-color_weak"
+            >
+              Nenhum contrato encontrado para esta entidade.
+            </div>
+          </template>
+        </div>
+      </div>
+
+      <!-- Detalhes do Contrato Selecionado -->
+      <div class="slds-col slds-size_1-of-1 slds-medium-size_5-of-12">
+        <template lwc:if={selectedDetail}>
+          <div class="slds-box slds-theme_default">
+            <div class="slds-grid slds-grid_align-spread slds-m-bottom_small">
+              <h2 class="slds-text-heading_small">{selectedDetail.title}</h2>
+              <lightning-button
+                label="Editar Rascunho"
+                icon-name="utility:edit"
+                variant="neutral"
+                onclick={handleEditDraft}
+              >
+              </lightning-button>
+            </div>
+
+            <div class="slds-form slds-form_stacked">
+              <div class="slds-form-element">
+                <label class="slds-form-element__label">Codigo Canonico</label>
+                <div class="slds-form-element__control font-weight-bold">
+                  {selectedDetail.contractCode}
+                </div>
+              </div>
+              <div class="slds-form-element">
+                <label class="slds-form-element__label"
+                  >Contraparte Vinculada</label
+                >
+                <div class="slds-form-element__control">
+                  {selectedDetail.counterpartyName}
+                </div>
+              </div>
+              <div class="slds-form-element">
+                <label class="slds-form-element__label">Papel na Relacao</label>
+                <div class="slds-form-element__control">
+                  {selectedDetail.relationshipRole}
+                </div>
+              </div>
+              <div class="slds-form-element">
+                <label class="slds-form-element__label"
+                  >Ciclo de Vida Canonico</label
+                >
+                <div class="slds-form-element__control">
+                  <span class="slds-badge slds-theme_warning"
+                    >{selectedDetail.lifecycle}</span
+                  >
+                </div>
+              </div>
+              <div class="slds-form-element">
+                <label class="slds-form-element__label">Tipo / Moeda</label>
+                <div class="slds-form-element__control">
+                  {selectedDetail.contractType} -
+                  {selectedDetail.currencyIsoCode}
+                </div>
+              </div>
+              <div class="slds-form-element">
+                <label class="slds-form-element__label"
+                  >Vigencia Prevista</label
+                >
+                <div class="slds-form-element__control">
+                  {selectedDetail.startDate} ate {selectedDetail.endDate}
+                </div>
+              </div>
+              <div class="slds-form-element">
+                <label class="slds-form-element__label"
+                  >Versao (expectedVersion)</label
+                >
+                <div class="slds-form-element__control">
+                  {selectedDetail.version}
+                </div>
+              </div>
+              <div class="slds-form-element">
+                <label class="slds-form-element__label"
+                  >Descricao do Objeto</label
+                >
+                <div class="slds-form-element__control slds-text-longform">
+                  {selectedDetail.description}
+                </div>
+              </div>
+            </div>
+
+            <!-- Secao de Termos e Remuneracao (AXF-54) -->
+            <div class="slds-m-top_medium slds-border_top slds-p-top_small">
+              <div class="slds-grid slds-grid_align-spread slds-m-bottom_x-small">
+                <h3 class="slds-text-heading_small">Modelos de Remuneracao (AXF-54)</h3>
+                <lightning-button
+                  data-testid="new-term-btn"
+                  label="Novo Termo"
+                  icon-name="utility:new"
+                  variant="brand-outline"
+                  onclick={handleOpenTermModal}
+                >
+                </lightning-button>
+              </div>
+
+              <template lwc:if={hasTermVersions}>
+                <template for:each={termVersions} for:item="tv">
+                  <div key={tv.termVersionId} class="slds-box slds-box_x-small slds-m-bottom_x-small slds-theme_shade">
+                    <div class="slds-grid slds-grid_align-spread">
+                      <div>
+                        <strong>{tv.termNumber}</strong> (Rev. {tv.revision}) -
+                        <span class="slds-badge slds-m-left_xx-small">{tv.remunerationModel}</span>
+                        <template lwc:if={tv.isBlocked}>
+                          <span class="slds-badge slds-theme_error slds-m-left_xx-small">BLOQUEADO</span>
+                        </template>
+                        <template lwc:elseif={tv.isActive}>
+                          <span class="slds-badge slds-theme_success slds-m-left_xx-small">ATIVO</span>
+                        </template>
+                        <template lwc:else>
+                          <span class="slds-badge slds-theme_warning slds-m-left_xx-small">{tv.status}</span>
+                        </template>
+                      </div>
+                      <template lwc:if={tv.canActivate}>
+                        <div class="slds-button-group">
+                          <lightning-button
+                            data-testid="review-term-btn"
+                            data-id={tv.termVersionId}
+                            label="Revisar e Ativar"
+                            variant="brand"
+                            onclick={handleOpenReviewModal}
+                            class="slds-m-right_xx-small"
+                          >
+                          </lightning-button>
+                          <lightning-button
+                            data-testid="activate-term-btn"
+                            data-id={tv.termVersionId}
+                            label="Ativar Direto"
+                            variant="neutral"
+                            onclick={handleActivateTerm}
+                          >
+                          </lightning-button>
+                        </div>
+                      </template>
+                    </div>
+                    <div class="slds-text-body_small slds-m-top_xx-small">
+                      <template lwc:if={tv.contractedAmount}>
+                        Valor Total Fixo: {tv.currencyIsoCode} {tv.contractedAmount} ({tv.installments} parcelas) |
+                      </template>
+                      <template lwc:if={tv.rate}>
+                        Taxa: {tv.currencyIsoCode} {tv.rate} |
+                      </template>
+                      <template lwc:if={tv.hoursQuantity}>
+                        Horas: {tv.hoursQuantity}h |
+                      </template>
+                      Calendario: {tv.calendarPolicy} ({tv.timeZone})
+                    </div>
+                    <template lwc:if={tv.blockedReason}>
+                      <div class="slds-text-color_error slds-text-body_small slds-m-top_xx-small font-weight-bold">
+                        {tv.blockedReason}
+                      </div>
+                    </template>
+                  </div>
+                </template>
+              </template>
+              <template lwc:else>
+                <p class="slds-text-body_small slds-text-color_weak">Nenhuma versao de termo configurada para este contrato.</p>
+              </template>
+            </div>
+
+            
+            <!-- Secao de Registros de Trabalho (AXF-56) -->
+            <div class="slds-m-top_medium slds-border_top slds-p-top_small" data-testid="work-records-section">
+              <div class="slds-grid slds-grid_align-spread slds-m-bottom_x-small">
+                <div>
+                  <h3 class="slds-text-heading_small">Registros de Trabalho (AXF-56)</h3>
+                  <p class="slds-text-body_small slds-text-color_weak">Apuracao e aprovacao auditavel de horas/quantidades</p>
+                </div>
+                <lightning-button
+                  data-testid="new-work-record-btn"
+                  label="Apontar Horas/Trabalho"
+                  icon-name="utility:clock"
+                  variant="brand-outline"
+                  onclick={handleOpenWorkRecordModal}
+                >
+                </lightning-button>
+              </div>
+
+              <template lwc:if={hasWorkRecords}>
+                <template for:each={workRecords} for:item="wr">
+                  <div key={wr.workRecordId} class="slds-box slds-box_x-small slds-m-bottom_x-small slds-theme_shade" data-testid="work-record-item">
+                    <div class="slds-grid slds-grid_align-spread">
+                      <div>
+                        <strong>{wr.recordNumber}</strong>: {wr.quantity}h/unid a {wr.currencyIsoCode} {wr.rate} = <strong>{wr.currencyIsoCode} {wr.totalAmount}</strong>
+                        <template lwc:if={wr.isApproved}>
+                          <span class="slds-badge slds-theme_success slds-m-left_xx-small">APROVADO</span>
+                        </template>
+                        <template lwc:elseif={wr.isSubmitted}>
+                          <span class="slds-badge slds-theme_info slds-m-left_xx-small">SUBMETIDO</span>
+                        </template>
+                        <template lwc:elseif={wr.isRejected}>
+                          <span class="slds-badge slds-theme_error slds-m-left_xx-small">REJEITADO</span>
+                        </template>
+                        <template lwc:elseif={wr.isSuperseded}>
+                          <span class="slds-badge slds-theme_inverse slds-m-left_xx-small">SUBSTITUIDO</span>
+                        </template>
+                        <template lwc:else>
+                          <span class="slds-badge slds-theme_warning slds-m-left_xx-small">{wr.status}</span>
+                        </template>
+                      </div>
+
+                      <!-- Acoes de ciclo de vida do WorkRecord -->
+                      <div class="slds-button-group">
+                        <template lwc:if={wr.canSubmit}>
+                          <lightning-button
+                            data-testid="submit-wr-btn"
+                            data-id={wr.workRecordId}
+                            label="Submeter"
+                            variant="neutral"
+                            onclick={handleSubmitWorkRecord}
+                            class="slds-m-right_xx-small"
+                          >
+                          </lightning-button>
+                        </template>
+                        <template lwc:if={wr.canReview}>
+                          <lightning-button
+                            data-testid="approve-wr-btn"
+                            data-id={wr.workRecordId}
+                            label="Aprovar"
+                            variant="success"
+                            onclick={handleApproveWorkRecord}
+                            class="slds-m-right_xx-small"
+                          >
+                          </lightning-button>
+                          <lightning-button
+                            data-testid="reject-wr-btn"
+                            data-id={wr.workRecordId}
+                            label="Rejeitar"
+                            variant="destructive"
+                            onclick={handleRejectWorkRecord}
+                            class="slds-m-right_xx-small"
+                          >
+                          </lightning-button>
+                        </template>
+                        <template lwc:if={wr.canCorrect}>
+                          <lightning-button
+                            data-testid="correct-wr-btn"
+                            data-id={wr.workRecordId}
+                            label="Corrigir/Reverter"
+                            variant="destructive-text"
+                            onclick={handleOpenCorrectionModal}
+                          >
+                          </lightning-button>
+                        </template>
+                      </div>
+                    </div>
+
+                    <div class="slds-text-body_small slds-m-top_xx-small">
+                      Periodo: {wr.startDate} ate {wr.endDate} | Origem: {wr.source}
+                      <template lwc:if={wr.description}>
+                        | {wr.description}
+                      </template>
+                    </div>
+                    <template lwc:if={wr.decidedByName}>
+                      <div class="slds-text-body_small slds-text-color_weak slds-m-top_xx-small">
+                        Decidido por: {wr.decidedByName} ({wr.decisionReason})
+                      </div>
+                    </template>
+                    <template lwc:if={wr.replacedWorkRecordNumber}>
+                      <div class="slds-text-body_small slds-text-color_weak">
+                        Substitui o registro original: {wr.replacedWorkRecordNumber}
+                      </div>
+                    </template>
+                  </div>
+                </template>
+              </template>
+              <template lwc:else>
+                <p class="slds-text-body_small slds-text-color_weak">Nenhum registro de trabalho apontado para este contrato.</p>
+              </template>
+            </div>
+<div class="slds-m-top_medium slds-border_top slds-p-top_small">
+              <p
+                class="slds-text-body_small slds-text-color_weak slds-m-bottom_x-small"
+              >
+                Operacoes canonicas de ciclo de vida (AC 3):
+              </p>
+              <lightning-button
+                label="Cancelar / Encerrar Contrato"
+                variant="destructive-text"
+                onclick={handleLifecycleAttempt}
+              >
+              </lightning-button>
+            </div>
+          </div>
+        </template>
+        <template lwc:else>
+          <div
+            class="slds-box slds-theme_default slds-text-align_center slds-text-color_weak slds-p-around_large"
+          >
+            Selecione um contrato na tabela para visualizar detalhes e editar o
+            rascunho.
+          </div>
+        </template>
+      </div>
+    </div>
+
+    <!-- Modal de Criacao / Edicao de Rascunho de Contrato -->
+    <template lwc:if={isModalOpen}>
+      <section
+        role="dialog"
+        tabindex="-1"
+        class="slds-modal slds-fade-in-open slds-modal_medium"
+        aria-modal="true"
+      >
+        <div class="slds-modal__container">
+          <header class="slds-modal__header">
+            <button
+              class="slds-button slds-button_icon slds-modal__close slds-button_icon-inverse"
+              title="Fechar"
+              onclick={handleCloseModal}
+            >
+              <lightning-icon
+                icon-name="utility:close"
+                alternative-text="Fechar"
+                size="small"
+              ></lightning-icon>
+            </button>
+            <h2 class="slds-modal__title slds-hyphenate">{modalTitle}</h2>
+          </header>
+          <div class="slds-modal__content slds-p-around_medium">
+            <template lwc:if={isSaving}>
+              <lightning-spinner
+                alternative-text="Salvando..."
+                size="medium"
+              ></lightning-spinner>
+            </template>
+            <div class="slds-grid slds-gutters slds-wrap">
+              <div
+                class="slds-col slds-size_1-of-1 slds-medium-size_1-of-2 slds-m-bottom_small"
+              >
+                <lightning-input
+                  name="contractCode"
+                  label="Codigo do Contrato"
+                  value={form.contractCode}
+                  disabled={isEditing}
+                  required
+                  onchange={handleFormChange}
+                >
+                </lightning-input>
+              </div>
+              <div
+                class="slds-col slds-size_1-of-1 slds-medium-size_1-of-2 slds-m-bottom_small"
+              >
+                <lightning-combobox
+                  name="relationshipId"
+                  label="Relacao Contratual com Contraparte"
+                  value={form.relationshipId}
+                  options={activeRelationships}
+                  required
+                  onchange={handleFormChange}
+                >
+                </lightning-combobox>
+              </div>
+              <div
+                class="slds-col slds-size_1-of-1 slds-medium-size_1-of-2 slds-m-bottom_small"
+              >
+                <lightning-input
+                  name="title"
+                  label="Titulo do Contrato"
+                  value={form.title}
+                  required
+                  onchange={handleFormChange}
+                >
+                </lightning-input>
+              </div>
+              <div
+                class="slds-col slds-size_1-of-1 slds-medium-size_1-of-4 slds-m-bottom_small"
+              >
+                <lightning-combobox
+                  name="contractType"
+                  label="Tipo de Contrato"
+                  value={form.contractType}
+                  options={typeOptions}
+                  required
+                  onchange={handleFormChange}
+                >
+                </lightning-combobox>
+              </div>
+              <div
+                class="slds-col slds-size_1-of-1 slds-medium-size_1-of-4 slds-m-bottom_small"
+              >
+                <lightning-input
+                  name="currencyIsoCode"
+                  label="Moeda"
+                  value={form.currencyIsoCode}
+                  required
+                  max-length="3"
+                  onchange={handleFormChange}
+                >
+                </lightning-input>
+              </div>
+              <div
+                class="slds-col slds-size_1-of-1 slds-medium-size_1-of-2 slds-m-bottom_small"
+              >
+                <lightning-input
+                  name="startDate"
+                  type="date"
+                  label="Data de Inicio"
+                  value={form.startDate}
+                  onchange={handleFormChange}
+                >
+                </lightning-input>
+              </div>
+              <div
+                class="slds-col slds-size_1-of-1 slds-medium-size_1-of-2 slds-m-bottom_small"
+              >
+                <lightning-input
+                  name="endDate"
+                  type="date"
+                  label="Data de Termino"
+                  value={form.endDate}
+                  onchange={handleFormChange}
+                >
+                </lightning-input>
+              </div>
+              <div class="slds-col slds-size_1-of-1 slds-m-bottom_small">
+                <lightning-textarea
+                  name="description"
+                  label="Descricao / Objeto Contratual"
+                  value={form.description}
+                  onchange={handleFormChange}
+                >
+                </lightning-textarea>
+              </div>
+            </div>
+          </div>
+          <footer class="slds-modal__footer">
+            <lightning-button
+              label="Cancelar"
+              variant="neutral"
+              onclick={handleCloseModal}
+              class="slds-m-right_small"
+            >
+            </lightning-button>
+            <lightning-button
+              label="Salvar Rascunho"
+              variant="brand"
+              onclick={handleSaveContract}
+            >
+            </lightning-button>
+          </footer>
+        </div>
+      </section>
+      <div class="slds-backdrop slds-backdrop_open"></div>
+    </template>
+
+    <!-- Modal de Configuracao de Termo / Remuneracao (AXF-54) -->
+    <template lwc:if={isTermModalOpen}>
+      <section
+        role="dialog"
+        tabindex="-1"
+        class="slds-modal slds-fade-in-open slds-modal_large"
+        aria-modal="true"
+      >
+        <div class="slds-modal__container">
+          <header class="slds-modal__header">
+            <button
+              class="slds-button slds-button_icon slds-modal__close slds-button_icon-inverse"
+              title="Fechar"
+              onclick={handleCloseTermModal}
+            >
+              <lightning-icon
+                icon-name="utility:close"
+                alternative-text="Fechar"
+                size="small"
+              ></lightning-icon>
+            </button>
+            <h2 class="slds-modal__title slds-hyphenate">Configurar Termo e Modelo de Remuneracao (AXF-54)</h2>
+          </header>
+          <div class="slds-modal__content slds-p-around_medium">
+            <template lwc:if={isSaving}>
+              <lightning-spinner alternative-text="Processando..." size="medium"></lightning-spinner>
+            </template>
+
+            <div class="slds-grid slds-gutters slds-wrap">
+              <!-- Modelo de Remuneracao -->
+              <div class="slds-col slds-size_1-of-1 slds-medium-size_1-of-3 slds-m-bottom_small">
+                <lightning-combobox
+                  name="remunerationModel"
+                  label="Modelo de Remuneracao"
+                  value={termForm.remunerationModel}
+                  options={modelOptions}
+                  required
+                  onchange={handleTermFormChange}
+                >
+                </lightning-combobox>
+              </div>
+
+              <!-- Moeda -->
+              <div class="slds-col slds-size_1-of-1 slds-medium-size_1-of-3 slds-m-bottom_small">
+                <lightning-input
+                  name="currencyIsoCode"
+                  label="Moeda"
+                  value={termForm.currencyIsoCode}
+                  required
+                  max-length="3"
+                  onchange={handleTermFormChange}
+                >
+                </lightning-input>
+              </div>
+
+              <!-- Vigencia Inicial -->
+              <div class="slds-col slds-size_1-of-1 slds-medium-size_1-of-3 slds-m-bottom_small">
+                <lightning-input
+                  name="effectiveFrom"
+                  type="date"
+                  label="Vigencia Inicial"
+                  value={termForm.effectiveFrom}
+                  required
+                  onchange={handleTermFormChange}
+                >
+                </lightning-input>
+              </div>
+
+              <!-- Vigencia Final -->
+              <div class="slds-col slds-size_1-of-1 slds-medium-size_1-of-3 slds-m-bottom_small">
+                <lightning-input
+                  name="effectiveTo"
+                  type="date"
+                  label="Vigencia Final"
+                  value={termForm.effectiveTo}
+                  onchange={handleTermFormChange}
+                >
+                </lightning-input>
+              </div>
+
+              <!-- Fuso Horario -->
+              <div class="slds-col slds-size_1-of-1 slds-medium-size_1-of-3 slds-m-bottom_small">
+                <lightning-input
+                  name="timeZone"
+                  label="Fuso Horario (IANA)"
+                  value={termForm.timeZone}
+                  required
+                  onchange={handleTermFormChange}
+                >
+                </lightning-input>
+              </div>
+
+              <!-- Politica de Calendario -->
+              <div class="slds-col slds-size_1-of-1 slds-medium-size_1-of-3 slds-m-bottom_small">
+                <lightning-combobox
+                  name="calendarPolicy"
+                  label="Politica de Calendario"
+                  value={termForm.calendarPolicy}
+                  options={calendarOptions}
+                  required
+                  onchange={handleTermFormChange}
+                >
+                </lightning-combobox>
+              </div>
+
+              <!-- CAMPOS APLICAVEIS: MONTHLY -->
+              <template lwc:if={isModelMonthly}>
+                <div class="slds-col slds-size_1-of-1 slds-medium-size_1-of-2 slds-m-bottom_small">
+                  <lightning-input
+                    name="rate"
+                    type="number"
+                    formatter="currency"
+                    step="0.01"
+                    label="Valor / Taxa Mensal"
+                    value={termForm.rate}
+                    required
+                    onchange={handleTermFormChange}
+                  >
+                  </lightning-input>
+                </div>
+                <div class="slds-col slds-size_1-of-1 slds-medium-size_1-of-2 slds-m-bottom_small">
+                  <lightning-combobox
+                    name="proportionalityPolicy"
+                    label="Politica de Proporcionalidade"
+                    value={termForm.proportionalityPolicy}
+                    options={prorationOptions}
+                    required
+                    onchange={handleTermFormChange}
+                  >
+                  </lightning-combobox>
+                </div>
+              </template>
+
+              <!-- CAMPOS APLICAVEIS: HOURLY -->
+              <template lwc:if={isModelHourly}>
+                <div class="slds-col slds-size_1-of-1 slds-medium-size_1-of-2 slds-m-bottom_small">
+                  <lightning-input
+                    name="rate"
+                    type="number"
+                    formatter="currency"
+                    step="0.01"
+                    label="Taxa por Hora"
+                    value={termForm.rate}
+                    required
+                    onchange={handleTermFormChange}
+                  >
+                  </lightning-input>
+                </div>
+                <div class="slds-col slds-size_1-of-1 slds-medium-size_1-of-2 slds-m-bottom_small">
+                  <lightning-input
+                    name="hoursQuantity"
+                    type="number"
+                    step="0.5"
+                    label="Quantidade de Horas (Estimada / Teto)"
+                    value={termForm.hoursQuantity}
+                    required
+                    onchange={handleTermFormChange}
+                  >
+                  </lightning-input>
+                </div>
+              </template>
+
+              <!-- CAMPOS APLICAVEIS: FIXED -->
+              <template lwc:if={isModelFixed}>
+                <div class="slds-col slds-size_1-of-1 slds-medium-size_1-of-2 slds-m-bottom_small">
+                  <lightning-input
+                    name="contractedAmount"
+                    type="number"
+                    formatter="currency"
+                    step="0.01"
+                    label="Valor Total Contratado (Fixo)"
+                    value={termForm.contractedAmount}
+                    required
+                    onchange={handleTermFormChange}
+                  >
+                  </lightning-input>
+                </div>
+                <div class="slds-col slds-size_1-of-1 slds-medium-size_1-of-2 slds-m-bottom_small">
+                  <lightning-input
+                    name="installments"
+                    type="number"
+                    step="1"
+                    min="1"
+                    label="Numero de Parcelas / Marcos"
+                    value={termForm.installments}
+                    required
+                    onchange={handleTermFormChange}
+                  >
+                  </lightning-input>
+                </div>
+              </template>
+            </div>
+
+            <!-- Preview do Cronograma Calculado (GF-04) -->
+            <div class="slds-m-top_medium slds-border_top slds-p-top_small">
+              <div class="slds-grid slds-grid_align-spread slds-m-bottom_x-small">
+                <h3 class="slds-text-heading_small">Calculo do Cronograma e Conservacao (GF-04)</h3>
+                <lightning-button
+                  data-testid="calculate-schedule-btn"
+                  label="Calcular Cronograma"
+                  icon-name="utility:table"
+                  variant="neutral"
+                  onclick={handleCalculateSchedule}
+                >
+                </lightning-button>
+              </div>
+
+              <template lwc:if={schedulePreview}>
+                <div class="slds-box slds-theme_default slds-m-bottom_small">
+                  <div class="slds-grid slds-grid_align-spread slds-m-bottom_xx-small">
+                    <div>
+                      <strong>Total Contratado Conservado:</strong> {schedulePreview.currencyIsoCode} {schedulePreview.totalAmount}
+                    </div>
+                    <div>
+                      <strong>Residual Canonico:</strong> {schedulePreview.currencyIsoCode} {schedulePreview.totalResidual}
+                    </div>
+                  </div>
+                  <table class="slds-table slds-table_cell-buffer slds-table_bordered slds-table_striped">
+                    <thead>
+                      <tr class="slds-line-height_reset">
+                        <th>Parcela / Competencia</th>
+                        <th>Vencimento</th>
+                        <th>Valor</th>
+                        <th>Residual</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      <template for:each={schedulePreview.scheduleItems} for:item="item">
+                        <tr key={item.installmentNumber}>
+                          <td>{item.periodLabel}</td>
+                          <td>{item.dueDate}</td>
+                          <td>{item.currencyIsoCode} {item.amount}</td>
+                          <td>
+                            <template lwc:if={item.roundingResidual}>
+                              <span class="slds-badge slds-theme_warning">+{item.roundingResidual}</span>
+                            </template>
+                            <template lwc:else>
+                              0.00
+                            </template>
+                          </td>
+                        </tr>
+                      </template>
+                    </tbody>
+                  </table>
+                </div>
+              </template>
+            </div>
+          </div>
+          <footer class="slds-modal__footer">
+            <lightning-button
+              label="Cancelar"
+              variant="neutral"
+              onclick={handleCloseTermModal}
+              class="slds-m-right_small"
+            >
+            </lightning-button>
+            <lightning-button
+              label="Salvar Rascunho do Termo"
+              variant="brand"
+              onclick={handleSaveTerm}
+            >
+            </lightning-button>
+          </footer>
+        </div>
+      </section>
+      <div class="slds-backdrop slds-backdrop_open"></div>
+    </template>
+    <!-- Modal de Revisao Formal e Ativacao de TermVersion (AXF-53) -->
+    <template lwc:if={isReviewModalOpen}>
+      <section
+        role="dialog"
+        tabindex="-1"
+        class="slds-modal slds-fade-in-open slds-modal_medium"
+        aria-modal="true"
+        data-testid="review-modal"
+      >
+        <div class="slds-modal__container">
+          <header class="slds-modal__header">
+            <button
+              class="slds-button slds-button_icon slds-modal__close slds-button_icon-inverse"
+              title="Fechar"
+              onclick={handleCloseReviewModal}
+            >
+              <lightning-icon icon-name="utility:close" alternative-text="Fechar" size="small"></lightning-icon>
+            </button>
+            <h2 class="slds-modal__title slds-hyphenate">
+              Revisao Formal e Ativacao de Termo (AXF-53)
+            </h2>
+            <p class="slds-m-top_x-small slds-text-color_weak">
+              Termo: {reviewData.termNumber} (Revisao {reviewData.revision}) | Contrato: {reviewData.contractCode}
+            </p>
+          </header>
+          <div class="slds-modal__content slds-p-around_medium">
+            <template lwc:if={reviewData}>
+              <!-- Card de Parametros e Vigencia -->
+              <div class="slds-box slds-box_small slds-m-bottom_medium slds-theme_shade">
+                <div class="slds-grid slds-grid_align-spread slds-m-bottom_small">
+                  <h3 class="slds-text-heading_small">1. Condicoes e Vigencia Contratual</h3>
+                  <span class="slds-badge slds-theme_default font-weight-bold" data-testid="review-interval-badge">
+                    Vigencia: {reviewData.intervalLabel}
+                  </span>
+                </div>
+                <div class="slds-grid slds-wrap slds-gutters">
+                  <div class="slds-col slds-size_1-of-2 slds-m-bottom_x-small">
+                    <strong>Modelo:</strong> {reviewData.remunerationModel} ({reviewData.currencyIsoCode})
+                  </div>
+                  <div class="slds-col slds-size_1-of-2 slds-m-bottom_x-small">
+                    <strong>Remuneracao:</strong> {reviewData.remunerationSummary}
+                  </div>
+                  <div class="slds-col slds-size_1-of-2 slds-m-bottom_x-small">
+                    <strong>Calendario:</strong> {reviewData.calendarPolicy}
+                  </div>
+                  <div class="slds-col slds-size_1-of-2 slds-m-bottom_x-small">
+                    <strong>Fuso Horario:</strong> {reviewData.timeZone}
+                  </div>
+                  <div class="slds-col slds-size_1-of-2 slds-m-bottom_x-small">
+                    <strong>Renovacao:</strong> {reviewData.renewalPolicy}
+                  </div>
+                  <div class="slds-col slds-size_1-of-2 slds-m-bottom_x-small">
+                    <strong>Confianca:</strong> {reviewData.confidence}
+                  </div>
+                  <div class="slds-col slds-size_1-of-1 slds-m-bottom_x-small">
+                    <strong>Conta Bancaria Sugerida (AC 4):</strong>
+                    <template lwc:if={reviewData.preferredBankAccountName}>
+                      {reviewData.preferredBankAccountName} (Sugestao revisavel - nao altera escolhas informadas)
+                    </template>
+                    <template lwc:else>
+                      Nenhuma conta sugerida (padrao do titular)
+                    </template>
+                  </div>
+                </div>
+              </div>
+
+              <!-- Card de Timeline e Delta (AC 1, AC 2) -->
+              <div class="slds-box slds-box_small slds-m-bottom_medium">
+                <h3 class="slds-text-heading_small slds-m-bottom_small">2. Impacto e Linha do Tempo (Delta)</h3>
+                <div class="slds-m-bottom_small slds-p-around_x-small slds-theme_info">
+                  <p class="font-weight-bold" data-testid="review-delta-desc">{reviewData.deltaDescription}</p>
+                </div>
+                <div class="slds-m-bottom_small">
+                  <strong>Linha do Tempo (sem dependencia de cor):</strong>
+                  <ul class="slds-list_dotted slds-m-left_medium slds-m-top_xx-small" data-testid="review-timeline-list">
+                    <template for:each={reviewData.timelineLabels} for:item="lbl">
+                      <li key={lbl} class="slds-m-bottom_xx-small">{lbl}</li>
+                    </template>
+                  </ul>
+                </div>
+                <div class="slds-text-body_small slds-text-color_weak slds-border_top slds-p-top_x-small">
+                  <strong>Regras de Imutabilidade (AD-31):</strong> Ao confirmar a ativacao, o Contrato sera vinculado a esta versao ativa. Esta versao tornar-se-a estritamente somente leitura (read-only) e protegida contra delecao no banco de dados.
+                </div>
+              </div>
+            </template>
+          </div>
+          <footer class="slds-modal__footer">
+            <lightning-button
+              label="Cancelar"
+              variant="neutral"
+              onclick={handleCloseReviewModal}
+              class="slds-m-right_small"
+            >
+            </lightning-button>
+            <lightning-button
+              data-testid="confirm-activation-btn"
+              label="Confirmar Ativacao"
+              variant="brand"
+              onclick={handleConfirmReviewActivation}
+            >
+            </lightning-button>
+          </footer>
+        </div>
+      </section>
+      <div class="slds-backdrop slds-backdrop_open"></div>
+    </template>
+  
+    <!-- Modal de Apontamento / Correcao de WorkRecord (AXF-56) -->
+    <template lwc:if={isWorkRecordModalOpen}>
+      <section
+        role="dialog"
+        tabindex="-1"
+        class="slds-modal slds-fade-in-open slds-modal_small"
+        aria-modal="true"
+        data-testid="work-record-modal"
+      >
+        <div class="slds-modal__container">
+          <header class="slds-modal__header">
+            <button
+              class="slds-button slds-button_icon slds-modal__close slds-button_icon-inverse"
+              title="Fechar"
+              onclick={handleCloseWorkRecordModal}
+            >
+              <lightning-icon
+                icon-name="utility:close"
+                alternative-text="fechar"
+                variant="inverse"
+                size="small"
+              ></lightning-icon>
+            </button>
+            <h2 class="slds-text-heading_medium">
+              <template lwc:if={isCorrectionMode}>
+                Corrigir Registro de Trabalho Aprovado (AC 3)
+              </template>
+              <template lwc:else>
+                Novo Registro de Trabalho (AXF-56)
+              </template>
+            </h2>
+          </header>
+          <div class="slds-modal__content slds-p-around_medium">
+            <template lwc:if={isCorrectionMode}>
+              <div class="slds-notify slds-notify_alert slds-theme_warning slds-m-bottom_medium">
+                Este apontamento substituira o registro original de forma auditavel. O original passara para SUPERSEDED.
+              </div>
+              <lightning-input
+                data-testid="correction-reason-input"
+                label="Motivo Obrigatorio da Correcao"
+                value={correctionReason}
+                onchange={handleCorrectionReasonChange}
+                required
+                class="slds-m-bottom_small"
+              >
+              </lightning-input>
+            </template>
+
+            <div class="slds-grid slds-wrap slds-gutters">
+              <div class="slds-col slds-size_1-of-2">
+                <lightning-input
+                  type="date"
+                  label="Data de Inicio"
+                  value={wrForm.startDate}
+                  onchange={handleWrStartDateChange}
+                  required
+                >
+                </lightning-input>
+              </div>
+              <div class="slds-col slds-size_1-of-2">
+                <lightning-input
+                  type="date"
+                  label="Data de Fim"
+                  value={wrForm.endDate}
+                  onchange={handleWrEndDateChange}
+                  required
+                >
+                </lightning-input>
+              </div>
+              <div class="slds-col slds-size_1-of-2 slds-m-top_small">
+                <lightning-input
+                  type="number"
+                  step="0.01"
+                  label="Quantidade (Horas/Unid)"
+                  value={wrForm.quantity}
+                  onchange={handleWrQuantityChange}
+                  required
+                >
+                </lightning-input>
+              </div>
+              <div class="slds-col slds-size_1-of-2 slds-m-top_small">
+                <lightning-input
+                  type="number"
+                  step="0.01"
+                  label="Taxa Unitaria"
+                  value={wrForm.rate}
+                  onchange={handleWrRateChange}
+                  required
+                >
+                </lightning-input>
+              </div>
+              <div class="slds-col slds-size_1-of-1 slds-m-top_small">
+                <lightning-input
+                  label="Descricao das Atividades"
+                  value={wrForm.description}
+                  onchange={handleWrDescriptionChange}
+                >
+                </lightning-input>
+              </div>
+            </div>
+          </div>
+          <footer class="slds-modal__footer">
+            <lightning-button
+              label="Cancelar"
+              variant="neutral"
+              onclick={handleCloseWorkRecordModal}
+              class="slds-m-right_small"
+            >
+            </lightning-button>
+            <lightning-button
+              data-testid="save-wr-btn"
+              label="Salvar Apontamento"
+              variant="brand"
+              onclick={handleSaveWorkRecord}
+            >
+            </lightning-button>
+          </footer>
+        </div>
+      </section>
+      <div class="slds-backdrop slds-backdrop_open"></div>
+    </template>
+</div>
+</template>
+

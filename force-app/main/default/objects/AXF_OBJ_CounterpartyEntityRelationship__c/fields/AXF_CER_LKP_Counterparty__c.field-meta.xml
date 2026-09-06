@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<CustomField xmlns="http://soap.sforce.com/2006/04/metadata">
+    <fullName>AXF_CER_LKP_Counterparty__c</fullName>
+    <deleteConstraint>Restrict</deleteConstraint>
+    <description>Contraparte associada a esta relação contextualizada.</description>
+    <label>Contraparte</label>
+    <referenceTo>AXF_OBJ_Counterparty__c</referenceTo>
+    <relationshipLabel>Relações com Entidades</relationshipLabel>
+    <relationshipName>AXF_CounterpartyEntityRelationships</relationshipName>
+    <required>true</required>
+    <type>Lookup</type>
+</CustomField>

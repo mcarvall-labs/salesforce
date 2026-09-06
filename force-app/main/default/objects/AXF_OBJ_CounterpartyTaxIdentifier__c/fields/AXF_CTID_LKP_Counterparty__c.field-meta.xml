@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<CustomField xmlns="http://soap.sforce.com/2006/04/metadata">
+    <fullName>AXF_CTID_LKP_Counterparty__c</fullName>
+    <deleteConstraint>Restrict</deleteConstraint>
+    <description>Contraparte detentora deste identificador fiscal protegido.</description>
+    <label>Contraparte</label>
+    <referenceTo>AXF_OBJ_Counterparty__c</referenceTo>
+    <relationshipLabel>Identificadores Fiscais</relationshipLabel>
+    <relationshipName>AXF_CounterpartyTaxIdentifiers</relationshipName>
+    <required>true</required>
+    <type>Lookup</type>
+</CustomField>

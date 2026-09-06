@@ -1,0 +1,29 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<CustomField xmlns="http://soap.sforce.com/2006/04/metadata">
+    <fullName>AXF_CTV_PKL_RenewalPolicy__c</fullName>
+    <description>Politica de renovacao contratual do termo (MANUAL, AUTOMATIC, NONE).</description>
+    <label>Politica de Renovacao</label>
+    <required>false</required>
+    <type>Picklist</type>
+    <valueSet>
+        <restricted>true</restricted>
+        <valueSetDefinition>
+            <sorted>false</sorted>
+            <value>
+                <fullName>MANUAL</fullName>
+                <default>true</default>
+                <label>Manual (MANUAL)</label>
+            </value>
+            <value>
+                <fullName>AUTOMATIC</fullName>
+                <default>false</default>
+                <label>Automatica (AUTOMATIC)</label>
+            </value>
+            <value>
+                <fullName>NONE</fullName>
+                <default>false</default>
+                <label>Nenhuma (NONE)</label>
+            </value>
+        </valueSetDefinition>
+    </valueSet>
+</CustomField>

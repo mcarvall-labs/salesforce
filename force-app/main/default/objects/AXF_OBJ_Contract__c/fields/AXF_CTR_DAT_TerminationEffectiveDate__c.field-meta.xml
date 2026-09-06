@@ -1,0 +1,8 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<CustomField xmlns="http://soap.sforce.com/2006/04/metadata">
+    <fullName>AXF_CTR_DAT_TerminationEffectiveDate__c</fullName>
+    <description>Data efetiva de término ou cancelamento do contrato.</description>
+    <label>Data de Término Efetivo</label>
+    <required>false</required>
+    <type>Date</type>
+</CustomField>

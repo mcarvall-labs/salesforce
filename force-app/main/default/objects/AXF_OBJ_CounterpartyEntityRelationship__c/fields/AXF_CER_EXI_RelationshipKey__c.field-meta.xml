@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<CustomField xmlns="http://soap.sforce.com/2006/04/metadata">
+    <fullName>AXF_CER_EXI_RelationshipKey__c</fullName>
+    <caseSensitive>true</caseSensitive>
+    <description>Chave externa enquadrada única por org para o par Contraparte + Entidade + Papel (G1, G6, AD-30).</description>
+    <externalId>true</externalId>
+    <label>Chave da Relação</label>
+    <length>255</length>
+    <required>true</required>
+    <type>Text</type>
+    <unique>true</unique>
+</CustomField>

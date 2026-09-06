@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<CustomField xmlns="http://soap.sforce.com/2006/04/metadata">
+    <fullName>AXF_CER_TAL_AddressSnapshot__c</fullName>
+    <description>Endereço contratual estruturado da contraparte para esta relação com a entidade (protegido por acesso à relação, AD-30, GF-32).</description>
+    <label>Endereço Contratual</label>
+    <length>32768</length>
+    <type>LongTextArea</type>
+    <visibleLines>3</visibleLines>
+</CustomField>

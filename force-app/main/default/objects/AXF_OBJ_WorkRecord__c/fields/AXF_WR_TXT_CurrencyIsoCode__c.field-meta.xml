@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<CustomField xmlns="http://soap.sforce.com/2006/04/metadata">
+    <fullName>AXF_WR_TXT_CurrencyIsoCode__c</fullName>
+    <description>Codigo ISO da moeda da taxa e valor (ex: BRL, USD).</description>
+    <label>Moeda</label>
+    <length>3</length>
+    <required>true</required>
+    <type>Text</type>
+</CustomField>

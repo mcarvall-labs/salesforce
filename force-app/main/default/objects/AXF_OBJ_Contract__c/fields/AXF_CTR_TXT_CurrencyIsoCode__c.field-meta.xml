@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<CustomField xmlns="http://soap.sforce.com/2006/04/metadata">
+    <fullName>AXF_CTR_TXT_CurrencyIsoCode__c</fullName>
+    <defaultValue>&apos;BRL&apos;</defaultValue>
+    <description>Código de moeda ISO de 3 letras (ex: BRL, USD, EUR).</description>
+    <externalId>false</externalId>
+    <label>Moeda</label>
+    <length>3</length>
+    <required>false</required>
+    <type>Text</type>
+    <unique>false</unique>
+</CustomField>

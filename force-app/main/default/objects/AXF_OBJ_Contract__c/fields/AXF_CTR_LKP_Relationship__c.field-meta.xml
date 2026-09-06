@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<CustomField xmlns="http://soap.sforce.com/2006/04/metadata">
+    <fullName>AXF_CTR_LKP_Relationship__c</fullName>
+    <deleteConstraint>Restrict</deleteConstraint>
+    <description>Relação contextual ativa entre a Entidade titular e a Contraparte.</description>
+    <label>Relação com Contraparte</label>
+    <referenceTo>AXF_OBJ_CounterpartyEntityRelationship__c</referenceTo>
+    <relationshipLabel>Contratos</relationshipLabel>
+    <relationshipName>Contracts</relationshipName>
+    <required>true</required>
+    <type>Lookup</type>
+</CustomField>
