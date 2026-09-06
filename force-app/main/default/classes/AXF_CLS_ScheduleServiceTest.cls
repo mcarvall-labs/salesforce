@@ -178,7 +178,11 @@ private class AXF_CLS_ScheduleServiceTest {
         found = true;
       }
     }
-    System.assertEquals(true, found, 'o titular criado deve aparecer como contexto autorizado');
+    System.assertEquals(
+      true,
+      found,
+      'o titular criado deve aparecer como contexto autorizado'
+    );
   }
 
   @IsTest
