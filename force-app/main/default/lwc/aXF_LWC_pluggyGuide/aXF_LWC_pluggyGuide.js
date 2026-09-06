@@ -80,7 +80,18 @@ export default class AxfLwcPluggyGuide extends LightningElement {
     return `width:${this.progressPercent}%`;
   }
   get bodyParagraphs() {
-    return (this.content.body || []).map((text, i) => ({ key: i, text }));
+    // A body entry is either a plain string (paragraph) or { list: [...] }
+    // for an ordered set of short actions (D-56 readability).
+    return (this.content.body || []).map((entry, i) => {
+      if (entry && typeof entry === "object" && Array.isArray(entry.list)) {
+        return {
+          key: `b${i}`,
+          isList: true,
+          items: entry.list.map((text, j) => ({ key: `b${i}-${j}`, text }))
+        };
+      }
+      return { key: `b${i}`, isList: false, text: entry };
+    });
   }
   get helpParagraphs() {
     return (this.content.help || []).map((text, i) => ({ key: i, text }));

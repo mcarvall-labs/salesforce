@@ -375,6 +375,116 @@ public with sharing class AXF_CLS_PluggyDiscoveryService {
     return out;
   }
 
+  public class RegisterResult {
+    @AuraEnabled
+    public Id connectionId;
+    @AuraEnabled
+    public String institution;
+    @AuraEnabled
+    public Boolean created;
+    @AuraEnabled
+    public String message;
+  }
+
+  /**
+   * @description Registers (or re-uses) the AXF_OBJ_PluggyConnection__c for an Item ID the
+   * administrator copied inside the configured application on the Pluggy Dashboard
+   * (AXF-84 AC1, AXF-98). Validates the identifier against GET /items before any DML, then
+   * persists institution/connector from the response. Idempotent on the
+   * AXF_CON_EXI_PluggyItemId__c external id — re-informing the same Item ID never
+   * duplicates the connection. The Item ID grants no authority; consent is captured and
+   * enforced by the discovery run itself ("Descobrir agora").
+   *
+   * Ordering: read, then the single callout, then DML — never a callout after DML.
+   */
+  public RegisterResult registerConnection(String pluggyItemId) {
+    if (!callerCanDiscover()) {
+      throw new AXF_CLS_PluggyDiscoveryException(
+        'Voce nao tem autorizacao para registrar conexoes Pluggy.'
+      );
+    }
+    String itemId = pluggyItemId == null ? '' : pluggyItemId.trim();
+    if (
+      itemId.startsWithIgnoreCase('http') ||
+      itemId.contains('/') ||
+      itemId.containsIgnoreCase('meupluggy')
+    ) {
+      throw new AXF_CLS_PluggyDiscoveryException(
+        'Isso parece um link do MeuPluggy. Copie o Item ID dentro da aplicacao, no Dashboard da Pluggy.'
+      );
+    }
+    if (!Pattern.matches('[A-Za-z0-9_\\-]{3,64}', itemId)) {
+      throw new AXF_CLS_PluggyDiscoveryException(
+        'Informe um Item ID valido copiado no painel da Pluggy.'
+      );
+    }
+
+    // ---- read ----
+    List<AXF_OBJ_PluggyConnection__c> existing = [
+      SELECT Id, AXF_CON_TXT_InstitutionName__c
+      FROM AXF_OBJ_PluggyConnection__c
+      WHERE AXF_CON_EXI_PluggyItemId__c = :itemId
+      WITH USER_MODE
+      LIMIT 1
+    ];
+    Boolean created = existing.isEmpty();
+
+    // ---- callout: validate the identifier (AC1) ----
+    AXF_CLS_PluggyHttpClient.PluggyResponse itemRes = client()
+      .getJson('/items/' + itemId);
+    if (itemRes.statusCode == 404) {
+      throw new AXF_CLS_PluggyDiscoveryException(
+        'Item ID nao encontrado na Pluggy. Confira se copiou dentro da aplicacao correta.'
+      );
+    }
+    if (!itemRes.isSuccess) {
+      throw new AXF_CLS_PluggyDiscoveryException(
+        'Nao foi possivel validar o Item ID na Pluggy agora. Tente novamente em instantes.'
+      );
+    }
+    String institution;
+    String connectorId;
+    String observedItemId;
+    if (itemRes.body != null) {
+      observedItemId = String.valueOf(itemRes.body.get('id'));
+      Map<String, Object> connector = (Map<String, Object>) itemRes.body.get(
+        'connector'
+      );
+      if (connector != null) {
+        institution = String.valueOf(connector.get('name'));
+        connectorId = String.valueOf(connector.get('id'));
+      }
+    }
+
+    // ---- DML ----
+    AXF_OBJ_PluggyConnection__c conn = created
+      ? new AXF_OBJ_PluggyConnection__c(
+          AXF_CON_EXI_PluggyItemId__c = itemId,
+          AXF_CON_PKL_ConsentState__c = 'ACTIVE',
+          AXF_CON_PKL_CollectionState__c = 'ACTIVE'
+        )
+      : existing[0];
+    if (String.isNotBlank(institution)) {
+      conn.AXF_CON_TXT_InstitutionName__c = institution;
+    }
+    if (String.isNotBlank(connectorId)) {
+      conn.AXF_CON_TXT_ConnectorId__c = connectorId;
+    }
+    if (String.isNotBlank(observedItemId)) {
+      conn.AXF_CON_TXT_ObservedItemId__c = observedItemId;
+    }
+    upsert as user conn;
+
+    RegisterResult r = new RegisterResult();
+    r.connectionId = conn.Id;
+    r.institution = conn.AXF_CON_TXT_InstitutionName__c;
+    r.created = created;
+    r.message = created
+      ? 'Conexao registrada. Clique em "Descobrir agora" para carregar contas e cartoes.'
+      : 'Conexao ja registrada para este Item ID. Clique em "Descobrir agora".';
+    return r;
+  }
+
   // ---------------------------------------------------------------------------
 
   private Map<String, Object> upsertSources(

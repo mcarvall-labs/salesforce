@@ -30,7 +30,13 @@ const PT = {
     intro: {
       title: "O que você vai fazer",
       body: [
-        "Antes de configurar o Axon, você precisa: (1) conectar seus bancos no MeuPluggy e (2) autorizar esses dados para a aplicação certa no painel do Pluggy.",
+        "Antes de configurar o Axon, você precisa:",
+        {
+          list: [
+            "conectar seus bancos no MeuPluggy;",
+            "autorizar esses dados para a aplicação certa no painel do Pluggy."
+          ]
+        },
         "Este guia mostra uma ação por vez. Você pode voltar a qualquer momento. Nada aqui conecta banco nem envia senha — as instruções são só de apoio."
       ]
     },
@@ -161,7 +167,13 @@ const EN = {
     intro: {
       title: "What you are going to do",
       body: [
-        "Before setting up Axon you need to: (1) connect your banks on MeuPluggy and (2) authorize that data for the right application in the Pluggy dashboard.",
+        "Before setting up Axon you need to:",
+        {
+          list: [
+            "connect your banks on MeuPluggy;",
+            "authorize that data for the right application in the Pluggy dashboard."
+          ]
+        },
         "This guide shows one action at a time. You can go back anytime. Nothing here connects a bank or sends a password — the instructions are support only."
       ]
     },

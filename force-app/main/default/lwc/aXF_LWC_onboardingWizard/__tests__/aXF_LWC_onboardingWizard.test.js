@@ -88,7 +88,7 @@ describe("c-aXF_LWC_onboardingWizard", () => {
     expect(el.shadowRoot.textContent).toMatch(/autoriza|authorized/i);
   });
 
-  it("resumes at the server step and confirms it", async () => {
+  it("disables Next on PLUGGY_CREDENTIALS until credential is configured, then confirms", async () => {
     canConfigure.mockResolvedValue(true);
     getState.mockResolvedValue(
       STEPS({ currentStep: "PLUGGY_CREDENTIALS", version: 2 })
@@ -102,15 +102,59 @@ describe("c-aXF_LWC_onboardingWizard", () => {
     await flush();
 
     expect(el.shadowRoot.textContent).toMatch(/2 de 8|2 of 8/);
-    btn(el, /Próximo|Next/).click();
+    const nextBtn = btn(el, /Próximo|Next/);
+    expect(nextBtn.disabled).toBe(true);
+    expect(el.shadowRoot.textContent).toMatch(
+      /Configure e salve as credenciais|Configure and save/i
+    );
+
+    // Simulate child component notifying that credential is now active
+    const pluggyCmp = el.shadowRoot.querySelector(
+      "c-a-x-f_-l-w-c_pluggy-integration-config"
+    );
+    pluggyCmp.dispatchEvent(
+      new CustomEvent("statuschange", {
+        detail: { hasActiveCredential: true }
+      })
+    );
+    await flush();
+
+    expect(nextBtn.disabled).toBe(false);
+    nextBtn.click();
     await flush();
     await flush();
     expect(confirmStep).toHaveBeenCalledTimes(1);
-    expect(confirmStep.mock.calls[0][0].input).toEqual({
+    expect(confirmStep.mock.calls[0][0]).toEqual({
       stepKey: "PLUGGY_CREDENTIALS",
       expectedVersion: 2,
       evidenceRef: "wizard"
     });
+  });
+
+  it("opens the Pluggy guide in a dialog and closes it", async () => {
+    canConfigure.mockResolvedValue(true);
+    getState.mockResolvedValue(
+      STEPS({ currentStep: "PLUGGY_CREDENTIALS", version: 2 })
+    );
+    const el = build();
+    await flush();
+    await flush();
+    await flush();
+
+    const dlg = () => el.shadowRoot.querySelector('[role="dialog"]');
+    expect(dlg()).toBeNull();
+    expect(
+      el.shadowRoot.querySelector("c-a-x-f_-l-w-c_pluggy-guide")
+    ).toBeNull();
+
+    btn(el, /o que você|what you/i).click();
+    await flush();
+    expect(dlg()).not.toBeNull();
+    expect(dlg().querySelector("c-a-x-f_-l-w-c_pluggy-guide")).not.toBeNull();
+
+    el.shadowRoot.querySelector(".wizard__modal-close").click();
+    await flush();
+    expect(dlg()).toBeNull();
   });
 
   it("offers skip on an optional step", async () => {
@@ -143,9 +187,12 @@ describe("c-aXF_LWC_onboardingWizard", () => {
       STEPS({
         currentStep: "REVIEW",
         version: 9,
-        steps: STEPS().steps.map((s) =>
-          s.stepKey === "CURRENCY_PREF" ? s : { ...s, status: "CONFIRMED" }
-        )
+        steps: STEPS().steps.map((s) => {
+          if (s.stepKey === "CURRENCY_PREF") {
+            return s;
+          }
+          return { ...s, status: "CONFIRMED" };
+        })
       })
     );
     complete.mockResolvedValue(

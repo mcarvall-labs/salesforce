@@ -25,6 +25,12 @@ jest.mock(
   () => ({ default: jest.fn() }),
   { virtual: true }
 );
+jest.mock(
+  "@salesforce/apex/AXF_CLS_CTRL_SourceDiscovery.registerConnection",
+  () => ({ default: jest.fn() }),
+  { virtual: true }
+);
+import registerConnection from "@salesforce/apex/AXF_CLS_CTRL_SourceDiscovery.registerConnection";
 
 const flush = () => Promise.resolve();
 const button = (el, re) =>
@@ -50,6 +56,47 @@ describe("c-aXF_LWC_sourceDiscovery", () => {
   it("shows a spinner before the status wire resolves", () => {
     const el = build();
     expect(el.shadowRoot.querySelector("lightning-spinner")).not.toBeNull();
+  });
+
+  it("shows guidance instead of an endless spinner when no connection is set", async () => {
+    const el = createElement("c-a-x-f_-l-w-c_source-discovery", { is: Disc });
+    document.body.appendChild(el);
+    await flush();
+    expect(el.shadowRoot.querySelector("lightning-spinner")).toBeNull();
+    expect(el.shadowRoot.textContent).toMatch(
+      /Nenhuma conexão Pluggy registrada/i
+    );
+    expect(el.shadowRoot.querySelector("lightning-input")).not.toBeNull();
+  });
+
+  it("registers a connection from an Item ID then runs the status wire", async () => {
+    registerConnection.mockResolvedValue({
+      connectionId: "a01000000000009",
+      consentState: "ACTIVE",
+      institution: "Banco X",
+      created: true,
+      message: "Conexão registrada."
+    });
+    const el = createElement("c-a-x-f_-l-w-c_source-discovery", { is: Disc });
+    document.body.appendChild(el);
+    await flush();
+
+    const input = el.shadowRoot.querySelector("lightning-input");
+    input.value = "abc123def456";
+    input.dispatchEvent(new CustomEvent("change"));
+    await flush();
+
+    button(el, /Registrar e descobrir/).click();
+    await flush();
+    await flush();
+
+    expect(registerConnection).toHaveBeenCalledWith({
+      pluggyItemId: "abc123def456"
+    });
+    getStatus.emit({ state: null, complete: false });
+    getDiscovered.emit([]);
+    await flush();
+    expect(button(el, /Descobrir agora/)).toBeDefined();
   });
 
   it("offers 'Descobrir agora' and explains no history / no holder", async () => {

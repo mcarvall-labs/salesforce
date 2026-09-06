@@ -66,6 +66,17 @@ describe("c-aXF_LWC_pluggyGuide", () => {
     expect(back(el).disabled).toBe(true);
   });
 
+  it("renders the intro prerequisites as an ordered list", () => {
+    const el = build();
+    const list = el.shadowRoot.querySelector(".guide__list");
+    expect(list).not.toBeNull();
+    expect(list.querySelectorAll("li").length).toBe(2);
+    // the surrounding lead-in and closing sentences are still paragraphs
+    expect(
+      el.shadowRoot.querySelectorAll("p.guide__text").length
+    ).toBeGreaterThanOrEqual(2);
+  });
+
   it("walks forward through every step and back one", async () => {
     const el = build();
     for (let i = 2; i <= STEPS.length; i++) {
