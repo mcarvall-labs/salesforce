@@ -4,7 +4,7 @@
     <label>Versao do Termo Aplicada</label>
     <type>Lookup</type>
     <referenceTo>AXF_OBJ_ContractTermVersion__c</referenceTo>
-    <relationshipName>AXF_REL_ContractTermFinancialTransactions</relationshipName>
+    <relationshipName>AXF_REL_CTVFinancialTransactions</relationshipName>
     <deleteConstraint>SetNull</deleteConstraint>
     <required>false</required>
     <description>Lookup opcional para o TermVersion aplicado (AXF-57). Termo imutavel; o snapshot guarda revision/hash no instante da geracao.</description>
