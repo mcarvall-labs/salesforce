@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<CustomField xmlns="http://soap.sforce.com/2006/04/metadata">
+    <fullName>AXF_FTX_NUM_Sequence__c</fullName>
+    <label>Sequencia no Cronograma</label>
+    <type>Number</type>
+    <precision>5</precision>
+    <scale>0</scale>
+    <required>false</required>
+    <description
+  >Posicao 1..n da parcela dentro do cronograma (AXF-20).</description>
+</CustomField>

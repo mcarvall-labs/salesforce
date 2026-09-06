@@ -12,6 +12,18 @@
         <apexClass>AXF_CLS_FinancialEntryService</apexClass>
         <enabled>true</enabled>
     </classAccesses>
+    <classAccesses>
+        <apexClass>ALT_CLS_AmortizationSchedule</apexClass>
+        <enabled>true</enabled>
+    </classAccesses>
+    <classAccesses>
+        <apexClass>AXF_CLS_ScheduleService</apexClass>
+        <enabled>true</enabled>
+    </classAccesses>
+    <classAccesses>
+        <apexClass>AXF_CLS_CTRL_ScheduleWizard</apexClass>
+        <enabled>true</enabled>
+    </classAccesses>
     <objectPermissions>
         <allowCreate>true</allowCreate>
         <allowDelete>false</allowDelete>
@@ -48,8 +60,57 @@
         <field>AXF_OBJ_FinancialTransaction__c.AXF_FTX_NUM_Version__c</field>
         <readable>true</readable>
     </fieldPermissions>
+    <fieldPermissions>
+        <editable>true</editable>
+        <field
+    >AXF_OBJ_FinancialTransaction__c.AXF_FTX_TXT_ScheduleGroupKey__c</field>
+        <readable>true</readable>
+    </fieldPermissions>
+    <fieldPermissions>
+        <editable>true</editable>
+        <field>AXF_OBJ_FinancialTransaction__c.AXF_FTX_NUM_Sequence__c</field>
+        <readable>true</readable>
+    </fieldPermissions>
+    <fieldPermissions>
+        <editable>true</editable>
+        <field>AXF_OBJ_FinancialTransaction__c.AXF_FTX_PKL_Modality__c</field>
+        <readable>true</readable>
+    </fieldPermissions>
+    <fieldPermissions>
+        <editable>true</editable>
+        <field
+    >AXF_OBJ_FinancialTransaction__c.AXF_FTX_NUM_PrincipalPortion__c</field>
+        <readable>true</readable>
+    </fieldPermissions>
+    <fieldPermissions>
+        <editable>true</editable>
+        <field
+    >AXF_OBJ_FinancialTransaction__c.AXF_FTX_NUM_InterestPortion__c</field>
+        <readable>true</readable>
+    </fieldPermissions>
+    <fieldPermissions>
+        <editable>true</editable>
+        <field>AXF_OBJ_FinancialTransaction__c.AXF_FTX_NUM_FeePortion__c</field>
+        <readable>true</readable>
+    </fieldPermissions>
+    <fieldPermissions>
+        <editable>true</editable>
+        <field
+    >AXF_OBJ_FinancialTransaction__c.AXF_FTX_NUM_ClosingBalance__c</field>
+        <readable>true</readable>
+    </fieldPermissions>
+    <fieldPermissions>
+        <editable>true</editable>
+        <field
+    >AXF_OBJ_FinancialTransaction__c.AXF_FTX_CHK_RoundingResidual__c</field>
+        <readable>true</readable>
+    </fieldPermissions>
     <tabSettings>
         <tab>AXF_EntryWizard</tab>
+        <visibility>Visible</visibility>
+    </tabSettings>
+    <tabSettings>
+        <tab>AXF_ScheduleWizard</tab>
         <visibility>Visible</visibility>
     </tabSettings>
 </PermissionSet>
