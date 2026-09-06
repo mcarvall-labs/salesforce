@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<CustomField xmlns="http://soap.sforce.com/2006/04/metadata">
+    <fullName>AXF_PSP_NUM_MaxAttempts__c</fullName>
+    <label>Tentativas maximas</label>
+    <type>Number</type>
+    <precision>2</precision>
+    <scale>0</scale>
+    <required>true</required>
+    <description
+  >Tentativas por unidade antes de FAILED_RETRYABLE. Aprovado: 3.</description>
+</CustomField>
