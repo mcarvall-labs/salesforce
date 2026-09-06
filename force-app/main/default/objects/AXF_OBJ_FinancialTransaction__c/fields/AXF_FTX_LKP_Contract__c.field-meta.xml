@@ -7,5 +7,6 @@
     <relationshipName>AXF_REL_ContractFinancialTransactions</relationshipName>
     <deleteConstraint>SetNull</deleteConstraint>
     <required>false</required>
-    <description>Lookup opcional, preenchido somente em lancamentos gerados por contrato (AXF-57, fechamento G1/G2 06/09). Preenchimento validado por Application Service (cross-account proibido).</description>
+    <description
+  >Lookup opcional, preenchido somente em lancamentos gerados por contrato (AXF-57, fechamento G1/G2 06/09). Preenchimento validado por Application Service (cross-account proibido).</description>
 </CustomField>

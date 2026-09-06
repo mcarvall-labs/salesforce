@@ -7,5 +7,6 @@
     <relationshipName>AXF_REL_CASFinancialTransactions</relationshipName>
     <deleteConstraint>SetNull</deleteConstraint>
     <required>false</required>
-    <description>Lookup opcional para o snapshot vigente (ACTIVE) da aplicacao contratual desta ocorrencia (AXF-57). Rastreabilidade deterministica alocacao/liquidacao/ocorrencia - design forward-compatible (AC 4).</description>
+    <description
+  >Lookup opcional para o snapshot vigente (ACTIVE) da aplicacao contratual desta ocorrencia (AXF-57). Rastreabilidade deterministica alocacao/liquidacao/ocorrencia - design forward-compatible (AC 4).</description>
 </CustomField>

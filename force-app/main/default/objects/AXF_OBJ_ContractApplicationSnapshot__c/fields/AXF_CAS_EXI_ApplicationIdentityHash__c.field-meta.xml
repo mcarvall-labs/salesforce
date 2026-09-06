@@ -8,5 +8,6 @@
     <externalId>true</externalId>
     <caseSensitive>true</caseSensitive>
     <required>true</required>
-    <description>SHA256(frame(FTX.PlanIdentityHash, TermVersion.Revision)); max. 1 ACTIVE por (alvo, revisao) (AXF-57, fechamento G1/G2 06/09).</description>
+    <description
+  >SHA256(frame(FTX.PlanIdentityHash, TermVersion.Revision)); max. 1 ACTIVE por (alvo, revisao) (AXF-57, fechamento G1/G2 06/09).</description>
 </CustomField>

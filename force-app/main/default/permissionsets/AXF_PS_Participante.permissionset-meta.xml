@@ -352,80 +352,95 @@
     
     <fieldPermissions>
         <editable>false</editable>
-        <field>AXF_OBJ_ContractApplicationSnapshot__c.AXF_CAS_LKP_PredecessorSnapshot__c</field>
+        <field
+    >AXF_OBJ_ContractApplicationSnapshot__c.AXF_CAS_LKP_PredecessorSnapshot__c</field>
         <readable>true</readable>
     </fieldPermissions>
     
     
     <fieldPermissions>
         <editable>false</editable>
-        <field>AXF_OBJ_ContractApplicationSnapshot__c.AXF_CAS_CUR_AppliedAmount__c</field>
+        <field
+    >AXF_OBJ_ContractApplicationSnapshot__c.AXF_CAS_CUR_AppliedAmount__c</field>
         <readable>true</readable>
     </fieldPermissions>
     <fieldPermissions>
         <editable>false</editable>
-        <field>AXF_OBJ_ContractApplicationSnapshot__c.AXF_CAS_TXT_CurrencyIsoCode__c</field>
+        <field
+    >AXF_OBJ_ContractApplicationSnapshot__c.AXF_CAS_TXT_CurrencyIsoCode__c</field>
         <readable>true</readable>
     </fieldPermissions>
     <fieldPermissions>
         <editable>false</editable>
-        <field>AXF_OBJ_ContractApplicationSnapshot__c.AXF_CAS_PKL_RemunerationModel__c</field>
+        <field
+    >AXF_OBJ_ContractApplicationSnapshot__c.AXF_CAS_PKL_RemunerationModel__c</field>
         <readable>true</readable>
     </fieldPermissions>
     <fieldPermissions>
         <editable>false</editable>
-        <field>AXF_OBJ_ContractApplicationSnapshot__c.AXF_CAS_NUM_HoursQuantity__c</field>
+        <field
+    >AXF_OBJ_ContractApplicationSnapshot__c.AXF_CAS_NUM_HoursQuantity__c</field>
         <readable>true</readable>
     </fieldPermissions>
     <fieldPermissions>
         <editable>false</editable>
-        <field>AXF_OBJ_ContractApplicationSnapshot__c.AXF_CAS_NUM_Installments__c</field>
+        <field
+    >AXF_OBJ_ContractApplicationSnapshot__c.AXF_CAS_NUM_Installments__c</field>
         <readable>true</readable>
     </fieldPermissions>
     <fieldPermissions>
         <editable>false</editable>
-        <field>AXF_OBJ_ContractApplicationSnapshot__c.AXF_CAS_TXT_CalendarPolicyVersion__c</field>
+        <field
+    >AXF_OBJ_ContractApplicationSnapshot__c.AXF_CAS_TXT_CalendarPolicyVersion__c</field>
         <readable>true</readable>
     </fieldPermissions>
     <fieldPermissions>
         <editable>false</editable>
-        <field>AXF_OBJ_ContractApplicationSnapshot__c.AXF_CAS_TXT_TimeZone__c</field>
+        <field
+    >AXF_OBJ_ContractApplicationSnapshot__c.AXF_CAS_TXT_TimeZone__c</field>
         <readable>true</readable>
     </fieldPermissions>
     <fieldPermissions>
         <editable>false</editable>
-        <field>AXF_OBJ_ContractApplicationSnapshot__c.AXF_CAS_TXT_SourceTermRevision__c</field>
+        <field
+    >AXF_OBJ_ContractApplicationSnapshot__c.AXF_CAS_TXT_SourceTermRevision__c</field>
         <readable>true</readable>
     </fieldPermissions>
     <fieldPermissions>
         <editable>false</editable>
-        <field>AXF_OBJ_ContractApplicationSnapshot__c.AXF_CAS_EXI_SourceTermHash__c</field>
+        <field
+    >AXF_OBJ_ContractApplicationSnapshot__c.AXF_CAS_EXI_SourceTermHash__c</field>
         <readable>true</readable>
     </fieldPermissions>
     <fieldPermissions>
         <editable>false</editable>
-        <field>AXF_OBJ_ContractApplicationSnapshot__c.AXF_CAS_TAL_FieldProvenance__c</field>
+        <field
+    >AXF_OBJ_ContractApplicationSnapshot__c.AXF_CAS_TAL_FieldProvenance__c</field>
         <readable>true</readable>
     </fieldPermissions>
     <fieldPermissions>
         <editable>false</editable>
-        <field>AXF_OBJ_ContractApplicationSnapshot__c.AXF_CAS_TAL_OverrideReason__c</field>
+        <field
+    >AXF_OBJ_ContractApplicationSnapshot__c.AXF_CAS_TAL_OverrideReason__c</field>
         <readable>true</readable>
     </fieldPermissions>
     <fieldPermissions>
         <editable>false</editable>
-        <field>AXF_OBJ_ContractApplicationSnapshot__c.AXF_CAS_LKP_OverriddenByUser__c</field>
+        <field
+    >AXF_OBJ_ContractApplicationSnapshot__c.AXF_CAS_LKP_OverriddenByUser__c</field>
         <readable>true</readable>
     </fieldPermissions>
     <fieldPermissions>
         <editable>false</editable>
-        <field>AXF_OBJ_ContractApplicationSnapshot__c.AXF_CAS_DT_OverriddenAt__c</field>
+        <field
+    >AXF_OBJ_ContractApplicationSnapshot__c.AXF_CAS_DT_OverriddenAt__c</field>
         <readable>true</readable>
     </fieldPermissions>
     
     <fieldPermissions>
         <editable>false</editable>
-        <field>AXF_OBJ_FinancialTransaction__c.AXF_FTX_EXI_PlanIdentityHash__c</field>
+        <field
+    >AXF_OBJ_FinancialTransaction__c.AXF_FTX_EXI_PlanIdentityHash__c</field>
         <readable>true</readable>
     </fieldPermissions>
     <fieldPermissions>
@@ -435,12 +450,14 @@
     </fieldPermissions>
     <fieldPermissions>
         <editable>false</editable>
-        <field>AXF_OBJ_FinancialTransaction__c.AXF_FTX_LKP_ContractTermVersion__c</field>
+        <field
+    >AXF_OBJ_FinancialTransaction__c.AXF_FTX_LKP_ContractTermVersion__c</field>
         <readable>true</readable>
     </fieldPermissions>
     <fieldPermissions>
         <editable>false</editable>
-        <field>AXF_OBJ_FinancialTransaction__c.AXF_FTX_LKP_ContractApplicationSnapshot__c</field>
+        <field
+    >AXF_OBJ_FinancialTransaction__c.AXF_FTX_LKP_ContractApplicationSnapshot__c</field>
         <readable>true</readable>
     </fieldPermissions>
 <objectPermissions>
@@ -578,5 +595,3 @@
     
 
 </PermissionSet>
-
-

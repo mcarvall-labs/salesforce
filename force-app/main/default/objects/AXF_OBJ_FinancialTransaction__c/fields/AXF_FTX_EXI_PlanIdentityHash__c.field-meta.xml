@@ -8,5 +8,6 @@
     <externalId>true</externalId>
     <caseSensitive>true</caseSensitive>
     <required>false</required>
-    <description>Identidade deterministica da ocorrencia (ex-parcela): SHA256(frame(ScheduleGroupKey, Sequence)) para cronogramas; preenchida por servico para ocorrencias geradas por contrato. Insumo da identidade do ContractApplicationSnapshot (AXF-57, fechamento G1/G2 06/09; AXF-20).</description>
+    <description
+  >Identidade deterministica da ocorrencia (ex-parcela): SHA256(frame(ScheduleGroupKey, Sequence)) para cronogramas; preenchida por servico para ocorrencias geradas por contrato. Insumo da identidade do ContractApplicationSnapshot (AXF-57, fechamento G1/G2 06/09; AXF-20).</description>
 </CustomField>

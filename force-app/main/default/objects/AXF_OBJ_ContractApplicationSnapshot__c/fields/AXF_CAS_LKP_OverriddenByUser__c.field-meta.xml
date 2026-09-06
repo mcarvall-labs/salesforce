@@ -7,5 +7,6 @@
     <relationshipName>AXF_REL_CASOverriddenBy</relationshipName>
     <deleteConstraint>SetNull</deleteConstraint>
     <required>false</required>
-    <description>Ator do override manual quando ao menos um campo esta OVERRIDDEN (AXF-57).</description>
+    <description
+  >Ator do override manual quando ao menos um campo esta OVERRIDDEN (AXF-57).</description>
 </CustomField>

@@ -6,5 +6,6 @@
     <precision>18</precision>
     <scale>0</scale>
     <required>false</required>
-    <description>Parametro de parcelas do termo no instante da geracao, quando aplicavel (imutavel apos criacao - AXF-57).</description>
+    <description
+  >Parametro de parcelas do termo no instante da geracao, quando aplicavel (imutavel apos criacao - AXF-57).</description>
 </CustomField>

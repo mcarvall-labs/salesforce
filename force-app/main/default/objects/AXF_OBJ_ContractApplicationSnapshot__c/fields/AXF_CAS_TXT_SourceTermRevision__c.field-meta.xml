@@ -5,5 +5,6 @@
     <type>Text</type>
     <length>20</length>
     <required>false</required>
-    <description>AXF_CTV_NUM_Revision__c no instante da geracao (imutavel apos criacao - AXF-57).</description>
+    <description
+  >AXF_CTV_NUM_Revision__c no instante da geracao (imutavel apos criacao - AXF-57).</description>
 </CustomField>

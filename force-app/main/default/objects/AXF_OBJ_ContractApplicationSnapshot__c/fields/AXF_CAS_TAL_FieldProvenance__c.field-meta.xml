@@ -5,5 +5,6 @@
     <length>32768</length>
     <type>LongTextArea</type>
     <visibleLines>4</visibleLines>
-    <description>JSON canonico versionado {"schemaVersion":1,"fields":{"campo":"DEFAULTED" ou "OVERRIDDEN"}}, validado no servidor (AXF-57).</description>
+    <description
+  >JSON canonico versionado {"schemaVersion":1,"fields":{"campo":"DEFAULTED" ou "OVERRIDDEN"}}, validado no servidor (AXF-57).</description>
 </CustomField>

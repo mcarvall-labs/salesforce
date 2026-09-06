@@ -8,10 +8,14 @@
         <restricted>true</restricted>
         <valueSetDefinition>
             <sorted>false</sorted>
-            <value><fullName>MONTHLY</fullName><default>false</default><label>Mensal</label></value>
-            <value><fullName>HOURLY</fullName><default>false</default><label>Horista</label></value>
-            <value><fullName>FIXED</fullName><default>false</default><label>Fixo</label></value>
+            <value><fullName>MONTHLY</fullName><default>false</default><label
+        >Mensal</label></value>
+            <value><fullName>HOURLY</fullName><default>false</default><label
+        >Horista</label></value>
+            <value><fullName>FIXED</fullName><default>false</default><label
+        >Fixo</label></value>
         </valueSetDefinition>
     </valueSet>
-    <description>Copiado de ContractTermVersion no instante da geracao (imutavel apos criacao - AXF-57).</description>
+    <description
+  >Copiado de ContractTermVersion no instante da geracao (imutavel apos criacao - AXF-57).</description>
 </CustomField>

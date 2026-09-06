@@ -6,5 +6,6 @@
     <precision>16</precision>
     <scale>2</scale>
     <required>false</required>
-    <description>Valor default congelado do termo aplicado a esta ocorrencia (imutavel apos criacao - AXF-57). Override nao edita este campo: o valor efetivo (possivelmente overridden) vive no FinancialTransaction.</description>
+    <description
+  >Valor default congelado do termo aplicado a esta ocorrencia (imutavel apos criacao - AXF-57). Override nao edita este campo: o valor efetivo (possivelmente overridden) vive no FinancialTransaction.</description>
 </CustomField>

@@ -6,5 +6,6 @@
     <precision>16</precision>
     <scale>2</scale>
     <required>false</required>
-    <description>Quantidade congelada quando o modelo e HOURLY (imutavel apos criacao - AXF-57).</description>
+    <description
+  >Quantidade congelada quando o modelo e HOURLY (imutavel apos criacao - AXF-57).</description>
 </CustomField>

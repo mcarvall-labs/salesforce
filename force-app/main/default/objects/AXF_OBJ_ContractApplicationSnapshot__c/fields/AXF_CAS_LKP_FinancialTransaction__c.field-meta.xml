@@ -7,5 +7,6 @@
     <relationshipName>AXF_REL_ContractAppSnapshots</relationshipName>
     <deleteConstraint>Restrict</deleteConstraint>
     <required>true</required>
-    <description>Ocorrencia (FinancialTransaction, ex-CashFlow) a qual este snapshot 1:1 se aplica. Titular deriva de FinancialTransaction.AXF_FTX_LKP_Account__c; sem FinancialEntity (AXF-57, fechamento G1/G2 06/09).</description>
+    <description
+  >Ocorrencia (FinancialTransaction, ex-CashFlow) a qual este snapshot 1:1 se aplica. Titular deriva de FinancialTransaction.AXF_FTX_LKP_Account__c; sem FinancialEntity (AXF-57, fechamento G1/G2 06/09).</description>
 </CustomField>

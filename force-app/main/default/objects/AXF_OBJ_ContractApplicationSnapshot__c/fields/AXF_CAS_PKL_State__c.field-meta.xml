@@ -8,9 +8,12 @@
         <restricted>true</restricted>
         <valueSetDefinition>
             <sorted>false</sorted>
-            <value><fullName>ACTIVE</fullName><default>true</default><label>Ativo</label></value>
-            <value><fullName>SUPERSEDED</fullName><default>false</default><label>Substituido</label></value>
+            <value><fullName>ACTIVE</fullName><default>true</default><label
+        >Ativo</label></value>
+            <value><fullName>SUPERSEDED</fullName><default>false</default><label
+        >Substituido</label></value>
         </valueSetDefinition>
     </valueSet>
-    <description>ACTIVE = snapshot vigente da ocorrencia; SUPERSEDED = substituido por sucessor (AXF-57). Transicao so ACTIVE para SUPERSEDED, via servico.</description>
+    <description
+  >ACTIVE = snapshot vigente da ocorrencia; SUPERSEDED = substituido por sucessor (AXF-57). Transicao so ACTIVE para SUPERSEDED, via servico.</description>
 </CustomField>

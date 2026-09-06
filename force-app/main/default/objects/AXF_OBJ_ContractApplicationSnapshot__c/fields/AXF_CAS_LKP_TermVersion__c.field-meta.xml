@@ -7,5 +7,6 @@
     <relationshipName>AXF_REL_ContractAppSnapshots</relationshipName>
     <deleteConstraint>Restrict</deleteConstraint>
     <required>true</required>
-    <description>ContractTermVersion aplicado no instante da geracao (AXF-57). Revision/hash do termo congelados no snapshot.</description>
+    <description
+  >ContractTermVersion aplicado no instante da geracao (AXF-57). Revision/hash do termo congelados no snapshot.</description>
 </CustomField>

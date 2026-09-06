@@ -7,5 +7,6 @@
     <relationshipName>AXF_REL_CTVFinancialTransactions</relationshipName>
     <deleteConstraint>SetNull</deleteConstraint>
     <required>false</required>
-    <description>Lookup opcional para o TermVersion aplicado (AXF-57). Termo imutavel; o snapshot guarda revision/hash no instante da geracao.</description>
+    <description
+  >Lookup opcional para o TermVersion aplicado (AXF-57). Termo imutavel; o snapshot guarda revision/hash no instante da geracao.</description>
 </CustomField>

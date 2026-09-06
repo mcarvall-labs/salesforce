@@ -7,5 +7,6 @@
     <relationshipName>AXF_REL_ContractAppSnapshots</relationshipName>
     <deleteConstraint>Restrict</deleteConstraint>
     <required>true</required>
-    <description>Contrato de origem do termo aplicado (AXF-57). Consistencia Account do FTX x Account do Contract validada no Application Service.</description>
+    <description
+  >Contrato de origem do termo aplicado (AXF-57). Consistencia Account do FTX x Account do Contract validada no Application Service.</description>
 </CustomField>
