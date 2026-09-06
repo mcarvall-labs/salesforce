@@ -28,8 +28,10 @@
   display: flex;
   flex-direction: column;
   align-items: center;
+  /* every step is exactly the same width — equal segments across the bar */
   flex: 1 1 0;
-  min-width: 4.5rem;
+  width: 0;
+  min-width: 0;
   position: relative;
 }
 
@@ -91,7 +93,13 @@
   line-height: 1.25;
   text-align: center;
   color: var(--slds-g-color-neutral-base-40, #747474);
-  max-width: 6rem;
+  max-width: 100%;
+  padding: 0 0.25rem;
+  /* keep every column the same height so the bar reads as an even grid */
+  display: -webkit-box;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 2;
+  overflow: hidden;
 }
 
 .wizard__step_current .wizard__step-label {

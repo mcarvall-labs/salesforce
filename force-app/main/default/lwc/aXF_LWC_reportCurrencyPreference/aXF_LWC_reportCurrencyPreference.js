@@ -2,10 +2,11 @@ import { LightningElement, wire } from "lwc";
 import { refreshApex } from "@salesforce/apex";
 import getState from "@salesforce/apex/AXF_CLS_CTRL_ReportCurrencyPref.getState";
 import setPreference from "@salesforce/apex/AXF_CLS_CTRL_ReportCurrencyPref.setPreference";
+import LANG from "@salesforce/i18n/lang";
 
-// PT-BR literals for the MVP (D-86). Move to Custom Labels + Translation Workbench when
-// that i18n infrastructure exists (same convention as aXF_LWC_accessLevelConfig).
-const L = {
+// Component-local i18n (org has no Translation Workbench). Axon ships PT-BR + EN
+// only; the language follows the Salesforce user profile (@salesforce/i18n/lang).
+const PT = {
   TITLE: "Moeda de apresentação",
   HELP: "Define apenas como os valores são exibidos. Não converte nem altera suas contas, transações, saldos ou histórico.",
   LABEL: "Moeda preferida",
@@ -21,6 +22,29 @@ const L = {
   CONFIRM_YES: "Confirmar troca",
   CONFIRM_NO: "Cancelar"
 };
+
+const EN = {
+  TITLE: "Display currency",
+  HELP: "It only sets how amounts are shown. It does not convert or change your accounts, transactions, balances or history.",
+  LABEL: "Preferred currency",
+  PLACEHOLDER: "Select",
+  SUGGESTED: "Suggested",
+  SAVE: "Save",
+  LOAD_ERROR: "Could not load the currencies.",
+  RETRY: "Try again",
+  SAVED: "Currency preference saved.",
+  GENERIC_FAIL: "Could not save. Nothing was changed.",
+  CONFIRM_PREFIX: "A preference already exists. ",
+  CONFIRM_SUFFIX: " Confirm the change?",
+  CONFIRM_YES: "Confirm change",
+  CONFIRM_NO: "Cancel"
+};
+
+const L = String(LANG || "")
+  .toLowerCase()
+  .startsWith("en")
+  ? EN
+  : PT;
 
 const STATE = { LOADING: "LOADING", READY: "READY", ERROR: "ERROR" };
 

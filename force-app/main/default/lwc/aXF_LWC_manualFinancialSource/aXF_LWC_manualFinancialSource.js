@@ -1,5 +1,13 @@
 import { LightningElement, api } from "lwc";
+import LANG from "@salesforce/i18n/lang";
 import save from "@salesforce/apex/AXF_CLS_CTRL_ManualFinancialSource.save";
+
+// Axon ships PT-BR + EN only; follow the Salesforce user profile language.
+const PROFILE_LOCALE = String(LANG || "")
+  .toLowerCase()
+  .startsWith("en")
+  ? "en"
+  : "pt-BR";
 
 const COPY = {
   "pt-BR": {
@@ -49,7 +57,7 @@ const COPY = {
 };
 
 export default class AXF_LWC_manualFinancialSource extends LightningElement {
-  @api locale = "pt-BR";
+  @api locale;
   @api allowSkip = false;
   _sourceId;
   _expectedVersion;
@@ -82,7 +90,7 @@ export default class AXF_LWC_manualFinancialSource extends LightningElement {
   outcome = "";
   pendingManualKey;
   get labels() {
-    return COPY[this.locale] || COPY.en;
+    return COPY[this.locale] || COPY[PROFILE_LOCALE] || COPY.en;
   }
   get kindOptions() {
     return [
