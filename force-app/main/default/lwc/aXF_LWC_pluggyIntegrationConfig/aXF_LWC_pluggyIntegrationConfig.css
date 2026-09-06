@@ -1,0 +1,38 @@
+/* Two columns: the credentials form on the left, the rotation/health status
+   on the right, so the section reads across instead of stacking tall. */
+.pic__grid {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-start;
+  gap: 1rem 2.5rem;
+}
+
+.pic__col {
+  min-width: 0;
+}
+
+.pic__col_form {
+  flex: 1 1 20rem;
+  max-width: 24rem;
+}
+
+.pic__col_status {
+  flex: 2 1 26rem;
+}
+
+/* Keep the credential inputs compact — they hold short ids, not prose. */
+.pic__field {
+  display: block;
+  max-width: 22rem;
+}
+
+@media (max-width: 48rem) {
+  .pic__col_form,
+  .pic__col_status {
+    flex-basis: 100%;
+    max-width: none;
+  }
+  .pic__field {
+    max-width: none;
+  }
+}

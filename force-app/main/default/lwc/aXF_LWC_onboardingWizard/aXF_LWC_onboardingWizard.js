@@ -37,6 +37,8 @@ const PT = {
     "Uma etapa anterior foi reaberta — revise as etapas marcadas como desatualizadas.",
   conflict:
     "A configuração mudou em outra sessão. Recarregamos o estado atual.",
+  guideOpen: "O que você vai fazer",
+  guideClose: "Fechar guia",
   steps: {
     WELCOME_PREFS: "Boas-vindas",
     PLUGGY_CREDENTIALS: "Credenciais Pluggy",
@@ -68,6 +70,8 @@ const EN = {
   stale: "A previous step was reopened — review the steps marked as outdated.",
   conflict:
     "The setup changed in another session. We reloaded the current state.",
+  guideOpen: "What you are going to do",
+  guideClose: "Close guide",
   steps: {
     WELCOME_PREFS: "Welcome",
     PLUGGY_CREDENTIALS: "Pluggy credentials",
@@ -97,6 +101,7 @@ export default class AxfLwcOnboardingWizard extends LightningElement {
   message = null;
   acknowledge = false;
   busy = false;
+  guideOpen = false;
 
   async connectedCallback() {
     this.allowed = (await canConfigure().catch(() => false)) === true;
@@ -122,6 +127,7 @@ export default class AxfLwcOnboardingWizard extends LightningElement {
     }
     // resume where the server says we are (AC6)
     this.current = s.currentStep || "WELCOME_PREFS";
+    this.guideOpen = false;
   }
 
   // ---- derived view ----
@@ -222,6 +228,28 @@ export default class AxfLwcOnboardingWizard extends LightningElement {
     return this.requiredPending && !this.acknowledge;
   }
 
+  // ---- pluggy guide dialog ----
+  openGuide() {
+    this.guideOpen = true;
+  }
+  closeGuide() {
+    this.guideOpen = false;
+    const btn = this.template.querySelector("[data-guide-open]");
+    if (btn) {
+      btn.focus();
+    }
+  }
+  handleGuideBackdrop(event) {
+    if (event.target === event.currentTarget) {
+      this.closeGuide();
+    }
+  }
+  handleGuideKeydown(event) {
+    if (event.key === "Escape") {
+      this.closeGuide();
+    }
+  }
+
   // ---- navigation ----
   handleAck(event) {
     this.acknowledge = event.target.checked;
@@ -235,6 +263,7 @@ export default class AxfLwcOnboardingWizard extends LightningElement {
       this.current = ORDER[ORDER.length - 1];
     }
     this.message = null;
+    this.guideOpen = false;
   }
 
   async handleNext() {

@@ -56,8 +56,13 @@
           </template>
         </div>
 
-        <p class="wizard__eyebrow">{stepNumberLabel}</p>
-        <h2 class="wizard__title" tabindex="-1" data-heading>{stepTitle}</h2>
+        <h2
+          class="wizard__title slds-assistive-text"
+          tabindex="-1"
+          data-heading
+        >
+          {stepNumberLabel} — {stepTitle}
+        </h2>
 
         <template lwc:if={message}>
           <div
@@ -106,14 +111,43 @@
                 <p class="wizard__welcome">{labels.welcome}</p>
               </template>
               <template lwc:if={showPluggyGuide}>
-                <div class="wizard__split">
-                  <div class="wizard__split-main">
-                    <c-a-x-f_-l-w-c_pluggy-integration-config></c-a-x-f_-l-w-c_pluggy-integration-config>
-                  </div>
-                  <aside class="wizard__split-aside">
-                    <c-a-x-f_-l-w-c_pluggy-guide></c-a-x-f_-l-w-c_pluggy-guide>
-                  </aside>
+                <div class="wizard__guide-bar">
+                  <lightning-button
+                    variant="brand-outline"
+                    icon-name="utility:help"
+                    label={labels.guideOpen}
+                    data-guide-open
+                    onclick={openGuide}
+                  ></lightning-button>
                 </div>
+                <c-a-x-f_-l-w-c_pluggy-integration-config></c-a-x-f_-l-w-c_pluggy-integration-config>
+
+                <template lwc:if={guideOpen}>
+                  <section
+                    class="wizard__modal"
+                    role="dialog"
+                    aria-modal="true"
+                    aria-label={labels.guideOpen}
+                    onclick={handleGuideBackdrop}
+                    onkeydown={handleGuideKeydown}
+                  >
+                    <div class="wizard__modal-box">
+                      <button
+                        class="wizard__modal-close"
+                        type="button"
+                        title={labels.guideClose}
+                        aria-label={labels.guideClose}
+                        onclick={closeGuide}
+                      >
+                        &times;
+                      </button>
+                      <c-a-x-f_-l-w-c_pluggy-guide
+                        onguidecomplete={closeGuide}
+                        onopensecureform={closeGuide}
+                      ></c-a-x-f_-l-w-c_pluggy-guide>
+                    </div>
+                  </section>
+                </template>
               </template>
               <template lwc:if={showDiscovery}>
                 <c-a-x-f_-l-w-c_source-discovery></c-a-x-f_-l-w-c_source-discovery>

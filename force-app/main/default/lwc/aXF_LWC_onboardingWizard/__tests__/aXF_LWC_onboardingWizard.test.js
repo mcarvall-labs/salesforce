@@ -113,6 +113,32 @@ describe("c-aXF_LWC_onboardingWizard", () => {
     });
   });
 
+  it("opens the Pluggy guide in a dialog and closes it", async () => {
+    canConfigure.mockResolvedValue(true);
+    getState.mockResolvedValue(
+      STEPS({ currentStep: "PLUGGY_CREDENTIALS", version: 2 })
+    );
+    const el = build();
+    await flush();
+    await flush();
+    await flush();
+
+    const dlg = () => el.shadowRoot.querySelector('[role="dialog"]');
+    expect(dlg()).toBeNull();
+    expect(
+      el.shadowRoot.querySelector("c-a-x-f_-l-w-c_pluggy-guide")
+    ).toBeNull();
+
+    btn(el, /o que você|what you/i).click();
+    await flush();
+    expect(dlg()).not.toBeNull();
+    expect(dlg().querySelector("c-a-x-f_-l-w-c_pluggy-guide")).not.toBeNull();
+
+    el.shadowRoot.querySelector(".wizard__modal-close").click();
+    await flush();
+    expect(dlg()).toBeNull();
+  });
+
   it("offers skip on an optional step", async () => {
     canConfigure.mockResolvedValue(true);
     getState.mockResolvedValue(

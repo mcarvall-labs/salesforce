@@ -100,26 +100,9 @@
 }
 
 /* ================= header ================= */
-.wizard__eyebrow {
-  margin: 0;
-  font-size: 0.75rem;
-  font-weight: 600;
-  text-transform: uppercase;
-  letter-spacing: 0.06em;
-  color: var(--slds-g-color-brand-base-50, #0b5cab);
-}
-
-.wizard__title {
-  margin: 0.25rem 0 0.85rem;
-  font-size: 1.5rem;
-  font-weight: 700;
-  line-height: 1.3;
-  color: var(--slds-g-color-neutral-base-10, #181818);
-}
-.wizard__title:focus {
-  outline: 2px solid var(--slds-g-color-brand-base-40, #0176d3);
-  outline-offset: 2px;
-}
+/* The step number + name live in the stepper; the visible per-step title was
+   redundant, so .wizard__title is now assistive-text only (kept for focus
+   management / screen readers on step change). */
 
 /* ================= banners ================= */
 .wizard__banner {
@@ -167,41 +150,51 @@
   color: var(--slds-g-color-neutral-base-20, #2e2e2e);
 }
 
-/* Pluggy step: the setup form and the illustrated guide side by side, using
-   the wide layout so the step reads across instead of scrolling down. */
-.wizard__split {
+/* Pluggy step: the illustrated guide opens on demand in a dialog. */
+.wizard__guide-bar {
+  display: flex;
+  justify-content: flex-end;
+  margin-bottom: 1rem;
+}
+
+.wizard__modal {
+  position: fixed;
+  inset: 0;
+  z-index: 9001;
   display: flex;
   align-items: flex-start;
   justify-content: center;
-  gap: 2.5rem;
+  padding: 3rem 1rem;
+  background: rgba(0, 0, 0, 0.45);
+  overflow-y: auto;
 }
 
-.wizard__split-main {
-  flex: 1 1 46rem;
-  min-width: 0;
-  max-width: 48rem;
+.wizard__modal-box {
+  position: relative;
+  width: 100%;
+  max-width: 44rem;
+  border-radius: 0.75rem;
+  background: var(--slds-g-color-neutral-base-100, #fff);
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.25);
 }
 
-.wizard__split-aside {
-  flex: 0 0 27rem;
-  max-width: 27rem;
-  position: sticky;
-  top: 0;
+.wizard__modal-close {
+  position: absolute;
+  top: 0.35rem;
+  right: 0.5rem;
+  z-index: 1;
+  width: 2rem;
+  height: 2rem;
+  border: 0;
+  border-radius: 50%;
+  background: transparent;
+  font-size: 1.4rem;
+  line-height: 1;
+  cursor: pointer;
+  color: var(--slds-g-color-neutral-base-30, #444);
 }
-
-@media (max-width: 76rem) {
-  .wizard__split {
-    flex-direction: column;
-  }
-  .wizard__split-aside {
-    order: -1;
-    flex-basis: auto;
-    width: 100%;
-    max-width: none;
-    position: static;
-    max-height: none;
-    overflow: visible;
-  }
+.wizard__modal-close:hover {
+  background: var(--slds-g-color-neutral-base-95, #f3f2f2);
 }
 
 /* review list */
