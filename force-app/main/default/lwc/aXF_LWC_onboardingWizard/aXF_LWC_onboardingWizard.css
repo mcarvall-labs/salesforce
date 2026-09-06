@@ -5,7 +5,7 @@
 
 .wizard {
   box-sizing: border-box;
-  max-width: 60rem;
+  max-width: 88rem;
   margin: 0 auto;
   padding: 0.25rem 1.5rem 1rem;
 }
@@ -147,14 +147,6 @@
 
 /* ================= content ================= */
 .wizard__card {
-  display: flex;
-  flex-direction: column;
-  /* keep the whole step (incl. the Back/Next footer) within the viewport so
-     the page itself never gets a scrollbar; long content scrolls in the body.
-     ~30rem ≈ the fixed chrome above the card (Lightning header + page header +
-     stepper + step title) — it stays roughly constant as the viewport grows. */
-  max-height: calc(100vh - 30rem);
-  min-height: 16rem;
   border: 1px solid var(--slds-g-color-border-base-1, #e5e5e5);
   border-radius: 0.75rem;
   background: var(--slds-g-color-neutral-base-100, #fff);
@@ -165,9 +157,6 @@
 }
 
 .wizard__body {
-  flex: 1 1 auto;
-  min-height: 0;
-  overflow-y: auto;
   padding: 1.75rem 2rem;
 }
 
@@ -178,27 +167,29 @@
   color: var(--slds-g-color-neutral-base-20, #2e2e2e);
 }
 
-/* Pluggy step: the setup form is the main column, the illustrated guide is a
-   side panel on the right so the step fits without a page scrollbar. */
+/* Pluggy step: the setup form and the illustrated guide side by side, using
+   the wide layout so the step reads across instead of scrolling down. */
 .wizard__split {
   display: flex;
   align-items: flex-start;
-  gap: 1.5rem;
+  justify-content: center;
+  gap: 2.5rem;
 }
 
 .wizard__split-main {
-  flex: 1 1 auto;
+  flex: 1 1 46rem;
   min-width: 0;
+  max-width: 48rem;
 }
 
 .wizard__split-aside {
-  flex: 0 0 22rem;
-  max-width: 22rem;
+  flex: 0 0 27rem;
+  max-width: 27rem;
   position: sticky;
   top: 0;
 }
 
-@media (max-width: 60rem) {
+@media (max-width: 76rem) {
   .wizard__split {
     flex-direction: column;
   }
