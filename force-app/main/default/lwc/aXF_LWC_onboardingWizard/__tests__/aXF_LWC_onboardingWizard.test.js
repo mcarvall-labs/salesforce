@@ -104,7 +104,9 @@ describe("c-aXF_LWC_onboardingWizard", () => {
     expect(el.shadowRoot.textContent).toMatch(/2 de 8|2 of 8/);
     const nextBtn = btn(el, /Próximo|Next/);
     expect(nextBtn.disabled).toBe(true);
-    expect(el.shadowRoot.textContent).toMatch(/Configure e salve as credenciais|Configure and save/i);
+    expect(el.shadowRoot.textContent).toMatch(
+      /Configure e salve as credenciais|Configure and save/i
+    );
 
     // Simulate child component notifying that credential is now active
     const pluggyCmp = el.shadowRoot.querySelector(

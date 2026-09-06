@@ -176,7 +176,9 @@ describe("c-aXF_LWC_pluggyIntegrationConfig", () => {
     await flush();
 
     // Rotation section hidden when NONE — promote button doesn't exist
-    expect(el.shadowRoot.querySelector(".pic__rotation-hint_warning")).toBeNull();
+    expect(
+      el.shadowRoot.querySelector(".pic__rotation-hint_warning")
+    ).toBeNull();
     expect(
       [...el.shadowRoot.querySelectorAll("lightning-button")].find(
         (b) => b.label === "Ativar nova credencial"
@@ -263,8 +265,12 @@ describe("c-aXF_LWC_pluggyIntegrationConfig", () => {
     });
     await flush();
 
-    expect(el.shadowRoot.textContent).toMatch(/Último teste — credencial ativa/i);
-    expect(el.shadowRoot.textContent).toMatch(/Conexão verificada com sucesso/i);
+    expect(el.shadowRoot.textContent).toMatch(
+      /Último teste — credencial ativa/i
+    );
+    expect(el.shadowRoot.textContent).toMatch(
+      /Conexão verificada com sucesso/i
+    );
   });
 
   it("does not show stale ROLLED_BACK state in the UI (it is volatile)", async () => {

@@ -200,7 +200,9 @@ public with sharing class AXF_CLS_PluggyCredentialRotationService {
         cfg.AXF_PIC_DT_CandidateSlotTestedAt__c = null;
       }
     } else {
-      cfg.AXF_PIC_TXT_CandidateSlotTestResult__c = healthy ? truncate(message) : null;
+      cfg.AXF_PIC_TXT_CandidateSlotTestResult__c = healthy
+        ? truncate(message)
+        : null;
       cfg.AXF_PIC_DT_CandidateSlotTestedAt__c = healthy ? Datetime.now() : null;
       if (!healthy) {
         // Clear primary candidate fields as well — nothing to show
@@ -211,7 +213,6 @@ public with sharing class AXF_CLS_PluggyCredentialRotationService {
     AXF_CLS_PluggySettings.save(cfg);
     return r;
   }
-
 
   /**
    * @description Promotes the candidate by flipping the active-slot pointer. Only allowed
@@ -286,4 +287,3 @@ public with sharing class AXF_CLS_PluggyCredentialRotationService {
     return s.length() > 255 ? s.substring(0, 255) : s;
   }
 }
-
