@@ -58,7 +58,9 @@ private class ALT_CLS_ContractAgendaServiceTest {
     input.endDate = Date.today().addYears(1);
 
     ALT_CLS_ContractService service = new ALT_CLS_ContractService();
-    ALT_CLS_ContractService.OperationResultDTO res = service.createDraftContract(input);
+    ALT_CLS_ContractService.OperationResultDTO res = service.createDraftContract(
+      input
+    );
     Assert.isTrue(res.success, 'Contrato de teste criado.');
     return res.contractId;
   }
@@ -128,13 +130,16 @@ private class ALT_CLS_ContractAgendaServiceTest {
     );
 
     Assert.isTrue(first.created, 'Primeiro run criado.');
-    Assert.isFalse(second.created, 'Run concorrente nao duplica: acompanha o existente (AC 1).');
+    Assert.isFalse(
+      second.created,
+      'Run concorrente nao duplica: acompanha o existente (AC 1).'
+    );
     Assert.areEqual(first.runId, second.runId);
 
     Integer activeRuns = [
       SELECT COUNT()
       FROM AXF_OBJ_ContractScheduleRun__c
-      WHERE AXF_CSR_EXI_ActiveScopeToken__c != null
+      WHERE AXF_CSR_EXI_ActiveScopeToken__c != NULL
     ];
     Assert.areEqual(1, activeRuns, 'Apenas um token Contract+ACTIVE ativo.');
   }
@@ -154,8 +159,16 @@ private class ALT_CLS_ContractAgendaServiceTest {
       run.runId
     );
 
-    Assert.areEqual(0, countOccurrences(contractId), 'Nada publicado antes da confirmacao (AC 2).');
-    Assert.areEqual(3, preview.added, '3 ocorrencias adicionadas previstas no horizonte.');
+    Assert.areEqual(
+      0,
+      countOccurrences(contractId),
+      'Nada publicado antes da confirmacao (AC 2).'
+    );
+    Assert.areEqual(
+      3,
+      preview.added,
+      '3 ocorrencias adicionadas previstas no horizonte.'
+    );
     Assert.areEqual('PREVIEW', preview.state);
 
     AXF_OBJ_ContractScheduleRun__c persisted = [
@@ -164,7 +177,10 @@ private class ALT_CLS_ContractAgendaServiceTest {
       WHERE Id = :run.runId
       LIMIT 1
     ];
-    Assert.isFalse(String.isBlank(persisted.AXF_CSR_TAL_PreviewJson__c), 'Preview persiste JSON.');
+    Assert.isFalse(
+      String.isBlank(persisted.AXF_CSR_TAL_PreviewJson__c),
+      'Preview persiste JSON.'
+    );
   }
 
   @IsTest
@@ -178,7 +194,9 @@ private class ALT_CLS_ContractAgendaServiceTest {
       runInput(contractId, term.Id, monthStart(0), monthStart(2))
     );
     service.computePreview(run.runId);
-    ALT_CLS_ContractAgendaService.RunResultDTO done = service.publish(run.runId);
+    ALT_CLS_ContractAgendaService.RunResultDTO done = service.publish(
+      run.runId
+    );
 
     Assert.areEqual(3, countOccurrences(contractId));
     Assert.areEqual('COMPLETE', done.state);
@@ -187,18 +205,29 @@ private class ALT_CLS_ContractAgendaServiceTest {
     Integer cas = [
       SELECT COUNT()
       FROM AXF_OBJ_ContractApplicationSnapshot__c
-      WHERE AXF_CAS_LKP_FinancialTransaction__r.AXF_FTX_LKP_Contract__c = :contractId
+      WHERE
+        AXF_CAS_LKP_FinancialTransaction__r.AXF_FTX_LKP_Contract__c = :contractId
     ];
     Assert.areEqual(3, cas, 'Cada ocorrencia recebe CAS imutavel (AXF-57).');
 
     AXF_OBJ_ContractScheduleRun__c finalState = [
-      SELECT AXF_CSR_TXT_Watermark__c, AXF_CSR_DAT_CompleteThrough__c, AXF_CSR_EXI_ActiveScopeToken__c
+      SELECT
+        AXF_CSR_TXT_Watermark__c,
+        AXF_CSR_DAT_CompleteThrough__c,
+        AXF_CSR_EXI_ActiveScopeToken__c
       FROM AXF_OBJ_ContractScheduleRun__c
       WHERE Id = :run.runId
       LIMIT 1
     ];
-    Assert.isNotNull(finalState.AXF_CSR_DAT_CompleteThrough__c, 'Complete-through gravado.');
-    Assert.areEqual(null, finalState.AXF_CSR_EXI_ActiveScopeToken__c, 'Token liberado ao concluir.');
+    Assert.isNotNull(
+      finalState.AXF_CSR_DAT_CompleteThrough__c,
+      'Complete-through gravado.'
+    );
+    Assert.areEqual(
+      null,
+      finalState.AXF_CSR_EXI_ActiveScopeToken__c,
+      'Token liberado ao concluir.'
+    );
   }
 
   @IsTest
@@ -218,9 +247,17 @@ private class ALT_CLS_ContractAgendaServiceTest {
       runInput(contractId, term.Id, monthStart(0), monthStart(2))
     );
 
-    Assert.areEqual(first.runId, replay.runId, 'Replay retorna o run original (G6).');
+    Assert.areEqual(
+      first.runId,
+      replay.runId,
+      'Replay retorna o run original (G6).'
+    );
     Assert.areEqual('COMPLETE', replay.state);
-    Assert.areEqual(3, countOccurrences(contractId), 'Replay nao duplica ocorrencias.');
+    Assert.areEqual(
+      3,
+      countOccurrences(contractId),
+      'Replay nao duplica ocorrencias.'
+    );
   }
 
   @IsTest
@@ -240,7 +277,17 @@ private class ALT_CLS_ContractAgendaServiceTest {
     List<AXF_OBJ_FinancialTransaction__c> seeded = new List<AXF_OBJ_FinancialTransaction__c>();
     for (Integer seq = 2; seq <= 4; seq++) {
       Date due = term.AXF_CTV_DAT_EffectiveFrom__c.addMonths(seq - 1);
-      seeded.add(seedOccurrence(acc.Id, contract.Id, contract.AXF_CTR_EXI_ContractKey__c, term.Id, seq, due, 100));
+      seeded.add(
+        seedOccurrence(
+          acc.Id,
+          contract.Id,
+          contract.AXF_CTR_EXI_ContractKey__c,
+          term.Id,
+          seq,
+          due,
+          100
+        )
+      );
     }
 
     // 1) Confirmada (protegida), 2) overridden (protegida), 3) draft intocado editado (supersede)
@@ -266,9 +313,19 @@ private class ALT_CLS_ContractAgendaServiceTest {
     ALT_CLS_ContractAgendaService.RunResultDTO run = service.createRun(
       runInput(contractId, term.Id, monthStart(0), monthStart(2))
     );
-    ALT_CLS_ContractAgendaService.RunResultDTO preview = service.computePreview(run.runId);
-    Assert.areEqual(2, preview.blocked, 'Confirmado + overridden sao bloqueados (AC 3).');
-    Assert.areEqual(1, preview.superseded, 'Draft gerado intocado e superseded.');
+    ALT_CLS_ContractAgendaService.RunResultDTO preview = service.computePreview(
+      run.runId
+    );
+    Assert.areEqual(
+      2,
+      preview.blocked,
+      'Confirmado + overridden sao bloqueados (AC 3).'
+    );
+    Assert.areEqual(
+      1,
+      preview.superseded,
+      'Draft gerado intocado e superseded.'
+    );
 
     // Publicar nao toca os protegidos e restaura o intocado para o valor canonico.
     service.publish(run.runId);
@@ -282,8 +339,16 @@ private class ALT_CLS_ContractAgendaServiceTest {
     );
     Assert.areEqual(100, after.get(confirmed.Id).AXF_FTX_NUM_Magnitude__c);
     Assert.areEqual('CONFIRMED', after.get(confirmed.Id).AXF_FTX_PKL_Status__c);
-    Assert.areEqual(111, after.get(overridden.Id).AXF_FTX_NUM_Magnitude__c, 'Override preservado.');
-    Assert.areEqual(100, after.get(touched.Id).AXF_FTX_NUM_Magnitude__c, 'Draft intocado restaurado (superseded).');
+    Assert.areEqual(
+      111,
+      after.get(overridden.Id).AXF_FTX_NUM_Magnitude__c,
+      'Override preservado.'
+    );
+    Assert.areEqual(
+      100,
+      after.get(touched.Id).AXF_FTX_NUM_Magnitude__c,
+      'Draft intocado restaurado (superseded).'
+    );
   }
 
   /** Semeia uma ocorrencia PLANNED gerada por contrato (mesma forma que o motor publica) + CAS. */
@@ -342,7 +407,9 @@ private class ALT_CLS_ContractAgendaServiceTest {
     );
     update failed;
 
-    ALT_CLS_ContractAgendaService.RunResultDTO resumed = service.publish(run.runId);
+    ALT_CLS_ContractAgendaService.RunResultDTO resumed = service.publish(
+      run.runId
+    );
 
     Assert.areEqual('COMPLETE', resumed.state);
     Assert.areEqual(2, countOccurrences(contractId));
@@ -366,11 +433,25 @@ private class ALT_CLS_ContractAgendaServiceTest {
       runInput(contractId, term.Id, monthStart(1), monthStart(4))
     );
     Assert.isTrue(next.created, 'Novo run apos conclusao do anterior.');
-    ALT_CLS_ContractAgendaService.RunResultDTO preview = service.computePreview(next.runId);
-    Assert.areEqual(2, preview.preserved, 'Janela sobreposta preserva ocorrencias existentes.');
-    Assert.areEqual(2, preview.added, 'Nova janela adiciona ocorrencias seguintes.');
+    ALT_CLS_ContractAgendaService.RunResultDTO preview = service.computePreview(
+      next.runId
+    );
+    Assert.areEqual(
+      2,
+      preview.preserved,
+      'Janela sobreposta preserva ocorrencias existentes.'
+    );
+    Assert.areEqual(
+      2,
+      preview.added,
+      'Nova janela adiciona ocorrencias seguintes.'
+    );
     service.publish(next.runId);
-    Assert.areEqual(5, countOccurrences(contractId), 'Sem duplicacao entre janelas.');
+    Assert.areEqual(
+      5,
+      countOccurrences(contractId),
+      'Sem duplicacao entre janelas.'
+    );
   }
 
   @IsTest

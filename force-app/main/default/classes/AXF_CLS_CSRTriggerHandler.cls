@@ -69,7 +69,9 @@ public with sharing class AXF_CLS_CSRTriggerHandler {
       return false;
     }
     if (oldState == 'PREVIEW') {
-      return newState == 'APPLYING' || newState == 'FAILED' || newState == 'COMPLETE';
+      return newState == 'APPLYING' ||
+        newState == 'FAILED' ||
+        newState == 'COMPLETE';
     }
     if (oldState == 'APPLYING') {
       return newState == 'COMPLETE' || newState == 'FAILED';
