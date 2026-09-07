@@ -1,0 +1,28 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<CustomField xmlns="http://soap.sforce.com/2006/04/metadata">
+    <fullName>AXF_RVI_PKL_Type__c</fullName>
+    <label>Tipo</label>
+    <type>Picklist</type>
+    <required>true</required>
+    <valueSet>
+        <restricted>true</restricted>
+        <valueSetDefinition>
+            <sorted>false</sorted>
+            <value><fullName>MATCH_LOW_CONFIDENCE</fullName><default
+        >false</default><label
+        >Correspondencia de baixa confianca</label></value>
+            <value><fullName>SOURCE_CHANGE</fullName><default
+        >false</default><label>Alteracao de origem</label></value>
+            <value><fullName>SOURCE_DELETE</fullName><default
+        >false</default><label>Exclusao de origem</label></value>
+            <value><fullName>TRANSFER_SUGGESTION</fullName><default
+        >false</default><label>Sugestao de transferencia</label></value>
+            <value><fullName>ACCOUNT_MERGE</fullName><default
+        >false</default><label>Uniao de conta</label></value>
+            <value><fullName>HOLDER_CONFIRMATION</fullName><default
+        >false</default><label>Titular a confirmar</label></value>
+        </valueSetDefinition>
+    </valueSet>
+    <description
+  >Tipo da pendencia que exige decisao humana (AXF-94, AD-41).</description>
+</CustomField>
