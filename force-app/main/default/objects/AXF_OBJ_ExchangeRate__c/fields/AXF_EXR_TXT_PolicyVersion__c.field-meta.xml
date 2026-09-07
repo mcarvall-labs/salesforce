@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<CustomField xmlns="http://soap.sforce.com/2006/04/metadata">
+    <fullName>AXF_EXR_TXT_PolicyVersion__c</fullName>
+    <label>Versao da Policy</label>
+    <type>Text</type>
+    <length>32</length>
+    <required>false</required>
+    <description>Versao da policy de cotacao aplicada (AXF-92/59).</description>
+</CustomField>
