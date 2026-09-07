@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<CustomField xmlns="http://soap.sforce.com/2006/04/metadata">
+    <fullName>AXF_FXS_EXI_ApplicationKey__c</fullName>
+    <label>Chave de Aplicacao</label>
+    <type>Text</type>
+    <length>64</length>
+    <unique>true</unique>
+    <externalId>true</externalId>
+    <caseSensitive>true</caseSensitive>
+    <required>true</required>
+    <description>TargetType+TargetId+Purpose+Revision - unico por alvo/finalidade/revisao (G6; AXF-24).</description>
+</CustomField>
