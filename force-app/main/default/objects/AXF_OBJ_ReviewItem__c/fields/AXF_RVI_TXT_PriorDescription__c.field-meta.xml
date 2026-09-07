@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<CustomField xmlns="http://soap.sforce.com/2006/04/metadata">
+    <fullName>AXF_RVI_TXT_PriorDescription__c</fullName>
+    <label>Descricao Anterior</label>
+    <type>Text</type>
+    <length>255</length>
+    <required>false</required>
+    <description
+  >Descricao anterior; expurgada apos resolucao (G7, AXF-94).</description>
+</CustomField>
