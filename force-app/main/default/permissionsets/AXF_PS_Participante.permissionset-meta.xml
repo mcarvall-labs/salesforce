@@ -559,6 +559,15 @@
         <object>AXF_OBJ_ContractApplicationSnapshot__c</object>
         <viewAllRecords>false</viewAllRecords>
     </objectPermissions>
+    <objectPermissions>
+        <allowCreate>false</allowCreate>
+        <allowDelete>false</allowDelete>
+        <allowEdit>false</allowEdit>
+        <allowRead>true</allowRead>
+        <modifyAllRecords>false</modifyAllRecords>
+        <object>AXF_OBJ_ContractScheduleRun__c</object>
+        <viewAllRecords>false</viewAllRecords>
+    </objectPermissions>
     <recordTypeVisibilities>
         <recordType>Account.AXF_Business</recordType>
         <visible>true</visible>
@@ -594,4 +603,69 @@
     
     
 
+    <fieldPermissions>
+        <editable>false</editable>
+        <field>AXF_OBJ_ContractScheduleRun__c.AXF_CSR_EXI_ActiveScopeToken__c</field>
+        <readable>true</readable>
+    </fieldPermissions>
+    <fieldPermissions>
+        <editable>false</editable>
+        <field>AXF_OBJ_ContractScheduleRun__c.AXF_CSR_EXI_OccurrenceKey__c</field>
+        <readable>true</readable>
+    </fieldPermissions>
+    <fieldPermissions>
+        <editable>false</editable>
+        <field>AXF_OBJ_ContractScheduleRun__c.AXF_CSR_TAL_PreviewJson__c</field>
+        <readable>true</readable>
+    </fieldPermissions>
+    <fieldPermissions>
+        <editable>false</editable>
+        <field>AXF_OBJ_ContractScheduleRun__c.AXF_CSR_NUM_Added__c</field>
+        <readable>true</readable>
+    </fieldPermissions>
+    <fieldPermissions>
+        <editable>false</editable>
+        <field>AXF_OBJ_ContractScheduleRun__c.AXF_CSR_NUM_Preserved__c</field>
+        <readable>true</readable>
+    </fieldPermissions>
+    <fieldPermissions>
+        <editable>false</editable>
+        <field>AXF_OBJ_ContractScheduleRun__c.AXF_CSR_NUM_Superseded__c</field>
+        <readable>true</readable>
+    </fieldPermissions>
+    <fieldPermissions>
+        <editable>false</editable>
+        <field>AXF_OBJ_ContractScheduleRun__c.AXF_CSR_NUM_Blocked__c</field>
+        <readable>true</readable>
+    </fieldPermissions>
+    <fieldPermissions>
+        <editable>false</editable>
+        <field>AXF_OBJ_ContractScheduleRun__c.AXF_CSR_TXT_Watermark__c</field>
+        <readable>true</readable>
+    </fieldPermissions>
+    <fieldPermissions>
+        <editable>false</editable>
+        <field>AXF_OBJ_ContractScheduleRun__c.AXF_CSR_DAT_CompleteThrough__c</field>
+        <readable>true</readable>
+    </fieldPermissions>
+    <fieldPermissions>
+        <editable>false</editable>
+        <field>AXF_OBJ_ContractScheduleRun__c.AXF_CSR_TXT_CorrelationId__c</field>
+        <readable>true</readable>
+    </fieldPermissions>
+    <fieldPermissions>
+        <editable>false</editable>
+        <field>AXF_OBJ_ContractScheduleRun__c.AXF_CSR_EXI_InputHash__c</field>
+        <readable>true</readable>
+    </fieldPermissions>
+    <fieldPermissions>
+        <editable>false</editable>
+        <field>AXF_OBJ_ContractScheduleRun__c.AXF_CSR_DAT_HorizonFrom__c</field>
+        <readable>true</readable>
+    </fieldPermissions>
+    <fieldPermissions>
+        <editable>false</editable>
+        <field>AXF_OBJ_ContractScheduleRun__c.AXF_CSR_DAT_HorizonThrough__c</field>
+        <readable>true</readable>
+    </fieldPermissions>
 </PermissionSet>
