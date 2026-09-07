@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<CustomField xmlns="http://soap.sforce.com/2006/04/metadata">
+    <fullName>AXF_CSR_EXI_InputHash__c</fullName>
+    <label>Hash de Input</label>
+    <type>Text</type>
+    <length>64</length>
+    <required>false</required>
+    <description
+  >Hash deterministico dos inputs (contrato/termo/horizonte/policy): reproduz a previsao calculada (G6; AXF-55).</description>
+</CustomField>

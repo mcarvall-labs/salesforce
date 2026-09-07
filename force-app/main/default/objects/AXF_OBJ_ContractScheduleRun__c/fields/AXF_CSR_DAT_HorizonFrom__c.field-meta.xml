@@ -1,0 +1,8 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<CustomField xmlns="http://soap.sforce.com/2006/04/metadata">
+    <fullName>AXF_CSR_DAT_HorizonFrom__c</fullName>
+    <label>Horizonte (de)</label>
+    <type>Date</type>
+    <required>false</required>
+    <description>Inicio do horizonte gerado da agenda (AXF-55).</description>
+</CustomField>
