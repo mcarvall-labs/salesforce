@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<CustomField xmlns="http://soap.sforce.com/2006/04/metadata">
+    <fullName>AXF_FXC_NUM_Sequence__c</fullName>
+    <label>Sequencia</label>
+    <type>Number</type>
+    <precision>9</precision>
+    <scale>0</scale>
+    <required>true</required>
+    <description
+  >Sequencia do encargo dentro da liquidacao (1..n; AXF-61).</description>
+</CustomField>

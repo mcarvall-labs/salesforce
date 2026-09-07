@@ -1033,6 +1033,41 @@
     <field>AXF_OBJ_ExchangeRate__c.AXF_EXR_TXT_PolicyVersion__c</field>
     <readable>true</readable>
   </fieldPermissions>
+  <fieldPermissions>
+    <editable>true</editable>
+    <field>AXF_OBJ_FxSettlementCharge__c.AXF_FXC_LKP_SeparateEntry__c</field>
+    <readable>true</readable>
+  </fieldPermissions>
+  <fieldPermissions>
+    <editable>true</editable>
+    <field>AXF_OBJ_FxSettlementCharge__c.AXF_FXC_TXT_ContributionKey__c</field>
+    <readable>true</readable>
+  </fieldPermissions>
+  <fieldPermissions>
+    <editable>true</editable>
+    <field>AXF_OBJ_FxSettlementCharge__c.AXF_FXC_TXT_Jurisdiction__c</field>
+    <readable>true</readable>
+  </fieldPermissions>
+  <fieldPermissions>
+    <editable>true</editable>
+    <field>AXF_OBJ_FxSettlementCharge__c.AXF_FXC_TXT_PolicyVersion__c</field>
+    <readable>true</readable>
+  </fieldPermissions>
+  <fieldPermissions>
+    <editable>true</editable>
+    <field>AXF_OBJ_FxSettlementCharge__c.AXF_FXC_TAL_Description__c</field>
+    <readable>true</readable>
+  </fieldPermissions>
+  <fieldPermissions>
+    <editable>true</editable>
+    <field>AXF_OBJ_FxSettlementCharge__c.AXF_FXC_TXT_EvidenceHash__c</field>
+    <readable>true</readable>
+  </fieldPermissions>
+  <fieldPermissions>
+    <editable>true</editable>
+    <field>AXF_OBJ_FxSettlementCharge__c.AXF_FXC_EXI_ChargeKey__c</field>
+    <readable>true</readable>
+  </fieldPermissions>
   <objectPermissions>
     <allowCreate>true</allowCreate>
     <allowDelete>false</allowDelete>
@@ -1238,6 +1273,15 @@
     <allowRead>true</allowRead>
     <modifyAllRecords>false</modifyAllRecords>
     <object>AXF_OBJ_ExchangeRate__c</object>
+    <viewAllRecords>false</viewAllRecords>
+  </objectPermissions>
+  <objectPermissions>
+    <allowCreate>true</allowCreate>
+    <allowDelete>false</allowDelete>
+    <allowEdit>true</allowEdit>
+    <allowRead>true</allowRead>
+    <modifyAllRecords>false</modifyAllRecords>
+    <object>AXF_OBJ_FxSettlementCharge__c</object>
     <viewAllRecords>false</viewAllRecords>
   </objectPermissions>
   <recordTypeVisibilities>
