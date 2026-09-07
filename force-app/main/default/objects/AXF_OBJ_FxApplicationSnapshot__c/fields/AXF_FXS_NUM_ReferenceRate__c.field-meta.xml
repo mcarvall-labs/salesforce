@@ -6,5 +6,6 @@
     <precision>18</precision>
     <scale>12</scale>
     <required>false</required>
-    <description>Taxa de referencia (PTAX/closing) congelada; referencia separada nunca substitui a aplicada (AXF-24).</description>
+    <description
+  >Taxa de referencia (PTAX/closing) congelada; referencia separada nunca substitui a aplicada (AXF-24).</description>
 </CustomField>

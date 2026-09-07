@@ -2,8 +2,11 @@
 <ValidationRule xmlns="http://soap.sforce.com/2006/04/metadata">
     <fullName>FXS_VR_TargetExclusive</fullName>
     <active>true</active>
-    <description>Exatamente um alvo coerente com TargetType (AXF-24).</description>
-    <errorConditionFormula>OR(AND(TEXT(AXF_FXS_PKL_TargetType__c) = "FINANCIAL_TRANSACTION", OR(ISBLANK(AXF_FXS_LKP_FinancialTransaction__c), NOT(ISBLANK(AXF_FXS_LKP_FxSettlementCharge__c)))), AND(TEXT(AXF_FXS_PKL_TargetType__c) = "FX_SETTLEMENT_CHARGE", OR(ISBLANK(AXF_FXS_LKP_FxSettlementCharge__c), NOT(ISBLANK(AXF_FXS_LKP_FinancialTransaction__c)))))</errorConditionFormula>
+    <description
+  >Exatamente um alvo coerente com TargetType (AXF-24).</description>
+    <errorConditionFormula
+  >OR(AND(TEXT(AXF_FXS_PKL_TargetType__c) = "FINANCIAL_TRANSACTION", OR(ISBLANK(AXF_FXS_LKP_FinancialTransaction__c), NOT(ISBLANK(AXF_FXS_LKP_FxSettlementCharge__c)))), AND(TEXT(AXF_FXS_PKL_TargetType__c) = "FX_SETTLEMENT_CHARGE", OR(ISBLANK(AXF_FXS_LKP_FxSettlementCharge__c), NOT(ISBLANK(AXF_FXS_LKP_FinancialTransaction__c)))))</errorConditionFormula>
     <errorDisplayField>AXF_FXS_PKL_TargetType__c</errorDisplayField>
-    <errorMessage>O snapshot deve apontar exatamente para o alvo coerente com o TargetType.</errorMessage>
+    <errorMessage
+  >O snapshot deve apontar exatamente para o alvo coerente com o TargetType.</errorMessage>
 </ValidationRule>

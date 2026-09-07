@@ -7,5 +7,6 @@
     <relationshipName>FxApplicationSnapshots</relationshipName>
     <deleteConstraint>Restrict</deleteConstraint>
     <required>false</required>
-    <description>ExchangeRate usada como fonte do snapshot; ID/effective date persistidos (AXF-24).</description>
+    <description
+  >ExchangeRate usada como fonte do snapshot; ID/effective date persistidos (AXF-24).</description>
 </CustomField>

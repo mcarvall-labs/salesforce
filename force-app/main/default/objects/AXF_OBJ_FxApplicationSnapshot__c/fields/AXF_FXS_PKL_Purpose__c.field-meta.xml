@@ -8,12 +8,18 @@
         <restricted>true</restricted>
         <valueSetDefinition>
             <sorted>false</sorted>
-            <value><fullName>RECOGNITION</fullName><default>false</default><label>Reconhecimento</label></value>
-            <value><fullName>SETTLEMENT</fullName><default>false</default><label>Liquidacao</label></value>
-            <value><fullName>ISSUANCE</fullName><default>false</default><label>Emissao</label></value>
-            <value><fullName>CHARGE</fullName><default>false</default><label>Encargo</label></value>
-            <value><fullName>CURRENT_REVALUATION</fullName><default>false</default><label>Reavaliacao corrente</label></value>
+            <value><fullName>RECOGNITION</fullName><default
+        >false</default><label>Reconhecimento</label></value>
+            <value><fullName>SETTLEMENT</fullName><default>false</default><label
+        >Liquidacao</label></value>
+            <value><fullName>ISSUANCE</fullName><default>false</default><label
+        >Emissao</label></value>
+            <value><fullName>CHARGE</fullName><default>false</default><label
+        >Encargo</label></value>
+            <value><fullName>CURRENT_REVALUATION</fullName><default
+        >false</default><label>Reavaliacao corrente</label></value>
         </valueSetDefinition>
     </valueSet>
-    <description>Finalidade historica do snapshot (AXF-24; CURRENT_REVALUATION e serie separada).</description>
+    <description
+  >Finalidade historica do snapshot (AXF-24; CURRENT_REVALUATION e serie separada).</description>
 </CustomField>

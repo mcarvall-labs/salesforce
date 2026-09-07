@@ -8,5 +8,6 @@
     <externalId>true</externalId>
     <caseSensitive>true</caseSensitive>
     <required>true</required>
-    <description>TargetType+TargetId+Purpose+Revision - unico por alvo/finalidade/revisao (G6; AXF-24).</description>
+    <description
+  >TargetType+TargetId+Purpose+Revision - unico por alvo/finalidade/revisao (G6; AXF-24).</description>
 </CustomField>

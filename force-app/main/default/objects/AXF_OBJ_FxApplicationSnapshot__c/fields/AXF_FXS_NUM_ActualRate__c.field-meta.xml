@@ -6,5 +6,6 @@
     <precision>18</precision>
     <scale>12</scale>
     <required>false</required>
-    <description>Taxa efetivamente aplicada no snapshot (Number(18,12); AXF-24).</description>
+    <description
+  >Taxa efetivamente aplicada no snapshot (Number(18,12); AXF-24).</description>
 </CustomField>

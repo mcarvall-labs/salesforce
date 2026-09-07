@@ -7,5 +7,6 @@
     <relationshipName>FxSnapshotPredecessors</relationshipName>
     <deleteConstraint>SetNull</deleteConstraint>
     <required>false</required>
-    <description>Snapshot que este registro sucede (supersessao; AXF-24).</description>
+    <description
+  >Snapshot que este registro sucede (supersessao; AXF-24).</description>
 </CustomField>

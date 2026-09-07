@@ -7,5 +7,6 @@
     <relationshipName>FxApplicationSnapshots</relationshipName>
     <deleteConstraint>Restrict</deleteConstraint>
     <required>false</required>
-    <description>Alvo FinancialTransaction quando TargetType = FINANCIAL_TRANSACTION (AXF-24).</description>
+    <description
+  >Alvo FinancialTransaction quando TargetType = FINANCIAL_TRANSACTION (AXF-24).</description>
 </CustomField>

@@ -7,5 +7,6 @@
     <scale>0</scale>
     <required>true</required>
     <defaultValue>1</defaultValue>
-    <description>Revisao da aplicacao para o mesmo alvo/finalidade (AXF-24).</description>
+    <description
+  >Revisao da aplicacao para o mesmo alvo/finalidade (AXF-24).</description>
 </CustomField>

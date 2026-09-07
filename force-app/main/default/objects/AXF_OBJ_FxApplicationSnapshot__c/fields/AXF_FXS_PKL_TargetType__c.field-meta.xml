@@ -8,10 +8,14 @@
         <restricted>true</restricted>
         <valueSetDefinition>
             <sorted>false</sorted>
-            <value><fullName>FINANCIAL_TRANSACTION</fullName><default>false</default><label>Lancamento Financeiro</label></value>
-            <value><fullName>FX_SETTLEMENT_CHARGE</fullName><default>false</default><label>Encargo de Liquidacao Cambial</label></value>
-            <value><fullName>CALCULATION_SNAPSHOT</fullName><default>false</default><label>Snapshot de Calculo</label></value>
+            <value><fullName>FINANCIAL_TRANSACTION</fullName><default
+        >false</default><label>Lancamento Financeiro</label></value>
+            <value><fullName>FX_SETTLEMENT_CHARGE</fullName><default
+        >false</default><label>Encargo de Liquidacao Cambial</label></value>
+            <value><fullName>CALCULATION_SNAPSHOT</fullName><default
+        >false</default><label>Snapshot de Calculo</label></value>
         </valueSetDefinition>
     </valueSet>
-    <description>Tipo do alvo do snapshot (MVP: FINANCIAL_TRANSACTION|FX_SETTLEMENT_CHARGE; CALCULATION_SNAPSHOT reservado) - exatamente um coerente (AXF-24).</description>
+    <description
+  >Tipo do alvo do snapshot (MVP: FINANCIAL_TRANSACTION|FX_SETTLEMENT_CHARGE; CALCULATION_SNAPSHOT reservado) - exatamente um coerente (AXF-24).</description>
 </CustomField>
