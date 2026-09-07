@@ -1,16 +1,14 @@
 /**
- * Structure of the Pluggy setup mini-wizard (AXF-89). Language-neutral:
- * ids, the official external link, and — for the five tutorial steps — the base
- * name of an anonymised MP4 demonstration held in the `AXF_pluggyGuideMedia`
- * static resource (`<base>.mp4` + `<base>-poster.png`). All prose lives in
- * labels.js.
+ * Structure of the Pluggy setup mini-wizard (AXF-89 / AXF-99). Language-neutral:
+ * ids, the official external link, and — for the seven tutorial steps — the base
+ * name of an anonymised MP4 screencast held in the `AXF_pluggyGuideMedia` static
+ * resource (`<base>.mp4` + `<base>-poster.png`). All prose lives in labels.js.
  *
- * The MP4s and posters were produced in the UX design phase from screenshots
- * supplied by the product owner, anonymised with fictitious data (person "Ana",
- * accounts DEMO-001…, Item UUID 0000…0002, app badge "Axon Exemplo"). Source:
- * _bmad-output/planning-artifacts/ux-designs/.../pluggy-tutoriais-v2 and
- * pluggy-item-id-v2. Photo-real captures can replace them by swapping the
- * static resource — no code change.
+ * The screencasts were produced from real dashboard.pluggy.ai / meupluggy.com.br
+ * captures supplied by the product owner and anonymised with fictitious data
+ * (person "Ana"/"A", accounts DEMO-00N, Item UUID 0000…0002, Client ID
+ * "axon-exemplo-client-id", CPF 000.000.000-00). Banks keep their real names.
+ * They can be replaced by swapping the static resource — no code change.
  */
 export const OFFICIAL_LINKS = {
   meupluggy: "https://meupluggy.com.br/",
@@ -20,10 +18,11 @@ export const OFFICIAL_LINKS = {
 /**
  * `phase` splits the guide in two (AXF-89 revisão / AXF-98):
  *  - "credentials" — shown on the wizard's Pluggy credentials step: create the
- *    MeuPluggy account, connect the banks via Open Finance, create the Pluggy
- *    application, copy Client ID + Client Secret.
- *  - "discovery" — shown on the wizard's "find accounts and cards" step: copy the
- *    Item ID of EACH connection, history period, background import, limitations.
+ *    MeuPluggy account, connect the first bank, connect the next banks, create
+ *    the Pluggy application, copy Client ID + Client Secret.
+ *  - "discovery" — shown on the wizard's "find accounts and cards" step:
+ *    authorize the connections for the application, copy the Item ID of EACH
+ *    connection, history period, background import, limitations.
  * The component renders only the steps of its current `phase`.
  */
 export const STEPS = [
@@ -33,14 +32,22 @@ export const STEPS = [
     phase: "credentials",
     link: "meupluggy",
     action: null,
-    media: null
+    media: "meupluggyAccount"
   },
   {
-    id: "meupluggyConnect",
+    id: "meupluggyConnectFirst",
     phase: "credentials",
     link: "meupluggy",
     action: null,
-    media: "meu-pluggy",
+    media: "meupluggyConnectFirst",
+    help: true
+  },
+  {
+    id: "meupluggyConnectNext",
+    phase: "credentials",
+    link: "meupluggy",
+    action: null,
+    media: "meupluggyConnectNext",
     help: true
   },
   {
@@ -48,22 +55,14 @@ export const STEPS = [
     phase: "credentials",
     link: "dashboard",
     action: null,
-    media: "criar-aplicacao"
-  },
-  {
-    id: "dashboardConnect",
-    phase: "credentials",
-    link: "dashboard",
-    action: null,
-    media: "aplicacao",
-    help: true
+    media: "dashboardApp"
   },
   {
     id: "credentials",
     phase: "credentials",
     link: "dashboard",
     action: "openSecureForm",
-    media: "credenciais",
+    media: "credentials",
     help: true
   },
   {
@@ -74,11 +73,19 @@ export const STEPS = [
     media: null
   },
   {
+    id: "dashboardConnect",
+    phase: "discovery",
+    link: "dashboard",
+    action: null,
+    media: "dashboardConnect",
+    help: true
+  },
+  {
     id: "itemId",
     phase: "discovery",
     link: "dashboard",
     action: null,
-    media: "copiar-item-id",
+    media: "itemId",
     help: true
   },
   {

@@ -74,7 +74,7 @@ describe("c-aXF_LWC_pluggyGuide", () => {
     const el = build();
     const list = el.shadowRoot.querySelector(".guide__list");
     expect(list).not.toBeNull();
-    expect(list.querySelectorAll("li").length).toBe(4);
+    expect(list.querySelectorAll("li").length).toBe(5);
     // the surrounding lead-in and closing sentences are still paragraphs
     expect(
       el.shadowRoot.querySelectorAll("p.guide__text").length

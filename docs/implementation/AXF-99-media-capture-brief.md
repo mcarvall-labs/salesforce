@@ -104,7 +104,43 @@ o que aparece na tela.
 4. Ajustar `labels.js` (`mediaAlt`/`body` PT+EN) só se algum fluxo do Pluggy mudou.
 5. Deploy AXON_DEV, `npm run test:unit` (guia), validar no wizard, PR → develop, AXF-99 → Em análise.
 
-## Executado (06/09/2026)
+## Executado — v2 (06/09/2026): 7 screencasts + guia reestruturado
+
+O product owner pediu vídeos "parecendo gravados de verdade" — navegação, digitação,
+zoom, mouse ponto-a-ponto, transições. O guia foi **reestruturado para 7 passos com
+mídia** (antes 5), um por tutorial:
+
+| # | step id (novo) | fonte | o que mostra |
+| - | -------------- | ----- | ------------ |
+| 1 | `meupluggyAccount`       | pasta 1 | digita `meupluggy.com.br` → Criar conta → login por e-mail |
+| 2 | `meupluggyConnectFirst`  | pasta 2 | Conectar minha conta → instituição → CPF (fictício) → autorizar → conta conectada |
+| 3 | `meupluggyConnectNext`   | pasta 3 | Nova conexão → 2º banco (Itaú sobre Santander) → 2 conexões ativas |
+| 4 | `dashboardApp`           | pasta 4 | digita `dashboard.pluggy.ai` → Aplicações → Novo |
+| 5 | `credentials`            | pasta 4 | copiar Client ID + Client Secret (borrados) → colar no Axon |
+| 6 | `dashboardConnect`       | pasta 4 | Conectar Conta → autorizar as conexões ao app |
+| 7 | `itemId`                 | pasta 5 | app → Item → ⋮ → Copiar Item ID → colar/registrar no wizard do Axon |
+
+- Engine própria (`scratchpad/studio.py` + `render.py` + `build_studio.py`): barra de
+  navegador sintética com digitação de URL + "carregamento", cursor com easing +
+  anel de clique, digitação em campos com caret, zoom-punch, transições
+  crossfade/slide/dip, card de título, legenda lower-third. Encode por pipe
+  `libx264` (ShareX ffmpeg), CRF 28, `yuv420p`, `+faststart`. 1280×720, 11–21 s,
+  200–615 KB.
+- Anonimização: nome real → "Ana"/"A"; Client ID/Secret/API Key → exemplo; Item ID
+  real (`f1a652d5…`, `d89b6828…`) → `0000000-0000-4000-8000-000000000002`; contas
+  → DEMO-00N / 000N; saldos/limite → fictícios; CPF digitado → `000.000.000-00`;
+  cursores nativos dos screenshots pintados por cima; banners de trial/offline e
+  widget de suporte removidos; bancos reais mantidos.
+- `steps.js` reestruturado (fase credentials: intro + 1–5; fase discovery:
+  discoveryIntro + 6 + 7 + historyPeriod/backgroundImport/limitations/done).
+  `labels.js` PT+EN: `meupluggyConnect` → `meupluggyConnectFirst` +
+  `meupluggyConnectNext`; `intro` atualizado (5 itens); `dashboardConnect` movido
+  para a fase discovery. `aXF_LWC_pluggyGuide.js`/`.html` **sem mudança** (leem
+  `step.media`). jest 12/12. Deploy AXON_DEV OK.
+- Screenshots reais do Michel em `_bmad-output/pluggy-screenshots/` **não** entram
+  no repo. Os 10 arquivos antigos de mídia foram substituídos pelos 14 novos.
+
+## Executado — v1 (06/09/2026, superado pela v2)
 
 Michel entregou ~78 screenshots reais em `_bmad-output/pluggy-screenshots/` (5 fluxos).
 Os 5 pares `.mp4`+`-poster.png` foram **regerados a partir desses screenshots reais**, não
