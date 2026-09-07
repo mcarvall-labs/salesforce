@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<CustomField xmlns="http://soap.sforce.com/2006/04/metadata">
+  <fullName>AXF_CBR_DAT_EffectiveTo__c</fullName>
+  <label>Vigente Ate</label>
+  <type>Date</type>
+  <required>false</required>
+  <description
+  >Fim da vigencia da regra, excluido. Intervalo [from,to); to > from. Nullo = vigente indefinidamente (AXF-35).</description>
+</CustomField>

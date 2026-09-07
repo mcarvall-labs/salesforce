@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<CustomField xmlns="http://soap.sforce.com/2006/04/metadata">
+  <fullName>AXF_CBR_TXT_CalendarPolicyVersion__c</fullName>
+  <label>Versao da Policy de Calendario</label>
+  <type>Text</type>
+  <length>80</length>
+  <required>false</required>
+  <description
+  >Versao da politica de dia util/feriado persistida para reproducao historica (AXF-35).</description>
+</CustomField>

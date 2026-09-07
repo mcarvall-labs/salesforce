@@ -1,0 +1,23 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<CustomObject xmlns="http://soap.sforce.com/2006/04/metadata">
+  <deploymentStatus>Deployed</deploymentStatus>
+  <description
+  >Regra effective-dated de fechamento e vencimento do cartao, sem intervalos ambiguos; historico preservado (AXF-35, G1 fechamento 07/09, AD-7/14/15/17).</description>
+  <enableActivities>false</enableActivities>
+  <enableBulkApi>true</enableBulkApi>
+  <enableFeeds>false</enableFeeds>
+  <enableHistory>true</enableHistory>
+  <enableReports>true</enableReports>
+  <enableSearch>true</enableSearch>
+  <enableSharing>true</enableSharing>
+  <enableStreamingApi>true</enableStreamingApi>
+  <label>Regra de Ciclo de Faturamento do Cartao</label>
+  <nameField>
+    <displayFormat>CBR-{000000}</displayFormat>
+    <label>Numero da Regra</label>
+    <type>AutoNumber</type>
+  </nameField>
+  <pluralLabel>Regras de Ciclo de Faturamento</pluralLabel>
+  <sharingModel>Private</sharingModel>
+  <visibility>Public</visibility>
+</CustomObject>

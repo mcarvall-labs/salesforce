@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<CustomField xmlns="http://soap.sforce.com/2006/04/metadata">
+    <fullName>AXF_CBR_LKP_CreditCard__c</fullName>
+    <label>Cartao de Credito</label>
+    <type>Lookup</type>
+    <referenceTo>AXF_OBJ_CreditCard__c</referenceTo>
+    <relationshipName>AXF_REL_CardBillingRules</relationshipName>
+    <deleteConstraint>Cascade</deleteConstraint>
+    <required>true</required>
+    <description
+  >Cartao ao qual a regra de ciclo pertence. Accesso segue o cartao pai (owner-sync, G2); sem Delete de negocio (AXF-35).</description>
+</CustomField>
