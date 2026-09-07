@@ -9,6 +9,10 @@
  * (person "Ana"/"A", accounts DEMO-00N, Item UUID 0000…0002, Client ID
  * "axon-exemplo-client-id", CPF 000.000.000-00). Banks keep their real names.
  * They can be replaced by swapping the static resource — no code change.
+ *
+ * Five base names are historical (meu-pluggy, criar-aplicacao, aplicacao,
+ * credenciais, copiar-item-id) and now carry the re-shot screencast for their
+ * step; two are new (meupluggyAccount, meupluggyConnectNext).
  */
 export const OFFICIAL_LINKS = {
   meupluggy: "https://meupluggy.com.br/",
@@ -39,7 +43,7 @@ export const STEPS = [
     phase: "credentials",
     link: "meupluggy",
     action: null,
-    media: "meupluggyConnectFirst",
+    media: "meu-pluggy",
     help: true
   },
   {
@@ -55,14 +59,14 @@ export const STEPS = [
     phase: "credentials",
     link: "dashboard",
     action: null,
-    media: "dashboardApp"
+    media: "criar-aplicacao"
   },
   {
     id: "credentials",
     phase: "credentials",
     link: "dashboard",
     action: "openSecureForm",
-    media: "credentials",
+    media: "credenciais",
     help: true
   },
   {
@@ -77,7 +81,7 @@ export const STEPS = [
     phase: "discovery",
     link: "dashboard",
     action: null,
-    media: "dashboardConnect",
+    media: "aplicacao",
     help: true
   },
   {
@@ -85,7 +89,7 @@ export const STEPS = [
     phase: "discovery",
     link: "dashboard",
     action: null,
-    media: "itemId",
+    media: "copiar-item-id",
     help: true
   },
   {
