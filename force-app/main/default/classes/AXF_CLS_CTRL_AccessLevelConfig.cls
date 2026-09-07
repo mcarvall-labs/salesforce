@@ -66,15 +66,15 @@ public with sharing class AXF_CLS_CTRL_AccessLevelConfig {
     List<User> users = [
       SELECT Id, Name, Username, IsActive
       FROM User
-      WHERE IsActive = TRUE
-      AND UserType = 'Standard'
+      WHERE IsActive = TRUE AND UserType = 'Standard'
       WITH USER_MODE
       ORDER BY Name
       LIMIT 200
     ];
 
     Set<Id> ids = new Map<Id, User>(users).keySet();
-    Map<Id, String> levels = new ALT_CLS_AxonAccessProvisioning().currentLevels(ids);
+    Map<Id, String> levels = new ALT_CLS_AxonAccessProvisioning()
+      .currentLevels(ids);
 
     List<UserAccessDTO> dtos = new List<UserAccessDTO>();
     for (User u : users) {
@@ -99,16 +99,22 @@ public with sharing class AXF_CLS_CTRL_AccessLevelConfig {
     out.userId = userId;
     out.level = level;
 
-    ALT_CLS_AxonAccessProvisioning.Tier tier = ALT_CLS_AxonAccessProvisioning.parseLevel(level);
+    ALT_CLS_AxonAccessProvisioning.Tier tier = ALT_CLS_AxonAccessProvisioning.parseLevel(
+      level
+    );
 
     ALT_CLS_AxonAccessProvisioning service = new ALT_CLS_AxonAccessProvisioning();
-    ALT_CLS_AxonAccessProvisioning.Result res = service.applyAccessLevel(userId, tier);
+    ALT_CLS_AxonAccessProvisioning.Result res = service.applyAccessLevel(
+      userId,
+      tier
+    );
 
     out.outcome = res.outcome == null ? null : res.outcome.name();
     out.message = res.message;
 
     if (userId != null && userId.getSobjectType() == User.SObjectType) {
-      out.currentLevel = service.currentLevels(new Set<Id>{ userId }).get(userId);
+      out.currentLevel = service.currentLevels(new Set<Id>{ userId })
+        .get(userId);
     }
     return out;
   }
