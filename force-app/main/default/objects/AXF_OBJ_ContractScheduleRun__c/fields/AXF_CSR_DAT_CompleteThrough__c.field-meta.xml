@@ -1,0 +1,8 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<CustomField xmlns="http://soap.sforce.com/2006/04/metadata">
+    <fullName>AXF_CSR_DAT_CompleteThrough__c</fullName>
+    <label>Complete-through (data)</label>
+    <type>Date</type>
+    <required>false</required>
+    <description>Data-vencimento mais recente completamente publicada; status exibe complete-through e proxima acao (AXF-55 AC 4).</description>
+</CustomField>
