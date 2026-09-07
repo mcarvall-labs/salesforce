@@ -4,9 +4,7 @@
  * (correcao/estorno usam novos registros em stories posteriores).
  */
 public with sharing class AXF_CLS_FxSettlementTriggerHandler {
-  public static void handleBeforeDelete(
-    List<AXF_OBJ_FxSettlement__c> oldList
-  ) {
+  public static void handleBeforeDelete(List<AXF_OBJ_FxSettlement__c> oldList) {
     for (AXF_OBJ_FxSettlement__c record : oldList) {
       record.addError(
         'FxSettlement nao pode ser excluida (AXF-59; correcao/estorno usa novos registros).'

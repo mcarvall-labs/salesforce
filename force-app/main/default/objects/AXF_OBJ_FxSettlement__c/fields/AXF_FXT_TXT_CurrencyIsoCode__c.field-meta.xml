@@ -5,5 +5,6 @@
     <type>Text</type>
     <length>3</length>
     <required>true</required>
-    <description>Target currency ISO (padrao do registro e sempre target; AXF-59). Number + ISO proprio (Money contract do repo).</description>
+    <description
+  >Target currency ISO (padrao do registro e sempre target; AXF-59). Number + ISO proprio (Money contract do repo).</description>
 </CustomField>

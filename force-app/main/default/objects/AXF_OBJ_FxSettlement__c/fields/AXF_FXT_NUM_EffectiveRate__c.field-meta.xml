@@ -6,5 +6,6 @@
     <precision>18</precision>
     <scale>12</scale>
     <required>false</required>
-    <description>Taxa efetiva normalizada target per 1 source (AXF-59; Number(18,12)).</description>
+    <description
+  >Taxa efetiva normalizada target per 1 source (AXF-59; Number(18,12)).</description>
 </CustomField>

@@ -8,9 +8,12 @@
         <restricted>true</restricted>
         <valueSetDefinition>
             <sorted>false</sorted>
-            <value><fullName>NONE</fullName><default>true</default><label>Sem evidencia</label></value>
-            <value><fullName>ATTACHED</fullName><default>false</default><label>Comprovante anexado</label></value>
-            <value><fullName>VERIFIED</fullName><default>false</default><label>Verificado</label></value>
+            <value><fullName>NONE</fullName><default>true</default><label
+        >Sem evidencia</label></value>
+            <value><fullName>ATTACHED</fullName><default>false</default><label
+        >Comprovante anexado</label></value>
+            <value><fullName>VERIFIED</fullName><default>false</default><label
+        >Verificado</label></value>
         </valueSetDefinition>
     </valueSet>
     <description>Situacao da evidencia da operacao (AXF-59).</description>

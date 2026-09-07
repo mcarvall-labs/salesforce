@@ -6,5 +6,6 @@
     <precision>18</precision>
     <scale>2</scale>
     <required>false</required>
-    <description>Bruto em target currency (ISO em AXF_FXT_TXT_CurrencyIsoCode__c); Number + ISO proprio (AXF-59).</description>
+    <description
+  >Bruto em target currency (ISO em AXF_FXT_TXT_CurrencyIsoCode__c); Number + ISO proprio (AXF-59).</description>
 </CustomField>

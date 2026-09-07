@@ -7,5 +7,6 @@
     <relationshipName>AXF_REL_FxSettlements</relationshipName>
     <deleteConstraint>Restrict</deleteConstraint>
     <required>true</required>
-    <description>Pessoa/empresa titular da operacao (G1-3: required Restrict; sem Household/FinancialEntity - fechamento FX 06/09).</description>
+    <description
+  >Pessoa/empresa titular da operacao (G1-3: required Restrict; sem Household/FinancialEntity - fechamento FX 06/09).</description>
 </CustomField>

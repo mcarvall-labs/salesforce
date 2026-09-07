@@ -8,5 +8,6 @@
     <externalId>true</externalId>
     <caseSensitive>true</caseSensitive>
     <required>false</required>
-    <description>Chave da operacao do provedor ou gerada para operacao manual; idempotencia (AXF-59).</description>
+    <description
+  >Chave da operacao do provedor ou gerada para operacao manual; idempotencia (AXF-59).</description>
 </CustomField>

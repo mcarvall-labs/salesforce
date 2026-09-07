@@ -5,5 +5,6 @@
     <type>Text</type>
     <length>32</length>
     <required>false</required>
-    <description>Provedor/origem da operacao; MANUAL e definido pelo servico para rascunho registrado sem integracao (AXF-59). Integracoes futuras estendem.</description>
+    <description
+  >Provedor/origem da operacao; MANUAL e definido pelo servico para rascunho registrado sem integracao (AXF-59). Integracoes futuras estendem.</description>
 </CustomField>

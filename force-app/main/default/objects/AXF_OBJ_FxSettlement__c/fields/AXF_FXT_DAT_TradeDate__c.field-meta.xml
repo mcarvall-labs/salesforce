@@ -4,5 +4,6 @@
     <label>Data do Negocio</label>
     <type>Date</type>
     <required>false</required>
-    <description>Data do negocio (trade date) da operacao (AXF-59).</description>
+    <description
+  >Data do negocio (trade date) da operacao (AXF-59).</description>
 </CustomField>

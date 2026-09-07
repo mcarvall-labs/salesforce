@@ -8,8 +8,10 @@
         <restricted>true</restricted>
         <valueSetDefinition>
             <sorted>false</sorted>
-            <value><fullName>INBOUND</fullName><default>false</default><label>Entrada</label></value>
-            <value><fullName>OUTBOUND</fullName><default>false</default><label>Saida</label></value>
+            <value><fullName>INBOUND</fullName><default>false</default><label
+        >Entrada</label></value>
+            <value><fullName>OUTBOUND</fullName><default>false</default><label
+        >Saida</label></value>
         </valueSetDefinition>
     </valueSet>
     <description>Direcao da operacao INBOUND|OUTBOUND (AXF-59).</description>

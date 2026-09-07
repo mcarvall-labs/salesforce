@@ -5,5 +5,6 @@
     <type>Text</type>
     <length>3</length>
     <required>true</required>
-    <description>Source currency ISO explicita (ex.: USD); target usa AXF_FXT_TXT_CurrencyIsoCode__c (AXF-59).</description>
+    <description
+  >Source currency ISO explicita (ex.: USD); target usa AXF_FXT_TXT_CurrencyIsoCode__c (AXF-59).</description>
 </CustomField>

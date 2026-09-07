@@ -6,5 +6,6 @@
     <precision>18</precision>
     <scale>12</scale>
     <required>false</required>
-    <description>PTAX/referencia normalizada target per 1 source; referencia separada nunca substitui a efetiva (AXF-59).</description>
+    <description
+  >PTAX/referencia normalizada target per 1 source; referencia separada nunca substitui a efetiva (AXF-59).</description>
 </CustomField>

@@ -7,5 +7,6 @@
     <relationshipName>AXF_REL_FxSettlementPredecessors</relationshipName>
     <deleteConstraint>SetNull</deleteConstraint>
     <required>false</required>
-    <description>Liquidacao que este registro corrige/estorna (AXF-59/63).</description>
+    <description
+  >Liquidacao que este registro corrige/estorna (AXF-59/63).</description>
 </CustomField>

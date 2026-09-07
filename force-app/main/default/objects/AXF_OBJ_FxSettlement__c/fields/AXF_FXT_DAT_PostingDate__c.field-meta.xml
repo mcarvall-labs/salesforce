@@ -4,5 +4,6 @@
     <label>Data de Lancamento</label>
     <type>Date</type>
     <required>false</required>
-    <description>Data de lancamento/posting da operacao; coincide com os Entries (AXF-59).</description>
+    <description
+  >Data de lancamento/posting da operacao; coincide com os Entries (AXF-59).</description>
 </CustomField>

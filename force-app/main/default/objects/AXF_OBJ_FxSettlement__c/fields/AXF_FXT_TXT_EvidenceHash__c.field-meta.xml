@@ -5,5 +5,6 @@
     <type>Text</type>
     <length>64</length>
     <required>false</required>
-    <description>Hash da evidencia comprovante quando disponivel (conteudo integral fora do Salesforce Files; AXF-59/63).</description>
+    <description
+  >Hash da evidencia comprovante quando disponivel (conteudo integral fora do Salesforce Files; AXF-59/63).</description>
 </CustomField>

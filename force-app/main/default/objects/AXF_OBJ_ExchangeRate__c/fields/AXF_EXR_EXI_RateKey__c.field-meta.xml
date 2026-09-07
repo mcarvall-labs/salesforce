@@ -8,5 +8,6 @@
     <externalId>true</externalId>
     <caseSensitive>true</caseSensitive>
     <required>true</required>
-    <description>Provider+Pair+EffectiveDateTime+Bulletin+Side (append-only; AXF-92/59).</description>
+    <description
+  >Provider+Pair+EffectiveDateTime+Bulletin+Side (append-only; AXF-92/59).</description>
 </CustomField>

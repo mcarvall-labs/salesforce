@@ -8,8 +8,10 @@
         <restricted>true</restricted>
         <valueSetDefinition>
             <sorted>false</sorted>
-            <value><fullName>BUY</fullName><default>false</default><label>Compra</label></value>
-            <value><fullName>SELL</fullName><default>false</default><label>Venda</label></value>
+            <value><fullName>BUY</fullName><default>false</default><label
+        >Compra</label></value>
+            <value><fullName>SELL</fullName><default>false</default><label
+        >Venda</label></value>
         </valueSetDefinition>
     </valueSet>
     <description>Lado BUY|SELL da cotacao (AXF-92/59).</description>

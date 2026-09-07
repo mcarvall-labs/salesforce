@@ -12,7 +12,9 @@ private class ALT_CLS_FxSettlementServiceTest {
     return acc;
   }
 
-  private static ALT_CLS_FxSettlementService.DraftInputDTO baseInput(Id accountId) {
+  private static ALT_CLS_FxSettlementService.DraftInputDTO baseInput(
+    Id accountId
+  ) {
     ALT_CLS_FxSettlementService.DraftInputDTO input = new ALT_CLS_FxSettlementService.DraftInputDTO();
     input.accountId = accountId;
     input.direction = 'INBOUND';
@@ -75,7 +77,11 @@ private class ALT_CLS_FxSettlementServiceTest {
     ALT_CLS_FxSettlementService service = new ALT_CLS_FxSettlementService();
     ALT_CLS_FxSettlementService.ResultDTO result = service.createDraft(input);
 
-    Assert.areEqual('PENDING_DETAILS', result.state, 'Dados ausentes -> PENDING_DETAILS.');
+    Assert.areEqual(
+      'PENDING_DETAILS',
+      result.state,
+      'Dados ausentes -> PENDING_DETAILS.'
+    );
 
     AXF_OBJ_FxSettlement__c saved = [
       SELECT
@@ -87,10 +93,26 @@ private class ALT_CLS_FxSettlementServiceTest {
       WHERE Id = :result.settlementId
       LIMIT 1
     ];
-    Assert.areEqual(null, saved.AXF_FXT_NUM_EffectiveRate__c, 'Nao presume taxa.');
-    Assert.areEqual(null, saved.AXF_FXT_NUM_ConvertedSource__c, 'Nao presume valor convertido.');
-    Assert.areEqual(null, saved.AXF_FXT_CUR_GrossTargetAmount__c, 'Nao presume bruto alvo.');
-    Assert.areEqual(1000, saved.AXF_FXT_NUM_DeliveredSource__c, 'Preserva caixa observado conhecido.');
+    Assert.areEqual(
+      null,
+      saved.AXF_FXT_NUM_EffectiveRate__c,
+      'Nao presume taxa.'
+    );
+    Assert.areEqual(
+      null,
+      saved.AXF_FXT_NUM_ConvertedSource__c,
+      'Nao presume valor convertido.'
+    );
+    Assert.areEqual(
+      null,
+      saved.AXF_FXT_CUR_GrossTargetAmount__c,
+      'Nao presume bruto alvo.'
+    );
+    Assert.areEqual(
+      1000,
+      saved.AXF_FXT_NUM_DeliveredSource__c,
+      'Preserva caixa observado conhecido.'
+    );
   }
 
   @IsTest

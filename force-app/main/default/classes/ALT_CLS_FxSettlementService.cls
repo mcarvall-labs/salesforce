@@ -73,11 +73,20 @@ public with sharing class ALT_CLS_FxSettlementService {
 
     String provider = PROVIDER_MANUAL;
     String operationKey = String.isBlank(input.operationKey)
-      ? 'man-' + AXF_CLS_IdentityFraming.sha256Hex(String.valueOf(Datetime.now().getTime())).substring(0, 20)
+      ? 'man-' +
+        AXF_CLS_IdentityFraming.sha256Hex(
+            String.valueOf(Datetime.now().getTime())
+          )
+          .substring(0, 20)
       : input.operationKey.trim();
 
     String settlementKey = AXF_CLS_IdentityFraming.key(
-      new List<Object>{ 'fxt-v1', String.valueOf(input.accountId), provider, operationKey }
+      new List<Object>{
+        'fxt-v1',
+        String.valueOf(input.accountId),
+        provider,
+        operationKey
+      }
     );
 
     // Replay/idempotencia por chave (G6).
@@ -121,7 +130,9 @@ public with sharing class ALT_CLS_FxSettlementService {
       ? STATE_DRAFT
       : STATE_PENDING_DETAILS;
     settlement.AXF_FXT_TXT_EvidenceHash__c = input.evidenceHash;
-    settlement.AXF_FXT_PKL_EvidenceStatus__c = String.isBlank(input.evidenceHash)
+    settlement.AXF_FXT_PKL_EvidenceStatus__c = String.isBlank(
+        input.evidenceHash
+      )
       ? EVIDENCE_NONE
       : 'ATTACHED';
     settlement.AXF_FXT_NUM_Version__c = 0;
@@ -152,7 +163,9 @@ public with sharing class ALT_CLS_FxSettlementService {
       );
     }
     if (input.direction != 'INBOUND' && input.direction != 'OUTBOUND') {
-      throw new AXF_CLS_FxSettlementException('Direcao invalida (INBOUND|OUTBOUND).');
+      throw new AXF_CLS_FxSettlementException(
+        'Direcao invalida (INBOUND|OUTBOUND).'
+      );
     }
     if (
       String.isBlank(input.sourceCurrency) ||
@@ -173,7 +186,9 @@ public with sharing class ALT_CLS_FxSettlementService {
       );
     }
     if (input.effectiveRate != null && input.effectiveRate < 0) {
-      throw new AXF_CLS_FxSettlementException('Taxa efetiva deve ser nao negativa.');
+      throw new AXF_CLS_FxSettlementException(
+        'Taxa efetiva deve ser nao negativa.'
+      );
     }
   }
 }

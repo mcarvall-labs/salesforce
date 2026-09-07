@@ -6,5 +6,6 @@
     <precision>18</precision>
     <scale>2</scale>
     <required>false</required>
-    <description>Movimento bancario liquido absoluto em target currency (AXF-59).</description>
+    <description
+  >Movimento bancario liquido absoluto em target currency (AXF-59).</description>
 </CustomField>

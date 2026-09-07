@@ -8,5 +8,6 @@
     <externalId>true</externalId>
     <caseSensitive>true</caseSensitive>
     <required>false</required>
-    <description>SHA256(frame(Account, Provider, OperationKey)) - unicidade por titular/provedor/operacao (G6; AXF-59).</description>
+    <description
+  >SHA256(frame(Account, Provider, OperationKey)) - unicidade por titular/provedor/operacao (G6; AXF-59).</description>
 </CustomField>

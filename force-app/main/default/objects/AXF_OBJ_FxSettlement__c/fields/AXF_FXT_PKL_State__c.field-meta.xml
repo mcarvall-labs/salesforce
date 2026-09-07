@@ -8,12 +8,18 @@
         <restricted>true</restricted>
         <valueSetDefinition>
             <sorted>false</sorted>
-            <value><fullName>DRAFT</fullName><default>true</default><label>Rascunho</label></value>
-            <value><fullName>PENDING_DETAILS</fullName><default>false</default><label>Dados pendentes</label></value>
-            <value><fullName>CONFIRMED</fullName><default>false</default><label>Confirmada</label></value>
-            <value><fullName>CORRECTION</fullName><default>false</default><label>Correcao</label></value>
-            <value><fullName>REVERSAL</fullName><default>false</default><label>Estorno</label></value>
+            <value><fullName>DRAFT</fullName><default>true</default><label
+        >Rascunho</label></value>
+            <value><fullName>PENDING_DETAILS</fullName><default
+        >false</default><label>Dados pendentes</label></value>
+            <value><fullName>CONFIRMED</fullName><default>false</default><label
+        >Confirmada</label></value>
+            <value><fullName>CORRECTION</fullName><default>false</default><label
+        >Correcao</label></value>
+            <value><fullName>REVERSAL</fullName><default>false</default><label
+        >Estorno</label></value>
         </valueSetDefinition>
     </valueSet>
-    <description>Lifecycle da liquidacao: DRAFT; PENDING_DETAILS quando ha dados ausentes (nao presume taxa/encargo); CONFIRMED append-only; CORRECTION/REVERSAL compensatorios (AXF-59/63).</description>
+    <description
+  >Lifecycle da liquidacao: DRAFT; PENDING_DETAILS quando ha dados ausentes (nao presume taxa/encargo); CONFIRMED append-only; CORRECTION/REVERSAL compensatorios (AXF-59/63).</description>
 </CustomField>
