@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<ValidationRule xmlns="http://soap.sforce.com/2006/04/metadata">
+    <fullName>AXF_FXC_VR_CurrencyRestrictedToSettlement</fullName>
+    <active>true</active>
+    <description>Moeda do encargo restrita a source ou target do Settlement (moeda terceira recusada; AXF-61).</description>
+    <errorConditionFormula>AND(NOT(ISBLANK(AXF_FXC_TXT_CurrencyIsoCode__c)), NOT(ISBLANK(AXF_FXC_MDR_Settlement__r.AXF_FXT_TXT_SourceCurrency__c)), NOT(ISBLANK(AXF_FXC_MDR_Settlement__r.AXF_FXT_TXT_CurrencyIsoCode__c)), AND(AXF_FXC_TXT_CurrencyIsoCode__c != AXF_FXC_MDR_Settlement__r.AXF_FXT_TXT_SourceCurrency__c, AXF_FXC_TXT_CurrencyIsoCode__c != AXF_FXC_MDR_Settlement__r.AXF_FXT_TXT_CurrencyIsoCode__c))</errorConditionFormula>
+    <errorDisplayField>AXF_FXC_TXT_CurrencyIsoCode__c</errorDisplayField>
+    <errorMessage>Moeda do encargo deve ser a source ou a target da liquidacao; moeda terceira exige liquidacao/lancamento separado.</errorMessage>
+</ValidationRule>

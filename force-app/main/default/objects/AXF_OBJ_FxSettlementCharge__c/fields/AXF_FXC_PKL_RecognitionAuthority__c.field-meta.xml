@@ -1,0 +1,16 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<CustomField xmlns="http://soap.sforce.com/2006/04/metadata">
+    <fullName>AXF_FXC_PKL_RecognitionAuthority__c</fullName>
+    <label>Autoridade de Reconhecimento</label>
+    <type>Picklist</type>
+    <required>true</required>
+    <valueSet>
+        <restricted>true</restricted>
+        <valueSetDefinition>
+            <sorted>false</sorted>
+            <value><fullName>DERIVED_CONTRIBUTION</fullName><default>false</default><label>Contribuicao derivada</label></value>
+            <value><fullName>SEPARATE_ENTRY</fullName><default>false</default><label>Lancamento separado</label></value>
+        </valueSetDefinition>
+    </valueSet>
+    <description>Exatamente uma: DERIVED_CONTRIBUTION (gerada por chave) ou SEPARATE_ENTRY (exige AXF_FXC_LKP_SeparateEntry__c) - impede dupla despesa (AXF-61).</description>
+</CustomField>

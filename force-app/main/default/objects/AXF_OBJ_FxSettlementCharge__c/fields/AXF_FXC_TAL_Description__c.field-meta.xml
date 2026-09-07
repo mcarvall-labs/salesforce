@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<CustomField xmlns="http://soap.sforce.com/2006/04/metadata">
+    <fullName>AXF_FXC_TAL_Description__c</fullName>
+    <label>Descricao (redigida)</label>
+    <length>32768</length>
+    <type>LongTextArea</type>
+    <visibleLines>3</visibleLines>
+    <description>Descricao redigida do encargo; sem segredos/PII (AXF-61).</description>
+</CustomField>

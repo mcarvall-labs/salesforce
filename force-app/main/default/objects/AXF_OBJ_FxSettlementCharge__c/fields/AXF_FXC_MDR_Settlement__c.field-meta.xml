@@ -1,0 +1,13 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<CustomField xmlns="http://soap.sforce.com/2006/04/metadata">
+    <fullName>AXF_FXC_MDR_Settlement__c</fullName>
+    <label>Liquidacao Cambial</label>
+    <type>MasterDetail</type>
+    <referenceTo>AXF_OBJ_FxSettlement__c</referenceTo>
+    <relationshipLabel>Encargos de Liquidacao Cambial</relationshipLabel>
+    <relationshipName>FxSettlementCharges</relationshipName>
+    <relationshipOrder>0</relationshipOrder>
+    <reparentableMasterDetail>false</reparentableMasterDetail>
+    <writeRequiresMasterRead>false</writeRequiresMasterRead>
+    <required>true</required>
+</CustomField>
