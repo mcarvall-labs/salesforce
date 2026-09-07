@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<CustomField xmlns="http://soap.sforce.com/2006/04/metadata">
+    <fullName>AXF_FXT_TXT_SourceCurrency__c</fullName>
+    <label>Moeda Origem (ISO)</label>
+    <type>Text</type>
+    <length>3</length>
+    <required>true</required>
+    <description>Source currency ISO explicita (ex.: USD); target usa AXF_FXT_TXT_CurrencyIsoCode__c (AXF-59).</description>
+</CustomField>

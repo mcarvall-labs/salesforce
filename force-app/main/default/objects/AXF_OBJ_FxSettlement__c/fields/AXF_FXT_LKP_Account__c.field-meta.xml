@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<CustomField xmlns="http://soap.sforce.com/2006/04/metadata">
+    <fullName>AXF_FXT_LKP_Account__c</fullName>
+    <label>Titular</label>
+    <type>Lookup</type>
+    <referenceTo>Account</referenceTo>
+    <relationshipName>AXF_REL_FxSettlements</relationshipName>
+    <deleteConstraint>Restrict</deleteConstraint>
+    <required>true</required>
+    <description>Pessoa/empresa titular da operacao (G1-3: required Restrict; sem Household/FinancialEntity - fechamento FX 06/09).</description>
+</CustomField>

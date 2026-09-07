@@ -1,0 +1,17 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<CustomField xmlns="http://soap.sforce.com/2006/04/metadata">
+    <fullName>AXF_FXT_PKL_Kind__c</fullName>
+    <label>Natureza</label>
+    <type>Picklist</type>
+    <required>true</required>
+    <valueSet>
+        <restricted>true</restricted>
+        <valueSetDefinition>
+            <sorted>false</sorted>
+            <value><fullName>PRIMARY</fullName><default>true</default><label>Original</label></value>
+            <value><fullName>CORRECTION</fullName><default>false</default><label>Correcao</label></value>
+            <value><fullName>REVERSAL</fullName><default>false</default><label>Estorno</label></value>
+        </valueSetDefinition>
+    </valueSet>
+    <description>Natureza do registro: PRIMARY, CORRECTION ou REVERSAL (AXF-59/63; correcao/estorno usa novo registro, nunca edita confirmado).</description>
+</CustomField>

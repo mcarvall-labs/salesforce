@@ -1,0 +1,22 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<CustomObject xmlns="http://soap.sforce.com/2006/04/metadata">
+    <deploymentStatus>Deployed</deploymentStatus>
+    <description>Cotacao de cambio de referencia (base criada no fluxo AXF-59 para o lookup FXT; alimentacao/UX pertencem a AXF-92/24). OWD Public Read Only; escrita somente pelo principal de integracao; append-only (troca de provedor nao reescreve) (fechamento FX 06/09; AD-10).</description>
+    <enableActivities>false</enableActivities>
+    <enableBulkApi>true</enableBulkApi>
+    <enableFeeds>false</enableFeeds>
+    <enableHistory>true</enableHistory>
+    <enableReports>true</enableReports>
+    <enableSearch>true</enableSearch>
+    <enableSharing>true</enableSharing>
+    <enableStreamingApi>true</enableStreamingApi>
+    <label>Taxa de Cambio de Referencia</label>
+    <nameField>
+        <displayFormat>EXR-{000000}</displayFormat>
+        <label>Numero da Cotacao</label>
+        <type>AutoNumber</type>
+    </nameField>
+    <pluralLabel>Taxas de Cambio de Referencia</pluralLabel>
+    <sharingModel>ReadWrite</sharingModel>
+    <visibility>Public</visibility>
+</CustomObject>

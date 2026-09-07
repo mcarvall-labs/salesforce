@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<CustomField xmlns="http://soap.sforce.com/2006/04/metadata">
+    <fullName>AXF_FXT_CUR_GrossTargetAmount__c</fullName>
+    <label>Valor Bruto (target)</label>
+    <type>Number</type>
+    <precision>18</precision>
+    <scale>2</scale>
+    <required>false</required>
+    <description>Bruto em target currency (ISO em AXF_FXT_TXT_CurrencyIsoCode__c); Number + ISO proprio (AXF-59).</description>
+</CustomField>

@@ -1,0 +1,17 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<CustomField xmlns="http://soap.sforce.com/2006/04/metadata">
+    <fullName>AXF_FXT_PKL_EvidenceStatus__c</fullName>
+    <label>Status da Evidencia</label>
+    <type>Picklist</type>
+    <required>false</required>
+    <valueSet>
+        <restricted>true</restricted>
+        <valueSetDefinition>
+            <sorted>false</sorted>
+            <value><fullName>NONE</fullName><default>true</default><label>Sem evidencia</label></value>
+            <value><fullName>ATTACHED</fullName><default>false</default><label>Comprovante anexado</label></value>
+            <value><fullName>VERIFIED</fullName><default>false</default><label>Verificado</label></value>
+        </valueSetDefinition>
+    </valueSet>
+    <description>Situacao da evidencia da operacao (AXF-59).</description>
+</CustomField>
