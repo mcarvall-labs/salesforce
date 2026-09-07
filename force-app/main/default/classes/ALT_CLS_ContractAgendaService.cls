@@ -87,14 +87,22 @@ public with sharing class ALT_CLS_ContractAgendaService {
   // 1. Criar / reutilizar run da agenda
   // ------------------------------------------------------------------
   public RunResultDTO createRun(RunInputDTO input) {
-    if (input == null || input.contractId == null || input.termVersionId == null) {
-      throw new AXF_CLS_ContractException('Contrato, TermVersion e obrigatorios.');
+    if (
+      input == null ||
+      input.contractId == null ||
+      input.termVersionId == null
+    ) {
+      throw new AXF_CLS_ContractException(
+        'Contrato, TermVersion e obrigatorios.'
+      );
     }
     if (input.horizonFrom == null || input.horizonThrough == null) {
       throw new AXF_CLS_ContractException('Horizonte (de/ate) e obrigatorio.');
     }
     if (input.horizonThrough < input.horizonFrom) {
-      throw new AXF_CLS_ContractException('Horizonte invalido (ate antes de de).');
+      throw new AXF_CLS_ContractException(
+        'Horizonte invalido (ate antes de de).'
+      );
     }
 
     ContractContext ctx = loadContext(input.contractId, input.termVersionId);
@@ -119,7 +127,9 @@ public with sharing class ALT_CLS_ContractAgendaService {
         input.horizonThrough
       }
     );
-    AXF_OBJ_ContractScheduleRun__c byKey = findRunByOccurrenceKey(occurrenceKey);
+    AXF_OBJ_ContractScheduleRun__c byKey = findRunByOccurrenceKey(
+      occurrenceKey
+    );
     if (byKey != null) {
       return toResult(byKey, null, false);
     }
@@ -205,7 +215,9 @@ public with sharing class ALT_CLS_ContractAgendaService {
       } else if (item.action == ACTION_PRESERVED) {
         preserved++;
       } else if (item.action == ACTION_SUPERSEDED) {
-        AXF_OBJ_FinancialTransaction__c target = existing.get(item.occurrenceKey);
+        AXF_OBJ_FinancialTransaction__c target = existing.get(
+          item.occurrenceKey
+        );
         if (target != null && isSupersedeAllowed(target, ctx)) {
           target.AXF_FTX_NUM_Magnitude__c = item.amount;
           target.AXF_FTX_DAT_DueDate__c = item.dueDate;
@@ -219,7 +231,11 @@ public with sharing class ALT_CLS_ContractAgendaService {
       } else {
         blocked++;
       }
-      if (item.dueDate != null && (completeThrough == null || item.dueDate > completeThrough)) {
+      if (
+        item.dueDate != null &&
+        (completeThrough == null ||
+        item.dueDate > completeThrough)
+      ) {
         completeThrough = item.dueDate;
       }
     }
@@ -231,24 +247,36 @@ public with sharing class ALT_CLS_ContractAgendaService {
     run.AXF_CSR_DAT_CompleteThrough__c = completeThrough;
     run.AXF_CSR_PKL_State__c = STATE_COMPLETE;
     run.AXF_CSR_EXI_ActiveScopeToken__c = null; // libera nova geracao do mesmo contrato
-    run.AXF_CSR_NUM_Version__c = (run.AXF_CSR_NUM_Version__c == null ? 0 : run.AXF_CSR_NUM_Version__c) + 1;
+    run.AXF_CSR_NUM_Version__c =
+      (run.AXF_CSR_NUM_Version__c == null ? 0 : run.AXF_CSR_NUM_Version__c) + 1;
     update run;
 
     RunResultDTO result = toResult(run, null, false);
-    result.message = added + ' adicionada(s); ' + superseded + ' superseded; ' + blocked + ' bloqueada(s).';
+    result.message =
+      added +
+      ' adicionada(s); ' +
+      superseded +
+      ' superseded; ' +
+      blocked +
+      ' bloqueada(s).';
     return result;
   }
 
   // ------------------------------------------------------------------
   // classificacao
   // ------------------------------------------------------------------
-  private List<AgendaItemDTO> classifyDelta(ContractContext ctx, AXF_OBJ_ContractScheduleRun__c run) {
+  private List<AgendaItemDTO> classifyDelta(
+    ContractContext ctx,
+    AXF_OBJ_ContractScheduleRun__c run
+  ) {
     List<AgendaItemDTO> desired = desiredItems(ctx, run);
     Map<String, AXF_OBJ_FinancialTransaction__c> existing = loadExisting(ctx);
     List<AgendaItemDTO> result = new List<AgendaItemDTO>();
 
     for (AgendaItemDTO item : desired) {
-      AXF_OBJ_FinancialTransaction__c current = existing.get(item.occurrenceKey);
+      AXF_OBJ_FinancialTransaction__c current = existing.get(
+        item.occurrenceKey
+      );
       if (current == null) {
         item.action = ACTION_ADDED;
       } else if (isProtected(current, ctx)) {
@@ -264,7 +292,10 @@ public with sharing class ALT_CLS_ContractAgendaService {
     return result;
   }
 
-  private List<AgendaItemDTO> desiredItems(ContractContext ctx, AXF_OBJ_ContractScheduleRun__c run) {
+  private List<AgendaItemDTO> desiredItems(
+    ContractContext ctx,
+    AXF_OBJ_ContractScheduleRun__c run
+  ) {
     List<AgendaItemDTO> items = new List<AgendaItemDTO>();
     Date horizonStart = run.AXF_CSR_DAT_HorizonFrom__c;
     Date horizonEnd = run.AXF_CSR_DAT_HorizonThrough__c;
@@ -286,13 +317,23 @@ public with sharing class ALT_CLS_ContractAgendaService {
     input.timeZone = ctx.timeZone;
     input.calendarPolicy = ctx.calendarPolicy;
 
-    ALT_CLS_ContractRemunerationService.ScheduleCalculationResultDTO calc = rem.calculateSchedule(input);
+    ALT_CLS_ContractRemunerationService.ScheduleCalculationResultDTO calc = rem.calculateSchedule(
+      input
+    );
     if (calc == null || calc.scheduleItems == null) {
-      throw new AXF_CLS_ContractException('Nao foi possivel calcular a agenda do termo.');
+      throw new AXF_CLS_ContractException(
+        'Nao foi possivel calcular a agenda do termo.'
+      );
     }
 
-    for (ALT_CLS_ContractRemunerationService.ScheduleItemDTO raw : calc.scheduleItems) {
-      if (raw.dueDate == null || raw.dueDate < horizonStart || raw.dueDate > horizonEnd) {
+    for (
+      ALT_CLS_ContractRemunerationService.ScheduleItemDTO raw : calc.scheduleItems
+    ) {
+      if (
+        raw.dueDate == null ||
+        raw.dueDate < horizonStart ||
+        raw.dueDate > horizonEnd
+      ) {
         continue;
       }
       AgendaItemDTO item = new AgendaItemDTO();
@@ -305,7 +346,9 @@ public with sharing class ALT_CLS_ContractAgendaService {
     return items;
   }
 
-  private Map<String, AXF_OBJ_FinancialTransaction__c> loadExisting(ContractContext ctx) {
+  private Map<String, AXF_OBJ_FinancialTransaction__c> loadExisting(
+    ContractContext ctx
+  ) {
     Map<String, AXF_OBJ_FinancialTransaction__c> resultByKey = new Map<String, AXF_OBJ_FinancialTransaction__c>();
     for (AXF_OBJ_FinancialTransaction__c ftx : [
       SELECT
@@ -316,9 +359,10 @@ public with sharing class ALT_CLS_ContractAgendaService {
         AXF_FTX_DAT_DueDate__c,
         AXF_FTX_LKP_ContractApplicationSnapshot__c
       FROM AXF_OBJ_FinancialTransaction__c
-      WHERE AXF_FTX_LKP_Contract__c = :ctx.contractId
+      WHERE
+        AXF_FTX_LKP_Contract__c = :ctx.contractId
         AND AXF_FTX_LKP_ContractTermVersion__c = :ctx.termVersionId
-        AND AXF_FTX_EXI_PlanIdentityHash__c != null
+        AND AXF_FTX_EXI_PlanIdentityHash__c != NULL
     ]) {
       resultByKey.put(ftx.AXF_FTX_EXI_PlanIdentityHash__c, ftx);
     }
@@ -352,7 +396,9 @@ public with sharing class ALT_CLS_ContractAgendaService {
       cas.AXF_CAS_TAL_FieldProvenance__c
     );
     for (String field : provenance.keySet()) {
-      if (provenance.get(field) == ALT_CLS_ContractSnapshotService.PROV_OVERRIDDEN) {
+      if (
+        provenance.get(field) == ALT_CLS_ContractSnapshotService.PROV_OVERRIDDEN
+      ) {
         return true;
       }
     }
@@ -372,7 +418,8 @@ public with sharing class ALT_CLS_ContractAgendaService {
     AXF_OBJ_FinancialTransaction__c ftx,
     ContractContext ctx
   ) {
-    return ftx.AXF_FTX_PKL_Status__c == FTX_STATUS_PLANNED && !hasActiveOverride(ftx);
+    return ftx.AXF_FTX_PKL_Status__c == FTX_STATUS_PLANNED &&
+      !hasActiveOverride(ftx);
   }
 
   // ------------------------------------------------------------------
@@ -451,7 +498,10 @@ public with sharing class ALT_CLS_ContractAgendaService {
     root.put('model', ctx.model);
     root.put('currencyIsoCode', ctx.currencyIsoCode);
     root.put('horizonFrom', String.valueOf(run.AXF_CSR_DAT_HorizonFrom__c));
-    root.put('horizonThrough', String.valueOf(run.AXF_CSR_DAT_HorizonThrough__c));
+    root.put(
+      'horizonThrough',
+      String.valueOf(run.AXF_CSR_DAT_HorizonThrough__c)
+    );
     List<Map<String, Object>> rows = new List<Map<String, Object>>();
     Decimal totalAdded = 0;
     Decimal totalResidual = 0;
@@ -502,10 +552,18 @@ public with sharing class ALT_CLS_ContractAgendaService {
     result.state = run.AXF_CSR_PKL_State__c;
     result.message = 'Run em ' + run.AXF_CSR_PKL_State__c + '.';
     result.items = items == null ? new List<AgendaItemDTO>() : items;
-    result.added = run.AXF_CSR_NUM_Added__c == null ? 0 : Integer.valueOf(run.AXF_CSR_NUM_Added__c);
-    result.preserved = run.AXF_CSR_NUM_Preserved__c == null ? 0 : Integer.valueOf(run.AXF_CSR_NUM_Preserved__c);
-    result.superseded = run.AXF_CSR_NUM_Superseded__c == null ? 0 : Integer.valueOf(run.AXF_CSR_NUM_Superseded__c);
-    result.blocked = run.AXF_CSR_NUM_Blocked__c == null ? 0 : Integer.valueOf(run.AXF_CSR_NUM_Blocked__c);
+    result.added = run.AXF_CSR_NUM_Added__c == null
+      ? 0
+      : Integer.valueOf(run.AXF_CSR_NUM_Added__c);
+    result.preserved = run.AXF_CSR_NUM_Preserved__c == null
+      ? 0
+      : Integer.valueOf(run.AXF_CSR_NUM_Preserved__c);
+    result.superseded = run.AXF_CSR_NUM_Superseded__c == null
+      ? 0
+      : Integer.valueOf(run.AXF_CSR_NUM_Superseded__c);
+    result.blocked = run.AXF_CSR_NUM_Blocked__c == null
+      ? 0
+      : Integer.valueOf(run.AXF_CSR_NUM_Blocked__c);
     return result;
   }
 
@@ -611,10 +669,14 @@ public with sharing class ALT_CLS_ContractAgendaService {
       LIMIT 1
     ];
     if (terms.isEmpty() || terms[0].AXF_CTV_LKP_Contract__c != contractId) {
-      throw new AXF_CLS_ContractException('TermVersion invalida para o contrato.');
+      throw new AXF_CLS_ContractException(
+        'TermVersion invalida para o contrato.'
+      );
     }
     if (terms[0].AXF_CTV_PKL_Status__c != 'ACTIVE') {
-      throw new AXF_CLS_ContractException('Somente TermVersion ACTIVE gera agenda.');
+      throw new AXF_CLS_ContractException(
+        'Somente TermVersion ACTIVE gera agenda.'
+      );
     }
 
     ContractContext ctx = new ContractContext();
@@ -623,9 +685,13 @@ public with sharing class ALT_CLS_ContractAgendaService {
     ctx.accountId = contract.AXF_CTR_LKP_Account__c;
     ctx.contractKey = contract.AXF_CTR_EXI_ContractKey__c;
     ctx.contractType = contract.AXF_CTR_PKL_Type__c;
-    ctx.direction = 'EXPENSE'.equalsIgnoreCase(ctx.contractType) ? 'DEBIT' : 'CREDIT';
+    ctx.direction = 'EXPENSE'.equalsIgnoreCase(ctx.contractType)
+      ? 'DEBIT'
+      : 'CREDIT';
     ctx.termVersionId = termVersionId;
-    ctx.termRevision = terms[0].AXF_CTV_NUM_Revision__c == null ? 0 : terms[0].AXF_CTV_NUM_Revision__c.longValue();
+    ctx.termRevision = terms[0].AXF_CTV_NUM_Revision__c == null
+      ? 0
+      : terms[0].AXF_CTV_NUM_Revision__c.longValue();
     ctx.model = terms[0].AXF_CTV_PKL_RemunerationModel__c;
     ctx.currencyIsoCode = terms[0].AXF_CTV_TXT_CurrencyIsoCode__c;
     ctx.effectiveFrom = terms[0].AXF_CTV_DAT_EffectiveFrom__c;
@@ -633,7 +699,9 @@ public with sharing class ALT_CLS_ContractAgendaService {
     ctx.contractedAmount = terms[0].AXF_CTV_CUR_ContractedAmount__c;
     ctx.rate = terms[0].AXF_CTV_CUR_Rate__c;
     ctx.hoursQuantity = terms[0].AXF_CTV_NUM_HoursQuantity__c;
-    ctx.installments = terms[0].AXF_CTV_NUM_Installments__c == null ? null : Integer.valueOf(terms[0].AXF_CTV_NUM_Installments__c);
+    ctx.installments = terms[0].AXF_CTV_NUM_Installments__c == null
+      ? null
+      : Integer.valueOf(terms[0].AXF_CTV_NUM_Installments__c);
     ctx.proportionalityPolicy = terms[0].AXF_CTV_PKL_ProportionalityPolicy__c;
     ctx.timeZone = terms[0].AXF_CTV_TXT_TimeZone__c;
     ctx.calendarPolicy = terms[0].AXF_CTV_TXT_CalendarPolicy__c;
