@@ -103,3 +103,28 @@ o que aparece na tela.
 3. Substituir os 10 arquivos em `force-app/main/default/staticresources/AXF_pluggyGuideMedia/`.
 4. Ajustar `labels.js` (`mediaAlt`/`body` PT+EN) só se algum fluxo do Pluggy mudou.
 5. Deploy AXON_DEV, `npm run test:unit` (guia), validar no wizard, PR → develop, AXF-99 → Em análise.
+
+## Executado (06/09/2026)
+
+Michel entregou ~78 screenshots reais em `_bmad-output/pluggy-screenshots/` (5 fluxos).
+Os 5 pares `.mp4`+`-poster.png` foram **regerados a partir desses screenshots reais**, não
+mais dos mockups da fase UX.
+
+| clip              | telas usadas (pasta `pluggy-screenshots`)                                                             | anonimização aplicada                                                                                                              |
+| ----------------- | ---------------------------------------------------------------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------- |
+| `meu-pluggy`      | `3/chrome_4knJkYnj2p`, `2/chrome_XiJdan2OId`, `2/chrome_MC1JudJWBL`, `2/chrome_OYmIrINwe7`, `2/chrome_XHnojWYyWa` | avatar `M`→`A`; saldos/limite/final de cartão → fictícios (R$ 1.500 / R$ 320 / xxxx 0001). Frames com CPF descartados. |
+| `criar-aplicacao` | `4/chrome_OHodlkQLZu`, `4/chrome_RK6an1uWTm`                                                          | "Bem-vindo de volta, Michel!" → "Bem-vindo de volta!"; banner "Faça um tour" removido; banners de trial/offline recortados; Client ID real → `axon-exemplo-client-id`; avatar→`A`. |
+| `credenciais`     | `4/chrome_RK6an1uWTm`, `4/chrome_RxxEYt01d7`                                                          | Client ID real → `axon-exemplo-client-id`; API Key (JWT) → texto de exemplo; Client Secret já vinha mascarado.       |
+| `aplicacao`       | `4/chrome_EKm5GxZa3k`, `4/chrome_vzBTEC4oZC`, `4/chrome_cJo8taWKPj`                                   | IDs de conexão (`2fa28325`, `4d4fa69f`) → `DEMO-001`/`DEMO-002`; banners de trial/offline recortados; avatar→`A`.    |
+| `copiar-item-id`  | `5/chrome_0QdHUZ1OMg`, `5/chrome_D3ayHcU8KV`                                                          | Item ID real `f1a652d5-…` → `0000000-0000-4000-8000-000000000002`; conta `00022740-6` → `DEMO-001`; final de cartão `3576`/`6644` → `0001`/`0002`; saldo → R$ 250,00; widget WhatsApp e banners removidos; avatar→`A`. |
+
+- Bancos reais (Itaú, Santander) mantidos — permitido pela regra de anonimização.
+- Todos os clipes: H.264 mudo, 1200×700, **40–145 KB**, ~7–15 s, cursor animado que desliza
+  até o botão + anel de pulso no clique, legenda "<ação> · Demonstração · dados fictícios"
+  queimada. Posters = frame do estado final.
+- Pipeline: `scratchpad/anon.py` + `scratchpad/build_videos.py` (PIL para redação/composição,
+  `C:\Program Files\ShareX\ffmpeg.exe` `libx264` para encode). Screenshots reais do Michel
+  **não** entram no repo.
+- `labels.js` **não** mudou — os `mediaAlt`/`body` (PT+EN) já descreviam os fluxos de forma
+  genérica e continuam corretos.
+- `aXF_LWC_pluggyGuide` jest: 12/12. Deploy AXON_DEV: OK.
