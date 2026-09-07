@@ -7,10 +7,7 @@
 private class AXF_CLS_CTRL_AccessLevelConfigTest {
   private static User buildStandardUser() {
     Profile p = [SELECT Id FROM Profile WHERE Name = 'Standard User' LIMIT 1];
-    String unique =
-      'axf7c' +
-      String.valueOf(Datetime.now().getTime()) +
-      Crypto.getRandomInteger();
+    String unique = 'axf7c' + String.valueOf(Datetime.now().getTime()) + Crypto.getRandomInteger();
     return new User(
       FirstName = 'Axon',
       LastName = 'CtrlTester',
@@ -29,11 +26,7 @@ private class AXF_CLS_CTRL_AccessLevelConfigTest {
     for (PermissionSetGroup psg : [
       SELECT Id, Status
       FROM PermissionSetGroup
-      WHERE
-        DeveloperName IN :new Set<String>{
-          'AXF_PSG_GestorFinanceiro',
-          'AXF_PSG_Participante'
-        }
+      WHERE DeveloperName IN :new Set<String>{ 'AXF_PSG_GestorFinanceiro', 'AXF_PSG_Participante' }
     ]) {
       if (psg.Status != 'Updated') {
         Test.calculatePermissionSetGroup(psg.Id);
@@ -49,17 +42,9 @@ private class AXF_CLS_CTRL_AccessLevelConfigTest {
   @IsTest
   static void canConfigureReflectsOverride() {
     AXF_CLS_CTRL_AccessLevelConfig.canConfigureOverride = false;
-    System.assertEquals(
-      false,
-      AXF_CLS_CTRL_AccessLevelConfig.canConfigure(),
-      'forbidden'
-    );
+    System.assertEquals(false, AXF_CLS_CTRL_AccessLevelConfig.canConfigure(), 'forbidden');
     AXF_CLS_CTRL_AccessLevelConfig.canConfigureOverride = true;
-    System.assertEquals(
-      true,
-      AXF_CLS_CTRL_AccessLevelConfig.canConfigure(),
-      'allowed'
-    );
+    System.assertEquals(true, AXF_CLS_CTRL_AccessLevelConfig.canConfigure(), 'allowed');
   }
 
   @IsTest
@@ -89,11 +74,7 @@ private class AXF_CLS_CTRL_AccessLevelConfigTest {
     for (AXF_CLS_CTRL_AccessLevelConfig.UserAccessDTO row : rows) {
       if (row.userId == target.Id) {
         sawTarget = true;
-        System.assertEquals(
-          ALT_CLS_AxonAccessProvisioning.LEVEL_GESTOR,
-          row.currentLevel,
-          'level reported'
-        );
+        System.assertEquals(ALT_CLS_AxonAccessProvisioning.LEVEL_GESTOR, row.currentLevel, 'level reported');
         System.assertEquals(target.Username, row.username, 'username on DTO');
         System.assertEquals(true, row.isActive, 'active flag');
       }
@@ -117,11 +98,7 @@ private class AXF_CLS_CTRL_AccessLevelConfigTest {
 
     System.assertEquals('SUCCEEDED', out.outcome, 'apply succeeds');
     System.assertEquals('participante', out.level, 'echoes requested level');
-    System.assertEquals(
-      ALT_CLS_AxonAccessProvisioning.LEVEL_PARTICIPANTE,
-      out.currentLevel,
-      'recalculated level'
-    );
+    System.assertEquals(ALT_CLS_AxonAccessProvisioning.LEVEL_PARTICIPANTE, out.currentLevel, 'recalculated level');
   }
 
   @IsTest
@@ -154,10 +131,6 @@ private class AXF_CLS_CTRL_AccessLevelConfigTest {
     );
     Test.stopTest();
 
-    System.assertEquals(
-      'FORBIDDEN',
-      out.outcome,
-      'service authority is enforced'
-    );
+    System.assertEquals('FORBIDDEN', out.outcome, 'service authority is enforced');
   }
 }

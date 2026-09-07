@@ -23,9 +23,7 @@ public with sharing class AXF_CLS_CTRL_FinancialEntry {
     try {
       return AXF_CLS_FinancialEntryService.createEntry(input);
     } catch (Exception unexpected) {
-      throw new AuraHandledException(
-        'Não foi possível concluir. Tente novamente.'
-      );
+      throw new AuraHandledException('Não foi possível concluir. Tente novamente.');
     }
   }
 }
