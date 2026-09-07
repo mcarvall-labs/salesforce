@@ -7,5 +7,6 @@
     <scale>0</scale>
     <required>false</required>
     <defaultValue>0</defaultValue>
-    <description>Contador de ocorrencias preservadas (drafts intocados confirmados na mesma previsao) (AXF-55).</description>
+    <description
+  >Contador de ocorrencias preservadas (drafts intocados confirmados na mesma previsao) (AXF-55).</description>
 </CustomField>

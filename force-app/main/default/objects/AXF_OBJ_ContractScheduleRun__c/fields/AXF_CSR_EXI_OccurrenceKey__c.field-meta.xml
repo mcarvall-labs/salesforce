@@ -8,5 +8,6 @@
     <externalId>true</externalId>
     <caseSensitive>true</caseSensitive>
     <required>false</required>
-    <description>Chave deterministica de replay/retomada (G6): derivada dos inputs do run (contracto/termo/horizonte/policy). Mesmos inputs retomam o mesmo run em vez de duplicar.</description>
+    <description
+  >Chave deterministica de replay/retomada (G6): derivada dos inputs do run (contracto/termo/horizonte/policy). Mesmos inputs retomam o mesmo run em vez de duplicar.</description>
 </CustomField>

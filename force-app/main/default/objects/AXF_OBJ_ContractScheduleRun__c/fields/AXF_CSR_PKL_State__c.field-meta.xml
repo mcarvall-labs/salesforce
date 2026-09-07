@@ -8,11 +8,16 @@
         <restricted>true</restricted>
         <valueSetDefinition>
             <sorted>false</sorted>
-            <value><fullName>PREVIEW</fullName><default>true</default><label>Previa calculada</label></value>
-            <value><fullName>APPLYING</fullName><default>false</default><label>Aplicando delta</label></value>
-            <value><fullName>COMPLETE</fullName><default>false</default><label>Concluida</label></value>
-            <value><fullName>FAILED</fullName><default>false</default><label>Falhou (retomavel)</label></value>
+            <value><fullName>PREVIEW</fullName><default>true</default><label
+        >Previa calculada</label></value>
+            <value><fullName>APPLYING</fullName><default>false</default><label
+        >Aplicando delta</label></value>
+            <value><fullName>COMPLETE</fullName><default>false</default><label
+        >Concluida</label></value>
+            <value><fullName>FAILED</fullName><default>false</default><label
+        >Falhou (retomavel)</label></value>
         </valueSetDefinition>
     </valueSet>
-    <description>PREVIEW = calculada, nada publicado (aguarda confirmacao humana); APPLYING = publicacao em andamento; COMPLETE = concluida com complete-through; FAILED = retomavel via replay/checkpoint (AXF-55 AC 1/2/4).</description>
+    <description
+  >PREVIEW = calculada, nada publicado (aguarda confirmacao humana); APPLYING = publicacao em andamento; COMPLETE = concluida com complete-through; FAILED = retomavel via replay/checkpoint (AXF-55 AC 1/2/4).</description>
 </CustomField>

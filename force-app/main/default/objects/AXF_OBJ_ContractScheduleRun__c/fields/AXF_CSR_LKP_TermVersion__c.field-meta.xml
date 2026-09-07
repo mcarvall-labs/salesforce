@@ -7,5 +7,6 @@
     <relationshipName>AXF_REL_TermScheduleRuns</relationshipName>
     <deleteConstraint>Restrict</deleteConstraint>
     <required>true</required>
-    <description>TermVersion ACTIVE aplicada na geracao desta agenda (AXF-55).</description>
+    <description
+  >TermVersion ACTIVE aplicada na geracao desta agenda (AXF-55).</description>
 </CustomField>

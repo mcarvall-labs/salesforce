@@ -5,5 +5,6 @@
     <length>131072</length>
     <type>LongTextArea</type>
     <visibleLines>4</visibleLines>
-    <description>Previa delta calculada (added/preserved/superseded/blocked com termo, policy, totais e residual) em JSON canonico; nada e publicado antes da confirmacao humana (AXF-55 AC 2).</description>
+    <description
+  >Previa delta calculada (added/preserved/superseded/blocked com termo, policy, totais e residual) em JSON canonico; nada e publicado antes da confirmacao humana (AXF-55 AC 2).</description>
 </CustomField>

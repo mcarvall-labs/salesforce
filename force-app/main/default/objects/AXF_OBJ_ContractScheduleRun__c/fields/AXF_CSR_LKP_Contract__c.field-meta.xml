@@ -7,5 +7,6 @@
     <relationshipName>AXF_REL_ContractScheduleRuns</relationshipName>
     <deleteConstraint>Restrict</deleteConstraint>
     <required>true</required>
-    <description>Contrato cuja agenda esta sendo gerada/revisada (AXF-55). Sem Household - escopo de org (ratificacao 06/09).</description>
+    <description
+  >Contrato cuja agenda esta sendo gerada/revisada (AXF-55). Sem Household - escopo de org (ratificacao 06/09).</description>
 </CustomField>

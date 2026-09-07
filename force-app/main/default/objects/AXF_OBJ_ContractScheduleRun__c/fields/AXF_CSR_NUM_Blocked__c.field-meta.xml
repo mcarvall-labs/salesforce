@@ -7,5 +7,6 @@
     <scale>0</scale>
     <required>false</required>
     <defaultValue>0</defaultValue>
-    <description>Contador de ocorrencias bloqueadas (confirmados/realizados/conciliados/overridden nunca tocados) (AXF-55 AC 3).</description>
+    <description
+  >Contador de ocorrencias bloqueadas (confirmados/realizados/conciliados/overridden nunca tocados) (AXF-55 AC 3).</description>
 </CustomField>

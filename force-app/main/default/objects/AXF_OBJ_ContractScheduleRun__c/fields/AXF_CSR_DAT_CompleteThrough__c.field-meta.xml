@@ -4,5 +4,6 @@
     <label>Complete-through (data)</label>
     <type>Date</type>
     <required>false</required>
-    <description>Data-vencimento mais recente completamente publicada; status exibe complete-through e proxima acao (AXF-55 AC 4).</description>
+    <description
+  >Data-vencimento mais recente completamente publicada; status exibe complete-through e proxima acao (AXF-55 AC 4).</description>
 </CustomField>

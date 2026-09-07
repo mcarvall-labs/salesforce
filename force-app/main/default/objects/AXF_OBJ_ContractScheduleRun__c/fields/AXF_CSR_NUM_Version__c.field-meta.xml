@@ -7,5 +7,6 @@
     <scale>0</scale>
     <required>true</required>
     <defaultValue>0</defaultValue>
-    <description>Versao de concorrencia otimista do run (padrao do dominio).</description>
+    <description
+  >Versao de concorrencia otimista do run (padrao do dominio).</description>
 </CustomField>

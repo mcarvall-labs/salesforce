@@ -8,5 +8,6 @@
     <externalId>true</externalId>
     <caseSensitive>true</caseSensitive>
     <required>false</required>
-    <description>Token global Contract+ACTIVE: impede duas geracoes ativas concorrentes do mesmo contrato (AC 1). Preenchido enquanto ha run em PREVIEW/APPLYING; nulo quando nenhuma execucao ativa existe.</description>
+    <description
+  >Token global Contract+ACTIVE: impede duas geracoes ativas concorrentes do mesmo contrato (AC 1). Preenchido enquanto ha run em PREVIEW/APPLYING; nulo quando nenhuma execucao ativa existe.</description>
 </CustomField>

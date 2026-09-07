@@ -185,9 +185,12 @@ public with sharing class ALT_CLS_ContractAgendaService {
   // ------------------------------------------------------------------
   public RunResultDTO publish(Id runId) {
     AXF_OBJ_ContractScheduleRun__c run = loadRun(runId);
-    if (run.AXF_CSR_PKL_State__c != STATE_PREVIEW) {
+    if (
+      run.AXF_CSR_PKL_State__c != STATE_PREVIEW &&
+      run.AXF_CSR_PKL_State__c != STATE_FAILED
+    ) {
       throw new AXF_CLS_ContractException(
-        'Publicacao requer previa confirmada (estado PREVIEW).'
+        'Publicacao requer previa confirmada (PREVIEW) ou retomada apos falha (FAILED).'
       );
     }
 
@@ -199,67 +202,80 @@ public with sharing class ALT_CLS_ContractAgendaService {
     run.AXF_CSR_PKL_State__c = STATE_APPLYING;
     update run;
 
-    List<AgendaItemDTO> items = classifyDelta(ctx, run);
-    Integer added = 0;
-    Integer preserved = 0;
-    Integer superseded = 0;
-    Integer blocked = 0;
-    Date completeThrough = run.AXF_CSR_DAT_HorizonFrom__c;
-    Map<String, AXF_OBJ_FinancialTransaction__c> existing = loadExisting(ctx);
+    try {
+      List<AgendaItemDTO> items = classifyDelta(ctx, run);
+      Integer added = 0;
+      Integer preserved = 0;
+      Integer superseded = 0;
+      Integer blocked = 0;
+      Date completeThrough = run.AXF_CSR_DAT_HorizonFrom__c;
+      Map<String, AXF_OBJ_FinancialTransaction__c> existing = loadExisting(ctx);
 
-    for (AgendaItemDTO item : items) {
-      if (item.action == ACTION_ADDED) {
-        applyAdded(ctx, run, item);
-        added++;
-        run.AXF_CSR_TXT_Watermark__c = item.occurrenceKey;
-      } else if (item.action == ACTION_PRESERVED) {
-        preserved++;
-      } else if (item.action == ACTION_SUPERSEDED) {
-        AXF_OBJ_FinancialTransaction__c target = existing.get(
-          item.occurrenceKey
-        );
-        if (target != null && isSupersedeAllowed(target, ctx)) {
-          target.AXF_FTX_NUM_Magnitude__c = item.amount;
-          target.AXF_FTX_DAT_DueDate__c = item.dueDate;
-          target.AXF_FTX_DAT_PurchaseDate__c = item.dueDate;
-          update target;
-          superseded++;
+      for (AgendaItemDTO item : items) {
+        if (item.action == ACTION_ADDED) {
+          applyAdded(ctx, run, item);
+          added++;
           run.AXF_CSR_TXT_Watermark__c = item.occurrenceKey;
+        } else if (item.action == ACTION_PRESERVED) {
+          preserved++;
+        } else if (item.action == ACTION_SUPERSEDED) {
+          AXF_OBJ_FinancialTransaction__c target = existing.get(
+            item.occurrenceKey
+          );
+          if (target != null && isSupersedeAllowed(target, ctx)) {
+            target.AXF_FTX_NUM_Magnitude__c = item.amount;
+            target.AXF_FTX_DAT_DueDate__c = item.dueDate;
+            target.AXF_FTX_DAT_PurchaseDate__c = item.dueDate;
+            update target;
+            superseded++;
+            run.AXF_CSR_TXT_Watermark__c = item.occurrenceKey;
+          } else {
+            blocked++;
+          }
         } else {
           blocked++;
         }
-      } else {
-        blocked++;
+        if (
+          item.dueDate != null &&
+          (completeThrough == null ||
+          item.dueDate > completeThrough)
+        ) {
+          completeThrough = item.dueDate;
+        }
       }
-      if (
-        item.dueDate != null &&
-        (completeThrough == null ||
-        item.dueDate > completeThrough)
-      ) {
-        completeThrough = item.dueDate;
-      }
+
+      run.AXF_CSR_NUM_Added__c = added;
+      run.AXF_CSR_NUM_Preserved__c = preserved;
+      run.AXF_CSR_NUM_Superseded__c = superseded;
+      run.AXF_CSR_NUM_Blocked__c = blocked;
+      run.AXF_CSR_DAT_CompleteThrough__c = completeThrough;
+      run.AXF_CSR_PKL_State__c = STATE_COMPLETE;
+      run.AXF_CSR_EXI_ActiveScopeToken__c = null; // libera nova geracao do mesmo contrato
+      run.AXF_CSR_NUM_Version__c =
+        (run.AXF_CSR_NUM_Version__c == null ? 0 : run.AXF_CSR_NUM_Version__c) +
+        1;
+      update run;
+
+      RunResultDTO result = toResult(run, null, false);
+      result.message =
+        added +
+        ' adicionada(s); ' +
+        superseded +
+        ' superseded; ' +
+        blocked +
+        ' bloqueada(s).';
+      return result;
+    } catch (Exception e) {
+      // Checkpoint preservado: estado FAILED retomavel, token mantido (AC 4).
+      AXF_OBJ_ContractScheduleRun__c failed = new AXF_OBJ_ContractScheduleRun__c(
+        Id = run.Id,
+        AXF_CSR_PKL_State__c = STATE_FAILED
+      );
+      update failed;
+      throw new AXF_CLS_ContractException(
+        'Falha durante a publicacao da agenda: ' + e.getMessage()
+      );
     }
-
-    run.AXF_CSR_NUM_Added__c = added;
-    run.AXF_CSR_NUM_Preserved__c = preserved;
-    run.AXF_CSR_NUM_Superseded__c = superseded;
-    run.AXF_CSR_NUM_Blocked__c = blocked;
-    run.AXF_CSR_DAT_CompleteThrough__c = completeThrough;
-    run.AXF_CSR_PKL_State__c = STATE_COMPLETE;
-    run.AXF_CSR_EXI_ActiveScopeToken__c = null; // libera nova geracao do mesmo contrato
-    run.AXF_CSR_NUM_Version__c =
-      (run.AXF_CSR_NUM_Version__c == null ? 0 : run.AXF_CSR_NUM_Version__c) + 1;
-    update run;
-
-    RunResultDTO result = toResult(run, null, false);
-    result.message =
-      added +
-      ' adicionada(s); ' +
-      superseded +
-      ' superseded; ' +
-      blocked +
-      ' bloqueada(s).';
-    return result;
   }
 
   // ------------------------------------------------------------------
@@ -316,6 +332,27 @@ public with sharing class ALT_CLS_ContractAgendaService {
     input.proportionalityPolicy = ctx.proportionalityPolicy;
     input.timeZone = ctx.timeZone;
     input.calendarPolicy = ctx.calendarPolicy;
+
+    // Campos nao aplicaveis ao modelo sao zerados: o TermVersion pode carregar defaults
+    // que o calculo canonico do modelo rejeita (validateDraftTermVersion AC 1).
+    String model = ctx.model == null ? '' : ctx.model;
+    if (model == 'FIXED') {
+      input.rate = null;
+      input.hoursQuantity = null;
+      input.proportionalityPolicy = null;
+      input.timeZone = null;
+      input.calendarPolicy = null;
+    } else if (model == 'MONTHLY') {
+      input.contractedAmount = null;
+      input.installments = null;
+      input.hoursQuantity = null;
+    } else if (model == 'HOURLY') {
+      input.contractedAmount = null;
+      input.installments = null;
+      input.proportionalityPolicy = null;
+      input.calendarPolicy = null;
+      input.timeZone = null;
+    }
 
     ALT_CLS_ContractRemunerationService.ScheduleCalculationResultDTO calc = rem.calculateSchedule(
       input
@@ -466,7 +503,7 @@ public with sharing class ALT_CLS_ContractAgendaService {
   }
 
   private String agendaGroupKey(AXF_OBJ_ContractScheduleRun__c run) {
-    return 'agenda-' + left(run.AXF_CSR_EXI_OccurrenceKey__c, 20);
+    return 'agenda-' + left(run.AXF_CSR_EXI_OccurrenceKey__c, 17);
   }
 
   private String buildInputHash(ContractContext ctx, RunInputDTO input) {
