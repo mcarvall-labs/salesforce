@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<CustomField xmlns="http://soap.sforce.com/2006/04/metadata">
+    <fullName>AXF_FXS_LKP_FinancialTransaction__c</fullName>
+    <label>Lancamento Financeiro</label>
+    <type>Lookup</type>
+    <referenceTo>AXF_OBJ_FinancialTransaction__c</referenceTo>
+    <relationshipName>FxApplicationSnapshots</relationshipName>
+    <deleteConstraint>Restrict</deleteConstraint>
+    <required>false</required>
+    <description>Alvo FinancialTransaction quando TargetType = FINANCIAL_TRANSACTION (AXF-24).</description>
+</CustomField>

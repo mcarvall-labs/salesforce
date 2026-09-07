@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<CustomField xmlns="http://soap.sforce.com/2006/04/metadata">
+    <fullName>AXF_FXS_NUM_OriginalAmount__c</fullName>
+    <label>Valor Original</label>
+    <type>Number</type>
+    <precision>18</precision>
+    <scale>8</scale>
+    <required>true</required>
+    <description>Magnitude original (nao convertida) preservada (AXF-24).</description>
+</CustomField>

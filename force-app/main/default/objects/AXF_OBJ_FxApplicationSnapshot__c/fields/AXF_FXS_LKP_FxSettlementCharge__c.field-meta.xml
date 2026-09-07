@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<CustomField xmlns="http://soap.sforce.com/2006/04/metadata">
+    <fullName>AXF_FXS_LKP_FxSettlementCharge__c</fullName>
+    <label>Encargo de Liquidacao Cambial</label>
+    <type>Lookup</type>
+    <referenceTo>AXF_OBJ_FxSettlementCharge__c</referenceTo>
+    <relationshipName>FxApplicationSnapshots</relationshipName>
+    <deleteConstraint>Restrict</deleteConstraint>
+    <required>false</required>
+    <description>Alvo FxSettlementCharge quando TargetType = FX_SETTLEMENT_CHARGE (AXF-24/61).</description>
+</CustomField>
