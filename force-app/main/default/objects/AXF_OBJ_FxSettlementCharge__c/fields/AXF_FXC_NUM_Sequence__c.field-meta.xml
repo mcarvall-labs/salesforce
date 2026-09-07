@@ -6,5 +6,6 @@
     <precision>9</precision>
     <scale>0</scale>
     <required>true</required>
-    <description>Sequencia do encargo dentro da liquidacao (1..n; AXF-61).</description>
+    <description
+  >Sequencia do encargo dentro da liquidacao (1..n; AXF-61).</description>
 </CustomField>

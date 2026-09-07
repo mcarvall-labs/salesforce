@@ -2,8 +2,11 @@
 <ValidationRule xmlns="http://soap.sforce.com/2006/04/metadata">
     <fullName>AXF_FXC_VR_RecognitionAuthorityExclusive</fullName>
     <active>true</active>
-    <description>Exatamente uma autoridade: SEPARATE_ENTRY exige Lancamento Separado; DERIVED_CONTRIBUTION nao pode tela-lo (AXF-61).</description>
-    <errorConditionFormula>OR(AND(TEXT(AXF_FXC_PKL_RecognitionAuthority__c) = "SEPARATE_ENTRY", ISBLANK(AXF_FXC_LKP_SeparateEntry__c)), AND(TEXT(AXF_FXC_PKL_RecognitionAuthority__c) = "DERIVED_CONTRIBUTION", NOT(ISBLANK(AXF_FXC_LKP_SeparateEntry__c))))</errorConditionFormula>
+    <description
+  >Exatamente uma autoridade: SEPARATE_ENTRY exige Lancamento Separado; DERIVED_CONTRIBUTION nao pode tela-lo (AXF-61).</description>
+    <errorConditionFormula
+  >OR(AND(TEXT(AXF_FXC_PKL_RecognitionAuthority__c) = "SEPARATE_ENTRY", ISBLANK(AXF_FXC_LKP_SeparateEntry__c)), AND(TEXT(AXF_FXC_PKL_RecognitionAuthority__c) = "DERIVED_CONTRIBUTION", NOT(ISBLANK(AXF_FXC_LKP_SeparateEntry__c))))</errorConditionFormula>
     <errorDisplayField>AXF_FXC_PKL_RecognitionAuthority__c</errorDisplayField>
-    <errorMessage>Escolha exatamente uma autoridade: SEPARATE_ENTRY exige lancamento separado; DERIVED_CONTRIBUTION nao pode ter lancamento.</errorMessage>
+    <errorMessage
+  >Escolha exatamente uma autoridade: SEPARATE_ENTRY exige lancamento separado; DERIVED_CONTRIBUTION nao pode ter lancamento.</errorMessage>
 </ValidationRule>

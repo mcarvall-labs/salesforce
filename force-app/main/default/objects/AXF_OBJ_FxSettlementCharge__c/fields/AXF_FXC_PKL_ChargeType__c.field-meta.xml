@@ -8,12 +8,18 @@
         <restricted>true</restricted>
         <valueSetDefinition>
             <sorted>false</sorted>
-            <value><fullName>FEE</fullName><default>false</default><label>Tarifa</label></value>
-            <value><fullName>IOF</fullName><default>false</default><label>IOF</label></value>
-            <value><fullName>TAX</fullName><default>false</default><label>Tributo</label></value>
-            <value><fullName>INTERMEDIARY</fullName><default>false</default><label>Intermediario</label></value>
-            <value><fullName>OTHER</fullName><default>false</default><label>Outro</label></value>
+            <value><fullName>FEE</fullName><default>false</default><label
+        >Tarifa</label></value>
+            <value><fullName>IOF</fullName><default>false</default><label
+        >IOF</label></value>
+            <value><fullName>TAX</fullName><default>false</default><label
+        >Tributo</label></value>
+            <value><fullName>INTERMEDIARY</fullName><default
+        >false</default><label>Intermediario</label></value>
+            <value><fullName>OTHER</fullName><default>false</default><label
+        >Outro</label></value>
         </valueSetDefinition>
     </valueSet>
-    <description>Natureza do encargo comprovado (AXF-61). Spread/VET sao metricas, nunca ChargeType.</description>
+    <description
+  >Natureza do encargo comprovado (AXF-61). Spread/VET sao metricas, nunca ChargeType.</description>
 </CustomField>

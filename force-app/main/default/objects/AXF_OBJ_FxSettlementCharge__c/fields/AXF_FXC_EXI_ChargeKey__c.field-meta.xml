@@ -8,5 +8,6 @@
     <externalId>true</externalId>
     <caseSensitive>true</caseSensitive>
     <required>false</required>
-    <description>Identidade idempotente do encargo (Settlement+Sequence; G6; AXF-61).</description>
+    <description
+  >Identidade idempotente do encargo (Settlement+Sequence; G6; AXF-61).</description>
 </CustomField>

@@ -7,5 +7,6 @@
     <relationshipName>FxSettlementCharges</relationshipName>
     <deleteConstraint>Restrict</deleteConstraint>
     <required>false</required>
-    <description>FinancialTransaction (despesa) somente quando RecognitionAuthority = SEPARATE_ENTRY (XOR; AXF-61).</description>
+    <description
+  >FinancialTransaction (despesa) somente quando RecognitionAuthority = SEPARATE_ENTRY (XOR; AXF-61).</description>
 </CustomField>

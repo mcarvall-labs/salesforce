@@ -5,5 +5,6 @@
     <type>Text</type>
     <length>3</length>
     <required>true</required>
-    <description>Moeda do encargo, restrita a source ou target do Settlement (moeda terceira recusada - AXF-61).</description>
+    <description
+  >Moeda do encargo, restrita a source ou target do Settlement (moeda terceira recusada - AXF-61).</description>
 </CustomField>
