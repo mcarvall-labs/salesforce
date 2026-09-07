@@ -1,0 +1,8 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<CustomField xmlns="http://soap.sforce.com/2006/04/metadata">
+    <fullName>AXF_CAS_DT_OverriddenAt__c</fullName>
+    <label>Override em</label>
+    <type>DateTime</type>
+    <required>false</required>
+    <description>Instante do ultimo override manual (AXF-57).</description>
+</CustomField>

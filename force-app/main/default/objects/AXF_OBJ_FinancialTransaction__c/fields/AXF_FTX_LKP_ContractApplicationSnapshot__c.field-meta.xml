@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<CustomField xmlns="http://soap.sforce.com/2006/04/metadata">
+    <fullName>AXF_FTX_LKP_ContractApplicationSnapshot__c</fullName>
+    <label>Snapshot de Aplicacao</label>
+    <type>Lookup</type>
+    <referenceTo>AXF_OBJ_ContractApplicationSnapshot__c</referenceTo>
+    <relationshipName>AXF_REL_CASFinancialTransactions</relationshipName>
+    <deleteConstraint>SetNull</deleteConstraint>
+    <required>false</required>
+    <description
+  >Lookup opcional para o snapshot vigente (ACTIVE) da aplicacao contratual desta ocorrencia (AXF-57). Rastreabilidade deterministica alocacao/liquidacao/ocorrencia - design forward-compatible (AC 4).</description>
+</CustomField>
