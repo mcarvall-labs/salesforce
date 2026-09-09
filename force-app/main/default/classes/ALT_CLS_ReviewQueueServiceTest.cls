@@ -91,6 +91,10 @@ private class ALT_CLS_ReviewQueueServiceTest {
     dto.reviewKey = key;
     dto.accountId = accountId;
     dto.priorAmount = 42.5;
+    dto.priorMatchConfidence = 75;
+    dto.priorCurrency = 'BRL';
+    dto.priorDirection = 'DEBIT';
+    dto.priorStatus = 'CONFIRMED';
     dto.priorDescription = 'descricao anterior';
     dto.priorDate = Date.today().addDays(-1);
     return dto;
@@ -189,7 +193,9 @@ private class ALT_CLS_ReviewQueueServiceTest {
     resolve.decision = 'RESOLVED';
     resolve.note = 'Reviewed with source evidence';
     resolve.expectedVersion = 0;
+    Datetime beforeResolve = Datetime.now();
     ALT_CLS_ReviewQueueService.ResultDTO res = svc().resolve(resolve);
+    Datetime afterResolve = Datetime.now();
 
     Assert.isTrue(res.success, 'Item resolvido.');
     AXF_OBJ_ReviewItem__c stored = [
@@ -197,7 +203,11 @@ private class ALT_CLS_ReviewQueueServiceTest {
         AXF_RVI_PKL_State__c,
         AXF_RVI_NUM_PriorAmount__c,
         AXF_RVI_DAT_PriorDate__c,
+        AXF_RVI_NUM_PriorMatchConfidence__c,
         AXF_RVI_TXT_PriorDescription__c,
+        AXF_RVI_TXT_PriorCurrency__c,
+        AXF_RVI_TXT_PriorDirection__c,
+        AXF_RVI_TXT_PriorStatus__c,
         AXF_RVI_LKP_ResolvedByUser__c,
         AXF_RVI_DT_ResolvedAt__c,
         AXF_RVI_TAL_ResolutionNote__c,
@@ -208,6 +218,28 @@ private class ALT_CLS_ReviewQueueServiceTest {
     ];
     Assert.areEqual('RESOLVED', stored.AXF_RVI_PKL_State__c);
     Assert.areEqual(
+      'BRL',
+      stored.AXF_RVI_TXT_PriorCurrency__c,
+      'Prior currency retained.'
+    );
+    Assert.areEqual(
+      'DEBIT',
+      stored.AXF_RVI_TXT_PriorDirection__c,
+      'Prior direction retained.'
+    );
+    Assert.areEqual(
+      'CONFIRMED',
+      stored.AXF_RVI_TXT_PriorStatus__c,
+      'Prior status retained.'
+    );
+    Assert.isTrue(
+      stored.AXF_RVI_DT_ResolvedAt__c >=
+        Datetime.valueOfGmt(beforeResolve.formatGmt('yyyy-MM-dd HH:mm:ss')) &&
+        stored.AXF_RVI_DT_ResolvedAt__c <=
+        Datetime.valueOfGmt(afterResolve.formatGmt('yyyy-MM-dd HH:mm:ss')),
+      'ResolvedAt is bounded by the resolution call at persisted second precision.'
+    );
+    Assert.areEqual(
       42.5,
       stored.AXF_RVI_NUM_PriorAmount__c,
       'Prior evidence is retained.'
@@ -216,6 +248,16 @@ private class ALT_CLS_ReviewQueueServiceTest {
       'descricao anterior',
       stored.AXF_RVI_TXT_PriorDescription__c,
       'Description evidence is retained.'
+    );
+    Assert.areEqual(
+      Date.today().addDays(-1),
+      stored.AXF_RVI_DAT_PriorDate__c,
+      'Prior date retained.'
+    );
+    Assert.areEqual(
+      75,
+      stored.AXF_RVI_NUM_PriorMatchConfidence__c,
+      'Prior confidence retained.'
     );
     Assert.areEqual(UserInfo.getUserId(), stored.AXF_RVI_LKP_ResolvedByUser__c);
     Assert.isNotNull(stored.AXF_RVI_DT_ResolvedAt__c);
@@ -238,17 +280,77 @@ private class ALT_CLS_ReviewQueueServiceTest {
     d.decision = 'DISMISSED';
     d.note = 'Reviewed with source evidence';
     d.expectedVersion = 0;
+    Datetime beforeResolve = Datetime.now();
     ALT_CLS_ReviewQueueService.ResultDTO res = svc().resolve(d);
+    Datetime afterResolve = Datetime.now();
 
     Assert.isTrue(res.success);
     Assert.areEqual('DISMISSED', res.state);
     AXF_OBJ_ReviewItem__c stored = [
-      SELECT AXF_RVI_PKL_State__c, AXF_RVI_NUM_PriorAmount__c
+      SELECT
+        AXF_RVI_PKL_State__c,
+        AXF_RVI_NUM_PriorAmount__c,
+        AXF_RVI_DAT_PriorDate__c,
+        AXF_RVI_TXT_PriorDescription__c,
+        AXF_RVI_TXT_PriorCurrency__c,
+        AXF_RVI_TXT_PriorDirection__c,
+        AXF_RVI_TXT_PriorStatus__c,
+        AXF_RVI_NUM_PriorMatchConfidence__c,
+        AXF_RVI_DT_ResolvedAt__c,
+        AXF_RVI_LKP_ResolvedByUser__c,
+        AXF_RVI_NUM_Version__c
       FROM AXF_OBJ_ReviewItem__c
       WHERE Id = :itemId
       LIMIT 1
     ];
     Assert.areEqual('DISMISSED', stored.AXF_RVI_PKL_State__c);
+    Assert.areEqual(
+      'BRL',
+      stored.AXF_RVI_TXT_PriorCurrency__c,
+      'Prior currency retained.'
+    );
+    Assert.areEqual(
+      'DEBIT',
+      stored.AXF_RVI_TXT_PriorDirection__c,
+      'Prior direction retained.'
+    );
+    Assert.areEqual(
+      'CONFIRMED',
+      stored.AXF_RVI_TXT_PriorStatus__c,
+      'Prior status retained.'
+    );
+    Assert.isTrue(
+      stored.AXF_RVI_DT_ResolvedAt__c >=
+        Datetime.valueOfGmt(beforeResolve.formatGmt('yyyy-MM-dd HH:mm:ss')) &&
+        stored.AXF_RVI_DT_ResolvedAt__c <=
+        Datetime.valueOfGmt(afterResolve.formatGmt('yyyy-MM-dd HH:mm:ss')),
+      'ResolvedAt is bounded by the resolution call at persisted second precision.'
+    );
+    Assert.areEqual(
+      Date.today().addDays(-1),
+      stored.AXF_RVI_DAT_PriorDate__c,
+      'Prior date retained.'
+    );
+    Assert.areEqual(
+      'descricao anterior',
+      stored.AXF_RVI_TXT_PriorDescription__c,
+      'Prior description retained.'
+    );
+    Assert.areEqual(
+      75,
+      stored.AXF_RVI_NUM_PriorMatchConfidence__c,
+      'Prior confidence retained.'
+    );
+    Assert.isNotNull(
+      stored.AXF_RVI_DT_ResolvedAt__c,
+      'Finalization starts retention.'
+    );
+    Assert.areEqual(
+      UserInfo.getUserId(),
+      stored.AXF_RVI_LKP_ResolvedByUser__c,
+      'Actor recorded.'
+    );
+    Assert.areEqual(1, stored.AXF_RVI_NUM_Version__c, 'Version incremented.');
     Assert.areEqual(42.5, stored.AXF_RVI_NUM_PriorAmount__c);
   }
 
