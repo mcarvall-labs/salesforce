@@ -22,12 +22,19 @@ public with sharing class AXF_CLS_PluggyWebhookEventHandler {
       return;
     }
     Set<String> observedItemIds = new Set<String>();
+    List<AXF_PluggyWebhookEvent__e> deletions = new List<AXF_PluggyWebhookEvent__e>();
     for (AXF_PluggyWebhookEvent__e evt : events) {
+      if (evt.AXF_PWE_TXT_EventType__c == 'transactions/deleted') {
+        deletions.add(evt);
+        continue;
+      }
       if (String.isNotBlank(evt.AXF_PWE_TXT_ObservedItemId__c)) {
         observedItemIds.add(evt.AXF_PWE_TXT_ObservedItemId__c);
       }
     }
     if (observedItemIds.isEmpty()) {
+      if (!deletions.isEmpty())
+        enqueueDeletions(deletions);
       return;
     }
     try {
@@ -40,6 +47,20 @@ public with sharing class AXF_CLS_PluggyWebhookEventHandler {
     } catch (Exception terminal) {
       // Terminal (e.g. connection not visible): nothing to retry. AXF-12's periodic
       // sweep reconciles anything a lost webhook would have missed.
+    }
+    if (!deletions.isEmpty())
+      enqueueDeletions(deletions);
+  }
+
+  private static void enqueueDeletions(List<AXF_PluggyWebhookEvent__e> events) {
+    try {
+      List<Id> runIds = new ALT_CLS_SourceDeleteInbox().admit(events);
+      if (!runIds.isEmpty())
+        System.enqueueJob(new AXF_CLS_SourceDeleteQueueable(runIds));
+    } catch (Exception failure) {
+      throw new EventBus.RetryableException(
+        'Deletion hints were not admitted durably.'
+      );
     }
   }
 }

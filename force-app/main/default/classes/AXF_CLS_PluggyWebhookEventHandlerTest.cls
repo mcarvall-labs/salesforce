@@ -7,6 +7,84 @@
 @IsTest
 private class AXF_CLS_PluggyWebhookEventHandlerTest {
   @IsTest
+  static void deletionHintIsDurableBeforeWorkerRuns() {
+    Id connectionId = AXF_CLS_PluggyTestData.connection('ITEM_A').Id;
+    AXF_CLS_PluggyTestData.bankAccount(connectionId, 'DELETE_ACCOUNT', true);
+    Test.setMock(HttpCalloutMock.class, new AXF_CLS_PluggyHttpCalloutMock());
+    Test.startTest();
+    AXF_CLS_PluggyWebhookEventHandler.handle(
+      new List<AXF_PluggyWebhookEvent__e>{
+        new AXF_PluggyWebhookEvent__e(
+          AXF_PWE_TXT_EventType__c = 'transactions/deleted',
+          AXF_PWE_TXT_ObservedItemId__c = 'ITEM_A',
+          AXF_PWE_TXT_AccountId__c = 'DELETE_ACCOUNT',
+          AXF_PWE_TAL_TransactionIds__c = '["UNKNOWN_TX"]',
+          AXF_PWE_TXT_CorrelationId__c = 'handler-test'
+        )
+      }
+    );
+    AXF_OBJ_IntegrationRun__c admitted = [
+      SELECT Id, AXF_INR_PKL_State__c, AXF_INR_TAL_SourceDeleteIds__c
+      FROM AXF_OBJ_IntegrationRun__c
+      WHERE AXF_INR_PKL_Product__c = 'SOURCE_DELETIONS'
+    ];
+    Assert.areEqual(
+      'PENDING',
+      admitted.AXF_INR_PKL_State__c,
+      'Admission commits before the asynchronous work executes.'
+    );
+    Assert.areEqual('["UNKNOWN_TX"]', admitted.AXF_INR_TAL_SourceDeleteIds__c);
+    Test.stopTest();
+    Assert.areEqual(
+      'SUCCEEDED',
+      [
+        SELECT AXF_INR_PKL_State__c
+        FROM AXF_OBJ_IntegrationRun__c
+        WHERE Id = :admitted.Id
+      ]
+      .AXF_INR_PKL_State__c
+    );
+    Assert.areEqual(
+      0,
+      [SELECT COUNT() FROM AXF_OBJ_ReviewItem__c],
+      'A hint without a local fact cannot invent financial evidence.'
+    );
+  }
+
+  @IsTest
+  static void malformedDeletionAdmissionRequestsRedelivery() {
+    AXF_CLS_PluggyTestData.connection('ITEM_A');
+    Boolean retry = false;
+    Test.startTest();
+    try {
+      AXF_CLS_PluggyWebhookEventHandler.handle(
+        new List<AXF_PluggyWebhookEvent__e>{
+          new AXF_PluggyWebhookEvent__e(
+            AXF_PWE_TXT_EventType__c = 'transactions/deleted',
+            AXF_PWE_TXT_ObservedItemId__c = 'ITEM_A',
+            AXF_PWE_TXT_AccountId__c = 'DELETE_ACCOUNT',
+            AXF_PWE_TAL_TransactionIds__c = '[]'
+          )
+        }
+      );
+    } catch (EventBus.RetryableException expected) {
+      retry = true;
+    }
+    Test.stopTest();
+    Assert.isTrue(
+      retry,
+      'A failed durable admission must not acknowledge the platform event.'
+    );
+    Assert.areEqual(
+      0,
+      [
+        SELECT COUNT()
+        FROM AXF_OBJ_IntegrationRun__c
+        WHERE AXF_INR_PKL_Product__c = 'SOURCE_DELETIONS'
+      ]
+    );
+  }
+  @IsTest
   static void publishedEventFlowsThroughTheTrigger() {
     // End-to-end wiring: publish -> AXF_TRG_PluggyWebhookEvent -> handler. The revalidation
     // behaviour itself is asserted by the direct-call tests below; Test.setMock is not

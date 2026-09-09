@@ -290,6 +290,116 @@ private class AXF_CLS_PluggySyncServiceTest {
   }
 
   @IsTest
+  static void sourceDeltaCreatesReviewAndCountsOnlyNewFacts() {
+    AXF_OBJ_BankAccount__c bankAccount = [
+      SELECT Id
+      FROM AXF_OBJ_BankAccount__c
+      WHERE AXF_BA_EXI_PluggyAccountId__c = 'ACC-BANK-1'
+    ];
+    AXF_OBJ_BankAccountTransaction__c original = new AXF_OBJ_BankAccountTransaction__c(
+      AXF_BAT_MDR_BankAccount__c = bankAccount.Id,
+      AXF_BAT_EXI_SourceKey__c = 'changed',
+      AXF_BAT_PKL_Source__c = 'PLUGGY',
+      AXF_BAT_NUM_Magnitude__c = 10,
+      AXF_BAT_DAT_Date__c = Date.newInstance(2026, 9, 4),
+      AXF_BAT_PKL_Direction__c = 'DEBIT',
+      AXF_BAT_PKL_Status__c = 'POSTED',
+      AXF_BAT_TXT_CurrencyIsoCode__c = 'BRL',
+      AXF_BAT_TXT_Description__c = 'COMPRA EXEMPLO LTDA',
+      AXF_BAT_TXT_NormalizedDescription__c = 'preserved normalization'
+    );
+    insert original;
+    AXF_CLS_PluggyHttpCalloutMock mock = new AXF_CLS_PluggyHttpCalloutMock();
+    mock.txPages = new List<String>{
+      AXF_CLS_PluggyTestData.txPage(
+        new List<Map<String, Object>>{
+          row('changed', '-12', 'DEBIT'),
+          row('new-fact', '-3', 'DEBIT')
+        },
+        null
+      )
+    };
+    Test.setMock(HttpCalloutMock.class, mock);
+    AXF_CLS_PluggySyncService.ClaimedScope bankScope = scopeOf(
+      svc().claimScopes(connId()),
+      'BANK'
+    );
+    Test.startTest();
+    AXF_CLS_PluggySyncService.ScopeOutcome outcome = svc().runScope(bankScope);
+    Test.stopTest();
+    Assert.areEqual(
+      'SUCCEEDED',
+      outcome.state,
+      'Accepted evidence permits completion.'
+    );
+    Assert.areEqual(1, outcome.recordsWritten, 'Only the new fact is written.');
+    Assert.areEqual(
+      0,
+      outcome.recordsFailed,
+      'Both accepted rows are accounted for.'
+    );
+    Assert.areEqual(
+      1,
+      [
+        SELECT COUNT()
+        FROM AXF_OBJ_ReviewItem__c
+        WHERE
+          AXF_RVI_NUM_PriorAmount__c = 10
+          AND AXF_RVI_NUM_ProposedAmount__c = 12
+      ],
+      'Typed delta evidence is persisted.'
+    );
+    Assert.areEqual(
+      1,
+      [
+        SELECT COUNT()
+        FROM AXF_OBJ_BankAccountTransaction__c
+        WHERE
+          Id = :original.Id
+          AND AXF_BAT_NUM_Magnitude__c = 10
+          AND AXF_BAT_TXT_NormalizedDescription__c = 'preserved normalization'
+      ],
+      'Published source remains unchanged.'
+    );
+  }
+
+  @IsTest
+  static void invalidProviderFactRetainsTheCheckpoint() {
+    AXF_CLS_PluggyHttpCalloutMock mock = new AXF_CLS_PluggyHttpCalloutMock();
+    Map<String, Object> invalid = row('invalid', '-12', 'DEBIT');
+    invalid.put('date', 'not-a-date');
+    mock.txPages = new List<String>{
+      AXF_CLS_PluggyTestData.txPage(
+        new List<Map<String, Object>>{ invalid },
+        null
+      )
+    };
+    Test.setMock(HttpCalloutMock.class, mock);
+    AXF_CLS_PluggySyncService.ClaimedScope bankScope = scopeOf(
+      svc().claimScopes(connId()),
+      'BANK'
+    );
+    Test.startTest();
+    AXF_CLS_PluggySyncService.ScopeOutcome outcome = svc().runScope(bankScope);
+    Test.stopTest();
+    Assert.areEqual(
+      'FAILED_RETRYABLE',
+      outcome.state,
+      'Invalid evidence cannot mark an interval complete.'
+    );
+    Assert.areEqual(1, outcome.recordsFailed, 'Rejected row is counted.');
+    Assert.isNull(
+      runFor(bankScope.runKey).AXF_INR_DT_CompleteThrough__c,
+      'Incomplete interval does not advance completeness.'
+    );
+    Assert.areEqual(
+      bankScope.startCursor,
+      runFor(bankScope.runKey).AXF_INR_TXT_Cursor__c,
+      'Retry starts from the original checkpoint.'
+    );
+  }
+
+  @IsTest
   static void checkpointPausesAtTheCadence() {
     AXF_CLS_PluggySyncService.canConfigureOverride = true;
     AXF_CLS_PluggySyncPolicy.overrideRecord = AXF_CLS_PluggyTestData.syncPolicy(
