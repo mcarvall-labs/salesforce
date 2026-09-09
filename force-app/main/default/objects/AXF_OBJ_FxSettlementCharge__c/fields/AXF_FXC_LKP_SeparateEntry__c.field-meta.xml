@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<CustomField xmlns="http://soap.sforce.com/2006/04/metadata">
+    <fullName>AXF_FXC_LKP_SeparateEntry__c</fullName>
+    <label>Lancamento Separado</label>
+    <type>Lookup</type>
+    <referenceTo>AXF_OBJ_FinancialTransaction__c</referenceTo>
+    <relationshipName>FxSettlementCharges</relationshipName>
+    <deleteConstraint>Restrict</deleteConstraint>
+    <required>false</required>
+    <description
+  >FinancialTransaction (despesa) somente quando RecognitionAuthority = SEPARATE_ENTRY (XOR; AXF-61).</description>
+</CustomField>

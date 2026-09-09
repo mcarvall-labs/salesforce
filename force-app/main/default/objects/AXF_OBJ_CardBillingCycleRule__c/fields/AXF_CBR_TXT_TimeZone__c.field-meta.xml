@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<CustomField xmlns="http://soap.sforce.com/2006/04/metadata">
+  <fullName>AXF_CBR_TXT_TimeZone__c</fullName>
+  <label>Fuso Horario (IANA)</label>
+  <type>Text</type>
+  <length>64</length>
+  <required>true</required>
+  <description
+  >Fuso IANA (ex.: America/Sao_Paulo) usado para fechamento e vencimento (AXF-35).</description>
+</CustomField>

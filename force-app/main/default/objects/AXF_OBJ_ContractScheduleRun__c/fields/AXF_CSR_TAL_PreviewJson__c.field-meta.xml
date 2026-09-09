@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<CustomField xmlns="http://soap.sforce.com/2006/04/metadata">
+    <fullName>AXF_CSR_TAL_PreviewJson__c</fullName>
+    <label>Previa Delta (JSON)</label>
+    <length>131072</length>
+    <type>LongTextArea</type>
+    <visibleLines>4</visibleLines>
+    <description
+  >Previa delta calculada (added/preserved/superseded/blocked com termo, policy, totais e residual) em JSON canonico; nada e publicado antes da confirmacao humana (AXF-55 AC 2).</description>
+</CustomField>

@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<CustomField xmlns="http://soap.sforce.com/2006/04/metadata">
+    <fullName>AXF_FXT_LKP_ReferenceRate__c</fullName>
+    <label>Cotacao de Referencia</label>
+    <type>Lookup</type>
+    <referenceTo>AXF_OBJ_ExchangeRate__c</referenceTo>
+    <relationshipName>AXF_REL_FxSettlementRates</relationshipName>
+    <deleteConstraint>SetNull</deleteConstraint>
+    <required>false</required>
+    <description
+  >Cotacao (ExchangeRate) usada como referencia/PTAX; referencia nunca substitui a taxa efetiva (AXF-59).</description>
+</CustomField>

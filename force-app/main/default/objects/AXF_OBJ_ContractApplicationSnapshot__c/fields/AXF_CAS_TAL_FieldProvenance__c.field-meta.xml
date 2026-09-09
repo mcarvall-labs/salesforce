@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<CustomField xmlns="http://soap.sforce.com/2006/04/metadata">
+    <fullName>AXF_CAS_TAL_FieldProvenance__c</fullName>
+    <label>Proveniencia por Campo</label>
+    <length>32768</length>
+    <type>LongTextArea</type>
+    <visibleLines>4</visibleLines>
+    <description
+  >JSON canonico versionado {"schemaVersion":1,"fields":{"campo":"DEFAULTED" ou "OVERRIDDEN"}}, validado no servidor (AXF-57).</description>
+</CustomField>

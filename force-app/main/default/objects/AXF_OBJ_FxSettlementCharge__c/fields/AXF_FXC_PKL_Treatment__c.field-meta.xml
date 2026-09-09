@@ -1,0 +1,23 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<CustomField xmlns="http://soap.sforce.com/2006/04/metadata">
+    <fullName>AXF_FXC_PKL_Treatment__c</fullName>
+    <label>Tratamento</label>
+    <type>Picklist</type>
+    <required>true</required>
+    <valueSet>
+        <restricted>true</restricted>
+        <valueSetDefinition>
+            <sorted>false</sorted>
+            <value><fullName>DEDUCTED_SOURCE</fullName><default
+        >false</default><label>Deduzido da origem</label></value>
+            <value><fullName>ADDED_SOURCE</fullName><default
+        >false</default><label>Adicionado a origem</label></value>
+            <value><fullName>DEDUCTED_TARGET</fullName><default
+        >false</default><label>Deduzido do alvo</label></value>
+            <value><fullName>ADDED_TARGET</fullName><default
+        >false</default><label>Adicionado ao alvo</label></value>
+        </valueSetDefinition>
+    </valueSet>
+    <description
+  >Lado de deducao/adicao do encargo (AXF-61; AD-38).</description>
+</CustomField>

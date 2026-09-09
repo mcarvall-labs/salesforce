@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<CustomField xmlns="http://soap.sforce.com/2006/04/metadata">
+    <fullName>AXF_RVI_LKP_ResolvedByUser__c</fullName>
+    <label>Resolvido Por</label>
+    <type>Lookup</type>
+    <referenceTo>User</referenceTo>
+    <relationshipName>AXF_REL_RVI_ResolvedBy</relationshipName>
+    <deleteConstraint>SetNull</deleteConstraint>
+    <required>false</required>
+    <description>Usuario que resolveu o item (AXF-94).</description>
+</CustomField>

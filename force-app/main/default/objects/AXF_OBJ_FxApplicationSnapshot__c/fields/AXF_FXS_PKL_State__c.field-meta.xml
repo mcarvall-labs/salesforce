@@ -1,0 +1,19 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<CustomField xmlns="http://soap.sforce.com/2006/04/metadata">
+    <fullName>AXF_FXS_PKL_State__c</fullName>
+    <label>Estado</label>
+    <type>Picklist</type>
+    <required>true</required>
+    <valueSet>
+        <restricted>true</restricted>
+        <valueSetDefinition>
+            <sorted>false</sorted>
+            <value><fullName>ACTIVE</fullName><default>true</default><label
+        >Ativo</label></value>
+            <value><fullName>SUPERSEDED</fullName><default>false</default><label
+        >Substituido</label></value>
+        </valueSetDefinition>
+    </valueSet>
+    <description
+  >ACTIVE|SUPERSEDED; correcao = sucessor, nunca update (AXF-24).</description>
+</CustomField>

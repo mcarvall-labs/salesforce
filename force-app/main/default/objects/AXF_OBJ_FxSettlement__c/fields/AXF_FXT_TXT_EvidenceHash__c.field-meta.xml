@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<CustomField xmlns="http://soap.sforce.com/2006/04/metadata">
+    <fullName>AXF_FXT_TXT_EvidenceHash__c</fullName>
+    <label>Hash de Evidencia</label>
+    <type>Text</type>
+    <length>64</length>
+    <required>false</required>
+    <description
+  >Hash da evidencia comprovante quando disponivel (conteudo integral fora do Salesforce Files; AXF-59/63).</description>
+</CustomField>
