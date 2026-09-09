@@ -1,4 +1,4 @@
-﻿<?xml version="1.0" encoding="UTF-8"?>
+﻿<?xml version="1.0" encoding="UTF-8" ?>
 <PermissionSet xmlns="http://soap.sforce.com/2006/04/metadata">
   <classAccesses>
     <apexClass>AXF_CLS_CTRL_FinancialEntry</apexClass>
@@ -20,7 +20,8 @@
     <apexClass>AXF_CLS_CTRL_ScheduleWizard</apexClass>
     <enabled>true</enabled>
   </classAccesses>
-  <description>Permite a qualquer usuario do Axon criar um Lancamento financeiro pelo wizard guiado (sem Delete). Componente dos PSGs Gestor/Participante. AXF-19.</description>
+  <description
+  >Permite a qualquer usuario do Axon criar um Lancamento financeiro pelo wizard guiado (sem Delete). Componente dos PSGs Gestor/Participante. AXF-19.</description>
   <fieldPermissions>
     <editable>true</editable>
     <field>AXF_OBJ_FinancialTransaction__c.AXF_FTX_CHK_IsEstimated__c</field>
@@ -28,7 +29,8 @@
   </fieldPermissions>
   <fieldPermissions>
     <editable>true</editable>
-    <field>AXF_OBJ_FinancialTransaction__c.AXF_FTX_CHK_RoundingResidual__c</field>
+    <field
+    >AXF_OBJ_FinancialTransaction__c.AXF_FTX_CHK_RoundingResidual__c</field>
     <readable>true</readable>
   </fieldPermissions>
   <fieldPermissions>
@@ -43,12 +45,14 @@
   </fieldPermissions>
   <fieldPermissions>
     <editable>true</editable>
-    <field>AXF_OBJ_FinancialTransaction__c.AXF_FTX_NUM_InterestPortion__c</field>
+    <field
+    >AXF_OBJ_FinancialTransaction__c.AXF_FTX_NUM_InterestPortion__c</field>
     <readable>true</readable>
   </fieldPermissions>
   <fieldPermissions>
     <editable>true</editable>
-    <field>AXF_OBJ_FinancialTransaction__c.AXF_FTX_NUM_PrincipalPortion__c</field>
+    <field
+    >AXF_OBJ_FinancialTransaction__c.AXF_FTX_NUM_PrincipalPortion__c</field>
     <readable>true</readable>
   </fieldPermissions>
   <fieldPermissions>
@@ -63,7 +67,8 @@
   </fieldPermissions>
   <fieldPermissions>
     <editable>true</editable>
-    <field>AXF_OBJ_FinancialTransaction__c.AXF_FTX_BOL_TrackConfirmation__c</field>
+    <field
+    >AXF_OBJ_FinancialTransaction__c.AXF_FTX_BOL_TrackConfirmation__c</field>
     <readable>true</readable>
   </fieldPermissions>
   <fieldPermissions>
@@ -88,7 +93,8 @@
   </fieldPermissions>
   <fieldPermissions>
     <editable>true</editable>
-    <field>AXF_OBJ_FinancialTransaction__c.AXF_FTX_TXT_ScheduleGroupKey__c</field>
+    <field
+    >AXF_OBJ_FinancialTransaction__c.AXF_FTX_TXT_ScheduleGroupKey__c</field>
     <readable>true</readable>
   </fieldPermissions>
   <hasActivationRequired>false</hasActivationRequired>

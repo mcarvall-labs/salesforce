@@ -8,7 +8,8 @@
         <restricted>true</restricted>
         <valueSetDefinition>
             <sorted>false</sorted>
-<value><fullName>MANUAL_CONFIRMATION</fullName><default>false</default><label>Manual confirmation</label></value>
+<value><fullName>MANUAL_CONFIRMATION</fullName><default>false</default><label
+        >Manual confirmation</label></value>
             <value><fullName>MATCH_LOW_CONFIDENCE</fullName><default
         >false</default><label
         >Correspondencia de baixa confianca</label></value>

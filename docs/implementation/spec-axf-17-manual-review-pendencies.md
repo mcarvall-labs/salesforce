@@ -1,12 +1,12 @@
 ---
-title: 'AXF-17: Explicit manual confirmation tracking'
+title: "AXF-17: Explicit manual confirmation tracking"
 type: feature
-created: '2026-09-07'
+created: "2026-09-07"
 status: implemented-validated
 contract_approval: approved
-approved: '2026-09-08'
+approved: "2026-09-08"
 review_loop_iteration: 0
-context: ['{project-root}/AGENTS.md']
+context: ["{project-root}/AGENTS.md"]
 ---
 
 <frozen-after-approval reason="human-owned intent — scope approved by Michel on 2026-09-08">
@@ -29,14 +29,14 @@ Authority: https://axon-personal-finances.atlassian.net/browse/AXF-17, comments 
 
 ## I/O & Edge-Case Matrix
 
-| Scenario | Input/state | Expected behavior | Failure handling |
-|---|---|---|---|
-| Manual follow-up | Authorized manual create explicitly requests confirmation | One financial entry and one OPEN item committed atomically | Roll back both on failure |
-| Legitimate cash | Manual entry without bank/card, no follow-up selected | Create normally; no fabricated pending requirement | Existing validation |
-| Replay | Same client operation and payload | Return existing entry/item, never reopen resolved item | Changed payload returns conflict |
-| Identity collision | Existing producer receives its established key again | Existing replay/conflict response, no extra fact | Never reinterpret as similarity |
-| Resolution | OPEN item, note and expected version, all references accessible | Resolve once with evidence; preserve financial entry | Stale/access loss leaves item pending |
-| Imported fact | Normal CSV/Pluggy publication | No manual review item | Source problems retain their own types |
+| Scenario           | Input/state                                                     | Expected behavior                                          | Failure handling                       |
+| ------------------ | --------------------------------------------------------------- | ---------------------------------------------------------- | -------------------------------------- |
+| Manual follow-up   | Authorized manual create explicitly requests confirmation       | One financial entry and one OPEN item committed atomically | Roll back both on failure              |
+| Legitimate cash    | Manual entry without bank/card, no follow-up selected           | Create normally; no fabricated pending requirement         | Existing validation                    |
+| Replay             | Same client operation and payload                               | Return existing entry/item, never reopen resolved item     | Changed payload returns conflict       |
+| Identity collision | Existing producer receives its established key again            | Existing replay/conflict response, no extra fact           | Never reinterpret as similarity        |
+| Resolution         | OPEN item, note and expected version, all references accessible | Resolve once with evidence; preserve financial entry       | Stale/access loss leaves item pending  |
+| Imported fact      | Normal CSV/Pluggy publication                                   | No manual review item                                      | Source problems retain their own types |
 
 </frozen-after-approval>
 
@@ -52,6 +52,7 @@ Authority: https://axon-personal-finances.atlassian.net/browse/AXF-17, comments 
 ## Tasks & Acceptance
 
 **Execution under approved scope:**
+
 - [x] `docs/implementation/spec-axf-17-manual-review-pendencies.md` — reconcile the decisions in Jira and freeze the approved intent.
 - [x] `force-app/main/default/classes/ALT_CLS_ManualReviewService.cls` — add a typed manual producer using common queue creation and durable per-entry review identity; keep resolution in the shared resolver.
 - [x] `force-app/main/default/classes/AXF_CLS_FinancialEntryService.cls` and `lwc/aXF_LWC_entryWizard/` — carry explicit pending intent, atomically create entry/item, preserve replay and legitimate distinct entries.
@@ -60,6 +61,7 @@ Authority: https://axon-personal-finances.atlassian.net/browse/AXF-17, comments 
 - [x] Focused Apex/Jest tests adjacent to changed services/components — cover the matrix, denied records/fields, concurrent resolution, replay after resolution and atomic failure.
 
 **Acceptance Criteria:**
+
 - Given a permitted manual follow-up request, when the user confirms the wizard, then its durable pending item is available without Home being implemented.
 - Given an authorized pending item, when explicitly confirmed with a reason, then it closes once without changing financial amount, identity or linkage.
 - Given distinct legitimate manual operations, when both are confirmed, then both remain distinct; no similarity policy is implied.
@@ -75,7 +77,6 @@ The original AC1 candidate evidence and AC2 override after a duplicate suggestio
 ## Verification
 
 Run targeted Jest, ESLint and formatting checks; inspect the final diff and XML dependencies. Coordinate check-only Salesforce validation and targeted Apex tests with the root agent; never run concurrent shared-org mutation/test jobs. Record actual results, commit and PR only after required checks. Check-only validation and focused test evidence are recorded below.
-
 
 ### Implementation and verification — 2026-09-09
 

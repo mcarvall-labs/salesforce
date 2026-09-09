@@ -53,8 +53,15 @@ private class ALT_CLS_ManualReviewServiceTest {
         rejected = true;
       }
       Test.stopTest();
-      Assert.isTrue(rejected, 'Unavailable items are rejected at the UI boundary');
-      Assert.areEqual(0, [SELECT COUNT() FROM AXF_OBJ_ReviewItem__c], 'No evidence is fabricated');
+      Assert.isTrue(
+        rejected,
+        'Unavailable items are rejected at the UI boundary'
+      );
+      Assert.areEqual(
+        0,
+        [SELECT COUNT() FROM AXF_OBJ_ReviewItem__c],
+        'No evidence is fabricated'
+      );
     }
   }
   @IsTest
@@ -80,20 +87,59 @@ private class ALT_CLS_ManualReviewServiceTest {
   }
   @IsTest
   static void reviewPermissionFailureRollsBackEntry() {
-    User actor=new User(Alias='axf17',Email='axf17@example.invalid',EmailEncodingKey='UTF-8',LastName='Manual review tester',LanguageLocaleKey='en_US',LocaleSidKey='en_US',TimeZoneSidKey='America/Sao_Paulo',ProfileId=[SELECT Id FROM Profile WHERE Name='Standard User' LIMIT 1].Id,Username='axf17.'+System.now().getTime()+'@example.invalid');
+    User actor = new User(
+      Alias = 'axf17',
+      Email = 'axf17@example.invalid',
+      EmailEncodingKey = 'UTF-8',
+      LastName = 'Manual review tester',
+      LanguageLocaleKey = 'en_US',
+      LocaleSidKey = 'en_US',
+      TimeZoneSidKey = 'America/Sao_Paulo',
+      ProfileId = [SELECT Id FROM Profile WHERE Name = 'Standard User' LIMIT 1]
+      .Id,
+      Username = 'axf17.' + System.now().getTime() + '@example.invalid'
+    );
     insert actor;
-    List<PermissionSetAssignment> permissions=new List<PermissionSetAssignment>();
-    for(PermissionSet permission:[SELECT Id FROM PermissionSet WHERE Name IN ('AXF_PS_FinancialEntry','AXF_PS_GestorFinanceiro')]) { permissions.add(new PermissionSetAssignment(AssigneeId=actor.Id,PermissionSetId=permission.Id)); }
+    List<PermissionSetAssignment> permissions = new List<PermissionSetAssignment>();
+    for (PermissionSet permission : [
+      SELECT Id
+      FROM PermissionSet
+      WHERE Name IN ('AXF_PS_FinancialEntry', 'AXF_PS_GestorFinanceiro')
+    ]) {
+      permissions.add(
+        new PermissionSetAssignment(
+          AssigneeId = actor.Id,
+          PermissionSetId = permission.Id
+        )
+      );
+    }
     insert permissions;
     System.runAs(actor) {
-      Account holder=new Account(Name='No review access',RecordTypeId=Account.SObjectType.getDescribe().getRecordTypeInfosByDeveloperName().get('AXF_Business').getRecordTypeId());insert holder;
-      AXF_CLS_FinancialEntryService.EntryInput input=new AXF_CLS_FinancialEntryService.EntryInput();
-      input.accountId=holder.Id;input.direction='DEBIT';input.magnitude=100;input.currencyIsoCode='BRL';input.purchaseDate=Date.today();input.clientRequestId='33333333-3333-4333-8333-333333333333';input.trackConfirmation=true;
+      Account holder = new Account(
+        Name = 'No review access',
+        RecordTypeId = Account.SObjectType.getDescribe()
+          .getRecordTypeInfosByDeveloperName()
+          .get('AXF_Business')
+          .getRecordTypeId()
+      );
+      insert holder;
+      AXF_CLS_FinancialEntryService.EntryInput input = new AXF_CLS_FinancialEntryService.EntryInput();
+      input.accountId = holder.Id;
+      input.direction = 'DEBIT';
+      input.magnitude = 100;
+      input.currencyIsoCode = 'BRL';
+      input.purchaseDate = Date.today();
+      input.clientRequestId = '33333333-3333-4333-8333-333333333333';
+      input.trackConfirmation = true;
       Test.startTest();
-      Assert.areEqual('INVALID',AXF_CLS_FinancialEntryService.createEntry(input).outcome,'Financial creation fails atomically when review evidence cannot be written');
+      Assert.areEqual(
+        'INVALID',
+        AXF_CLS_FinancialEntryService.createEntry(input).outcome,
+        'Financial creation fails atomically when review evidence cannot be written'
+      );
       Test.stopTest();
-      Assert.areEqual(0,[SELECT COUNT() FROM AXF_OBJ_FinancialTransaction__c]);
-      Assert.areEqual(0,[SELECT COUNT() FROM AXF_OBJ_ReviewItem__c]);
+      Assert.areEqual(0, [SELECT COUNT() FROM AXF_OBJ_FinancialTransaction__c]);
+      Assert.areEqual(0, [SELECT COUNT() FROM AXF_OBJ_ReviewItem__c]);
     }
   }
   @IsTest

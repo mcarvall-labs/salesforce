@@ -121,10 +121,12 @@ describe("c-aXF_LWC_entryWizard", () => {
 
     // step 4: review + confirm
     expect(el.shadowRoot.textContent).toMatch(/150\.75/);
-    const tracking = [...el.shadowRoot.querySelectorAll('lightning-input')].find(input => input.type === 'checkbox');
+    const tracking = [
+      ...el.shadowRoot.querySelectorAll("lightning-input")
+    ].find((input) => input.type === "checkbox");
     expect(tracking.checked).toBe(false);
     tracking.checked = true;
-    tracking.dispatchEvent(new CustomEvent('change'));
+    tracking.dispatchEvent(new CustomEvent("change"));
     await flush();
     btn(el, /Confirmar|Confirm/).click();
     await settle();
