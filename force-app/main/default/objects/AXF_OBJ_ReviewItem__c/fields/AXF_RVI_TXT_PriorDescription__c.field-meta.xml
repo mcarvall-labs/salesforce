@@ -6,5 +6,5 @@
     <length>255</length>
     <required>false</required>
     <description
-  >Typed review evidence is retained until an authorized retention policy permits disposal.</description>
+  >Typed review evidence is retained after resolution until an explicitly configured domain retention policy permits authorized disposal.</description>
 </CustomField>

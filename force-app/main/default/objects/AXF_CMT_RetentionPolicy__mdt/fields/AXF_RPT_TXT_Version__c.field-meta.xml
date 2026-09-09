@@ -1,0 +1,7 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<CustomField xmlns="http://soap.sforce.com/2006/04/metadata"><fullName
+  >AXF_RPT_TXT_Version__c</fullName><length>255</length><required
+  >true</required><description
+  >Explicit Version for this domain policy; missing or invalid configuration blocks eligibility.</description><fieldManageability
+  >DeveloperControlled</fieldManageability><label>Version</label><type
+  >Text</type></CustomField>

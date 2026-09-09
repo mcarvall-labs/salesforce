@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="UTF-8" ?>
 <CustomField xmlns="http://soap.sforce.com/2006/04/metadata"><fullName
   >AXF_RVI_TXT_PriorStatus__c</fullName><description
-  >Typed review evidence is retained until an authorized retention policy permits disposal.</description><label
+  >Typed review evidence is retained after resolution until an explicitly configured domain retention policy permits authorized disposal.</description><label
   >PriorStatus</label><length>255</length><required>false</required><type
   >Text</type></CustomField>
