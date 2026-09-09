@@ -1,0 +1,8 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<CustomField xmlns="http://soap.sforce.com/2006/04/metadata"><fullName
+  >AXF_RA_LKP_FinancialTransaction__c</fullName><label
+  >Planned target</label><deleteConstraint
+  >Restrict</deleteConstraint><referenceTo
+  >AXF_OBJ_FinancialTransaction__c</referenceTo><relationshipLabel
+  >Planned target allocations</relationshipLabel><relationshipName
+  >TargetAllocations</relationshipName><type>Lookup</type></CustomField>

@@ -14,7 +14,9 @@
         >false</default><label>Encargo de Liquidacao Cambial</label></value>
             <value><fullName>CALCULATION_SNAPSHOT</fullName><default
         >false</default><label>Snapshot de Calculo</label></value>
-        </valueSetDefinition>
+        <value><fullName>RECONCILIATION_ALLOCATION</fullName><default
+        >false</default><label
+        >Realization allocation</label></value></valueSetDefinition>
     </valueSet>
     <description
   >Tipo do alvo do snapshot (MVP: FINANCIAL_TRANSACTION|FX_SETTLEMENT_CHARGE; CALCULATION_SNAPSHOT reservado) - exatamente um coerente (AXF-24).</description>

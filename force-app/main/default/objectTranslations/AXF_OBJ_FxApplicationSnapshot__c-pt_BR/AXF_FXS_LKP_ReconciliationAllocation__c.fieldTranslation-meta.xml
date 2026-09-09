@@ -1,0 +1,4 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<CustomFieldTranslation xmlns="http://soap.sforce.com/2006/04/metadata"><label
+  >Alocação de realização</label><name
+  >AXF_FXS_LKP_ReconciliationAllocation__c</name></CustomFieldTranslation>

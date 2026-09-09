@@ -1,0 +1,8 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<CustomField xmlns="http://soap.sforce.com/2006/04/metadata"><fullName
+  >AXF_RA_LKP_FxSnapshot__c</fullName><label
+  >Recognition evidence</label><deleteConstraint
+  >Restrict</deleteConstraint><referenceTo
+  >AXF_OBJ_FxApplicationSnapshot__c</referenceTo><relationshipLabel
+  >Recognition evidence allocations</relationshipLabel><relationshipName
+  >RecognitionAllocations</relationshipName><type>Lookup</type></CustomField>

@@ -1,0 +1,152 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<CustomLabels xmlns="http://soap.sforce.com/2006/04/metadata"><labels><fullName
+    >AXF_Realization_title</fullName><language>en_US</language><protected
+    >false</protected><shortDescription
+    >Realization title</shortDescription><value
+    >Record realization</value></labels><labels><fullName
+    >AXF_Realization_target</fullName><language>en_US</language><protected
+    >false</protected><shortDescription
+    >Realization target</shortDescription><value
+    >Planned transaction</value></labels><labels><fullName
+    >AXF_Realization_actual</fullName><language>en_US</language><protected
+    >false</protected><shortDescription
+    >Realization actual</shortDescription><value
+    >No prior plan</value></labels><labels><fullName
+    >AXF_Realization_holder</fullName><language>en_US</language><protected
+    >false</protected><shortDescription
+    >Realization holder</shortDescription><value
+    >Person or company</value></labels><labels><fullName
+    >AXF_Realization_direction</fullName><language>en_US</language><protected
+    >false</protected><shortDescription
+    >Realization direction</shortDescription><value
+    >Direction</value></labels><labels><fullName
+    >AXF_Realization_debit</fullName><language>en_US</language><protected
+    >false</protected><shortDescription
+    >Realization debit</shortDescription><value>Expense</value></labels><labels
+  ><fullName>AXF_Realization_credit</fullName><language
+    >en_US</language><protected>false</protected><shortDescription
+    >Realization credit</shortDescription><value>Income</value></labels><labels
+  ><fullName>AXF_Realization_currency</fullName><language
+    >en_US</language><protected>false</protected><shortDescription
+    >Realization currency</shortDescription><value
+    >Original currency (ISO)</value></labels><labels><fullName
+    >AXF_Realization_amount</fullName><language>en_US</language><protected
+    >false</protected><shortDescription
+    >Realization amount</shortDescription><value
+    >Realized amount</value></labels><labels><fullName
+    >AXF_Realization_date</fullName><language>en_US</language><protected
+    >false</protected><shortDescription
+    >Realization date</shortDescription><value
+    >Realization date</value></labels><labels><fullName
+    >AXF_Realization_source</fullName><language>en_US</language><protected
+    >false</protected><shortDescription
+    >Realization source</shortDescription><value>Source</value></labels><labels
+  ><fullName>AXF_Realization_cash</fullName><language>en_US</language><protected
+    >false</protected><shortDescription
+    >Realization cash</shortDescription><value>Cash</value></labels><labels
+  ><fullName>AXF_Realization_bank</fullName><language>en_US</language><protected
+    >false</protected><shortDescription
+    >Realization bank</shortDescription><value
+    >Bank account</value></labels><labels><fullName
+    >AXF_Realization_card</fullName><language>en_US</language><protected
+    >false</protected><shortDescription
+    >Realization card</shortDescription><value
+    >Credit card</value></labels><labels><fullName
+    >AXF_Realization_existing</fullName><language>en_US</language><protected
+    >false</protected><shortDescription
+    >Realization existing</shortDescription><value
+    >Use an existing source fact</value></labels><labels><fullName
+    >AXF_Realization_fact</fullName><language>en_US</language><protected
+    >false</protected><shortDescription
+    >Realization fact</shortDescription><value
+    >Source transaction</value></labels><labels><fullName
+    >AXF_Realization_sourceVersion</fullName><language
+    >en_US</language><protected>false</protected><shortDescription
+    >Realization sourceVersion</shortDescription><value
+    >Observed source version</value></labels><labels><fullName
+    >AXF_Realization_funding</fullName><language>en_US</language><protected
+    >false</protected><shortDescription
+    >Realization funding</shortDescription><value
+    >Account or card</value></labels><labels><fullName
+    >AXF_Realization_confirm</fullName><language>en_US</language><protected
+    >false</protected><shortDescription
+    >Realization confirm</shortDescription><value
+    >Confirm realization</value></labels><labels><fullName
+    >AXF_Realization_reverse</fullName><language>en_US</language><protected
+    >false</protected><shortDescription
+    >Realization reverse</shortDescription><value
+    >Reverse application</value></labels><labels><fullName
+    >AXF_Realization_retry</fullName><language>en_US</language><protected
+    >false</protected><shortDescription
+    >Realization retry</shortDescription><value
+    >Retry reporting FX</value></labels><labels><fullName
+    >AXF_Realization_refresh</fullName><language>en_US</language><protected
+    >false</protected><shortDescription
+    >Realization refresh</shortDescription><value
+    >Refresh</value></labels><labels><fullName
+    >AXF_Realization_planned</fullName><language>en_US</language><protected
+    >false</protected><shortDescription
+    >Realization planned</shortDescription><value
+    >Planned</value></labels><labels><fullName
+    >AXF_Realization_realized</fullName><language>en_US</language><protected
+    >false</protected><shortDescription
+    >Realization realized</shortDescription><value
+    >Realized</value></labels><labels><fullName
+    >AXF_Realization_residual</fullName><language>en_US</language><protected
+    >false</protected><shortDescription
+    >Realization residual</shortDescription><value
+    >Outstanding</value></labels><labels><fullName
+    >AXF_Realization_reporting</fullName><language>en_US</language><protected
+    >false</protected><shortDescription
+    >Realization reporting</shortDescription><value
+    >Reporting total</value></labels><labels><fullName
+    >AXF_Realization_pending</fullName><language>en_US</language><protected
+    >false</protected><shortDescription
+    >Realization pending</shortDescription><value
+    >Reporting FX is pending. Converted total is unavailable.</value></labels><labels
+  ><fullName>AXF_Realization_empty</fullName><language
+    >en_US</language><protected>false</protected><shortDescription
+    >Realization empty</shortDescription><value
+    >No realizations yet.</value></labels><labels><fullName
+    >AXF_Realization_error</fullName><language>en_US</language><protected
+    >false</protected><shortDescription
+    >Realization error</shortDescription><value
+    >Unable to complete. Refresh access and versions, then review the values.</value></labels><labels
+  ><fullName>AXF_Realization_success</fullName><language
+    >en_US</language><protected>false</protected><shortDescription
+    >Realization success</shortDescription><value
+    >Operation recorded.</value></labels><labels><fullName
+    >AXF_Realization_loading</fullName><language>en_US</language><protected
+    >false</protected><shortDescription
+    >Realization loading</shortDescription><value
+    >Loading realization</value></labels><labels><fullName
+    >AXF_Realization_effect</fullName><language>en_US</language><protected
+    >false</protected><shortDescription
+    >Realization effect</shortDescription><value>Effect</value></labels><labels
+  ><fullName>AXF_Realization_application</fullName><language
+    >en_US</language><protected>false</protected><shortDescription
+    >Realization application</shortDescription><value
+    >Application</value></labels><labels><fullName
+    >AXF_Realization_reversal</fullName><language>en_US</language><protected
+    >false</protected><shortDescription
+    >Realization reversal</shortDescription><value
+    >Reversal</value></labels><labels><fullName
+    >AXF_Realization_ready</fullName><language>en_US</language><protected
+    >false</protected><shortDescription
+    >Realization ready</shortDescription><value>Ready</value></labels><labels
+  ><fullName>AXF_Realization_currencyMismatch</fullName><language
+    >en_US</language><protected>false</protected><shortDescription
+    >Realization currencyMismatch</shortDescription><value
+    >The source and planned transaction must use the same original currency.</value></labels><labels
+  ><fullName>AXF_Realization_conflict</fullName><language
+    >en_US</language><protected>false</protected><shortDescription
+    >Realization conflict</shortDescription><value
+    >The data changed. Refresh before confirming a new operation.</value></labels><labels
+  ><fullName>AXF_Realization_unavailableAmount</fullName><language
+    >en_US</language><protected>false</protected><shortDescription
+    >Realization unavailableAmount</shortDescription><value
+    >The amount exceeds the available source or outstanding plan.</value></labels><labels
+  ><fullName>AXF_Realization_reportingCurrencyRequired</fullName><language
+    >en_US</language><protected>false</protected><shortDescription
+    >Realization reportingCurrencyRequired</shortDescription><value
+    >Configure the organization reporting currency before recording realization.</value></labels></CustomLabels>

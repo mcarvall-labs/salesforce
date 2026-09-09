@@ -1,0 +1,4 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<CustomField xmlns="http://soap.sforce.com/2006/04/metadata"><fullName
+  >AXF_RA_NUM_Magnitude__c</fullName><label>Applied amount</label><precision
+  >16</precision><scale>2</scale><type>Number</type></CustomField>

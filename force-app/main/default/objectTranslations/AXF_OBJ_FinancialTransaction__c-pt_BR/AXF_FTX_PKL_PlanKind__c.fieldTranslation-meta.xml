@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<CustomFieldTranslation xmlns="http://soap.sforce.com/2006/04/metadata"><label
+  >Papel financeiro</label><name>AXF_FTX_PKL_PlanKind__c</name><picklistValues
+  ><masterLabel>PLANNED</masterLabel><translation
+    >Previsto</translation></picklistValues><picklistValues><masterLabel
+    >ACTUAL_ONLY</masterLabel><translation
+    >Sem previsão</translation></picklistValues><picklistValues><masterLabel
+    >CASH_FACT</masterLabel><translation
+    >Fato em dinheiro</translation></picklistValues></CustomFieldTranslation>

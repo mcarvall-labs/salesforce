@@ -1,0 +1,4 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<CustomPermission xmlns="http://soap.sforce.com/2006/04/metadata"><description
+  >Allows authorized manual realization and compensating reversal. Record access is always revalidated.</description><label
+  >Record financial realization</label></CustomPermission>
