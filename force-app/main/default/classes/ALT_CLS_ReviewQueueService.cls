@@ -5,6 +5,7 @@ public with sharing class ALT_CLS_ReviewQueueService {
   public static final String STATE_DISMISSED = 'DISMISSED';
 
   public static final Set<String> SUPPORTED_TYPES = new Set<String>{
+    'MANUAL_CONFIRMATION',
     'MATCH_LOW_CONFIDENCE',
     'SOURCE_CHANGE',
     'SOURCE_DELETE',
@@ -203,10 +204,17 @@ public with sharing class ALT_CLS_ReviewQueueService {
 
   /** Lista itens OPEN visiveis ao usuario (with sharing). */
   public List<ReviewViewDTO> listOpen() {
+    return listOpenByType(null);
+  }
+
+  /** @description Filters before the page limit; the same reference authorization applies. */
+  public List<ReviewViewDTO> listOpenByType(String type) {
     List<AXF_OBJ_ReviewItem__c> rows = (List<AXF_OBJ_ReviewItem__c>) Database.queryWithBinds(
       selectQuery() +
-      ' WHERE AXF_RVI_PKL_State__c = :state ORDER BY CreatedDate ASC LIMIT 200',
-      new Map<String, Object>{ 'state' => STATE_OPEN },
+        ' WHERE AXF_RVI_PKL_State__c = :state' +
+        (type == null ? '' : ' AND AXF_RVI_PKL_Type__c = :type') +
+        ' ORDER BY CreatedDate ASC LIMIT 200',
+      new Map<String, Object>{ 'state' => STATE_OPEN, 'type' => type },
       AccessLevel.USER_MODE
     );
     ReferenceAccess allowed = authorizedReferences(rows);
@@ -334,6 +342,19 @@ public with sharing class ALT_CLS_ReviewQueueService {
           'A source review requires one typed fact, its parent and observation evidence.'
         );
       }
+    }
+    if (
+      input.type == 'MANUAL_CONFIRMATION' &&
+      (input.financialTransactionId == null ||
+      input.accountId == null ||
+      input.bankAccountTransactionId != null ||
+      input.creditCardTransactionId != null ||
+      input.bankAccountId != null ||
+      input.creditCardId != null)
+    ) {
+      throw new AXF_CLS_ReviewQueueException(
+        'Manual confirmation requires an entry and its holder only.'
+      );
     }
     Integer refs = 0;
     if (input.financialTransactionId != null)

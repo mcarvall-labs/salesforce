@@ -1,7 +1,80 @@
-﻿<?xml version="1.0" encoding="UTF-8" ?>
+﻿<?xml version="1.0" encoding="UTF-8"?>
 <PermissionSet xmlns="http://soap.sforce.com/2006/04/metadata">
-  <description
-  >Review queue access with minimal object read required for typed lookups. Financial field permissions and record sharing remain independently required; no source write or broad record access is granted.</description>
+  <classAccesses>
+    <apexClass>AXF_CLS_CTRL_ManualReview</apexClass>
+    <enabled>true</enabled>
+  </classAccesses>
+  <description>Review queue access with minimal object read required for typed lookups. Financial field permissions and record sharing remain independently required; no source write or broad record access is granted.</description>
+  <fieldPermissions>
+    <editable>true</editable>
+    <field>AXF_OBJ_ReviewItem__c.AXF_RVI_TXT_ProposedStatus__c</field>
+    <readable>true</readable>
+  </fieldPermissions>
+  <fieldPermissions>
+    <editable>true</editable>
+    <field>AXF_OBJ_ReviewItem__c.AXF_RVI_TXT_ProposedDirection__c</field>
+    <readable>true</readable>
+  </fieldPermissions>
+  <fieldPermissions>
+    <editable>true</editable>
+    <field>AXF_OBJ_ReviewItem__c.AXF_RVI_TXT_ProposedDescription__c</field>
+    <readable>true</readable>
+  </fieldPermissions>
+  <fieldPermissions>
+    <editable>true</editable>
+    <field>AXF_OBJ_ReviewItem__c.AXF_RVI_TXT_ProposedCurrency__c</field>
+    <readable>true</readable>
+  </fieldPermissions>
+  <fieldPermissions>
+    <editable>true</editable>
+    <field>AXF_OBJ_ReviewItem__c.AXF_RVI_TXT_PriorStatus__c</field>
+    <readable>true</readable>
+  </fieldPermissions>
+  <fieldPermissions>
+    <editable>true</editable>
+    <field>AXF_OBJ_ReviewItem__c.AXF_RVI_TXT_PriorDirection__c</field>
+    <readable>true</readable>
+  </fieldPermissions>
+  <fieldPermissions>
+    <editable>true</editable>
+    <field>AXF_OBJ_ReviewItem__c.AXF_RVI_TXT_PriorDescription__c</field>
+    <readable>true</readable>
+  </fieldPermissions>
+  <fieldPermissions>
+    <editable>true</editable>
+    <field>AXF_OBJ_ReviewItem__c.AXF_RVI_TXT_PriorCurrency__c</field>
+    <readable>true</readable>
+  </fieldPermissions>
+  <fieldPermissions>
+    <editable>true</editable>
+    <field>AXF_OBJ_ReviewItem__c.AXF_RVI_TAL_ResolutionNote__c</field>
+    <readable>true</readable>
+  </fieldPermissions>
+  <fieldPermissions>
+    <editable>true</editable>
+    <field>AXF_OBJ_ReviewItem__c.AXF_RVI_NUM_Version__c</field>
+    <readable>true</readable>
+  </fieldPermissions>
+  <fieldPermissions>
+    <editable>true</editable>
+    <field>AXF_OBJ_ReviewItem__c.AXF_RVI_NUM_ProposedAmount__c</field>
+    <readable>true</readable>
+  </fieldPermissions>
+  <fieldPermissions>
+    <editable>true</editable>
+    <field>AXF_OBJ_ReviewItem__c.AXF_RVI_NUM_PriorMatchConfidence__c</field>
+    <readable>true</readable>
+  </fieldPermissions>
+  <fieldPermissions>
+    <editable>true</editable>
+    <field>AXF_OBJ_ReviewItem__c.AXF_RVI_TXT_EvidenceRef__c</field>
+    <readable>true</readable>
+  </fieldPermissions>
+  <fieldPermissions>
+    <editable>true</editable>
+    <field>AXF_OBJ_ReviewItem__c.AXF_RVI_LKP_ResolvedByUser__c</field>
+    <readable>true</readable>
+  </fieldPermissions>
   <fieldPermissions>
     <editable>true</editable>
     <field>AXF_OBJ_ReviewItem__c.AXF_RVI_DAT_PriorDate__c</field>
@@ -9,7 +82,7 @@
   </fieldPermissions>
   <fieldPermissions>
     <editable>true</editable>
-    <field>AXF_OBJ_ReviewItem__c.AXF_RVI_DAT_ProposedDate__c</field>
+    <field>AXF_OBJ_ReviewItem__c.AXF_RVI_NUM_PriorAmount__c</field>
     <readable>true</readable>
   </fieldPermissions>
   <fieldPermissions>
@@ -29,7 +102,7 @@
   </fieldPermissions>
   <fieldPermissions>
     <editable>true</editable>
-    <field>AXF_OBJ_ReviewItem__c.AXF_RVI_LKP_Account__c</field>
+    <field>AXF_OBJ_ReviewItem__c.AXF_RVI_DAT_ProposedDate__c</field>
     <readable>true</readable>
   </fieldPermissions>
   <fieldPermissions>
@@ -59,77 +132,7 @@
   </fieldPermissions>
   <fieldPermissions>
     <editable>true</editable>
-    <field>AXF_OBJ_ReviewItem__c.AXF_RVI_LKP_ResolvedByUser__c</field>
-    <readable>true</readable>
-  </fieldPermissions>
-  <fieldPermissions>
-    <editable>true</editable>
-    <field>AXF_OBJ_ReviewItem__c.AXF_RVI_NUM_PriorAmount__c</field>
-    <readable>true</readable>
-  </fieldPermissions>
-  <fieldPermissions>
-    <editable>true</editable>
-    <field>AXF_OBJ_ReviewItem__c.AXF_RVI_NUM_PriorMatchConfidence__c</field>
-    <readable>true</readable>
-  </fieldPermissions>
-  <fieldPermissions>
-    <editable>true</editable>
-    <field>AXF_OBJ_ReviewItem__c.AXF_RVI_NUM_ProposedAmount__c</field>
-    <readable>true</readable>
-  </fieldPermissions>
-  <fieldPermissions>
-    <editable>true</editable>
-    <field>AXF_OBJ_ReviewItem__c.AXF_RVI_NUM_Version__c</field>
-    <readable>true</readable>
-  </fieldPermissions>
-  <fieldPermissions>
-    <editable>true</editable>
-    <field>AXF_OBJ_ReviewItem__c.AXF_RVI_TAL_ResolutionNote__c</field>
-    <readable>true</readable>
-  </fieldPermissions>
-  <fieldPermissions>
-    <editable>true</editable>
-    <field>AXF_OBJ_ReviewItem__c.AXF_RVI_TXT_EvidenceRef__c</field>
-    <readable>true</readable>
-  </fieldPermissions>
-  <fieldPermissions>
-    <editable>true</editable>
-    <field>AXF_OBJ_ReviewItem__c.AXF_RVI_TXT_PriorCurrency__c</field>
-    <readable>true</readable>
-  </fieldPermissions>
-  <fieldPermissions>
-    <editable>true</editable>
-    <field>AXF_OBJ_ReviewItem__c.AXF_RVI_TXT_PriorDescription__c</field>
-    <readable>true</readable>
-  </fieldPermissions>
-  <fieldPermissions>
-    <editable>true</editable>
-    <field>AXF_OBJ_ReviewItem__c.AXF_RVI_TXT_PriorDirection__c</field>
-    <readable>true</readable>
-  </fieldPermissions>
-  <fieldPermissions>
-    <editable>true</editable>
-    <field>AXF_OBJ_ReviewItem__c.AXF_RVI_TXT_PriorStatus__c</field>
-    <readable>true</readable>
-  </fieldPermissions>
-  <fieldPermissions>
-    <editable>true</editable>
-    <field>AXF_OBJ_ReviewItem__c.AXF_RVI_TXT_ProposedCurrency__c</field>
-    <readable>true</readable>
-  </fieldPermissions>
-  <fieldPermissions>
-    <editable>true</editable>
-    <field>AXF_OBJ_ReviewItem__c.AXF_RVI_TXT_ProposedDescription__c</field>
-    <readable>true</readable>
-  </fieldPermissions>
-  <fieldPermissions>
-    <editable>true</editable>
-    <field>AXF_OBJ_ReviewItem__c.AXF_RVI_TXT_ProposedDirection__c</field>
-    <readable>true</readable>
-  </fieldPermissions>
-  <fieldPermissions>
-    <editable>true</editable>
-    <field>AXF_OBJ_ReviewItem__c.AXF_RVI_TXT_ProposedStatus__c</field>
+    <field>AXF_OBJ_ReviewItem__c.AXF_RVI_LKP_Account__c</field>
     <readable>true</readable>
   </fieldPermissions>
   <hasActivationRequired>false</hasActivationRequired>
@@ -188,4 +191,8 @@
     <object>AXF_OBJ_FinancialTransaction__c</object>
     <viewAllRecords>false</viewAllRecords>
   </objectPermissions>
+  <tabSettings>
+    <tab>AXF_CT_ManualReview</tab>
+    <visibility>Available</visibility>
+  </tabSettings>
 </PermissionSet>

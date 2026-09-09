@@ -33,6 +33,8 @@ public with sharing class AXF_CLS_FinancialEntryService {
     public Id creditCardId;
     @AuraEnabled
     public String clientRequestId;
+    @AuraEnabled
+    public Boolean trackConfirmation;
   }
 
   public class EntryResult {
@@ -137,6 +139,8 @@ public with sharing class AXF_CLS_FinancialEntryService {
         AXF_FTX_NUM_Magnitude__c,
         AXF_FTX_TXT_CurrencyIsoCode__c,
         AXF_FTX_DAT_PurchaseDate__c,
+        AXF_FTX_DAT_DueDate__c,
+        AXF_FTX_BOL_TrackConfirmation__c,
         AXF_FTX_LKP_BankAccount__c,
         AXF_FTX_LKP_CreditCard__c
       FROM AXF_OBJ_FinancialTransaction__c
@@ -153,6 +157,9 @@ public with sharing class AXF_CLS_FinancialEntryService {
         prior.AXF_FTX_NUM_Magnitude__c == input.magnitude &&
         prior.AXF_FTX_TXT_CurrencyIsoCode__c == input.currencyIsoCode &&
         prior.AXF_FTX_DAT_PurchaseDate__c == input.purchaseDate &&
+        prior.AXF_FTX_DAT_DueDate__c == input.dueDate &&
+        prior.AXF_FTX_BOL_TrackConfirmation__c ==
+        (input.trackConfirmation == true) &&
         prior.AXF_FTX_LKP_BankAccount__c == input.bankAccountId &&
         prior.AXF_FTX_LKP_CreditCard__c == input.creditCardId;
       EntryResult r = new EntryResult();
@@ -179,12 +186,19 @@ public with sharing class AXF_CLS_FinancialEntryService {
       AXF_FTX_PKL_Status__c = 'CONFIRMED',
       AXF_FTX_CHK_IsEstimated__c = false,
       AXF_FTX_NUM_Version__c = 0,
-      AXF_FTX_EXI_ClientRequestId__c = input.clientRequestId
+      AXF_FTX_EXI_ClientRequestId__c = input.clientRequestId,
+      AXF_FTX_BOL_TrackConfirmation__c = input.trackConfirmation == true
     );
 
+    Savepoint checkpoint = Database.setSavepoint();
     try {
       insert as user ftx;
-    } catch (DmlException dmlError) {
+      if (input.trackConfirmation == true) {
+        new ALT_CLS_ManualReviewService()
+          .recordEntries(new List<AXF_OBJ_FinancialTransaction__c>{ ftx });
+      }
+    } catch (Exception persistenceError) {
+      Database.rollback(checkpoint);
       EntryResult r = new EntryResult();
       r.outcome = 'INVALID';
       r.message = MSG_INVALID;

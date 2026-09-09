@@ -1,6 +1,7 @@
 import LANG from "@salesforce/i18n/lang";
 
 const PT = {
+  trackConfirmation: "Acompanhar confirmação",
   title: "Adicionar Receita ou Despesa",
   forbidden: "Você não tem autorização para lançar nesta pessoa ou empresa.",
   stepContext: "Contexto",
@@ -43,6 +44,7 @@ const PT = {
 };
 
 const EN = {
+  trackConfirmation: "Track confirmation",
   title: "Add Income or Expense",
   forbidden:
     "You are not authorized to post an entry for this person or company.",
