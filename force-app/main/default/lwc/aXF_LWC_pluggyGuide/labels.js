@@ -30,16 +30,17 @@ const PT = {
     intro: {
       title: "O que você vai fazer nesta etapa",
       body: [
-        "Aqui você prepara o acesso do Axon à Pluggy. São quatro passos:",
+        "Aqui você prepara o acesso do Axon à Pluggy. Os passos são:",
         {
           list: [
             "criar ou entrar na conta MeuPluggy;",
-            "conectar seus bancos (Open Finance) no MeuPluggy;",
-            "criar a aplicação no painel do Pluggy e autorizar as conexões;",
+            "conectar o primeiro banco (Open Finance) no MeuPluggy;",
+            "adicionar as próximas conexões de banco;",
+            "criar a aplicação no painel do Pluggy;",
             "copiar o Client ID e o Client Secret da aplicação."
           ]
         },
-        "O Item ID de cada conexão você copia na etapa seguinte, ao buscar contas e cartões.",
+        "Autorizar as conexões para a aplicação e copiar o Item ID de cada uma você faz na etapa seguinte, ao buscar contas e cartões.",
         "Este guia mostra uma ação por vez e você pode voltar a qualquer momento. Nada aqui conecta banco nem envia senha — as instruções são só de apoio."
       ]
     },
@@ -52,17 +53,30 @@ const PT = {
       mediaAlt:
         "Tela inicial do MeuPluggy com os botões de criar conta e entrar, com dados fictícios."
     },
-    meupluggyConnect: {
-      title: "Conectar um banco no MeuPluggy",
+    meupluggyConnectFirst: {
+      title: "Conectar o primeiro banco",
       body: [
-        "No MeuPluggy, abra Conexões e clique em Nova conexão.",
-        "Clique em Continuar, escolha a instituição e conclua a autorização que o banco pedir. Os campos mudam de um banco para outro."
+        "No MeuPluggy, clique em Conectar minha conta e escolha a instituição.",
+        "Leia as informações, clique em Continuar, informe os dados que o banco pedir e conclua a autorização. Os campos mudam de um banco para outro."
       ],
       mediaAlt:
-        "Tela de Conexões do MeuPluggy com o botão Nova conexão em destaque, com dados fictícios.",
+        "Fluxo do MeuPluggy: Conectar minha conta, escolher a instituição, autorizar no banco e ver a conta conectada, com dados fictícios.",
       help: [
-        "Repita esta etapa para cada banco que você quer disponibilizar ao Axon.",
-        "Alguns bancos pedem confirmação no aplicativo do próprio banco ou um código enviado a você."
+        "Alguns bancos pedem confirmação no aplicativo do próprio banco ou um código enviado a você.",
+        "Ao final, a conexão aparece na tela inicial do MeuPluggy como ativa."
+      ]
+    },
+    meupluggyConnectNext: {
+      title: "Adicionar a próxima conexão",
+      body: [
+        "Na tela de Conexões do MeuPluggy, clique em Nova conexão e repita o processo para o próximo banco.",
+        "Faça isso para cada banco que você quer disponibilizar ao Axon."
+      ],
+      mediaAlt:
+        "Tela de Conexões do MeuPluggy com uma conexão ativa, o botão Nova conexão e uma segunda conexão sendo adicionada, com dados fictícios.",
+      help: [
+        "Cada banco conectado vira uma conexão separada, com o seu próprio Item ID.",
+        "Você pode adicionar e remover conexões a qualquer momento pelo MeuPluggy."
       ]
     },
     dashboardApp: {
@@ -179,16 +193,17 @@ const EN = {
     intro: {
       title: "What you will do in this step",
       body: [
-        "Here you prepare Axon's access to Pluggy. Four steps:",
+        "Here you prepare Axon's access to Pluggy. The steps are:",
         {
           list: [
             "create or sign in to the MeuPluggy account;",
-            "connect your banks (Open Finance) on MeuPluggy;",
-            "create the application in the Pluggy dashboard and authorize the connections;",
+            "connect the first bank (Open Finance) on MeuPluggy;",
+            "add the next bank connections;",
+            "create the application in the Pluggy dashboard;",
             "copy the application's Client ID and Client Secret."
           ]
         },
-        "You copy each connection's Item ID in the next step, when finding accounts and cards.",
+        "Authorizing the connections for the application and copying each connection's Item ID happen in the next step, when finding accounts and cards.",
         "This guide shows one action at a time and you can go back anytime. Nothing here connects a bank or sends a password — the instructions are support only."
       ]
     },
@@ -201,17 +216,30 @@ const EN = {
       mediaAlt:
         "MeuPluggy home screen with the create-account and sign-in buttons, using fictitious data."
     },
-    meupluggyConnect: {
-      title: "Connect a bank on MeuPluggy",
+    meupluggyConnectFirst: {
+      title: "Connect the first bank",
       body: [
-        "On MeuPluggy, open Conexões and click Nova conexão.",
-        "Click Continuar, choose the institution and complete the authorization the bank asks for. Fields differ from bank to bank."
+        "On MeuPluggy, click Conectar minha conta and choose the institution.",
+        "Read the information, click Continuar, enter what the bank asks for and complete the authorization. Fields differ from bank to bank."
       ],
       mediaAlt:
-        "MeuPluggy Conexões screen with the Nova conexão button highlighted, using fictitious data.",
+        "MeuPluggy flow: Conectar minha conta, choose the institution, authorize at the bank and see the connected account, using fictitious data.",
       help: [
-        "Repeat this step for every bank you want to make available to Axon.",
-        "Some banks ask for confirmation in their own app or a code sent to you."
+        "Some banks ask for confirmation in their own app or a code sent to you.",
+        "When done, the connection shows as active on the MeuPluggy home screen."
+      ]
+    },
+    meupluggyConnectNext: {
+      title: "Add the next connection",
+      body: [
+        "On the MeuPluggy Conexões screen, click Nova conexão and repeat the process for the next bank.",
+        "Do this for every bank you want to make available to Axon."
+      ],
+      mediaAlt:
+        "MeuPluggy Conexões screen with one active connection, the Nova conexão button and a second connection being added, using fictitious data.",
+      help: [
+        "Each connected bank becomes a separate connection, with its own Item ID.",
+        "You can add and remove connections anytime from MeuPluggy."
       ]
     },
     dashboardApp: {
