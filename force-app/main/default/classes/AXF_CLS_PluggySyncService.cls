@@ -372,7 +372,13 @@ public with sharing class AXF_CLS_PluggySyncService {
       .refresh(s.connectionId);
 
     // ---- DML: publish facts, then finalize the run ----
-    Map<String, Object> dml = upsertFacts(s, raw);
+    Map<String, Object> dml = snap.collectionAllowed == true
+      ? upsertFacts(s, raw)
+      : new Map<String, Object>{
+          'written' => 0,
+          'failed' => 0,
+          'maxDate' => null
+        };
     out.recordsWritten = (Integer) dml.get('written');
     out.recordsFailed = (Integer) dml.get('failed');
     Date maxDate = (Date) dml.get('maxDate');
@@ -388,7 +394,7 @@ public with sharing class AXF_CLS_PluggySyncService {
     Datetime completeThrough = run.AXF_INR_DT_CompleteThrough__c;
     Datetime lastSuccessAt = null;
 
-    if (snap.consentState != 'ACTIVE') {
+    if (snap.collectionAllowed != true) {
       state = 'FAILED_TERMINAL';
       message = 'Consentimento deixou de estar ativo durante a sincronizacao. Reautorize no provedor.';
     } else if (stop == 'FORBIDDEN') {
@@ -507,10 +513,12 @@ public with sharing class AXF_CLS_PluggySyncService {
     Map<String, SObject> cardByKey = new Map<String, SObject>();
     Date maxDate = null;
     Datetime now = Datetime.now();
+    Integer rejected = 0;
 
     for (Map<String, Object> t : raw) {
       String providerId = strOf(t.get('id'));
       if (String.isBlank(providerId)) {
+        rejected++;
         continue;
       }
       // Only route rows that belong to the account we asked for.
@@ -525,7 +533,11 @@ public with sharing class AXF_CLS_PluggySyncService {
         maxDate = bookedOn;
       }
       Decimal amount = decimalOf(t.get('amount'));
-      Decimal magnitude = (amount == null) ? 0 : Math.abs(amount).setScale(2);
+      if (amount == null || bookedOn == null) {
+        rejected++;
+        continue;
+      }
+      Decimal magnitude = Math.abs(amount).setScale(8);
       String direction = directionOf(t.get('type'), amount);
       String rawDesc = firstNonBlank(
         strOf(t.get('descriptionRaw')),
@@ -598,7 +610,7 @@ public with sharing class AXF_CLS_PluggySyncService {
     }
 
     Integer written = 0;
-    Integer failed = 0;
+    Integer failed = rejected;
     if (!bankByKey.isEmpty()) {
       Map<String, Object> r = applyUpsert(
         bankByKey.values(),
@@ -627,22 +639,12 @@ public with sharing class AXF_CLS_PluggySyncService {
     List<SObject> records,
     Schema.SObjectField externalIdField
   ) {
-    Integer ok = 0;
-    Integer bad = 0;
-    List<Database.UpsertResult> results = Database.upsert(
-      records,
-      externalIdField,
-      false,
-      AccessLevel.USER_MODE
-    );
-    for (Database.UpsertResult r : results) {
-      if (r.isSuccess()) {
-        ok++;
-      } else {
-        bad++;
-      }
+    try {
+      return new ALT_CLS_SourceChangeReview().reconcile(records);
+    } catch (Exception failedEvidence) {
+      // The caller persists a sanitized failure and retains the original checkpoint.
+      return new Map<String, Object>{ 'ok' => 0, 'bad' => records.size() };
     }
-    return new Map<String, Object>{ 'ok' => ok, 'bad' => bad };
   }
 
   // ---------------------------------------------------------------------------

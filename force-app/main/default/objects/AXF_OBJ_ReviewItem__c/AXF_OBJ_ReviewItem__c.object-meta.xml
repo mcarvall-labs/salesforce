@@ -2,7 +2,7 @@
 <CustomObject xmlns="http://soap.sforce.com/2006/04/metadata">
   <deploymentStatus>Deployed</deploymentStatus>
   <description
-  >Item da fila unica de revisao humana (AXF-94, AD-41). Valores anteriores vivem no proprio item e sao expurgados apos resolucao (G7); sem snapshot de payload cru.</description>
+  >Typed review evidence is retained until an authorized retention policy permits disposal.</description>
   <enableActivities>false</enableActivities>
   <enableBulkApi>true</enableBulkApi>
   <enableFeeds>false</enableFeeds>

@@ -14,5 +14,6 @@
         >Transacoes</label></value>
         <value><fullName>BILLS</fullName><default>false</default><label
         >Faturas</label></value>
-    </valueSetDefinition></valueSet>
+    <value><fullName>SOURCE_DELETIONS</fullName><default>false</default><label
+        >Source deletions</label></value></valueSetDefinition></valueSet>
 </CustomField>

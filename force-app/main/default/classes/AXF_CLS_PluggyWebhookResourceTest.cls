@@ -39,6 +39,45 @@ private class AXF_CLS_PluggyWebhookResourceTest {
   }
 
   @IsTest
+  static void rejectsIncompleteDeletionInsteadOfAcknowledgingLostWork() {
+    AXF_CLS_PluggyWebhookResource.secretOverrideForTests = SECRET;
+    buildRequest(
+      '{"event":"transactions/deleted","itemId":"ITEM_A","accountId":"ACCOUNT_A"}',
+      SECRET
+    );
+    Test.startTest();
+    AXF_CLS_PluggyWebhookResource.handlePost();
+    Test.stopTest();
+    Assert.areEqual(400, RestContext.response.statusCode);
+    Assert.isTrue(
+      RestContext.response.responseBody.toString().contains('"accepted":false')
+    );
+  }
+
+  @IsTest
+  static void acceptsTypedDeletionWithoutExposingItsIdentifiers() {
+    AXF_CLS_PluggyWebhookResource.secretOverrideForTests = SECRET;
+    insert new AXF_PluggyIntegrationConfig__c(
+      SetupOwnerId = UserInfo.getOrganizationId(),
+      AXF_PIC_BOL_WebhookEnabled__c = false
+    );
+    buildRequest(
+      '{"event":"transactions/deleted","itemId":"ITEM_A","accountId":"ACCOUNT_A","transactionIds":["TX_A"]}',
+      SECRET
+    );
+    Test.startTest();
+    AXF_CLS_PluggyWebhookResource.handlePost();
+    Test.stopTest();
+    Assert.areEqual(200, RestContext.response.statusCode);
+    Assert.isTrue(
+      RestContext.response.responseBody.toString().contains('"queued":true')
+    );
+    Assert.isFalse(
+      RestContext.response.responseBody.toString().contains('TX_A')
+    );
+  }
+
+  @IsTest
   static void rejectsWrongToken() {
     AXF_CLS_PluggyWebhookResource.secretOverrideForTests = SECRET;
     buildRequest(BODY, 'not-the-secret');

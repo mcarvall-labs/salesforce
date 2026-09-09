@@ -5,5 +5,5 @@
     <type>Date</type>
     <required>false</required>
     <description
-  >Data anterior relevante; expurgada apos resolucao (G7, AXF-94).</description>
+  >Typed review evidence is retained until an authorized retention policy permits disposal.</description>
 </CustomField>
