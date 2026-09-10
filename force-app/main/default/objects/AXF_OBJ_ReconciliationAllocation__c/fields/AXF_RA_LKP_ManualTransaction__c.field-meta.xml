@@ -1,0 +1,7 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<CustomField xmlns="http://soap.sforce.com/2006/04/metadata"><fullName
+  >AXF_RA_LKP_ManualTransaction__c</fullName><label
+  >Cash fact</label><deleteConstraint>Restrict</deleteConstraint><referenceTo
+  >AXF_OBJ_FinancialTransaction__c</referenceTo><relationshipLabel
+  >Cash fact allocations</relationshipLabel><relationshipName
+  >CashAllocations</relationshipName><type>Lookup</type></CustomField>

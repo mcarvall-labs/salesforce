@@ -1,0 +1,7 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<CustomFieldTranslation xmlns="http://soap.sforce.com/2006/04/metadata"><label
+  >Tipo de efeito</label><name>AXF_RA_PKL_Kind__c</name><picklistValues
+  ><masterLabel>APPLICATION</masterLabel><translation
+    >Aplicação</translation></picklistValues><picklistValues><masterLabel
+    >REVERSAL</masterLabel><translation
+    >Reversão</translation></picklistValues></CustomFieldTranslation>

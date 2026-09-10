@@ -1,0 +1,8 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<CustomField xmlns="http://soap.sforce.com/2006/04/metadata"><fullName
+  >AXF_RA_PKL_Kind__c</fullName><label>Effect kind</label><type
+  >Picklist</type><valueSet><restricted>true</restricted><valueSetDefinition
+    ><sorted>false</sorted><value><fullName>APPLICATION</fullName><default
+        >true</default><label>APPLICATION</label></value><value><fullName
+        >REVERSAL</fullName><default>false</default><label
+        >REVERSAL</label></value></valueSetDefinition></valueSet></CustomField>

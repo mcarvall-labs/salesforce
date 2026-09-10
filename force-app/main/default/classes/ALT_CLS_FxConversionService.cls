@@ -53,6 +53,37 @@ public with sharing class ALT_CLS_FxConversionService {
     validate(input);
 
     FxTarget target = loadTarget(input);
+    String stableKey = applicationKey(
+      input.targetType,
+      input.targetId,
+      input.purpose,
+      1
+    );
+    List<AXF_OBJ_FxApplicationSnapshot__c> frozen = [
+      SELECT
+        Id,
+        AXF_FXS_NUM_OriginalAmount__c,
+        AXF_FXS_TXT_OriginalIso__c,
+        AXF_FXS_NUM_ReportingAmount__c,
+        AXF_FXS_TXT_CurrencyIsoCode__c,
+        AXF_FXS_NUM_ActualRate__c
+      FROM AXF_OBJ_FxApplicationSnapshot__c
+      WHERE AXF_FXS_EXI_ApplicationKey__c = :stableKey
+      WITH USER_MODE
+      LIMIT 1
+    ];
+    if (!frozen.isEmpty()) {
+      ConversionResultDTO replay = baseResult(input, target);
+      replay.snapshotId = frozen[0].Id;
+      replay.originalAmount = frozen[0].AXF_FXS_NUM_OriginalAmount__c;
+      replay.originalIso = frozen[0].AXF_FXS_TXT_OriginalIso__c;
+      replay.reportingAmount = frozen[0].AXF_FXS_NUM_ReportingAmount__c;
+      replay.reportingIso = frozen[0].AXF_FXS_TXT_CurrencyIsoCode__c;
+      replay.rateUsed = frozen[0].AXF_FXS_NUM_ActualRate__c;
+      replay.converted = true;
+      replay.outcome = 'CONVERTED';
+      return replay;
+    }
     if (target.originalIso == input.reportingIso) {
       ConversionResultDTO same = baseResult(input, target);
       same.converted = false;
@@ -83,38 +114,13 @@ public with sharing class ALT_CLS_FxConversionService {
     Decimal reportingAmount = (target.originalAmount * rate.AXF_EXR_NUM_Rate__c)
       .setScale(2, System.RoundingMode.HALF_UP);
 
-    // Idempotencia: mesma aplicacao (alvo/finalidade/taxa/origem/convertido) reutiliza o snapshot.
-    String revisionKey = applicationKey(
-      input.targetType,
-      input.targetId,
-      input.purpose,
-      1
-    );
-    List<AXF_OBJ_FxApplicationSnapshot__c> existing = [
-      SELECT Id
-      FROM AXF_OBJ_FxApplicationSnapshot__c
-      WHERE AXF_FXS_EXI_ApplicationKey__c = :revisionKey
-      LIMIT 1
-    ];
-    if (!existing.isEmpty()) {
-      ConversionResultDTO replay = baseResult(input, target);
-      replay.snapshotId = existing[0].Id;
-      replay.converted = true;
-      replay.outcome = 'CONVERTED';
-      replay.reportingAmount = reportingAmount;
-      replay.reportingIso = input.reportingIso;
-      replay.rateUsed = rate.AXF_EXR_NUM_Rate__c;
-      replay.message = 'Snapshot ja existente (idempotente).';
-      return replay;
-    }
-
     AXF_OBJ_FxApplicationSnapshot__c snapshot = buildSnapshot(
       input,
       target,
       rate,
       reportingAmount
     );
-    insert snapshot;
+    insert as user snapshot;
 
     ConversionResultDTO result = baseResult(input, target);
     result.snapshotId = snapshot.Id;
@@ -135,7 +141,9 @@ public with sharing class ALT_CLS_FxConversionService {
   ) {
     AXF_OBJ_FxApplicationSnapshot__c snapshot = new AXF_OBJ_FxApplicationSnapshot__c();
     snapshot.AXF_FXS_PKL_TargetType__c = input.targetType;
-    if (input.targetType == 'FINANCIAL_TRANSACTION') {
+    if (input.targetType == 'RECONCILIATION_ALLOCATION') {
+      snapshot.AXF_FXS_LKP_ReconciliationAllocation__c = input.targetId;
+    } else if (input.targetType == 'FINANCIAL_TRANSACTION') {
       snapshot.AXF_FXS_LKP_FinancialTransaction__c = input.targetId;
     } else {
       snapshot.AXF_FXS_LKP_FxSettlementCharge__c = input.targetId;
@@ -181,7 +189,34 @@ public with sharing class ALT_CLS_FxConversionService {
 
   private FxTarget loadTarget(ConversionInputDTO input) {
     FxTarget target = new FxTarget();
-    if (input.targetType == 'FINANCIAL_TRANSACTION') {
+    if (input.targetType == 'RECONCILIATION_ALLOCATION') {
+      ALT_CLS_RealizationService.requireAccess();
+      if (
+        !ALT_CLS_RealizationService.isWriting() ||
+        input.purpose != 'RECOGNITION'
+      ) {
+        throw new AXF_CLS_FxSettlementException('UNAVAILABLE');
+      }
+      AXF_OBJ_ReconciliationAllocation__c allocation = [
+        SELECT
+          AXF_RA_NUM_Magnitude__c,
+          AXF_RA_TXT_CurrencyIsoCode__c,
+          AXF_RA_DAT_RecognitionDate__c,
+          AXF_RA_TXT_ReportingIso__c,
+          OwnerId
+        FROM AXF_OBJ_ReconciliationAllocation__c
+        WHERE Id = :input.targetId
+        WITH USER_MODE
+      ];
+      if (input.reportingIso != allocation.AXF_RA_TXT_ReportingIso__c) {
+        throw new AXF_CLS_FxSettlementException('UNAVAILABLE');
+      }
+      target.originalAmount = allocation.AXF_RA_NUM_Magnitude__c;
+      target.originalIso = allocation.AXF_RA_TXT_CurrencyIsoCode__c;
+      target.tradeDate = allocation.AXF_RA_DAT_RecognitionDate__c;
+      target.valueDate = target.tradeDate;
+      target.accountOwnerId = allocation.OwnerId;
+    } else if (input.targetType == 'FINANCIAL_TRANSACTION') {
       List<AXF_OBJ_FinancialTransaction__c> rows = [
         SELECT
           Id,
@@ -192,6 +227,7 @@ public with sharing class ALT_CLS_FxConversionService {
           AXF_FTX_LKP_Account__r.OwnerId
         FROM AXF_OBJ_FinancialTransaction__c
         WHERE Id = :input.targetId
+        WITH USER_MODE
         LIMIT 1
       ];
       if (rows.isEmpty()) {
@@ -219,6 +255,7 @@ public with sharing class ALT_CLS_FxConversionService {
           AXF_FXC_MDR_Settlement__r.AXF_FXT_DAT_ValueDate__c
         FROM AXF_OBJ_FxSettlementCharge__c
         WHERE Id = :input.targetId
+        WITH USER_MODE
         LIMIT 1
       ];
       if (rows.isEmpty()) {
@@ -248,7 +285,10 @@ public with sharing class ALT_CLS_FxConversionService {
     Date effectiveDate,
     String side
   ) {
-    Date earliest = effectiveDate.addDays(-MAX_LOOKBACK_DAYS);
+    Datetime earliest = bulletinMidnight(
+      effectiveDate.addDays(-MAX_LOOKBACK_DAYS)
+    );
+    Datetime tomorrow = bulletinMidnight(effectiveDate.addDays(1));
     List<AXF_OBJ_ExchangeRate__c> rates = [
       SELECT Id, AXF_EXR_NUM_Rate__c, AXF_EXR_DT_EffectiveDateTime__c
       FROM AXF_OBJ_ExchangeRate__c
@@ -257,12 +297,25 @@ public with sharing class ALT_CLS_FxConversionService {
         AND AXF_EXR_TXT_QuoteCurrency__c = :quoteIso
         AND AXF_EXR_TXT_Provider__c = :PROVIDER_BCB_PTAX
         AND AXF_EXR_DT_EffectiveDateTime__c >= :earliest
+        AND AXF_EXR_DT_EffectiveDateTime__c < :tomorrow
+        AND AXF_EXR_NUM_Rate__c > 0
+        AND AXF_EXR_PKL_Side__c = :side
+      WITH USER_MODE
       ORDER BY AXF_EXR_DT_EffectiveDateTime__c DESC
       LIMIT 1
     ];
     return rates.isEmpty() ? null : rates[0];
   }
 
+  private Datetime bulletinMidnight(Date day) {
+    Datetime midnight = Datetime.newInstanceGmt(
+      day,
+      Time.newInstance(0, 0, 0, 0)
+    );
+    return midnight.addSeconds(
+      -TimeZone.getTimeZone('America/Sao_Paulo').getOffset(midnight) / 1000
+    );
+  }
   private String applicationKey(
     String targetType,
     Id targetId,
@@ -287,7 +340,8 @@ public with sharing class ALT_CLS_FxConversionService {
     }
     if (
       input.targetType != 'FINANCIAL_TRANSACTION' &&
-      input.targetType != 'FX_SETTLEMENT_CHARGE'
+      input.targetType != 'FX_SETTLEMENT_CHARGE' &&
+      input.targetType != 'RECONCILIATION_ALLOCATION'
     ) {
       throw new AXF_CLS_FxSettlementException(
         'TargetType invalido para conversao.'

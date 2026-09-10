@@ -1,0 +1,7 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<CustomFieldTranslation xmlns="http://soap.sforce.com/2006/04/metadata"><label
+  >Situação do câmbio</label><name>AXF_RA_PKL_FxState__c</name><picklistValues
+  ><masterLabel>PENDING_FX</masterLabel><translation
+    >Câmbio pendente</translation></picklistValues><picklistValues><masterLabel
+    >READY</masterLabel><translation
+    >Disponível</translation></picklistValues></CustomFieldTranslation>

@@ -1,0 +1,80 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<Translations xmlns="http://soap.sforce.com/2006/04/metadata"><customLabels
+  ><label>Registrar realização</label><name
+    >AXF_Realization_title</name></customLabels><customLabels><label
+    >Lançamento previsto</label><name
+    >AXF_Realization_target</name></customLabels><customLabels><label
+    >Sem previsão anterior</label><name
+    >AXF_Realization_actual</name></customLabels><customLabels><label
+    >Pessoa ou empresa</label><name
+    >AXF_Realization_holder</name></customLabels><customLabels><label
+    >Direção</label><name
+    >AXF_Realization_direction</name></customLabels><customLabels><label
+    >Despesa</label><name
+    >AXF_Realization_debit</name></customLabels><customLabels><label
+    >Receita</label><name
+    >AXF_Realization_credit</name></customLabels><customLabels><label
+    >Moeda original (ISO)</label><name
+    >AXF_Realization_currency</name></customLabels><customLabels><label
+    >Valor realizado</label><name
+    >AXF_Realization_amount</name></customLabels><customLabels><label
+    >Data da realização</label><name
+    >AXF_Realization_date</name></customLabels><customLabels><label
+    >Origem</label><name
+    >AXF_Realization_source</name></customLabels><customLabels><label
+    >Dinheiro</label><name
+    >AXF_Realization_cash</name></customLabels><customLabels><label
+    >Conta bancária</label><name
+    >AXF_Realization_bank</name></customLabels><customLabels><label
+    >Cartão de crédito</label><name
+    >AXF_Realization_card</name></customLabels><customLabels><label
+    >Usar fato de origem existente</label><name
+    >AXF_Realization_existing</name></customLabels><customLabels><label
+    >Transação de origem</label><name
+    >AXF_Realization_fact</name></customLabels><customLabels><label
+    >Versão observada da origem</label><name
+    >AXF_Realization_sourceVersion</name></customLabels><customLabels><label
+    >Conta ou cartão</label><name
+    >AXF_Realization_funding</name></customLabels><customLabels><label
+    >Confirmar realização</label><name
+    >AXF_Realization_confirm</name></customLabels><customLabels><label
+    >Reverter aplicação</label><name
+    >AXF_Realization_reverse</name></customLabels><customLabels><label
+    >Tentar câmbio novamente</label><name
+    >AXF_Realization_retry</name></customLabels><customLabels><label
+    >Atualizar</label><name
+    >AXF_Realization_refresh</name></customLabels><customLabels><label
+    >Previsto</label><name
+    >AXF_Realization_planned</name></customLabels><customLabels><label
+    >Realizado</label><name
+    >AXF_Realization_realized</name></customLabels><customLabels><label
+    >Saldo pendente</label><name
+    >AXF_Realization_residual</name></customLabels><customLabels><label
+    >Total de relatório</label><name
+    >AXF_Realization_reporting</name></customLabels><customLabels><label
+    >Câmbio pendente. O total convertido está indisponível.</label><name
+    >AXF_Realization_pending</name></customLabels><customLabels><label
+    >Nenhuma realização registrada.</label><name
+    >AXF_Realization_empty</name></customLabels><customLabels><label
+    >Não foi possível concluir. Atualize os acessos e versões e revise os valores.</label><name
+    >AXF_Realization_error</name></customLabels><customLabels><label
+    >Operação registrada.</label><name
+    >AXF_Realization_success</name></customLabels><customLabels><label
+    >Carregando realização</label><name
+    >AXF_Realization_loading</name></customLabels><customLabels><label
+    >Efeito</label><name
+    >AXF_Realization_effect</name></customLabels><customLabels><label
+    >Aplicação</label><name
+    >AXF_Realization_application</name></customLabels><customLabels><label
+    >Reversão</label><name
+    >AXF_Realization_reversal</name></customLabels><customLabels><label
+    >Disponível</label><name
+    >AXF_Realization_ready</name></customLabels><customLabels><label
+    >A origem e o lançamento previsto devem usar a mesma moeda original.</label><name
+    >AXF_Realization_currencyMismatch</name></customLabels><customLabels><label
+    >Os dados mudaram. Atualize antes de confirmar uma nova operação.</label><name
+    >AXF_Realization_conflict</name></customLabels><customLabels><label
+    >O valor excede o disponível na origem ou o saldo do plano.</label><name
+    >AXF_Realization_unavailableAmount</name></customLabels><customLabels><label
+    >Configure a moeda de relatório da organização antes de registrar a realização.</label><name
+    >AXF_Realization_reportingCurrencyRequired</name></customLabels></Translations>

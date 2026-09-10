@@ -12,6 +12,7 @@
         >Pluggy</label></value>
             <value><fullName>CSV</fullName><default>false</default><label
         >CSV Contabilizei.bank</label></value>
-        </valueSetDefinition>
+        <value><fullName>MANUAL</fullName><default>false</default><label
+        >Manual</label></value></valueSetDefinition>
     </valueSet>
 </CustomField>

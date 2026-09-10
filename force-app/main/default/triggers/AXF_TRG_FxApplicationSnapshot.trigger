@@ -3,9 +3,13 @@
  * Sem delete; imutavel; ACTIVE -> SUPERSEDED via servico.
  */
 trigger AXF_TRG_FxApplicationSnapshot on AXF_OBJ_FxApplicationSnapshot__c(
+  before insert,
   before update,
   before delete
 ) {
+  if (Trigger.isInsert) {
+    ALT_CLS_RealizationGuard.snapshots(Trigger.new);
+  }
   if (Trigger.isBefore && Trigger.isUpdate) {
     AXF_CLS_FxSnapshotTriggerHandler.handleBeforeUpdate(
       Trigger.new,
