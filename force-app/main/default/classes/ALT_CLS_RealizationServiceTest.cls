@@ -70,10 +70,13 @@ private class ALT_CLS_RealizationServiceTest {
       AssigneeId = peer.Id,
       PermissionSetId = capability.Id
     );
-    insert new AXF_ReportCurrencyPref__c(
-      SetupOwnerId = UserInfo.getOrganizationId(),
-      AXF_RCP_TXT_IsoCode__c = 'BRL'
-    );
+    // Isolate the preference fixture from permission setup in standalone runs.
+    System.runAs(new User(Id = UserInfo.getUserId())) {
+      insert new AXF_ReportCurrencyPref__c(
+        SetupOwnerId = UserInfo.getOrganizationId(),
+        AXF_RCP_TXT_IsoCode__c = 'BRL'
+      );
+    }
   }
   @IsTest
   static void snapshotPersistenceFailureRollsBackWholeRealization() {
