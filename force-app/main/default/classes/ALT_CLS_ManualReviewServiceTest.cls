@@ -30,7 +30,10 @@ private class ALT_CLS_ManualReviewServiceTest {
         .get('AXF_Business')
         .getRecordTypeId()
     );
-    insert holder;
+    // Isolate business data from setup DML in standalone Apex test runs.
+    System.runAs(new User(Id = UserInfo.getUserId())) {
+      insert holder;
+    }
     AXF_CLS_FinancialEntryService.EntryInput input = new AXF_CLS_FinancialEntryService.EntryInput();
     input.accountId = holder.Id;
     input.direction = 'DEBIT';
