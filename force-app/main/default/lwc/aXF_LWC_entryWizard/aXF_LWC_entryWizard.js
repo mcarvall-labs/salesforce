@@ -40,7 +40,8 @@ export default class AxfLwcEntryWizard extends LightningElement {
     dueDate: null,
     sourceKind: "CASH",
     bankAccountId: null,
-    creditCardId: null
+    creditCardId: null,
+    trackConfirmation: false
   };
 
   clientRequestId = uuidv4();
@@ -197,12 +198,16 @@ export default class AxfLwcEntryWizard extends LightningElement {
     const value = event.detail ? event.detail.value : event.target.value;
     this.form = { ...this.form, [field]: value };
   }
+  handleTracking(event) {
+    this.form = { ...this.form, trackConfirmation: event.target.checked };
+  }
   handleSourceKind(event) {
     this.form = {
       ...this.form,
       sourceKind: event.detail.value,
       bankAccountId: null,
-      creditCardId: null
+      creditCardId: null,
+      trackConfirmation: false
     };
   }
   handleBack() {
@@ -240,6 +245,7 @@ export default class AxfLwcEntryWizard extends LightningElement {
           dueDate: this.form.dueDate || null,
           bankAccountId: this.isSourceBank ? this.form.bankAccountId : null,
           creditCardId: this.isSourceCard ? this.form.creditCardId : null,
+          trackConfirmation: this.form.trackConfirmation,
           clientRequestId: this.clientRequestId
         }
       });
@@ -285,7 +291,8 @@ export default class AxfLwcEntryWizard extends LightningElement {
       dueDate: null,
       sourceKind: "CASH",
       bankAccountId: null,
-      creditCardId: null
+      creditCardId: null,
+      trackConfirmation: false
     };
   }
 }

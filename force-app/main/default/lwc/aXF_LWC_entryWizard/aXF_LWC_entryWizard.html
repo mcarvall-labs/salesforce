@@ -129,6 +129,12 @@
           <dt>{labels.reviewSource}</dt>
           <dd>{sourceText}</dd>
         </dl>
+        <lightning-input
+          type="checkbox"
+          label={labels.trackConfirmation}
+          checked={form.trackConfirmation}
+          onchange={handleTracking}
+        ></lightning-input>
       </template>
 
       <div class="slds-m-top_medium">

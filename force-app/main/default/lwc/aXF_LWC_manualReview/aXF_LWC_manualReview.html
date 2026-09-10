@@ -1,0 +1,49 @@
+<template
+  ><lightning-card title={labels.title}>
+    <div class="slds-p-around_medium">
+      <lightning-button
+        label={labels.refresh}
+        onclick={refresh}
+        disabled={busy}
+      ></lightning-button>
+      <p role="status" aria-live="polite">{feedback}</p>
+      <template lwc:if={busy}
+        ><lightning-spinner
+          alternative-text={labels.loading}
+          size="small"
+        ></lightning-spinner
+      ></template>
+      <template lwc:if={empty}><p>{labels.empty}</p></template>
+      <template for:each={items} for:item="item"
+        ><section key={item.reviewItemId} class="slds-box slds-m-top_small">
+          <h2 class="slds-text-heading_small">{item.name}</h2>
+          <p>{labels.reason}</p>
+          <p>
+            {labels.holder}:
+            <lightning-formatted-url
+              value={item.holderUrl}
+              label={item.accountId}
+            ></lightning-formatted-url>
+          </p>
+          <p>
+            {labels.entry}:
+            <lightning-formatted-url
+              value={item.entryUrl}
+              label={item.financialTransactionId}
+            ></lightning-formatted-url>
+          </p>
+          <lightning-textarea
+            label={labels.note}
+            data-id={item.reviewItemId}
+            onchange={handleNote}
+            required
+            disabled={busy}
+          ></lightning-textarea>
+          <lightning-button
+            label={labels.confirm}
+            data-id={item.reviewItemId}
+            onclick={handleConfirm}
+            disabled={busy}
+          ></lightning-button></section
+      ></template></div></lightning-card
+></template>
