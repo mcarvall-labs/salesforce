@@ -252,7 +252,13 @@ private class AXF_CLS_CsvImportConfirmServiceTest {
     User cfg = configurator();
     AXF_CLS_CsvImportConfirmService.ConfirmResult r;
     System.runAs(cfg) {
-      r = AXF_CLS_CTRL_CsvImportPreview.confirmCsv(null, null, null, null, false);
+      r = AXF_CLS_CTRL_CsvImportPreview.confirmCsv(
+        null,
+        null,
+        null,
+        null,
+        false
+      );
     }
     System.assertEquals('INVALID_FILE', r.outcome);
   }

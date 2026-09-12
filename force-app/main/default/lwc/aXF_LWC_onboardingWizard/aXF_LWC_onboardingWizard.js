@@ -249,7 +249,8 @@ export default class AxfLwcOnboardingWizard extends LightningElement {
       const isStale = !!row && row.status === "STALE";
       const isCurrent = i === idx;
       const label = L.steps[k] || k;
-      const statusLabel = L.statuses[row ? row.status : "NOT_STARTED"] ||
+      const statusLabel =
+        L.statuses[row ? row.status : "NOT_STARTED"] ||
         (row ? row.status : "NOT_STARTED");
       return {
         key: k,
@@ -371,7 +372,11 @@ export default class AxfLwcOnboardingWizard extends LightningElement {
     this.navigateToStep(event.currentTarget.dataset.step);
   }
   handleStepKeydown(event) {
-    if (event.key === "Enter" || event.key === " " || event.key === "Spacebar") {
+    if (
+      event.key === "Enter" ||
+      event.key === " " ||
+      event.key === "Spacebar"
+    ) {
       event.preventDefault();
       this.navigateToStep(event.currentTarget.dataset.step);
     }

@@ -113,11 +113,7 @@ private class ALT_CLS_AxonOnboardingProgressTest {
     Test.stopTest();
     System.assertEquals('CONFIRMED', st1.outcome);
     System.assertEquals(1, st1.version, 'version bumped');
-    System.assertEquals(
-      'HOLDERS',
-      st1.currentStep,
-      'next unsettled step'
-    );
+    System.assertEquals('HOLDERS', st1.currentStep, 'next unsettled step');
     for (ALT_CLS_AxonOnboardingProgress.StepView v : st1.steps) {
       if (v.stepKey == 'WELCOME_PREFS') {
         System.assertEquals('CONFIRMED', v.status);

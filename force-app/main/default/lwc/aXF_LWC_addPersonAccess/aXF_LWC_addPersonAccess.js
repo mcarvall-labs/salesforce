@@ -167,8 +167,7 @@ export default class AxfLwcAddPersonAccess extends LightningElement {
     // in target.value. Reading only target.value left radio fields undefined (AXF-106).
     this.form = {
       ...this.form,
-      [event.target.dataset.field]:
-        event.detail?.value ?? event.target.value
+      [event.target.dataset.field]: event.detail?.value ?? event.target.value
     };
   }
   handleUserSearch(event) {

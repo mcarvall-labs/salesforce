@@ -192,7 +192,9 @@ describe("c-aXF_LWC_onboardingWizard", () => {
 
   it("lets the administrator move forward and backwards through the stepper", async () => {
     canConfigure.mockResolvedValue(true);
-    getState.mockResolvedValue(STEPS({ currentStep: "WELCOME_PREFS", version: 1 }));
+    getState.mockResolvedValue(
+      STEPS({ currentStep: "WELCOME_PREFS", version: 1 })
+    );
     const el = build();
     await flush();
     await flush();
@@ -214,7 +216,9 @@ describe("c-aXF_LWC_onboardingWizard", () => {
     // Backwards: one click back to the beginning.
     step(el, "WELCOME_PREFS").click();
     await flush();
-    expect(el.shadowRoot.textContent).toMatch(/já está instalado|already installed/i);
+    expect(el.shadowRoot.textContent).toMatch(
+      /já está instalado|already installed/i
+    );
     expect(doneSteps(el)).toEqual([]);
   });
 
@@ -248,7 +252,9 @@ describe("c-aXF_LWC_onboardingWizard", () => {
     expect(step(el, "PLUGGY_CREDENTIALS").className).not.toMatch(
       /wizard__step_done/
     );
-    expect(step(el, "CURRENCY_PREF").className).toMatch(/wizard__step_upcoming/);
+    expect(step(el, "CURRENCY_PREF").className).toMatch(
+      /wizard__step_upcoming/
+    );
     expect(step(el, "HOLDERS").getAttribute("aria-label")).toMatch(
       /Pulada|Skipped/
     );
@@ -290,7 +296,9 @@ describe("c-aXF_LWC_onboardingWizard", () => {
 
   it("keeps the reader in place when a step ahead of the order is confirmed", async () => {
     canConfigure.mockResolvedValue(true);
-    getState.mockResolvedValue(STEPS({ currentStep: "WELCOME_PREFS", version: 1 }));
+    getState.mockResolvedValue(
+      STEPS({ currentStep: "WELCOME_PREFS", version: 1 })
+    );
     // The server resumes at the first unsettled step — which is still step 1.
     confirmStep.mockResolvedValue(
       STEPS({

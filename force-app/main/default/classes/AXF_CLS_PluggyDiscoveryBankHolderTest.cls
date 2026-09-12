@@ -152,8 +152,7 @@ private class AXF_CLS_PluggyDiscoveryBankHolderTest {
     AXF_OBJ_PluggyConnection__c c = AXF_CLS_PluggyTestData.connection('ITEM_F');
     AXF_CLS_PluggyDiscoveryService.canDiscoverOverride = false;
     try {
-      new AXF_CLS_PluggyDiscoveryService()
-        .updateReferences(c.Id, null, null);
+      new AXF_CLS_PluggyDiscoveryService().updateReferences(c.Id, null, null);
       System.assert(false, 'unauthorized reference edit must fail');
     } catch (AXF_CLS_PluggyDiscoveryException e) {
       System.assert(e.getMessage().containsIgnoreCase('autoriza'));

@@ -207,7 +207,9 @@ describe("c-aXF_LWC_sourceDiscovery", () => {
     getConnections.emit([connection]);
     await flush();
 
-    expect(el.shadowRoot.querySelectorAll("tbody lightning-record-picker")).toHaveLength(0);
+    expect(
+      el.shadowRoot.querySelectorAll("tbody lightning-record-picker")
+    ).toHaveLength(0);
     expect(el.shadowRoot.textContent).toMatch(/MeuPluggy/);
     expect(el.shadowRoot.textContent).toMatch(/Não vinculado/);
     expect(icon(el, "Editar conexão")).toBeDefined();
@@ -229,7 +231,9 @@ describe("c-aXF_LWC_sourceDiscovery", () => {
     await flush();
     expect(el.shadowRoot.querySelector("[role='dialog']")).not.toBeNull();
     expect(el.shadowRoot.textContent).toMatch(/…def456/);
-    expect(el.shadowRoot.textContent).toMatch(/Descoberta|Aguardando descoberta/);
+    expect(el.shadowRoot.textContent).toMatch(
+      /Descoberta|Aguardando descoberta/
+    );
     expect(el.shadowRoot.textContent).toMatch(
       /1 conta e 2 cartões de crédito encontrados/
     );

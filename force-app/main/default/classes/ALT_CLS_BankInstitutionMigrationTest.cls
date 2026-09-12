@@ -44,7 +44,9 @@ private class ALT_CLS_BankInstitutionMigrationTest {
     AXF_OBJ_BankInstitution__c inst = bank('260', 'Nubank');
     insert inst;
 
-    Map<String, String> mapping = new Map<String, String>{ 'Test Bank' => '260' };
+    Map<String, String> mapping = new Map<String, String>{
+      'Test Bank' => '260'
+    };
 
     Test.startTest();
     ALT_CLS_BankInstitutionMigration m = new ALT_CLS_BankInstitutionMigration();
@@ -72,7 +74,9 @@ private class ALT_CLS_BankInstitutionMigrationTest {
     AXF_OBJ_PluggyConnection__c c = AXF_CLS_PluggyTestData.connection('ITEM_C');
     AXF_OBJ_BankInstitution__c inst = bank('260', 'Nubank');
     insert inst;
-    Map<String, String> mapping = new Map<String, String>{ 'Test Bank' => '260' };
+    Map<String, String> mapping = new Map<String, String>{
+      'Test Bank' => '260'
+    };
 
     ALT_CLS_BankInstitutionMigration m = new ALT_CLS_BankInstitutionMigration();
     m.apply(mapping);
@@ -101,7 +105,9 @@ private class ALT_CLS_BankInstitutionMigrationTest {
     c.AXF_CON_LKP_BankInstitution__c = manual.Id;
     update c;
 
-    Map<String, String> mapping = new Map<String, String>{ 'Test Bank' => '260' };
+    Map<String, String> mapping = new Map<String, String>{
+      'Test Bank' => '260'
+    };
 
     Test.startTest();
     new ALT_CLS_BankInstitutionMigration().apply(mapping);

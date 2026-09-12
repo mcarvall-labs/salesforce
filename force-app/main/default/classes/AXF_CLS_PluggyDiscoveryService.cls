@@ -769,8 +769,7 @@ public with sharing class AXF_CLS_PluggyDiscoveryService {
     for (AXF_OBJ_BankAccount__c b : banks) {
       if (b.AXF_BA_PKL_AvailabilityState__c == 'AVAILABLE') {
         r.outcome = 'BLOCKED';
-        r.message =
-          'Esta conexao tem conta ja liberada para uso. Excluir a conexao apagaria fatos financeiros, entao a remocao foi bloqueada.';
+        r.message = 'Esta conexao tem conta ja liberada para uso. Excluir a conexao apagaria fatos financeiros, entao a remocao foi bloqueada.';
         return r;
       }
       sourceIds.add(b.Id);
@@ -778,8 +777,7 @@ public with sharing class AXF_CLS_PluggyDiscoveryService {
     for (AXF_OBJ_CreditCard__c c : cards) {
       if (c.AXF_CC_PKL_AvailabilityState__c == 'AVAILABLE') {
         r.outcome = 'BLOCKED';
-        r.message =
-          'Esta conexao tem cartao ja liberado para uso. Excluir a conexao apagaria fatos financeiros, entao a remocao foi bloqueada.';
+        r.message = 'Esta conexao tem cartao ja liberado para uso. Excluir a conexao apagaria fatos financeiros, entao a remocao foi bloqueada.';
         return r;
       }
       sourceIds.add(c.Id);
@@ -797,8 +795,7 @@ public with sharing class AXF_CLS_PluggyDiscoveryService {
       ];
       if (confirmedHolders > 0) {
         r.outcome = 'BLOCKED';
-        r.message =
-          'Esta conexao tem fontes com titular confirmado. A remocao foi bloqueada para nao apagar vinculos confirmados.';
+        r.message = 'Esta conexao tem fontes com titular confirmado. A remocao foi bloqueada para nao apagar vinculos confirmados.';
         return r;
       }
       Integer facts =
@@ -816,8 +813,7 @@ public with sharing class AXF_CLS_PluggyDiscoveryService {
         ];
       if (facts > 0) {
         r.outcome = 'BLOCKED';
-        r.message =
-          'Esta conexao tem lancamentos importados. A remocao foi bloqueada para nao apagar fatos financeiros.';
+        r.message = 'Esta conexao tem lancamentos importados. A remocao foi bloqueada para nao apagar fatos financeiros.';
         return r;
       }
     }
@@ -841,8 +837,7 @@ public with sharing class AXF_CLS_PluggyDiscoveryService {
       Database.delete(conns, AccessLevel.SYSTEM_MODE);
     } catch (DmlException e) {
       r.outcome = 'BLOCKED';
-      r.message =
-        'Nao foi possivel excluir: existem outros registros vinculados a esta conexao.';
+      r.message = 'Nao foi possivel excluir: existem outros registros vinculados a esta conexao.';
       return r;
     }
 

@@ -82,7 +82,9 @@ public with sharing class ALT_CLS_BankInstitutionMigration {
   public Report apply(Map<String, String> providerToBankNumber) {
     Report r = simulate();
     Map<String, Id> byNumber = institutionByBankNumber();
-    Map<String, String> normalizedMapping = normalizeMapping(providerToBankNumber);
+    Map<String, String> normalizedMapping = normalizeMapping(
+      providerToBankNumber
+    );
 
     List<AXF_OBJ_PluggyConnection__c> connsToUpdate = new List<AXF_OBJ_PluggyConnection__c>();
     for (AXF_OBJ_PluggyConnection__c c : [
@@ -91,7 +93,11 @@ public with sharing class ALT_CLS_BankInstitutionMigration {
       WHERE AXF_CON_LKP_BankInstitution__c = NULL
       WITH USER_MODE
     ]) {
-      Id target = resolve(c.AXF_CON_TXT_InstitutionName__c, normalizedMapping, byNumber);
+      Id target = resolve(
+        c.AXF_CON_TXT_InstitutionName__c,
+        normalizedMapping,
+        byNumber
+      );
       if (target != null) {
         connsToUpdate.add(
           new AXF_OBJ_PluggyConnection__c(
@@ -109,7 +115,11 @@ public with sharing class ALT_CLS_BankInstitutionMigration {
       WHERE AXF_BA_LKP_BankInstitution__c = NULL
       WITH USER_MODE
     ]) {
-      Id target = resolve(b.AXF_BA_TXT_InstitutionName__c, normalizedMapping, byNumber);
+      Id target = resolve(
+        b.AXF_BA_TXT_InstitutionName__c,
+        normalizedMapping,
+        byNumber
+      );
       if (target != null) {
         accountsToUpdate.add(
           new AXF_OBJ_BankAccount__c(
@@ -127,7 +137,11 @@ public with sharing class ALT_CLS_BankInstitutionMigration {
       WHERE AXF_CC_LKP_BankInstitution__c = NULL
       WITH USER_MODE
     ]) {
-      Id target = resolve(cc.AXF_CC_TXT_InstitutionName__c, normalizedMapping, byNumber);
+      Id target = resolve(
+        cc.AXF_CC_TXT_InstitutionName__c,
+        normalizedMapping,
+        byNumber
+      );
       if (target != null) {
         cardsToUpdate.add(
           new AXF_OBJ_CreditCard__c(
@@ -138,7 +152,10 @@ public with sharing class ALT_CLS_BankInstitutionMigration {
       }
     }
 
-    Integer total = connsToUpdate.size() + accountsToUpdate.size() + cardsToUpdate.size();
+    Integer total =
+      connsToUpdate.size() +
+      accountsToUpdate.size() +
+      cardsToUpdate.size();
     if (total > 0) {
       if (!connsToUpdate.isEmpty()) {
         update as user connsToUpdate;
@@ -163,7 +180,9 @@ public with sharing class ALT_CLS_BankInstitutionMigration {
   public Report rollback(Map<String, String> providerToBankNumber) {
     Report r = simulate();
     Map<String, Id> byNumber = institutionByBankNumber();
-    Map<String, String> normalizedMapping = normalizeMapping(providerToBankNumber);
+    Map<String, String> normalizedMapping = normalizeMapping(
+      providerToBankNumber
+    );
 
     Integer cleared = 0;
     List<AXF_OBJ_PluggyConnection__c> conns = new List<AXF_OBJ_PluggyConnection__c>();
@@ -173,8 +192,20 @@ public with sharing class ALT_CLS_BankInstitutionMigration {
       WHERE AXF_CON_LKP_BankInstitution__c != NULL
       WITH USER_MODE
     ]) {
-      if (wasBackfilled(c.AXF_CON_TXT_InstitutionName__c, c.AXF_CON_LKP_BankInstitution__c, normalizedMapping, byNumber)) {
-        conns.add(new AXF_OBJ_PluggyConnection__c(Id = c.Id, AXF_CON_LKP_BankInstitution__c = null));
+      if (
+        wasBackfilled(
+          c.AXF_CON_TXT_InstitutionName__c,
+          c.AXF_CON_LKP_BankInstitution__c,
+          normalizedMapping,
+          byNumber
+        )
+      ) {
+        conns.add(
+          new AXF_OBJ_PluggyConnection__c(
+            Id = c.Id,
+            AXF_CON_LKP_BankInstitution__c = null
+          )
+        );
       }
     }
     // clearing a lookup via `update as user` requires edit FLS; the running user must
@@ -191,8 +222,20 @@ public with sharing class ALT_CLS_BankInstitutionMigration {
       WHERE AXF_BA_LKP_BankInstitution__c != NULL
       WITH USER_MODE
     ]) {
-      if (wasBackfilled(b.AXF_BA_TXT_InstitutionName__c, b.AXF_BA_LKP_BankInstitution__c, normalizedMapping, byNumber)) {
-        accounts.add(new AXF_OBJ_BankAccount__c(Id = b.Id, AXF_BA_LKP_BankInstitution__c = null));
+      if (
+        wasBackfilled(
+          b.AXF_BA_TXT_InstitutionName__c,
+          b.AXF_BA_LKP_BankInstitution__c,
+          normalizedMapping,
+          byNumber
+        )
+      ) {
+        accounts.add(
+          new AXF_OBJ_BankAccount__c(
+            Id = b.Id,
+            AXF_BA_LKP_BankInstitution__c = null
+          )
+        );
       }
     }
     if (!accounts.isEmpty()) {
@@ -207,8 +250,20 @@ public with sharing class ALT_CLS_BankInstitutionMigration {
       WHERE AXF_CC_LKP_BankInstitution__c != NULL
       WITH USER_MODE
     ]) {
-      if (wasBackfilled(cc.AXF_CC_TXT_InstitutionName__c, cc.AXF_CC_LKP_BankInstitution__c, normalizedMapping, byNumber)) {
-        cards.add(new AXF_OBJ_CreditCard__c(Id = cc.Id, AXF_CC_LKP_BankInstitution__c = null));
+      if (
+        wasBackfilled(
+          cc.AXF_CC_TXT_InstitutionName__c,
+          cc.AXF_CC_LKP_BankInstitution__c,
+          normalizedMapping,
+          byNumber
+        )
+      ) {
+        cards.add(
+          new AXF_OBJ_CreditCard__c(
+            Id = cc.Id,
+            AXF_CC_LKP_BankInstitution__c = null
+          )
+        );
       }
     }
     if (!cards.isEmpty()) {
@@ -283,7 +338,11 @@ public with sharing class ALT_CLS_BankInstitutionMigration {
       WHERE AXF_BA_LKP_Connection__c != NULL
       WITH USER_MODE
     ]) {
-      addDistinct(distinctInstitutions, b.AXF_BA_LKP_Connection__c, b.AXF_BA_TXT_InstitutionName__c);
+      addDistinct(
+        distinctInstitutions,
+        b.AXF_BA_LKP_Connection__c,
+        b.AXF_BA_TXT_InstitutionName__c
+      );
     }
     for (AXF_OBJ_CreditCard__c cc : [
       SELECT Id, AXF_CC_LKP_Connection__c, AXF_CC_TXT_InstitutionName__c
@@ -291,7 +350,11 @@ public with sharing class ALT_CLS_BankInstitutionMigration {
       WHERE AXF_CC_LKP_Connection__c != NULL
       WITH USER_MODE
     ]) {
-      addDistinct(distinctInstitutions, cc.AXF_CC_LKP_Connection__c, cc.AXF_CC_TXT_InstitutionName__c);
+      addDistinct(
+        distinctInstitutions,
+        cc.AXF_CC_LKP_Connection__c,
+        cc.AXF_CC_TXT_InstitutionName__c
+      );
     }
     Integer conflicting = 0;
     for (Set<String> names : distinctInstitutions.values()) {

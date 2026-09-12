@@ -2,7 +2,8 @@
 <CustomField xmlns="http://soap.sforce.com/2006/04/metadata">
     <fullName>AXF_CON_LKP_Account__c</fullName>
     <deleteConstraint>SetNull</deleteConstraint>
-    <description>Titular sugerido para as fontes descobertas desta conexao. Apenas sugestao: nao confirma titularidade, nao cria acesso e nao atribui fonte. A confirmacao por conta/cartao continua obrigatoria (AXF-85). AXF-106.</description>
+    <description
+  >Titular sugerido para as fontes descobertas desta conexao. Apenas sugestao: nao confirma titularidade, nao cria acesso e nao atribui fonte. A confirmacao por conta/cartao continua obrigatoria (AXF-85). AXF-106.</description>
     <label>Titular Sugerido</label>
     <referenceTo>Account</referenceTo>
     <relationshipLabel>Conexoes</relationshipLabel>

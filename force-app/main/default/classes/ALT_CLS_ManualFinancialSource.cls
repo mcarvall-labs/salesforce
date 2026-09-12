@@ -385,10 +385,7 @@ public with sharing class ALT_CLS_ManualFinancialSource {
         'maskedNumber',
         'Informe somente um valor mascarado, com no máximo quatro dígitos visíveis.'
       );
-    if (
-      i.institutionName != null &&
-      i.institutionName.trim().length() > 255
-    )
+    if (i.institutionName != null && i.institutionName.trim().length() > 255)
       return invalid('institutionName', 'A instituição excede 255 caracteres.');
     if (
       trim(i.maskedNumber) != null &&
