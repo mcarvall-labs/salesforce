@@ -69,6 +69,8 @@ export default class AxfSourceHealth extends LightningElement {
       isReauthorize: s.permittedAction === "REAUTHORIZE",
       isPause: s.permittedAction === "PAUSE",
       isResume: s.permittedAction === "RESUME",
+      // Canonical institution name when confirmed, provider text otherwise (AXF-106).
+      institutionLabel: s.bankInstitutionName || s.institution,
       rowBusy: this.busyId === s.connectionId
     }));
     this.state = this.rows.length ? STATE.READY : STATE.EMPTY;

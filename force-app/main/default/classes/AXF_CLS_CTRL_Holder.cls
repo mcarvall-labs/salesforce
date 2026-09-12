@@ -36,10 +36,29 @@ public with sharing class AXF_CLS_CTRL_Holder {
     return new ALT_CLS_AxonHolder().getHolder(accountId);
   }
 
+  // Primitive params (not the service's inner DTO) so the LWC call binds reliably:
+  // Aura does not populate the fields of an @AuraEnabled Apex class that is an inner
+  // class of another top-level class, which silently delivered an all-null SaveInput
+  // and made every holder registration fail with "tipo de titular invalido". Same
+  // limitation already fixed in AXF_CLS_CTRL_OnboardingProgress. AXF-80 / AXF-106.
   @AuraEnabled
   public static ALT_CLS_AxonHolder.SaveResult saveHolder(
-    ALT_CLS_AxonHolder.SaveInput input
+    Id accountId,
+    String type,
+    String firstName,
+    String lastName,
+    String name,
+    Datetime expectedLastModifiedDate,
+    Boolean confirmedDespiteDuplicates
   ) {
+    ALT_CLS_AxonHolder.SaveInput input = new ALT_CLS_AxonHolder.SaveInput();
+    input.accountId = accountId;
+    input.type = type;
+    input.firstName = firstName;
+    input.lastName = lastName;
+    input.name = name;
+    input.expectedLastModifiedDate = expectedLastModifiedDate;
+    input.confirmedDespiteDuplicates = confirmedDespiteDuplicates;
     return new ALT_CLS_AxonHolder().saveHolder(input);
   }
 }

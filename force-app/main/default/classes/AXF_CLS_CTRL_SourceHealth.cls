@@ -20,7 +20,9 @@ public with sharing class AXF_CLS_CTRL_SourceHealth {
     @AuraEnabled
     public String name;
     @AuraEnabled
-    public String institution;
+    public String institution; // provider connector/institution name (evidence)
+    @AuraEnabled
+    public String bankInstitutionName; // canonical directory name (AXF-106)
     @AuraEnabled
     public String consentState; // ACTIVE | STALE | REVOKED
     @AuraEnabled
@@ -50,6 +52,7 @@ public with sharing class AXF_CLS_CTRL_SourceHealth {
         Id,
         Name,
         AXF_CON_TXT_InstitutionName__c,
+        AXF_CON_LKP_BankInstitution__r.Name,
         AXF_CON_PKL_ConsentState__c,
         AXF_CON_PKL_CollectionState__c,
         AXF_CON_DT_ConsentExpiresAt__c,
@@ -65,6 +68,9 @@ public with sharing class AXF_CLS_CTRL_SourceHealth {
       d.connectionId = c.Id;
       d.name = c.Name;
       d.institution = c.AXF_CON_TXT_InstitutionName__c;
+      d.bankInstitutionName = c.AXF_CON_LKP_BankInstitution__r == null
+        ? null
+        : c.AXF_CON_LKP_BankInstitution__r.Name;
       d.consentState = c.AXF_CON_PKL_ConsentState__c;
       d.collectionState = c.AXF_CON_PKL_CollectionState__c;
       d.consentExpiresAt = c.AXF_CON_DT_ConsentExpiresAt__c;

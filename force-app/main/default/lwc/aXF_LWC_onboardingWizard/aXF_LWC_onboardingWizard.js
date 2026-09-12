@@ -9,6 +9,7 @@ import complete from "@salesforce/apex/AXF_CLS_CTRL_OnboardingProgress.complete"
 
 const ORDER = [
   "WELCOME_PREFS",
+  "HOLDERS",
   "PLUGGY_CREDENTIALS",
   "PLUGGY_DISCOVERY",
   "ACCOUNT_HOLDERS",
@@ -16,7 +17,10 @@ const ORDER = [
   "MANUAL_SOURCES",
   "CURRENCY_PREF"
 ];
-const OPTIONAL = new Set(["PEOPLE_ACCESS", "MANUAL_SOURCES"]);
+const OPTIONAL = new Set(["HOLDERS", "PEOPLE_ACCESS", "MANUAL_SOURCES"]);
+// The stepper shows the eight ordered steps plus the review page.
+const STEP_KEYS = [...ORDER, "REVIEW"];
+const SETTLED = new Set(["CONFIRMED", "SKIPPED"]);
 
 const PT = {
   title: "Configuração do Axon",
@@ -39,8 +43,17 @@ const PT = {
     "A configuração mudou em outra sessão. Recarregamos o estado atual.",
   guideOpen: "O que você vai fazer",
   guideClose: "Fechar guia",
+  currentStepMark: "etapa atual",
+  statuses: {
+    CONFIRMED: "Concluída",
+    SKIPPED: "Pulada",
+    STALE: "Desatualizada — revise",
+    NOT_STARTED: "Não iniciada",
+    RESULT_UNKNOWN: "Resultado desconhecido"
+  },
   steps: {
     WELCOME_PREFS: "Boas-vindas",
+    HOLDERS: "Titulares (opcional)",
     PLUGGY_CREDENTIALS: "Credenciais Pluggy",
     PLUGGY_DISCOVERY: "Buscar contas e cartões",
     ACCOUNT_HOLDERS: "Titulares das fontes",
@@ -74,8 +87,17 @@ const EN = {
     "The setup changed in another session. We reloaded the current state.",
   guideOpen: "What you are going to do",
   guideClose: "Close guide",
+  currentStepMark: "current step",
+  statuses: {
+    CONFIRMED: "Completed",
+    SKIPPED: "Skipped",
+    STALE: "Outdated — review",
+    NOT_STARTED: "Not started",
+    RESULT_UNKNOWN: "Unknown result"
+  },
   steps: {
     WELCOME_PREFS: "Welcome",
+    HOLDERS: "Holders (optional)",
     PLUGGY_CREDENTIALS: "Pluggy credentials",
     PLUGGY_DISCOVERY: "Find accounts and cards",
     ACCOUNT_HOLDERS: "Source holders",
@@ -94,6 +116,19 @@ const L = String(LANG || "")
   .startsWith("en")
   ? EN
   : PT;
+
+function visualState(isCurrent, isDone, isStale) {
+  if (isCurrent) {
+    return "current";
+  }
+  if (isDone) {
+    return "done";
+  }
+  if (isStale) {
+    return "stale";
+  }
+  return "upcoming";
+}
 
 export default class AxfLwcOnboardingWizard extends LightningElement {
   labels = L;
@@ -155,6 +190,18 @@ export default class AxfLwcOnboardingWizard extends LightningElement {
     const i = ORDER.indexOf(this.current);
     return i < 0 ? ORDER.length : i;
   }
+  // Position inside the stepper (which also carries the review page); -1 on DONE.
+  get stepperIndex() {
+    return STEP_KEYS.indexOf(this.current);
+  }
+  get stepStatusMap() {
+    const map = {};
+    const rows = (this.state && this.state.steps) || [];
+    rows.forEach((row) => {
+      map[row.stepKey] = row;
+    });
+    return map;
+  }
   get stepNumberLabel() {
     return String(L.stepOf)
       .replace("{0}", Math.min(this.stepIndex + 1, ORDER.length + 1))
@@ -188,20 +235,46 @@ export default class AxfLwcOnboardingWizard extends LightningElement {
     this.pluggyReady = !!(event.detail && event.detail.hasActiveCredential);
   }
   get stepperItems() {
-    const keys = [...ORDER, "REVIEW"];
-    const idx = this.stepIndex;
-    return keys.map((k, i) => {
-      const state = i < idx ? "done" : i === idx ? "current" : "upcoming";
-      const lead = "wizard__step-line wizard__step-line_leading";
-      const trail = "wizard__step-line wizard__step-line_trailing";
+    const status = this.stepStatusMap;
+    const settled = (key) => {
+      const row = status[key];
+      return !!row && SETTLED.has(row.status);
+    };
+    const idx = this.stepperIndex;
+    const lead = "wizard__step-line wizard__step-line_leading";
+    const trail = "wizard__step-line wizard__step-line_trailing";
+    return STEP_KEYS.map((k, i) => {
+      const row = status[k];
+      const isDone = settled(k);
+      const isStale = !!row && row.status === "STALE";
+      const isCurrent = i === idx;
+      const label = L.steps[k] || k;
+      const statusLabel = L.statuses[row ? row.status : "NOT_STARTED"] ||
+        (row ? row.status : "NOT_STARTED");
       return {
         key: k,
-        label: L.steps[k] || k,
+        label,
         num: i + 1,
-        isDone: state === "done",
-        cssClass: `wizard__step wizard__step_${state}`,
-        leadingClass: i <= idx ? `${lead} wizard__step-line_done` : lead,
-        trailingClass: i < idx ? `${trail} wizard__step-line_done` : trail
+        // The tick means "the server recorded this step as settled" (confirmed or
+        // skipped) — never merely "we walked past it".
+        isDone,
+        isStale,
+        statusLabel,
+        tabIndex: "0",
+        ariaCurrent: isCurrent ? "step" : null,
+        ariaLabel: isCurrent
+          ? `${i + 1}. ${label} — ${statusLabel} (${L.currentStepMark})`
+          : `${i + 1}. ${label} — ${statusLabel}`,
+        cssClass: `wizard__step wizard__step_${visualState(
+          isCurrent,
+          isDone,
+          isStale
+        )} wizard__step_navigable`,
+        leadingClass:
+          i > 0 && settled(STEP_KEYS[i - 1])
+            ? `${lead} wizard__step-line_done`
+            : lead,
+        trailingClass: isDone ? `${trail} wizard__step-line_done` : trail
       };
     });
   }
@@ -209,7 +282,7 @@ export default class AxfLwcOnboardingWizard extends LightningElement {
     return OPTIONAL.has(this.current);
   }
   get isFirst() {
-    return this.stepIndex <= 0;
+    return this.stepperIndex <= 0;
   }
   get staleDetected() {
     return this.state && this.state.staleDetected === true;
@@ -231,6 +304,9 @@ export default class AxfLwcOnboardingWizard extends LightningElement {
   }
   get showWelcome() {
     return this.current === "WELCOME_PREFS";
+  }
+  get showHoldersRegistration() {
+    return this.current === "HOLDERS";
   }
   get showPluggyGuide() {
     return this.current === "PLUGGY_CREDENTIALS";
@@ -285,17 +361,39 @@ export default class AxfLwcOnboardingWizard extends LightningElement {
     }
   }
 
+  // ---- stepper navigation ----
+  // Every step is clickable, forwards and backwards, so the administrator can look
+  // ahead or go back without pressing Next/Back repeatedly. Jumping to a step only
+  // moves the view: nothing is marked as done. A step shows the tick solely when the
+  // server recorded it as settled (confirmed or skipped), so browsing ahead never
+  // fakes progress, and "Finish setup" still validates the pending items.
+  handleStepClick(event) {
+    this.navigateToStep(event.currentTarget.dataset.step);
+  }
+  handleStepKeydown(event) {
+    if (event.key === "Enter" || event.key === " " || event.key === "Spacebar") {
+      event.preventDefault();
+      this.navigateToStep(event.currentTarget.dataset.step);
+    }
+  }
+  navigateToStep(key) {
+    if (!key || key === this.current || STEP_KEYS.indexOf(key) < 0) {
+      return;
+    }
+    this.current = key;
+    this.message = null;
+    this.guideOpen = false;
+  }
+
   // ---- navigation ----
   handleAck(event) {
     this.acknowledge = event.target.checked;
   }
 
   async handleBack() {
-    const i = this.stepIndex;
+    const i = this.stepperIndex;
     if (i > 0) {
-      this.current = ORDER[i - 1];
-    } else if (this.onReview) {
-      this.current = ORDER[ORDER.length - 1];
+      this.current = STEP_KEYS[i - 1];
     }
     this.message = null;
     this.guideOpen = false;
@@ -337,7 +435,14 @@ export default class AxfLwcOnboardingWizard extends LightningElement {
         this.message = s.message;
         return;
       }
+      const position = STEP_KEYS.indexOf(key);
       this.applyState(s);
+      // Confirming a step ahead of the pending order must not yank the view
+      // backwards: the server resumes at the first unsettled step, which is correct
+      // for the ordered flow but would undo an intentional forward jump.
+      if (position >= 0 && STEP_KEYS.indexOf(this.current) < position) {
+        this.current = STEP_KEYS[Math.min(position + 1, STEP_KEYS.length - 1)];
+      }
       this.message = s.staleDetected ? L.stale : null;
     } catch (e) {
       this.message = (e && e.body && e.body.message) || String(e);

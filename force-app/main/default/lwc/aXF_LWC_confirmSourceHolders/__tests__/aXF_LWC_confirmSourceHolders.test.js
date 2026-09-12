@@ -111,7 +111,7 @@ describe("c-aXF_LWC_confirmSourceHolders", () => {
     await flush();
 
     expect(confirmHolder).toHaveBeenCalledTimes(1);
-    expect(confirmHolder.mock.calls[0][0].input).toEqual({
+    expect(confirmHolder.mock.calls[0][0]).toEqual({
       sourceId: "a01",
       kind: "BANK",
       holderId: "001x",

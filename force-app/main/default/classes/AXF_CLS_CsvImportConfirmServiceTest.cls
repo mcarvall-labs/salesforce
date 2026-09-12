@@ -72,18 +72,32 @@ private class AXF_CLS_CsvImportConfirmServiceTest {
     return b;
   }
 
-  private static AXF_CLS_CsvImportConfirmService.ConfirmInput input(
+  /**
+   * Calls the controller with the primitive params it now exposes: Aura cannot bind an
+   * @AuraEnabled inner class of another top-level class (AXF-106), so the service DTO is
+   * built inside the controller.
+   */
+  private static AXF_CLS_CsvImportConfirmService.ConfirmResult confirmCsv(
     Id accountId,
     String csv,
     Boolean ack
   ) {
-    AXF_CLS_CsvImportConfirmService.ConfirmInput req = new AXF_CLS_CsvImportConfirmService.ConfirmInput();
-    req.accountId = accountId;
-    req.fileName = 'extrato.csv';
-    req.base64Content = EncodingUtil.base64Encode(Blob.valueOf(csv));
-    req.expectedParserVersion = PARSER_VERSION;
-    req.acknowledgeRejections = ack;
-    return req;
+    return confirmCsv(accountId, csv, PARSER_VERSION, ack);
+  }
+
+  private static AXF_CLS_CsvImportConfirmService.ConfirmResult confirmCsv(
+    Id accountId,
+    String csv,
+    String expectedParserVersion,
+    Boolean ack
+  ) {
+    return AXF_CLS_CTRL_CsvImportPreview.confirmCsv(
+      accountId,
+      'extrato.csv',
+      EncodingUtil.base64Encode(Blob.valueOf(csv)),
+      expectedParserVersion,
+      ack
+    );
   }
 
   private static Integer batCount(Id accountId) {
@@ -106,12 +120,8 @@ private class AXF_CLS_CsvImportConfirmServiceTest {
     AXF_CLS_CsvImportConfirmService.ConfirmResult first;
     AXF_CLS_CsvImportConfirmService.ConfirmResult again;
     System.runAs(cfg) {
-      first = AXF_CLS_CTRL_CsvImportPreview.confirmCsv(
-        input(bank.Id, csv, false)
-      );
-      again = AXF_CLS_CTRL_CsvImportPreview.confirmCsv(
-        input(bank.Id, csv, false)
-      );
+      first = confirmCsv(bank.Id, csv, false);
+      again = confirmCsv(bank.Id, csv, false);
     }
 
     System.assertEquals('PUBLISHED', first.outcome, first.message);
@@ -136,10 +146,8 @@ private class AXF_CLS_CsvImportConfirmServiceTest {
     AXF_CLS_CsvImportConfirmService.ConfirmResult blocked;
     AXF_CLS_CsvImportConfirmService.ConfirmResult ok;
     System.runAs(cfg) {
-      blocked = AXF_CLS_CTRL_CsvImportPreview.confirmCsv(
-        input(bank.Id, csv, false)
-      );
-      ok = AXF_CLS_CTRL_CsvImportPreview.confirmCsv(input(bank.Id, csv, true));
+      blocked = confirmCsv(bank.Id, csv, false);
+      ok = confirmCsv(bank.Id, csv, true);
     }
 
     System.assertEquals('NEEDS_ACKNOWLEDGE', blocked.outcome);
@@ -158,16 +166,14 @@ private class AXF_CLS_CsvImportConfirmServiceTest {
   static void stalePreviewVersionBlocksWithoutPublishing() {
     AXF_OBJ_BankAccount__c bank = availableBank();
     User cfg = configurator();
-    AXF_CLS_CsvImportConfirmService.ConfirmInput req = input(
-      bank.Id,
-      HEADER + '\n01/03/2026;Salario;5000,00;;5000,00',
-      false
-    );
-    req.expectedParserVersion = 'contabilizei-bank-csv@0.9.0';
-
     AXF_CLS_CsvImportConfirmService.ConfirmResult r;
     System.runAs(cfg) {
-      r = AXF_CLS_CTRL_CsvImportPreview.confirmCsv(req);
+      r = confirmCsv(
+        bank.Id,
+        HEADER + '\n01/03/2026;Salario;5000,00;;5000,00',
+        'contabilizei-bank-csv@0.9.0',
+        false
+      );
     }
 
     System.assertEquals('STALE_PREVIEW', r.outcome);
@@ -183,8 +189,10 @@ private class AXF_CLS_CsvImportConfirmServiceTest {
 
     AXF_CLS_CsvImportConfirmService.ConfirmResult r;
     System.runAs(cfg) {
-      r = AXF_CLS_CTRL_CsvImportPreview.confirmCsv(
-        input(bank.Id, HEADER + '\n01/03/2026;Salario;5000,00;;5000,00', false)
+      r = confirmCsv(
+        bank.Id,
+        HEADER + '\n01/03/2026;Salario;5000,00;;5000,00',
+        false
       );
     }
 
@@ -198,9 +206,7 @@ private class AXF_CLS_CsvImportConfirmServiceTest {
 
     AXF_CLS_CsvImportConfirmService.ConfirmResult r;
     System.runAs(cfg) {
-      r = AXF_CLS_CTRL_CsvImportPreview.confirmCsv(
-        input(bank.Id, 'ColunaA;ColunaB\nx;y', false)
-      );
+      r = confirmCsv(bank.Id, 'ColunaA;ColunaB\nx;y', false);
     }
 
     System.assertEquals('INVALID_FILE', r.outcome);
@@ -214,8 +220,10 @@ private class AXF_CLS_CsvImportConfirmServiceTest {
 
     AXF_CLS_CsvImportConfirmService.ConfirmResult r;
     System.runAs(cfg) {
-      r = AXF_CLS_CTRL_CsvImportPreview.confirmCsv(
-        input(bank.Id, HEADER + '\n01/03/2026;Salario;5000,00;;5000,00', false)
+      r = confirmCsv(
+        bank.Id,
+        HEADER + '\n01/03/2026;Salario;5000,00;;5000,00',
+        false
       );
     }
 
@@ -244,9 +252,7 @@ private class AXF_CLS_CsvImportConfirmServiceTest {
     User cfg = configurator();
     AXF_CLS_CsvImportConfirmService.ConfirmResult r;
     System.runAs(cfg) {
-      r = AXF_CLS_CTRL_CsvImportPreview.confirmCsv(
-        new AXF_CLS_CsvImportConfirmService.ConfirmInput()
-      );
+      r = AXF_CLS_CTRL_CsvImportPreview.confirmCsv(null, null, null, null, false);
     }
     System.assertEquals('INVALID_FILE', r.outcome);
   }

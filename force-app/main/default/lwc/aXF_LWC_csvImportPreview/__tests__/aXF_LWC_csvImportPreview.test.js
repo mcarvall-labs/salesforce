@@ -165,13 +165,11 @@ describe("c-a-x-f_-l-w-c_csv-import-preview", () => {
     await flush();
 
     expect(confirmCsv).toHaveBeenCalledWith({
-      input: {
-        accountId: "a0X000000000001AAA",
-        fileName: "extrato.csv",
-        base64Content: "ZmFrZS1jc3Y=",
-        expectedParserVersion: "contabilizei-bank-csv@1.0.0",
-        acknowledgeRejections: false
-      }
+      accountId: "a0X000000000001AAA",
+      fileName: "extrato.csv",
+      base64Content: "ZmFrZS1jc3Y=",
+      expectedParserVersion: "contabilizei-bank-csv@1.0.0",
+      acknowledgeRejections: false
     });
     const heading = element.shadowRoot.querySelector(
       '[data-id="step-heading"]'

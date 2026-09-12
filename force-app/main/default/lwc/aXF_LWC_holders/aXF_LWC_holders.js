@@ -154,7 +154,12 @@ export default class AxfLwcHolders extends LightningElement {
   // ---- form actions ----
   handleFieldChange(event) {
     const field = event.target.dataset.field;
-    this.form = { ...this.form, [field]: event.target.value };
+    // lightning-radio-group delivers the selection in detail.value; lightning-input
+    // in target.value. Reading only target.value left form.type undefined (AXF-106).
+    this.form = {
+      ...this.form,
+      [field]: event.detail?.value ?? event.target.value
+    };
   }
 
   handleCancel() {
@@ -171,7 +176,9 @@ export default class AxfLwcHolders extends LightningElement {
     this.saving = true;
     this.feedback = null;
     try {
-      const result = await saveHolder({ input: this.form });
+      // Primitive params: the controller does not accept the service's inner DTO
+      // (Aura cannot populate an inner class of another top-level class).
+      const result = await saveHolder({ ...this.form });
       this.applyResult(result);
     } catch (error) {
       this.feedback = {

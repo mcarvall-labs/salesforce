@@ -45,12 +45,14 @@ const STEPS = (over = {}) => ({
   status: "IN_PROGRESS",
   steps: [
     { stepKey: "WELCOME_PREFS", status: "NOT_STARTED", optional: false },
+    { stepKey: "HOLDERS", status: "NOT_STARTED", optional: true },
     { stepKey: "PLUGGY_CREDENTIALS", status: "NOT_STARTED", optional: false },
     { stepKey: "PLUGGY_DISCOVERY", status: "NOT_STARTED", optional: false },
     { stepKey: "ACCOUNT_HOLDERS", status: "NOT_STARTED", optional: false },
     { stepKey: "PEOPLE_ACCESS", status: "NOT_STARTED", optional: true },
     { stepKey: "MANUAL_SOURCES", status: "NOT_STARTED", optional: true },
-    { stepKey: "CURRENCY_PREF", status: "NOT_STARTED", optional: false }
+    { stepKey: "CURRENCY_PREF", status: "NOT_STARTED", optional: false },
+    { stepKey: "REVIEW", status: "NOT_STARTED", optional: false }
   ],
   ...over
 });
@@ -70,6 +72,12 @@ function build() {
 const btn = (el, re) =>
   [...el.shadowRoot.querySelectorAll("lightning-button")].find((b) =>
     re.test(b.label)
+  );
+const step = (el, key) =>
+  el.shadowRoot.querySelector(`.wizard__step[data-step="${key}"]`);
+const doneSteps = (el) =>
+  [...el.shadowRoot.querySelectorAll(".wizard__step_done")].map((s) =>
+    s.getAttribute("data-step")
   );
 
 afterEach(() => {
@@ -101,7 +109,8 @@ describe("c-aXF_LWC_onboardingWizard", () => {
     await flush();
     await flush();
 
-    expect(el.shadowRoot.textContent).toMatch(/2 de 8|2 of 8/);
+    // HOLDERS (optional) is step 2, so Pluggy credentials is step 3 of 9 (AXF-106).
+    expect(el.shadowRoot.textContent).toMatch(/3 de 9|3 of 9/);
     const nextBtn = btn(el, /Próximo|Next/);
     expect(nextBtn.disabled).toBe(true);
     expect(el.shadowRoot.textContent).toMatch(
@@ -179,6 +188,140 @@ describe("c-aXF_LWC_onboardingWizard", () => {
       stepKey: "PEOPLE_ACCESS",
       expectedVersion: 5
     });
+  });
+
+  it("lets the administrator move forward and backwards through the stepper", async () => {
+    canConfigure.mockResolvedValue(true);
+    getState.mockResolvedValue(STEPS({ currentStep: "WELCOME_PREFS", version: 1 }));
+    const el = build();
+    await flush();
+    await flush();
+    await flush();
+
+    // Nothing was validated yet, so nothing may show as done — even the steps
+    // behind the current one.
+    expect(doneSteps(el)).toEqual([]);
+
+    // Forward: straight to a step that Next would only reach after 7 confirmations.
+    step(el, "CURRENCY_PREF").click();
+    await flush();
+    expect(
+      el.shadowRoot.querySelector("c-a-x-f_-l-w-c_report-currency-preference")
+    ).not.toBeNull();
+    expect(step(el, "CURRENCY_PREF").getAttribute("aria-current")).toBe("step");
+    expect(doneSteps(el)).toEqual([]);
+
+    // Backwards: one click back to the beginning.
+    step(el, "WELCOME_PREFS").click();
+    await flush();
+    expect(el.shadowRoot.textContent).toMatch(/já está instalado|already installed/i);
+    expect(doneSteps(el)).toEqual([]);
+  });
+
+  it("ticks only the steps the server recorded as settled", async () => {
+    canConfigure.mockResolvedValue(true);
+    getState.mockResolvedValue(
+      STEPS({
+        currentStep: "PLUGGY_CREDENTIALS",
+        version: 4,
+        steps: STEPS().steps.map((s) => {
+          if (s.stepKey === "WELCOME_PREFS") {
+            return { ...s, status: "CONFIRMED" };
+          }
+          if (s.stepKey === "HOLDERS") {
+            return { ...s, status: "SKIPPED" };
+          }
+          return s;
+        })
+      })
+    );
+    const el = build();
+    await flush();
+    await flush();
+    await flush();
+
+    expect(doneSteps(el)).toEqual(["WELCOME_PREFS", "HOLDERS"]);
+    // The current step is not done, and neither is anything after it.
+    expect(step(el, "PLUGGY_CREDENTIALS").className).toMatch(
+      /wizard__step_current/
+    );
+    expect(step(el, "PLUGGY_CREDENTIALS").className).not.toMatch(
+      /wizard__step_done/
+    );
+    expect(step(el, "CURRENCY_PREF").className).toMatch(/wizard__step_upcoming/);
+    expect(step(el, "HOLDERS").getAttribute("aria-label")).toMatch(
+      /Pulada|Skipped/
+    );
+    expect(step(el, "CURRENCY_PREF").getAttribute("aria-label")).toMatch(
+      /Não iniciada|Not started/
+    );
+  });
+
+  it("marks a reopened step as outdated instead of done", async () => {
+    canConfigure.mockResolvedValue(true);
+    getState.mockResolvedValue(
+      STEPS({
+        currentStep: "ACCOUNT_HOLDERS",
+        version: 6,
+        staleDetected: true,
+        steps: STEPS().steps.map((s) => {
+          if (s.stepKey === "PLUGGY_DISCOVERY") {
+            return { ...s, status: "STALE" };
+          }
+          if (s.stepKey === "WELCOME_PREFS") {
+            return { ...s, status: "CONFIRMED" };
+          }
+          return s;
+        })
+      })
+    );
+    const el = build();
+    await flush();
+    await flush();
+    await flush();
+
+    const stale = step(el, "PLUGGY_DISCOVERY");
+    expect(stale.className).toMatch(/wizard__step_stale/);
+    expect(stale.className).not.toMatch(/wizard__step_done/);
+    expect(stale.querySelector(".wizard__step-dot").textContent).toMatch(/!/);
+    expect(stale.getAttribute("aria-label")).toMatch(/Desatualizada|Outdated/);
+    expect(doneSteps(el)).toEqual(["WELCOME_PREFS"]);
+  });
+
+  it("keeps the reader in place when a step ahead of the order is confirmed", async () => {
+    canConfigure.mockResolvedValue(true);
+    getState.mockResolvedValue(STEPS({ currentStep: "WELCOME_PREFS", version: 1 }));
+    // The server resumes at the first unsettled step — which is still step 1.
+    confirmStep.mockResolvedValue(
+      STEPS({
+        currentStep: "WELCOME_PREFS",
+        version: 2,
+        steps: STEPS().steps.map((s) => {
+          if (s.stepKey === "CURRENCY_PREF") {
+            return { ...s, status: "CONFIRMED" };
+          }
+          return s;
+        })
+      })
+    );
+    const el = build();
+    await flush();
+    await flush();
+    await flush();
+
+    step(el, "CURRENCY_PREF").click();
+    await flush();
+    btn(el, /Próximo|Next/).click();
+    await flush();
+    await flush();
+    await flush();
+
+    expect(confirmStep.mock.calls[0][0].stepKey).toBe("CURRENCY_PREF");
+    // It advanced to the review page instead of snapping back to step 1.
+    expect(el.shadowRoot.textContent).toMatch(/Revisão|Review/);
+    expect(el.shadowRoot.textContent).not.toMatch(
+      /já está instalado|already installed/i
+    );
   });
 
   it("gates finish on acknowledging pending items, then completes", async () => {

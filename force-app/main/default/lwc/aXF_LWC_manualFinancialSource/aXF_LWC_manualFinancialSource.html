@@ -32,12 +32,24 @@
         required
         disabled={isEdit}
       ></lightning-input>
+      <lightning-record-picker
+        label={labels.institutionDirectory}
+        object-api-name="AXF_OBJ_BankInstitution__c"
+        value={form.bankInstitutionId}
+        onchange={handleBankInstitution}
+      ></lightning-record-picker>
+      <lightning-button
+        label={labels.newBank}
+        variant="base"
+        data-action="new-bank"
+        onclick={openNewBank}
+        class="slds-var-m-bottom_small"
+      ></lightning-button>
       <lightning-input
         name="institutionName"
         label={labels.institution}
         value={form.institutionName}
         onchange={handleChange}
-        required
       ></lightning-input>
       <lightning-input
         name="maskedNumber"
@@ -63,12 +75,14 @@
         <lightning-button
           variant="brand"
           label={labels.save}
+          data-action="save"
           onclick={handleSave}
           disabled={saving}
         ></lightning-button>
         <lightning-button
           class="slds-var-m-left_small"
           label={labels.skip}
+          data-action="skip"
           onclick={handleSkip}
           disabled={saving}
           lwc:if={allowSkip}
@@ -82,4 +96,66 @@
       ></lightning-spinner
     ></template>
   </lightning-card>
+
+  <template lwc:if={newBankOpen}>
+    <div class="slds-backdrop slds-backdrop_open"></div>
+    <section
+      role="dialog"
+      tabindex="-1"
+      aria-modal="true"
+      aria-labelledby="manual-new-bank-title"
+      class="slds-modal slds-fade-in-open"
+    >
+      <div class="slds-modal__container">
+        <header class="slds-modal__header">
+          <h2
+            id="manual-new-bank-title"
+            class="slds-modal__title slds-hyphenate"
+          >
+            {labels.newBankTitle}
+          </h2>
+        </header>
+        <div class="slds-modal__content slds-p-around_medium">
+          <lightning-input
+            label={labels.bankNameLabel}
+            value={newBank.name}
+            data-field="name"
+            onchange={handleNewBankInput}
+            maxlength="80"
+            class="slds-m-bottom_small"
+          ></lightning-input>
+          <lightning-input
+            label={labels.bankNumberLabel}
+            value={newBank.bankNumber}
+            data-field="bankNumber"
+            onchange={handleNewBankInput}
+            maxlength="8"
+            class="slds-m-bottom_small"
+          ></lightning-input>
+          <template lwc:if={newBankFeedback}>
+            <p
+              class="slds-m-top_small slds-text-color_error"
+              role="alert"
+              aria-live="assertive"
+            >
+              {newBankFeedback}
+            </p>
+          </template>
+        </div>
+        <footer class="slds-modal__footer">
+          <lightning-button
+            label={labels.cancel}
+            onclick={closeNewBank}
+            disabled={newBankSaving}
+          ></lightning-button>
+          <lightning-button
+            variant="brand"
+            label={newBankSaveLabel}
+            onclick={saveNewBank}
+            disabled={newBankSaving}
+          ></lightning-button>
+        </footer>
+      </div>
+    </section>
+  </template>
 </template>

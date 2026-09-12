@@ -42,11 +42,23 @@
         <!-- ================= stepper ================= -->
         <div class="wizard__stepper">
           <template for:each={stepperItems} for:item="st">
-            <div key={st.key} class={st.cssClass}>
+            <div
+              key={st.key}
+              class={st.cssClass}
+              role="button"
+              tabindex={st.tabIndex}
+              data-step={st.key}
+              aria-current={st.ariaCurrent}
+              aria-label={st.ariaLabel}
+              title={st.ariaLabel}
+              onclick={handleStepClick}
+              onkeydown={handleStepKeydown}
+            >
               <div class="wizard__step-row">
                 <div class={st.leadingClass}></div>
                 <div class="wizard__step-dot">
                   <template lwc:if={st.isDone}>✓</template>
+                  <template lwc:elseif={st.isStale}>!</template>
                   <template lwc:else>{st.num}</template>
                 </div>
                 <div class={st.trailingClass}></div>
@@ -109,6 +121,9 @@
             <template lwc:else>
               <template lwc:if={showWelcome}>
                 <p class="wizard__welcome">{labels.welcome}</p>
+              </template>
+              <template lwc:if={showHoldersRegistration}>
+                <c-a-x-f_-l-w-c_holders></c-a-x-f_-l-w-c_holders>
               </template>
               <template lwc:if={showGuideBar}>
                 <div class="wizard__guide-bar">

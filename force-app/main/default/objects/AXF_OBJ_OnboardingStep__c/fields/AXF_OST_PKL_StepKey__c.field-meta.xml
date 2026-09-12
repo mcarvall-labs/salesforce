@@ -8,6 +8,8 @@
       >false</sorted>
       <value><fullName>WELCOME_PREFS</fullName><default>true</default><label
         >WELCOME_PREFS</label></value>
+      <value><fullName>HOLDERS</fullName><default>false</default><label
+        >HOLDERS</label></value>
       <value><fullName>PLUGGY_CREDENTIALS</fullName><default>false</default><label
         >PLUGGY_CREDENTIALS</label></value>
       <value><fullName>PLUGGY_DISCOVERY</fullName><default>false</default><label

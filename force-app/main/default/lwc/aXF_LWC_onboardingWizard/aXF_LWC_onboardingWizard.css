@@ -35,6 +35,20 @@
   position: relative;
 }
 
+/* Every step can be clicked to jump straight to it — forwards or backwards.
+   Jumping only moves the view: the tick still means "settled on the server". */
+.wizard__step_navigable {
+  cursor: pointer;
+}
+.wizard__step_navigable:hover .wizard__step-label {
+  text-decoration: underline;
+}
+.wizard__step_navigable:focus-visible {
+  outline: 2px solid var(--slds-g-color-border-brand-1, #0176d3);
+  outline-offset: 2px;
+  border-radius: 0.25rem;
+}
+
 .wizard__step-row {
   display: flex;
   align-items: center;
@@ -85,6 +99,15 @@
   background: var(--slds-g-color-brand-base-50, #0b5cab);
   border-color: var(--slds-g-color-brand-base-50, #0b5cab);
   color: #fff;
+}
+
+/* A step reopened later in the flow: settled before, review needed now. */
+.wizard__step_stale .wizard__step-dot {
+  border-color: var(--slds-g-color-warning-base-50, #dd7a01);
+  color: var(--slds-g-color-warning-base-50, #dd7a01);
+}
+.wizard__step_stale .wizard__step-label {
+  color: var(--slds-g-color-warning-base-50, #dd7a01);
 }
 
 .wizard__step-label {

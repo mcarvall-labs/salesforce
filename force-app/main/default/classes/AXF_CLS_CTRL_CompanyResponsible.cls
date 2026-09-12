@@ -70,10 +70,22 @@ public with sharing class AXF_CLS_CTRL_CompanyResponsible {
     return new ALT_CLS_AxonCompanyResponsible().getResponsibilities(businessId);
   }
 
+  // Primitive params (not the service's inner DTO) so the LWC call binds reliably:
+  // Aura does not populate the fields of an @AuraEnabled Apex class that is an inner
+  // class of another top-level class (same limitation fixed in
+  // AXF_CLS_CTRL_OnboardingProgress). AXF-83 / AXF-106.
   @AuraEnabled
   public static ALT_CLS_AxonCompanyResponsible.ResponsibilityView confirmResponsibility(
-    ALT_CLS_AxonCompanyResponsible.ConfirmInput input
+    Id businessId,
+    Id personId,
+    String role,
+    Integer expectedVersion
   ) {
+    ALT_CLS_AxonCompanyResponsible.ConfirmInput input = new ALT_CLS_AxonCompanyResponsible.ConfirmInput();
+    input.businessId = businessId;
+    input.personId = personId;
+    input.role = role;
+    input.expectedVersion = expectedVersion;
     return new ALT_CLS_AxonCompanyResponsible().confirmResponsibility(input);
   }
 

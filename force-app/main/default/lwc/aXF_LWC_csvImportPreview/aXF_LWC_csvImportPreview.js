@@ -227,13 +227,11 @@ export default class AXF_LWC_csvImportPreview extends LightningElement {
     this.loading = true;
     try {
       const result = await confirmCsv({
-        input: {
-          accountId: this.recordId,
-          fileName: this.pendingFileName,
-          base64Content: this.pendingContent,
-          expectedParserVersion: this.previewResult.parseResult.parserVersion,
-          acknowledgeRejections: this.acknowledge
-        }
+        accountId: this.recordId,
+        fileName: this.pendingFileName,
+        base64Content: this.pendingContent,
+        expectedParserVersion: this.previewResult.parseResult.parserVersion,
+        acknowledgeRejections: this.acknowledge
       });
       this.confirmResult = result;
       if (result.outcome === "PUBLISHED") {

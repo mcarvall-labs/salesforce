@@ -21,6 +21,14 @@ jest.mock(
   { virtual: true }
 );
 jest.mock(
+  "@salesforce/apex/AXF_CLS_CTRL_SourceDiscovery.getConnections",
+  () => {
+    const { createApexTestWireAdapter } = require("@salesforce/sfdx-lwc-jest");
+    return { default: createApexTestWireAdapter(jest.fn()) };
+  },
+  { virtual: true }
+);
+jest.mock(
   "@salesforce/apex/AXF_CLS_CTRL_SourceDiscovery.startDiscovery",
   () => ({ default: jest.fn() }),
   { virtual: true }
@@ -31,14 +39,29 @@ jest.mock(
   { virtual: true }
 );
 jest.mock(
-  "@salesforce/apex/AXF_CLS_CTRL_SourceDiscovery.getConnections",
-  () => {
-    const { createApexTestWireAdapter } = require("@salesforce/sfdx-lwc-jest");
-    return { default: createApexTestWireAdapter(jest.fn()) };
-  },
+  "@salesforce/apex/AXF_CLS_CTRL_SourceDiscovery.updateReferences",
+  () => ({ default: jest.fn() }),
   { virtual: true }
 );
+jest.mock(
+  "@salesforce/apex/AXF_CLS_CTRL_SourceDiscovery.createBankInstitution",
+  () => ({ default: jest.fn() }),
+  { virtual: true }
+);
+jest.mock(
+  "@salesforce/apex/AXF_CLS_CTRL_SourceDiscovery.deleteConnection",
+  () => ({ default: jest.fn() }),
+  { virtual: true }
+);
+jest.mock(
+  "@salesforce/apex/AXF_CLS_CTRL_Holder.saveHolder",
+  () => ({ default: jest.fn() }),
+  { virtual: true }
+);
+
 import registerConnection from "@salesforce/apex/AXF_CLS_CTRL_SourceDiscovery.registerConnection";
+import updateReferences from "@salesforce/apex/AXF_CLS_CTRL_SourceDiscovery.updateReferences";
+import deleteConnection from "@salesforce/apex/AXF_CLS_CTRL_SourceDiscovery.deleteConnection";
 import getConnections from "@salesforce/apex/AXF_CLS_CTRL_SourceDiscovery.getConnections";
 
 jest.mock("@salesforce/i18n/lang", () => ({ default: "pt-BR" }), {
@@ -50,10 +73,43 @@ const button = (el, re) =>
   [...el.shadowRoot.querySelectorAll("lightning-button")].find((b) =>
     re.test(b.label)
   );
+const icon = (el, alt) =>
+  [...el.shadowRoot.querySelectorAll("lightning-button-icon")].find((i) =>
+    new RegExp(alt, "i").test(
+      i.alternativeText || i.getAttribute("alternative-text") || ""
+    )
+  );
+const setInput = (input, value) => {
+  input.value = value;
+  input.dispatchEvent(new CustomEvent("change", { detail: { value } }));
+};
+const pick = (picker, recordId) =>
+  picker.dispatchEvent(new CustomEvent("change", { detail: { recordId } }));
+
+const connection = {
+  connectionId: "a01000000000009",
+  institution: "MeuPluggy",
+  itemIdHint: "…def456",
+  bankInstitutionId: null,
+  bankInstitutionName: null,
+  holderId: null,
+  holderName: null,
+  consentState: "ACTIVE",
+  runState: null,
+  accountsFound: 1,
+  cardsFound: 2,
+  discovered: false
+};
 
 function build() {
   const el = createElement("c-a-x-f_-l-w-c_source-discovery", { is: Disc });
   el.recordId = "a01000000000001";
+  document.body.appendChild(el);
+  return el;
+}
+
+function buildWizard() {
+  const el = createElement("c-a-x-f_-l-w-c_source-discovery", { is: Disc });
   document.body.appendChild(el);
   return el;
 }
@@ -71,55 +127,184 @@ describe("c-aXF_LWC_sourceDiscovery", () => {
     expect(el.shadowRoot.querySelector("lightning-spinner")).not.toBeNull();
   });
 
-  it("wizard mode: no spinner, shows the Item ID form and the empty-list note", async () => {
-    const el = createElement("c-a-x-f_-l-w-c_source-discovery", { is: Disc });
-    document.body.appendChild(el);
+  it("wizard mode: keeps the Item ID off the screen and only opens it in the modal", async () => {
+    const el = buildWizard();
     getConnections.emit([]);
     await flush();
+
     expect(el.shadowRoot.querySelector("lightning-spinner")).toBeNull();
-    expect(el.shadowRoot.querySelector("lightning-input")).not.toBeNull();
+    expect(el.shadowRoot.querySelector("lightning-input")).toBeNull();
+    expect(el.shadowRoot.querySelector("[role='dialog']")).toBeNull();
+    expect(button(el, /^Registrar conexão$/)).toBeDefined();
     expect(el.shadowRoot.textContent).toMatch(/Nenhuma conexão cadastrada/i);
+
+    button(el, /^Registrar conexão$/).click();
+    await flush();
+    expect(el.shadowRoot.querySelector("lightning-input")).not.toBeNull();
+    expect(el.shadowRoot.querySelector("[role='dialog']")).not.toBeNull();
   });
 
-  it("wizard mode: registers an Item ID and lists the connection", async () => {
+  it("wizard mode: registers the Item ID typed inside the modal", async () => {
     registerConnection.mockResolvedValue({
       connectionId: "a01000000000009",
       institution: "Banco X",
       created: true,
       message: "Conexão registrada."
     });
-    const el = createElement("c-a-x-f_-l-w-c_source-discovery", { is: Disc });
-    document.body.appendChild(el);
+    const el = buildWizard();
     getConnections.emit([]);
     await flush();
 
-    const input = el.shadowRoot.querySelector("lightning-input");
-    input.value = "abc123def456";
-    input.dispatchEvent(new CustomEvent("change"));
+    button(el, /^Registrar conexão$/).click();
+    await flush();
+    setInput(el.shadowRoot.querySelector("lightning-input"), "abc123def456");
+    await flush();
+    button(el, /^Registrar$/).click();
+    await flush();
     await flush();
 
-    button(el, /Registrar conexão/).click();
-    await flush();
-    await flush();
     expect(registerConnection).toHaveBeenCalledWith({
       pluggyItemId: "abc123def456"
     });
+    // Nothing was selected: the references are a genuinely optional step.
+    expect(updateReferences).not.toHaveBeenCalled();
+  });
 
+  it("wizard mode: registers the bank and the suggested holder chosen in the modal", async () => {
+    registerConnection.mockResolvedValue({
+      connectionId: "a01000000000009",
+      institution: "MeuPluggy",
+      created: true,
+      message: "Conexão registrada."
+    });
+    updateReferences.mockResolvedValue({ outcome: "UPDATED" });
+    const el = buildWizard();
+    getConnections.emit([]);
+    await flush();
+
+    button(el, /^Registrar conexão$/).click();
+    await flush();
+    setInput(el.shadowRoot.querySelector("lightning-input"), "abc123def456");
+    const pickers = el.shadowRoot.querySelectorAll("lightning-record-picker");
+    expect(pickers).toHaveLength(2);
+    pick(pickers[0], "a0100000000000B");
+    pick(pickers[1], "00100000000000A");
+    await flush();
+    button(el, /^Registrar$/).click();
+    await flush();
+    await flush();
+    await flush();
+
+    expect(updateReferences).toHaveBeenCalledWith({
+      connectionId: "a01000000000009",
+      bankInstitutionId: "a0100000000000B",
+      holderId: "00100000000000A"
+    });
+  });
+
+  it("wizard mode: the list is read-only and shows the pending bank/holder", async () => {
+    const el = buildWizard();
+    getConnections.emit([connection]);
+    await flush();
+
+    expect(el.shadowRoot.querySelectorAll("tbody lightning-record-picker")).toHaveLength(0);
+    expect(el.shadowRoot.textContent).toMatch(/MeuPluggy/);
+    expect(el.shadowRoot.textContent).toMatch(/Não vinculado/);
+    expect(icon(el, "Editar conexão")).toBeDefined();
+    expect(icon(el, "Excluir conexão")).toBeDefined();
+  });
+
+  it("wizard mode: the bare edit_form icon opens the details and the pickers", async () => {
+    const el = buildWizard();
+    getConnections.emit([connection]);
+    await flush();
+
+    const editIcon = icon(el, "Editar conexão");
+    expect(editIcon.iconName || editIcon.getAttribute("icon-name")).toBe(
+      "utility:edit_form"
+    );
+    expect(editIcon.variant || editIcon.getAttribute("variant")).toBe("bare");
+
+    editIcon.click();
+    await flush();
+    expect(el.shadowRoot.querySelector("[role='dialog']")).not.toBeNull();
+    expect(el.shadowRoot.textContent).toMatch(/…def456/);
+    expect(el.shadowRoot.textContent).toMatch(/Descoberta|Aguardando descoberta/);
+    expect(el.shadowRoot.textContent).toMatch(
+      /1 conta e 2 cartões de crédito encontrados/
+    );
+    // The details modal is where an existing connection can be re-linked.
+    expect(
+      el.shadowRoot.querySelectorAll("[role='dialog'] lightning-record-picker")
+    ).toHaveLength(2);
+  });
+
+  it("wizard mode: spells out what was found per kind instead of a bare count", async () => {
+    const el = buildWizard();
     getConnections.emit([
-      {
-        connectionId: "a01000000000009",
-        institution: "Banco X",
-        itemIdHint: "…def456",
-        consentState: "ACTIVE",
-        runState: null,
-        accountsFound: 0,
-        cardsFound: 0,
-        discovered: false
-      }
+      { ...connection, connectionId: "c1", accountsFound: 2, cardsFound: 0 },
+      { ...connection, connectionId: "c2", accountsFound: 1, cardsFound: 1 },
+      { ...connection, connectionId: "c3", accountsFound: 0, cardsFound: 1 },
+      { ...connection, connectionId: "c4", accountsFound: 0, cardsFound: 0 }
     ]);
     await flush();
-    expect(el.shadowRoot.textContent).toMatch(/Banco X/);
-    expect(button(el, /Descobrir agora/)).toBeDefined();
+
+    const text = el.shadowRoot.textContent;
+    expect(text).toMatch(/2 contas encontradas/);
+    expect(text).toMatch(/1 conta e 1 cartão de crédito encontrados/);
+    expect(text).toMatch(/1 cartão de crédito encontrado(?!s)/);
+    expect(text).toMatch(/Aguardando descoberta/);
+    expect(text).not.toMatch(/\d \+ \d/);
+  });
+
+  it("wizard mode: reports nothing found once discovery finished empty", async () => {
+    const el = buildWizard();
+    getConnections.emit([
+      { ...connection, accountsFound: 0, cardsFound: 0, discovered: true }
+    ]);
+    await flush();
+
+    expect(el.shadowRoot.textContent).toMatch(/Nada encontrado/);
+  });
+
+  it("wizard mode: the trash icon confirms before deleting a connection", async () => {
+    deleteConnection.mockResolvedValue({
+      outcome: "DELETED",
+      message: "Conexão excluída."
+    });
+    const el = buildWizard();
+    getConnections.emit([connection]);
+    await flush();
+
+    expect(deleteConnection).not.toHaveBeenCalled();
+    icon(el, "Excluir conexão").click();
+    await flush();
+    expect(el.shadowRoot.textContent).toMatch(/não pode ser desfeita/i);
+    button(el, /^Excluir conexão$/).click();
+    await flush();
+    await flush();
+
+    expect(deleteConnection).toHaveBeenCalledWith({
+      connectionId: "a01000000000009"
+    });
+  });
+
+  it("wizard mode: keeps the connection and explains why deletion was blocked", async () => {
+    deleteConnection.mockResolvedValue({
+      outcome: "BLOCKED",
+      message: "A conexão tem contas em uso financeiro."
+    });
+    const el = buildWizard();
+    getConnections.emit([connection]);
+    await flush();
+
+    icon(el, "Excluir conexão").click();
+    await flush();
+    button(el, /^Excluir conexão$/).click();
+    await flush();
+    await flush();
+
+    expect(el.shadowRoot.textContent).toMatch(/uso financeiro/i);
   });
 
   it("wizard mode: 'Descobrir agora' runs discovery for every connection", async () => {
@@ -129,8 +314,7 @@ describe("c-aXF_LWC_sourceDiscovery", () => {
       accountsFound: 1,
       cardsFound: 0
     });
-    const el = createElement("c-a-x-f_-l-w-c_source-discovery", { is: Disc });
-    document.body.appendChild(el);
+    const el = buildWizard();
     getConnections.emit([
       {
         connectionId: "c1",

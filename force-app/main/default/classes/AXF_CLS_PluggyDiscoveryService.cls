@@ -55,6 +55,8 @@ public with sharing class AXF_CLS_PluggyDiscoveryService {
     @AuraEnabled
     public String institution;
     @AuraEnabled
+    public String bankInstitutionName;
+    @AuraEnabled
     public String currencyIsoCode;
     @AuraEnabled
     public String availability; // CUSTODY | AVAILABLE
@@ -344,6 +346,14 @@ public with sharing class AXF_CLS_PluggyDiscoveryService {
     public Integer cardsFound;
     @AuraEnabled
     public Boolean discovered;
+    @AuraEnabled
+    public Id bankInstitutionId;
+    @AuraEnabled
+    public String bankInstitutionName;
+    @AuraEnabled
+    public Id holderId;
+    @AuraEnabled
+    public String holderName;
   }
 
   /**
@@ -359,7 +369,11 @@ public with sharing class AXF_CLS_PluggyDiscoveryService {
         Id,
         AXF_CON_EXI_PluggyItemId__c,
         AXF_CON_TXT_InstitutionName__c,
-        AXF_CON_PKL_ConsentState__c
+        AXF_CON_PKL_ConsentState__c,
+        AXF_CON_LKP_BankInstitution__c,
+        AXF_CON_LKP_BankInstitution__r.Name,
+        AXF_CON_LKP_Account__c,
+        AXF_CON_LKP_Account__r.Name
       FROM AXF_OBJ_PluggyConnection__c
       WITH USER_MODE
       ORDER BY CreatedDate
@@ -368,6 +382,14 @@ public with sharing class AXF_CLS_PluggyDiscoveryService {
       d.connectionId = c.Id;
       d.institution = c.AXF_CON_TXT_InstitutionName__c;
       d.consentState = c.AXF_CON_PKL_ConsentState__c;
+      d.bankInstitutionId = c.AXF_CON_LKP_BankInstitution__c;
+      d.bankInstitutionName = c.AXF_CON_LKP_BankInstitution__r == null
+        ? null
+        : c.AXF_CON_LKP_BankInstitution__r.Name;
+      d.holderId = c.AXF_CON_LKP_Account__c;
+      d.holderName = c.AXF_CON_LKP_Account__r == null
+        ? null
+        : c.AXF_CON_LKP_Account__r.Name;
       String iid = c.AXF_CON_EXI_PluggyItemId__c;
       d.itemIdHint = (iid != null &&
         iid.length() > 6)
@@ -417,6 +439,7 @@ public with sharing class AXF_CLS_PluggyDiscoveryService {
       SELECT
         Id,
         AXF_BA_TXT_InstitutionName__c,
+        AXF_BA_LKP_BankInstitution__r.Name,
         AXF_BA_TXT_CurrencyIsoCode__c,
         AXF_BA_PKL_AvailabilityState__c,
         AXF_BA_LKP_Account__c
@@ -429,6 +452,9 @@ public with sharing class AXF_CLS_PluggyDiscoveryService {
       d.recordId = b.Id;
       d.kind = 'BANK';
       d.institution = b.AXF_BA_TXT_InstitutionName__c;
+      d.bankInstitutionName = b.AXF_BA_LKP_BankInstitution__r == null
+        ? null
+        : b.AXF_BA_LKP_BankInstitution__r.Name;
       d.currencyIsoCode = b.AXF_BA_TXT_CurrencyIsoCode__c;
       d.availability = b.AXF_BA_PKL_AvailabilityState__c;
       d.hasHolder = b.AXF_BA_LKP_Account__c != null;
@@ -438,6 +464,7 @@ public with sharing class AXF_CLS_PluggyDiscoveryService {
       SELECT
         Id,
         AXF_CC_TXT_InstitutionName__c,
+        AXF_CC_LKP_BankInstitution__r.Name,
         AXF_CC_TXT_CurrencyIsoCode__c,
         AXF_CC_PKL_AvailabilityState__c,
         AXF_CC_LKP_Account__c
@@ -450,6 +477,9 @@ public with sharing class AXF_CLS_PluggyDiscoveryService {
       d.recordId = c.Id;
       d.kind = 'CARD';
       d.institution = c.AXF_CC_TXT_InstitutionName__c;
+      d.bankInstitutionName = c.AXF_CC_LKP_BankInstitution__r == null
+        ? null
+        : c.AXF_CC_LKP_BankInstitution__r.Name;
       d.currencyIsoCode = c.AXF_CC_TXT_CurrencyIsoCode__c;
       d.availability = c.AXF_CC_PKL_AvailabilityState__c;
       d.hasHolder = c.AXF_CC_LKP_Account__c != null;
@@ -565,6 +595,261 @@ public with sharing class AXF_CLS_PluggyDiscoveryService {
     r.message = created
       ? 'Conexao registrada. Clique em "Descobrir agora" para carregar contas e cartoes.'
       : 'Conexao ja registrada para este Item ID. Clique em "Descobrir agora".';
+    return r;
+  }
+
+  public class UpdateReferencesResult {
+    @AuraEnabled
+    public Id connectionId;
+    @AuraEnabled
+    public Id bankInstitutionId;
+    @AuraEnabled
+    public Id holderId;
+    @AuraEnabled
+    public String message;
+  }
+
+  /**
+   * @description Sets or clears the canonical bank institution and the suggested
+   * holder on a connection (AXF-106). Explicit administrator action only: the bank
+   * is never derived from the Pluggy connector/institution name and a manual
+   * selection is never overwritten silently by registration or discovery. The
+   * holder is a suggestion — confirmed source holders (AXF-85), consent, collection
+   * state, provider institution/connector text and observed Item IDs are untouched.
+   * USER_MODE enforces sharing, CRUD and FLS on every read and write.
+   */
+  public UpdateReferencesResult updateReferences(
+    Id connectionId,
+    Id bankInstitutionId,
+    Id holderId
+  ) {
+    if (!callerCanDiscover()) {
+      throw new AXF_CLS_PluggyDiscoveryException(
+        'Voce nao tem autorizacao para editar as referencias da conexao.'
+      );
+    }
+    if (connectionId == null) {
+      throw new AXF_CLS_PluggyDiscoveryException('Informe a conexao a editar.');
+    }
+
+    if (bankInstitutionId != null) {
+      List<AXF_OBJ_BankInstitution__c> banks = [
+        SELECT Id
+        FROM AXF_OBJ_BankInstitution__c
+        WHERE Id = :bankInstitutionId
+        WITH USER_MODE
+        LIMIT 1
+      ];
+      if (banks.isEmpty()) {
+        throw new AXF_CLS_PluggyDiscoveryException(
+          'Instituicao financeira selecionada inacessivel ou inexistente.'
+        );
+      }
+    }
+
+    if (holderId != null) {
+      List<Account> holders = [
+        SELECT Id, RecordType.DeveloperName
+        FROM Account
+        WHERE Id = :holderId
+        WITH USER_MODE
+        LIMIT 1
+      ];
+      if (holders.isEmpty()) {
+        throw new AXF_CLS_PluggyDiscoveryException(
+          'Titular sugerido selecionado inacessivel ou inexistente.'
+        );
+      }
+      String rt = holders[0].RecordType == null
+        ? null
+        : holders[0].RecordType.DeveloperName;
+      if (
+        rt != ALT_CLS_AxonHolder.RT_PERSON &&
+        rt != ALT_CLS_AxonHolder.RT_BUSINESS
+      ) {
+        throw new AXF_CLS_PluggyDiscoveryException(
+          'Selecione uma pessoa ou empresa valida como titular sugerido.'
+        );
+      }
+    }
+
+    List<AXF_OBJ_PluggyConnection__c> conns = [
+      SELECT Id, AXF_CON_LKP_BankInstitution__c, AXF_CON_LKP_Account__c
+      FROM AXF_OBJ_PluggyConnection__c
+      WHERE Id = :connectionId
+      WITH USER_MODE
+      LIMIT 1
+    ];
+    if (conns.isEmpty()) {
+      throw new AXF_CLS_PluggyDiscoveryException(
+        'Conexao nao encontrada ou inacessivel.'
+      );
+    }
+
+    AXF_OBJ_PluggyConnection__c conn = conns[0];
+    conn.AXF_CON_LKP_BankInstitution__c = bankInstitutionId;
+    conn.AXF_CON_LKP_Account__c = holderId;
+    update as user conn;
+
+    UpdateReferencesResult r = new UpdateReferencesResult();
+    r.connectionId = conn.Id;
+    r.bankInstitutionId = bankInstitutionId;
+    r.holderId = holderId;
+    r.message = 'Banco e titular da conexao atualizados.';
+    return r;
+  }
+
+  public class DeleteResult {
+    @AuraEnabled
+    public Id connectionId;
+    @AuraEnabled
+    public String outcome; // DELETED | BLOCKED | NOT_FOUND
+    @AuraEnabled
+    public String message;
+    @AuraEnabled
+    public Integer accounts;
+    @AuraEnabled
+    public Integer cards;
+  }
+
+  /**
+   * @description Removes a registration that is not in financial use: the connection,
+   * its discovery runs and any discovered source still in custody, unconfirmed and with
+   * no imported facts. Refuses while a source is AVAILABLE, has a CONFIRMED holder or
+   * already carries transactions — those are financial evidence and are never deleted as
+   * a side effect (AXF-106 AC6/AC9). Authority: AXF_CanConfigure; the connection is read
+   * WITH USER_MODE, and the custody cleanup follows the AXF-85 config-workspace pattern
+   * (SYSTEM_MODE behind the explicit authority gate).
+   */
+  public DeleteResult deleteConnection(Id connectionId) {
+    DeleteResult r = new DeleteResult();
+    r.connectionId = connectionId;
+    r.accounts = 0;
+    r.cards = 0;
+    if (!callerCanDiscover()) {
+      throw new AXF_CLS_PluggyDiscoveryException(
+        'Voce nao tem autorizacao para remover conexoes.'
+      );
+    }
+    if (connectionId == null) {
+      r.outcome = 'NOT_FOUND';
+      r.message = 'Conexao nao informada.';
+      return r;
+    }
+
+    List<AXF_OBJ_PluggyConnection__c> conns = [
+      SELECT Id
+      FROM AXF_OBJ_PluggyConnection__c
+      WHERE Id = :connectionId
+      WITH USER_MODE
+      LIMIT 1
+    ];
+    if (conns.isEmpty()) {
+      r.outcome = 'NOT_FOUND';
+      r.message = 'Conexao nao encontrada ou inacessivel.';
+      return r;
+    }
+
+    List<AXF_OBJ_BankAccount__c> banks = [
+      SELECT Id, AXF_BA_PKL_AvailabilityState__c
+      FROM AXF_OBJ_BankAccount__c
+      WHERE AXF_BA_LKP_Connection__c = :connectionId
+      WITH SYSTEM_MODE
+    ];
+    List<AXF_OBJ_CreditCard__c> cards = [
+      SELECT Id, AXF_CC_PKL_AvailabilityState__c
+      FROM AXF_OBJ_CreditCard__c
+      WHERE AXF_CC_LKP_Connection__c = :connectionId
+      WITH SYSTEM_MODE
+    ];
+    r.accounts = banks.size();
+    r.cards = cards.size();
+
+    Set<Id> sourceIds = new Set<Id>();
+    for (AXF_OBJ_BankAccount__c b : banks) {
+      if (b.AXF_BA_PKL_AvailabilityState__c == 'AVAILABLE') {
+        r.outcome = 'BLOCKED';
+        r.message =
+          'Esta conexao tem conta ja liberada para uso. Excluir a conexao apagaria fatos financeiros, entao a remocao foi bloqueada.';
+        return r;
+      }
+      sourceIds.add(b.Id);
+    }
+    for (AXF_OBJ_CreditCard__c c : cards) {
+      if (c.AXF_CC_PKL_AvailabilityState__c == 'AVAILABLE') {
+        r.outcome = 'BLOCKED';
+        r.message =
+          'Esta conexao tem cartao ja liberado para uso. Excluir a conexao apagaria fatos financeiros, entao a remocao foi bloqueada.';
+        return r;
+      }
+      sourceIds.add(c.Id);
+    }
+
+    if (!sourceIds.isEmpty()) {
+      Integer confirmedHolders = [
+        SELECT COUNT()
+        FROM AXF_OBJ_AccountHolder__c
+        WHERE
+          AXF_ACH_PKL_State__c = 'CONFIRMED'
+          AND (AXF_ACH_LKP_BankAccount__c IN :sourceIds
+          OR AXF_ACH_LKP_CreditCard__c IN :sourceIds)
+        WITH SYSTEM_MODE
+      ];
+      if (confirmedHolders > 0) {
+        r.outcome = 'BLOCKED';
+        r.message =
+          'Esta conexao tem fontes com titular confirmado. A remocao foi bloqueada para nao apagar vinculos confirmados.';
+        return r;
+      }
+      Integer facts =
+        [
+          SELECT COUNT()
+          FROM AXF_OBJ_BankAccountTransaction__c
+          WHERE AXF_BAT_MDR_BankAccount__c IN :sourceIds
+          WITH SYSTEM_MODE
+        ] +
+        [
+          SELECT COUNT()
+          FROM AXF_OBJ_CreditCardTransaction__c
+          WHERE AXF_CCT_MDR_CreditCard__c IN :sourceIds
+          WITH SYSTEM_MODE
+        ];
+      if (facts > 0) {
+        r.outcome = 'BLOCKED';
+        r.message =
+          'Esta conexao tem lancamentos importados. A remocao foi bloqueada para nao apagar fatos financeiros.';
+        return r;
+      }
+    }
+
+    try {
+      if (!sourceIds.isEmpty()) {
+        List<SObject> custodySources = new List<SObject>();
+        custodySources.addAll(banks);
+        custodySources.addAll(cards);
+        Database.delete(custodySources, AccessLevel.SYSTEM_MODE);
+      }
+      List<AXF_OBJ_IntegrationRun__c> runs = [
+        SELECT Id
+        FROM AXF_OBJ_IntegrationRun__c
+        WHERE AXF_INR_LKP_Connection__c = :connectionId
+        WITH SYSTEM_MODE
+      ];
+      if (!runs.isEmpty()) {
+        Database.delete(runs, AccessLevel.SYSTEM_MODE);
+      }
+      Database.delete(conns, AccessLevel.SYSTEM_MODE);
+    } catch (DmlException e) {
+      r.outcome = 'BLOCKED';
+      r.message =
+        'Nao foi possivel excluir: existem outros registros vinculados a esta conexao.';
+      return r;
+    }
+
+    r.outcome = 'DELETED';
+    r.message =
+      'Conexao excluida' +
+      (sourceIds.isEmpty() ? '.' : ' junto das fontes em custodia.');
     return r;
   }
 

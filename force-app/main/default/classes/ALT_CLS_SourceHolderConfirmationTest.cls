@@ -403,7 +403,11 @@ private class ALT_CLS_SourceHolderConfirmationTest {
     System.assertEquals(false, o.forbidden);
 
     ALT_CLS_SourceHolderConfirmation.ConfirmResult r = AXF_CLS_CTRL_SourceHolderConfirmation.confirmHolder(
-      input(b.Id, 'BANK', p.Id, 0)
+      b.Id,
+      'BANK',
+      p.Id,
+      0,
+      null
     );
     System.assertEquals('CONFIRMED', r.outcome);
 

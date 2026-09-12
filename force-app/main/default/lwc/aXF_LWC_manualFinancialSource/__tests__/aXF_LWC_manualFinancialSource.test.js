@@ -53,7 +53,7 @@ describe("c-a-x-f_-l-w-c_manual-financial-source", () => {
     document.body.appendChild(el);
     const listener = jest.fn();
     el.addEventListener("skip", listener);
-    el.shadowRoot.querySelectorAll("lightning-button")[1].click();
+    el.shadowRoot.querySelector('[data-action="skip"]').click();
     expect(listener).toHaveBeenCalled();
     expect(save).not.toHaveBeenCalled();
   });
@@ -66,18 +66,18 @@ describe("c-a-x-f_-l-w-c_manual-financial-source", () => {
     const element = build();
     const listener = jest.fn();
     element.addEventListener("sourcesaved", listener);
-    element.shadowRoot.querySelector("lightning-button").click();
+    element.shadowRoot.querySelector('[data-action="save"]').click();
     await flush();
     await flush();
-    element.shadowRoot.querySelector("lightning-button").click();
+    element.shadowRoot.querySelector('[data-action="save"]').click();
     await flush();
     await flush();
     expect(save).toHaveBeenCalledTimes(2);
     expect(crypto.randomUUID).toHaveBeenCalledTimes(1);
-    expect(save.mock.calls[0][0].input.manualKey).toBe(
-      save.mock.calls[1][0].input.manualKey
+    expect(save.mock.calls[0][0].manualKey).toBe(
+      save.mock.calls[1][0].manualKey
     );
-    expect(save.mock.calls[0][0].input).toMatchObject({
+    expect(save.mock.calls[0][0]).toMatchObject({
       kind: "BANK",
       currencyIsoCode: "BRL",
       sourceId: undefined,
@@ -102,7 +102,7 @@ describe("c-a-x-f_-l-w-c_manual-financial-source", () => {
     element.expectedVersion = 4;
     const listener = jest.fn();
     element.addEventListener("sourcesaved", listener);
-    element.shadowRoot.querySelector("lightning-button").click();
+    element.shadowRoot.querySelector('[data-action="save"]').click();
     await flush();
     await flush();
     expect(listener).not.toHaveBeenCalled();
@@ -113,7 +113,7 @@ describe("c-a-x-f_-l-w-c_manual-financial-source", () => {
     const element = build();
     const field = element.shadowRoot.querySelector("lightning-input");
     field.checkValidity.mockReturnValue(false);
-    element.shadowRoot.querySelector("lightning-button").click();
+    element.shadowRoot.querySelector('[data-action="save"]').click();
     expect(save).not.toHaveBeenCalled();
   });
 });

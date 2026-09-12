@@ -218,12 +218,10 @@ describe("c-aXF_LWC_companyResponsibleAccess", () => {
     await settle();
 
     expect(confirmResponsibility).toHaveBeenCalledWith({
-      input: {
-        businessId: "001000000000999",
-        personId: "001000000000103",
-        role: "PARTNER",
-        expectedVersion: 4
-      }
+      businessId: "001000000000999",
+      personId: "001000000000103",
+      role: "PARTNER",
+      expectedVersion: 4
     });
   });
 

@@ -32,6 +32,45 @@ public with sharing class AXF_CLS_CTRL_SourceDiscovery {
     return new AXF_CLS_PluggyDiscoveryService().overview();
   }
 
+  @AuraEnabled
+  public static AXF_CLS_PluggyDiscoveryService.UpdateReferencesResult updateReferences(
+    Id connectionId,
+    Id bankInstitutionId,
+    Id holderId
+  ) {
+    try {
+      return new AXF_CLS_PluggyDiscoveryService()
+        .updateReferences(connectionId, bankInstitutionId, holderId);
+    } catch (AXF_CLS_PluggyDiscoveryException e) {
+      throw new AuraHandledException(e.getMessage());
+    }
+  }
+
+  @AuraEnabled
+  public static AXF_CLS_PluggyDiscoveryService.DeleteResult deleteConnection(
+    Id connectionId
+  ) {
+    try {
+      return new AXF_CLS_PluggyDiscoveryService()
+        .deleteConnection(connectionId);
+    } catch (AXF_CLS_PluggyDiscoveryException e) {
+      throw new AuraHandledException(e.getMessage());
+    }
+  }
+
+  // Primitive params so the LWC call binds reliably (Aura does not populate an
+  // @AuraEnabled parameter typed as an inner class of another top-level class).
+  @AuraEnabled
+  public static ALT_CLS_BankInstitution.SaveResult createBankInstitution(
+    String name,
+    String bankNumber
+  ) {
+    ALT_CLS_BankInstitution.SaveInput input = new ALT_CLS_BankInstitution.SaveInput();
+    input.name = name;
+    input.bankNumber = bankNumber;
+    return new ALT_CLS_BankInstitution().save(input);
+  }
+
   @AuraEnabled(cacheable=true)
   public static List<AXF_CLS_PluggyDiscoveryService.DiscoveredSourceDTO> getDiscovered(
     Id connectionId

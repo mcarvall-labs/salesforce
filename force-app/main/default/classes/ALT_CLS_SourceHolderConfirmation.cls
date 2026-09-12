@@ -75,6 +75,8 @@ public with sharing class ALT_CLS_SourceHolderConfirmation {
     @AuraEnabled
     public String institutionName;
     @AuraEnabled
+    public String bankInstitutionName;
+    @AuraEnabled
     public String maskedNumber;
     @AuraEnabled
     public String currencyIsoCode;
@@ -140,6 +142,7 @@ public with sharing class ALT_CLS_SourceHolderConfirmation {
       SELECT
         Id,
         AXF_BA_TXT_InstitutionName__c,
+        AXF_BA_LKP_BankInstitution__r.Name,
         AXF_BA_TXT_NumberMasked__c,
         AXF_BA_TXT_CurrencyIsoCode__c,
         AXF_BA_PKL_AvailabilityState__c,
@@ -157,6 +160,7 @@ public with sharing class ALT_CLS_SourceHolderConfirmation {
       SELECT
         Id,
         AXF_CC_TXT_InstitutionName__c,
+        AXF_CC_LKP_BankInstitution__r.Name,
         AXF_CC_TXT_LastFourMasked__c,
         AXF_CC_TXT_CurrencyIsoCode__c,
         AXF_CC_PKL_AvailabilityState__c,
@@ -403,6 +407,7 @@ public with sharing class ALT_CLS_SourceHolderConfirmation {
           AXF_BA_LKP_Account__c,
           AXF_BA_LKP_Account__r.Name,
           AXF_BA_TXT_InstitutionName__c,
+          AXF_BA_LKP_BankInstitution__r.Name,
           AXF_BA_TXT_NumberMasked__c,
           AXF_BA_TXT_CurrencyIsoCode__c,
           AXF_BA_PKL_AvailabilityState__c,
@@ -421,6 +426,7 @@ public with sharing class ALT_CLS_SourceHolderConfirmation {
         AXF_CC_LKP_Account__c,
         AXF_CC_LKP_Account__r.Name,
         AXF_CC_TXT_InstitutionName__c,
+        AXF_CC_LKP_BankInstitution__r.Name,
         AXF_CC_TXT_LastFourMasked__c,
         AXF_CC_TXT_CurrencyIsoCode__c,
         AXF_CC_PKL_AvailabilityState__c,
@@ -439,6 +445,9 @@ public with sharing class ALT_CLS_SourceHolderConfirmation {
     v.sourceId = b.Id;
     v.kind = 'BANK';
     v.institutionName = b.AXF_BA_TXT_InstitutionName__c;
+    v.bankInstitutionName = b.AXF_BA_LKP_BankInstitution__r == null
+      ? null
+      : b.AXF_BA_LKP_BankInstitution__r.Name;
     v.maskedNumber = b.AXF_BA_TXT_NumberMasked__c;
     v.currencyIsoCode = b.AXF_BA_TXT_CurrencyIsoCode__c;
     v.availabilityState = b.AXF_BA_PKL_AvailabilityState__c;
@@ -455,6 +464,9 @@ public with sharing class ALT_CLS_SourceHolderConfirmation {
     v.sourceId = c.Id;
     v.kind = 'CARD';
     v.institutionName = c.AXF_CC_TXT_InstitutionName__c;
+    v.bankInstitutionName = c.AXF_CC_LKP_BankInstitution__r == null
+      ? null
+      : c.AXF_CC_LKP_BankInstitution__r.Name;
     v.maskedNumber = c.AXF_CC_TXT_LastFourMasked__c;
     v.currencyIsoCode = c.AXF_CC_TXT_CurrencyIsoCode__c;
     v.availabilityState = c.AXF_CC_PKL_AvailabilityState__c;

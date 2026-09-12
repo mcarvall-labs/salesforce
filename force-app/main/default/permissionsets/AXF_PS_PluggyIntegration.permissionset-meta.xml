@@ -1,4 +1,4 @@
-﻿<?xml version="1.0" encoding="UTF-8" ?>
+<?xml version="1.0" encoding="UTF-8" ?>
 <PermissionSet xmlns="http://soap.sforce.com/2006/04/metadata">
   <classAccesses>
     <apexClass>AXF_CLS_PluggyAuthService</apexClass>
@@ -616,8 +616,37 @@
     <field>AXF_OBJ_IntegrationRun__c.AXF_INR_TXT_SourceItemId__c</field>
     <readable>true</readable>
   </fieldPermissions>
+  <fieldPermissions>
+    <editable>true</editable>
+    <field>AXF_OBJ_PluggyConnection__c.AXF_CON_LKP_BankInstitution__c</field>
+    <readable>true</readable>
+  </fieldPermissions>
+  <fieldPermissions>
+    <editable>true</editable>
+    <field>AXF_OBJ_PluggyConnection__c.AXF_CON_LKP_Account__c</field>
+    <readable>true</readable>
+  </fieldPermissions>
+  <fieldPermissions>
+    <editable>true</editable>
+    <field>AXF_OBJ_BankAccount__c.AXF_BA_LKP_BankInstitution__c</field>
+    <readable>true</readable>
+  </fieldPermissions>
+  <fieldPermissions>
+    <editable>true</editable>
+    <field>AXF_OBJ_CreditCard__c.AXF_CC_LKP_BankInstitution__c</field>
+    <readable>true</readable>
+  </fieldPermissions>
   <hasActivationRequired>false</hasActivationRequired>
   <label>Axon - Integracao Pluggy (servico)</label>
+  <objectPermissions>
+    <allowCreate>false</allowCreate>
+    <allowDelete>false</allowDelete>
+    <allowEdit>false</allowEdit>
+    <allowRead>true</allowRead>
+    <modifyAllRecords>false</modifyAllRecords>
+    <object>AXF_OBJ_BankInstitution__c</object>
+    <viewAllRecords>false</viewAllRecords>
+  </objectPermissions>
   <objectPermissions>
     <allowCreate>true</allowCreate>
     <allowDelete>false</allowDelete>

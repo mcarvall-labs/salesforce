@@ -63,6 +63,9 @@ export default class AxfLwcConfirmSourceHolders extends LightningElement {
     return {
       ...s,
       kindLabel: s.kind === "BANK" ? L.bank : L.card,
+      // Canonical institution name when confirmed, provider text otherwise (AXF-106).
+      // Computed here because templates cannot hold logical expressions (LWC1060).
+      institutionLabel: s.bankInstitutionName || s.institutionName,
       rowClass: "slds-box slds-box_x-small slds-var-m-bottom_x-small"
     };
   }
@@ -94,8 +97,12 @@ export default class AxfLwcConfirmSourceHolders extends LightningElement {
       return;
     }
     try {
+      // Primitive params: the controller does not accept the service's inner DTO.
       const r = await confirmHolder({
-        input: { sourceId, kind, holderId, expectedVersion: version }
+        sourceId,
+        kind,
+        holderId,
+        expectedVersion: version
       });
       this.message = r.message;
       await refreshApex(this._wired);

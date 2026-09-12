@@ -523,4 +523,39 @@ private class ALT_CLS_ManualFinancialSourceTest {
       'the losing registry insert must leave no partial holder record'
     );
   }
+
+  @IsTest
+  static void createsWithCanonicalInstitutionAndDerivesName() {
+    ALT_CLS_ManualFinancialSource.canConfigureOverride = true;
+    ALT_CLS_ManualFinancialSource.sourceAccessOverride = true;
+    Account a = holder();
+    AXF_OBJ_BankInstitution__c inst = new AXF_OBJ_BankInstitution__c(
+      Name = 'Nubank',
+      AXF_BI_EXI_Bank_Number__c = '260'
+    );
+    insert inst;
+    ALT_CLS_ManualFinancialSource.SaveInput i = input(
+      a,
+      'BANK',
+      '123e4567-e89b-42d3-a456-426614174099'
+    );
+    i.institutionName = ' ';
+    i.bankInstitutionId = inst.Id;
+
+    ALT_CLS_ManualFinancialSource.SaveResult r = new ALT_CLS_ManualFinancialSource()
+      .save(i);
+
+    System.assertEquals('CREATED', r.outcome, r.message);
+    AXF_OBJ_BankAccount__c bank = [
+      SELECT AXF_BA_TXT_InstitutionName__c, AXF_BA_LKP_BankInstitution__c
+      FROM AXF_OBJ_BankAccount__c
+      WHERE Id = :r.sourceId
+    ];
+    System.assertEquals(inst.Id, bank.AXF_BA_LKP_BankInstitution__c);
+    System.assertEquals(
+      'Nubank',
+      bank.AXF_BA_TXT_InstitutionName__c,
+      'provider text derived from the canonical directory'
+    );
+  }
 }

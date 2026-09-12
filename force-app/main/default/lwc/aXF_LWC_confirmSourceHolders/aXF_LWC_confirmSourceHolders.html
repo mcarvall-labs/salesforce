@@ -29,7 +29,7 @@
           <template for:each={pending} for:item="s">
             <div key={s.sourceId} class={s.rowClass}>
               <p class="slds-text-title_caps slds-text-color_weak">
-                {s.kindLabel} · {s.institutionName} · {s.maskedNumber} ·
+                {s.kindLabel} · {s.institutionLabel} · {s.maskedNumber} ·
                 {s.currencyIsoCode}
               </p>
               <lightning-record-picker

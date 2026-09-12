@@ -236,18 +236,16 @@ export default class AxfLwcEntryWizard extends LightningElement {
     this.feedback = undefined;
     try {
       const result = await createEntry({
-        input: {
-          accountId: this.form.accountId,
-          direction: this.form.direction,
-          magnitude: Number(this.form.magnitude),
-          currencyIsoCode: this.form.currencyIsoCode,
-          purchaseDate: this.form.purchaseDate,
-          dueDate: this.form.dueDate || null,
-          bankAccountId: this.isSourceBank ? this.form.bankAccountId : null,
-          creditCardId: this.isSourceCard ? this.form.creditCardId : null,
-          trackConfirmation: this.form.trackConfirmation,
-          clientRequestId: this.clientRequestId
-        }
+        accountId: this.form.accountId,
+        direction: this.form.direction,
+        magnitude: Number(this.form.magnitude),
+        currencyIsoCode: this.form.currencyIsoCode,
+        purchaseDate: this.form.purchaseDate,
+        dueDate: this.form.dueDate || null,
+        bankAccountId: this.isSourceBank ? this.form.bankAccountId : null,
+        creditCardId: this.isSourceCard ? this.form.creditCardId : null,
+        trackConfirmation: this.form.trackConfirmation,
+        clientRequestId: this.clientRequestId
       });
       this.applyResult(result);
     } catch (e) {

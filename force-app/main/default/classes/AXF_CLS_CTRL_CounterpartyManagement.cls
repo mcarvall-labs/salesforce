@@ -65,16 +65,59 @@ public with sharing class AXF_CLS_CTRL_CounterpartyManagement {
   /**
    * @description Cria ou atualiza a contraparte e sua relação contratual com a entidade.
    */
+  // Primitive params (not the service's inner DTO) so the LWC call binds reliably:
+  // Aura does not populate the fields of an @AuraEnabled Apex class that is an inner
+  // class of another top-level class (same limitation fixed in
+  // AXF_CLS_CTRL_OnboardingProgress). AXF-51 / AXF-106.
   @AuraEnabled
   public static ALT_CLS_CounterpartyService.OperationResultDTO saveCounterparty(
-    ALT_CLS_CounterpartyService.CounterpartyInputDTO payload
+    Id counterpartyId,
+    Id accountId,
+    String legalName,
+    String displayName,
+    String kind,
+    String country,
+    String status,
+    Long version,
+    Id relationshipId,
+    String role,
+    String relationshipStatus,
+    String entitySpecificDisplay,
+    Date validFrom,
+    Date validTo,
+    String addressSnapshot,
+    String email,
+    String phone,
+    String contactName,
+    Long relationshipVersion,
+    String taxScheme,
+    String taxCountry,
+    String taxRawDocument
   ) {
     try {
-      if (payload == null) {
-        throw new AuraHandledException(
-          'Dados da contraparte não foram informados.'
-        );
-      }
+      ALT_CLS_CounterpartyService.CounterpartyInputDTO payload = new ALT_CLS_CounterpartyService.CounterpartyInputDTO();
+      payload.counterpartyId = counterpartyId;
+      payload.accountId = accountId;
+      payload.legalName = legalName;
+      payload.displayName = displayName;
+      payload.kind = kind;
+      payload.country = country;
+      payload.status = status;
+      payload.version = version;
+      payload.relationshipId = relationshipId;
+      payload.role = role;
+      payload.relationshipStatus = relationshipStatus;
+      payload.entitySpecificDisplay = entitySpecificDisplay;
+      payload.validFrom = validFrom;
+      payload.validTo = validTo;
+      payload.addressSnapshot = addressSnapshot;
+      payload.email = email;
+      payload.phone = phone;
+      payload.contactName = contactName;
+      payload.relationshipVersion = relationshipVersion;
+      payload.taxScheme = taxScheme;
+      payload.taxCountry = taxCountry;
+      payload.taxRawDocument = taxRawDocument;
       ALT_CLS_CounterpartyService service = new ALT_CLS_CounterpartyService();
       return service.createOrUpdateCounterpartyAndRelationship(payload);
     } catch (AuraHandledException ahe) {

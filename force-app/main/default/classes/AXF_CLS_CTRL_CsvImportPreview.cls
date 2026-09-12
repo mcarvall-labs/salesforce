@@ -125,6 +125,7 @@ public with sharing class AXF_CLS_CTRL_CsvImportPreview {
         Id,
         Name,
         AXF_BA_TXT_InstitutionName__c,
+        AXF_BA_LKP_BankInstitution__r.Name,
         AXF_BA_PKL_AvailabilityState__c
       FROM AXF_OBJ_BankAccount__c
       WHERE Id = :input.accountId
@@ -160,11 +161,12 @@ public with sharing class AXF_CLS_CTRL_CsvImportPreview {
       return out;
     }
     out.outcome = 'OK';
-    out.targetAccountLabel = String.isBlank(
-        accounts[0].AXF_BA_TXT_InstitutionName__c
-      )
+    String institutionName = accounts[0].AXF_BA_LKP_BankInstitution__r == null
+      ? accounts[0].AXF_BA_TXT_InstitutionName__c
+      : accounts[0].AXF_BA_LKP_BankInstitution__r.Name;
+    out.targetAccountLabel = String.isBlank(institutionName)
       ? accounts[0].Name
-      : accounts[0].AXF_BA_TXT_InstitutionName__c + ' · ' + accounts[0].Name;
+      : institutionName + ' · ' + accounts[0].Name;
     out.message = 'Prévia gerada. Nenhum lançamento foi publicado.';
     return out;
   }
@@ -177,10 +179,24 @@ public with sharing class AXF_CLS_CTRL_CsvImportPreview {
   }
 
   /** AXF-15 — publish the reviewed batch. Thin delegate to the confirm service. */
+  // Primitive params (not the service's inner DTO) so the LWC call binds reliably:
+  // Aura does not populate the fields of an @AuraEnabled Apex class that is an inner
+  // class of another top-level class (same limitation fixed in
+  // AXF_CLS_CTRL_OnboardingProgress). AXF-15 / AXF-106.
   @AuraEnabled
   public static AXF_CLS_CsvImportConfirmService.ConfirmResult confirmCsv(
-    AXF_CLS_CsvImportConfirmService.ConfirmInput input
+    Id accountId,
+    String fileName,
+    String base64Content,
+    String expectedParserVersion,
+    Boolean acknowledgeRejections
   ) {
+    AXF_CLS_CsvImportConfirmService.ConfirmInput input = new AXF_CLS_CsvImportConfirmService.ConfirmInput();
+    input.accountId = accountId;
+    input.fileName = fileName;
+    input.base64Content = base64Content;
+    input.expectedParserVersion = expectedParserVersion;
+    input.acknowledgeRejections = acknowledgeRejections;
     return new AXF_CLS_CsvImportConfirmService().confirm(input);
   }
 }

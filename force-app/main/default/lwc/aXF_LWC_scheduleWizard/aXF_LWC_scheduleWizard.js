@@ -128,7 +128,7 @@ export default class AXF_LWC_scheduleWizard extends LightningElement {
     this.saveResult = undefined;
     this.loading = true;
     try {
-      const result = await planSchedule({ input: this.buildPlanInput() });
+      const result = await planSchedule({ ...this.buildPlanInput() });
       this.schedule = result;
       if (result.outcome !== "OK") {
         this.errorMessage = result.message;
@@ -147,13 +147,11 @@ export default class AXF_LWC_scheduleWizard extends LightningElement {
     try {
       const groupKey = this.newGroupKey();
       const result = await saveSchedule({
-        input: {
-          plan: this.buildPlanInput(),
-          accountId: this.accountId,
-          direction: this.direction,
-          currencyIsoCode: this.currencyIsoCode,
-          groupKey
-        }
+        planJson: JSON.stringify(this.buildPlanInput()),
+        accountId: this.accountId,
+        direction: this.direction,
+        currencyIsoCode: this.currencyIsoCode,
+        groupKey
       });
       this.saveResult = result;
       if (result.outcome !== "SAVED" && result.outcome !== "ALREADY") {
