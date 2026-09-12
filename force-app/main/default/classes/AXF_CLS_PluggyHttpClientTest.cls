@@ -7,7 +7,8 @@ private class AXF_CLS_PluggyHttpClientTest {
   @IsTest
   static void timeoutBecomesUnknownNotSuccess() {
     AXF_CLS_PluggyHttpCalloutMock mock = new AXF_CLS_PluggyHttpCalloutMock();
-    mock.throwCallout = true;
+    // The GET itself fails after a successful auth, so it is a genuine transport unknown.
+    mock.throwOnItems = true;
     Test.setMock(HttpCalloutMock.class, mock);
 
     Test.startTest();
@@ -18,6 +19,36 @@ private class AXF_CLS_PluggyHttpClientTest {
       System.assert(
         e.getMessage().containsIgnoreCase('desconhecido'),
         e.getMessage()
+      );
+      System.assert(
+        !e.getMessage().contains('ITEM_SECRET_ID'),
+        'ids stay out of user text'
+      );
+    }
+    Test.stopTest();
+  }
+
+  @IsTest
+  static void authConfigFailureIsNotMislabeledAsItemLookup() {
+    AXF_CLS_PluggyHttpCalloutMock mock = new AXF_CLS_PluggyHttpCalloutMock();
+    // A callout exception thrown during the AUTH phase (e.g. the External Credential's
+    // merge fields cannot resolve) must surface as an auth/config error, never as a
+    // "GET /items (resultado desconhecido)".
+    mock.throwCallout = true;
+    Test.setMock(HttpCalloutMock.class, mock);
+
+    Test.startTest();
+    try {
+      new AXF_CLS_PluggyHttpClient().getJson('/items/ITEM_SECRET_ID');
+      System.assert(false, 'an auth-phase failure must surface distinctly');
+    } catch (AXF_CLS_PluggyConfigException e) {
+      System.assert(
+        e.getMessage().containsIgnoreCase('autenticacao'),
+        'auth/config failure must name the authentication concern: ' + e.getMessage()
+      );
+      System.assert(
+        !e.getMessage().containsIgnoreCase('GET /items'),
+        'auth failure must not be reported as an item lookup: ' + e.getMessage()
       );
       System.assert(
         !e.getMessage().contains('ITEM_SECRET_ID'),
