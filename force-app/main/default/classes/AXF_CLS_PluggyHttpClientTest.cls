@@ -44,11 +44,11 @@ private class AXF_CLS_PluggyHttpClientTest {
     } catch (AXF_CLS_PluggyConfigException e) {
       System.assert(
         e.getMessage().containsIgnoreCase('autenticacao'),
-        'auth/config failure must name the authentication concern: ' + e.getMessage()
+        'auth failure must name the concern: ' + e.getMessage()
       );
       System.assert(
         !e.getMessage().containsIgnoreCase('GET /items'),
-        'auth failure must not be reported as an item lookup: ' + e.getMessage()
+        'auth failure must not be an item lookup: ' + e.getMessage()
       );
       System.assert(
         !e.getMessage().contains('ITEM_SECRET_ID'),
