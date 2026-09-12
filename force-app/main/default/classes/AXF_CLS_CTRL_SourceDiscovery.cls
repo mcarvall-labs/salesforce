@@ -20,6 +20,10 @@ public with sharing class AXF_CLS_CTRL_SourceDiscovery {
         .registerConnection(pluggyItemId);
     } catch (AXF_CLS_PluggyDiscoveryException e) {
       throw new AuraHandledException(e.getMessage());
+    } catch (AXF_CLS_PluggyIntegrationException e) {
+      // Auth/config failure (e.g. External Credential not provisioned) — surface the
+      // sanitized message so it is not shown as a generic internal error.
+      throw new AuraHandledException(e.getMessage());
     }
   }
 
@@ -51,6 +55,15 @@ public with sharing class AXF_CLS_CTRL_SourceDiscovery {
       r.message = e.getMessage();
       return r;
     } catch (AXF_CLS_PluggyCollectionBlockedException e) {
+      AXF_CLS_PluggyDiscoveryService.DiscoveryResult r = new AXF_CLS_PluggyDiscoveryService.DiscoveryResult();
+      r.connectionId = connectionId;
+      r.state = 'FAILED_TERMINAL';
+      r.complete = false;
+      r.message = e.getMessage();
+      return r;
+    } catch (AXF_CLS_PluggyIntegrationException e) {
+      // Auth/config failure before any item lookup — return a clean terminal DTO with the
+      // sanitized message instead of leaking an unhandled exception.
       AXF_CLS_PluggyDiscoveryService.DiscoveryResult r = new AXF_CLS_PluggyDiscoveryService.DiscoveryResult();
       r.connectionId = connectionId;
       r.state = 'FAILED_TERMINAL';

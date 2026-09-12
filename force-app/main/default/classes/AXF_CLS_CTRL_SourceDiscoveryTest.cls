@@ -159,6 +159,37 @@ private class AXF_CLS_CTRL_SourceDiscoveryTest {
   }
 
   @IsTest
+  static void registerConnectionSurfacesAuthFailureAsHandledError() {
+    AXF_CLS_PluggyDiscoveryService.canDiscoverOverride = true;
+    AXF_CLS_PluggyHttpCalloutMock mock = new AXF_CLS_PluggyHttpCalloutMock();
+    mock.throwCallout = true; // auth-phase failure (credential not provisioned)
+    Test.setMock(HttpCalloutMock.class, mock);
+
+    Boolean threw = false;
+    Test.startTest();
+    try {
+      AXF_CLS_CTRL_SourceDiscovery.registerConnection('ITEM_AUTH_FAIL');
+    } catch (AuraHandledException e) {
+      // AuraHandledException.getMessage() is not reliably inspectable in a test context
+      // (it reports the platform default "Script-thrown exception"); the sanitized
+      // auth/config message itself is asserted at the auth-service and HTTP-client layers.
+      threw = true;
+    }
+    Test.stopTest();
+
+    System.assertEquals(true, threw, 'auth failure must be a handled error');
+    System.assertEquals(
+      0,
+      [
+        SELECT COUNT()
+        FROM AXF_OBJ_PluggyConnection__c
+        WHERE AXF_CON_EXI_PluggyItemId__c = 'ITEM_AUTH_FAIL'
+      ],
+      'no connection must be persisted when authentication fails'
+    );
+  }
+
+  @IsTest
   static void registerConnectionDeniedWithoutAuthority() {
     AXF_CLS_PluggyTestData.grantIntegrationAccess();
     AXF_CLS_PluggyDiscoveryService.canDiscoverOverride = false;

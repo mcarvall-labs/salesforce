@@ -9,6 +9,7 @@ public class AXF_CLS_PluggyHttpCalloutMock implements HttpCalloutMock {
   public String apiKey = 'test-api-key-not-a-real-secret';
   public Integer connectorsStatus = 200;
   public Integer itemStatus = 200;
+  public Boolean throwOnItems = false;
   public String itemBodyStatus = 'UPDATED';
   public Integer consentsStatus = 200;
   public String consentRevokedAt = null;
@@ -136,6 +137,9 @@ public class AXF_CLS_PluggyHttpCalloutMock implements HttpCalloutMock {
       return res;
     }
     if (ep.contains('/items/')) {
+      if (throwOnItems) {
+        throw new System.CalloutException('simulated items timeout');
+      }
       res.setStatusCode(itemStatus);
       if (itemStatus == 200) {
         res.setBody(
