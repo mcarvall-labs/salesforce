@@ -11,8 +11,19 @@ const STAGE = {
   FORM: "FORM",
   RUNNING: "RUNNING",
   DONE: "DONE",
-  FAILED: "FAILED"
+  FAILED: "FAILED",
+  STALLED: "STALLED"
 };
+
+// Outcomes that never resolve by waiting: the operation stopped for a reason the
+// administrator must act on, so polling must not continue (AXF-107 AC4 / AC6).
+const TERMINAL_OUTCOMES = [
+  "FORBIDDEN",
+  "INVALID",
+  "CONFLICT",
+  "NOT_FOUND",
+  "BLOCKED_LICENSE"
+];
 
 export default class AxfLwcAddPersonAccess extends LightningElement {
   labels = L;
@@ -20,6 +31,18 @@ export default class AxfLwcAddPersonAccess extends LightningElement {
   licensesFree = 0;
   stage = STAGE.FORM;
   stepIndex = 0;
+
+  /**
+   * Finite observation policy (AXF-107 AC5). The provisioning chain runs as
+   * Queueables, so this component watches with a bounded budget plus a stall
+   * window instead of polling forever. Reaching either limit never marks the
+   * server job failed: it stops the spinner and offers an explicit resume, and it
+   * never starts a second provisioning for the same request.
+   */
+  pollIntervalMs = 2500;
+  stallWindowMs = 45000;
+  observationBudgetMs = 180000;
+  maxStatusFailures = 3;
 
   @track form = {
     personId: null,
@@ -34,7 +57,14 @@ export default class AxfLwcAddPersonAccess extends LightningElement {
   provisioningId = null;
   status = null;
   feedback = null;
+  canRetry = false;
   _poll;
+  _pollStartedAt = 0;
+  _lastProgressAt = 0;
+  _lastProgressKey = null;
+  _statusFailures = 0;
+  _statusBusy = false;
+  _acting = false;
 
   @wire(canConfigure)
   wiredCanConfigure({ data }) {
@@ -63,6 +93,9 @@ export default class AxfLwcAddPersonAccess extends LightningElement {
   }
   get isRunning() {
     return this.stage === STAGE.RUNNING;
+  }
+  get isStalled() {
+    return this.stage === STAGE.STALLED;
   }
   get isDone() {
     return this.stage === STAGE.DONE;
@@ -129,6 +162,17 @@ export default class AxfLwcAddPersonAccess extends LightningElement {
   get canAdvanceDisabled() {
     return !this.canAdvance;
   }
+  // A retryable failure and an unknown (stalled) outcome both offer "resume"; a
+  // terminal one only offers the way back to the form.
+  get leaveLabel() {
+    return this.canRetry ? L.leave : L.backToForm;
+  }
+  get linkedUserId() {
+    return this.status ? this.status.linkedUserId : null;
+  }
+  get summaryName() {
+    return this.form.name;
+  }
 
   // ---- accessibility helpers ----
   get stepTitle() {
@@ -191,23 +235,44 @@ export default class AxfLwcAddPersonAccess extends LightningElement {
     this.moveFocus("[data-step-heading]");
   }
 
+  /**
+   * Leaves the running view without claiming success (AXF-107 AC7). The optional
+   * step stays unsettled and the same request can be resumed later from the
+   * configuration entry point.
+   */
+  handleLeave() {
+    this.clearPoll();
+    this.stage = STAGE.FORM;
+    this.feedback = null;
+    this.canRetry = false;
+    this.moveFocus("[data-step-heading]");
+  }
+
   async handleConfirm() {
+    if (this._acting) {
+      return; // no duplicate provisioning from a double click
+    }
+    this._acting = true;
     this.stage = STAGE.RUNNING;
     this.feedback = L.starting;
     this.moveFocus("[data-feedback]");
     try {
       const r = await startProvisioning({ ...this.form });
-      this.provisioningId = r.provisioningId;
-      this.applyResult(r);
-      this.poll();
+      this.provisioningId = (r && r.provisioningId) || null;
+      this.watch(r);
     } catch (e) {
-      this.stage = STAGE.FAILED;
-      this.feedback = (e && e.body && e.body.message) || L.failed;
+      this.failWith((e && e.body && e.body.message) || L.failed, true);
       this.moveFocus("[data-feedback]");
+    } finally {
+      this._acting = false;
     }
   }
 
   async handleRetry() {
+    if (this._acting || !this.provisioningId) {
+      return;
+    }
+    this._acting = true;
     this.stage = STAGE.RUNNING;
     this.feedback = L.running;
     this.moveFocus("[data-feedback]");
@@ -215,68 +280,156 @@ export default class AxfLwcAddPersonAccess extends LightningElement {
       const r = await resumeProvisioning({
         provisioningId: this.provisioningId
       });
-      this.applyResult(r);
-      this.poll();
+      this.watch(r);
     } catch (e) {
-      this.stage = STAGE.FAILED;
-      this.feedback = (e && e.body && e.body.message) || L.failed;
+      this.failWith((e && e.body && e.body.message) || L.failed, true);
+      this.moveFocus("[data-feedback]");
+    } finally {
+      this._acting = false;
+    }
+  }
+
+  /**
+   * Applies a start/resume/status response and keeps watching only while the
+   * operation is genuinely nonterminal: a terminal response never restarts
+   * polling, and every watch cycle clears the previous timer first (AC6).
+   */
+  watch(r) {
+    const wasStage = this.stage;
+    this.applyResult(r);
+    if (this.stage === STAGE.RUNNING) {
+      this.startPoll();
+    } else {
+      this.clearPoll();
+    }
+    if (this.stage !== wasStage) {
       this.moveFocus("[data-feedback]");
     }
   }
 
-  poll() {
+  startPoll() {
     this.clearPoll();
+    const now = Date.now();
+    this._pollStartedAt = now;
+    this._lastProgressAt = now;
+    this._statusFailures = 0;
     // eslint-disable-next-line @lwc/lwc/no-async-operation
-    this._poll = setInterval(() => this.refreshStatus(), 2500);
+    this._poll = setInterval(() => this.refreshStatus(), this.pollIntervalMs);
   }
+
   clearPoll() {
     if (this._poll) {
       clearInterval(this._poll);
       this._poll = undefined;
     }
   }
+
   disconnectedCallback() {
+    // AC6: skipping the step, navigating away or changing tab stops the polling.
     this.clearPoll();
+    this._statusBusy = false;
   }
 
   async refreshStatus() {
-    if (!this.provisioningId) {
+    if (!this.provisioningId || this._statusBusy) {
+      return; // never overlap uncontrolled status requests
+    }
+    if (Date.now() - this._pollStartedAt >= this.observationBudgetMs) {
+      this.stopForUnknown(L.watchLimit);
       return;
     }
+    this._statusBusy = true;
     try {
       const r = await getStatus({ provisioningId: this.provisioningId });
+      this._statusFailures = 0;
+      const wasStage = this.stage;
       this.applyResult(r);
+      if (this.stage !== wasStage) {
+        this.moveFocus("[data-feedback]");
+      }
+      if (this.stage !== STAGE.RUNNING) {
+        return;
+      }
+      if (Date.now() - this._lastProgressAt >= this.stallWindowMs) {
+        this.stopForUnknown(L.stalled);
+      }
     } catch (error) {
-      // transient — keep polling
-      this.feedback =
-        (error && error.body && error.body.message) || this.feedback;
+      this._statusFailures += 1;
+      const detail = (error && error.body && error.body.message) || null;
+      this.feedback = detail || L.statusUnavailable;
+      if (this._statusFailures >= this.maxStatusFailures) {
+        // The server job may still be running: report an unknown outcome with an
+        // explicit resume instead of failing it or provisioning twice.
+        this.stopForUnknown(
+          detail ? `${detail} ${L.statusUnavailable}` : L.statusUnavailable
+        );
+      }
+    } finally {
+      this._statusBusy = false;
     }
   }
 
   applyResult(r) {
+    if (!r) {
+      return;
+    }
     this.status = r;
-    this.feedback = r.message;
-    const wasStage = this.stage;
-    if (r.currentStep === "DONE" || r.status === "SUCCEEDED") {
+    if (r.message) {
+      this.feedback = r.message;
+    }
+    const key = `${r.currentStep}|${r.status}`;
+    if (key !== this._lastProgressKey) {
+      // Progress is a CHANGE of the persisted step/state pair, not a response.
+      this._lastProgressKey = key;
+      this._lastProgressAt = Date.now();
+    }
+    if (
+      r.currentStep === "DONE" ||
+      r.status === "SUCCEEDED" ||
+      r.outcome === "ALREADY_DONE"
+    ) {
       this.stage = STAGE.DONE;
+      this.canRetry = false;
       this.feedback = L.done;
       this.clearPoll();
-    } else if (
-      r.status === "FAILED_TERMINAL" ||
-      r.status === "FAILED_RETRYABLE" ||
-      r.outcome === "FORBIDDEN" ||
-      r.outcome === "INVALID" ||
-      r.outcome === "BLOCKED_LICENSE" ||
-      r.outcome === "CONFLICT"
-    ) {
-      this.stage = STAGE.FAILED;
-      this.clearPoll();
-    } else {
-      this.stage = STAGE.RUNNING;
+      return;
     }
-    if (this.stage !== wasStage) {
-      this.moveFocus("[data-feedback]");
+    if (r.status === "FAILED_TERMINAL") {
+      this.failWith(r.message || L.failed, false);
+      return;
     }
+    if (TERMINAL_OUTCOMES.includes(r.outcome)) {
+      // Freeing a license is the one terminal outcome that is actionable again.
+      this.failWith(r.message || L.failed, r.outcome === "BLOCKED_LICENSE");
+      return;
+    }
+    if (r.status === "FAILED_RETRYABLE") {
+      this.failWith(r.message || L.failed, true);
+      return;
+    }
+    // PENDING / RUNNING / RESUMED / STARTED — still nonterminal
+    this.stage = STAGE.RUNNING;
+    this.canRetry = false;
+  }
+
+  failWith(message, retryable) {
+    this.stage = STAGE.FAILED;
+    this.canRetry = retryable === true;
+    this.feedback = message;
+    this.clearPoll();
+  }
+
+  /**
+   * Ends the bounded observation with an UNKNOWN outcome: the server job may
+   * still be running, so the status is neither failed nor reset, and the only
+   * offered action is an explicit resume of the same request.
+   */
+  stopForUnknown(message) {
+    this.clearPoll();
+    this.stage = STAGE.STALLED;
+    this.canRetry = true;
+    this.feedback = message;
+    this.moveFocus("[data-feedback]");
   }
 
   reset() {
@@ -286,6 +439,11 @@ export default class AxfLwcAddPersonAccess extends LightningElement {
     this.provisioningId = null;
     this.status = null;
     this.feedback = null;
+    this.canRetry = false;
+    this._lastProgressKey = null;
+    this._statusFailures = 0;
+    this._pollStartedAt = 0;
+    this._lastProgressAt = 0;
     this.form = {
       personId: null,
       name: "",
