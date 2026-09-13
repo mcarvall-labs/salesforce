@@ -163,9 +163,11 @@ export default class AxfLwcAddPersonAccess extends LightningElement {
     this.form = { ...this.form, personId: event.detail.recordId || null };
   }
   handleField(event) {
+    // lightning-radio-group delivers the selection in detail.value; lightning-input
+    // in target.value. Reading only target.value left radio fields undefined (AXF-106).
     this.form = {
       ...this.form,
-      [event.target.dataset.field]: event.target.value
+      [event.target.dataset.field]: event.detail?.value ?? event.target.value
     };
   }
   handleUserSearch(event) {
@@ -194,7 +196,7 @@ export default class AxfLwcAddPersonAccess extends LightningElement {
     this.feedback = L.starting;
     this.moveFocus("[data-feedback]");
     try {
-      const r = await startProvisioning({ input: this.form });
+      const r = await startProvisioning({ ...this.form });
       this.provisioningId = r.provisioningId;
       this.applyResult(r);
       this.poll();

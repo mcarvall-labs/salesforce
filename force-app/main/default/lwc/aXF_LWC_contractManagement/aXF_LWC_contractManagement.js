@@ -304,14 +304,14 @@ export default class AXF_LWC_contractManagement extends LightningElement {
     this.isSaving = true;
     try {
       if (this.isEditing) {
-        await updateDraftContract({ payload: this.form });
+        await updateDraftContract({ ...this.form });
         this.showToast(
           "Sucesso",
           "Rascunho do contrato atualizado com sucesso.",
           "success"
         );
       } else {
-        await createDraftContract({ payload: this.form });
+        await createDraftContract({ ...this.form });
         this.showToast(
           "Sucesso",
           "Contrato em rascunho criado com sucesso.",
@@ -397,7 +397,7 @@ export default class AXF_LWC_contractManagement extends LightningElement {
     this.isSaving = true;
     try {
       const payload = { ...this.termForm };
-      this.schedulePreview = await calculateSchedulePreview({ payload });
+      this.schedulePreview = await calculateSchedulePreview({ ...payload });
       this.showToast(
         "Calculo Concluido",
         "Cronograma calculado com conservacao estrita e residual explicito (GF-04).",
@@ -414,7 +414,7 @@ export default class AXF_LWC_contractManagement extends LightningElement {
     this.isSaving = true;
     try {
       const payload = { ...this.termForm };
-      await saveDraftTermVersion({ payload });
+      await saveDraftTermVersion({ ...payload });
       this.showToast(
         "Sucesso",
         "Rascunho do termo contratual salvo com sucesso.",
@@ -691,7 +691,7 @@ export default class AXF_LWC_contractManagement extends LightningElement {
       }
       correctApprovedWorkRecord({
         approvedWorkRecordId: this.correctionTargetId,
-        replacementPayload: this.wrForm,
+        ...this.wrForm,
         correctionReason: this.correctionReason
       })
         .then(() => {
@@ -712,7 +712,7 @@ export default class AXF_LWC_contractManagement extends LightningElement {
           this.isLoading = false;
         });
     } else {
-      registerWorkRecord({ payload: this.wrForm })
+      registerWorkRecord({ ...this.wrForm })
         .then(() => {
           this.isWorkRecordModalOpen = false;
           this.loadWorkRecords();

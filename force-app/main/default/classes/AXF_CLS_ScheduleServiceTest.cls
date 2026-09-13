@@ -191,10 +191,21 @@ private class AXF_CLS_ScheduleServiceTest {
     AXF_CLS_ScheduleService.authorizedOverride = new Set<Id>{ a.Id };
 
     ALT_CLS_AmortizationSchedule.ScheduleResult preview = AXF_CLS_CTRL_ScheduleWizard.planSchedule(
-      priceplan()
+      'PRICE',
+      1000.00,
+      4,
+      0.02,
+      Date.newInstance(2026, 3, 15),
+      null,
+      null,
+      null
     );
     AXF_CLS_ScheduleService.SaveResult saved = AXF_CLS_CTRL_ScheduleWizard.saveSchedule(
-      saveInput(a.Id, 'gk-ctrl-0001')
+      JSON.serialize(priceplan()),
+      a.Id,
+      'DEBIT',
+      'BRL',
+      'gk-ctrl-0001'
     );
 
     System.assertEquals('OK', preview.outcome);

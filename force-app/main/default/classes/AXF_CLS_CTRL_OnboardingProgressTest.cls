@@ -36,7 +36,7 @@ private class AXF_CLS_CTRL_OnboardingProgressTest {
     allow();
     Test.startTest();
     ALT_CLS_AxonOnboardingProgress.OnboardingState s = AXF_CLS_CTRL_OnboardingProgress.getState();
-    System.assertEquals(7, s.steps.size());
+    System.assertEquals(8, s.steps.size());
 
     s = confirm('WELCOME_PREFS', s.version, 'BRL');
     System.assertEquals('CONFIRMED', s.outcome);

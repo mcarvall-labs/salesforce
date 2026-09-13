@@ -1,6 +1,7 @@
 import { LightningElement, api } from "lwc";
 import LANG from "@salesforce/i18n/lang";
 import save from "@salesforce/apex/AXF_CLS_CTRL_ManualFinancialSource.save";
+import createBankInstitution from "@salesforce/apex/AXF_CLS_CTRL_ManualFinancialSource.createBankInstitution";
 
 // Axon ships PT-BR + EN only; follow the Salesforce user profile language.
 const PROFILE_LOCALE = String(LANG || "")
@@ -16,6 +17,14 @@ const COPY = {
     holder: "Titular",
     currency: "Moeda (ISO)",
     institution: "Instituição",
+    institutionDirectory: "Instituição financeira (cadastro)",
+    newBank: "Novo banco",
+    newBankTitle: "Cadastrar banco",
+    bankNameLabel: "Nome da instituição",
+    bankNumberLabel: "Código bancário (COMPE)",
+    saveBank: "Salvar banco",
+    savingBank: "Salvando…",
+    bankCreated: "Banco cadastrado e selecionado.",
     masked: "Número mascarado",
     type: "Tipo da conta",
     brand: "Bandeira",
@@ -38,6 +47,14 @@ const COPY = {
     holder: "Holder",
     currency: "Currency (ISO)",
     institution: "Institution",
+    institutionDirectory: "Financial institution (directory)",
+    newBank: "New bank",
+    newBankTitle: "Register bank",
+    bankNameLabel: "Institution name",
+    bankNumberLabel: "Bank number (COMPE)",
+    saveBank: "Save bank",
+    savingBank: "Saving…",
+    bankCreated: "Bank created and selected.",
     masked: "Masked number",
     type: "Account type",
     brand: "Card brand",
@@ -81,6 +98,7 @@ export default class AXF_LWC_manualFinancialSource extends LightningElement {
     holderId: null,
     currencyIsoCode: "BRL",
     institutionName: "",
+    bankInstitutionId: null,
     maskedNumber: "",
     sourceType: "",
     brand: ""
@@ -89,6 +107,11 @@ export default class AXF_LWC_manualFinancialSource extends LightningElement {
   message = "";
   outcome = "";
   pendingManualKey;
+  // inline "Novo banco" modal state
+  newBankOpen = false;
+  newBankSaving = false;
+  newBankFeedback = "";
+  newBank = { name: "", bankNumber: "" };
   get labels() {
     return COPY[this.locale] || COPY[PROFILE_LOCALE] || COPY.en;
   }
@@ -123,6 +146,56 @@ export default class AXF_LWC_manualFinancialSource extends LightningElement {
   handleHolder(e) {
     this.form = { ...this.form, holderId: e.detail.recordId };
   }
+  handleBankInstitution(e) {
+    this.form = {
+      ...this.form,
+      bankInstitutionId: e.detail.recordId || null
+    };
+  }
+
+  // ---- inline "Novo banco" ----
+  get newBankSaveLabel() {
+    return this.newBankSaving ? this.labels.savingBank : this.labels.saveBank;
+  }
+  openNewBank() {
+    this.newBank = { name: "", bankNumber: "" };
+    this.newBankFeedback = "";
+    this.newBankOpen = true;
+  }
+  closeNewBank() {
+    this.newBankOpen = false;
+    this.newBankFeedback = "";
+  }
+  handleNewBankInput(event) {
+    this.newBank = {
+      ...this.newBank,
+      [event.target.dataset.field]: event.target.value
+    };
+  }
+  async saveNewBank() {
+    this.newBankSaving = true;
+    this.newBankFeedback = "";
+    try {
+      const res = await createBankInstitution({
+        name: this.newBank.name,
+        bankNumber: this.newBank.bankNumber
+      });
+      if (res.outcome !== "CREATED" && res.outcome !== "ALREADY") {
+        this.newBankFeedback = res.message || this.labels.failed;
+        return;
+      }
+      // Select the new/existing institution on the form without losing anything typed.
+      this.form = { ...this.form, bankInstitutionId: res.institutionId };
+      this.message = this.labels.bankCreated;
+      this.outcome = "CREATED";
+      this.closeNewBank();
+    } catch (e) {
+      this.newBankFeedback =
+        (e && e.body && e.body.message) || this.labels.failed;
+    } finally {
+      this.newBankSaving = false;
+    }
+  }
   async handleSave() {
     const fields = [
       ...this.template.querySelectorAll(
@@ -145,13 +218,12 @@ export default class AXF_LWC_manualFinancialSource extends LightningElement {
       if (!this.sourceId && !this.pendingManualKey) {
         this.pendingManualKey = crypto.randomUUID();
       }
+      // Primitive params: the controller does not accept the service's inner DTO.
       const result = await save({
-        input: {
-          ...this.form,
-          sourceId: this.sourceId,
-          expectedVersion: this.expectedVersion,
-          manualKey: this.sourceId ? null : this.pendingManualKey
-        }
+        ...this.form,
+        sourceId: this.sourceId,
+        expectedVersion: this.expectedVersion,
+        manualKey: this.sourceId ? null : this.pendingManualKey
       });
       this.outcome = result.outcome;
       const successful = ["CREATED", "UPDATED", "ALREADY"].includes(

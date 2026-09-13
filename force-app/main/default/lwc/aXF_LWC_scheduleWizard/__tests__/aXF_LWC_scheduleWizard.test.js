@@ -120,8 +120,8 @@ describe("c-a-x-f_-l-w-c_schedule-wizard", () => {
 
     expect(saveSchedule).toHaveBeenCalled();
     const call = saveSchedule.mock.calls[0][0];
-    expect(call.input.accountId).toBe("001000000000001AAA");
-    expect(call.input.groupKey.length).toBeLessThanOrEqual(24);
+    expect(call.accountId).toBe("001000000000001AAA");
+    expect(call.groupKey.length).toBeLessThanOrEqual(24);
     expect(el.shadowRoot.textContent).toContain("Cronograma salvo");
   });
 

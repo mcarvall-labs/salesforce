@@ -115,7 +115,20 @@ private class AXF_CLS_CTRL_ContractManagementTest {
 
     Test.startTest();
     ALT_CLS_ContractService.OperationResultDTO createRes = AXF_CLS_CTRL_ContractManagement.createDraftContract(
-      input
+      input.contractId,
+      input.accountId,
+      input.counterpartyId,
+      input.relationshipId,
+      input.contractCode,
+      input.title,
+      input.lifecycle,
+      input.contractType,
+      input.currencyIsoCode,
+      input.startDate,
+      input.endDate,
+      input.description,
+      input.version,
+      input.clientRequestId
     );
     Assert.isTrue(createRes.success, 'Criacao com sucesso');
 
@@ -136,7 +149,20 @@ private class AXF_CLS_CTRL_ContractManagementTest {
     updateInput.version = 1;
 
     ALT_CLS_ContractService.OperationResultDTO updateRes = AXF_CLS_CTRL_ContractManagement.updateDraftContract(
-      updateInput
+      updateInput.contractId,
+      updateInput.accountId,
+      updateInput.counterpartyId,
+      updateInput.relationshipId,
+      updateInput.contractCode,
+      updateInput.title,
+      updateInput.lifecycle,
+      updateInput.contractType,
+      updateInput.currencyIsoCode,
+      updateInput.startDate,
+      updateInput.endDate,
+      updateInput.description,
+      updateInput.version,
+      updateInput.clientRequestId
     );
     Assert.isTrue(updateRes.success, 'Atualizacao com sucesso');
     Assert.areEqual(2, updateRes.version, 'Versao incrementada');
@@ -161,7 +187,20 @@ private class AXF_CLS_CTRL_ContractManagementTest {
     input.contractType = 'EXPENSE';
     input.currencyIsoCode = 'BRL';
     ALT_CLS_ContractService.OperationResultDTO ctrRes = AXF_CLS_CTRL_ContractManagement.createDraftContract(
-      input
+      input.contractId,
+      input.accountId,
+      input.counterpartyId,
+      input.relationshipId,
+      input.contractCode,
+      input.title,
+      input.lifecycle,
+      input.contractType,
+      input.currencyIsoCode,
+      input.startDate,
+      input.endDate,
+      input.description,
+      input.version,
+      input.clientRequestId
     );
 
     ALT_CLS_ContractRemunerationService.TermVersionInputDTO tvInput = new ALT_CLS_ContractRemunerationService.TermVersionInputDTO();
@@ -178,7 +217,26 @@ private class AXF_CLS_CTRL_ContractManagementTest {
     Test.startTest();
     // 1. Salva rascunho de termo
     ALT_CLS_ContractRemunerationService.OperationResultDTO saveTvRes = AXF_CLS_CTRL_ContractManagement.saveDraftTermVersion(
-      tvInput
+      tvInput.termVersionId,
+      tvInput.contractId,
+      tvInput.accountId,
+      tvInput.revision,
+      tvInput.remunerationModel,
+      tvInput.currencyIsoCode,
+      tvInput.effectiveFrom,
+      tvInput.effectiveTo,
+      tvInput.contractedAmount,
+      tvInput.rate,
+      tvInput.hoursQuantity,
+      tvInput.installments,
+      tvInput.proportionalityPolicy,
+      tvInput.timeZone,
+      tvInput.calendarPolicy,
+      tvInput.renewalPolicy,
+      tvInput.confidence,
+      tvInput.preferredBankAccountId,
+      tvInput.version,
+      tvInput.expectedContractVersion
     );
     Assert.isTrue(saveTvRes.success, 'Termo salvo com sucesso');
 
@@ -191,7 +249,26 @@ private class AXF_CLS_CTRL_ContractManagementTest {
 
     // 3. Calcula cronograma de preview
     ALT_CLS_ContractRemunerationService.ScheduleCalculationResultDTO preview = AXF_CLS_CTRL_ContractManagement.calculateSchedulePreview(
-      tvInput
+      tvInput.termVersionId,
+      tvInput.contractId,
+      tvInput.accountId,
+      tvInput.revision,
+      tvInput.remunerationModel,
+      tvInput.currencyIsoCode,
+      tvInput.effectiveFrom,
+      tvInput.effectiveTo,
+      tvInput.contractedAmount,
+      tvInput.rate,
+      tvInput.hoursQuantity,
+      tvInput.installments,
+      tvInput.proportionalityPolicy,
+      tvInput.timeZone,
+      tvInput.calendarPolicy,
+      tvInput.renewalPolicy,
+      tvInput.confidence,
+      tvInput.preferredBankAccountId,
+      tvInput.version,
+      tvInput.expectedContractVersion
     );
     Assert.isTrue(preview.success, 'Calculo de preview com sucesso');
     Assert.areEqual(3, preview.scheduleItems.size(), '3 parcelas calculadas');
@@ -233,14 +310,44 @@ private class AXF_CLS_CTRL_ContractManagementTest {
     }
 
     try {
-      AXF_CLS_CTRL_ContractManagement.createDraftContract(null);
+      AXF_CLS_CTRL_ContractManagement.createDraftContract(
+        null,
+        null,
+        null,
+        null,
+        null,
+        null,
+        null,
+        null,
+        null,
+        null,
+        null,
+        null,
+        null,
+        null
+      );
       Assert.fail('Deveria falhar');
     } catch (AuraHandledException e) {
       Assert.isNotNull(e);
     }
 
     try {
-      AXF_CLS_CTRL_ContractManagement.updateDraftContract(null);
+      AXF_CLS_CTRL_ContractManagement.updateDraftContract(
+        null,
+        null,
+        null,
+        null,
+        null,
+        null,
+        null,
+        null,
+        null,
+        null,
+        null,
+        null,
+        null,
+        null
+      );
       Assert.fail('Deveria falhar');
     } catch (AuraHandledException e) {
       Assert.isNotNull(e);
@@ -254,14 +361,56 @@ private class AXF_CLS_CTRL_ContractManagementTest {
     }
 
     try {
-      AXF_CLS_CTRL_ContractManagement.saveDraftTermVersion(null);
+      AXF_CLS_CTRL_ContractManagement.saveDraftTermVersion(
+        null,
+        null,
+        null,
+        null,
+        null,
+        null,
+        null,
+        null,
+        null,
+        null,
+        null,
+        null,
+        null,
+        null,
+        null,
+        null,
+        null,
+        null,
+        null,
+        null
+      );
       Assert.fail('Deveria falhar');
     } catch (AuraHandledException e) {
       Assert.isNotNull(e);
     }
 
     try {
-      AXF_CLS_CTRL_ContractManagement.calculateSchedulePreview(null);
+      AXF_CLS_CTRL_ContractManagement.calculateSchedulePreview(
+        null,
+        null,
+        null,
+        null,
+        null,
+        null,
+        null,
+        null,
+        null,
+        null,
+        null,
+        null,
+        null,
+        null,
+        null,
+        null,
+        null,
+        null,
+        null,
+        null
+      );
       Assert.fail('Deveria falhar');
     } catch (AuraHandledException e) {
       Assert.isNotNull(e);
@@ -308,7 +457,20 @@ private class AXF_CLS_CTRL_ContractManagementTest {
     ctrInput.currencyIsoCode = 'BRL';
     ctrInput.startDate = Date.newInstance(2026, 7, 1);
     ALT_CLS_ContractService.OperationResultDTO ctrRes = AXF_CLS_CTRL_ContractManagement.createDraftContract(
-      ctrInput
+      ctrInput.contractId,
+      ctrInput.accountId,
+      ctrInput.counterpartyId,
+      ctrInput.relationshipId,
+      ctrInput.contractCode,
+      ctrInput.title,
+      ctrInput.lifecycle,
+      ctrInput.contractType,
+      ctrInput.currencyIsoCode,
+      ctrInput.startDate,
+      ctrInput.endDate,
+      ctrInput.description,
+      ctrInput.version,
+      ctrInput.clientRequestId
     );
 
     ALT_CLS_WorkRecordService.WorkRecordInputDTO wrInput = new ALT_CLS_WorkRecordService.WorkRecordInputDTO();
@@ -323,7 +485,17 @@ private class AXF_CLS_CTRL_ContractManagementTest {
     Test.startTest();
     // 1. Registra
     ALT_CLS_WorkRecordService.WorkRecordDetailDTO wr = AXF_CLS_CTRL_ContractManagement.registerWorkRecord(
-      wrInput
+      wrInput.workRecordId,
+      wrInput.contractId,
+      wrInput.termVersionId,
+      wrInput.startDate,
+      wrInput.endDate,
+      wrInput.quantity,
+      wrInput.rate,
+      wrInput.currencyIsoCode,
+      wrInput.source,
+      wrInput.description,
+      wrInput.externalEvidenceHash
     );
     Assert.isNotNull(wr.workRecordId, 'Deve registrar');
 
@@ -362,7 +534,17 @@ private class AXF_CLS_CTRL_ContractManagementTest {
     wrInput.quantity = 12.0;
     ALT_CLS_WorkRecordService.WorkRecordDetailDTO corrected = AXF_CLS_CTRL_ContractManagement.correctApprovedWorkRecord(
       approved.workRecordId,
-      wrInput,
+      wrInput.workRecordId,
+      wrInput.contractId,
+      wrInput.termVersionId,
+      wrInput.startDate,
+      wrInput.endDate,
+      wrInput.quantity,
+      wrInput.rate,
+      wrInput.currencyIsoCode,
+      wrInput.source,
+      wrInput.description,
+      wrInput.externalEvidenceHash,
       'Horas retificadas'
     );
     Assert.isNotNull(corrected.workRecordId);
@@ -377,7 +559,19 @@ private class AXF_CLS_CTRL_ContractManagementTest {
     }
 
     try {
-      AXF_CLS_CTRL_ContractManagement.registerWorkRecord(null);
+      AXF_CLS_CTRL_ContractManagement.registerWorkRecord(
+        null,
+        null,
+        null,
+        null,
+        null,
+        null,
+        null,
+        null,
+        null,
+        null,
+        null
+      );
       Assert.fail('Deveria falhar');
     } catch (AuraHandledException e) {
       Assert.isNotNull(e);
@@ -399,6 +593,16 @@ private class AXF_CLS_CTRL_ContractManagementTest {
 
     try {
       AXF_CLS_CTRL_ContractManagement.correctApprovedWorkRecord(
+        null,
+        null,
+        null,
+        null,
+        null,
+        null,
+        null,
+        null,
+        null,
+        null,
         null,
         null,
         null

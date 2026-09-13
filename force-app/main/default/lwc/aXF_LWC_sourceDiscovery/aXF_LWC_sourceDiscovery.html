@@ -9,26 +9,12 @@
           {labels.MULTI_INTRO}
         </p>
 
-        <lightning-input
-          type="text"
-          label={labels.ITEM_ID_LABEL}
-          field-level-help={labels.ITEM_ID_HELP}
-          value={itemId}
-          onchange={handleItemIdChange}
-          max-length="64"
-          class="slds-m-bottom_x-small"
-        ></lightning-input>
         <lightning-button
           label={labels.REGISTER}
           variant="brand-outline"
-          disabled={registerDisabled}
-          onclick={handleRegister}
+          title={labels.REGISTER}
+          onclick={openRegister}
         ></lightning-button>
-        <template lwc:if={registering}>
-          <p class="slds-m-top_x-small slds-text-color_weak" role="status">
-            {labels.REGISTERING}
-          </p>
-        </template>
 
         <template lwc:if={hasConnections}>
           <table
@@ -36,7 +22,11 @@
           >
             <thead>
               <tr class="slds-line-height_reset">
-                <th scope="col">{labels.COL_CONN}</th>
+                <th scope="col">
+                  <span class="slds-assistive-text">{labels.COL_ACTIONS}</span>
+                </th>
+                <th scope="col">{labels.COL_BANK}</th>
+                <th scope="col">{labels.COL_HOLDER}</th>
                 <th scope="col">{labels.COL_CONSENT}</th>
                 <th scope="col">{labels.COL_STATUS}</th>
                 <th scope="col">{labels.COL_FOUND}</th>
@@ -46,8 +36,35 @@
               <template for:each={connections} for:item="c">
                 <tr key={c.key}>
                   <td>
-                    {c.name}
-                    <span class="slds-text-color_weak">({c.itemIdHint})</span>
+                    <lightning-button-icon
+                      icon-name="utility:edit_form"
+                      variant="bare"
+                      alternative-text={labels.EDIT_CONNECTION}
+                      title={labels.EDIT_CONNECTION}
+                      data-connection={c.connectionId}
+                      onclick={openDetails}
+                    ></lightning-button-icon>
+                    <lightning-button-icon
+                      icon-name="utility:delete"
+                      variant="bare"
+                      alternative-text={labels.DELETE_CONNECTION}
+                      title={labels.DELETE_CONNECTION}
+                      data-connection={c.connectionId}
+                      onclick={requestDelete}
+                      class="slds-var-m-left_xx-small"
+                    ></lightning-button-icon>
+                  </td>
+                  <td>
+                    <template lwc:if={c.bankPending}>
+                      <span class="slds-text-color_weak">{c.bankLabel}</span>
+                    </template>
+                    <template lwc:else>{c.bankLabel}</template>
+                  </td>
+                  <td>
+                    <template lwc:if={c.holderPending}>
+                      <span class="slds-text-color_weak">{c.holderLabel}</span>
+                    </template>
+                    <template lwc:else>{c.holderLabel}</template>
                   </td>
                   <td>
                     <template lwc:if={c.consentWarn}>
@@ -83,8 +100,14 @@
         </template>
 
         <template lwc:if={feedback}>
-          <div class="slds-m-top_small" role="status" aria-live="polite">
+          <div
+            class="slds-m-top_small"
+            data-feedback-variant={feedbackVariant}
+            role="status"
+            aria-live="polite"
+          >
             <lightning-formatted-text
+              class={feedbackClass}
               value={feedback}
             ></lightning-formatted-text>
           </div>
@@ -173,8 +196,14 @@
         </template>
 
         <template lwc:if={feedback}>
-          <div class="slds-m-top_small" role="status" aria-live="polite">
+          <div
+            class="slds-m-top_small"
+            data-feedback-variant={feedbackVariant}
+            role="status"
+            aria-live="polite"
+          >
             <lightning-formatted-text
+              class={feedbackClass}
               value={feedback}
             ></lightning-formatted-text>
           </div>
@@ -182,4 +211,399 @@
       </template>
     </div>
   </lightning-card>
+
+  <template lwc:if={registerOpen}>
+    <div class="slds-backdrop slds-backdrop_open"></div>
+    <section
+      role="dialog"
+      tabindex="-1"
+      aria-modal="true"
+      aria-labelledby="conn-register-title"
+      class="slds-modal slds-fade-in-open"
+    >
+      <div class="slds-modal__container">
+        <header class="slds-modal__header">
+          <h2 id="conn-register-title" class="slds-modal__title slds-hyphenate">
+            {labels.REGISTER_TITLE}
+          </h2>
+        </header>
+        <div class="slds-modal__content slds-p-around_medium">
+          <p
+            class="slds-text-body_small slds-text-color_weak slds-m-bottom_small"
+          >
+            {labels.REGISTER_HELP}
+          </p>
+          <lightning-input
+            type="text"
+            label={labels.ITEM_ID_LABEL}
+            field-level-help={labels.ITEM_ID_HELP}
+            value={registerForm.itemId}
+            data-field="itemId"
+            onchange={handleRegisterInput}
+            max-length="64"
+            class="slds-m-bottom_small"
+          ></lightning-input>
+          <div class="slds-m-bottom_small">
+            <lightning-record-picker
+              label={labels.COL_BANK}
+              object-api-name="AXF_OBJ_BankInstitution__c"
+              value={registerForm.bankInstitutionId}
+              placeholder={labels.PENDING_BANK}
+              onchange={handleRegisterBankChange}
+            ></lightning-record-picker>
+            <lightning-button
+              label={labels.NEW_BANK}
+              variant="base"
+              data-target="REGISTER"
+              onclick={openNewBank}
+              class="slds-m-top_x-small"
+            ></lightning-button>
+          </div>
+          <div class="slds-m-bottom_small">
+            <lightning-record-picker
+              label={labels.COL_HOLDER}
+              object-api-name="Account"
+              value={registerForm.holderId}
+              placeholder={labels.PENDING_HOLDER}
+              onchange={handleRegisterHolderChange}
+            ></lightning-record-picker>
+            <lightning-button
+              label={labels.NEW_HOLDER}
+              variant="base"
+              data-target="REGISTER"
+              onclick={openNewHolder}
+              class="slds-m-top_x-small"
+            ></lightning-button>
+          </div>
+          <template lwc:if={registerFeedback}>
+            <p
+              class="slds-m-top_small slds-text-color_error"
+              role="alert"
+              aria-live="assertive"
+            >
+              {registerFeedback}
+            </p>
+          </template>
+        </div>
+        <footer class="slds-modal__footer">
+          <lightning-button
+            label={labels.CANCEL}
+            onclick={closeRegister}
+            disabled={registerSaving}
+          ></lightning-button>
+          <lightning-button
+            variant="brand"
+            label={registerSaveLabel}
+            onclick={saveRegister}
+            disabled={registerSaveDisabled}
+          ></lightning-button>
+        </footer>
+      </div>
+    </section>
+  </template>
+
+  <template lwc:if={detailsOpen}>
+    <div class="slds-backdrop slds-backdrop_open"></div>
+    <section
+      role="dialog"
+      tabindex="-1"
+      aria-modal="true"
+      aria-labelledby="conn-details-title"
+      class="slds-modal slds-fade-in-open"
+    >
+      <div class="slds-modal__container">
+        <header class="slds-modal__header">
+          <h2 id="conn-details-title" class="slds-modal__title slds-hyphenate">
+            {labels.CONNECTION_DETAILS}
+          </h2>
+        </header>
+        <div class="slds-modal__content slds-p-around_medium">
+          <template lwc:if={detailsConnection}>
+            <dl class="slds-dl_horizontal slds-m-bottom_medium">
+              <dt class="slds-dl_horizontal__label">{labels.ITEM_ID}</dt>
+              <dd class="slds-dl_horizontal__detail">
+                {detailsConnection.itemIdHint}
+              </dd>
+              <dt class="slds-dl_horizontal__label">{labels.PROVIDER}</dt>
+              <dd class="slds-dl_horizontal__detail">
+                {detailsConnection.providerInstitution}
+              </dd>
+              <dt class="slds-dl_horizontal__label">{labels.COL_CONSENT}</dt>
+              <dd class="slds-dl_horizontal__detail">
+                {detailsConnection.consentLabel}
+              </dd>
+              <dt class="slds-dl_horizontal__label">{labels.COL_STATUS}</dt>
+              <dd class="slds-dl_horizontal__detail">
+                {detailsConnection.runLabel}
+              </dd>
+              <dt class="slds-dl_horizontal__label">{labels.COL_FOUND}</dt>
+              <dd class="slds-dl_horizontal__detail">
+                {detailsConnection.found}
+              </dd>
+            </dl>
+
+            <div class="slds-m-bottom_small">
+              <lightning-record-picker
+                label={labels.COL_BANK}
+                object-api-name="AXF_OBJ_BankInstitution__c"
+                value={detailsConnection.bankInstitutionId}
+                placeholder={labels.PENDING_BANK}
+                onchange={handleDetailsBankChange}
+                disabled={detailsSaving}
+              ></lightning-record-picker>
+              <lightning-button
+                label={labels.NEW_BANK}
+                variant="base"
+                data-target={detailsConnectionId}
+                onclick={openNewBank}
+                disabled={detailsSaving}
+                class="slds-m-top_x-small"
+              ></lightning-button>
+            </div>
+            <div class="slds-m-bottom_small">
+              <lightning-record-picker
+                label={labels.COL_HOLDER}
+                object-api-name="Account"
+                value={detailsConnection.holderId}
+                placeholder={labels.PENDING_HOLDER}
+                onchange={handleDetailsHolderChange}
+                disabled={detailsSaving}
+              ></lightning-record-picker>
+              <lightning-button
+                label={labels.NEW_HOLDER}
+                variant="base"
+                data-target={detailsConnectionId}
+                onclick={openNewHolder}
+                disabled={detailsSaving}
+                class="slds-m-top_x-small"
+              ></lightning-button>
+            </div>
+          </template>
+          <template lwc:if={detailsFeedback}>
+            <template lwc:if={detailsFeedbackIsError}>
+              <p
+                class="slds-m-top_small slds-text-color_error"
+                role="alert"
+                aria-live="assertive"
+              >
+                {detailsFeedback}
+              </p>
+            </template>
+            <template lwc:else>
+              <p
+                class="slds-m-top_small slds-text-color_success"
+                role="status"
+                aria-live="polite"
+              >
+                {detailsFeedback}
+              </p>
+            </template>
+          </template>
+        </div>
+        <footer class="slds-modal__footer">
+          <lightning-button
+            label={labels.CLOSE}
+            onclick={closeDetails}
+            disabled={detailsSaving}
+          ></lightning-button>
+        </footer>
+      </div>
+    </section>
+  </template>
+
+  <template lwc:if={deleteOpen}>
+    <div class="slds-backdrop slds-backdrop_open"></div>
+    <section
+      role="dialog"
+      tabindex="-1"
+      aria-modal="true"
+      aria-labelledby="conn-delete-title"
+      class="slds-modal slds-fade-in-open"
+    >
+      <div class="slds-modal__container">
+        <header class="slds-modal__header">
+          <h2 id="conn-delete-title" class="slds-modal__title slds-hyphenate">
+            {labels.DELETE_TITLE}
+          </h2>
+        </header>
+        <div class="slds-modal__content slds-p-around_medium">
+          <p class="slds-m-bottom_small">{deleteQuestion}</p>
+          <p class="slds-text-body_small slds-text-color_weak">
+            {labels.DELETE_WARNING}
+          </p>
+          <template lwc:if={deleteFeedback}>
+            <p
+              class="slds-m-top_small slds-text-color_error"
+              role="alert"
+              aria-live="assertive"
+            >
+              {deleteFeedback}
+            </p>
+          </template>
+        </div>
+        <footer class="slds-modal__footer">
+          <lightning-button
+            label={labels.CANCEL}
+            onclick={closeDeleteConfirm}
+            disabled={deleteSaving}
+          ></lightning-button>
+          <lightning-button
+            variant="destructive"
+            label={labels.DELETE_CONNECTION}
+            onclick={confirmDelete}
+            disabled={deleteSaving}
+          ></lightning-button>
+        </footer>
+      </div>
+    </section>
+  </template>
+
+  <template lwc:if={newBankOpen}>
+    <div class="slds-backdrop slds-backdrop_open"></div>
+    <section
+      role="dialog"
+      tabindex="-1"
+      aria-modal="true"
+      aria-labelledby="new-bank-title"
+      class="slds-modal slds-fade-in-open"
+    >
+      <div class="slds-modal__container">
+        <header class="slds-modal__header">
+          <h2 id="new-bank-title" class="slds-modal__title slds-hyphenate">
+            {labels.NEW_BANK_TITLE}
+          </h2>
+        </header>
+        <div class="slds-modal__content slds-p-around_medium">
+          <lightning-input
+            label={labels.BANK_NAME}
+            value={newBank.name}
+            data-field="name"
+            onchange={handleNewBankInput}
+            maxlength="80"
+            class="slds-m-bottom_small"
+          ></lightning-input>
+          <lightning-input
+            label={labels.BANK_NUMBER}
+            value={newBank.bankNumber}
+            data-field="bankNumber"
+            onchange={handleNewBankInput}
+            maxlength="8"
+            class="slds-m-bottom_small"
+          ></lightning-input>
+          <template lwc:if={newBankFeedback}>
+            <p
+              class="slds-m-top_small slds-text-color_error"
+              role="alert"
+              aria-live="assertive"
+            >
+              {newBankFeedback}
+            </p>
+          </template>
+        </div>
+        <footer class="slds-modal__footer">
+          <lightning-button
+            label={labels.CANCEL}
+            onclick={closeNewBank}
+            disabled={newBankSaving}
+          ></lightning-button>
+          <lightning-button
+            variant="brand"
+            label={newBankSaveLabel}
+            onclick={saveNewBank}
+            disabled={newBankSaving}
+          ></lightning-button>
+        </footer>
+      </div>
+    </section>
+  </template>
+
+  <template lwc:if={newHolderOpen}>
+    <div class="slds-backdrop slds-backdrop_open"></div>
+    <section
+      role="dialog"
+      tabindex="-1"
+      aria-modal="true"
+      aria-labelledby="new-holder-title"
+      class="slds-modal slds-fade-in-open"
+    >
+      <div class="slds-modal__container">
+        <header class="slds-modal__header">
+          <h2 id="new-holder-title" class="slds-modal__title slds-hyphenate">
+            {labels.NEW_HOLDER_TITLE}
+          </h2>
+        </header>
+        <div class="slds-modal__content slds-p-around_medium">
+          <lightning-radio-group
+            name="holderType"
+            label={labels.HOLDER_TYPE}
+            options={holderTypeOptions}
+            value={newHolder.type}
+            type="radio"
+            onchange={handleHolderTypeChange}
+            class="slds-m-bottom_small"
+          ></lightning-radio-group>
+          <template lwc:if={newHolderIsPerson}>
+            <lightning-input
+              label={labels.FIRST_NAME}
+              value={newHolder.firstName}
+              data-field="firstName"
+              onchange={handleHolderInput}
+              maxlength="80"
+              class="slds-m-bottom_small"
+            ></lightning-input>
+            <lightning-input
+              label={labels.LAST_NAME}
+              value={newHolder.lastName}
+              data-field="lastName"
+              onchange={handleHolderInput}
+              maxlength="80"
+              class="slds-m-bottom_small"
+            ></lightning-input>
+          </template>
+          <template lwc:else>
+            <lightning-input
+              label={labels.BUSINESS_NAME}
+              value={newHolder.name}
+              data-field="name"
+              onchange={handleHolderInput}
+              maxlength="255"
+              class="slds-m-bottom_small"
+            ></lightning-input>
+          </template>
+          <template lwc:if={newHolderFeedback}>
+            <p
+              class="slds-m-top_small slds-text-color_error"
+              role="alert"
+              aria-live="assertive"
+            >
+              {newHolderFeedback}
+            </p>
+          </template>
+        </div>
+        <footer class="slds-modal__footer">
+          <lightning-button
+            label={labels.CANCEL}
+            onclick={closeNewHolder}
+            disabled={newHolderSaving}
+          ></lightning-button>
+          <template lwc:if={newHolderShowConfirm}>
+            <lightning-button
+              variant="brand"
+              label={labels.CONFIRM_DUPLICATE}
+              onclick={handleSaveNewHolderConfirm}
+              disabled={newHolderSaving}
+            ></lightning-button>
+          </template>
+          <template lwc:else>
+            <lightning-button
+              variant="brand"
+              label={newHolderSaveLabel}
+              onclick={handleSaveNewHolder}
+              disabled={newHolderSaving}
+            ></lightning-button>
+          </template>
+        </footer>
+      </div>
+    </section>
+  </template>
 </template>

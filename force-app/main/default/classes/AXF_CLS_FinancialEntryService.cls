@@ -77,7 +77,11 @@ public with sharing class AXF_CLS_FinancialEntryService {
       return out;
     }
     for (AXF_OBJ_BankAccount__c ba : [
-      SELECT Id, AXF_BA_TXT_InstitutionName__c, AXF_BA_TXT_NumberMasked__c
+      SELECT
+        Id,
+        AXF_BA_TXT_InstitutionName__c,
+        AXF_BA_LKP_BankInstitution__r.Name,
+        AXF_BA_TXT_NumberMasked__c
       FROM AXF_OBJ_BankAccount__c
       WHERE
         AXF_BA_LKP_Account__c = :accountId
@@ -90,7 +94,9 @@ public with sharing class AXF_CLS_FinancialEntryService {
       o.kind = 'BANK_ACCOUNT';
       o.label = String.join(
         new List<String>{
-          ba.AXF_BA_TXT_InstitutionName__c,
+          ba.AXF_BA_LKP_BankInstitution__r == null
+            ? ba.AXF_BA_TXT_InstitutionName__c
+            : ba.AXF_BA_LKP_BankInstitution__r.Name,
           ba.AXF_BA_TXT_NumberMasked__c
         },
         ' '
@@ -98,7 +104,11 @@ public with sharing class AXF_CLS_FinancialEntryService {
       out.add(o);
     }
     for (AXF_OBJ_CreditCard__c cc : [
-      SELECT Id, AXF_CC_TXT_InstitutionName__c, AXF_CC_TXT_LastFourMasked__c
+      SELECT
+        Id,
+        AXF_CC_TXT_InstitutionName__c,
+        AXF_CC_LKP_BankInstitution__r.Name,
+        AXF_CC_TXT_LastFourMasked__c
       FROM AXF_OBJ_CreditCard__c
       WHERE
         AXF_CC_LKP_Account__c = :accountId
@@ -111,7 +121,9 @@ public with sharing class AXF_CLS_FinancialEntryService {
       o.kind = 'CREDIT_CARD';
       o.label = String.join(
         new List<String>{
-          cc.AXF_CC_TXT_InstitutionName__c,
+          cc.AXF_CC_LKP_BankInstitution__r == null
+            ? cc.AXF_CC_TXT_InstitutionName__c
+            : cc.AXF_CC_LKP_BankInstitution__r.Name,
           cc.AXF_CC_TXT_LastFourMasked__c
         },
         ' '

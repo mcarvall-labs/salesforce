@@ -132,7 +132,7 @@ describe("c-aXF_LWC_entryWizard", () => {
     await settle();
 
     expect(createEntry).toHaveBeenCalledTimes(1);
-    const call = createEntry.mock.calls[0][0].input;
+    const call = createEntry.mock.calls[0][0];
     expect(call.accountId).toBe(CONTEXTS[1].accountId);
     expect(call.direction).toBe("DEBIT");
     expect(call.magnitude).toBe(150.75);

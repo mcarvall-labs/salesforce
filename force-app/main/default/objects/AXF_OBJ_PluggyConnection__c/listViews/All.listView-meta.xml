@@ -1,8 +1,10 @@
-<?xml version="1.0" encoding="UTF-8"?>
+<?xml version="1.0" encoding="UTF-8" ?>
 <ListView xmlns="http://soap.sforce.com/2006/04/metadata">
     <fullName>All</fullName>
     <columns>NAME</columns>
     <columns>AXF_CON_TXT_InstitutionName__c</columns>
+    <columns>AXF_CON_LKP_BankInstitution__c</columns>
+    <columns>AXF_CON_LKP_Account__c</columns>
     <columns>AXF_CON_PKL_ConsentState__c</columns>
     <columns>AXF_CON_PKL_CollectionState__c</columns>
     <columns>AXF_CON_DT_LastSuccessAt__c</columns>

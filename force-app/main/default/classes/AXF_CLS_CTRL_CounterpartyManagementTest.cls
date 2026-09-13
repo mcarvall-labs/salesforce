@@ -37,14 +37,30 @@ private class AXF_CLS_CTRL_CounterpartyManagementTest {
   static void testGetCounterpartiesSuccessAndError() {
     Account acc = createTestAccount('Entidade Controller Test');
 
-    ALT_CLS_CounterpartyService.CounterpartyInputDTO input = new ALT_CLS_CounterpartyService.CounterpartyInputDTO();
-    input.accountId = acc.Id;
-    input.legalName = 'Empresa Fornecedora Beta S/A';
-    input.displayName = 'Fornecedora Beta';
-    input.country = 'BR';
-    input.role = 'SUPPLIER';
-
-    AXF_CLS_CTRL_CounterpartyManagement.saveCounterparty(input);
+    AXF_CLS_CTRL_CounterpartyManagement.saveCounterparty(
+      null,
+      acc.Id,
+      'Empresa Fornecedora Beta S/A',
+      'Fornecedora Beta',
+      null,
+      'BR',
+      null,
+      null,
+      null,
+      'SUPPLIER',
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null
+    );
 
     Test.startTest();
     List<ALT_CLS_CounterpartyService.CounterpartySummaryDTO> listResult = AXF_CLS_CTRL_CounterpartyManagement.getCounterparties(
@@ -69,16 +85,29 @@ private class AXF_CLS_CTRL_CounterpartyManagementTest {
   static void testGetCounterpartyDetailSuccessAndError() {
     Account acc = createTestAccount('Entidade Detalhe Controller');
 
-    ALT_CLS_CounterpartyService.CounterpartyInputDTO input = new ALT_CLS_CounterpartyService.CounterpartyInputDTO();
-    input.accountId = acc.Id;
-    input.legalName = 'Gamma Soluções Digitais LTDA';
-    input.displayName = 'Gamma Soluções';
-    input.country = 'BR';
-    input.role = 'CLIENT';
-    input.entitySpecificDisplay = 'Gamma - Matriz SP';
-
     ALT_CLS_CounterpartyService.OperationResultDTO saveRes = AXF_CLS_CTRL_CounterpartyManagement.saveCounterparty(
-      input
+      null,
+      acc.Id,
+      'Gamma Soluções Digitais LTDA',
+      'Gamma Soluções',
+      null,
+      'BR',
+      null,
+      null,
+      null,
+      'CLIENT',
+      null,
+      'Gamma - Matriz SP',
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null
     );
 
     Test.startTest();
@@ -115,19 +144,63 @@ private class AXF_CLS_CTRL_CounterpartyManagementTest {
 
   @IsTest
   static void testSaveCounterpartyPayloadValidation() {
-    // Erro: payload nulo
+    // Erro: nenhum dado informado
     try {
-      AXF_CLS_CTRL_CounterpartyManagement.saveCounterparty(null);
-      Assert.fail('Deveria lançar AuraHandledException para payload nulo');
+      AXF_CLS_CTRL_CounterpartyManagement.saveCounterparty(
+        null,
+        null,
+        null,
+        null,
+        null,
+        null,
+        null,
+        null,
+        null,
+        null,
+        null,
+        null,
+        null,
+        null,
+        null,
+        null,
+        null,
+        null,
+        null,
+        null,
+        null,
+        null
+      );
+      Assert.fail('Deveria lançar AuraHandledException sem dados');
     } catch (AuraHandledException e) {
       Assert.isNotNull(e);
     }
 
     // Erro de domínio capturado e convertido em AuraHandledException
-    ALT_CLS_CounterpartyService.CounterpartyInputDTO invalidDTO = new ALT_CLS_CounterpartyService.CounterpartyInputDTO();
-    invalidDTO.legalName = 'Sem Account';
     try {
-      AXF_CLS_CTRL_CounterpartyManagement.saveCounterparty(invalidDTO);
+      AXF_CLS_CTRL_CounterpartyManagement.saveCounterparty(
+        null,
+        null,
+        'Sem Account',
+        null,
+        null,
+        null,
+        null,
+        null,
+        null,
+        null,
+        null,
+        null,
+        null,
+        null,
+        null,
+        null,
+        null,
+        null,
+        null,
+        null,
+        null,
+        null
+      );
       Assert.fail(
         'Deveria converter AXF_CLS_CounterpartyException em AuraHandledException'
       );

@@ -81,21 +81,158 @@ public with sharing class AXF_CLS_CTRL_ContractManagement {
     }
   }
 
+  // Primitive params (not the service's inner DTO) so the LWC call binds reliably:
+  // Aura does not populate the fields of an @AuraEnabled Apex class that is an inner
+  // class of another top-level class (same limitation fixed in
+  // AXF_CLS_CTRL_OnboardingProgress). AXF-52 / AXF-106.
+  private static ALT_CLS_ContractService.ContractInputDTO contractInput(
+    Id contractId,
+    Id accountId,
+    Id counterpartyId,
+    Id relationshipId,
+    String contractCode,
+    String title,
+    String lifecycle,
+    String contractType,
+    String currencyIsoCode,
+    Date startDate,
+    Date endDate,
+    String description,
+    Long version,
+    String clientRequestId
+  ) {
+    ALT_CLS_ContractService.ContractInputDTO payload = new ALT_CLS_ContractService.ContractInputDTO();
+    payload.contractId = contractId;
+    payload.accountId = accountId;
+    payload.counterpartyId = counterpartyId;
+    payload.relationshipId = relationshipId;
+    payload.contractCode = contractCode;
+    payload.title = title;
+    payload.lifecycle = lifecycle;
+    payload.contractType = contractType;
+    payload.currencyIsoCode = currencyIsoCode;
+    payload.startDate = startDate;
+    payload.endDate = endDate;
+    payload.description = description;
+    payload.version = version;
+    payload.clientRequestId = clientRequestId;
+    return payload;
+  }
+
+  private static ALT_CLS_ContractRemunerationService.TermVersionInputDTO termVersionInput(
+    Id termVersionId,
+    Id contractId,
+    Id accountId,
+    Long revision,
+    String remunerationModel,
+    String currencyIsoCode,
+    Date effectiveFrom,
+    Date effectiveTo,
+    Decimal contractedAmount,
+    Decimal rate,
+    Decimal hoursQuantity,
+    Integer installments,
+    String proportionalityPolicy,
+    String timeZone,
+    String calendarPolicy,
+    String renewalPolicy,
+    String confidence,
+    Id preferredBankAccountId,
+    Long version,
+    Long expectedContractVersion
+  ) {
+    ALT_CLS_ContractRemunerationService.TermVersionInputDTO payload = new ALT_CLS_ContractRemunerationService.TermVersionInputDTO();
+    payload.termVersionId = termVersionId;
+    payload.contractId = contractId;
+    payload.accountId = accountId;
+    payload.revision = revision;
+    payload.remunerationModel = remunerationModel;
+    payload.currencyIsoCode = currencyIsoCode;
+    payload.effectiveFrom = effectiveFrom;
+    payload.effectiveTo = effectiveTo;
+    payload.contractedAmount = contractedAmount;
+    payload.rate = rate;
+    payload.hoursQuantity = hoursQuantity;
+    payload.installments = installments;
+    payload.proportionalityPolicy = proportionalityPolicy;
+    payload.timeZone = timeZone;
+    payload.calendarPolicy = calendarPolicy;
+    payload.renewalPolicy = renewalPolicy;
+    payload.confidence = confidence;
+    payload.preferredBankAccountId = preferredBankAccountId;
+    payload.version = version;
+    payload.expectedContractVersion = expectedContractVersion;
+    return payload;
+  }
+
+  private static ALT_CLS_WorkRecordService.WorkRecordInputDTO workRecordInput(
+    Id workRecordId,
+    Id contractId,
+    Id termVersionId,
+    Date startDate,
+    Date endDate,
+    Decimal quantity,
+    Decimal rate,
+    String currencyIsoCode,
+    String source,
+    String description,
+    String externalEvidenceHash
+  ) {
+    ALT_CLS_WorkRecordService.WorkRecordInputDTO payload = new ALT_CLS_WorkRecordService.WorkRecordInputDTO();
+    payload.workRecordId = workRecordId;
+    payload.contractId = contractId;
+    payload.termVersionId = termVersionId;
+    payload.startDate = startDate;
+    payload.endDate = endDate;
+    payload.quantity = quantity;
+    payload.rate = rate;
+    payload.currencyIsoCode = currencyIsoCode;
+    payload.source = source;
+    payload.description = description;
+    payload.externalEvidenceHash = externalEvidenceHash;
+    return payload;
+  }
+
   /**
    * @description Cria um novo contrato em rascunho (DRAFT).
    */
   @AuraEnabled
   public static ALT_CLS_ContractService.OperationResultDTO createDraftContract(
-    ALT_CLS_ContractService.ContractInputDTO payload
+    Id contractId,
+    Id accountId,
+    Id counterpartyId,
+    Id relationshipId,
+    String contractCode,
+    String title,
+    String lifecycle,
+    String contractType,
+    String currencyIsoCode,
+    Date startDate,
+    Date endDate,
+    String description,
+    Long version,
+    String clientRequestId
   ) {
     try {
-      if (payload == null) {
-        throw new AuraHandledException(
-          'Dados do contrato nao foram informados.'
-        );
-      }
       ALT_CLS_ContractService service = new ALT_CLS_ContractService();
-      return service.createDraftContract(payload);
+      return service.createDraftContract(
+        contractInput(
+          contractId,
+          accountId,
+          counterpartyId,
+          relationshipId,
+          contractCode,
+          title,
+          lifecycle,
+          contractType,
+          currencyIsoCode,
+          startDate,
+          endDate,
+          description,
+          version,
+          clientRequestId
+        )
+      );
     } catch (AuraHandledException ahe) {
       throw ahe;
     } catch (Exception e) {
@@ -108,16 +245,41 @@ public with sharing class AXF_CLS_CTRL_ContractManagement {
    */
   @AuraEnabled
   public static ALT_CLS_ContractService.OperationResultDTO updateDraftContract(
-    ALT_CLS_ContractService.ContractInputDTO payload
+    Id contractId,
+    Id accountId,
+    Id counterpartyId,
+    Id relationshipId,
+    String contractCode,
+    String title,
+    String lifecycle,
+    String contractType,
+    String currencyIsoCode,
+    Date startDate,
+    Date endDate,
+    String description,
+    Long version,
+    String clientRequestId
   ) {
     try {
-      if (payload == null) {
-        throw new AuraHandledException(
-          'Dados do contrato nao foram informados.'
-        );
-      }
       ALT_CLS_ContractService service = new ALT_CLS_ContractService();
-      return service.updateDraftContract(payload);
+      return service.updateDraftContract(
+        contractInput(
+          contractId,
+          accountId,
+          counterpartyId,
+          relationshipId,
+          contractCode,
+          title,
+          lifecycle,
+          contractType,
+          currencyIsoCode,
+          startDate,
+          endDate,
+          description,
+          version,
+          clientRequestId
+        )
+      );
     } catch (AuraHandledException ahe) {
       throw ahe;
     } catch (Exception e) {
@@ -151,16 +313,53 @@ public with sharing class AXF_CLS_CTRL_ContractManagement {
    */
   @AuraEnabled
   public static ALT_CLS_ContractRemunerationService.OperationResultDTO saveDraftTermVersion(
-    ALT_CLS_ContractRemunerationService.TermVersionInputDTO payload
+    Id termVersionId,
+    Id contractId,
+    Id accountId,
+    Long revision,
+    String remunerationModel,
+    String currencyIsoCode,
+    Date effectiveFrom,
+    Date effectiveTo,
+    Decimal contractedAmount,
+    Decimal rate,
+    Decimal hoursQuantity,
+    Integer installments,
+    String proportionalityPolicy,
+    String timeZone,
+    String calendarPolicy,
+    String renewalPolicy,
+    String confidence,
+    Id preferredBankAccountId,
+    Long version,
+    Long expectedContractVersion
   ) {
     try {
-      if (payload == null) {
-        throw new AuraHandledException(
-          'Dados da versao do termo nao informados.'
-        );
-      }
       ALT_CLS_ContractRemunerationService service = new ALT_CLS_ContractRemunerationService();
-      return service.saveDraftTermVersion(payload);
+      return service.saveDraftTermVersion(
+        termVersionInput(
+          termVersionId,
+          contractId,
+          accountId,
+          revision,
+          remunerationModel,
+          currencyIsoCode,
+          effectiveFrom,
+          effectiveTo,
+          contractedAmount,
+          rate,
+          hoursQuantity,
+          installments,
+          proportionalityPolicy,
+          timeZone,
+          calendarPolicy,
+          renewalPolicy,
+          confidence,
+          preferredBankAccountId,
+          version,
+          expectedContractVersion
+        )
+      );
     } catch (AuraHandledException ahe) {
       throw ahe;
     } catch (Exception e) {
@@ -173,16 +372,53 @@ public with sharing class AXF_CLS_CTRL_ContractManagement {
    */
   @AuraEnabled
   public static ALT_CLS_ContractRemunerationService.ScheduleCalculationResultDTO calculateSchedulePreview(
-    ALT_CLS_ContractRemunerationService.TermVersionInputDTO payload
+    Id termVersionId,
+    Id contractId,
+    Id accountId,
+    Long revision,
+    String remunerationModel,
+    String currencyIsoCode,
+    Date effectiveFrom,
+    Date effectiveTo,
+    Decimal contractedAmount,
+    Decimal rate,
+    Decimal hoursQuantity,
+    Integer installments,
+    String proportionalityPolicy,
+    String timeZone,
+    String calendarPolicy,
+    String renewalPolicy,
+    String confidence,
+    Id preferredBankAccountId,
+    Long version,
+    Long expectedContractVersion
   ) {
     try {
-      if (payload == null) {
-        throw new AuraHandledException(
-          'Dados para calculo do cronograma nao informados.'
-        );
-      }
       ALT_CLS_ContractRemunerationService service = new ALT_CLS_ContractRemunerationService();
-      return service.calculateSchedule(payload);
+      return service.calculateSchedule(
+        termVersionInput(
+          termVersionId,
+          contractId,
+          accountId,
+          revision,
+          remunerationModel,
+          currencyIsoCode,
+          effectiveFrom,
+          effectiveTo,
+          contractedAmount,
+          rate,
+          hoursQuantity,
+          installments,
+          proportionalityPolicy,
+          timeZone,
+          calendarPolicy,
+          renewalPolicy,
+          confidence,
+          preferredBankAccountId,
+          version,
+          expectedContractVersion
+        )
+      );
     } catch (AuraHandledException ahe) {
       throw ahe;
     } catch (Exception e) {
@@ -264,16 +500,35 @@ public with sharing class AXF_CLS_CTRL_ContractManagement {
    */
   @AuraEnabled
   public static ALT_CLS_WorkRecordService.WorkRecordDetailDTO registerWorkRecord(
-    ALT_CLS_WorkRecordService.WorkRecordInputDTO payload
+    Id workRecordId,
+    Id contractId,
+    Id termVersionId,
+    Date startDate,
+    Date endDate,
+    Decimal quantity,
+    Decimal rate,
+    String currencyIsoCode,
+    String source,
+    String description,
+    String externalEvidenceHash
   ) {
     try {
-      if (payload == null) {
-        throw new AuraHandledException(
-          'Dados do registro de trabalho nao foram informados.'
-        );
-      }
       ALT_CLS_WorkRecordService service = new ALT_CLS_WorkRecordService();
-      return service.registerWorkRecord(payload);
+      return service.registerWorkRecord(
+        workRecordInput(
+          workRecordId,
+          contractId,
+          termVersionId,
+          startDate,
+          endDate,
+          quantity,
+          rate,
+          currencyIsoCode,
+          source,
+          description,
+          externalEvidenceHash
+        )
+      );
     } catch (AuraHandledException ahe) {
       throw ahe;
     } catch (Exception e) {
@@ -333,7 +588,17 @@ public with sharing class AXF_CLS_CTRL_ContractManagement {
   @AuraEnabled
   public static ALT_CLS_WorkRecordService.WorkRecordDetailDTO correctApprovedWorkRecord(
     Id approvedWorkRecordId,
-    ALT_CLS_WorkRecordService.WorkRecordInputDTO replacementPayload,
+    Id workRecordId,
+    Id contractId,
+    Id termVersionId,
+    Date startDate,
+    Date endDate,
+    Decimal quantity,
+    Decimal rate,
+    String currencyIsoCode,
+    String source,
+    String description,
+    String externalEvidenceHash,
     String correctionReason
   ) {
     try {
@@ -345,7 +610,19 @@ public with sharing class AXF_CLS_CTRL_ContractManagement {
       ALT_CLS_WorkRecordService service = new ALT_CLS_WorkRecordService();
       return service.correctApprovedWorkRecord(
         approvedWorkRecordId,
-        replacementPayload,
+        workRecordInput(
+          workRecordId,
+          contractId,
+          termVersionId,
+          startDate,
+          endDate,
+          quantity,
+          rate,
+          currencyIsoCode,
+          source,
+          description,
+          externalEvidenceHash
+        ),
         correctionReason
       );
     } catch (AuraHandledException ahe) {

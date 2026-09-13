@@ -89,7 +89,7 @@ private class ALT_CLS_AxonOnboardingProgressTest {
     ALT_CLS_AxonOnboardingProgress.OnboardingState st = svc().getState();
     Test.stopTest();
     System.assertEquals(false, st.forbidden);
-    System.assertEquals(7, st.steps.size(), 'all seven steps seeded');
+    System.assertEquals(8, st.steps.size(), 'all eight steps seeded');
     System.assertEquals('WELCOME_PREFS', st.currentStep);
     System.assertEquals(0, st.version);
     System.assertEquals(
@@ -113,11 +113,7 @@ private class ALT_CLS_AxonOnboardingProgressTest {
     Test.stopTest();
     System.assertEquals('CONFIRMED', st1.outcome);
     System.assertEquals(1, st1.version, 'version bumped');
-    System.assertEquals(
-      'PLUGGY_CREDENTIALS',
-      st1.currentStep,
-      'next unsettled step'
-    );
+    System.assertEquals('HOLDERS', st1.currentStep, 'next unsettled step');
     for (ALT_CLS_AxonOnboardingProgress.StepView v : st1.steps) {
       if (v.stepKey == 'WELCOME_PREFS') {
         System.assertEquals('CONFIRMED', v.status);
@@ -211,6 +207,7 @@ private class ALT_CLS_AxonOnboardingProgressTest {
     allow();
     ALT_CLS_AxonOnboardingProgress.OnboardingState s = svc().getState();
     s = svc().confirmStep(confirm('WELCOME_PREFS', s.version, 'a'));
+    s = svc().skipStep('HOLDERS', s.version);
     s = svc().confirmStep(confirm('PLUGGY_CREDENTIALS', s.version, 'b'));
     s = svc().confirmStep(confirm('PLUGGY_DISCOVERY', s.version, 'c'));
     Test.startTest();
@@ -305,6 +302,7 @@ private class ALT_CLS_AxonOnboardingProgressTest {
     allow();
     ALT_CLS_AxonOnboardingProgress.OnboardingState s = svc().getState();
     s = svc().confirmStep(confirm('WELCOME_PREFS', s.version, 'a'));
+    s = svc().skipStep('HOLDERS', s.version);
     s = svc().confirmStep(confirm('PLUGGY_CREDENTIALS', s.version, 'b'));
     s = svc().confirmStep(confirm('PLUGGY_DISCOVERY', s.version, 'c'));
     s = svc().confirmStep(confirm('ACCOUNT_HOLDERS', s.version, 'd'));
@@ -346,7 +344,7 @@ private class ALT_CLS_AxonOnboardingProgressTest {
     s = svc().confirmStep(confirm('WELCOME_PREFS', s.version, 'a3'));
     Test.stopTest();
     System.assertEquals(
-      7,
+      8,
       [SELECT COUNT() FROM AXF_OBJ_OnboardingStep__c],
       'still one row per step'
     );
@@ -379,7 +377,7 @@ private class ALT_CLS_AxonOnboardingProgressTest {
       ALT_CLS_AxonOnboardingProgress.OnboardingState ok = new ALT_CLS_AxonOnboardingProgress()
         .getState();
       System.assertEquals(false, ok.forbidden, 'gestor has AXF_CanConfigure');
-      System.assertEquals(7, ok.steps.size());
+      System.assertEquals(8, ok.steps.size());
     }
     System.runAs(outsider) {
       ALT_CLS_AxonOnboardingProgress.OnboardingState no = new ALT_CLS_AxonOnboardingProgress()

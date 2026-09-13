@@ -348,7 +348,7 @@ export default class AXF_LWC_counterpartyManagement extends LightningElement {
         accountId: this.selectedAccountId
       };
 
-      const result = await saveCounterparty({ payload: payload });
+      const result = await saveCounterparty({ ...payload });
       this.showSuccessToast(
         "Sucesso",
         result.message || "Contraparte e relação salvas com sucesso."
