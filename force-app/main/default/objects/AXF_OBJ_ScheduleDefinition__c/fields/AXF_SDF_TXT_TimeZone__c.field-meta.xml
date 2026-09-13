@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<CustomField xmlns="http://soap.sforce.com/2006/04/metadata">
+  <fullName>AXF_SDF_TXT_TimeZone__c</fullName>
+  <label>Fuso Horário</label>
+  <type>Text</type>
+  <length>80</length>
+  <required>false</required>
+  <description
+  >Fuso horário de referência para interpretar datas do cronograma. Um vencimento é uma data de calendário: o fuso é evidência descritiva, nunca uma decisão de precedência econômica (AXF-103).</description>
+</CustomField>

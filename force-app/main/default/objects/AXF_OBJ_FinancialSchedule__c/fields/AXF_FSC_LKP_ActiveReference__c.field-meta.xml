@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<CustomField xmlns="http://soap.sforce.com/2006/04/metadata">
+  <fullName>AXF_FSC_LKP_ActiveReference__c</fullName>
+  <label>Referência Vigente</label>
+  <type>Lookup</type>
+  <referenceTo>AXF_OBJ_ScheduleReference__c</referenceTo>
+  <relationshipName>AXF_REL_ActiveReferences</relationshipName>
+  <deleteConstraint>Restrict</deleteConstraint>
+  <required>false</required>
+  <description
+  >Referência vigente do cronograma. Obrigatória para cronograma estimado e opcional para método calculado, que resolve o valor pela fórmula aprovada. Campo derivado, mantido pelo serviço (AXF-103).</description>
+</CustomField>

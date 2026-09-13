@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<CustomField xmlns="http://soap.sforce.com/2006/04/metadata">
+  <fullName>AXF_SCH_TAL_ProtectedRangesJson__c</fullName>
+  <label>Faixas Protegidas (JSON)</label>
+  <type>LongTextArea</type>
+  <length>32768</length>
+  <visibleLines>4</visibleLines>
+  <required>false</required>
+  <description
+  >Faixas de proteção capturadas na confirmação, excluindo edições financeiras a ocorrências realizadas ou parcialmente pagas. Nunca sobrescreve base ou evidência protegida (AXF-103).</description>
+</CustomField>

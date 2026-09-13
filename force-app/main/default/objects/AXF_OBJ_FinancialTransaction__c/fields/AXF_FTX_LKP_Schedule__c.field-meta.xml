@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<CustomField xmlns="http://soap.sforce.com/2006/04/metadata">
+  <fullName>AXF_FTX_LKP_Schedule__c</fullName>
+  <label>Cronograma</label>
+  <type>Lookup</type>
+  <referenceTo>AXF_OBJ_FinancialSchedule__c</referenceTo>
+  <relationshipName>AXF_REL_FinancialTransactions</relationshipName>
+  <deleteConstraint>Restrict</deleteConstraint>
+  <required>false</required>
+  <description
+  >Vínculo da ocorrência com a raiz do cronograma (AXF-103). Uma ocorrência pertence a no máximo um cronograma; o vínculo é imutável depois de populado e a exclusão é restrita para preservar a história. Nulo em lançamentos sem cronograma.</description>
+</CustomField>

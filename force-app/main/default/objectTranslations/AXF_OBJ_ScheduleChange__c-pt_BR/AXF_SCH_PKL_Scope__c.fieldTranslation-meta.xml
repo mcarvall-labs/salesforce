@@ -1,0 +1,16 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<CustomFieldTranslation xmlns="http://soap.sforce.com/2006/04/metadata">
+  <name>AXF_SCH_PKL_Scope__c</name>
+  <picklistValues>
+    <masterLabel>Esta ocorrência</masterLabel>
+    <translation>Esta ocorrência</translation>
+  </picklistValues>
+  <picklistValues>
+    <masterLabel>Desta sequência em diante</masterLabel>
+    <translation>Desta sequência em diante</translation>
+  </picklistValues>
+  <picklistValues>
+    <masterLabel>Todas as rastreadas</masterLabel>
+    <translation>Todas as rastreadas</translation>
+  </picklistValues>
+</CustomFieldTranslation>

@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<CustomField xmlns="http://soap.sforce.com/2006/04/metadata">
+  <fullName>AXF_FSC_LKP_ActiveDefinition__c</fullName>
+  <label>Definição Vigente</label>
+  <type>Lookup</type>
+  <referenceTo>AXF_OBJ_ScheduleDefinition__c</referenceTo>
+  <relationshipName>AXF_REL_ActiveDefinitions</relationshipName>
+  <deleteConstraint>Restrict</deleteConstraint>
+  <required>false</required>
+  <description
+  >Definição vigente do cronograma. Nula apenas durante a transação atômica de criação; um cronograma ACTIVE exige uma definição válida do mesmo cronograma. Campo derivado, mantido pelo serviço (AXF-103).</description>
+</CustomField>

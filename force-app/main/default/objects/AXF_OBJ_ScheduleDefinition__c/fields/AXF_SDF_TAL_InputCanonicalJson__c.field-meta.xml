@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<CustomField xmlns="http://soap.sforce.com/2006/04/metadata">
+  <fullName>AXF_SDF_TAL_InputCanonicalJson__c</fullName>
+  <label>Insumos Canônicos (JSON)</label>
+  <type>LongTextArea</type>
+  <length>32768</length>
+  <visibleLines>4</visibleLines>
+  <required>false</required>
+  <description
+  >Serializador tipado e versionado dos insumos da definição, com ordenação de campos estável, representação explícita de nulo e decimais/data normalizados. Payload acima do limite é rejeitado antes da escrita, nunca truncado (AXF-103).</description>
+</CustomField>

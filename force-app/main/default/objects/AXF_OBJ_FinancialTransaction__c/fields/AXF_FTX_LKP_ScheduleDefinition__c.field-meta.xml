@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<CustomField xmlns="http://soap.sforce.com/2006/04/metadata">
+  <fullName>AXF_FTX_LKP_ScheduleDefinition__c</fullName>
+  <label>Definição do Cronograma</label>
+  <type>Lookup</type>
+  <referenceTo>AXF_OBJ_ScheduleDefinition__c</referenceTo>
+  <relationshipName>AXF_REL_FinancialTransactions</relationshipName>
+  <deleteConstraint>Restrict</deleteConstraint>
+  <required>false</required>
+  <description
+  >Revisão de definição que produziu o valor desta ocorrência. Evidência de cálculo da projeção; exclusão restrita preserva a história (AXF-103).</description>
+</CustomField>

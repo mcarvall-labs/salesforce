@@ -1,0 +1,23 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<CustomObject xmlns="http://soap.sforce.com/2006/04/metadata">
+  <deploymentStatus>Deployed</deploymentStatus>
+  <description
+  >Raiz de cronograma financeiro (AXF-103). Identidade estável do fluxo de pagamento/recebimento: titular, direção, moeda, sequência de início de rastreamento e ponteiros para a definição e a referência vigentes. A ocorrência é identificada por hash(versão, ScheduleKey, sequência) — data e revisão nunca participam. OWD Private, sem Delete. AXF-103.</description>
+  <enableActivities>false</enableActivities>
+  <enableBulkApi>true</enableBulkApi>
+  <enableFeeds>false</enableFeeds>
+  <enableHistory>true</enableHistory>
+  <enableReports>true</enableReports>
+  <enableSearch>false</enableSearch>
+  <enableSharing>true</enableSharing>
+  <enableStreamingApi>true</enableStreamingApi>
+  <label>Cronograma Financeiro</label>
+  <nameField>
+    <displayFormat>FSC-{000000}</displayFormat>
+    <label>Número do Cronograma</label>
+    <type>AutoNumber</type>
+  </nameField>
+  <pluralLabel>Cronogramas Financeiros</pluralLabel>
+  <sharingModel>Private</sharingModel>
+  <visibility>Public</visibility>
+</CustomObject>

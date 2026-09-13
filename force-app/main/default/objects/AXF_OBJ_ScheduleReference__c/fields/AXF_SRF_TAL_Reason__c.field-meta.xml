@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<CustomField xmlns="http://soap.sforce.com/2006/04/metadata">
+  <fullName>AXF_SRF_TAL_Reason__c</fullName>
+  <label>Justificativa</label>
+  <type>LongTextArea</type>
+  <length>32768</length>
+  <visibleLines>4</visibleLines>
+  <required>false</required>
+  <description
+  >Justificativa registrada junto à evidência de referência. Payload acima do limite é rejeitado antes da escrita, nunca truncado (AXF-103).</description>
+</CustomField>

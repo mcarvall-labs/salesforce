@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<CustomField xmlns="http://soap.sforce.com/2006/04/metadata">
+  <fullName>AXF_SCH_TAL_ResultJson__c</fullName>
+  <label>Resultado (JSON)</label>
+  <type>LongTextArea</type>
+  <length>32768</length>
+  <visibleLines>4</visibleLines>
+  <required>false</required>
+  <description
+  >Resultado autorizado da operação, usado no replay: reenvio equivalente devolve este conteúdo original em vez de reaplicar. Uma operação revertida não deixa recibo (AXF-103).</description>
+</CustomField>

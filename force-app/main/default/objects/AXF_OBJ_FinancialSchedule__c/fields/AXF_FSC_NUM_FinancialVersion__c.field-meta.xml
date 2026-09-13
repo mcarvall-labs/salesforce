@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<CustomField xmlns="http://soap.sforce.com/2006/04/metadata">
+  <fullName>AXF_FSC_NUM_FinancialVersion__c</fullName>
+  <label>Versão Financeira</label>
+  <type>Number</type>
+  <precision>18</precision>
+  <scale>0</scale>
+  <required>true</required>
+  <defaultValue>0</defaultValue>
+  <description
+  >Época financeira do cronograma: avança em materialização, adoção, atualização de cache e qualquer mudança de composição persistida ou virtual, mesmo com a revisão lógica inalterada. Leitores refazem a leitura nessa mudança. Campo derivado (AXF-103).</description>
+</CustomField>
