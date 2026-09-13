@@ -175,6 +175,15 @@ public with sharing class ALT_CLS_ScheduleProjection {
     public Long capturedProjectionRevision;
     @AuraEnabled
     public Long capturedFinancialVersion;
+    /**
+     * Ponteiros VIGENTES capturados na leitura. Eles participam da rechecagem de quem ESCREVE:
+     * um ponteiro de definição trocado entre a leitura e o lock produziria linhas apontando para a
+     * definição antiga sob a etiqueta da revisão nova, e é essa comparação que devolve STALE.
+     */
+    @AuraEnabled
+    public Id capturedActiveDefinition;
+    @AuraEnabled
+    public Id capturedActiveReference;
     /** Fronteira de encerramento capturada na leitura, comparada na rechecagem. */
     @AuraEnabled
     public Date capturedTerminationDate;
@@ -269,6 +278,8 @@ public with sharing class ALT_CLS_ScheduleProjection {
     result.currencyIsoCode = root.AXF_FSC_TXT_CurrencyIsoCode__c;
     result.capturedProjectionRevision = revisionOf(root);
     result.capturedFinancialVersion = financialVersionOf(root);
+    result.capturedActiveDefinition = root.AXF_FSC_LKP_ActiveDefinition__c;
+    result.capturedActiveReference = root.AXF_FSC_LKP_ActiveReference__c;
     Date asOf = (input.asOfDate == null) ? Date.today() : input.asOfDate;
     result.asOfDate = asOf;
     Integer horizon = (root.AXF_FSC_NUM_HorizonMonths__c == null)
@@ -957,9 +968,12 @@ public with sharing class ALT_CLS_ScheduleProjection {
    * @description Gera uma única vez, por definição, as ocorrências da fórmula aprovada. A
    * autoridade da fórmula é ALT_CLS_AmortizationSchedule; nenhuma parcela é recalculada por
    * consumidor.
+   *
+   * Pública porque a MATERIALIZAÇÃO da reposição rolante (fatia 2) precisa das mesmas porções da
+   * criação a partir da definição JÁ PERSISTIDA: a autoridade de decomposição continua sendo uma
+   * só, e a porta de escrita não reimplementa a fórmula.
    */
-  @TestVisible
-  private static List<ALT_CLS_AmortizationSchedule.Occurrence> generateOccurrences(
+  public static List<ALT_CLS_AmortizationSchedule.Occurrence> generateOccurrences(
     AXF_OBJ_ScheduleDefinition__c definition
   ) {
     List<ALT_CLS_AmortizationSchedule.Occurrence> empty = new List<ALT_CLS_AmortizationSchedule.Occurrence>();

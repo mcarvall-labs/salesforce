@@ -170,6 +170,21 @@ public with sharing class AXF_CLS_FSCTriggerHandler {
             populated.containsKey(field) &&
             isChanged(record.get(field), oldRecord.get(field))
           ) {
+            // Exceção estreita e declarada: o METADADO OPERACIONAL de execução da reposição
+            // rolante (tentativas, próximo horário e código higienizado) é gravado pela
+            // capacidade privilegiada do próprio worker, e só estes três campos. Ela existe
+            // porque leitura e DML respeitam a visibilidade de registro da classe, e o job
+            // precisa registrar um desfecho permanente exatamente quando o principal NÃO enxerga
+            // o cronograma. Verificado neste org: um `with sharing` não consegue nem ler nem
+            // atualizar a linha invisível em SYSTEM_MODE.
+            if (
+              AXF_CLS_ScheduleReplenishmentStateWriter.isWriting() &&
+              AXF_CLS_ScheduleReplenishmentStateWriter.OPERATIONAL_FIELDS.contains(
+                field
+              )
+            ) {
+              continue;
+            }
             record.addError(
               'Campos derivados do cronograma (identidade, estado, ponteiros, contadores e cursores) são mantidos pelo serviço autorizado e não são editáveis diretamente (AXF-103).'
             );
@@ -226,11 +241,26 @@ public with sharing class AXF_CLS_FSCTriggerHandler {
         );
       }
 
+      // A ativação é REVALIDADA quando o cronograma passa a ACTIVE agora ou quando um ponteiro
+      // vigente é efetivamente ALTERADO. "Campo presente no mapa de preenchidos" não serve como
+      // sinal: no contexto de trigger a linha chega carregada, e o ponteiro aparece no mapa mesmo
+      // numa atualização que não pediu mudança nenhuma. Verificado neste org: um principal que não
+      // enxerga a definição vigente fazia toda atualização de metadado operacional do job (fatia 2)
+      // falhar na revalidação, e o estado acionável nunca era registrado.
+      Boolean pointersChanged =
+        (populated.containsKey('AXF_FSC_LKP_ActiveDefinition__c') &&
+        isChanged(
+          record.AXF_FSC_LKP_ActiveDefinition__c,
+          oldRecord.AXF_FSC_LKP_ActiveDefinition__c
+        )) ||
+        (populated.containsKey('AXF_FSC_LKP_ActiveReference__c') &&
+        isChanged(
+          record.AXF_FSC_LKP_ActiveReference__c,
+          oldRecord.AXF_FSC_LKP_ActiveReference__c
+        ));
       Boolean activating =
         newState == STATE_ACTIVE &&
-        (oldState != STATE_ACTIVE ||
-        populated.containsKey('AXF_FSC_LKP_ActiveDefinition__c') ||
-        populated.containsKey('AXF_FSC_LKP_ActiveReference__c'));
+        (oldState != STATE_ACTIVE || pointersChanged);
       if (!activating) {
         continue;
       }

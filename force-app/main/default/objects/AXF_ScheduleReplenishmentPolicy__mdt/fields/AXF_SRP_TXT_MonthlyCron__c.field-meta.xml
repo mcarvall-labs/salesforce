@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<CustomField xmlns="http://soap.sforce.com/2006/04/metadata">
+    <fullName>AXF_SRP_TXT_MonthlyCron__c</fullName>
+    <label>Cron mensal</label>
+    <type>Text</type>
+    <length>80</length>
+    <required>true</required>
+    <description
+  >Expressao CRON da passagem mensal de reposicao, no fuso declarado. Aprovado: 0 0 4 1 * ? (dia 1 as 04:00). Registrada pelo dono; o deploy nao cria CronTrigger.</description>
+</CustomField>

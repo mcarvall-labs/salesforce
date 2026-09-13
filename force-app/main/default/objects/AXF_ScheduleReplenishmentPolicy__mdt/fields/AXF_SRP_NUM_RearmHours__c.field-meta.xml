@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<CustomField xmlns="http://soap.sforce.com/2006/04/metadata">
+    <fullName>AXF_SRP_NUM_RearmHours__c</fullName>
+    <label>Janela do realarme (horas)</label>
+    <type>Number</type>
+    <precision>3</precision>
+    <scale>0</scale>
+    <required>true</required>
+    <description
+  >Janela do REALARME limitado de um cronograma com o orcamento de tentativas esgotado, em horas. O orcamento continua esgotado — nenhuma passagem automatica o reinicia —, mas a passagem de recuperacao tenta UMA vez de novo quando a janela vence, e cada tentativa fracassada apenas reinicia a janela. Sem realarme, quatro falhas transitorias desligariam a reposicao daquele cronograma para sempre; com reset irrestrito, uma falha permanente repetiria sem limite. Aprovado: 24.</description>
+</CustomField>

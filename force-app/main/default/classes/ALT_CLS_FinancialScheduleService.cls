@@ -28,6 +28,15 @@ public with sharing class ALT_CLS_FinancialScheduleService {
   public static final String OUTCOME_UNAVAILABLE = 'UNAVAILABLE';
   public static final String OUTCOME_TOO_LARGE = 'TOO_LARGE';
   public static final String OUTCOME_MULTI_HOLDER = 'MULTI_HOLDER';
+  /** Desfechos da reposição rolante da janela (fatia 2). */
+  public static final String OUTCOME_GENERATED = 'GENERATED';
+  public static final String OUTCOME_COMPLETE = 'COMPLETE';
+  public static final String OUTCOME_NOOP = 'NOOP';
+  /** Desligado por `GenerationEnabled`: pulado, nunca erro. */
+  public static final String OUTCOME_SKIPPED = 'SKIPPED';
+  public static final String OUTCOME_EXHAUSTED = 'EXHAUSTED';
+  public static final String OUTCOME_FAILED = 'FAILED';
+  public static final String OUTCOME_NOT_FOUND = 'NOT_FOUND';
 
   public static final String SCHEDULE_TAG = 'axf103-sch-v1';
   public static final String DEFINITION_TAG = 'axf103-sdf-v1';
@@ -58,6 +67,16 @@ public with sharing class ALT_CLS_FinancialScheduleService {
   public static final Integer MAX_HORIZON_MONTHS = 12;
   /** Limite efetivo de magnitude já em uso (Number(16,2)); não alarga metadado existente. */
   public static final Decimal MAX_AMOUNT = ALT_CLS_ScheduleProjection.MAX_EFFECTIVE_AMOUNT;
+  /**
+   * Teto de titulares lidos por `AXF_CLS_AuthorizedContextService.listAuthorizedContexts()`
+   * (`LIMIT 200`). A limitação é de INFRAESTRUTURA e está DIFERIDA pela spec; ela é declarada
+   * aqui apenas para que este serviço distinga "autoridade negada" de "autoridade não concluída".
+   */
+  public static final Integer AUTHORIZED_CONTEXT_LIMIT = 200;
+  /** Vereditos de autoridade do titular. */
+  private static final String AUTHORITY_GRANTED = 'GRANTED';
+  private static final String AUTHORITY_DENIED = 'DENIED';
+  private static final String AUTHORITY_TRUNCATED = 'TRUNCATED';
   public static final Integer MONEY_SCALE = 2;
   public static final Integer RATE_SCALE = 10;
   /** Limite dos campos de texto longo desta fatia. */
@@ -167,6 +186,164 @@ public with sharing class ALT_CLS_FinancialScheduleService {
     @AuraEnabled
     public Boolean replay = false;
   }
+
+  /**
+   * Entrada da reposição. O titular é resolvido pelo caminho privilegiado declarado do job
+   * (`AXF_CLS_ScheduleReplenishmentSelector`) para que a porta de escrita consiga distinguir
+   * "não existe" de "existe e o principal não o enxerga". Ele NÃO é uma autorização: o serviço
+   * compara com o titular realmente gravado na raiz e revalida a autoridade do titular antes de
+   * qualquer escrita.
+   */
+  public class ReplenishmentRequest {
+    @AuraEnabled
+    public Id scheduleId;
+    @AuraEnabled
+    public Id holderId;
+    /**
+     * Passagem de recuperação DIRIGIDA: o operador já corrigiu a causa apontada pelo estado
+     * acionável, então o portão de despacho (orçamento esgotado, código terminal) é ignorado
+     * nesta chamada. A revalidação de estado, autoridade e permissão continua valendo.
+     */
+    @AuraEnabled
+    public Boolean recovery = false;
+  }
+
+  /**
+   * Desfecho de UMA passagem de reposição sobre UM cronograma. É também o relato por cronograma
+   * exigido do despacho em lote: cada cronograma carrega o próprio resultado, sem tudo-ou-nada.
+   */
+  public class ReplenishmentResult {
+    @AuraEnabled
+    public String outcome;
+    @AuraEnabled
+    public String message;
+    @AuraEnabled
+    public Id scheduleId;
+    @AuraEnabled
+    public String scheduleKey;
+    @AuraEnabled
+    public Integer createdCount = 0;
+    @AuraEnabled
+    public Integer firstCreatedSequence;
+    @AuraEnabled
+    public Integer lastCreatedSequence;
+    @AuraEnabled
+    public Integer previousCoverageSequence;
+    /** Cursor de cobertura reconciliado PELA PRODUÇÃO sob o lock, nunca pelo plano pré-lock. */
+    @AuraEnabled
+    public Integer coverageSequence;
+    /** Há ocorrência elegível além do limite desta transação: a continuação precisa encadear. */
+    @AuraEnabled
+    public Boolean moreWork = false;
+    /** O termo terminou: nada mais será criado, nem agora nem depois. */
+    @AuraEnabled
+    public Boolean termReached = false;
+    /** O motor truncou por teto de avaliação: cobertura PARCIAL, sem queimar tentativa. */
+    @AuraEnabled
+    public Boolean evaluationCut = false;
+    @AuraEnabled
+    public Date windowEndDate;
+    @AuraEnabled
+    public Long financialVersion;
+    /** Código de erro higienizado, quando a passagem falhou. */
+    @AuraEnabled
+    public String errorCode;
+    @AuraEnabled
+    public Boolean terminal = false;
+    @AuraEnabled
+    public Integer retryCount;
+    @AuraEnabled
+    public DateTime nextAttemptAt;
+    @AuraEnabled
+    public Integer delayMinutes;
+    @AuraEnabled
+    public Boolean retryExhausted = false;
+    /** As identidades já existiam com a sequência correta: releitura autorizada, nada duplicado. */
+    @AuraEnabled
+    public Boolean replay = false;
+    /**
+     * O estado acionável foi de fato PERSISTIDO? `false` significa que o desfecho terminal existe
+     * mas o registro operacional foi recusado — o operador precisa ver isso em vez de encontrar um
+     * cronograma parado sem motivo.
+     */
+    @AuraEnabled
+    public Boolean statePersisted = false;
+    /** Motivo higienizado da recusa da gravação do estado operacional, quando houve. */
+    @AuraEnabled
+    public String stateWriteFailure;
+  }
+
+  /**
+   * Metadado de falha persistido em transação SEPARADA e limitada (o finalizador da fila), depois
+   * que a transação de geração abortou e reverteu o efeito financeiro parcial.
+   */
+  public class FailureRecord {
+    @AuraEnabled
+    public String errorCode;
+    @AuraEnabled
+    public Integer retryCount;
+    @AuraEnabled
+    public DateTime nextAttemptAt;
+    /** Atraso que cabe no enqueue atrasado; nulo no degrau de 30 minutos e no esgotado. */
+    @AuraEnabled
+    public Integer delayMinutes;
+    /** Orçamento esgotado ou código terminal: nada é reagendado e o estado fica acionável. */
+    @AuraEnabled
+    public Boolean terminal = false;
+    /** O estado acionável foi gravado? Ver `ReplenishmentResult.statePersisted`. */
+    @AuraEnabled
+    public Boolean statePersisted = false;
+    @AuraEnabled
+    public String stateWriteFailure;
+  }
+
+  /** Código de falha forçado por teste, para exercitar o caminho de DML parcialmente aplicada. */
+  @TestVisible
+  private static String forcedReplenishmentFailureCode;
+
+  /**
+   * Seam de teste declarado da RELEITURA SOB O LOCK: a revisão de projeção e o ponteiro de
+   * definição OBSERVADOS depois de o titular ter sido travado. Ele existe porque a divergência
+   * real (uma definição confirmada entre a leitura autorizada e o lock) não é produzível dentro de
+   * uma transação de teste; o que o seam muda é apenas o VALOR OBSERVADO, e a rechecagem que ele
+   * exercita é a de produção.
+   */
+  @TestVisible
+  private static Long lockedRevisionOverrideForTest;
+  @TestVisible
+  private static Id lockedDefinitionOverrideForTest;
+  /** Força o resultado da leitura autorizada, para exercitar cada desfecho de bloqueio. */
+  @TestVisible
+  private static ALT_CLS_ScheduleProjection.ProjectionResult projectionOverrideForTest;
+  /** Força a leitura autorizada a devolver NULO, para exercitar o desfecho sem resultado. */
+  @TestVisible
+  private static Boolean forceNullProjectionForTest = false;
+  /** Força a leitura autorizada a lançar, para exercitar a classificação de exceções reais. */
+  @TestVisible
+  private static Exception authorizedReadFailureForTest;
+  /** Reduz o teto declarado de identidades rastreadas, para exercitar o limite sem 4001 linhas. */
+  @TestVisible
+  private static Integer trackedIdentityCeilingOverrideForTest;
+  /**
+   * Teto EFETIVO de contextos autorizados nesta transação. O default é o teto real do serviço de
+   * contextos (200); o teste o reduz para exercitar a leitura INCONCLUSIVA.
+   */
+  @TestVisible
+  private static Integer authorizedContextLimitForTest = AUTHORIZED_CONTEXT_LIMIT;
+  /**
+   * Rastro da ORDEM dos passos do caminho da reposição (lock antes de descendentes). Nulo fora de
+   * teste: nenhum consumidor de runtime paga por ele.
+   */
+  @TestVisible
+  private static List<String> lockTraceForTest;
+
+  /** Observa se o lock do titular foi adquirido no caminho da reposição. */
+  @TestVisible
+  private static Boolean lastReplenishmentLockedHolder = false;
+
+  /** Observa a captura do plano pré-lock, para provar que o cursor não vem dele. */
+  @TestVisible
+  private static Integer lastPreLockCoverage;
 
   @TestVisible
   private static Set<Id> authorizedOverride;
@@ -336,13 +513,10 @@ public with sharing class ALT_CLS_FinancialScheduleService {
     }
 
     // Serialização holder-first: o titular é o primeiro lock, antes de qualquer descendente.
+    // O modo de acesso é parâmetro: o comando de usuário trava com USER_MODE, e o caminho do job
+    // (que já revalidou a autoridade do titular) trava pelo caminho privilegiado declarado.
     lastRunLockedHolder = true;
-    List<SObject> holders = Database.queryWithBinds(
-      'SELECT Id FROM Account WHERE Id = :holderId FOR UPDATE',
-      new Map<String, Object>{ 'holderId' => input.accountId },
-      AccessLevel.USER_MODE
-    );
-    if (holders.size() != 1) {
+    if (!lockHolder(input.accountId, AccessLevel.USER_MODE)) {
       return fail(
         result,
         OUTCOME_UNAVAILABLE,
@@ -674,6 +848,1289 @@ public with sharing class ALT_CLS_FinancialScheduleService {
       LIMIT 1
     ];
     return rows.isEmpty() ? null : rows[0].AXF_FSC_LKP_Account__c;
+  }
+
+  // --- reposição rolante da janela (fatia 2) -------------------------------
+
+  /**
+   * @description Materialização de reposição na porta única de escrita: cria SOMENTE as
+   * identidades de ocorrência ausentes dentro da janela rolante, avança o cursor de cobertura
+   * para o prefixo contíguo efetivamente contabilizado e persiste o metadado de execução, tudo na
+   * mesma transação. Nenhuma linha existente é tocada: ocorrência realizada, parcialmente paga,
+   * cancelada ou com override manual permanece intacta porque esta passagem não faz UPDATE em FTX
+   * nem reescreve `Magnitude` (guarda AXF-25 preservada). A reposição é atualização de cache em
+   * transações limitadas e NÃO grava recibo de comando de domínio: nenhum `SCH` nasce daqui.
+   *
+   * O que falta é decidido pelo motor único de projeção — o mesmo critério que a leitura usa — e
+   * recortado por `ALT_CLS_ScheduleReplenishment`. A projeção acontece ANTES do lock, para não
+   * segurar a linha do titular durante trabalho de CPU; o titular é então travado
+   * (`Account FOR UPDATE`, holder-first) e a raiz é RELIDA sob o lock, com enabled-state,
+   * autoridade, permissão e identidades revalidados. O cursor reconciliado é recalculado pela
+   * produção a partir do estado lido sob o lock, nunca aceito do plano pré-lock.
+   *
+   * Falha de escrita não devolve sucesso parcial: o efeito financeiro é revertido por savepoint e
+   * o desfecho é `FAILED` com código higienizado. Quem chama registra o metadado de falha em
+   * transação separada e limitada (`recordReplenishmentFailure`), como o contrato exige.
+   */
+  public static ReplenishmentResult replenishSchedule(
+    ReplenishmentRequest request
+  ) {
+    ReplenishmentResult result = new ReplenishmentResult();
+    lastReplenishmentLockedHolder = false;
+    lastPreLockCoverage = null;
+    if (request == null || request.scheduleId == null) {
+      return replenishmentFail(
+        result,
+        OUTCOME_INVALID,
+        'Cronograma é obrigatório para repor a janela.',
+        null
+      );
+    }
+    result.scheduleId = request.scheduleId;
+    Boolean recovery = request.recovery == true;
+
+    AXF_OBJ_FinancialSchedule__c root = readSchedule(request.scheduleId);
+    if (root == null) {
+      // A leitura usa o escopo de compartilhamento desta classe: `AccessLevel.SYSTEM_MODE`
+      // desliga permissão de objeto e FLS, e NÃO amplia visibilidade de registro. Quem enxerga o
+      // trabalho é o caminho privilegiado declarado do job, que resolve o titular; quando ele
+      // resolveu um titular e ainda assim a raiz não aparece, o desfecho é a ausência de
+      // visibilidade do principal.
+      if (request.holderId == null) {
+        return replenishmentFail(
+          result,
+          OUTCOME_NOT_FOUND,
+          'Cronograma não encontrado neste escopo.',
+          null
+        );
+      }
+      return terminalFail(
+        result,
+        OUTCOME_FORBIDDEN,
+        'O cronograma existe, mas o principal que executa a reposição não tem visibilidade nativa sobre ele. Provisione a visibilidade do registro; repetir não resolve.',
+        ALT_CLS_ScheduleReplenishment.ERROR_PRINCIPAL_WITHOUT_VISIBILITY
+      );
+    }
+    result.scheduleKey = root.AXF_FSC_EXI_ScheduleKey__c;
+    lastPreLockCoverage = intOf(root.AXF_FSC_NUM_CoverageSequence__c);
+
+    Id holderId = root.AXF_FSC_LKP_Account__c;
+    if (request.holderId != null && request.holderId != holderId) {
+      return replenishmentFail(
+        result,
+        OUTCOME_FORBIDDEN,
+        'O titular informado não é o titular gravado na raiz do cronograma; nada foi gerado.',
+        null
+      );
+    }
+    if (holderId == null) {
+      return terminalFail(
+        result,
+        OUTCOME_FORBIDDEN,
+        'O cronograma não possui titular; a autoridade não pode ser conferida e nada é gerado.',
+        ALT_CLS_ScheduleReplenishment.ERROR_PRINCIPAL_WITHOUT_VISIBILITY
+      );
+    }
+    // Autoridade do titular (AXF-3) revalidada a cada transação e a cada lote. O veredito
+    // distingue três desfechos: autorizado, NEGADO e INCONCLUSIVO — este último quando o teto
+    // diferido de titulares do serviço de contextos impede concluir. Confundir os dois últimos
+    // gravaria um estado permanente e bloqueante de despacho que nenhuma correção de visibilidade
+    // limpa.
+    String authority = authorityVerdict(holderId);
+    if (authority == AUTHORITY_TRUNCATED) {
+      return replenishmentFail(
+        result,
+        OUTCOME_FAILED,
+        'A autoridade do titular não pôde ser CONCLUÍDA: o serviço de contextos autorizados lê os titulares visíveis com um teto de ' +
+          AUTHORIZED_CONTEXT_LIMIT +
+          ' registros (limitação de infraestrutura diferida pela spec). Este desfecho NÃO é permanente e não bloqueia o despacho: nada foi gerado e a passagem seguinte relê.',
+        ALT_CLS_ScheduleReplenishment.ERROR_AUTHORITY_TRUNCATED
+      );
+    }
+    if (authority != AUTHORITY_GRANTED) {
+      return terminalFail(
+        result,
+        OUTCOME_FORBIDDEN,
+        'O principal que executa a reposição não enxerga a entidade titular do cronograma. Este é um desfecho permanente: provisione a visibilidade do titular; repetir não resolve.',
+        ALT_CLS_ScheduleReplenishment.ERROR_PRINCIPAL_WITHOUT_VISIBILITY
+      );
+    }
+    // Permissão revalidada a cada transação: sem CRUD de criação na ocorrência, nada é gerado.
+    if (!canGenerateOccurrences()) {
+      return terminalFail(
+        result,
+        OUTCOME_FORBIDDEN,
+        'O principal que executa a reposição não tem permissão para criar ocorrências: nada foi gerado.',
+        ALT_CLS_ScheduleReplenishment.ERROR_PERMISSION_DENIED
+      );
+    }
+    if (root.AXF_FSC_PKL_State__c != STATE_ACTIVE) {
+      // Um cronograma que não está ACTIVE não gera: o desfecho é pulado, não erro.
+      return replenishmentFail(
+        result,
+        OUTCOME_SKIPPED,
+        'O cronograma não está ACTIVE: nenhuma ocorrência nova foi criada e as obrigações seguem visíveis na leitura.',
+        null
+      );
+    }
+    if (root.AXF_FSC_BOL_GenerationEnabled__c != true) {
+      // Desligar nunca esconde a obrigação: nenhuma linha nova, nenhum erro.
+      return replenishmentFail(
+        result,
+        OUTCOME_SKIPPED,
+        'Geração desabilitada neste cronograma: nenhuma ocorrência nova foi criada e as obrigações seguem visíveis na leitura.',
+        null
+      );
+    }
+    if (
+      !recovery &&
+      ALT_CLS_ScheduleReplenishment.blocksDispatch(
+        root.AXF_FSC_TXT_LastErrorCode__c,
+        intOf(root.AXF_FSC_NUM_RetryCount__c),
+        ALT_CLS_ScheduleReplenishment.MAX_RETRY_COUNT
+      )
+    ) {
+      return replenishmentFail(
+        result,
+        OUTCOME_EXHAUSTED,
+        'O orçamento de tentativas se esgotou (ou há estado terminal registrado): nenhuma nova tentativa é agendada automaticamente e as obrigações seguem visíveis na leitura. Corrija a causa apontada por ' +
+          ALT_CLS_ScheduleReplenishment.sanitizeErrorCode(
+            root.AXF_FSC_TXT_LastErrorCode__c
+          ) +
+          ' e use a passagem de recuperação dirigida para retomar.',
+        ALT_CLS_ScheduleReplenishment.sanitizeErrorCode(
+          root.AXF_FSC_TXT_LastErrorCode__c
+        )
+      );
+    }
+
+    ALT_CLS_ScheduleProjection.ProjectionResult projection;
+    try {
+      if (authorizedReadFailureForTest != null) {
+        throw authorizedReadFailureForTest;
+      }
+      if (forceNullProjectionForTest) {
+        projection = null;
+      } else if (projectionOverrideForTest != null) {
+        projection = projectionOverrideForTest;
+      } else {
+        ALT_CLS_ScheduleProjection.ProjectionInput projectionInput = new ALT_CLS_ScheduleProjection.ProjectionInput();
+        projectionInput.scheduleId = request.scheduleId;
+        projectionInput.asOfDate = Date.today();
+        projection = ALT_CLS_ScheduleProjection.project(projectionInput);
+      }
+    } catch (Exception failure) {
+      // A classificação decide se a passagem REPETE (recuo limitado) ou PARA. Um estouro
+      // numérico determinístico da fórmula aprovada não melhora por repetição: ele é permanente
+      // e imediato, e não pode queimar o orçamento até virar `RETRY_EXHAUSTED` por engano.
+      return classifyFailure(
+        result,
+        OUTCOME_FAILED,
+        'A leitura autorizada do cronograma falhou antes de qualquer escrita.',
+        replenishmentErrorCode(failure)
+      );
+    }
+    ReplenishmentResult rejection = rejectProjection(projection, result);
+    if (rejection != null) {
+      return rejection;
+    }
+
+    ALT_CLS_ScheduleReplenishment.PlanInput planInput = new ALT_CLS_ScheduleReplenishment.PlanInput();
+    planInput.lines = projection.lines;
+    planInput.windowEndDate = projection.horizonEndDate;
+    planInput.trackingStartSequence = projection.trackingStartSequence;
+    planInput.coverageSequence = lastPreLockCoverage;
+    planInput.maxOccurrences = ALT_CLS_ScheduleReplenishment.MAX_OCCURRENCES_PER_TRANSACTION;
+    planInput.unbounded = projection.unbounded;
+    planInput.coverageComplete = projection.coverageComplete;
+    ALT_CLS_ScheduleReplenishment.Plan plan;
+    try {
+      plan = ALT_CLS_ScheduleReplenishment.plan(planInput);
+    } catch (ALT_CLS_ScheduleReplenishment.ReplenishmentException invalidPlan) {
+      return terminalFail(
+        result,
+        OUTCOME_INVALID,
+        'O recorte da janela rolante foi recusado pelo motor de regra.',
+        ALT_CLS_ScheduleReplenishment.ERROR_PROJECTION_BLOCKED
+      );
+    }
+    result.windowEndDate = plan.windowEndDate;
+    result.previousCoverageSequence = plan.previousCoverageSequence;
+    result.moreWork = plan.moreWork;
+    result.termReached = plan.termReached;
+    result.evaluationCut = plan.evaluationCut;
+
+    // Serialização holder-first: o titular é o PRIMEIRO lock, antes de qualquer descendente.
+    lastReplenishmentLockedHolder = lockHolder(
+      holderId,
+      AccessLevel.SYSTEM_MODE
+    );
+    traceLockStep('HOLDER_LOCK');
+    if (!lastReplenishmentLockedHolder) {
+      return replenishmentFail(
+        result,
+        OUTCOME_FAILED,
+        'O titular não está disponível para escrita neste momento.',
+        ALT_CLS_ScheduleReplenishment.ERROR_HOLDER_UNAVAILABLE
+      );
+    }
+
+    // Releitura sob o lock: estado, enabled-state e titular são revalidados AQUI, e não apenas na
+    // leitura pré-lock, porque entre as duas leituras o cronograma pode ter sido desligado.
+    AXF_OBJ_FinancialSchedule__c locked = readSchedule(request.scheduleId);
+    traceLockStep('LOCKED_ROOT_READ');
+    if (locked == null || locked.AXF_FSC_LKP_Account__c != holderId) {
+      return replenishmentFail(
+        result,
+        OUTCOME_UNAVAILABLE,
+        'O cronograma não está mais disponível sob o lock do titular; nada foi gravado.',
+        ALT_CLS_ScheduleReplenishment.ERROR_HOLDER_UNAVAILABLE
+      );
+    }
+    if (locked.AXF_FSC_PKL_State__c != STATE_ACTIVE) {
+      return replenishmentFail(
+        result,
+        OUTCOME_SKIPPED,
+        'O cronograma deixou de estar ACTIVE sob o lock: nenhuma ocorrência nova foi criada.',
+        null
+      );
+    }
+    if (locked.AXF_FSC_BOL_GenerationEnabled__c != true) {
+      return replenishmentFail(
+        result,
+        OUTCOME_SKIPPED,
+        'A geração foi desabilitada sob o lock: nenhuma ocorrência nova foi criada e as obrigações seguem visíveis na leitura.',
+        null
+      );
+    }
+    if (
+      !recovery &&
+      ALT_CLS_ScheduleReplenishment.blocksDispatch(
+        locked.AXF_FSC_TXT_LastErrorCode__c,
+        intOf(locked.AXF_FSC_NUM_RetryCount__c),
+        ALT_CLS_ScheduleReplenishment.MAX_RETRY_COUNT
+      )
+    ) {
+      // O estado pode ter se tornado terminal ENTRE a leitura e o lock: revalidado aqui, o
+      // "terminal é permanente" não depende da leitura pré-lock.
+      return replenishmentFail(
+        result,
+        OUTCOME_EXHAUSTED,
+        'O orçamento de tentativas se esgotou (ou há estado terminal registrado) sob o lock: nenhuma nova tentativa automática é agendada e as obrigações seguem visíveis na leitura.',
+        ALT_CLS_ScheduleReplenishment.sanitizeErrorCode(
+          locked.AXF_FSC_TXT_LastErrorCode__c
+        )
+      );
+    }
+
+    // Rechecagem da REVISÃO e dos PONTEIROS vigentes SOB O LOCK (contrato L44 e L83). O plano foi
+    // montado a partir da projeção pré-lock e carimba `ProjectionRevision` da raiz lida antes do
+    // lock; sem esta comparação, uma definição confirmada entre as duas leituras produziria linhas
+    // apontando para a definição antiga SOB A ETIQUETA da revisão nova, sem `STALE`.
+    Long observedRevision = (lockedRevisionOverrideForTest != null)
+      ? lockedRevisionOverrideForTest
+      : projectionRevisionOf(locked);
+    Id observedDefinition = (lockedDefinitionOverrideForTest != null)
+      ? lockedDefinitionOverrideForTest
+      : locked.AXF_FSC_LKP_ActiveDefinition__c;
+    Long capturedRevision = (projection.capturedProjectionRevision == null)
+      ? 0
+      : projection.capturedProjectionRevision;
+    if (
+      observedRevision != capturedRevision ||
+      observedDefinition != projection.capturedActiveDefinition
+    ) {
+      traceLockStep('STALE_RECHECK');
+      return replenishmentFail(
+        result,
+        OUTCOME_FAILED,
+        'A revisão vigente ou o ponteiro de definição mudou entre a leitura autorizada e o lock: nada foi gravado e a passagem será repetida com recuo limitado.',
+        ALT_CLS_ScheduleReplenishment.ERROR_PROJECTION_STALE
+      );
+    }
+
+    // Reconciliação de identidades sob o lock. Uma linha sob OUTRA identidade não conta como a
+    // esperada, e uma identidade já ocupada pela sequência correta é replay — nunca duplicidade.
+    Integer trackingStart = (projection.trackingStartSequence == null ||
+      projection.trackingStartSequence < 1)
+      ? 1
+      : projection.trackingStartSequence;
+    IdentitySnapshot snapshot = persistedIdentities(request.scheduleId);
+    traceLockStep('IDENTITIES_READ');
+    if (snapshot.truncated) {
+      return terminalFail(
+        result,
+        OUTCOME_INVALID,
+        'O cronograma tem mais identidades rastreadas do que o teto declarado de ' +
+          trackedIdentityCeiling() +
+          ' ocorrências por cronograma: a reconciliação do cursor não é decidível e a passagem não carrega o histórico inteiro em memória. Redimensione o cronograma ou o teto antes de retomar.',
+        ALT_CLS_ScheduleReplenishment.ERROR_SCALE_LIMIT
+      );
+    }
+    Map<Integer, String> identities = snapshot.bySequence;
+    Set<Integer> accounted = new Set<Integer>();
+    for (Integer sequence : identities.keySet()) {
+      if (sequence == null || sequence < trackingStart) {
+        continue;
+      }
+      if (
+        identities.get(sequence) ==
+        ALT_CLS_ScheduleProjection.occurrenceKey(result.scheduleKey, sequence)
+      ) {
+        accounted.add(sequence);
+      }
+    }
+    List<Integer> toCreate = new List<Integer>();
+    Boolean replayedIdentity = false;
+    for (Integer sequence : plan.sequences) {
+      String expected = ALT_CLS_ScheduleProjection.occurrenceKey(
+        result.scheduleKey,
+        sequence
+      );
+      String existing = identities.get(sequence);
+      if (existing == null) {
+        toCreate.add(sequence);
+        continue;
+      }
+      if (existing != expected) {
+        return terminalFail(
+          result,
+          OUTCOME_CONFLICT,
+          'A identidade da sequência ' +
+            sequence +
+            ' já pertence a outra ocorrência de identidade completa diferente; nada foi gravado.',
+          ALT_CLS_ScheduleReplenishment.ERROR_IDENTITY
+        );
+      }
+      replayedIdentity = true;
+      accounted.add(sequence);
+    }
+
+    // PÓS-LOCK: `moreWork` e `termReached` são RECALCULADOS a partir das identidades lidas sob o
+    // lock, e não aceitos do plano pré-lock. Uma passagem que não criou nada (replay, colisão,
+    // no-op) não pode re-enfileirar a si mesma e gastar uma rodada da cadeia.
+    Set<Integer> plannedNow = new Set<Integer>(toCreate);
+    Integer remaining = 0;
+    Integer virtualBeyond = 0;
+    for (ALT_CLS_ScheduleProjection.OccurrenceLine line : projection.lines) {
+      if (
+        line == null ||
+        line.sequence == null ||
+        line.sequence < trackingStart ||
+        line.nominalDueDate == null
+      ) {
+        continue;
+      }
+      Boolean covered =
+        accounted.contains(line.sequence) || plannedNow.contains(line.sequence);
+      if (line.nominalDueDate > plan.windowEndDate) {
+        if (!covered) {
+          virtualBeyond++;
+        }
+        continue;
+      }
+      if (!covered) {
+        remaining++;
+      }
+    }
+    result.moreWork = remaining > 0;
+    result.termReached =
+      projection.unbounded != true &&
+      projection.coverageComplete == true &&
+      remaining == 0 &&
+      virtualBeyond == 0;
+
+    Map<Id, AXF_OBJ_ScheduleDefinition__c> definitions = definitionRows(
+      request.scheduleId
+    );
+    List<AXF_OBJ_FinancialTransaction__c> occurrences = buildReplenishmentOccurrences(
+      toCreate,
+      projection,
+      definitions,
+      locked,
+      result.scheduleKey
+    );
+    // A colisão de identidade é REAL: a chave `AXF_FTX_EXI_OccurrenceKey__c` é única e o insert
+    // inteiro é revertido por savepoint. Nenhuma costura de produção semeia linhas concorrentes.
+    Savepoint checkpoint = Database.setSavepoint();
+    try {
+      writing = true;
+      if (!occurrences.isEmpty()) {
+        Database.insert(occurrences, AccessLevel.SYSTEM_MODE);
+      }
+      if (forcedReplenishmentFailureCode != null) {
+        // Seam de teste: falha após parte das linhas, para provar que nada parcial persiste.
+        throw new ServiceException(forcedReplenishmentFailureCode);
+      }
+      accounted.addAll(toCreate);
+      // O cursor reconciliado é recalculado pela PRODUÇÃO a partir do estado lido sob o lock —
+      // nunca aceito do plano pré-lock — e nunca fica abaixo do progresso já confirmado: um
+      // cursor persistido que ainda não foi reconciliado (uma lacuna abaixo dele) não é
+      // rebaixado. É a verificação de LACUNA do despacho, e não o valor do cursor, que mantém
+      // esse cronograma no conjunto devido até a lacuna ser materializada.
+      result.coverageSequence = Math.max(
+        ALT_CLS_ScheduleReplenishment.coverageAfter(trackingStart, accounted),
+        intOf(locked.AXF_FSC_NUM_CoverageSequence__c)
+      );
+      result.createdCount = occurrences.size();
+      result.firstCreatedSequence = occurrences.isEmpty()
+        ? null
+        : firstSequenceOf(toCreate);
+      result.lastCreatedSequence = occurrences.isEmpty()
+        ? null
+        : lastSequenceOf(toCreate);
+      persistSuccess(locked, result.coverageSequence, !occurrences.isEmpty());
+      result.financialVersion = financialVersionOf(
+        locked,
+        !occurrences.isEmpty()
+      );
+      result.replay = replayedIdentity && occurrences.isEmpty();
+      result.outcome = replenishmentOutcome(
+        result,
+        occurrences.size(),
+        replayedIdentity
+      );
+    } catch (DmlException failure) {
+      Database.rollback(checkpoint);
+      return recoverFromCollision(
+        request,
+        toCreate,
+        result,
+        trackingStart,
+        failure
+      );
+    } catch (ServiceException failure) {
+      Database.rollback(checkpoint);
+      return replenishmentFail(
+        result,
+        OUTCOME_FAILED,
+        'A escrita da reposição falhou e foi revertida por inteiro.',
+        forcedReplenishmentFailureCode != null
+          ? ALT_CLS_ScheduleReplenishment.sanitizeErrorCode(
+              forcedReplenishmentFailureCode
+            )
+          : ALT_CLS_ScheduleReplenishment.ERROR_DML
+      );
+    } catch (ALT_CLS_ScheduleProjection.ProjectionException failure) {
+      Database.rollback(checkpoint);
+      return terminalFail(
+        result,
+        OUTCOME_FAILED,
+        'A ocorrência recusada pelo motor de projeção durante a escrita.',
+        ALT_CLS_ScheduleReplenishment.ERROR_PROJECTION_BLOCKED
+      );
+    } catch (System.MathException failure) {
+      Database.rollback(checkpoint);
+      // Estouro numérico determinístico da fórmula aprovada: PERMANENTE e imediato. Repetir não
+      // muda a aritmética e queimaria o orçamento até virar `RETRY_EXHAUSTED` por engano.
+      return terminalFail(
+        result,
+        OUTCOME_FAILED,
+        'A fórmula aprovada estourou a precisão numérica: desfecho permanente, repetir não resolve.',
+        ALT_CLS_ScheduleReplenishment.ERROR_FORMULA
+      );
+    } finally {
+      writing = false;
+    }
+
+    result.message = replenishmentMessage(result);
+    return result;
+  }
+
+  /**
+   * @description Registro do metadado de falha em transação SEPARADA e limitada: uma única linha,
+   * somente `RetryCount`, `NextAttemptAt` e `LastErrorCode`. Chamado pelo finalizador da fila
+   * depois que a transação de geração abortou e reverteu o efeito financeiro.
+   *
+   * Um código TERMINAL não consome orçamento de retry e não agenda tentativa: ele deixa o estado
+   * acionável e tira o cronograma do conjunto devido, para que ele não morra de fome a cauda da
+   * fila esperando uma tentativa que nunca vai progredir.
+   */
+  public static FailureRecord recordReplenishmentFailure(
+    Id scheduleId,
+    String errorCode,
+    DateTime failedAt
+  ) {
+    FailureRecord record = new FailureRecord();
+    record.errorCode = ALT_CLS_ScheduleReplenishment.sanitizeErrorCode(
+      errorCode
+    );
+    if (scheduleId == null || failedAt == null) {
+      return record;
+    }
+    AXF_OBJ_FinancialSchedule__c row = AXF_CLS_ScheduleReplenishmentStateWriter.read(
+      scheduleId
+    );
+    if (row == null) {
+      return record;
+    }
+    Integer previous = intOf(row.AXF_FSC_NUM_RetryCount__c);
+    if (ALT_CLS_ScheduleReplenishment.isTerminal(record.errorCode)) {
+      // Condição PERMANENTE: o orçamento fica CONGELADO (não é consumido nem reiniciado) e nada é
+      // agendado automaticamente. O operador corrige a causa e usa a passagem DIRIGIDA.
+      record.retryCount = previous;
+      record.terminal = true;
+    } else {
+      ALT_CLS_ScheduleReplenishment.RetryDecision decision = ALT_CLS_ScheduleReplenishment.nextAttempt(
+        previous,
+        failedAt
+      );
+      record.retryCount = decision.retryCount;
+      record.nextAttemptAt = decision.nextAttemptAt;
+      record.delayMinutes = decision.delayMinutes;
+      record.terminal = decision.exhausted;
+      if (decision.exhausted) {
+        // REALARME LIMITADO: o orçamento continua esgotado, mas o cronograma ganha um horário
+        // declarado a partir do qual a passagem de recuperação tenta UMA vez de novo. Sem isso,
+        // quatro falhas transitórias desligariam a reposição daquele cronograma para sempre; com
+        // um reset irrestrito, uma falha permanente repetiria sem limite.
+        record.errorCode = ALT_CLS_ScheduleReplenishment.ERROR_EXHAUSTED;
+        record.nextAttemptAt = ALT_CLS_ScheduleReplenishment.rearmAt(
+          failedAt,
+          rearmHours()
+        );
+        record.delayMinutes = null;
+      }
+    }
+    Boolean stateWritten = writeOperationalState(
+      scheduleId,
+      record.errorCode,
+      record.retryCount,
+      record.nextAttemptAt
+    );
+    record.statePersisted = stateWritten;
+    record.stateWriteFailure = AXF_CLS_ScheduleReplenishmentStateWriter.failureReason();
+    if (!stateWritten) {
+      System.debug(
+        LoggingLevel.ERROR,
+        'AXF103 reposicao: estado acionavel NAO persistido. ' +
+          AXF_CLS_ScheduleReplenishmentStateWriter.describeLastOutcome() +
+          ' codigo=' +
+          record.errorCode
+      );
+    }
+    return record;
+  }
+
+  /** Janela declarada do realarme; ausência de política aprovada usa o default declarado. */
+  private static Integer rearmHours() {
+    try {
+      return AXF_CLS_ScheduleReplenishmentPolicy.current().rearmHours;
+    } catch (AXF_CLS_ScheduleReplenishmentPolicy.PolicyException unavailable) {
+      return ALT_CLS_ScheduleReplenishment.DEFAULT_REARM_HOURS;
+    }
+  }
+
+  /**
+   * @description Gravação do metadado operacional de execução: UMA linha, somente `RetryCount`,
+   * `NextAttemptAt` e `LastErrorCode`.
+   *
+   * Ela NÃO acontece dentro desta classe, e isso é uma decisão de plataforma verificada neste
+   * org: o job precisa registrar um desfecho permanente justamente quando o principal NÃO enxerga
+   * o cronograma, e tanto a leitura quanto a DML respeitam a visibilidade de registro da classe
+   * onde o código é declarado. O caminho privilegiado declarado é
+   * `AXF_CLS_ScheduleReplenishmentStateWriter`, cuja capacidade é aceita pelo handler da raiz
+   * SOMENTE para estes três campos — e que adquire o lock do titular ANTES da DML.
+   */
+  @TestVisible
+  private static Boolean writeOperationalState(
+    Id scheduleId,
+    String errorCode,
+    Integer retryCount,
+    DateTime nextAttemptAt
+  ) {
+    return AXF_CLS_ScheduleReplenishmentStateWriter.write(
+      scheduleId,
+      errorCode,
+      retryCount,
+      nextAttemptAt
+    );
+  }
+
+  // --- reposição: apoio ----------------------------------------------------
+
+  private static AXF_OBJ_FinancialSchedule__c readSchedule(Id scheduleId) {
+    List<AXF_OBJ_FinancialSchedule__c> rows = [
+      SELECT
+        Id,
+        AXF_FSC_EXI_ScheduleKey__c,
+        AXF_FSC_LKP_Account__c,
+        AXF_FSC_LKP_Contract__c,
+        AXF_FSC_TXT_CurrencyIsoCode__c,
+        AXF_FSC_PKL_Direction__c,
+        AXF_FSC_PKL_State__c,
+        AXF_FSC_NUM_TrackingStartSequence__c,
+        AXF_FSC_NUM_HorizonMonths__c,
+        AXF_FSC_NUM_ProjectionRevision__c,
+        AXF_FSC_NUM_CoverageSequence__c,
+        AXF_FSC_NUM_FinancialVersion__c,
+        AXF_FSC_NUM_RetryCount__c,
+        AXF_FSC_DT_NextAttemptAt__c,
+        AXF_FSC_TXT_LastErrorCode__c,
+        AXF_FSC_BOL_GenerationEnabled__c,
+        AXF_FSC_LKP_ActiveDefinition__c
+      FROM AXF_OBJ_FinancialSchedule__c
+      WHERE Id = :scheduleId
+      WITH SYSTEM_MODE
+      LIMIT 1
+    ];
+    return rows.isEmpty() ? null : rows[0];
+  }
+
+  /**
+   * @description Lock do titular extraído com o modo de acesso como PARÂMETRO: o comando de
+   * usuário trava com `USER_MODE`, e o caminho do job (que já revalidou estado, autoridade do
+   * titular e permissão) trava pelo caminho privilegiado declarado. É sempre o PRIMEIRO lock,
+   * antes de qualquer descendente.
+   */
+  private static Boolean lockHolder(Id accountId, AccessLevel mode) {
+    if (accountId == null) {
+      return false;
+    }
+    List<SObject> holders = Database.queryWithBinds(
+      'SELECT Id FROM Account WHERE Id = :holderId FOR UPDATE',
+      new Map<String, Object>{ 'holderId' => accountId },
+      mode
+    );
+    return holders.size() == 1;
+  }
+
+  /** @description Permissão de criação da ocorrência, revalidada a cada transação. */
+  private static Boolean canGenerateOccurrences() {
+    return AXF_OBJ_FinancialTransaction__c.SObjectType.getDescribe()
+      .isCreateable();
+  }
+
+  /**
+   * @description Identidades rastreadas lidas em memória, com o sinal de TETO excedido.
+   */
+  private class IdentitySnapshot {
+    public Map<Integer, String> bySequence = new Map<Integer, String>();
+    public Boolean truncated = false;
+  }
+
+  /** Teto declarado desta transação (o teste o reduz para exercitar o limite). */
+  private static Integer trackedIdentityCeiling() {
+    return (trackedIdentityCeilingOverrideForTest == null)
+      ? ALT_CLS_ScheduleReplenishment.MAX_TRACKED_IDENTITIES_PER_SCHEDULE
+      : trackedIdentityCeilingOverrideForTest;
+  }
+
+  /**
+   * @description As identidades persistidas do cronograma, por sequência. É a leitura que a
+   * produção faz sob o lock para reconciliar cobertura — nunca o plano montado antes dele.
+   *
+   * A leitura é LIMITADA pelo teto declarado: acima dele a passagem RECUSA em vez de carregar o
+   * histórico inteiro em memória e estourar o heap no meio do savepoint. O teto é asserido em
+   * teste, e a recusa é um código sanitizado (`SCALE_LIMIT_EXCEEDED`) com mensagem acionável.
+   */
+  private static IdentitySnapshot persistedIdentities(Id scheduleId) {
+    IdentitySnapshot snapshot = new IdentitySnapshot();
+    Integer ceiling = trackedIdentityCeiling();
+    Integer probe = ceiling + 1;
+    for (AXF_OBJ_FinancialTransaction__c row : [
+      SELECT AXF_FTX_NUM_Sequence__c, AXF_FTX_EXI_OccurrenceKey__c
+      FROM AXF_OBJ_FinancialTransaction__c
+      WHERE AXF_FTX_LKP_Schedule__c = :scheduleId
+      WITH SYSTEM_MODE
+      LIMIT :probe
+    ]) {
+      if (row.AXF_FTX_NUM_Sequence__c == null) {
+        continue;
+      }
+      snapshot.bySequence.put(
+        row.AXF_FTX_NUM_Sequence__c.intValue(),
+        row.AXF_FTX_EXI_OccurrenceKey__c
+      );
+    }
+    snapshot.truncated = snapshot.bySequence.size() > ceiling;
+    return snapshot;
+  }
+
+  /** @description Definições do cronograma, por Id, para reusar a fórmula aprovada. */
+  private static Map<Id, AXF_OBJ_ScheduleDefinition__c> definitionRows(
+    Id scheduleId
+  ) {
+    Map<Id, AXF_OBJ_ScheduleDefinition__c> definitions = new Map<Id, AXF_OBJ_ScheduleDefinition__c>();
+    for (AXF_OBJ_ScheduleDefinition__c definition : [
+      SELECT
+        Id,
+        AXF_SDF_PKL_Method__c,
+        AXF_SDF_NUM_FirstSequence__c,
+        AXF_SDF_DAT_FirstDueDate__c,
+        AXF_SDF_NUM_PeriodMonths__c,
+        AXF_SDF_NUM_TotalInstallments__c,
+        AXF_SDF_NUM_Principal__c,
+        AXF_SDF_NUM_PeriodRate__c,
+        AXF_SDF_NUM_FixedValue__c,
+        AXF_SDF_NUM_RecurringFee__c,
+        AXF_SDF_NUM_UpfrontFee__c
+      FROM AXF_OBJ_ScheduleDefinition__c
+      WHERE AXF_SDF_LKP_Schedule__c = :scheduleId
+      WITH SYSTEM_MODE
+    ]) {
+      definitions.put(definition.Id, definition);
+    }
+    return definitions;
+  }
+
+  /**
+   * @description Ocorrências a materializar com AS MESMAS porções e evidência da criação.
+   * O VALOR vem da linha do motor único de projeção (nenhum valor é recalculado aqui) e a
+   * decomposição vem da fórmula aprovada, pela mesma autoridade pura da criação.
+   */
+  private static List<AXF_OBJ_FinancialTransaction__c> buildReplenishmentOccurrences(
+    List<Integer> sequences,
+    ALT_CLS_ScheduleProjection.ProjectionResult projection,
+    Map<Id, AXF_OBJ_ScheduleDefinition__c> definitions,
+    AXF_OBJ_FinancialSchedule__c root,
+    String scheduleKey
+  ) {
+    List<AXF_OBJ_FinancialTransaction__c> occurrences = new List<AXF_OBJ_FinancialTransaction__c>();
+    if (sequences.isEmpty()) {
+      return occurrences;
+    }
+    Map<Integer, ALT_CLS_ScheduleProjection.OccurrenceLine> lines = new Map<Integer, ALT_CLS_ScheduleProjection.OccurrenceLine>();
+    for (ALT_CLS_ScheduleProjection.OccurrenceLine line : projection.lines) {
+      if (line != null && line.sequence != null) {
+        lines.put(line.sequence, line);
+      }
+    }
+    Map<Id, List<ALT_CLS_AmortizationSchedule.Occurrence>> formulas = new Map<Id, List<ALT_CLS_AmortizationSchedule.Occurrence>>();
+    Long revision = (root.AXF_FSC_NUM_ProjectionRevision__c == null)
+      ? 0
+      : root.AXF_FSC_NUM_ProjectionRevision__c.longValue();
+    for (Integer sequence : sequences) {
+      ALT_CLS_ScheduleProjection.OccurrenceLine line = lines.get(sequence);
+      if (line == null || line.nominalDueDate == null) {
+        throw new ServiceException(
+          'A projeção autorizada não cobre a sequência ' + sequence + '.'
+        );
+      }
+      AXF_OBJ_ScheduleDefinition__c definition = definitions.get(
+        line.definitionId
+      );
+      if (definition == null) {
+        throw new ServiceException(
+          'A sequência ' +
+            sequence +
+            ' não tem definição vigente do próprio cronograma.'
+        );
+      }
+      Decimal amount = line.amount;
+      if (amount == null || amount < 0 || amount > MAX_AMOUNT) {
+        throw new ServiceException(
+          'O valor da sequência ' +
+            sequence +
+            ' está fora do limite efetivo de magnitude já em uso.'
+        );
+      }
+      Boolean estimated = definition.AXF_SDF_PKL_Method__c == METHOD_ESTIMATED;
+      ALT_CLS_AmortizationSchedule.Occurrence computed = formulaPortions(
+        definition,
+        sequence,
+        formulas
+      );
+      String occurrenceKey = ALT_CLS_ScheduleProjection.occurrenceKey(
+        scheduleKey,
+        sequence
+      );
+      occurrences.add(
+        new AXF_OBJ_FinancialTransaction__c(
+          AXF_FTX_LKP_Account__c = root.AXF_FSC_LKP_Account__c,
+          AXF_FTX_LKP_Contract__c = root.AXF_FSC_LKP_Contract__c,
+          AXF_FTX_LKP_Schedule__c = root.Id,
+          AXF_FTX_LKP_ScheduleDefinition__c = line.definitionId,
+          AXF_FTX_LKP_ScheduleReference__c = line.referenceId,
+          AXF_FTX_EXI_OccurrenceKey__c = occurrenceKey,
+          AXF_FTX_EXI_ClientRequestId__c = ALT_CLS_ScheduleProjection.clientRequestId(
+            occurrenceKey
+          ),
+          AXF_FTX_NUM_CurrentBasis__c = amount,
+          AXF_FTX_NUM_ProjectionRevision__c = revision,
+          AXF_FTX_BOL_BasisFrozen__c = false,
+          AXF_FTX_DAT_NominalDueDate__c = line.nominalDueDate,
+          AXF_FTX_DAT_DueDate__c = line.nominalDueDate,
+          AXF_FTX_DAT_PurchaseDate__c = line.nominalDueDate,
+          AXF_FTX_PKL_ScheduleState__c = OPEN_STATE,
+          AXF_FTX_PKL_Status__c = 'PLANNED',
+          AXF_FTX_PKL_PlanKind__c = 'PLANNED',
+          AXF_FTX_NUM_Magnitude__c = amount,
+          AXF_FTX_CHK_IsEstimated__c = estimated,
+          AXF_FTX_NUM_PrincipalPortion__c = (computed == null)
+            ? null
+            : computed.principalPortion,
+          AXF_FTX_NUM_InterestPortion__c = (computed == null)
+            ? null
+            : computed.interestPortion,
+          AXF_FTX_NUM_FeePortion__c = (computed == null)
+            ? null
+            : computed.feePortion,
+          AXF_FTX_NUM_ClosingBalance__c = (computed == null)
+            ? null
+            : computed.closingBalance,
+          AXF_FTX_CHK_RoundingResidual__c = computed != null &&
+            computed.roundingResidualApplied == true,
+          AXF_FTX_NUM_Sequence__c = sequence,
+          AXF_FTX_PKL_Direction__c = root.AXF_FSC_PKL_Direction__c,
+          AXF_FTX_TXT_CurrencyIsoCode__c = root.AXF_FSC_TXT_CurrencyIsoCode__c,
+          AXF_FTX_NUM_Version__c = 0,
+          // A identidade desta via é a OccurrenceKey. `ScheduleGroupKey` pertence ao namespace de
+          // idempotência de AXF_CLS_ScheduleService: reusá-lo faria os dois escritores devolverem
+          // ALREADY/CONFLICT errados um para o outro.
+          AXF_FTX_TXT_ScheduleGroupKey__c = null,
+          // ESTIMATED não é uma modalidade da política de amortização: o valor vem da referência.
+          AXF_FTX_PKL_Modality__c = estimated
+            ? null
+            : definition.AXF_SDF_PKL_Method__c
+        )
+      );
+    }
+    return occurrences;
+  }
+
+  /**
+   * @description Decomposição da ocorrência pela fórmula aprovada, gerada uma única vez por
+   * definição. `ESTIMATED` não tem fórmula: as porções ficam nulas em vez de zero inventado.
+   */
+  private static ALT_CLS_AmortizationSchedule.Occurrence formulaPortions(
+    AXF_OBJ_ScheduleDefinition__c definition,
+    Integer sequence,
+    Map<Id, List<ALT_CLS_AmortizationSchedule.Occurrence>> formulas
+  ) {
+    if (definition.AXF_SDF_PKL_Method__c == METHOD_ESTIMATED) {
+      return null;
+    }
+    List<ALT_CLS_AmortizationSchedule.Occurrence> occurrences = formulas.get(
+      definition.Id
+    );
+    if (occurrences == null) {
+      occurrences = ALT_CLS_ScheduleProjection.generateOccurrences(definition);
+      formulas.put(definition.Id, occurrences);
+    }
+    if (occurrences.isEmpty()) {
+      throw new ServiceException(
+        'A fórmula aprovada não produziu o cronograma para a definição vigente.'
+      );
+    }
+    Integer first = intOf(definition.AXF_SDF_NUM_FirstSequence__c);
+    if (first == null || first < 1) {
+      first = 1;
+    }
+    Integer index = sequence - first;
+    if (index < 0 || index >= occurrences.size()) {
+      throw new ServiceException(
+        'A definição vigente não cobre a sequência ' + sequence + '.'
+      );
+    }
+    return occurrences[index];
+  }
+
+  /**
+   * @description Persiste os cursores e reconcilia o estado de execução sob o lock. A cobertura
+   * gravada é a reconciliada pela produção e NUNCA fica abaixo do progresso já confirmado: um
+   * cursor persistido que ainda não foi reconciliado (lacuna abaixo dele) não é rebaixado.
+   */
+  private static Long persistSuccess(
+    AXF_OBJ_FinancialSchedule__c locked,
+    Integer coverageSequence,
+    Boolean advanceVersion
+  ) {
+    Long version = financialVersionOf(locked, advanceVersion);
+    Database.update(
+      new List<AXF_OBJ_FinancialSchedule__c>{
+        new AXF_OBJ_FinancialSchedule__c(
+          Id = locked.Id,
+          AXF_FSC_NUM_CoverageSequence__c = coverageSequence,
+          AXF_FSC_NUM_FinancialVersion__c = version,
+          AXF_FSC_NUM_RetryCount__c = 0,
+          AXF_FSC_DT_NextAttemptAt__c = null,
+          AXF_FSC_TXT_LastErrorCode__c = null
+        )
+      },
+      AccessLevel.SYSTEM_MODE
+    );
+    return version;
+  }
+
+  private static Long financialVersionOf(
+    AXF_OBJ_FinancialSchedule__c row,
+    Boolean advance
+  ) {
+    Long current = (row == null ||
+      row.AXF_FSC_NUM_FinancialVersion__c == null)
+      ? 0
+      : row.AXF_FSC_NUM_FinancialVersion__c.longValue();
+    // FinancialVersion avança em toda mudança de composição persistida (materialização é mudança
+    // de composição persistida); uma passagem que não criou nada não a movimenta.
+    return advance ? current + 1 : current;
+  }
+
+  /**
+   * @description Releitura autorizada depois de uma colisão de chave única. Todas as identidades
+   * do plano já existem com a chave CORRETA => replay, nada duplicado. Alguma delas existe sob
+   * OUTRA identidade completa => CONFLICT, nunca sucesso arbitrário. Caso contrário, falha de DML
+   * recuperável.
+   *
+   * Visível ao teste porque a colisão REAL exige uma linha que apareça entre a leitura autorizada e
+   * a escrita — um entrelaçamento que não é produzível dentro de UMA transação de teste. O que o
+   * teste injeta é o `DmlException` de uma colisão de chave única REAL; a classificação e a
+   * reconciliação do cursor continuam sendo esta produção.
+   */
+  @TestVisible
+  private static ReplenishmentResult recoverFromCollision(
+    ReplenishmentRequest request,
+    List<Integer> toCreate,
+    ReplenishmentResult result,
+    Integer trackingStart,
+    DmlException failure
+  ) {
+    IdentitySnapshot snapshot = persistedIdentities(request.scheduleId);
+    if (snapshot.truncated) {
+      return terminalFail(
+        result,
+        OUTCOME_INVALID,
+        'O cronograma tem mais identidades rastreadas do que o teto declarado: a releitura autorizada depois da colisão não é decidível.',
+        ALT_CLS_ScheduleReplenishment.ERROR_SCALE_LIMIT
+      );
+    }
+    Map<Integer, String> identities = snapshot.bySequence;
+    Set<Integer> accounted = new Set<Integer>();
+    for (Integer sequence : identities.keySet()) {
+      if (sequence == null || sequence < trackingStart) {
+        continue;
+      }
+      if (
+        identities.get(sequence) ==
+        ALT_CLS_ScheduleProjection.occurrenceKey(result.scheduleKey, sequence)
+      ) {
+        accounted.add(sequence);
+      }
+    }
+    Boolean allPresent = true;
+    Boolean conflict = false;
+    for (Integer sequence : toCreate) {
+      String existing = identities.get(sequence);
+      String expected = ALT_CLS_ScheduleProjection.occurrenceKey(
+        result.scheduleKey,
+        sequence
+      );
+      if (existing == null) {
+        allPresent = false;
+        continue;
+      }
+      if (existing != expected) {
+        conflict = true;
+        continue;
+      }
+      accounted.add(sequence);
+    }
+    if (conflict) {
+      return terminalFail(
+        result,
+        OUTCOME_CONFLICT,
+        'A releitura autorizada encontrou uma identidade ocupada por outra ocorrência de identidade completa diferente; nada foi gravado.',
+        ALT_CLS_ScheduleReplenishment.ERROR_IDENTITY
+      );
+    }
+    if (!allPresent) {
+      return replenishmentFail(
+        result,
+        OUTCOME_FAILED,
+        'Não foi possível gravar a reposição: ' +
+        sanitize(failure.getDmlType(0)),
+        ALT_CLS_ScheduleReplenishment.ERROR_DML
+      );
+    }
+    AXF_OBJ_FinancialSchedule__c current = readSchedule(request.scheduleId);
+    if (current == null) {
+      return replenishmentFail(
+        result,
+        OUTCOME_UNAVAILABLE,
+        'O cronograma não está mais disponível após a releitura autorizada.',
+        ALT_CLS_ScheduleReplenishment.ERROR_HOLDER_UNAVAILABLE
+      );
+    }
+    Integer coverage = Math.max(
+      ALT_CLS_ScheduleReplenishment.coverageAfter(trackingStart, accounted),
+      intOf(current.AXF_FSC_NUM_CoverageSequence__c)
+    );
+    try {
+      writing = true;
+      result.financialVersion = persistSuccess(current, coverage, false);
+    } catch (DmlException retryFailure) {
+      return replenishmentFail(
+        result,
+        OUTCOME_FAILED,
+        'A reconciliação dos cursores falhou depois da colisão de identidade.',
+        ALT_CLS_ScheduleReplenishment.ERROR_DML
+      );
+    } finally {
+      writing = false;
+    }
+    result.coverageSequence = coverage;
+    result.replay = true;
+    result.outcome = OUTCOME_REPLAY;
+    result.message = 'As identidades elegíveis da janela já existiam com a sequência correta: nada foi duplicado e o cursor foi reconciliado pela produção.';
+    return result;
+  }
+
+  /**
+   * @description Rejeita uma leitura que não serve para gerar, com um código POR DESFECHO — o
+   * estado persistido é a superfície acionável do operador, e colapsar ambiguidade, método sem
+   * valor, leitura inválida e ausência de resultado no mesmo `PROJECTION_BLOCKED` deixaria o
+   * operador sem saber o que corrigir. Divergência de revisão continua recuperável; todo o resto é
+   * PERMANENTE e nunca queima orçamento de retry.
+   */
+  private static ReplenishmentResult rejectProjection(
+    ALT_CLS_ScheduleProjection.ProjectionResult projection,
+    ReplenishmentResult result
+  ) {
+    if (projection == null) {
+      return terminalFail(
+        result,
+        OUTCOME_FAILED,
+        'A leitura autorizada não devolveu resultado algum: não há o que materializar nem como decidir. Desfecho permanente.',
+        ALT_CLS_ScheduleReplenishment.ERROR_PROJECTION_MISSING
+      );
+    }
+    if (projection.outcome == ALT_CLS_ScheduleProjection.OUTCOME_OK) {
+      return null;
+    }
+    if (projection.outcome == ALT_CLS_ScheduleProjection.OUTCOME_FORBIDDEN) {
+      return terminalFail(
+        result,
+        OUTCOME_FORBIDDEN,
+        'A leitura autorizada recusou a autoridade do titular. Provisione o acesso; repetir não resolve.',
+        ALT_CLS_ScheduleReplenishment.ERROR_PRINCIPAL_WITHOUT_VISIBILITY
+      );
+    }
+    if (projection.outcome == ALT_CLS_ScheduleProjection.OUTCOME_NOT_FOUND) {
+      return replenishmentFail(
+        result,
+        OUTCOME_NOT_FOUND,
+        'Cronograma não encontrado neste escopo.',
+        null
+      );
+    }
+    if (projection.outcome == ALT_CLS_ScheduleProjection.OUTCOME_STALE) {
+      return replenishmentFail(
+        result,
+        OUTCOME_FAILED,
+        'A revisão do cronograma mudou durante a leitura: a passagem será repetida com recuo limitado.',
+        ALT_CLS_ScheduleReplenishment.ERROR_PROJECTION_STALE
+      );
+    }
+    if (projection.outcome == ALT_CLS_ScheduleProjection.OUTCOME_AMBIGUOUS) {
+      return terminalFail(
+        result,
+        OUTCOME_INVALID,
+        'Há confirmações de referência conflitantes na mesma ordem econômica: a precedência é AMBÍGUA e o operador precisa resolvê-la explicitamente. Nada foi gravado.',
+        ALT_CLS_ScheduleReplenishment.ERROR_PROJECTION_AMBIGUOUS
+      );
+    }
+    if (projection.outcome == ALT_CLS_ScheduleProjection.OUTCOME_UNSUPPORTED) {
+      return terminalFail(
+        result,
+        OUTCOME_INVALID,
+        'A definição vigente não produz valor para a sequência: método sem valor. O operador precisa corrigir a definição. Nada foi gravado.',
+        ALT_CLS_ScheduleReplenishment.ERROR_PROJECTION_UNSUPPORTED
+      );
+    }
+    if (projection.outcome == ALT_CLS_ScheduleProjection.OUTCOME_INVALID) {
+      return terminalFail(
+        result,
+        OUTCOME_INVALID,
+        'A leitura recusou a faixa rastreada — definição efetiva ausente na sequência, ocorrência duplicada na mesma identidade, identidade que não corresponde à posição, ou ponteiro para definição/referência de outro cronograma. Nada foi gravado: ' +
+        projection.message,
+        ALT_CLS_ScheduleReplenishment.ERROR_PROJECTION_INVALID
+      );
+    }
+    return terminalFail(
+      result,
+      OUTCOME_INVALID,
+      'A leitura autorizada devolveu um desfecho fora do catálogo conhecido: ' +
+      projection.outcome,
+      ALT_CLS_ScheduleReplenishment.ERROR_PROJECTION_BLOCKED
+    );
+  }
+
+  private static String replenishmentOutcome(
+    ReplenishmentResult result,
+    Integer createdCount,
+    Boolean replayedIdentity
+  ) {
+    if (createdCount > 0) {
+      return OUTCOME_GENERATED;
+    }
+    if (replayedIdentity) {
+      return OUTCOME_REPLAY;
+    }
+    return result.termReached ? OUTCOME_COMPLETE : OUTCOME_NOOP;
+  }
+
+  private static String replenishmentMessage(ReplenishmentResult result) {
+    if (result.outcome == OUTCOME_COMPLETE) {
+      return 'Termo concluído: nenhuma ocorrência elegível falta dentro da janela e nada é criado além do termo.';
+    }
+    if (result.outcome == OUTCOME_NOOP) {
+      return 'Nenhuma ocorrência elegível ausente dentro da janela.';
+    }
+    String message =
+      result.createdCount +
+      ' ocorrência(s) criada(s) na janela rolante; cobertura reconciliada em ' +
+      result.coverageSequence +
+      '.';
+    if (result.evaluationCut) {
+      message += ' Cobertura PARCIAL: o motor truncou por teto de avaliação e a passagem não consome tentativa por isso.';
+    }
+    if (result.moreWork) {
+      message += ' Há ocorrência elegível além do limite desta transação: a continuação encadeia.';
+    }
+    return message;
+  }
+
+  private static ReplenishmentResult replenishmentFail(
+    ReplenishmentResult result,
+    String outcome,
+    String message,
+    String errorCode
+  ) {
+    result.outcome = outcome;
+    result.message = message;
+    result.errorCode = (errorCode == null)
+      ? null
+      : ALT_CLS_ScheduleReplenishment.sanitizeErrorCode(errorCode);
+    result.terminal = ALT_CLS_ScheduleReplenishment.isTerminal(
+      result.errorCode
+    );
+    return result;
+  }
+
+  /**
+   * @description Desfecho PERMANENTE: deixa o estado acionável registrado e NÃO consome
+   * orçamento de retry nem agenda tentativa. O registro é operacional — uma única linha, antes de
+   * qualquer efeito financeiro a reverter — e não pode derrubar a classificação já feita.
+   */
+  private static ReplenishmentResult terminalFail(
+    ReplenishmentResult result,
+    String outcome,
+    String message,
+    String errorCode
+  ) {
+    replenishmentFail(result, outcome, message, errorCode);
+    if (result.scheduleId == null || result.errorCode == null) {
+      return result;
+    }
+    try {
+      AXF_OBJ_FinancialSchedule__c state = AXF_CLS_ScheduleReplenishmentStateWriter.read(
+        result.scheduleId
+      );
+      if (state == null) {
+        return result;
+      }
+      Boolean stateWritten = writeOperationalState(
+        result.scheduleId,
+        result.errorCode,
+        intOf(state.AXF_FSC_NUM_RetryCount__c),
+        null
+      );
+      result.statePersisted = stateWritten;
+      result.stateWriteFailure = AXF_CLS_ScheduleReplenishmentStateWriter.failureReason();
+      if (!stateWritten) {
+        // Sem este rastro, uma gravação recusada deixaria o cronograma parecendo parado sem
+        // motivo: o desfecho terminal existe, o estado acionável não, e ninguém saberia.
+        result.message +=
+          ' (O registro do estado acionável NÃO foi gravado: ' +
+          AXF_CLS_ScheduleReplenishmentStateWriter.describeLastOutcome() +
+          '. O cronograma segue no conjunto devido até o registro acontecer.)';
+        System.debug(
+          LoggingLevel.ERROR,
+          'AXF103 reposicao: estado acionavel NAO persistido. ' +
+            AXF_CLS_ScheduleReplenishmentStateWriter.describeLastOutcome() +
+            ' codigo=' +
+            result.errorCode
+        );
+      }
+    } catch (Exception markingFailure) {
+      // Estado acionável é registro operacional; a classificação do desfecho prevalece.
+      result.message += ' (O registro do estado acionável não pôde ser gravado nesta transação.)';
+      result.stateWriteFailure = AXF_CLS_ScheduleReplenishmentStateWriter.REASON_DML_REFUSED;
+    }
+    return result;
+  }
+
+  /**
+   * @description Classificação de uma falha da leitura autorizada. Um desfecho TERMINAL é
+   * permanente e imediato — registrar o estado acionável agora, sem consumir orçamento de retry;
+   * um recuperável segue o recuo limitado. Sem esta distinção, um estouro numérico determinístico
+   * da fórmula aprovada queimaria as três tentativas e viraria `RETRY_EXHAUSTED` por engano.
+   */
+  private static ReplenishmentResult classifyFailure(
+    ReplenishmentResult result,
+    String outcome,
+    String message,
+    String errorCode
+  ) {
+    if (ALT_CLS_ScheduleReplenishment.isTerminal(errorCode)) {
+      return terminalFail(result, outcome, message, errorCode);
+    }
+    return replenishmentFail(result, outcome, message, errorCode);
+  }
+
+  private static String replenishmentErrorCode(Exception failure) {
+    if (failure instanceof System.DmlException) {
+      return ALT_CLS_ScheduleReplenishment.ERROR_DML;
+    }
+    if (failure instanceof System.QueryException) {
+      return ALT_CLS_ScheduleReplenishment.ERROR_QUERY;
+    }
+    if (failure instanceof ALT_CLS_ScheduleCalendar.CalendarException) {
+      return ALT_CLS_ScheduleReplenishment.ERROR_CALENDAR;
+    }
+    if (failure instanceof System.MathException) {
+      // Estouro da fórmula aprovada: determinístico, permanente e imediato.
+      return ALT_CLS_ScheduleReplenishment.ERROR_FORMULA;
+    }
+    return ALT_CLS_ScheduleReplenishment.ERROR_UNEXPECTED;
+  }
+
+  /** Registra um passo do caminho da reposição, para o teste provar a ORDEM dos locks. */
+  private static void traceLockStep(String step) {
+    if (lockTraceForTest != null) {
+      lockTraceForTest.add(step);
+    }
+  }
+
+  private static Long projectionRevisionOf(AXF_OBJ_FinancialSchedule__c row) {
+    if (row == null || row.AXF_FSC_NUM_ProjectionRevision__c == null) {
+      return 0;
+    }
+    return row.AXF_FSC_NUM_ProjectionRevision__c.longValue();
+  }
+
+  private static Integer firstSequenceOf(List<Integer> sequences) {
+    Integer first;
+    for (Integer sequence : sequences) {
+      if (first == null || sequence < first) {
+        first = sequence;
+      }
+    }
+    return first;
+  }
+
+  private static Integer lastSequenceOf(List<Integer> sequences) {
+    Integer last;
+    for (Integer sequence : sequences) {
+      if (last == null || sequence > last) {
+        last = sequence;
+      }
+    }
+    return last;
+  }
+
+  private static Integer intOf(Decimal value) {
+    return (value == null) ? null : Integer.valueOf(value);
   }
 
   // --- normalização e validação -------------------------------------------
@@ -1478,17 +2935,39 @@ public with sharing class ALT_CLS_FinancialScheduleService {
   }
 
   private static Boolean isAuthorized(Id accountId) {
-    if (authorizedOverride != null) {
-      return authorizedOverride.contains(accountId);
+    return authorityVerdict(accountId) == AUTHORITY_GRANTED;
+  }
+
+  /**
+   * @description Veredito de autoridade do titular (AXF-3): autorizado, NEGADO ou NÃO CONCLUÍDO.
+   *
+   * A distinção existe porque `listAuthorizedContexts()` lê os titulares visíveis com `LIMIT 200`,
+   * limitação de infraestrutura DIFERIDA pela spec. Tratar "não vi nos primeiros 200" como
+   * "principal sem visibilidade" gravaria, no caminho do job, um estado PERMANENTE e BLOQUEANTE de
+   * despacho que nenhuma correção de visibilidade limpa — e a limitação é do mecanismo de leitura,
+   * não do principal. O veredito não concluído é NÃO terminal e não grava estado.
+   */
+  private static String authorityVerdict(Id accountId) {
+    if (accountId == null) {
+      return AUTHORITY_DENIED;
     }
-    for (
-      AXF_CLS_AuthorizedContextService.ContextView view : AXF_CLS_AuthorizedContextService.listAuthorizedContexts()
-    ) {
+    if (authorizedOverride != null) {
+      return authorizedOverride.contains(accountId)
+        ? AUTHORITY_GRANTED
+        : AUTHORITY_DENIED;
+    }
+    List<AXF_CLS_AuthorizedContextService.ContextView> contexts = AXF_CLS_AuthorizedContextService.listAuthorizedContexts();
+    for (AXF_CLS_AuthorizedContextService.ContextView view : contexts) {
       if (view.accountId == accountId) {
-        return true;
+        return AUTHORITY_GRANTED;
       }
     }
-    return false;
+    Integer contextLimit = (authorizedContextLimitForTest == null)
+      ? AUTHORIZED_CONTEXT_LIMIT
+      : authorizedContextLimitForTest;
+    return (contexts.size() >= contextLimit)
+      ? AUTHORITY_TRUNCATED
+      : AUTHORITY_DENIED;
   }
 
   private static String sanitize(Object value) {

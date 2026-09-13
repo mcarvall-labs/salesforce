@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<CustomField xmlns="http://soap.sforce.com/2006/04/metadata">
+    <fullName>AXF_SRP_NUM_DispatchBatchSize__c</fullName>
+    <label>Cronogramas por despacho</label>
+    <type>Number</type>
+    <precision>4</precision>
+    <scale>0</scale>
+    <required>true</required>
+    <description
+  >Cronogramas que UMA passagem do agendador entrega a cadeia de trabalho. O excedente nao e descartado: permanece no conjunto devido e e re-selecionado pela propria cadeia ou pela passagem seguinte. Aprovado: 25.</description>
+</CustomField>
