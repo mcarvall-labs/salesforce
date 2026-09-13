@@ -7,8 +7,28 @@
         {labels.subtitle}
       </p>
 
-      <template lwc:if={forbidden}>
+      <template lwc:if={loading}>
+        <lightning-spinner
+          alternative-text={labels.title}
+          size="small"
+        ></lightning-spinner>
+      </template>
+
+      <template lwc:elseif={forbidden}>
         <p role="status">{labels.forbidden}</p>
+      </template>
+
+      <template lwc:elseif={loadError}>
+        <p class="slds-text-color_error" role="alert">{labels.loadError}</p>
+        <lightning-button
+          label={labels.retry}
+          onclick={handleRetry}
+          class="slds-var-m-top_x-small"
+        ></lightning-button>
+      </template>
+
+      <template lwc:elseif={isEmpty}>
+        <p role="status" class="slds-text-body_small">{labels.empty}</p>
       </template>
 
       <template lwc:else>
@@ -32,6 +52,11 @@
                 {s.kindLabel} · {s.institutionLabel} · {s.maskedNumber} ·
                 {s.currencyIsoCode}
               </p>
+              <template lwc:if={s.divergent}>
+                <p class="slds-text-color_error slds-text-body_small">
+                  {labels.divergent}
+                </p>
+              </template>
               <lightning-record-picker
                 label={labels.holder}
                 placeholder={labels.holder}
@@ -47,6 +72,7 @@
                 data-kind={s.kind}
                 data-version={s.version}
                 onclick={handleConfirm}
+                disabled={s.busy}
               ></lightning-button>
             </div>
           </template>
@@ -55,11 +81,51 @@
           <p class="slds-text-body_small">{labels.allDone}</p>
         </template>
 
-        <p
-          class="slds-text-body_small slds-text-color_weak slds-var-m-top_small"
-        >
-          {labels.released}: {releasedCount}
-        </p>
+        <h2 class="slds-text-heading_small slds-var-m-top_medium">
+          {labels.released}
+        </h2>
+        <template lwc:if={hasReleased}>
+          <p
+            class="slds-text-body_small slds-text-color_weak slds-var-m-bottom_x-small"
+          >
+            {labels.fixHelp}
+          </p>
+          <template for:each={released} for:item="s">
+            <div key={s.sourceId} class={s.rowClass}>
+              <p class="slds-text-title_caps slds-text-color_weak">
+                {s.kindLabel} · {s.institutionLabel} · {s.maskedNumber} ·
+                {s.currencyIsoCode}
+              </p>
+              <p class="slds-text-body_small">
+                {labels.currentHolder}: {s.currentHolderLabel}
+              </p>
+              <template lwc:if={s.divergent}>
+                <p class="slds-text-color_error slds-text-body_small">
+                  {labels.divergent}
+                </p>
+              </template>
+              <lightning-record-picker
+                label={labels.holder}
+                placeholder={labels.holder}
+                object-api-name="Account"
+                data-source={s.sourceId}
+                onchange={handleHolder}
+                class="slds-var-m-vertical_x-small"
+              ></lightning-record-picker>
+              <lightning-button
+                label={labels.fix}
+                data-source={s.sourceId}
+                data-kind={s.kind}
+                data-version={s.version}
+                onclick={handleFix}
+                disabled={s.busy}
+              ></lightning-button>
+            </div>
+          </template>
+        </template>
+        <template lwc:else>
+          <p class="slds-text-body_small">{labels.noReleased}</p>
+        </template>
       </template>
     </div>
   </lightning-card>

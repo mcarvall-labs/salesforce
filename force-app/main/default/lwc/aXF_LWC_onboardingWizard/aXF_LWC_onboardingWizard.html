@@ -173,7 +173,12 @@
                 </section>
               </template>
               <template lwc:if={showHolders}>
-                <c-a-x-f_-l-w-c_confirm-source-holders></c-a-x-f_-l-w-c_confirm-source-holders>
+                <template lwc:if={holdersResolved}>
+                  <p class="wizard__welcome">{labels.holdersResolved}</p>
+                </template>
+                <template lwc:else>
+                  <c-a-x-f_-l-w-c_confirm-source-holders></c-a-x-f_-l-w-c_confirm-source-holders>
+                </template>
               </template>
               <template lwc:if={showPeopleAccess}>
                 <c-a-x-f_-l-w-c_add-person-access></c-a-x-f_-l-w-c_add-person-access>

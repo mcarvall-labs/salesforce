@@ -100,8 +100,14 @@
         </template>
 
         <template lwc:if={feedback}>
-          <div class="slds-m-top_small" role="status" aria-live="polite">
+          <div
+            class="slds-m-top_small"
+            data-feedback-variant={feedbackVariant}
+            role="status"
+            aria-live="polite"
+          >
             <lightning-formatted-text
+              class={feedbackClass}
               value={feedback}
             ></lightning-formatted-text>
           </div>
@@ -190,8 +196,14 @@
         </template>
 
         <template lwc:if={feedback}>
-          <div class="slds-m-top_small" role="status" aria-live="polite">
+          <div
+            class="slds-m-top_small"
+            data-feedback-variant={feedbackVariant}
+            role="status"
+            aria-live="polite"
+          >
             <lightning-formatted-text
+              class={feedbackClass}
               value={feedback}
             ></lightning-formatted-text>
           </div>

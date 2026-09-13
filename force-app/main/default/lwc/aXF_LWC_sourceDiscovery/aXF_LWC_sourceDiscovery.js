@@ -15,7 +15,7 @@ import LANG from "@salesforce/i18n/lang";
 // only; the language follows the Salesforce user profile (@salesforce/i18n/lang).
 const PT = {
   TITLE: "Descobrir contas e cartões",
-  HELP: "Carrega as contas e cartões autorizados na aplicação Pluggy configurada. Não importa o histórico e não escolhe o titular.",
+  HELP: "Carrega as contas e cartões autorizados na aplicação Pluggy configurada. Não importa o histórico. O banco e o titular definidos na conexão são aplicados a cada fonte descoberta, que fica liberada para uso.",
   START: "Descobrir agora",
   RESUME: "Continuar descoberta",
   BUSY: "Consultando a Pluggy…",
@@ -33,7 +33,7 @@ const PT = {
   CARD: "Cartão",
   GENERIC_FAIL: "A descoberta não foi concluída.",
   MULTI_INTRO:
-    "Cada banco que você conectou no Pluggy tem um Item ID próprio. Registre cada conexão informando o Item ID, o banco e o titular sugerido; a lista abaixo é somente para consulta. Depois clique em Descobrir agora.",
+    "Cada banco que você conectou no Pluggy tem um Item ID próprio. Registre cada conexão informando o Item ID, o banco e o titular: ao descobrir, o banco e o titular escolhidos aqui são aplicados a cada conta e cartão desta conexão, que ficam liberados para uso. A lista abaixo é somente para consulta.",
   ITEM_ID_LABEL: "Item ID da Pluggy",
   ITEM_ID_HELP:
     "Copie dentro da aplicação configurada no Dashboard da Pluggy: Aplicações → ▶ → conexão → ⋮ → Copiar Item ID. Não use o link do MeuPluggy.",
@@ -41,14 +41,14 @@ const PT = {
   REGISTER_SAVE: "Registrar",
   REGISTER_TITLE: "Registrar conexão Pluggy",
   REGISTER_HELP:
-    "O conector (por exemplo, MeuPluggy) não identifica o banco: selecione a instituição financeira correta e o titular sugerido. O titular é apenas uma sugestão — a confirmação por conta e cartão continua obrigatória.",
+    "O conector (por exemplo, MeuPluggy) não identifica o banco: selecione a instituição financeira correta e o titular. Ao descobrir, o banco e o titular escolhidos aqui são aplicados às contas e cartões desta conexão, que ficam liberados para uso. Um titular já confirmado e diferente nunca é sobrescrito — resolva a divergência em Confirmar titulares.",
   REGISTERING: "Registrando…",
   DISCOVER_ALL: "Descobrir agora",
   DISCOVERING: "Buscando contas e cartões em cada conexão…",
   NO_CONNECTIONS_YET: "Nenhuma conexão cadastrada ainda.",
   COL_ACTIONS: "Ações",
   COL_BANK: "Banco",
-  COL_HOLDER: "Titular sugerido",
+  COL_HOLDER: "Titular",
   COL_CONSENT: "Consentimento",
   COL_FOUND: "Encontrado",
   ACCOUNT_ONE: "1 conta",
@@ -71,13 +71,22 @@ const PT = {
   RUN_PARTIAL: "Descoberta incompleta",
   RUN_FAILED: "Falhou — tente de novo",
   DISCOVER_SUMMARY:
-    "Descoberta concluída: {0} conta(s) e {1} cartão(ões) em custódia.",
+    "Descoberta concluída: {0} conta(s) e {1} cartão(ões) — {2} liberada(s) com titular, {3} pendente(s) e {4} divergente(s).",
+  DISCOVER_PENDING_HINT:
+    " Resolva as pendências e divergências em Confirmar titulares.",
+  DISCOVER_NOTHING_RELEASED:
+    " Nenhuma fonte foi liberada: confira o banco e o titular da conexão.",
+  DISCOVER_CONFLICTS:
+    " {0} fonte(s) com banco ou versão em conflito: o valor existente foi preservado para revisão.",
+  DISCOVER_FAILED:
+    " {0} fonte(s) não puderam ser gravadas: nada foi liberado nelas.",
   DISCOVER_PARTIAL:
     " {0} conexão(ões) não concluíram — revise o consentimento e tente de novo.",
   PENDING_BANK: "Selecionar banco…",
   PENDING_HOLDER: "Selecionar titular…",
   NEW_HOLDER: "Novo titular",
-  REFERENCES_SAVED: "Banco e titular da conexão atualizados.",
+  REFERENCES_SAVED:
+    "Banco e titular da conexão atualizados. Eles serão aplicados às contas e cartões desta conexão na próxima descoberta.",
   HOLDER_TYPE: "Tipo de titular",
   PERSON: "Pessoa",
   BUSINESS: "Empresa",
@@ -88,7 +97,7 @@ const PT = {
   SAVE_HOLDER: "Salvar titular",
   SAVING_HOLDER: "Salvando…",
   CONFIRM_DUPLICATE: "Confirmar mesmo assim",
-  HOLDER_SAVED: "Titular criado e definido como sugestão.",
+  HOLDER_SAVED: "Titular criado e definido nesta conexão.",
   HOLDER_REQUIRED: "Informe os dados do titular.",
   NEW_HOLDER_TITLE: "Cadastrar titular",
   NEW_BANK: "Novo banco",
@@ -112,7 +121,7 @@ const PT = {
 
 const EN = {
   TITLE: "Find accounts and cards",
-  HELP: "Loads the accounts and cards authorized on the configured Pluggy application. It does not import history and does not choose the holder.",
+  HELP: "Loads the accounts and cards authorized on the configured Pluggy application. It does not import history. The bank and holder set on the connection are applied to every discovered source, which becomes available for use.",
   START: "Discover now",
   RESUME: "Resume discovery",
   BUSY: "Querying Pluggy…",
@@ -130,7 +139,7 @@ const EN = {
   CARD: "Card",
   GENERIC_FAIL: "Discovery did not complete.",
   MULTI_INTRO:
-    "Each bank you connected on Pluggy has its own Item ID. Register each connection with its Item ID, bank and suggested holder; the list below is read-only. Then click Discover now.",
+    "Each bank you connected on Pluggy has its own Item ID. Register each connection with its Item ID, bank and holder: on discovery, the bank and holder chosen here are applied to every account and card of this connection, which become available for use. The list below is read-only.",
   ITEM_ID_LABEL: "Pluggy Item ID",
   ITEM_ID_HELP:
     "Copy it inside the configured application in the Pluggy dashboard: Aplicações → ▶ → connection → ⋮ → Copiar Item ID. Do not use the MeuPluggy link.",
@@ -138,14 +147,14 @@ const EN = {
   REGISTER_SAVE: "Register",
   REGISTER_TITLE: "Register Pluggy connection",
   REGISTER_HELP:
-    "The connector (for example, MeuPluggy) does not identify the bank: select the right financial institution and the suggested holder. The holder is only a suggestion — per-account and per-card confirmation remains mandatory.",
+    "The connector (for example, MeuPluggy) does not identify the bank: select the right financial institution and the holder. On discovery, the bank and holder chosen here are applied to this connection's accounts and cards, which become available for use. An already confirmed and different holder is never overwritten — resolve the divergence in Confirm holders.",
   REGISTERING: "Registering…",
   DISCOVER_ALL: "Discover now",
   DISCOVERING: "Fetching accounts and cards on each connection…",
   NO_CONNECTIONS_YET: "No connection registered yet.",
   COL_ACTIONS: "Actions",
   COL_BANK: "Bank",
-  COL_HOLDER: "Suggested holder",
+  COL_HOLDER: "Holder",
   COL_CONSENT: "Consent",
   COL_FOUND: "Found",
   ACCOUNT_ONE: "1 account",
@@ -168,13 +177,22 @@ const EN = {
   RUN_PARTIAL: "Discovery incomplete",
   RUN_FAILED: "Failed — try again",
   DISCOVER_SUMMARY:
-    "Discovery complete: {0} account(s) and {1} card(s) in custody.",
+    "Discovery complete: {0} account(s) and {1} card(s) — {2} released with a holder, {3} pending and {4} divergent.",
+  DISCOVER_PENDING_HINT:
+    " Resolve the pending items and divergences in Confirm holders.",
+  DISCOVER_NOTHING_RELEASED:
+    " No source was released: check the connection's bank and holder.",
+  DISCOVER_CONFLICTS:
+    " {0} source(s) with a bank or version conflict: the existing value was preserved for review.",
+  DISCOVER_FAILED:
+    " {0} source(s) could not be written: nothing was released on them.",
   DISCOVER_PARTIAL:
     " {0} connection(s) did not complete — review the consent and try again.",
   PENDING_BANK: "Select bank…",
   PENDING_HOLDER: "Select holder…",
   NEW_HOLDER: "New holder",
-  REFERENCES_SAVED: "Connection bank and holder updated.",
+  REFERENCES_SAVED:
+    "Connection bank and holder updated. They are applied to this connection's accounts and cards on the next discovery.",
   HOLDER_TYPE: "Holder type",
   PERSON: "Person",
   BUSINESS: "Business",
@@ -185,7 +203,7 @@ const EN = {
   SAVE_HOLDER: "Save holder",
   SAVING_HOLDER: "Saving…",
   CONFIRM_DUPLICATE: "Confirm anyway",
-  HOLDER_SAVED: "Holder created and set as a suggestion.",
+  HOLDER_SAVED: "Holder created and set on this connection.",
   HOLDER_REQUIRED: "Provide the holder details.",
   NEW_HOLDER_TITLE: "Register holder",
   NEW_BANK: "New bank",
@@ -431,6 +449,23 @@ export default class AxfSourceDiscovery extends LightningElement {
   get statusMessage() {
     return this.status && this.status.message;
   }
+  /**
+   * The discovery summary must read as what really happened (AXF-106): an error or a
+   * warning is never presented with the success styling. Mapped onto the SLDS text-colour
+   * utilities already used in this repo.
+   */
+  get feedbackClass() {
+    if (this.feedbackVariant === "error") {
+      return "slds-text-color_error";
+    }
+    if (this.feedbackVariant === "warning") {
+      return "slds-text-color_weak";
+    }
+    if (this.feedbackVariant === "success") {
+      return "slds-text-color_success";
+    }
+    return "";
+  }
 
   // ---- multi-connection (wizard) view ----
   get hasConnections() {
@@ -533,7 +568,21 @@ export default class AxfSourceDiscovery extends LightningElement {
     this.feedback = undefined;
     let accounts = 0;
     let cards = 0;
+    // AXF-106 — what the connection's bank and holder did on the discovered sources.
+    let released = 0;
+    let pending = 0;
+    let divergent = 0;
+    // AXF-106 — a preserved bank divergence (AC8), a stale source and a refused write (AC6)
+    // are outcomes of the run, never a silent success.
+    let bankDivergent = 0;
+    let conflicts = 0;
     let failed = 0;
+    // An incomplete run is a failure of this discovery; a terminal/unknown state or a
+    // thrown error is a hard failure. Both are counted, and the FIRST real cause is kept
+    // so the summary below can never erase it (AXF-106).
+    let incomplete = 0;
+    let hardFailure = 0;
+    let failureCause = "";
     // One connection per Apex transaction — a callout is never issued after a DML.
     for (const c of this.connections) {
       try {
@@ -541,22 +590,84 @@ export default class AxfSourceDiscovery extends LightningElement {
         const r = await startDiscovery({ connectionId: c.connectionId });
         accounts += r.accountsFound || 0;
         cards += r.cardsFound || 0;
+        released += r.released || 0;
+        pending += r.pending || 0;
+        divergent += r.divergent || 0;
+        bankDivergent += r.bankDivergent || 0;
+        conflicts += r.conflicts || 0;
+        failed += r.failed || 0;
+        // A run that left something open — pending, divergent, a preserved bank, a stale
+        // source or a refused write — states it in its own message, and that message is the
+        // cause the summary must never discard (AXF-106).
+        if (
+          !failureCause &&
+          r.message &&
+          (r.complete !== true ||
+            (r.pending || 0) > 0 ||
+            (r.divergent || 0) > 0 ||
+            (r.bankDivergent || 0) > 0 ||
+            (r.conflicts || 0) > 0 ||
+            (r.failed || 0) > 0)
+        ) {
+          failureCause = r.message;
+        }
         if (r.complete !== true) {
-          failed += 1;
+          incomplete += 1;
+          if (r.state === "FAILED_TERMINAL" || r.state === "RESULT_UNKNOWN") {
+            hardFailure += 1;
+          }
         }
       } catch (err) {
-        this.feedback = this.extractMessage(err);
-        failed += 1;
+        incomplete += 1;
+        hardFailure += 1;
+        if (!failureCause) {
+          failureCause = this.extractMessage(err);
+        }
       }
     }
-    let summary = L.DISCOVER_SUMMARY.replace("{0}", accounts).replace(
-      "{1}",
-      cards
-    );
-    if (failed > 0) {
-      summary += L.DISCOVER_PARTIAL.replace("{0}", failed);
+
+    const found = accounts + cards;
+    // The style follows the real result, never the mere absence of a thrown error: a run
+    // that found sources and released none of them is not a success (AXF-106).
+    let variant = "success";
+    if (hardFailure > 0 || failed > 0) {
+      variant = "error";
+    } else if (
+      incomplete > 0 ||
+      pending > 0 ||
+      divergent > 0 ||
+      bankDivergent > 0 ||
+      conflicts > 0 ||
+      (found > 0 && released === 0)
+    ) {
+      variant = "warning";
     }
-    this.setFeedback(summary, failed > 0 ? "warning" : "success");
+
+    let summary = L.DISCOVER_SUMMARY.replace("{0}", accounts)
+      .replace("{1}", cards)
+      .replace("{2}", released)
+      .replace("{3}", pending)
+      .replace("{4}", divergent);
+    if (found > 0 && released === 0) {
+      summary += L.DISCOVER_NOTHING_RELEASED;
+    }
+    if (pending + divergent > 0) {
+      summary += L.DISCOVER_PENDING_HINT;
+    }
+    if (bankDivergent + conflicts > 0) {
+      summary += L.DISCOVER_CONFLICTS.replace("{0}", bankDivergent + conflicts);
+    }
+    if (failed > 0) {
+      summary += L.DISCOVER_FAILED.replace("{0}", failed);
+    }
+    if (incomplete > 0) {
+      summary += L.DISCOVER_PARTIAL.replace("{0}", incomplete);
+    }
+    // The service's own cause survives the summary.
+    if (failureCause) {
+      summary += ` ${failureCause}`;
+    }
+    this.setFeedback(summary, variant);
     await Promise.resolve(refreshApex(this._wiredConnections)).catch(() => {});
     this.running = false;
   }
@@ -807,19 +918,68 @@ export default class AxfSourceDiscovery extends LightningElement {
   }
 
   // ---- single-connection actions ----
+  /**
+   * The single-connection summary must read as what really happened (AXF-106): a refused
+   * write, a preserved bank divergence, a version conflict or a source that was found and
+   * released by nobody is never presented with the success styling.
+   */
+  outcomeVariant(res) {
+    const r = res || {};
+    const found = (r.accountsFound || 0) + (r.cardsFound || 0);
+    const unresolved =
+      (r.pending || 0) +
+      (r.divergent || 0) +
+      (r.bankDivergent || 0) +
+      (r.conflicts || 0);
+    // A refused or blocked run is never a success; the previous contract (a run that did
+    // not succeed is an error unless it is merely retryable) is preserved here.
+    if (
+      (r.failed || 0) > 0 ||
+      r.state === "RUNNING" ||
+      r.state === "FAILED_TERMINAL" ||
+      r.state === "RESULT_UNKNOWN"
+    ) {
+      return "error";
+    }
+    if (
+      r.complete !== true ||
+      r.state === "FAILED_RETRYABLE" ||
+      unresolved > 0 ||
+      (found > 0 && (r.released || 0) === 0)
+    ) {
+      return "warning";
+    }
+    return "success";
+  }
+
+  /** @description The run's own message, plus what it left open. */
+  outcomeMessage(res) {
+    const r = res || {};
+    let text = r.message || L.GENERIC_FAIL;
+    if ((r.failed || 0) > 0) {
+      text += L.DISCOVER_FAILED.replace("{0}", r.failed);
+    }
+    if ((r.pending || 0) + (r.divergent || 0) > 0) {
+      text += L.DISCOVER_PENDING_HINT;
+    }
+    if ((r.bankDivergent || 0) + (r.conflicts || 0) > 0) {
+      text += L.DISCOVER_CONFLICTS.replace(
+        "{0}",
+        (r.bankDivergent || 0) + (r.conflicts || 0)
+      );
+    }
+    return text;
+  }
+
   async handleStart() {
     this.running = true;
     this.feedback = undefined;
     try {
       const res = await startDiscovery({ connectionId: this.connectionId });
       this.status = res;
-      const variant =
-        res.state === "SUCCEEDED"
-          ? "success"
-          : res.state === "FAILED_RETRYABLE"
-            ? "warning"
-            : "error";
-      this.setFeedback(res.message || L.GENERIC_FAIL, variant);
+      // The variant comes from the real outcome of the run, never from the mere absence of
+      // a thrown error (AXF-106).
+      this.setFeedback(this.outcomeMessage(res), this.outcomeVariant(res));
       await this.refresh();
     } catch (e) {
       this.setFeedback(this.extractMessage(e), "error");

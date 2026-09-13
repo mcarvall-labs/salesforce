@@ -8,7 +8,9 @@
  *  - identity/origin/currency come from the API response and AXF-13 (AC2); replay upserts
  *    the same records, never duplicates;
  *  - a discovered account/card enters CUSTODY and is unavailable until a holder is
- *    confirmed by AXF-85 (AC3);
+ *    confirmed by AXF-85 (AC3); AXF-106 applies the bank and the holder chosen on the
+ *    connection to every eligible source and releases them, reporting what stayed
+ *    pending or divergent instead of claiming a false success;
  *  - zero sources after processing all informed connections => an explicit "none found",
  *    never confused with an error or a partial result (AC4);
  *  - interruption / partial pagination / revocation => the run state reflects it and a
@@ -45,6 +47,25 @@ public with sharing class AXF_CLS_PluggyDiscoveryService {
     public Boolean complete;
     @AuraEnabled
     public String message;
+    // AXF-106 — what happened to the connection's bank and holder on the discovered
+    // sources: applied (bank and/or link written), released (released by THIS run,
+    // AVAILABLE with a holder), pending (still in custody), divergent (another holder
+    // already confirmed), bankDivergent (a different canonical bank was preserved, AC8),
+    // conflicts (stale version) and failed (the database refused the write, AC6).
+    @AuraEnabled
+    public Integer applied;
+    @AuraEnabled
+    public Integer released;
+    @AuraEnabled
+    public Integer pending;
+    @AuraEnabled
+    public Integer divergent;
+    @AuraEnabled
+    public Integer bankDivergent;
+    @AuraEnabled
+    public Integer conflicts;
+    @AuraEnabled
+    public Integer failed;
   }
 
   public class DiscoveredSourceDTO {
@@ -103,7 +124,9 @@ public with sharing class AXF_CLS_PluggyDiscoveryService {
         AXF_CON_PKL_ConsentState__c,
         AXF_CON_PKL_CollectionState__c,
         AXF_CON_TXT_InstitutionName__c,
-        AXF_CON_TXT_ConnectorId__c
+        AXF_CON_TXT_ConnectorId__c,
+        AXF_CON_LKP_BankInstitution__c,
+        AXF_CON_LKP_Account__c
       FROM AXF_OBJ_PluggyConnection__c
       WHERE Id = :connectionId
       WITH USER_MODE
@@ -112,6 +135,31 @@ public with sharing class AXF_CLS_PluggyDiscoveryService {
 
     new AXF_CLS_PluggyCollectionControlService()
       .assertCollectionAllowed(connectionId);
+
+    // Sources already known for this connection, read before the callouts (AXF-106):
+    // a new discovery must not send a released source back to custody, and the version
+    // read here is what detects a concurrent confirmation during the callouts as a
+    // CONFLICT instead of overwriting it. SYSTEM_MODE follows the AXF-85 config
+    // workspace: custody sources are hidden from the product and the real authority is
+    // the AXF_CanConfigure gate asserted above.
+    Map<String, AXF_OBJ_BankAccount__c> knownBanks = new Map<String, AXF_OBJ_BankAccount__c>();
+    for (AXF_OBJ_BankAccount__c b : [
+      SELECT Id, AXF_BA_EXI_PluggyAccountId__c, AXF_BA_NUM_Version__c
+      FROM AXF_OBJ_BankAccount__c
+      WHERE AXF_BA_LKP_Connection__c = :connectionId
+      WITH SYSTEM_MODE
+    ]) {
+      knownBanks.put(b.AXF_BA_EXI_PluggyAccountId__c, b);
+    }
+    Map<String, AXF_OBJ_CreditCard__c> knownCards = new Map<String, AXF_OBJ_CreditCard__c>();
+    for (AXF_OBJ_CreditCard__c c : [
+      SELECT Id, AXF_CC_EXI_PluggyAccountId__c, AXF_CC_NUM_Version__c
+      FROM AXF_OBJ_CreditCard__c
+      WHERE AXF_CC_LKP_Connection__c = :connectionId
+      WITH SYSTEM_MODE
+    ]) {
+      knownCards.put(c.AXF_CC_EXI_PluggyAccountId__c, c);
+    }
 
     String runKey = AXF_CLS_IdentityFraming.key(
       new List<Object>{ 'inr-v1', connectionId, 'ACCOUNTS' }
@@ -256,9 +304,33 @@ public with sharing class AXF_CLS_PluggyDiscoveryService {
       );
     }
 
-    Map<String, Object> counts = upsertSources(conn, rawAccounts);
-    Integer accountsFound = (Integer) counts.get('bank');
-    Integer cardsFound = (Integer) counts.get('card');
+    UpsertOutcome upserted = upsertSources(
+      conn,
+      rawAccounts,
+      knownBanks,
+      knownCards
+    );
+    Integer accountsFound = upserted.bankCount;
+    Integer cardsFound = upserted.cardCount;
+
+    // AXF-106: the bank and the holder chosen on the connection are applied to the
+    // sources just discovered, releasing the eligible ones by the AXF-85 rules. The call
+    // is contained: an unexpected failure of the reference application must never escape
+    // before the run record is written, or the IntegrationRun would stay RUNNING and block
+    // the next discovery of this connection for 15 minutes (AC5/AC6).
+    ALT_CLS_SourceHolderConfirmation.ApplyResult apply;
+    try {
+      apply = applyConnectionReferences(conn, upserted.refs);
+    } catch (Exception e) {
+      apply = new ALT_CLS_SourceHolderConfirmation.ApplyResult();
+      apply.outcome = 'FAILED';
+      // Honest partial result: nothing was written, so every source the run carried is
+      // counted as a failure and stays awaiting a holder instead of being reported as a
+      // silent success.
+      apply.failed = upserted.refs.size();
+      apply.pending = upserted.refs.size();
+      apply.message = 'Nao foi possivel aplicar o banco e o titular da conexao as fontes descobertas. Nenhuma fonte foi liberada por esta execucao.';
+    }
 
     Boolean morePages = (page <= totalPages);
     String state;
@@ -274,11 +346,12 @@ public with sharing class AXF_CLS_PluggyDiscoveryService {
       message = 'Nenhuma conta ou cartao encontrado nas conexoes informadas. Autorize na aplicacao correta.';
     } else {
       state = 'SUCCEEDED';
-      message =
-        accountsFound +
-        ' conta(s) e ' +
-        cardsFound +
-        ' cartao(oes) em custodia. Confirme os titulares.';
+      message = discoverySummary(
+        accountsFound,
+        cardsFound,
+        apply,
+        upserted.ignored
+      );
     }
 
     AXF_OBJ_IntegrationRun__c saved = persistRun(
@@ -299,6 +372,15 @@ public with sharing class AXF_CLS_PluggyDiscoveryService {
     r.cardsFound = cardsFound;
     r.complete = (state == 'SUCCEEDED');
     r.message = message;
+    r.applied = apply == null ? 0 : apply.applied;
+    r.released = apply == null ? 0 : apply.released;
+    r.pending = apply == null ? 0 : apply.pending;
+    r.divergent = apply == null ? 0 : apply.divergent;
+    // AC8 / AC6 — a preserved bank divergence, a stale source and a refused write reach the
+    // caller, so a run that skipped or refused a source is never reported as a clean release.
+    r.bankDivergent = apply == null ? 0 : apply.bankDivergent;
+    r.conflicts = apply == null ? 0 : apply.conflicts;
+    r.failed = apply == null ? 0 : apply.failed;
     return r;
   }
 
@@ -309,6 +391,15 @@ public with sharing class AXF_CLS_PluggyDiscoveryService {
     );
     DiscoveryResult r = new DiscoveryResult();
     r.connectionId = connectionId;
+    // AXF-106 — every counter is always stated, so a caller that reads the outcome of the
+    // last discovery never receives nulls for it.
+    r.applied = 0;
+    r.released = 0;
+    r.pending = 0;
+    r.divergent = 0;
+    r.bankDivergent = 0;
+    r.conflicts = 0;
+    r.failed = 0;
     for (AXF_OBJ_IntegrationRun__c run : [
       SELECT
         AXF_INR_PKL_State__c,
@@ -850,13 +941,43 @@ public with sharing class AXF_CLS_PluggyDiscoveryService {
 
   // ---------------------------------------------------------------------------
 
-  private Map<String, Object> upsertSources(
+  private class UpsertOutcome {
+    Integer bankCount = 0;
+    Integer cardCount = 0;
+    // AXF-106: what the provider returned that already belongs to ANOTHER connection (or to
+    // no connection at all). Reported, never written.
+    Integer ignored = 0;
+    List<ALT_CLS_SourceHolderConfirmation.SourceRef> refs = new List<ALT_CLS_SourceHolderConfirmation.SourceRef>();
+  }
+
+  /**
+   * @description Replay-safe upsert of the discovered sources (AXF-13: the provider id is
+   * the idempotent key). Only a source created here enters CUSTODY: an existing one keeps
+   * the availability state — and therefore the holder link — it already had, so a new
+   * discovery never sends a released source back to custody (AXF-106).
+   *
+   * The upsert key is GLOBALLY unique while the caller knows only the sources of THIS
+   * connection, so a provider id that already exists on another connection (or without one)
+   * is read here, preserved untouched and reported as ignored: repointing it to this
+   * connection and forcing it back to CUSTODY would steal a source, and its holder, from the
+   * connection that already owns it (AC6). The sources are returned as refs carrying the
+   * version read before the callouts, which is what lets the application reject a concurrent
+   * change as CONFLICT.
+   */
+  private UpsertOutcome upsertSources(
     AXF_OBJ_PluggyConnection__c conn,
-    List<Map<String, Object>> rawAccounts
+    List<Map<String, Object>> rawAccounts,
+    Map<String, AXF_OBJ_BankAccount__c> knownBanks,
+    Map<String, AXF_OBJ_CreditCard__c> knownCards
   ) {
+    UpsertOutcome out = new UpsertOutcome();
     List<AXF_OBJ_BankAccount__c> banks = new List<AXF_OBJ_BankAccount__c>();
     List<AXF_OBJ_CreditCard__c> cards = new List<AXF_OBJ_CreditCard__c>();
 
+    // First pass: the provider decides what this run is about, so the rows are keyed by the
+    // upsert key before any record object is built.
+    Map<String, Map<String, Object>> bankRows = new Map<String, Map<String, Object>>();
+    Map<String, Map<String, Object>> cardRows = new Map<String, Map<String, Object>>();
     for (Map<String, Object> a : rawAccounts) {
       String providerId = str(a.get('id'));
       if (String.isBlank(providerId)) {
@@ -865,47 +986,80 @@ public with sharing class AXF_CLS_PluggyDiscoveryService {
       // AXF-13: the provider id is the idempotent upsert key.
       String key = AXF_CLS_PluggyFactIdentity.fromProviderId(providerId)
         .pluggyId;
-      String type = str(a.get('type'));
-      Boolean isCard = type == 'CREDIT';
-
-      if (isCard) {
-        Map<String, Object> cd = (Map<String, Object>) a.get('creditData');
-        cards.add(
-          new AXF_OBJ_CreditCard__c(
-            AXF_CC_EXI_PluggyAccountId__c = key,
-            AXF_CC_LKP_Connection__c = conn.Id,
-            AXF_CC_PKL_AvailabilityState__c = 'CUSTODY',
-            AXF_CC_TXT_InstitutionName__c = conn.AXF_CON_TXT_InstitutionName__c,
-            AXF_CC_TXT_ConnectorId__c = conn.AXF_CON_TXT_ConnectorId__c,
-            AXF_CC_TXT_CurrencyIsoCode__c = str(a.get('currencyCode')),
-            AXF_CC_TXT_Brand__c = cd == null ? null : str(cd.get('brand')),
-            AXF_CC_TXT_Level__c = cd == null ? null : str(cd.get('level')),
-            AXF_CC_TXT_LastFourMasked__c = maskLast4(str(a.get('number'))),
-            AXF_CC_CUR_CreditLimit__c = cd == null
-              ? null
-              : dec(cd.get('creditLimit')),
-            AXF_CC_CUR_AvailableLimit__c = cd == null
-              ? null
-              : dec(cd.get('availableCreditLimit')),
-            AXF_CC_DT_DiscoveredAt__c = Datetime.now()
-          )
-        );
+      if (str(a.get('type')) == 'CREDIT') {
+        cardRows.put(key, a);
       } else {
-        banks.add(
-          new AXF_OBJ_BankAccount__c(
-            AXF_BA_EXI_PluggyAccountId__c = key,
-            AXF_BA_LKP_Connection__c = conn.Id,
-            AXF_BA_PKL_AvailabilityState__c = 'CUSTODY',
-            AXF_BA_TXT_InstitutionName__c = conn.AXF_CON_TXT_InstitutionName__c,
-            AXF_BA_TXT_ConnectorId__c = conn.AXF_CON_TXT_ConnectorId__c,
-            AXF_BA_TXT_CurrencyIsoCode__c = str(a.get('currencyCode')),
-            AXF_BA_CUR_CurrentBalance__c = dec(a.get('balance')),
-            AXF_BA_TXT_Type__c = str(a.get('subtype')),
-            AXF_BA_TXT_NumberMasked__c = maskLast4(str(a.get('number'))),
-            AXF_BA_DT_DiscoveredAt__c = Datetime.now()
-          )
-        );
+        bankRows.put(key, a);
       }
+    }
+    // The provider really returned them, so they are found even when they are not written.
+    out.bankCount = bankRows.size();
+    out.cardCount = cardRows.size();
+
+    // A key this connection does not know may still exist somewhere else in the org: those
+    // rows belong to another connection and are left exactly as they are.
+    Set<String> foreignBanks = foreignBankKeys(
+      bankRows.keySet(),
+      knownBanks.keySet(),
+      conn.Id
+    );
+    Set<String> foreignCards = foreignCardKeys(
+      cardRows.keySet(),
+      knownCards.keySet(),
+      conn.Id
+    );
+
+    for (String key : bankRows.keySet()) {
+      if (foreignBanks.contains(key)) {
+        out.ignored++;
+        continue;
+      }
+      Map<String, Object> a = bankRows.get(key);
+      AXF_OBJ_BankAccount__c row = new AXF_OBJ_BankAccount__c(
+        AXF_BA_EXI_PluggyAccountId__c = key,
+        AXF_BA_LKP_Connection__c = conn.Id,
+        AXF_BA_TXT_InstitutionName__c = conn.AXF_CON_TXT_InstitutionName__c,
+        AXF_BA_TXT_ConnectorId__c = conn.AXF_CON_TXT_ConnectorId__c,
+        AXF_BA_TXT_CurrencyIsoCode__c = str(a.get('currencyCode')),
+        AXF_BA_CUR_CurrentBalance__c = dec(a.get('balance')),
+        AXF_BA_TXT_Type__c = str(a.get('subtype')),
+        AXF_BA_TXT_NumberMasked__c = maskLast4(str(a.get('number'))),
+        AXF_BA_DT_DiscoveredAt__c = Datetime.now()
+      );
+      if (!knownBanks.containsKey(key)) {
+        row.AXF_BA_PKL_AvailabilityState__c = 'CUSTODY';
+      }
+      banks.add(row);
+    }
+
+    for (String key : cardRows.keySet()) {
+      if (foreignCards.contains(key)) {
+        out.ignored++;
+        continue;
+      }
+      Map<String, Object> a = cardRows.get(key);
+      Map<String, Object> cd = (Map<String, Object>) a.get('creditData');
+      AXF_OBJ_CreditCard__c row = new AXF_OBJ_CreditCard__c(
+        AXF_CC_EXI_PluggyAccountId__c = key,
+        AXF_CC_LKP_Connection__c = conn.Id,
+        AXF_CC_TXT_InstitutionName__c = conn.AXF_CON_TXT_InstitutionName__c,
+        AXF_CC_TXT_ConnectorId__c = conn.AXF_CON_TXT_ConnectorId__c,
+        AXF_CC_TXT_CurrencyIsoCode__c = str(a.get('currencyCode')),
+        AXF_CC_TXT_Brand__c = cd == null ? null : str(cd.get('brand')),
+        AXF_CC_TXT_Level__c = cd == null ? null : str(cd.get('level')),
+        AXF_CC_TXT_LastFourMasked__c = maskLast4(str(a.get('number'))),
+        AXF_CC_CUR_CreditLimit__c = cd == null
+          ? null
+          : dec(cd.get('creditLimit')),
+        AXF_CC_CUR_AvailableLimit__c = cd == null
+          ? null
+          : dec(cd.get('availableCreditLimit')),
+        AXF_CC_DT_DiscoveredAt__c = Datetime.now()
+      );
+      if (!knownCards.containsKey(key)) {
+        row.AXF_CC_PKL_AvailabilityState__c = 'CUSTODY';
+      }
+      cards.add(row);
     }
 
     if (!banks.isEmpty()) {
@@ -914,10 +1068,195 @@ public with sharing class AXF_CLS_PluggyDiscoveryService {
     if (!cards.isEmpty()) {
       upsert as user cards AXF_CC_EXI_PluggyAccountId__c;
     }
-    return new Map<String, Object>{
-      'bank' => banks.size(),
-      'card' => cards.size()
-    };
+
+    for (AXF_OBJ_BankAccount__c b : banks) {
+      AXF_OBJ_BankAccount__c known = knownBanks.get(
+        b.AXF_BA_EXI_PluggyAccountId__c
+      );
+      out.refs.add(
+        sourceRef(
+          b.Id,
+          'BANK',
+          known == null ? null : safeInt(known.AXF_BA_NUM_Version__c)
+        )
+      );
+    }
+    for (AXF_OBJ_CreditCard__c c : cards) {
+      AXF_OBJ_CreditCard__c known = knownCards.get(
+        c.AXF_CC_EXI_PluggyAccountId__c
+      );
+      out.refs.add(
+        sourceRef(
+          c.Id,
+          'CARD',
+          known == null ? null : safeInt(known.AXF_CC_NUM_Version__c)
+        )
+      );
+    }
+    return out;
+  }
+
+  /**
+   * @description Provider ids this connection does not know and that already exist for
+   * ANOTHER connection (or for none). Bounded to the ids the run really returned, so the
+   * globally-unique key is never resolved with an unbounded read.
+   */
+  private static Set<String> foreignBankKeys(
+    Set<String> keys,
+    Set<String> knownKeys,
+    Id connectionId
+  ) {
+    Set<String> unknown = new Set<String>();
+    for (String key : keys) {
+      if (!knownKeys.contains(key)) {
+        unknown.add(key);
+      }
+    }
+    Set<String> foreign = new Set<String>();
+    if (unknown.isEmpty()) {
+      return foreign;
+    }
+    for (AXF_OBJ_BankAccount__c b : [
+      SELECT Id, AXF_BA_EXI_PluggyAccountId__c, AXF_BA_LKP_Connection__c
+      FROM AXF_OBJ_BankAccount__c
+      WHERE AXF_BA_EXI_PluggyAccountId__c IN :unknown
+      WITH SYSTEM_MODE
+    ]) {
+      if (b.AXF_BA_LKP_Connection__c != connectionId) {
+        foreign.add(b.AXF_BA_EXI_PluggyAccountId__c);
+      }
+    }
+    return foreign;
+  }
+
+  /** @description Credit-card twin of {@link foreignBankKeys}. */
+  private static Set<String> foreignCardKeys(
+    Set<String> keys,
+    Set<String> knownKeys,
+    Id connectionId
+  ) {
+    Set<String> unknown = new Set<String>();
+    for (String key : keys) {
+      if (!knownKeys.contains(key)) {
+        unknown.add(key);
+      }
+    }
+    Set<String> foreign = new Set<String>();
+    if (unknown.isEmpty()) {
+      return foreign;
+    }
+    for (AXF_OBJ_CreditCard__c c : [
+      SELECT Id, AXF_CC_EXI_PluggyAccountId__c, AXF_CC_LKP_Connection__c
+      FROM AXF_OBJ_CreditCard__c
+      WHERE AXF_CC_EXI_PluggyAccountId__c IN :unknown
+      WITH SYSTEM_MODE
+    ]) {
+      if (c.AXF_CC_LKP_Connection__c != connectionId) {
+        foreign.add(c.AXF_CC_EXI_PluggyAccountId__c);
+      }
+    }
+    return foreign;
+  }
+
+  private static ALT_CLS_SourceHolderConfirmation.SourceRef sourceRef(
+    Id sourceId,
+    String kind,
+    Integer expectedVersion
+  ) {
+    ALT_CLS_SourceHolderConfirmation.SourceRef ref = new ALT_CLS_SourceHolderConfirmation.SourceRef();
+    ref.sourceId = sourceId;
+    ref.kind = kind;
+    ref.expectedVersion = expectedVersion;
+    return ref;
+  }
+
+  private static ALT_CLS_SourceHolderConfirmation.ApplyResult applyConnectionReferences(
+    AXF_OBJ_PluggyConnection__c conn,
+    List<ALT_CLS_SourceHolderConfirmation.SourceRef> refs
+  ) {
+    ALT_CLS_SourceHolderConfirmation.ConnectionReferenceInput input = new ALT_CLS_SourceHolderConfirmation.ConnectionReferenceInput();
+    input.connectionId = conn.Id;
+    input.bankInstitutionId = conn.AXF_CON_LKP_BankInstitution__c;
+    input.holderId = conn.AXF_CON_LKP_Account__c;
+    input.sources = refs;
+    return new ALT_CLS_SourceHolderConfirmation()
+      .applyConnectionReferences(input);
+  }
+
+  /**
+   * @description What the run did with the connection's bank and holder (AXF-106). Never
+   * claims success a source did not have: applied, released, pending, divergent, bank
+   * divergence, version conflict, ignored and refused writes are stated separately, and a
+   * run that refused every write repeats the service message instead of a success line
+   * (AC6/AC8). `foreign` counts the sources the provider returned that already belong to
+   * ANOTHER connection: they are preserved and stated, never silently written.
+   */
+  private static String discoverySummary(
+    Integer accounts,
+    Integer cards,
+    ALT_CLS_SourceHolderConfirmation.ApplyResult apply,
+    Integer foreign
+  ) {
+    String head =
+      accounts +
+      ' conta(s) e ' +
+      cards +
+      ' cartao(oes) descobertos. ' +
+      ((foreign == null ||
+        foreign == 0)
+        ? ''
+        : foreign +
+          ' fonte(s) ja pertencem a outra conexao e foram preservadas (nao religadas nem devolvidas a custodia). ');
+    if (apply == null) {
+      return head + 'Confirme os titulares das fontes.';
+    }
+    if (apply.outcome == 'FORBIDDEN') {
+      return head +
+        'Sem autorizacao para aplicar o banco e o titular da conexao: as fontes seguem pendentes.';
+    }
+    if (apply.outcome == 'INVALID' || apply.outcome == 'NOT_FOUND') {
+      return head +
+        'Banco e titular da conexao nao foram aplicados. ' +
+        apply.message;
+    }
+    // A refused write is never hidden behind a success marker (AC6): the service's own
+    // counters and cause are repeated verbatim instead of being summarised away.
+    if (apply.failed > 0 || apply.outcome == 'FAILED') {
+      return head + apply.message + HOLDERS_HINT;
+    }
+    String tail = (apply.pending > 0 ||
+      apply.divergent > 0 ||
+      apply.conflicts > 0 ||
+      apply.bankDivergent > 0)
+      ? HOLDERS_HINT
+      : '';
+    return head +
+      apply.applied +
+      ' aplicada(s), ' +
+      apply.reused +
+      ' reutilizada(s), ' +
+      apply.released +
+      ' liberada(s) com titular, ' +
+      apply.pending +
+      ' pendente(s), ' +
+      apply.divergent +
+      ' divergente(s) de titular, ' +
+      apply.bankDivergent +
+      ' com banco divergente, ' +
+      apply.conflicts +
+      ' em conflito de versao, ' +
+      apply.ignored +
+      ' ignorada(s) e ' +
+      apply.failed +
+      ' com falha.' +
+      tail;
+  }
+
+  /** @description Where the administrator resolves whatever a run left open (AXF-106). */
+  private static final String HOLDERS_HINT = ' Resolva as pendencias em Confirmar titulares.';
+
+  private static Integer safeInt(Decimal d) {
+    return d == null ? 0 : d.intValue();
   }
 
   private AXF_OBJ_IntegrationRun__c persistRun(
@@ -983,6 +1322,13 @@ public with sharing class AXF_CLS_PluggyDiscoveryService {
     r.cardsFound = cardsCount;
     r.complete = false;
     r.message = message;
+    r.applied = 0;
+    r.released = 0;
+    r.pending = 0;
+    r.divergent = 0;
+    r.bankDivergent = 0;
+    r.conflicts = 0;
+    r.failed = 0;
     return r;
   }
 

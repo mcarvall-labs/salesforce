@@ -344,7 +344,59 @@ describe("c-aXF_LWC_sourceDiscovery", () => {
     expect(startDiscovery).toHaveBeenCalledWith({ connectionId: "c2" });
   });
 
-  it("offers 'Descobrir agora' and explains no history / no holder", async () => {
+  it("wizard mode: reports what the connection references did to the sources", async () => {
+    startDiscovery.mockResolvedValue({
+      state: "SUCCEEDED",
+      complete: true,
+      accountsFound: 1,
+      cardsFound: 1,
+      applied: 2,
+      released: 1,
+      pending: 1,
+      divergent: 0
+    });
+    const el = buildWizard();
+    getConnections.emit([
+      {
+        connectionId: "c1",
+        institution: "Banco A",
+        itemIdHint: "…1",
+        consentState: "ACTIVE"
+      }
+    ]);
+    await flush();
+
+    button(el, /Descobrir agora/).click();
+    await flush();
+    await flush();
+    await flush();
+    await flush();
+    await flush();
+
+    const text = el.shadowRoot.querySelector(
+      "[aria-live='polite'] lightning-formatted-text"
+    ).value;
+    expect(text).toMatch(/1 liberada\(s\) com titular/);
+    expect(text).toMatch(/1 pendente\(s\)/);
+    expect(text).toMatch(/0 divergente\(s\)/);
+    expect(text).toMatch(/Confirmar titulares/);
+  });
+
+  it("explains that the connection bank and holder are applied on discovery", async () => {
+    const el = buildWizard();
+    getConnections.emit([]);
+    await flush();
+
+    expect(el.shadowRoot.textContent).toMatch(
+      /banco e o titular escolhidos aqui são aplicados/i
+    );
+    button(el, /^Registrar conexão$/).click();
+    await flush();
+    expect(el.shadowRoot.textContent).toMatch(/nunca é sobrescrito/i);
+    expect(el.shadowRoot.textContent).toMatch(/Confirmar titulares/);
+  });
+
+  it("offers 'Descobrir agora' and explains that history is not imported", async () => {
     const el = build();
     getStatus.emit({ state: null, complete: false });
     getDiscovered.emit([]);
@@ -442,5 +494,204 @@ describe("c-aXF_LWC_sourceDiscovery", () => {
     expect(el.shadowRoot.querySelector("[role='alert']").textContent).toMatch(
       /Não foi possível carregar/i
     );
+  });
+
+  // ---- AXF-106: the summary never erases the cause nor claims a false success ----
+
+  const feedbackText = (el) =>
+    el.shadowRoot.querySelector("[aria-live='polite'] lightning-formatted-text")
+      .value;
+  // the style really rendered for the summary (AXF-106)
+  const feedbackVariant = (el) =>
+    el.shadowRoot
+      .querySelector("[data-feedback-variant]")
+      .getAttribute("data-feedback-variant");
+
+  const discoverAll = async (el) => {
+    button(el, /Descobrir agora/).click();
+    await flush();
+    await flush();
+    await flush();
+    await flush();
+    await flush();
+  };
+
+  it("does not claim success when nothing was released", async () => {
+    startDiscovery.mockResolvedValue({
+      state: "SUCCEEDED",
+      complete: true,
+      accountsFound: 2,
+      cardsFound: 0,
+      applied: 0,
+      released: 0,
+      pending: 2,
+      divergent: 0,
+      message: "2 conta(s) descobertos."
+    });
+    const el = buildWizard();
+    getConnections.emit([
+      { connectionId: "c1", institution: "Banco A", consentState: "ACTIVE" }
+    ]);
+    await flush();
+    await discoverAll(el);
+
+    expect(feedbackText(el)).toMatch(/Nenhuma fonte foi liberada/i);
+    expect(feedbackVariant(el)).toBe("warning");
+  });
+
+  it("styles a fully released discovery as a success", async () => {
+    startDiscovery.mockResolvedValue({
+      state: "SUCCEEDED",
+      complete: true,
+      accountsFound: 1,
+      cardsFound: 1,
+      applied: 2,
+      released: 2,
+      pending: 0,
+      divergent: 0,
+      message: "ok"
+    });
+    const el = buildWizard();
+    getConnections.emit([
+      { connectionId: "c1", institution: "Banco A", consentState: "ACTIVE" }
+    ]);
+    await flush();
+    await discoverAll(el);
+
+    expect(feedbackVariant(el)).toBe("success");
+    expect(feedbackText(el)).toMatch(/2 liberada\(s\) com titular/);
+  });
+
+  it("preserves the service cause of a terminal failure and styles it as an error", async () => {
+    startDiscovery.mockResolvedValue({
+      state: "FAILED_TERMINAL",
+      complete: false,
+      accountsFound: 0,
+      cardsFound: 0,
+      released: 0,
+      pending: 0,
+      divergent: 0,
+      message:
+        "A aplicacao nao tem autorizacao para listar as contas desta conexao. Reautorize."
+    });
+    const el = buildWizard();
+    getConnections.emit([
+      { connectionId: "c1", institution: "Banco A", consentState: "ACTIVE" }
+    ]);
+    await flush();
+    await discoverAll(el);
+
+    expect(feedbackText(el)).toMatch(/Reautorize/);
+    expect(feedbackText(el)).toMatch(/não concluíram/i);
+    expect(feedbackVariant(el)).toBe("error");
+  });
+
+  it("keeps a thrown error as the cause instead of the generic summary", async () => {
+    startDiscovery.mockRejectedValue({
+      body: { message: "Você não tem autorização para descobrir fontes." }
+    });
+    const el = buildWizard();
+    getConnections.emit([
+      { connectionId: "c1", institution: "Banco A", consentState: "ACTIVE" }
+    ]);
+    await flush();
+    await discoverAll(el);
+
+    expect(feedbackText(el)).toMatch(/não tem autorização para descobrir/i);
+    expect(feedbackVariant(el)).toBe("error");
+  });
+
+  // ---- AXF-106 AC6: the single-connection view never reports a false success either ----
+
+  // The connection view renders the run status AND the summary; the summary is the one
+  // carrying the variant, exactly as the multi-connection summary does.
+  const singleFeedbackText = (el) =>
+    el.shadowRoot.querySelector(
+      "[data-feedback-variant] lightning-formatted-text"
+    ).value;
+
+  it("reports an error on the connection view when the run failed a source", async () => {
+    startDiscovery.mockResolvedValue({
+      state: "SUCCEEDED",
+      complete: true,
+      accountsFound: 2,
+      cardsFound: 0,
+      applied: 1,
+      released: 1,
+      pending: 1,
+      divergent: 0,
+      bankDivergent: 0,
+      conflicts: 0,
+      failed: 1,
+      message: "2 conta(s) e 0 cartao(oes) descobertos."
+    });
+    const el = build();
+    getStatus.emit({ state: null, complete: false });
+    getDiscovered.emit([]);
+    await flush();
+
+    button(el, /Descobrir agora/).click();
+    await flush();
+    await flush();
+    await flush();
+
+    expect(feedbackVariant(el)).toBe("error");
+    expect(singleFeedbackText(el)).toMatch(/não puderam ser gravadas/i);
+    expect(singleFeedbackText(el)).toMatch(/nada foi liberado nelas/i);
+  });
+
+  it("warns on the connection view when a source was found and none released", async () => {
+    startDiscovery.mockResolvedValue({
+      state: "SUCCEEDED",
+      complete: true,
+      accountsFound: 1,
+      cardsFound: 0,
+      released: 0,
+      pending: 0,
+      divergent: 0,
+      bankDivergent: 0,
+      conflicts: 0,
+      failed: 0,
+      message: "1 conta(s) e 0 cartao(oes) descobertos."
+    });
+    const el = build();
+    getStatus.emit({ state: null, complete: false });
+    getDiscovered.emit([]);
+    await flush();
+
+    button(el, /Descobrir agora/).click();
+    await flush();
+    await flush();
+    await flush();
+
+    expect(feedbackVariant(el)).toBe("warning");
+  });
+
+  it("styles a fully released connection run as a success", async () => {
+    startDiscovery.mockResolvedValue({
+      state: "SUCCEEDED",
+      complete: true,
+      accountsFound: 1,
+      cardsFound: 0,
+      applied: 1,
+      released: 1,
+      pending: 0,
+      divergent: 0,
+      bankDivergent: 0,
+      conflicts: 0,
+      failed: 0,
+      message: "1 conta(s) e 0 cartao(oes) descobertos."
+    });
+    const el = build();
+    getStatus.emit({ state: null, complete: false });
+    getDiscovered.emit([]);
+    await flush();
+
+    button(el, /Descobrir agora/).click();
+    await flush();
+    await flush();
+    await flush();
+
+    expect(feedbackVariant(el)).toBe("success");
   });
 });
