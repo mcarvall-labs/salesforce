@@ -9,5 +9,5 @@
   <caseSensitive>true</caseSensitive>
   <required>true</required>
   <description
-  >Identidade determinística do cronograma: SHA-256 hex minúsculo de frame(tag de versão, titular, natureza, moeda, método, faixa e chave do cliente). Reenvio equivalente devolve o resultado original; identidade truncada divergente é CONFLICT, nunca replay bem-sucedido (AXF-103).</description>
+  >Identidade determinística do cronograma, estável sob emenda de fórmula: SHA-256 hex minúsculo de frame(tag de versão, titular, contrato, natureza, moeda, método, sequência inicial, primeiro vencimento, periodicidade, dia âncora, total de parcelas, sequência de rastreamento e discriminador do fluxo). Principal, taxa e tarifas não participam: emendar a fórmula cria um payload diferente sob a MESMA identidade e devolve CONFLICT, nunca um segundo cronograma. Reenvio equivalente devolve o resultado original; identidade truncada divergente é CONFLICT, nunca replay bem-sucedido (AXF-103).</description>
 </CustomField>

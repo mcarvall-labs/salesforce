@@ -460,7 +460,17 @@ private class ALT_CLS_FinancialScheduleServiceTest {
         request(second.Id, 'INSTALLMENT', 12, 1, Date.today(), 'axf103-b')
       }
     );
+    // Um desfecho por entrada: um consumidor que associa por índice não lê o resultado errado.
+    Assert.areEqual(2, mixed.size(), 'Um resultado por entrada');
     Assert.areEqual('MULTI_HOLDER', mixed[0].outcome, mixed[0].message);
+    Assert.areEqual('MULTI_HOLDER', mixed[1].outcome, mixed[1].message);
+    Assert.isNotNull(mixed[0].scheduleKey);
+    Assert.isNotNull(mixed[1].scheduleKey);
+    Assert.areNotEqual(
+      mixed[0].scheduleKey,
+      mixed[1].scheduleKey,
+      'Cada desfecho carrega a identidade da própria entrada'
+    );
 
     List<ALT_CLS_FinancialScheduleService.CreateResult> sameHolder = ALT_CLS_FinancialScheduleService.createSchedules(
       new List<ALT_CLS_FinancialScheduleService.CreateInput>{
@@ -468,7 +478,15 @@ private class ALT_CLS_FinancialScheduleServiceTest {
         request(first.Id, 'INSTALLMENT', 12, 1, Date.today(), 'axf103-d')
       }
     );
+    Assert.areEqual(2, sameHolder.size(), 'Um resultado por entrada');
     Assert.areEqual('INVALID', sameHolder[0].outcome, sameHolder[0].message);
+    Assert.areEqual('INVALID', sameHolder[1].outcome, sameHolder[1].message);
+    Assert.isNotNull(sameHolder[0].scheduleKey);
+    Assert.areNotEqual(
+      sameHolder[0].scheduleKey,
+      sameHolder[1].scheduleKey,
+      'A rejeição em massa não confunde as identidades das entradas'
+    );
 
     Assert.areEqual(0, [SELECT COUNT() FROM AXF_OBJ_FinancialSchedule__c]);
     Assert.areEqual(0, [SELECT COUNT() FROM AXF_OBJ_FinancialTransaction__c]);
@@ -530,12 +548,25 @@ private class ALT_CLS_FinancialScheduleServiceTest {
       SELECT
         AXF_SRF_PKL_Kind__c,
         AXF_SRF_NUM_RecurringAmount__c,
-        AXF_SRF_NUM_EconomicSequence__c
+        AXF_SRF_NUM_EconomicSequence__c,
+        AXF_SRF_DT_ConfirmedAt__c,
+        AXF_SRF_LKP_ConfirmedBy__c
       FROM AXF_OBJ_ScheduleReference__c
       WHERE Id = :result.referenceId
     ];
     Assert.areEqual('INITIAL', reference.AXF_SRF_PKL_Kind__c);
     Assert.areEqual(500.00, reference.AXF_SRF_NUM_RecurringAmount__c);
+    // As colunas de confirmação de um objeto de evidência imutável não ficam nulas para sempre:
+    // o comando autorizado que cria a referência inicial é quem confirma.
+    Assert.isNotNull(
+      reference.AXF_SRF_DT_ConfirmedAt__c,
+      'A referência inicial é confirmada na criação'
+    );
+    Assert.areEqual(
+      UserInfo.getUserId(),
+      reference.AXF_SRF_LKP_ConfirmedBy__c,
+      'Quem confirmou a referência inicial é o ator do comando'
+    );
     Assert.areEqual(
       result.referenceId,
       [
@@ -552,7 +583,12 @@ private class ALT_CLS_FinancialScheduleServiceTest {
         AXF_FTX_CHK_IsEstimated__c,
         AXF_FTX_NUM_Magnitude__c,
         AXF_FTX_PKL_Modality__c,
-        AXF_FTX_LKP_ScheduleReference__c
+        AXF_FTX_LKP_ScheduleReference__c,
+        AXF_FTX_NUM_PrincipalPortion__c,
+        AXF_FTX_NUM_InterestPortion__c,
+        AXF_FTX_NUM_FeePortion__c,
+        AXF_FTX_NUM_ClosingBalance__c,
+        AXF_FTX_CHK_RoundingResidual__c
       FROM AXF_OBJ_FinancialTransaction__c
       WHERE AXF_FTX_LKP_Schedule__c = :result.scheduleId
     ]) {
@@ -563,6 +599,12 @@ private class ALT_CLS_FinancialScheduleServiceTest {
         'ESTIMATED não é uma modalidade da política de amortização'
       );
       Assert.areEqual(result.referenceId, row.AXF_FTX_LKP_ScheduleReference__c);
+      // Sem fórmula aprovada não há decomposição: nula, e não zero inventado.
+      Assert.isNull(row.AXF_FTX_NUM_PrincipalPortion__c);
+      Assert.isNull(row.AXF_FTX_NUM_InterestPortion__c);
+      Assert.isNull(row.AXF_FTX_NUM_FeePortion__c);
+      Assert.isNull(row.AXF_FTX_NUM_ClosingBalance__c);
+      Assert.isFalse(row.AXF_FTX_CHK_RoundingResidual__c);
     }
   }
 
@@ -1647,5 +1689,650 @@ private class ALT_CLS_FinancialScheduleServiceTest {
     Assert.areEqual(5, result.evaluatedCount);
     Assert.areEqual(5, result.throughSequence);
     Assert.isFalse(result.complete);
+  }
+
+  /** Linhas materializadas do cronograma, ordenadas pela sequência absoluta. */
+  private static List<AXF_OBJ_FinancialTransaction__c> materializedRows(
+    Id scheduleId
+  ) {
+    return [
+      SELECT
+        AXF_FTX_NUM_Sequence__c,
+        AXF_FTX_NUM_Magnitude__c,
+        AXF_FTX_NUM_CurrentBasis__c,
+        AXF_FTX_NUM_PrincipalPortion__c,
+        AXF_FTX_NUM_InterestPortion__c,
+        AXF_FTX_NUM_FeePortion__c,
+        AXF_FTX_NUM_ClosingBalance__c,
+        AXF_FTX_CHK_RoundingResidual__c
+      FROM AXF_OBJ_FinancialTransaction__c
+      WHERE AXF_FTX_LKP_Schedule__c = :scheduleId
+      ORDER BY AXF_FTX_NUM_Sequence__c
+    ];
+  }
+
+  /**
+   * Contrato mínimo de um AXF_OBJ_Contract__c real: o comando valida existência, titular e moeda
+   * contra o registro físico, então o teste precisa de um contrato de verdade.
+   */
+  private static AXF_OBJ_Contract__c contractFixture(
+    Id holderId,
+    String isoCode,
+    String suffix
+  ) {
+    AXF_OBJ_Counterparty__c counterparty = new AXF_OBJ_Counterparty__c(
+      Name = 'AXF103 Contraparte ' + suffix,
+      AXF_CPTY_TXT_DisplayName__c = 'AXF103 Contraparte ' + suffix,
+      AXF_CPTY_TXT_LegalName__c = 'AXF103 Contraparte LTDA ' + suffix,
+      AXF_CPTY_TXT_Country__c = 'BR',
+      AXF_CPTY_PKL_Kind__c = 'ORGANIZATION',
+      AXF_CPTY_PKL_Status__c = 'ACTIVE',
+      AXF_CPTY_EXI_CounterpartyKey__c = AXF_CLS_IdentityFraming.key(
+        new List<Object>{ 'CPTY', 'AXF103 Contraparte LTDA', suffix, holderId }
+      ),
+      AXF_CPTY_NUM_Version__c = 1
+    );
+    insert counterparty;
+    AXF_OBJ_CounterpartyEntityRelationship__c relationship = new AXF_OBJ_CounterpartyEntityRelationship__c(
+      AXF_CER_LKP_Counterparty__c = counterparty.Id,
+      AXF_CER_LKP_Account__c = holderId,
+      AXF_CER_PKL_Role__c = 'SUPPLIER',
+      AXF_CER_PKL_Status__c = 'ACTIVE',
+      AXF_CER_TXT_EntitySpecificDisplay__c = 'Fornecedor AXF103 ' + suffix,
+      AXF_CER_EXI_RelationshipKey__c = AXF_CLS_IdentityFraming.key(
+        new List<Object>{ 'CER', counterparty.Id, holderId, 'SUPPLIER' }
+      ),
+      AXF_CER_NUM_Version__c = 1
+    );
+    insert relationship;
+    AXF_OBJ_Contract__c contract = new AXF_OBJ_Contract__c(
+      AXF_CTR_LKP_Account__c = holderId,
+      AXF_CTR_LKP_Relationship__c = relationship.Id,
+      AXF_CTR_LKP_Counterparty__c = counterparty.Id,
+      AXF_CTR_TXT_ContractCode__c = 'CTR-AXF103-' + suffix,
+      AXF_CTR_EXI_ContractKey__c = AXF_CLS_IdentityFraming.key(
+        new List<Object>{ 'CONTRACT', holderId, suffix }
+      ),
+      AXF_CTR_TXT_Title__c = 'Contrato AXF-103 ' + suffix,
+      AXF_CTR_PKL_Lifecycle__c = 'DRAFT',
+      AXF_CTR_PKL_Type__c = 'EXPENSE',
+      AXF_CTR_TXT_CurrencyIsoCode__c = isoCode,
+      AXF_CTR_DAT_StartDate__c = Date.today(),
+      AXF_CTR_NUM_Version__c = 1
+    );
+    insert contract;
+    return contract;
+  }
+
+  @IsTest
+  static void contractMustExistBelongToTheHolderAndShareTheCurrency() {
+    Account holder = holder('AXF103 contrato válido');
+    Account other = holder('AXF103 contrato alheio');
+    ALT_CLS_FinancialScheduleService.authorizedOverride = new Set<Id>{
+      holder.Id,
+      other.Id
+    };
+    AXF_OBJ_Contract__c valid = contractFixture(holder.Id, 'BRL', '0001');
+    AXF_OBJ_Contract__c foreign = contractFixture(other.Id, 'BRL', '0002');
+    AXF_OBJ_Contract__c foreignCurrency = contractFixture(
+      holder.Id,
+      'USD',
+      '0003'
+    );
+
+    // Contrato do próprio titular e mesma moeda: aceito e persistido.
+    ALT_CLS_FinancialScheduleService.CreateInput accepted = request(
+      holder.Id,
+      'INSTALLMENT',
+      12,
+      1,
+      Date.today(),
+      'axf103-contract-ok'
+    );
+    accepted.contractId = valid.Id;
+    ALT_CLS_FinancialScheduleService.CreateResult created = ALT_CLS_FinancialScheduleService.createSchedule(
+      accepted
+    );
+    Assert.areEqual('CREATED', created.outcome, created.message);
+    Assert.areEqual(
+      valid.Id,
+      [
+        SELECT AXF_FSC_LKP_Contract__c
+        FROM AXF_OBJ_FinancialSchedule__c
+        WHERE Id = :created.scheduleId
+      ]
+      .AXF_FSC_LKP_Contract__c
+    );
+
+    // Contrato de OUTRO titular: recusado.
+    ALT_CLS_FinancialScheduleService.CreateInput crossed = request(
+      holder.Id,
+      'INSTALLMENT',
+      12,
+      1,
+      Date.today(),
+      'axf103-contract-foreign'
+    );
+    crossed.contractId = foreign.Id;
+    ALT_CLS_FinancialScheduleService.CreateResult crossResult = ALT_CLS_FinancialScheduleService.createSchedule(
+      crossed
+    );
+    Assert.areEqual('FORBIDDEN', crossResult.outcome, crossResult.message);
+
+    // Moeda divergente da do contrato: recusada.
+    ALT_CLS_FinancialScheduleService.CreateInput wrongCurrency = request(
+      holder.Id,
+      'INSTALLMENT',
+      12,
+      1,
+      Date.today(),
+      'axf103-contract-currency'
+    );
+    wrongCurrency.contractId = foreignCurrency.Id;
+    ALT_CLS_FinancialScheduleService.CreateResult currencyResult = ALT_CLS_FinancialScheduleService.createSchedule(
+      wrongCurrency
+    );
+    Assert.areEqual('INVALID', currencyResult.outcome, currencyResult.message);
+
+    // Contrato inexistente: recusado, nunca gravado por omissão.
+    ALT_CLS_FinancialScheduleService.CreateInput missing = request(
+      holder.Id,
+      'INSTALLMENT',
+      12,
+      1,
+      Date.today(),
+      'axf103-contract-missing'
+    );
+    missing.contractId = Id.valueOf(
+      AXF_OBJ_Contract__c.SObjectType.getDescribe().getKeyPrefix() +
+      '000000000000'
+    );
+    ALT_CLS_FinancialScheduleService.CreateResult missingResult = ALT_CLS_FinancialScheduleService.createSchedule(
+      missing
+    );
+    Assert.areEqual('INVALID', missingResult.outcome, missingResult.message);
+
+    Assert.areEqual(
+      1,
+      [SELECT COUNT() FROM AXF_OBJ_FinancialSchedule__c],
+      'Só o cronograma com contrato válido foi gravado'
+    );
+  }
+
+  @IsTest
+  static void feeAndPortionMappingMatchesTheApprovedFormulaForEveryMethod() {
+    Account holder = holder('AXF103 tarifas');
+    ALT_CLS_FinancialScheduleService.authorizedOverride = new Set<Id>{
+      holder.Id
+    };
+
+    for (
+      String method : new List<String>{
+        'RECURRING',
+        'INSTALLMENT',
+        'PRICE',
+        'SAC'
+      }
+    ) {
+      ALT_CLS_FinancialScheduleService.CreateInput input = request(
+        holder.Id,
+        method,
+        6,
+        1,
+        Date.today(),
+        'axf103-fees-' + method
+      );
+      input.principal = 12000.00;
+      input.periodRate = 0.01;
+      input.fixedValue = 2000.00;
+      input.recurringFee = 25.00;
+      input.upfrontFee = 50.00;
+
+      ALT_CLS_FinancialScheduleService.CreateResult created = ALT_CLS_FinancialScheduleService.createSchedule(
+        input
+      );
+      Assert.areEqual(
+        'CREATED',
+        created.outcome,
+        method + ': ' + created.message
+      );
+
+      ALT_CLS_AmortizationSchedule.ScheduleInput formula = new ALT_CLS_AmortizationSchedule.ScheduleInput();
+      formula.modality = method;
+      formula.principal = (method == 'RECURRING') ? null : 12000.00;
+      formula.installments = 6;
+      formula.periodRate = (method == 'PRICE' || method == 'SAC') ? 0.01 : null;
+      formula.firstDueDate = Date.today();
+      formula.fixedValue = (method == 'RECURRING') ? 2000.00 : null;
+      formula.flatFeePerInstallment = 25.00;
+      formula.upfrontFee = 50.00;
+      ALT_CLS_AmortizationSchedule.ScheduleResult generated = ALT_CLS_AmortizationSchedule.generate(
+        formula
+      );
+      Assert.areEqual('OK', generated.outcome, generated.message);
+
+      // A MESMA fórmula sem as tarifas: é o que a ocorrência valeria se o mapeamento de tarifa
+      // fosse removido sem quebrar a suíte. A diferença prova que a tarifa está no valor gravado.
+      ALT_CLS_AmortizationSchedule.ScheduleInput bare = new ALT_CLS_AmortizationSchedule.ScheduleInput();
+      bare.modality = formula.modality;
+      bare.principal = formula.principal;
+      bare.installments = formula.installments;
+      bare.periodRate = formula.periodRate;
+      bare.firstDueDate = formula.firstDueDate;
+      bare.fixedValue = formula.fixedValue;
+      ALT_CLS_AmortizationSchedule.ScheduleResult withoutFees = ALT_CLS_AmortizationSchedule.generate(
+        bare
+      );
+      Assert.areEqual('OK', withoutFees.outcome, withoutFees.message);
+
+      List<AXF_OBJ_FinancialTransaction__c> rows = materializedRows(
+        created.scheduleId
+      );
+      Assert.areEqual(
+        6,
+        rows.size(),
+        method + ': a janela cobre as seis parcelas'
+      );
+      for (Integer index = 0; index < rows.size(); index++) {
+        AXF_OBJ_FinancialTransaction__c row = rows[index];
+        String label = method + ' na sequência ' + String.valueOf(index + 1);
+        ALT_CLS_AmortizationSchedule.Occurrence expected = generated.occurrences[
+          index
+        ];
+        Assert.areEqual(
+          expected.payment,
+          row.AXF_FTX_NUM_Magnitude__c,
+          label + ': valor da fórmula aprovada'
+        );
+        Assert.areEqual(
+          expected.payment,
+          row.AXF_FTX_NUM_CurrentBasis__c,
+          label + ': base corrente'
+        );
+        Assert.areEqual(
+          expected.principalPortion,
+          row.AXF_FTX_NUM_PrincipalPortion__c,
+          label + ': principal persistido'
+        );
+        Assert.areEqual(
+          expected.interestPortion,
+          row.AXF_FTX_NUM_InterestPortion__c,
+          label + ': juros persistidos'
+        );
+        Assert.areEqual(
+          expected.feePortion,
+          row.AXF_FTX_NUM_FeePortion__c,
+          label + ': tarifa persistida'
+        );
+        Assert.areEqual(
+          expected.closingBalance,
+          row.AXF_FTX_NUM_ClosingBalance__c,
+          label + ': saldo persistido'
+        );
+        Assert.areEqual(
+          expected.roundingResidualApplied,
+          row.AXF_FTX_CHK_RoundingResidual__c,
+          label + ': resíduo de arredondamento persistido'
+        );
+        Assert.areEqual(
+          withoutFees.occurrences[index].payment + expected.feePortion,
+          row.AXF_FTX_NUM_Magnitude__c,
+          label + ': a tarifa está incluída no valor gravado'
+        );
+      }
+      Assert.areEqual(
+        25.00,
+        rows[1].AXF_FTX_NUM_FeePortion__c,
+        method + ': tarifa recorrente na segunda parcela'
+      );
+      Assert.areEqual(
+        75.00,
+        rows[0].AXF_FTX_NUM_FeePortion__c,
+        method + ': tarifa recorrente MAIS tarifa inicial na primeira parcela'
+      );
+    }
+  }
+
+  @IsTest
+  static void realWindowLimitAcceptsFiftyAndRejectsFiftyOneWithoutPartialWrite() {
+    Account holder = holder('AXF103 limite real');
+    ALT_CLS_FinancialScheduleService.authorizedOverride = new Set<Id>{
+      holder.Id
+    };
+    Date atLimitDue = Date.today().addMonths(-38);
+    Date overLimitDue = Date.today().addMonths(-39);
+    // Autoconferência do fixture: a fronteira real é 50.
+    Assert.areEqual(50, expectedWindowCount(1, 60, atLimitDue));
+    Assert.areEqual(51, expectedWindowCount(1, 60, overLimitDue));
+
+    ALT_CLS_FinancialScheduleService.CreateInput atLimit = request(
+      holder.Id,
+      'INSTALLMENT',
+      60,
+      1,
+      atLimitDue,
+      'axf103-window-at-limit'
+    );
+    ALT_CLS_FinancialScheduleService.CreateResult accepted = ALT_CLS_FinancialScheduleService.createSchedule(
+      atLimit
+    );
+    Assert.areEqual('CREATED', accepted.outcome, accepted.message);
+    Assert.areEqual(
+      50,
+      accepted.occurrenceCount,
+      'A fronteira real de 50 ocorrências é aceita'
+    );
+
+    ALT_CLS_FinancialScheduleService.CreateInput overLimit = request(
+      holder.Id,
+      'INSTALLMENT',
+      60,
+      1,
+      overLimitDue,
+      'axf103-window-over-limit'
+    );
+    ALT_CLS_FinancialScheduleService.CreateResult rejected = ALT_CLS_FinancialScheduleService.createSchedule(
+      overLimit
+    );
+    Assert.areEqual('TOO_LARGE', rejected.outcome, rejected.message);
+    Assert.isNull(
+      rejected.scheduleId,
+      'Nada foi escrito para a tentativa recusada'
+    );
+    Assert.areEqual(
+      1,
+      [SELECT COUNT() FROM AXF_OBJ_FinancialSchedule__c],
+      'Nenhum cronograma parcial ficou para trás'
+    );
+    Assert.areEqual(
+      1,
+      [SELECT COUNT() FROM AXF_OBJ_ScheduleChange__c],
+      'Só o recibo da criação aceita existe'
+    );
+    Assert.areEqual(
+      50,
+      [SELECT COUNT() FROM AXF_OBJ_FinancialTransaction__c],
+      'Nenhuma ocorrência parcial da tentativa recusada'
+    );
+  }
+
+  @IsTest
+  static void scheduleKeyIsStableUnderAFormulaAmendment() {
+    Account holder = holder('AXF103 emenda');
+    ALT_CLS_FinancialScheduleService.authorizedOverride = new Set<Id>{
+      holder.Id
+    };
+    ALT_CLS_FinancialScheduleService.CreateInput original = request(
+      holder.Id,
+      'INSTALLMENT',
+      12,
+      1,
+      Date.today(),
+      'axf103-amendment'
+    );
+    ALT_CLS_FinancialScheduleService.CreateInput amended = request(
+      holder.Id,
+      'INSTALLMENT',
+      12,
+      1,
+      Date.today(),
+      'axf103-amendment'
+    );
+    amended.principal = 480000.00;
+    amended.periodRate = 0.02;
+    amended.recurringFee = 10.00;
+    amended.upfrontFee = 99.00;
+
+    Assert.areEqual(
+      ALT_CLS_FinancialScheduleService.previewScheduleKey(original),
+      ALT_CLS_FinancialScheduleService.previewScheduleKey(amended),
+      'Principal, taxa e tarifas não participam da identidade do cronograma'
+    );
+    Assert.areNotEqual(
+      ALT_CLS_FinancialScheduleService.previewPayloadHash(original),
+      ALT_CLS_FinancialScheduleService.previewPayloadHash(amended),
+      'A emenda de fórmula muda o payload canônico'
+    );
+    Assert.areNotEqual(
+      ALT_CLS_FinancialScheduleService.previewOperationKey(original),
+      ALT_CLS_FinancialScheduleService.previewOperationKey(amended),
+      'A identidade de operação é delimitada pelo payload'
+    );
+
+    Assert.areEqual(
+      'CREATED',
+      ALT_CLS_FinancialScheduleService.createSchedule(original).outcome
+    );
+    ALT_CLS_FinancialScheduleService.CreateResult conflicted = ALT_CLS_FinancialScheduleService.createSchedule(
+      amended
+    );
+    Assert.areEqual('CONFLICT', conflicted.outcome, conflicted.message);
+    Assert.areEqual(
+      1,
+      [SELECT COUNT() FROM AXF_OBJ_FinancialSchedule__c],
+      'A emenda não cria um segundo cronograma sob a mesma identidade'
+    );
+  }
+
+  @IsTest
+  static void preInsertedRootWithoutAReceiptIsConflictNeverCreated() {
+    Account holder = holder('AXF103 raiz pré-inserida');
+    ALT_CLS_FinancialScheduleService.authorizedOverride = new Set<Id>{
+      holder.Id
+    };
+    ALT_CLS_FinancialScheduleService.CreateInput input = request(
+      holder.Id,
+      'INSTALLMENT',
+      12,
+      1,
+      Date.today(),
+      'axf103-pre-root'
+    );
+    String scheduleKey = ALT_CLS_FinancialScheduleService.previewScheduleKey(
+      input
+    );
+    insert new AXF_OBJ_FinancialSchedule__c(
+      AXF_FSC_EXI_ScheduleKey__c = scheduleKey,
+      AXF_FSC_LKP_Account__c = holder.Id,
+      AXF_FSC_TXT_CurrencyIsoCode__c = 'BRL',
+      AXF_FSC_PKL_Direction__c = 'DEBIT',
+      AXF_FSC_PKL_State__c = 'DRAFT',
+      AXF_FSC_NUM_TrackingStartSequence__c = 1
+    );
+
+    ALT_CLS_FinancialScheduleService.CreateResult result = ALT_CLS_FinancialScheduleService.createSchedule(
+      input
+    );
+
+    Assert.areEqual('CONFLICT', result.outcome, result.message);
+    Assert.areEqual(0, [SELECT COUNT() FROM AXF_OBJ_ScheduleDefinition__c]);
+    Assert.areEqual(0, [SELECT COUNT() FROM AXF_OBJ_ScheduleChange__c]);
+    Assert.areEqual(0, [SELECT COUNT() FROM AXF_OBJ_FinancialTransaction__c]);
+  }
+
+  @IsTest
+  static void preInsertedEquivalentReceiptReplaysTheOriginalAuthorizedResult() {
+    Account holder = holder('AXF103 recibo pré-inserido');
+    ALT_CLS_FinancialScheduleService.authorizedOverride = new Set<Id>{
+      holder.Id
+    };
+    ALT_CLS_FinancialScheduleService.CreateInput input = request(
+      holder.Id,
+      'INSTALLMENT',
+      12,
+      1,
+      Date.today(),
+      'axf103-pre-receipt'
+    );
+    String scheduleKey = ALT_CLS_FinancialScheduleService.previewScheduleKey(
+      input
+    );
+    String payloadHash = ALT_CLS_FinancialScheduleService.previewPayloadHash(
+      input
+    );
+    String operationKey = ALT_CLS_FinancialScheduleService.previewOperationKey(
+      input
+    );
+
+    AXF_OBJ_FinancialSchedule__c root = new AXF_OBJ_FinancialSchedule__c(
+      AXF_FSC_EXI_ScheduleKey__c = scheduleKey,
+      AXF_FSC_LKP_Account__c = holder.Id,
+      AXF_FSC_TXT_CurrencyIsoCode__c = 'BRL',
+      AXF_FSC_PKL_Direction__c = 'DEBIT',
+      AXF_FSC_PKL_State__c = 'DRAFT',
+      AXF_FSC_NUM_TrackingStartSequence__c = 1
+    );
+    insert root;
+    ALT_CLS_FinancialScheduleService.CreateResult original = new ALT_CLS_FinancialScheduleService.CreateResult();
+    original.outcome = 'CREATED';
+    original.scheduleId = root.Id;
+    original.scheduleKey = scheduleKey;
+    original.occurrenceCount = 7;
+    // Evidência já confirmada: só o serviço grava recibo, então o teste usa a MESMA capacidade
+    // que o comando usa (a guarda do handler é sobre o contexto, não sobre o objeto).
+    ALT_CLS_FinancialScheduleService.writing = true;
+    insert new AXF_OBJ_ScheduleChange__c(
+      AXF_SCH_EXI_OperationKey__c = operationKey,
+      AXF_SCH_TXT_PayloadHash__c = payloadHash,
+      AXF_SCH_LKP_Schedule__c = root.Id,
+      AXF_SCH_PKL_Operation__c = 'CREATE',
+      AXF_SCH_NUM_Revision__c = 1,
+      AXF_SCH_PKL_Scope__c = 'FROM_SEQUENCE',
+      AXF_SCH_NUM_FromSequence__c = 1,
+      AXF_SCH_BOL_IncludeManualOverrides__c = false,
+      AXF_SCH_TAL_ResultJson__c = JSON.serialize(original),
+      AXF_SCH_DT_CommittedAt__c = System.now(),
+      AXF_SCH_LKP_Actor__c = UserInfo.getUserId()
+    );
+    ALT_CLS_FinancialScheduleService.writing = false;
+
+    ALT_CLS_FinancialScheduleService.CreateResult replay = ALT_CLS_FinancialScheduleService.createSchedule(
+      input
+    );
+
+    Assert.areEqual('REPLAY', replay.outcome, replay.message);
+    Assert.isTrue(replay.replay);
+    Assert.areEqual(root.Id, replay.scheduleId);
+    Assert.areEqual(
+      7,
+      replay.occurrenceCount,
+      'O resultado autorizado original é devolvido, e não um novo cálculo'
+    );
+    Assert.areEqual(1, [SELECT COUNT() FROM AXF_OBJ_FinancialSchedule__c]);
+    Assert.areEqual(0, [SELECT COUNT() FROM AXF_OBJ_ScheduleDefinition__c]);
+    Assert.areEqual(
+      0,
+      [SELECT COUNT() FROM AXF_OBJ_FinancialTransaction__c],
+      'O replay não grava ocorrência alguma'
+    );
+  }
+
+  @IsTest
+  static void malformedAuthorizedResultIsAConflictedReplayNotAnException() {
+    Account holder = holder('AXF103 resultado ilegível');
+    ALT_CLS_FinancialScheduleService.authorizedOverride = new Set<Id>{
+      holder.Id
+    };
+    ALT_CLS_FinancialScheduleService.CreateInput input = request(
+      holder.Id,
+      'INSTALLMENT',
+      12,
+      1,
+      Date.today(),
+      'axf103-malformed-result'
+    );
+    String scheduleKey = ALT_CLS_FinancialScheduleService.previewScheduleKey(
+      input
+    );
+    String payloadHash = ALT_CLS_FinancialScheduleService.previewPayloadHash(
+      input
+    );
+    String operationKey = ALT_CLS_FinancialScheduleService.previewOperationKey(
+      input
+    );
+
+    AXF_OBJ_FinancialSchedule__c root = new AXF_OBJ_FinancialSchedule__c(
+      AXF_FSC_EXI_ScheduleKey__c = scheduleKey,
+      AXF_FSC_LKP_Account__c = holder.Id,
+      AXF_FSC_TXT_CurrencyIsoCode__c = 'BRL',
+      AXF_FSC_PKL_Direction__c = 'DEBIT',
+      AXF_FSC_PKL_State__c = 'DRAFT',
+      AXF_FSC_NUM_TrackingStartSequence__c = 1
+    );
+    insert root;
+    ALT_CLS_FinancialScheduleService.writing = true;
+    insert new AXF_OBJ_ScheduleChange__c(
+      AXF_SCH_EXI_OperationKey__c = operationKey,
+      AXF_SCH_TXT_PayloadHash__c = payloadHash,
+      AXF_SCH_LKP_Schedule__c = root.Id,
+      AXF_SCH_PKL_Operation__c = 'CREATE',
+      AXF_SCH_NUM_Revision__c = 1,
+      AXF_SCH_PKL_Scope__c = 'FROM_SEQUENCE',
+      AXF_SCH_NUM_FromSequence__c = 1,
+      AXF_SCH_BOL_IncludeManualOverrides__c = false,
+      AXF_SCH_TAL_ResultJson__c = '{"occurrenceCount": [',
+      AXF_SCH_DT_CommittedAt__c = System.now(),
+      AXF_SCH_LKP_Actor__c = UserInfo.getUserId()
+    );
+    ALT_CLS_FinancialScheduleService.writing = false;
+
+    ALT_CLS_FinancialScheduleService.CreateResult result = ALT_CLS_FinancialScheduleService.createSchedule(
+      input
+    );
+
+    // Nem exceção de desserialização, nem replay inventado: desfecho controlado.
+    Assert.areEqual('CONFLICT', result.outcome, result.message);
+    Assert.isFalse(result.replay);
+    Assert.areEqual(0, [SELECT COUNT() FROM AXF_OBJ_FinancialTransaction__c]);
+  }
+
+  @IsTest
+  static void forgedReceiptCannotBeInsertedByDirectDml() {
+    Account holder = holder('AXF103 recibo forjado');
+    ALT_CLS_FinancialScheduleService.authorizedOverride = new Set<Id>{
+      holder.Id
+    };
+    ALT_CLS_FinancialScheduleService.CreateResult created = ALT_CLS_FinancialScheduleService.createSchedule(
+      request(
+        holder.Id,
+        'INSTALLMENT',
+        12,
+        1,
+        Date.today(),
+        'axf103-forged-receipt'
+      )
+    );
+    Assert.areEqual('CREATED', created.outcome, created.message);
+
+    // Recibo completo e sintaticamente válido, com Operation, Scope e ResultJson inventados:
+    // criar em AXF_OBJ_ScheduleChange__c é concedido ao Gestor e à entrada financeira, e sem a
+    // guarda de contexto o recibo deixaria de ser prova da operação.
+    Database.SaveResult forged = Database.insert(
+      new AXF_OBJ_ScheduleChange__c(
+        AXF_SCH_EXI_OperationKey__c = 'axf103-forged-operation',
+        AXF_SCH_TXT_PayloadHash__c = 'forgedpayload'.rightPad(64, '0'),
+        AXF_SCH_LKP_Schedule__c = created.scheduleId,
+        AXF_SCH_PKL_Operation__c = 'TERMINATE',
+        AXF_SCH_NUM_Revision__c = 2,
+        AXF_SCH_PKL_Scope__c = 'ALL_TRACKED',
+        AXF_SCH_NUM_FromSequence__c = 1,
+        AXF_SCH_BOL_IncludeManualOverrides__c = true,
+        AXF_SCH_TAL_ResultJson__c = '{"outcome":"CREATED","occurrenceCount":0}',
+        AXF_SCH_TAL_Reason__c = 'recibo forjado',
+        AXF_SCH_DT_CommittedAt__c = System.now(),
+        AXF_SCH_LKP_Actor__c = UserInfo.getUserId()
+      ),
+      false
+    );
+
+    Assert.isFalse(
+      forged.isSuccess(),
+      'O recibo é evidência do serviço autorizado, não um registro de usuário'
+    );
+    Assert.areEqual(
+      1,
+      [SELECT COUNT() FROM AXF_OBJ_ScheduleChange__c],
+      'Só o recibo autorizado da criação existe'
+    );
   }
 }

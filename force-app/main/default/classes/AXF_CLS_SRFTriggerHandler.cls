@@ -16,6 +16,26 @@ public with sharing class AXF_CLS_SRFTriggerHandler {
   public static void handleBeforeInsert(
     List<AXF_OBJ_ScheduleReference__c> newList
   ) {
+    Set<Id> compensatesIds = new Set<Id>();
+    for (AXF_OBJ_ScheduleReference__c record : newList) {
+      if (
+        record.AXF_SRF_PKL_Kind__c == KIND_COMPENSATION &&
+        record.AXF_SRF_LKP_Compensates__c != null
+      ) {
+        compensatesIds.add(record.AXF_SRF_LKP_Compensates__c);
+      }
+    }
+    Map<Id, AXF_OBJ_ScheduleReference__c> compensated = compensatesIds.isEmpty()
+      ? new Map<Id, AXF_OBJ_ScheduleReference__c>()
+      : new Map<Id, AXF_OBJ_ScheduleReference__c>(
+          [
+            SELECT Id, AXF_SRF_LKP_Schedule__c
+            FROM AXF_OBJ_ScheduleReference__c
+            WHERE Id IN :compensatesIds
+            WITH SYSTEM_MODE
+          ]
+        );
+
     for (AXF_OBJ_ScheduleReference__c record : newList) {
       if (String.isBlank(record.AXF_SRF_EXI_ReferenceKey__c)) {
         record.addError('A chave determinística da referência é obrigatória.');
@@ -57,12 +77,29 @@ public with sharing class AXF_CLS_SRFTriggerHandler {
         );
         continue;
       }
-      if (
-        record.AXF_SRF_PKL_Kind__c == KIND_COMPENSATION &&
-        record.AXF_SRF_LKP_Compensates__c == null
-      ) {
+      if (record.AXF_SRF_PKL_Kind__c != KIND_COMPENSATION) {
+        continue;
+      }
+      if (record.AXF_SRF_LKP_Compensates__c == null) {
         record.addError(
           'Uma compensação deve identificar a referência retirada.'
+        );
+        continue;
+      }
+      AXF_OBJ_ScheduleReference__c target = compensated.get(
+        record.AXF_SRF_LKP_Compensates__c
+      );
+      if (target == null) {
+        record.addError(
+          'Uma compensação deve identificar uma referência existente.'
+        );
+        continue;
+      }
+      if (target.AXF_SRF_LKP_Schedule__c != record.AXF_SRF_LKP_Schedule__c) {
+        // Uma compensação de outro cronograma não neutraliza nada: ela seria aceita como
+        // evidência e o valor compensado continuaria sendo somado.
+        record.addError(
+          'Uma compensação só neutraliza referência do MESMO cronograma.'
         );
       }
     }

@@ -149,12 +149,35 @@ private class ALT_CLS_ScheduleProjectionTest {
       result.totalRemaining,
       'O total é a soma das vencidas com as futuras'
     );
-    Assert.isTrue(result.complete, 'Um prazo finito produz um total completo');
+    Assert.isTrue(
+      result.coverageComplete,
+      'Um prazo finito cobre todas as sequências rastreadas'
+    );
     Assert.isFalse(result.unbounded);
     Assert.isTrue(
       result.estimated,
       'Há componente não confirmado, então o total é rotulado estimado'
     );
+    Assert.isTrue(
+      result.fullyEstimated,
+      'Sem nenhum componente confirmado o total é integralmente estimado'
+    );
+    Assert.isFalse(
+      result.complete,
+      'Um total integralmente estimado nunca chega como completo a quem só lê `complete`'
+    );
+    Assert.areEqual(
+      0.00,
+      result.confirmedTotal,
+      'Nada confirmado dentro da faixa avaliada'
+    );
+    Assert.areEqual(
+      result.totalRemaining,
+      result.estimatedTotal,
+      'O total é integralmente estimado'
+    );
+    Assert.areEqual(12, result.horizonMonths);
+    Assert.areEqual(windowEnd(), result.horizonEndDate);
 
     // A soma equivale exatamente à fórmula aprovada para a mesma faixa: nada foi contado duas
     // vezes e nenhuma sequência ficou de fora.
@@ -174,6 +197,19 @@ private class ALT_CLS_ScheduleProjectionTest {
       expected.setScale(2),
       result.totalRemaining,
       'O compromisso restante é a soma canônica das ocorrências rastreadas'
+    );
+
+    // Total EXPLÍCITO do horizonte solicitado: as ocorrências persistidas são exatamente as que
+    // vencem dentro do mês corrente mais onze, e o horizonte é exposto como campo próprio.
+    Decimal horizonExpected = 0;
+    for (Integer index = 0; index < persisted; index++) {
+      horizonExpected += generated.occurrences[84 + index].payment;
+    }
+    Assert.areEqual(persisted, result.horizonCount);
+    Assert.areEqual(
+      horizonExpected.setScale(2),
+      result.horizonTotal,
+      'O total do horizonte é explícito e não depende de inferência do consumidor'
     );
 
     Set<String> identities = new Set<String>();
@@ -277,7 +313,8 @@ private class ALT_CLS_ScheduleProjectionTest {
       SELECT
         Id,
         AXF_FSC_NUM_ProjectionRevision__c,
-        AXF_FSC_NUM_FinancialVersion__c
+        AXF_FSC_NUM_FinancialVersion__c,
+        AXF_FSC_DAT_TerminationDate__c
       FROM AXF_OBJ_FinancialSchedule__c
       WHERE Id = :created.scheduleId
     ];
@@ -289,6 +326,8 @@ private class ALT_CLS_ScheduleProjectionTest {
     );
     drifted.AXF_FSC_NUM_ProjectionRevision__c =
       root.AXF_FSC_NUM_ProjectionRevision__c + 1;
+    // A fronteira de encerramento acompanha a releitura: só a revisão é que divergiu.
+    drifted.AXF_FSC_DAT_TerminationDate__c = root.AXF_FSC_DAT_TerminationDate__c;
     ALT_CLS_ScheduleProjection.recheckOverride = drifted;
 
     ALT_CLS_ScheduleProjection.ProjectionResult result = read(
@@ -448,7 +487,9 @@ private class ALT_CLS_ScheduleProjectionTest {
   @IsTest
   static void overdueAndFutureSplitIsDisjointWithTheBoundaryCountedAsFuture() {
     Account holder = holder('AXF103 vencidas');
-    ALT_CLS_FinancialScheduleService.CreateResult created = create(
+    // Principal não divisível pelo prazo: as parcelas NÃO têm o mesmo valor, então somar o balde
+    // errado (ou contar a ocorrência errada) não passa por coincidência.
+    ALT_CLS_FinancialScheduleService.CreateInput input = request(
       holder.Id,
       'INSTALLMENT',
       24,
@@ -456,6 +497,14 @@ private class ALT_CLS_ScheduleProjectionTest {
       Date.today(),
       'proj-overdue'
     );
+    input.principal = 1000000.00;
+    ALT_CLS_FinancialScheduleService.authorizedOverride = new Set<Id>{
+      holder.Id
+    };
+    ALT_CLS_FinancialScheduleService.CreateResult created = ALT_CLS_FinancialScheduleService.createSchedule(
+      input
+    );
+    Assert.areEqual('CREATED', created.outcome, created.message);
 
     // Cada ocorrência vence em today + (n-1) meses. Lendo com asOf três meses à frente, as
     // três primeiras vencem no passado e as demais são futuras.
@@ -467,27 +516,47 @@ private class ALT_CLS_ScheduleProjectionTest {
     );
 
     Assert.areEqual('OK', result.outcome, result.message);
+    ALT_CLS_AmortizationSchedule.ScheduleInput formula = new ALT_CLS_AmortizationSchedule.ScheduleInput();
+    formula.modality = 'INSTALLMENT';
+    formula.principal = 1000000.00;
+    formula.installments = 24;
+    formula.firstDueDate = Date.today();
+    ALT_CLS_AmortizationSchedule.ScheduleResult generated = ALT_CLS_AmortizationSchedule.generate(
+      formula
+    );
+    Assert.areEqual('OK', generated.outcome, generated.message);
+
+    // Valores concretos da fórmula aprovada, por balde — não a soma das próprias linhas lidas.
+    Decimal overdueExpected = 0;
+    Decimal futureExpected = 0;
+    for (Integer sequence = 1; sequence <= 24; sequence++) {
+      if (Date.today().addMonths(sequence - 1) < asOf) {
+        overdueExpected += generated.occurrences[sequence - 1].payment;
+      } else {
+        futureExpected += generated.occurrences[sequence - 1].payment;
+      }
+    }
+    Assert.areNotEqual(
+      overdueExpected,
+      futureExpected,
+      'Os baldes precisam ter valores diferentes para a asserção ser significativa'
+    );
     Assert.areEqual(
       3,
       result.overdueCount,
       'Três vencidas até a data de corte'
     );
+    Assert.areEqual(21, result.futureCount, 'As demais são futuras');
     Assert.areEqual(
-      result.evaluatedCount - 3,
-      result.futureCount,
-      'Vencidas e futuras são disjuntas e cobrem toda a faixa'
+      overdueExpected.setScale(2),
+      result.overdueTotal,
+      'O total vencido é o valor concreto da fórmula para as vencidas'
     );
-    Decimal overdueExpected = 0;
-    Decimal futureExpected = 0;
-    for (ALT_CLS_ScheduleProjection.OccurrenceLine line : result.lines) {
-      if (line.overdue) {
-        overdueExpected += line.amount;
-      } else {
-        futureExpected += line.amount;
-      }
-    }
-    Assert.areEqual(overdueExpected.setScale(2), result.overdueTotal);
-    Assert.areEqual(futureExpected.setScale(2), result.futureTotal);
+    Assert.areEqual(
+      futureExpected.setScale(2),
+      result.futureTotal,
+      'O total futuro é o valor concreto da fórmula para as futuras'
+    );
     Assert.areEqual(
       (result.overdueTotal + result.futureTotal).setScale(2),
       result.totalRemaining
@@ -979,5 +1048,432 @@ private class ALT_CLS_ScheduleProjectionTest {
 
     Assert.areEqual('FORBIDDEN', result.outcome, result.message);
     Assert.isNull(result.totalRemaining);
+  }
+
+  @IsTest
+  static void readPortRefusesAnUnauthorizedHolder() {
+    Account holder = holder('AXF103 porta negada');
+    ALT_CLS_FinancialScheduleService.CreateResult created = create(
+      holder.Id,
+      'INSTALLMENT',
+      12,
+      1,
+      Date.today(),
+      'proj-port-forbidden'
+    );
+    ALT_CLS_FinancialScheduleService.authorizedOverride = new Set<Id>();
+
+    // A porta de leitura exposta à UI não é um atalho: a checagem de titular continua sendo a
+    // autoridade, e o motor não é alcançável sem ela.
+    ALT_CLS_ScheduleProjection.ProjectionResult denied = AXF_CLS_CTRL_FinancialSchedule.readProjection(
+      created.scheduleId,
+      Date.today(),
+      null
+    );
+
+    Assert.areEqual('FORBIDDEN', denied.outcome, denied.message);
+    Assert.isTrue(denied.lines.isEmpty());
+    Assert.isNull(denied.totalRemaining);
+  }
+
+  @IsTest
+  static void compensatedReferenceIsDiscardedInsteadOfInflatingTheTotal() {
+    Account holder = holder('AXF103 compensação');
+    // 24 parcelas: doze dentro da janela materializada e doze ainda VIRTUAIS. A referência
+    // vigente é a autoridade do valor virtual; a ocorrência persistida mantém a base congelada.
+    ALT_CLS_FinancialScheduleService.CreateResult created = create(
+      holder.Id,
+      'ESTIMATED',
+      24,
+      1,
+      Date.today(),
+      'proj-compensated'
+    );
+    AXF_OBJ_ScheduleReference__c manual = new AXF_OBJ_ScheduleReference__c(
+      AXF_SRF_EXI_ReferenceKey__c = 'compensated-manual',
+      AXF_SRF_LKP_Schedule__c = created.scheduleId,
+      AXF_SRF_NUM_EconomicSequence__c = 5,
+      AXF_SRF_NUM_EffectiveSequence__c = 1,
+      AXF_SRF_NUM_RecurringAmount__c = 900.00,
+      AXF_SRF_PKL_Kind__c = 'MANUAL',
+      AXF_SRF_DT_ConfirmedAt__c = System.now(),
+      AXF_SRF_LKP_ConfirmedBy__c = UserInfo.getUserId()
+    );
+    insert manual;
+
+    ALT_CLS_ScheduleProjection.ProjectionResult before = read(
+      created.scheduleId
+    );
+    Assert.areEqual('OK', before.outcome, before.message);
+    Assert.isTrue(
+      before.virtualCount > 0,
+      'Sem ocorrência virtual a referência não teria efeito algum'
+    );
+    Assert.areEqual(
+      16800.00,
+      before.totalRemaining,
+      'A referência de maior ordem econômica é a vigente para o componente virtual (12 x 900) somada à base congelada das persistidas (12 x 500)'
+    );
+
+    // A compensação retira a referência manual: ela não é mais selecionada nem fornece valor.
+    insert new AXF_OBJ_ScheduleReference__c(
+      AXF_SRF_EXI_ReferenceKey__c = 'compensated-withdrawal',
+      AXF_SRF_LKP_Schedule__c = created.scheduleId,
+      AXF_SRF_NUM_EconomicSequence__c = 6,
+      AXF_SRF_NUM_EffectiveSequence__c = 1,
+      AXF_SRF_NUM_RecurringAmount__c = 0.00,
+      AXF_SRF_PKL_Kind__c = 'COMPENSATION',
+      AXF_SRF_LKP_Compensates__c = manual.Id
+    );
+
+    ALT_CLS_ScheduleProjection.ProjectionResult after = read(
+      created.scheduleId
+    );
+    Assert.areEqual('OK', after.outcome, after.message);
+    Assert.areEqual(
+      12000.00,
+      after.totalRemaining,
+      'A referência retirada não fornece mais valor: o componente virtual volta à referência inicial (12 x 500) com a mesma base congelada (12 x 500)'
+    );
+    Assert.isFalse(after.lines.isEmpty());
+    for (ALT_CLS_ScheduleProjection.OccurrenceLine line : after.lines) {
+      Assert.areNotEqual(
+        manual.Id,
+        line.referenceId,
+        'A referência compensada não é selecionada'
+      );
+      Assert.areEqual(500.00, line.amount);
+    }
+
+    // Uma retirada NUNCA é um pagamento negativo: o mecanismo é a compensação, e um valor
+    // recorrente negativo é recusado.
+    Assert.isFalse(
+      Database.insert(
+          new AXF_OBJ_ScheduleReference__c(
+            AXF_SRF_EXI_ReferenceKey__c = 'negative-withdrawal',
+            AXF_SRF_LKP_Schedule__c = created.scheduleId,
+            AXF_SRF_NUM_EconomicSequence__c = 7,
+            AXF_SRF_NUM_EffectiveSequence__c = 1,
+            AXF_SRF_NUM_RecurringAmount__c = -100.00,
+            AXF_SRF_PKL_Kind__c = 'MANUAL'
+          ),
+          false
+        )
+        .isSuccess(),
+      'Uma retirada não é registrada como valor recorrente negativo'
+    );
+  }
+
+  @IsTest
+  static void compensationOfAnotherScheduleIsRejected() {
+    Account holder = holder('AXF103 compensação alheia');
+    ALT_CLS_FinancialScheduleService.CreateResult first = create(
+      holder.Id,
+      'ESTIMATED',
+      12,
+      1,
+      Date.today(),
+      'proj-compensates-a'
+    );
+    ALT_CLS_FinancialScheduleService.CreateResult second = create(
+      holder.Id,
+      'ESTIMATED',
+      12,
+      1,
+      Date.today().addDays(1),
+      'proj-compensates-b'
+    );
+    AXF_OBJ_ScheduleReference__c foreign = [
+      SELECT Id
+      FROM AXF_OBJ_ScheduleReference__c
+      WHERE AXF_SRF_LKP_Schedule__c = :first.scheduleId
+      LIMIT 1
+    ];
+
+    // Uma compensação que aponta a referência de OUTRO cronograma não neutralizaria nada: ela
+    // seria aceita como evidência e o valor compensado continuaria sendo somado.
+    Assert.isFalse(
+      Database.insert(
+          new AXF_OBJ_ScheduleReference__c(
+            AXF_SRF_EXI_ReferenceKey__c = 'compensates-foreign',
+            AXF_SRF_LKP_Schedule__c = second.scheduleId,
+            AXF_SRF_NUM_EconomicSequence__c = 2,
+            AXF_SRF_NUM_EffectiveSequence__c = 1,
+            AXF_SRF_NUM_RecurringAmount__c = 0.00,
+            AXF_SRF_PKL_Kind__c = 'COMPENSATION',
+            AXF_SRF_LKP_Compensates__c = foreign.Id
+          ),
+          false
+        )
+        .isSuccess(),
+      'A compensação só neutraliza referência do mesmo cronograma'
+    );
+  }
+
+  @IsTest
+  static void persistedOccurrenceUnderAForeignIdentityIsRejected() {
+    Account holder = holder('AXF103 identidade alheia');
+    ALT_CLS_FinancialScheduleService.CreateResult created = create(
+      holder.Id,
+      'INSTALLMENT',
+      12,
+      1,
+      Date.today(),
+      'proj-identity'
+    );
+    AXF_OBJ_FinancialTransaction__c row = [
+      SELECT Id
+      FROM AXF_OBJ_FinancialTransaction__c
+      WHERE
+        AXF_FTX_LKP_Schedule__c = :created.scheduleId
+        AND AXF_FTX_NUM_Sequence__c = 2
+      LIMIT 1
+    ];
+    row.AXF_FTX_EXI_OccurrenceKey__c = ALT_CLS_ScheduleProjection.occurrenceKey(
+      'outra-identidade-de-cronograma',
+      2
+    );
+    update row;
+
+    ALT_CLS_ScheduleProjection.ProjectionResult result = read(
+      created.scheduleId
+    );
+
+    Assert.areEqual('INVALID', result.outcome, result.message);
+    Assert.isNull(
+      result.totalRemaining,
+      'Uma linha sob outra identidade não conta como a esperada'
+    );
+    Assert.isFalse(result.complete);
+  }
+
+  @IsTest
+  static void trackedSequenceWithoutAnEffectiveDefinitionIsRejected() {
+    Account holder = holder('AXF103 lacuna de definição');
+    AXF_OBJ_FinancialSchedule__c root = new AXF_OBJ_FinancialSchedule__c(
+      AXF_FSC_EXI_ScheduleKey__c = 'fsc-gap-definition',
+      AXF_FSC_LKP_Account__c = holder.Id,
+      AXF_FSC_TXT_CurrencyIsoCode__c = 'BRL',
+      AXF_FSC_PKL_Direction__c = 'DEBIT',
+      AXF_FSC_PKL_State__c = 'DRAFT',
+      AXF_FSC_NUM_TrackingStartSequence__c = 1
+    );
+    insert root;
+    // A definição só passa a existir na sequência 5: as sequências 1..4 do intervalo rastreado
+    // ficam sem definição efetiva e não podem ser omitidas em silêncio sob um resultado
+    // rotulado completo.
+    insert new AXF_OBJ_ScheduleDefinition__c(
+      AXF_SDF_EXI_DefinitionKey__c = 'sdf-gap-definition',
+      AXF_SDF_LKP_Schedule__c = root.Id,
+      AXF_SDF_NUM_Revision__c = 1,
+      AXF_SDF_NUM_EffectiveSequence__c = 5,
+      AXF_SDF_PKL_Method__c = 'INSTALLMENT',
+      AXF_SDF_NUM_TotalInstallments__c = 8,
+      AXF_SDF_NUM_FirstSequence__c = 5,
+      AXF_SDF_DAT_FirstDueDate__c = Date.today(),
+      AXF_SDF_NUM_AnchorDay__c = 10,
+      AXF_SDF_NUM_PeriodMonths__c = 1,
+      AXF_SDF_NUM_Principal__c = 1200
+    );
+    ALT_CLS_FinancialScheduleService.authorizedOverride = new Set<Id>{
+      holder.Id
+    };
+
+    ALT_CLS_ScheduleProjection.ProjectionResult result = read(root.Id);
+
+    Assert.areEqual('INVALID', result.outcome, result.message);
+    Assert.isNull(result.totalRemaining);
+    Assert.isFalse(result.complete);
+    Assert.isFalse(result.coverageComplete);
+  }
+
+  @IsTest
+  static void fullySettledScheduleReturnsAZeroTotalInsteadOfInvalid() {
+    Account holder = holder('AXF103 liquidado');
+    ALT_CLS_FinancialScheduleService.CreateResult created = create(
+      holder.Id,
+      'INSTALLMENT',
+      3,
+      1,
+      Date.today(),
+      'proj-settled'
+    );
+    List<AXF_OBJ_FinancialTransaction__c> rows = [
+      SELECT Id
+      FROM AXF_OBJ_FinancialTransaction__c
+      WHERE AXF_FTX_LKP_Schedule__c = :created.scheduleId
+    ];
+    Assert.areEqual(3, rows.size(), 'A janela cobre as três parcelas');
+    for (AXF_OBJ_FinancialTransaction__c row : rows) {
+      row.AXF_FTX_PKL_ScheduleState__c = 'CANCELLED';
+    }
+    update rows;
+
+    ALT_CLS_ScheduleProjection.ProjectionResult result = read(
+      created.scheduleId
+    );
+
+    Assert.areEqual('OK', result.outcome, result.message);
+    Assert.areEqual(0, result.evaluatedCount);
+    Assert.areEqual(
+      0.00,
+      result.totalRemaining,
+      'Um cronograma totalmente liquidado tem total ZERO, não nulo'
+    );
+    Assert.areEqual(0.00, result.overdueTotal);
+    Assert.areEqual(0.00, result.futureTotal);
+    Assert.areEqual(0.00, result.horizonTotal);
+    Assert.isTrue(
+      result.coverageComplete,
+      'A cobertura é completa: o prazo é finito e nada foi truncado'
+    );
+  }
+
+  @IsTest
+  static void invalidPaginationRequestIsAnErrorInsteadOfTheFullTotal() {
+    Account holder = holder('AXF103 paginação inválida');
+    ALT_CLS_FinancialScheduleService.CreateResult created = create(
+      holder.Id,
+      'INSTALLMENT',
+      12,
+      1,
+      Date.today(),
+      'proj-paging-invalid'
+    );
+
+    for (Integer invalid : new List<Integer>{ 0, -1 }) {
+      ALT_CLS_ScheduleProjection.ProjectionResult result = read(
+        created.scheduleId,
+        Date.today(),
+        invalid
+      );
+      Assert.areEqual('INVALID', result.outcome, result.message);
+      Assert.isNull(
+        result.totalRemaining,
+        'Um pedido de paginação inválido não devolve o total completo'
+      );
+    }
+  }
+
+  @IsTest
+  static void terminationBoundaryDriftAloneMakesTheReadStale() {
+    Account holder = holder('AXF103 fronteira obsoleta');
+    ALT_CLS_FinancialScheduleService.CreateResult created = create(
+      holder.Id,
+      'INSTALLMENT',
+      12,
+      1,
+      Date.today(),
+      'proj-termination-stale'
+    );
+    AXF_OBJ_FinancialSchedule__c root = [
+      SELECT
+        Id,
+        AXF_FSC_NUM_ProjectionRevision__c,
+        AXF_FSC_NUM_FinancialVersion__c
+      FROM AXF_OBJ_FinancialSchedule__c
+      WHERE Id = :created.scheduleId
+    ];
+    AXF_OBJ_FinancialSchedule__c drifted = root.clone(
+      false,
+      true,
+      false,
+      false
+    );
+    // Só a fronteira de encerramento mudou: nem a revisão de projeção nem a época financeira.
+    drifted.AXF_FSC_DAT_TerminationDate__c = Date.today().addMonths(6);
+    ALT_CLS_ScheduleProjection.recheckOverride = drifted;
+
+    ALT_CLS_ScheduleProjection.ProjectionResult result = read(
+      created.scheduleId
+    );
+
+    Assert.areEqual('STALE', result.outcome, result.message);
+    Assert.isNull(result.totalRemaining);
+    Assert.isNull(result.horizonTotal);
+    Assert.isFalse(result.complete);
+    Assert.isNotNull(
+      result.recheckedTerminationDate,
+      'A fronteira relida participa da rechecagem de versão'
+    );
+  }
+
+  @IsTest
+  static void equalAmountConfirmationsAtTheSameEconomicSequenceAreAmbiguous() {
+    Account holder = holder('AXF103 ambíguo mesmo valor');
+    ALT_CLS_FinancialScheduleService.CreateResult created = create(
+      holder.Id,
+      'ESTIMATED',
+      12,
+      1,
+      Date.today(),
+      'proj-amb-equal'
+    );
+    // MESMO valor da referência inicial e MESMA ordem econômica: duas confirmações válidas na
+    // mesma ordem econômica conflitam mesmo com o mesmo valor, porque a ordem econômica é a
+    // autoridade de precedência e nenhuma das duas vence a outra.
+    insert new AXF_OBJ_ScheduleReference__c(
+      AXF_SRF_EXI_ReferenceKey__c = 'amb-equal-amount',
+      AXF_SRF_LKP_Schedule__c = created.scheduleId,
+      AXF_SRF_NUM_EconomicSequence__c = 1,
+      AXF_SRF_NUM_EffectiveSequence__c = 1,
+      AXF_SRF_NUM_RecurringAmount__c = 500.00,
+      AXF_SRF_PKL_Kind__c = 'MANUAL',
+      AXF_SRF_DT_ConfirmedAt__c = System.now(),
+      AXF_SRF_LKP_ConfirmedBy__c = UserInfo.getUserId()
+    );
+
+    ALT_CLS_ScheduleProjection.ProjectionResult result = read(
+      created.scheduleId
+    );
+
+    Assert.areEqual('AMBIGUOUS', result.outcome, result.message);
+    Assert.isNull(result.totalRemaining);
+    Assert.isTrue(result.lines.isEmpty());
+  }
+
+  @IsTest
+  static void terminationBoundaryUsesTheEffectiveDueDateNotTheNominalOne() {
+    Account holder = holder('AXF103 vencimento efetivo');
+    ALT_CLS_FinancialScheduleService.CreateResult created = create(
+      holder.Id,
+      'INSTALLMENT',
+      6,
+      1,
+      Date.today(),
+      'proj-effective-boundary'
+    );
+    AXF_OBJ_FinancialTransaction__c third = [
+      SELECT Id
+      FROM AXF_OBJ_FinancialTransaction__c
+      WHERE
+        AXF_FTX_LKP_Schedule__c = :created.scheduleId
+        AND AXF_FTX_NUM_Sequence__c = 3
+      LIMIT 1
+    ];
+    // O vencimento NOMINAL da sequência 3 é hoje + 2 meses e o EFETIVO passa a ser hoje.
+    third.AXF_FTX_DAT_DueDate__c = Date.today();
+    update third;
+
+    ALT_CLS_ScheduleProjection.terminationOverride = Date.today();
+    ALT_CLS_ScheduleProjection.ProjectionResult result = read(
+      created.scheduleId
+    );
+    ALT_CLS_ScheduleProjection.terminationOverride = null;
+
+    Assert.areEqual('OK', result.outcome, result.message);
+    Set<Integer> sequences = new Set<Integer>();
+    for (ALT_CLS_ScheduleProjection.OccurrenceLine line : result.lines) {
+      sequences.add(line.sequence);
+    }
+    Assert.isTrue(
+      sequences.contains(3),
+      'A fronteira é o vencimento EFETIVO: uma parcela cujo pagamento efetivo está na fronteira permanece'
+    );
+    Assert.isFalse(
+      sequences.contains(2),
+      'A parcela cujo vencimento efetivo é posterior à fronteira sai do total'
+    );
+    Assert.areEqual(2, result.evaluatedCount, result.message);
   }
 }

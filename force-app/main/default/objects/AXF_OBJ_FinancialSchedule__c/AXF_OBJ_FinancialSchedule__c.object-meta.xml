@@ -2,12 +2,12 @@
 <CustomObject xmlns="http://soap.sforce.com/2006/04/metadata">
   <deploymentStatus>Deployed</deploymentStatus>
   <description
-  >Raiz de cronograma financeiro (AXF-103). Identidade estável do fluxo de pagamento/recebimento: titular, direção, moeda, sequência de início de rastreamento e ponteiros para a definição e a referência vigentes. A ocorrência é identificada por hash(versão, ScheduleKey, sequência) — data e revisão nunca participam. OWD Private, sem Delete. AXF-103.</description>
+  >Raiz de cronograma financeiro (AXF-103). Identidade estável do fluxo de pagamento/recebimento: titular, direção, moeda, sequência de início de rastreamento e ponteiros para a definição e a referência vigentes. A ocorrência é identificada por hash(versão, ScheduleKey, sequência) — data e revisão nunca participam. OWD Private, sem Delete e sem exposição nativa em listas/relatórios enquanto a paridade de compartilhamento dos filhos não existir. AXF-103.</description>
   <enableActivities>false</enableActivities>
   <enableBulkApi>true</enableBulkApi>
   <enableFeeds>false</enableFeeds>
   <enableHistory>true</enableHistory>
-  <enableReports>true</enableReports>
+  <enableReports>false</enableReports>
   <enableSearch>false</enableSearch>
   <enableSharing>true</enableSharing>
   <enableStreamingApi>true</enableStreamingApi>

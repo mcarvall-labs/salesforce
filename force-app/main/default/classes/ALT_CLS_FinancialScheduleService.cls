@@ -44,6 +44,11 @@ public with sharing class ALT_CLS_FinancialScheduleService {
 
   /** Limite de engenharia para a janela inicial gravada numa transação. */
   public static final Integer MAX_INITIAL_WINDOW = 50;
+  /**
+   * Periodicidade máxima aceita, em meses. Mantém o deslocamento de sequências dentro do limite
+   * de sanidade do calendário puro, em vez de confiar em estouro aritmético.
+   */
+  public static final Integer MAX_PERIOD_MONTHS = 120;
   /** Meses da janela rolante: mês corrente mais onze. */
   public static final Integer DEFAULT_HORIZON_MONTHS = 12;
   /**
@@ -178,7 +183,12 @@ public with sharing class ALT_CLS_FinancialScheduleService {
 
   private static final String WINDOW_LIMIT_PREFIX = 'A janela inicial exigiria ';
 
-  /** Capacidade de escrita liberada apenas durante o comando autorizado deste serviço. */
+  /**
+   * Capacidade de escrita liberada apenas durante o comando autorizado deste serviço. Visível ao
+   * teste apenas para permitir montar evidência já confirmada (recibo/definição existentes) e
+   * exercitar o replay e a rechecagem pós-lock; nenhum consumidor a habilita em runtime.
+   */
+  @TestVisible
   private static Boolean writing = false;
 
   /**
@@ -197,6 +207,22 @@ public with sharing class ALT_CLS_FinancialScheduleService {
    */
   public static String previewScheduleKey(CreateInput input) {
     return normalize(input).scheduleKey;
+  }
+
+  /**
+   * @description Hash do payload canônico que o comando vai usar, sem executá-lo. Permite a um
+   * chamador autorizado (e aos testes) reconstruir a identidade de operação enquadrada.
+   */
+  public static String previewPayloadHash(CreateInput input) {
+    return normalize(input).payloadHash;
+  }
+
+  /**
+   * @description Identidade de operação enquadrada (hash do payload canônico versionado) que o
+   * comando vai usar, sem executá-lo. É por ela que o replay é resolvido primeiro.
+   */
+  public static String previewOperationKey(CreateInput input) {
+    return normalize(input).operationKey;
   }
 
   /**
@@ -270,6 +296,7 @@ public with sharing class ALT_CLS_FinancialScheduleService {
     // Replay autorizado: identidade de operação antes de qualquer verificação de versão.
     CreateResult replay = replayOrConflict(
       normalized.scheduleKey,
+      normalized.operationKey,
       normalized.payloadHash
     );
     if (replay != null) {
@@ -282,6 +309,13 @@ public with sharing class ALT_CLS_FinancialScheduleService {
     try {
       window = buildWindow(normalized);
       enforceWindowLimit(window.size());
+      if (window.isEmpty()) {
+        // Criar sem nenhuma ocorrência e sem `ThroughSequence` devolveria CREATED com um
+        // cronograma vazio, sem sinalização alguma.
+        throw new ServiceException(
+          'A primeira sequência rastreada vence depois do fim do mês corrente mais onze: nenhuma ocorrência seria materializada. Informe um vencimento dentro da janela ou aumente `periodMonths`.'
+        );
+      }
     } catch (ServiceException rejected) {
       return fail(
         result,
@@ -318,10 +352,26 @@ public with sharing class ALT_CLS_FinancialScheduleService {
     // A releitura do recibo após o lock evita gravar sobre uma operação já confirmada.
     CreateResult afterLock = replayOrConflict(
       normalized.scheduleKey,
+      normalized.operationKey,
       normalized.payloadHash
     );
     if (afterLock != null) {
       return afterLock;
+    }
+
+    // Integridade e autoridade do contrato informado, sob o lock do titular já adquirido: o
+    // contrato é o lock descendente seguinte, na mesma ordem usada pelos escritores financeiros
+    // existentes. Um cronograma nunca aponta o contrato de outro titular, de outra moeda, nem um
+    // contrato inexistente — e a validação acontece antes de qualquer escrita.
+    if (input.contractId != null) {
+      CreateResult contractFailure = lockAndValidateContract(
+        input.contractId,
+        input.accountId,
+        normalized.currencyIsoCode
+      );
+      if (contractFailure != null) {
+        return contractFailure;
+      }
     }
 
     Savepoint checkpoint = Database.setSavepoint();
@@ -381,7 +431,11 @@ public with sharing class ALT_CLS_FinancialScheduleService {
           AXF_SRF_NUM_EconomicSequence__c = 1,
           AXF_SRF_NUM_EffectiveSequence__c = normalized.firstSequence,
           AXF_SRF_NUM_RecurringAmount__c = normalized.referenceAmount,
-          AXF_SRF_PKL_Kind__c = 'INITIAL'
+          AXF_SRF_PKL_Kind__c = 'INITIAL',
+          // A referência inicial nasce confirmada pelo próprio comando autorizado: as colunas de
+          // confirmação de um objeto de evidência imutável não podem ficar permanentemente nulas.
+          AXF_SRF_DT_ConfirmedAt__c = System.now(),
+          AXF_SRF_LKP_ConfirmedBy__c = UserInfo.getUserId()
         );
         Database.insert(
           new List<AXF_OBJ_ScheduleReference__c>{ reference },
@@ -460,6 +514,7 @@ public with sharing class ALT_CLS_FinancialScheduleService {
       // Colisão de chave única: rollback e releitura autorizada, nunca sucesso arbitrário.
       CreateResult recovered = replayOrConflict(
         normalized.scheduleKey,
+        normalized.operationKey,
         normalized.payloadHash
       );
       if (recovered != null) {
@@ -508,14 +563,20 @@ public with sharing class ALT_CLS_FinancialScheduleService {
   }
 
   /**
-   * @description Comando em lote. Rejeita multi-titular e mais de uma schedule por transação
-   * antes de qualquer escrita: a serialização é por titular, não um all-or-nothing global.
+   * @description Comando em lote. Devolve UM resultado por entrada, alinhado por índice com a
+   * entrada correspondente e carregando a identidade do próprio cronograma: um único resultado
+   * para N entradas faz um chamador que associa por índice ler o desfecho errado. Rejeita
+   * multi-titular e mais de uma schedule por transação antes de qualquer escrita — a
+   * serialização é por titular, não um all-or-nothing global.
    */
   public static List<CreateResult> createSchedules(List<CreateInput> inputs) {
-    CreateResult rejected = new CreateResult();
     if (inputs == null || inputs.isEmpty()) {
       return new List<CreateResult>{
-        fail(rejected, OUTCOME_INVALID, 'Nenhum cronograma informado.')
+        fail(
+          new CreateResult(),
+          OUTCOME_INVALID,
+          'Nenhum cronograma informado.'
+        )
       };
     }
     Set<Id> holders = new Set<Id>();
@@ -525,24 +586,51 @@ public with sharing class ALT_CLS_FinancialScheduleService {
       }
     }
     if (holders.size() > 1) {
-      return new List<CreateResult>{
-        fail(
-          rejected,
-          OUTCOME_MULTI_HOLDER,
-          'Um comando por transação opera um único titular. Particione por titular e relate a conclusão por titular.'
-        )
-      };
+      return rejectPerInput(
+        inputs,
+        OUTCOME_MULTI_HOLDER,
+        'Um comando por transação opera um único titular. Particione por titular e relate a conclusão por titular.'
+      );
     }
     if (inputs.size() > 1) {
-      return new List<CreateResult>{
-        fail(
-          rejected,
-          OUTCOME_INVALID,
-          'Uma schedule por transação de geração.'
-        )
-      };
+      return rejectPerInput(
+        inputs,
+        OUTCOME_INVALID,
+        'Uma schedule por transação de geração.'
+      );
     }
     return new List<CreateResult>{ createSchedule(inputs[0]) };
+  }
+
+  /**
+   * @description Um desfecho por entrada, cada um com a identidade do cronograma que aquela
+   * entrada descreve. Nenhuma escrita acontece: a recusa é da transação inteira, mas o relato é
+   * por entrada.
+   */
+  private static List<CreateResult> rejectPerInput(
+    List<CreateInput> inputs,
+    String outcome,
+    String message
+  ) {
+    List<CreateResult> results = new List<CreateResult>();
+    for (CreateInput input : inputs) {
+      CreateResult result = new CreateResult();
+      if (input != null && input.accountId != null) {
+        result.trackingStartSequence = input.trackingStartSequence;
+        try {
+          Normalized normalized = normalize(input);
+          result.scheduleKey = normalized.scheduleKey;
+          result.changeKey = normalized.operationKey;
+        } catch (Exception rejectedInput) {
+          // Uma entrada inválida por si só continua sendo relatada por entrada, sem identidade
+          // inventada: o desfecho da transação é o mesmo e nada foi escrito.
+          result.scheduleKey = null;
+          result.changeKey = null;
+        }
+      }
+      results.add(fail(result, outcome, message));
+    }
+    return results;
   }
 
   /**
@@ -622,6 +710,12 @@ public with sharing class ALT_CLS_FinancialScheduleService {
     Integer sequence;
     Date nominalDueDate;
     Decimal amount;
+    /** Decomposição devolvida pela fórmula aprovada; nula em ESTIMATED, que não tem fórmula. */
+    Decimal principalPortion;
+    Decimal interestPortion;
+    Decimal feePortion;
+    Decimal closingBalance;
+    Boolean roundingResidual = false;
   }
 
   private static Normalized normalize(CreateInput input) {
@@ -671,6 +765,11 @@ public with sharing class ALT_CLS_FinancialScheduleService {
     if (value.periodMonths < 1) {
       throw new ServiceException('Periodicidade deve ser de pelo menos 1 mês.');
     }
+    if (value.periodMonths > MAX_PERIOD_MONTHS) {
+      throw new ServiceException(
+        'Periodicidade deve estar entre 1 e ' + MAX_PERIOD_MONTHS + ' meses.'
+      );
+    }
     value.horizonMonths = (input.horizonMonths == null)
       ? DEFAULT_HORIZON_MONTHS
       : input.horizonMonths;
@@ -697,9 +796,12 @@ public with sharing class ALT_CLS_FinancialScheduleService {
 
     value.anchorDay = input.anchorDay;
     if (value.anchorDay == null) {
-      Date anchorSource = (input.trackingDueDate != null)
-        ? input.trackingDueDate
-        : input.firstDueDate;
+      // A âncora é a autoridade de calendário da DEFINIÇÃO e a definição nasce no primeiro
+      // vencimento: derivá-la da parcela corrente usaria um dia já recortado pelo mês curto e
+      // recusaria pares coerentes com âncora 29/30/31 cuja parcela corrente cai em fevereiro.
+      Date anchorSource = (input.firstDueDate != null)
+        ? input.firstDueDate
+        : input.trackingDueDate;
       if (anchorSource == null) {
         throw new ServiceException(
           'Informe o vencimento da parcela corrente ou o primeiro vencimento.'
@@ -714,26 +816,37 @@ public with sharing class ALT_CLS_FinancialScheduleService {
       throw new ServiceException('Dia âncora deve estar entre 1 e 31.');
     }
 
-    Date derivedFromTracking;
-    if (input.trackingDueDate != null) {
-      derivedFromTracking = ALT_CLS_ScheduleCalendar.shift(
+    if (input.firstDueDate != null) {
+      if (input.trackingDueDate != null) {
+        // A coerência é comparada PARA A FRENTE, derivando pela mesma função que materializa a
+        // ocorrência — e não pelo calendário já recortado da parcela corrente. O par só é
+        // recusado quando o calendário aprovado realmente não o produz.
+        Date projected = ALT_CLS_ScheduleCalendar.nominalDueDate(
+          input.firstDueDate,
+          value.firstSequence,
+          value.periodMonths,
+          value.anchorDay,
+          value.trackingStartSequence
+        );
+        if (projected != input.trackingDueDate) {
+          throw new ServiceException(
+            'O vencimento da parcela corrente informado não é coerente com o primeiro vencimento, a periodicidade e a âncora.'
+          );
+        }
+      }
+      value.firstDueDate = input.firstDueDate;
+    } else if (input.trackingDueDate != null) {
+      value.firstDueDate = ALT_CLS_ScheduleCalendar.shift(
         input.trackingDueDate,
         -(value.trackingStartSequence - value.firstSequence) *
         value.periodMonths,
         value.anchorDay
       );
     }
-    if (input.firstDueDate != null && derivedFromTracking != null) {
-      if (input.firstDueDate != derivedFromTracking) {
-        throw new ServiceException(
-          'O primeiro vencimento informado não é coerente com o vencimento da parcela corrente e a sequência de rastreamento.'
-        );
-      }
-      value.firstDueDate = input.firstDueDate;
-    } else {
-      value.firstDueDate = (input.firstDueDate != null)
-        ? input.firstDueDate
-        : derivedFromTracking;
+    if (value.firstDueDate == null) {
+      throw new ServiceException(
+        'Informe o primeiro vencimento ou o vencimento da parcela corrente.'
+      );
     }
 
     value.totalInstallments = input.totalInstallments;
@@ -962,10 +1075,12 @@ public with sharing class ALT_CLS_FinancialScheduleService {
     Integer lastCovered = (normalized.totalInstallments == null)
       ? null
       : normalized.firstSequence + normalized.totalInstallments - 1;
+    // O teto de LEITURA (MAX_EVALUATED_SEQUENCES) não é o limite de PERSISTÊNCIA desta janela:
+    // persistir é limitado por MAX_INITIAL_WINDOW. Uma recorrência indefinida enumera no máximo
+    // uma sequência além do limite de persistência — o suficiente para que enforceWindowLimit
+    // recuse a janela, em vez de truncá-la em silêncio.
     Integer upperBound = (lastCovered == null)
-      ? normalized.trackingStartSequence +
-        ALT_CLS_ScheduleProjection.MAX_EVALUATED_SEQUENCES -
-        1
+      ? normalized.trackingStartSequence + MAX_INITIAL_WINDOW
       : lastCovered;
 
     // A fórmula aprovada é gerada uma única vez por definição: a janela gravada e a projeção
@@ -1005,6 +1120,21 @@ public with sharing class ALT_CLS_FinancialScheduleService {
     occurrence.sequence = sequence;
     occurrence.nominalDueDate = nominal;
     occurrence.amount = amountOf(normalized, formula, sequence);
+    // O que a fórmula aprovada devolve é persistido como fato, não descartado: o caminho legado
+    // da AXF-20 grava principal, juros, tarifa, saldo e resíduo de arredondamento da MESMA
+    // fórmula, e uma ocorrência de cronograma sem essas parcelas fica incompleta.
+    ALT_CLS_AmortizationSchedule.Occurrence computed = formulaOccurrence(
+      normalized,
+      formula,
+      sequence
+    );
+    if (computed != null) {
+      occurrence.principalPortion = computed.principalPortion;
+      occurrence.interestPortion = computed.interestPortion;
+      occurrence.feePortion = computed.feePortion;
+      occurrence.closingBalance = computed.closingBalance;
+      occurrence.roundingResidual = computed.roundingResidualApplied == true;
+    }
     // O valor calculado precisa caber no limite efetivo de magnitude já em uso; estourar aqui
     // é rejeitado antes de qualquer escrita, em vez de falhar no DML depois do lock.
     if (
@@ -1022,6 +1152,27 @@ public with sharing class ALT_CLS_FinancialScheduleService {
   }
 
   /**
+   * @description Ocorrência da fórmula aprovada para a sequência, ou nulo no método estimado —
+   * que usa valor de referência e não tem decomposição de principal/juros/tarifa.
+   */
+  private static ALT_CLS_AmortizationSchedule.Occurrence formulaOccurrence(
+    Normalized normalized,
+    List<ALT_CLS_AmortizationSchedule.Occurrence> formula,
+    Integer sequence
+  ) {
+    if (normalized.method == METHOD_ESTIMATED) {
+      return null;
+    }
+    Integer index = sequence - normalized.firstSequence;
+    if (index < 0 || index >= formula.size()) {
+      throw new ServiceException(
+        'A definição não cobre a sequência ' + sequence + '.'
+      );
+    }
+    return formula[index];
+  }
+
+  /**
    * @description Valor da ocorrência na materialização, pela mesma autoridade usada pela
    * leitura: a fórmula aprovada para métodos calculados e o valor de referência no estimado.
    */
@@ -1033,13 +1184,7 @@ public with sharing class ALT_CLS_FinancialScheduleService {
     if (normalized.method == METHOD_ESTIMATED) {
       return normalized.referenceAmount;
     }
-    Integer index = sequence - normalized.firstSequence;
-    if (index < 0 || index >= formula.size()) {
-      throw new ServiceException(
-        'A definição não cobre a sequência ' + sequence + '.'
-      );
-    }
-    return formula[index].payment;
+    return formulaOccurrence(normalized, formula, sequence).payment;
   }
 
   /** @description Ocorrências da fórmula aprovada; nenhuma fórmula nova é introduzida aqui. */
@@ -1145,6 +1290,13 @@ public with sharing class ALT_CLS_FinancialScheduleService {
       AXF_FTX_PKL_PlanKind__c = 'PLANNED',
       AXF_FTX_NUM_Magnitude__c = occurrence.amount,
       AXF_FTX_CHK_IsEstimated__c = (normalized.method == METHOD_ESTIMATED),
+      // A decomposição da fórmula aprovada é um fato financeiro da ocorrência. Em ESTIMATED
+      // não há fórmula: as parcelas ficam nulas em vez de zero inventado.
+      AXF_FTX_NUM_PrincipalPortion__c = occurrence.principalPortion,
+      AXF_FTX_NUM_InterestPortion__c = occurrence.interestPortion,
+      AXF_FTX_NUM_FeePortion__c = occurrence.feePortion,
+      AXF_FTX_NUM_ClosingBalance__c = occurrence.closingBalance,
+      AXF_FTX_CHK_RoundingResidual__c = occurrence.roundingResidual,
       AXF_FTX_NUM_Sequence__c = occurrence.sequence,
       AXF_FTX_PKL_Direction__c = normalized.direction,
       AXF_FTX_TXT_CurrencyIsoCode__c = normalized.currencyIsoCode,
@@ -1169,8 +1321,26 @@ public with sharing class ALT_CLS_FinancialScheduleService {
    */
   private static CreateResult replayOrConflict(
     String scheduleKey,
+    String operationKey,
     String payloadHash
   ) {
+    List<AXF_OBJ_ScheduleChange__c> receipts = [
+      SELECT
+        Id,
+        AXF_SCH_EXI_OperationKey__c,
+        AXF_SCH_TXT_PayloadHash__c,
+        AXF_SCH_TAL_ResultJson__c,
+        AXF_SCH_LKP_Schedule__c
+      FROM AXF_OBJ_ScheduleChange__c
+      WHERE
+        AXF_SCH_EXI_OperationKey__c = :operationKey
+        AND AXF_SCH_PKL_Operation__c = :OPERATION_CREATE
+      WITH SYSTEM_MODE
+      LIMIT 1
+    ];
+    if (!receipts.isEmpty()) {
+      return replayFromReceipt(receipts[0], payloadHash);
+    }
     List<AXF_OBJ_FinancialSchedule__c> roots = [
       SELECT Id, AXF_FSC_EXI_ScheduleKey__c
       FROM AXF_OBJ_FinancialSchedule__c
@@ -1181,51 +1351,76 @@ public with sharing class ALT_CLS_FinancialScheduleService {
     if (roots.isEmpty()) {
       return null;
     }
-    List<AXF_OBJ_ScheduleChange__c> receipts = [
-      SELECT
-        Id,
-        AXF_SCH_EXI_OperationKey__c,
-        AXF_SCH_TXT_PayloadHash__c,
-        AXF_SCH_TAL_ResultJson__c
-      FROM AXF_OBJ_ScheduleChange__c
-      WHERE
-        AXF_SCH_LKP_Schedule__c = :roots[0].Id
-        AND AXF_SCH_PKL_Operation__c = :OPERATION_CREATE
-      WITH SYSTEM_MODE
-      ORDER BY AXF_SCH_DT_CommittedAt__c ASC
-      LIMIT 1
-    ];
     CreateResult result = new CreateResult();
     result.scheduleKey = roots[0].AXF_FSC_EXI_ScheduleKey__c;
     result.scheduleId = roots[0].Id;
-    if (receipts.isEmpty()) {
-      return fail(
-        result,
-        OUTCOME_CONFLICT,
-        'Já existe um cronograma com esta identidade sem recibo de criação equivalente.'
-      );
-    }
-    AXF_OBJ_ScheduleChange__c receipt = receipts[0];
+    return fail(
+      result,
+      OUTCOME_CONFLICT,
+      'Já existe um cronograma com esta identidade sem recibo de criação equivalente.'
+    );
+  }
+
+  /**
+   * @description Resultado autorizado já confirmado para esta identidade de operação. Um
+   * `ResultJson` ausente ou malformado não vira replay nem exceção de desserialização: o
+   * reenvio é recusado com um desfecho controlado.
+   */
+  private static CreateResult replayFromReceipt(
+    AXF_OBJ_ScheduleChange__c receipt,
+    String payloadHash
+  ) {
+    CreateResult result = new CreateResult();
     result.changeId = receipt.Id;
     result.changeKey = receipt.AXF_SCH_EXI_OperationKey__c;
+    List<AXF_OBJ_FinancialSchedule__c> roots = [
+      SELECT Id, AXF_FSC_EXI_ScheduleKey__c
+      FROM AXF_OBJ_FinancialSchedule__c
+      WHERE Id = :receipt.AXF_SCH_LKP_Schedule__c
+      WITH SYSTEM_MODE
+      LIMIT 1
+    ];
+    if (!roots.isEmpty()) {
+      result.scheduleId = roots[0].Id;
+      result.scheduleKey = roots[0].AXF_FSC_EXI_ScheduleKey__c;
+    }
     if (receipt.AXF_SCH_TXT_PayloadHash__c != payloadHash) {
       return fail(
         result,
         OUTCOME_CONFLICT,
-        'Já existe um cronograma com esta identidade e um payload diferente. O resultado original não é reaproveitado.'
+        'A identidade de operação já está confirmada com um payload diferente. O resultado original não é reaproveitado.'
       );
     }
     CreateResult stored;
     if (String.isBlank(receipt.AXF_SCH_TAL_ResultJson__c)) {
       stored = new CreateResult();
     } else {
-      stored = (CreateResult) JSON.deserialize(
-        receipt.AXF_SCH_TAL_ResultJson__c,
-        CreateResult.class
+      try {
+        stored = (CreateResult) JSON.deserialize(
+          receipt.AXF_SCH_TAL_ResultJson__c,
+          CreateResult.class
+        );
+      } catch (Exception malformed) {
+        return fail(
+          result,
+          OUTCOME_CONFLICT,
+          'O resultado autorizado registrado no recibo não pôde ser lido; o reenvio é recusado em vez de inventar um desfecho.'
+        );
+      }
+    }
+    if (stored == null) {
+      return fail(
+        result,
+        OUTCOME_CONFLICT,
+        'O resultado autorizado registrado no recibo está vazio; o reenvio é recusado em vez de inventar um desfecho.'
       );
     }
-    stored.scheduleId = roots[0].Id;
-    stored.scheduleKey = roots[0].AXF_FSC_EXI_ScheduleKey__c;
+    if (result.scheduleId != null) {
+      stored.scheduleId = result.scheduleId;
+    }
+    if (result.scheduleKey != null) {
+      stored.scheduleKey = result.scheduleKey;
+    }
     stored.changeId = receipt.Id;
     stored.changeKey = receipt.AXF_SCH_EXI_OperationKey__c;
     stored.outcome = OUTCOME_REPLAY;
@@ -1235,6 +1430,52 @@ public with sharing class ALT_CLS_FinancialScheduleService {
   }
 
   // --- autorização ---------------------------------------------------------
+
+  /**
+   * @description Existe, pertence ao MESMO titular e usa a MESMA moeda? Executada depois do lock
+   * do titular (holder-first) e antes de qualquer escrita: o contrato é o lock descendente
+   * seguinte. Devolve nulo quando o contrato é válido.
+   */
+  private static CreateResult lockAndValidateContract(
+    Id contractId,
+    Id holderId,
+    String currencyIsoCode
+  ) {
+    CreateResult failure = new CreateResult();
+    List<AXF_OBJ_Contract__c> contracts = Database.queryWithBinds(
+      'SELECT Id, AXF_CTR_LKP_Account__c, AXF_CTR_TXT_CurrencyIsoCode__c FROM AXF_OBJ_Contract__c WHERE Id = :contractId FOR UPDATE',
+      new Map<String, Object>{ 'contractId' => contractId },
+      AccessLevel.SYSTEM_MODE
+    );
+    if (contracts.isEmpty()) {
+      return fail(
+        failure,
+        OUTCOME_INVALID,
+        'O contrato informado não existe; nada foi gravado.'
+      );
+    }
+    AXF_OBJ_Contract__c contract = contracts[0];
+    if (contract.AXF_CTR_LKP_Account__c != holderId) {
+      return fail(
+        failure,
+        OUTCOME_FORBIDDEN,
+        'O contrato informado pertence a outro titular: um cronograma nunca cruza a fronteira de titular.'
+      );
+    }
+    String contractCurrency = String.isBlank(
+        contract.AXF_CTR_TXT_CurrencyIsoCode__c
+      )
+      ? null
+      : contract.AXF_CTR_TXT_CurrencyIsoCode__c.trim().toUpperCase();
+    if (contractCurrency != null && contractCurrency != currencyIsoCode) {
+      return fail(
+        failure,
+        OUTCOME_INVALID,
+        'A moeda do cronograma difere da moeda do contrato informado.'
+      );
+    }
+    return null;
+  }
 
   private static Boolean isAuthorized(Id accountId) {
     if (authorizedOverride != null) {

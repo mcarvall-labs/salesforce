@@ -16,6 +16,17 @@ public with sharing class AXF_CLS_SCHTriggerHandler {
     List<AXF_OBJ_ScheduleChange__c> newList
   ) {
     for (AXF_OBJ_ScheduleChange__c record : newList) {
+      // O recibo é EVIDÊNCIA do serviço, não um registro de usuário. Criar em
+      // AXF_OBJ_ScheduleChange__c é concedido a Gestor e a entrada financeira: sem esta guarda,
+      // qualquer um deles insere um recibo arbitrário (Operation, Scope e ResultJson
+      // inventados) e o recibo deixa de ser prova da operação. Mesmo mecanismo de contexto
+      // autorizado usado em FSC/SDF/SRF.
+      if (!ALT_CLS_FinancialScheduleService.isWriting()) {
+        record.addError(
+          'O recibo de alteração do cronograma é gravado pelo serviço autorizado e não é criado por DML direta (AXF-103).'
+        );
+        continue;
+      }
       if (String.isBlank(record.AXF_SCH_EXI_OperationKey__c)) {
         record.addError('A chave da operação é obrigatória.');
         continue;

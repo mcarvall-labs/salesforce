@@ -11,8 +11,12 @@
 public inherited sharing class ALT_CLS_ScheduleCalendar {
   public static final Integer MIN_ANCHOR_DAY = 1;
   public static final Integer MAX_ANCHOR_DAY = 31;
-  /** Dez mil anos de deslocamento: limite de sanidade, não uma regra de negócio. */
-  public static final Integer MAX_MONTH_OFFSET = 120000;
+  /**
+   * Cem anos de deslocamento: limite de sanidade, não uma regra de negócio. Um teto de 120.000
+   * meses deixava uma entrada ruim levar `Date.addMonths` milhares de anos adiante, com o
+   * estouro aritmético como único freio.
+   */
+  public static final Integer MAX_MONTH_OFFSET = 1200;
 
   public class CalendarException extends Exception {
   }
