@@ -161,7 +161,7 @@
           </div>
         </template>
 
-        <!-- RUNNING / DONE / FAILED -->
+        <!-- RUNNING / DONE / FAILED / STALLED -->
         <template lwc:if={isRunning}>
           <div role="status" aria-live="polite" tabindex="-1" data-feedback>
             <lightning-spinner
@@ -176,20 +176,55 @@
               </p>
             </template>
           </div>
+          <lightning-button
+            label={labels.leave}
+            onclick={handleLeave}
+          ></lightning-button>
         </template>
 
         <template lwc:if={isDone}>
-          <p
-            class="slds-text-color_success"
-            role="status"
-            tabindex="-1"
-            data-feedback
-          >
-            {feedback}
-          </p>
+          <div role="status" tabindex="-1" data-feedback>
+            <p class="slds-text-color_success">{feedback}</p>
+            <dl class="slds-dl_horizontal slds-var-m-top_x-small">
+              <template lwc:if={summaryName}>
+                <dt class="slds-dl_horizontal__label">{labels.personLabel}</dt>
+                <dd class="slds-dl_horizontal__detail">{summaryName}</dd>
+              </template>
+              <dt class="slds-dl_horizontal__label">{labels.scopeLabel}</dt>
+              <dd class="slds-dl_horizontal__detail">{scopeLabelText}</dd>
+              <template lwc:if={linkedUserId}>
+                <dt class="slds-dl_horizontal__label">{labels.linkedUser}</dt>
+                <dd class="slds-dl_horizontal__detail">{linkedUserId}</dd>
+              </template>
+            </dl>
+          </div>
           <lightning-button
-            label={labels.cancel}
+            label={labels.close}
             onclick={handleCancel}
+          ></lightning-button>
+        </template>
+
+        <!-- Unknown outcome: the server job may still be running, so the operation
+             is neither reported as failed nor left loading forever. -->
+        <template lwc:if={isStalled}>
+          <div role="status" tabindex="-1" data-feedback>
+            <p>{feedback}</p>
+            <template lwc:if={status}>
+              <p class="slds-text-body_small slds-text-color_weak">
+                {labels.statusStep}: {status.currentStep} ·
+                {labels.statusState}: {status.status}
+              </p>
+            </template>
+          </div>
+          <lightning-button
+            variant="brand"
+            label={labels.retry}
+            onclick={handleRetry}
+          ></lightning-button>
+          <lightning-button
+            class="slds-var-m-left_x-small"
+            label={leaveLabel}
+            onclick={handleLeave}
           ></lightning-button>
         </template>
 
@@ -202,15 +237,17 @@
           >
             {feedback}
           </p>
-          <lightning-button
-            variant="brand"
-            label={labels.retry}
-            onclick={handleRetry}
-          ></lightning-button>
+          <template lwc:if={canRetry}>
+            <lightning-button
+              variant="brand"
+              label={labels.retry}
+              onclick={handleRetry}
+            ></lightning-button>
+          </template>
           <lightning-button
             class="slds-var-m-left_x-small"
-            label={labels.cancel}
-            onclick={handleCancel}
+            label={leaveLabel}
+            onclick={handleLeave}
           ></lightning-button>
         </template>
       </template>
