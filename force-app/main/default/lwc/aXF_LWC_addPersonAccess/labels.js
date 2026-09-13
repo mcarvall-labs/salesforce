@@ -24,12 +24,21 @@ const PT = {
   back: "Voltar",
   next: "Próximo",
   confirm: "Confirmar",
-  cancel: "Cancelar",
   starting: "Iniciando…",
   running: "Provisionando… acompanhe o andamento.",
   done: "Acesso concluído.",
   failed: "Não foi possível concluir. Veja a mensagem e retome.",
   retry: "Retomar",
+  stalled:
+    "Sem progresso por um tempo. O provisionamento pode continuar no servidor; retome para continuar.",
+  watchLimit:
+    "O acompanhamento automático atingiu o limite de espera. O provisionamento pode continuar no servidor; retome para verificar.",
+  statusUnavailable:
+    "Não foi possível consultar o andamento agora. O provisionamento pode continuar no servidor; retome para verificar.",
+  leave: "Sair e continuar depois",
+  backToForm: "Voltar ao formulário",
+  close: "Fechar",
+  linkedUser: "Usuário vinculado",
   statusStep: "Etapa",
   statusState: "Situação",
   stepOf: "Etapa {0} de {1}"
@@ -59,12 +68,21 @@ const EN = {
   back: "Back",
   next: "Next",
   confirm: "Confirm",
-  cancel: "Cancel",
   starting: "Starting…",
   running: "Provisioning… follow the progress.",
   done: "Access granted.",
   failed: "Could not finish. Read the message and resume.",
   retry: "Resume",
+  stalled:
+    "No progress for a while. Provisioning may still be running on the server; resume to continue.",
+  watchLimit:
+    "Automatic tracking reached its wait limit. Provisioning may still be running on the server; resume to check.",
+  statusUnavailable:
+    "Could not read the progress now. Provisioning may still be running on the server; resume to check.",
+  leave: "Leave and continue later",
+  backToForm: "Back to the form",
+  close: "Close",
+  linkedUser: "Linked user",
   statusStep: "Step",
   statusState: "State",
   stepOf: "Step {0} of {1}"

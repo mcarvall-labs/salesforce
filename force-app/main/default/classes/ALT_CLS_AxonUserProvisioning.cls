@@ -14,6 +14,12 @@
  *   NUNCA no mesmo contexto: cada execução de Queueable faz um só tipo. As
  *   etapas de setup gravam o checkpoint numa fase COMMIT separada (só toca o
  *   objeto custom).
+ * - Continuação (AXF-107): toda etapa não terminal concluída com sucesso agenda
+ *   exatamente UM sucessor. Etapa non-setup grava o checkpoint na própria
+ *   transação e agenda um STEP novo; etapa de setup agenda a fase COMMIT, que
+ *   grava o checkpoint e então agenda o STEP seguinte. A fase COMMIT decide a
+ *   continuação ANTES de gravar RUNNING: sem capacidade de Queueable o pedido
+ *   fica recuperável (FAILED_RETRYABLE) em vez de preso em RUNNING sem job.
  * - Idempotente: chave `AXF_APV_EXI_RequestKey__c` por pessoa+escopo. Retomar
  *   nunca cria 2º User / 2ª Person Account.
  * - Autoridade: o chamador precisa de `AXF_CanConfigure`. Ser System
@@ -85,6 +91,8 @@ public with sharing class ALT_CLS_AxonUserProvisioning {
   private static final String MSG_RESUMED = 'Provisionamento retomado da etapa pendente.';
   @TestVisible
   private static final String MSG_DONE = 'Acesso concluido.';
+  @TestVisible
+  private static final String MSG_NO_CAPACITY = 'Nao foi possivel agendar a proxima etapa agora. Retome para continuar de onde parou.';
 
   @TestVisible
   private static Boolean canConfigureOverride;
@@ -184,13 +192,23 @@ public with sharing class ALT_CLS_AxonUserProvisioning {
     );
     Database.insert(apv, AccessLevel.USER_MODE);
 
-    enqueueStep(apv.Id);
+    Boolean scheduled = enqueueStep(apv.Id);
+    if (!scheduled) {
+      // Without a scheduled STEP the request would stay PENDING forever: record the
+      // recoverable outcome so the operator gets an explicit resume (AXF-107).
+      commitCheckpoint(
+        apv.Id,
+        'CREATE_OR_LINK_PERSON',
+        'FAILED_RETRYABLE',
+        MSG_NO_CAPACITY
+      );
+    }
 
     r.provisioningId = apv.Id;
     r.outcome = Outcome.STARTED.name();
-    r.status = 'PENDING';
+    r.status = scheduled ? 'PENDING' : 'FAILED_RETRYABLE';
     r.currentStep = 'CREATE_OR_LINK_PERSON';
-    r.message = MSG_STARTED;
+    r.message = scheduled ? MSG_STARTED : MSG_NO_CAPACITY;
     return r;
   }
 
@@ -240,19 +258,80 @@ public with sharing class ALT_CLS_AxonUserProvisioning {
       r.message = apv.AXF_APV_TXT_Message__c;
       return r;
     }
-    enqueueStep(apv.Id);
+    // Resuming re-runs exactly the persisted checkpoint step, so a stalled request
+    // recovers without repeating the steps already completed (AXF-107).
+    Boolean scheduled = enqueueStep(apv.Id);
     r.outcome = Outcome.RESUMED.name();
-    r.message = MSG_RESUMED;
+    if (scheduled) {
+      r.message = MSG_RESUMED;
+      return r;
+    }
+    commitCheckpoint(
+      apv.Id,
+      apv.AXF_APV_PKL_CurrentStep__c,
+      'FAILED_RETRYABLE',
+      MSG_NO_CAPACITY
+    );
+    r.status = 'FAILED_RETRYABLE';
+    r.message = MSG_NO_CAPACITY;
     return r;
   }
 
   // ---- chained Queueable ----
 
-  private static void enqueueStep(Id apvId) {
-    if (Test.isRunningTest()) {
-      return; // tests drive steps synchronously via driveSync()
+  /**
+   * @description Test seams. Queueable chaining is not observable inside a test
+   * transaction, so `schedule()` records the transaction it would enqueue and
+   * `driveSync()` executes the recorded transactions in order. The continuation
+   * DECISION is therefore exercised by the tests, instead of being bypassed by a
+   * synchronous-only path (AXF-107).
+   */
+  @TestVisible
+  private static List<String> scheduledPhases = new List<String>();
+  private static List<Chain> scheduledChains = new List<Chain>();
+  @TestVisible
+  private static Boolean queueableCapacityOverride;
+
+  private static Boolean hasQueueableCapacity() {
+    if (queueableCapacityOverride != null) {
+      return queueableCapacityOverride;
     }
-    System.enqueueJob(new Chain('STEP', apvId, null, null, null));
+    if (Test.isRunningTest()) {
+      return true; // nothing is really enqueued in a test, so no capacity is used
+    }
+    return Limits.getQueueableJobs() < Limits.getLimitQueueableJobs();
+  }
+
+  /**
+   * @description Schedules exactly one chained transaction. Returns false when no
+   * Queueable capacity is left, and every caller must then persist (or explicitly
+   * accept) a recoverable state: a successful step may never stay in RUNNING with
+   * no job behind it (AXF-107).
+   */
+  private static Boolean schedule(
+    String phase,
+    Id apvId,
+    String nextStep,
+    String failStatus,
+    String message
+  ) {
+    if (!hasQueueableCapacity()) {
+      return false;
+    }
+    Chain job = new Chain(phase, apvId, nextStep, failStatus, message);
+    if (Test.isRunningTest()) {
+      scheduledChains.add(job);
+      scheduledPhases.add(
+        String.isBlank(nextStep) ? phase : phase + ':' + nextStep
+      );
+      return true;
+    }
+    System.enqueueJob(job);
+    return true;
+  }
+
+  private static Boolean enqueueStep(Id apvId) {
+    return schedule('STEP', apvId, null, null, null);
   }
 
   public class Chain implements Queueable {
@@ -277,16 +356,28 @@ public with sharing class ALT_CLS_AxonUserProvisioning {
     }
 
     public void execute(QueueableContext ctx) {
-      if (phase == 'COMMIT') {
-        commitCheckpoint(apvId, nextStep, failStatus, message);
-        Boolean canChain =
-          Limits.getQueueableJobs() < Limits.getLimitQueueableJobs();
-        if (failStatus == null && nextStep != 'DONE' && canChain) {
-          System.enqueueJob(new Chain('STEP', apvId, null, null, null));
-        }
+      if (phase != 'COMMIT') {
+        runStep(apvId);
         return;
       }
-      runStep(apvId);
+      if (failStatus != null) {
+        // Explicit failure commit: keeps the current step, so resume() re-runs it.
+        commitCheckpoint(apvId, nextStep, failStatus, message);
+        return;
+      }
+      // The COMMIT phase persists the checkpoint of a setup step (non-setup DML
+      // only) and then hands over to the successor. Capacity is decided BEFORE the
+      // RUNNING checkpoint is written: persisting RUNNING and only then discovering
+      // that no job can be scheduled is what strands a request (AXF-107).
+      if (nextStep == 'DONE') {
+        commitCheckpoint(apvId, 'DONE', null, message);
+        return;
+      }
+      if (enqueueStep(apvId)) {
+        commitCheckpoint(apvId, nextStep, null, message);
+        return;
+      }
+      commitStalled(apvId, nextStep, MSG_NO_CAPACITY);
     }
   }
 
@@ -303,8 +394,10 @@ public with sharing class ALT_CLS_AxonUserProvisioning {
   }
 
   /**
-   * @description Runs exactly one step (one DML kind). Setup steps enqueue a
-   * COMMIT to persist the checkpoint; non-setup steps persist inline.
+   * @description Runs exactly one step (one DML kind) and, when it succeeds,
+   * schedules exactly one successor transaction. Setup steps schedule the COMMIT
+   * that persists the checkpoint and continues; non-setup steps persist inline and
+   * continue immediately (AXF-107).
    */
   @TestVisible
   private static void runStep(Id apvId) {
@@ -331,13 +424,34 @@ public with sharing class ALT_CLS_AxonUserProvisioning {
       return;
     }
 
-    if (SETUP_STEPS.contains(step) && !Test.isRunningTest()) {
-      System.enqueueJob(new Chain('COMMIT', apvId, nextStep, null, sr.message));
-      // producedUserId is carried into COMMIT by re-deriving it there via
-      // username lookup (resume-safe); no cross-transaction static.
-    } else {
-      commitCheckpoint(apvId, nextStep, null, sr.message, sr.producedUserId);
+    if (SETUP_STEPS.contains(step)) {
+      // The step just performed setup DML, so the checkpoint (non-setup DML) cannot
+      // be written in this transaction (Mixed DML): a COMMIT transaction persists it
+      // and then schedules the successor. Should no Queueable capacity be available,
+      // nothing can be persisted here either; the record stays at this step and
+      // resume() re-runs it idempotently.
+      schedule('COMMIT', apvId, nextStep, null, sr.message);
+      return;
     }
+    // Non-setup step: persist the checkpoint in this transaction (same DML kind) and
+    // then schedule the single successor — the continuation AXF-107 was missing.
+    commitCheckpoint(apvId, nextStep, null, sr.message, sr.producedUserId);
+    continueFrom(apvId, nextStep);
+  }
+
+  /**
+   * @description Schedules the single successor of a committed nonterminal
+   * non-setup step. Without capacity the checkpoint is rewritten as a recoverable
+   * failure, so the request is never left in RUNNING with no job behind it.
+   */
+  private static void continueFrom(Id apvId, String nextStep) {
+    if (nextStep == 'DONE') {
+      return; // the operation is complete: nothing left to schedule
+    }
+    if (enqueueStep(apvId)) {
+      return;
+    }
+    commitStalled(apvId, nextStep, MSG_NO_CAPACITY);
   }
 
   private static void commitCheckpoint(
@@ -360,22 +474,51 @@ public with sharing class ALT_CLS_AxonUserProvisioning {
     if (apv == null) {
       return;
     }
-    apv.AXF_APV_PKL_CurrentStep__c = failStatus == null
-      ? nextStep
-      : apv.AXF_APV_PKL_CurrentStep__c;
-    apv.AXF_APV_PKL_Status__c = failStatus != null
-      ? failStatus
-      : (nextStep == 'DONE' ? 'SUCCEEDED' : 'RUNNING');
-    apv.AXF_APV_TXT_Message__c = message == null
-      ? apv.AXF_APV_TXT_Message__c
-      : message.abbreviate(255);
+    // A failure keeps the current step, so resume() re-runs exactly that step.
+    writeCheckpoint(
+      apv,
+      failStatus == null ? nextStep : apv.AXF_APV_PKL_CurrentStep__c,
+      failStatus != null
+        ? failStatus
+        : (nextStep == 'DONE' ? 'SUCCEEDED' : 'RUNNING'),
+      message,
+      producedUserId
+    );
+  }
+
+  /**
+   * @description Persists a step whose work already succeeded but whose successor
+   * could not be scheduled. The step advances (the work is done) while the status
+   * becomes recoverable, so the operator sees an explicit resume instead of an
+   * endless RUNNING (AXF-107).
+   */
+  private static void commitStalled(Id apvId, String nextStep, String message) {
+    AXF_OBJ_AccessProvisioning__c apv = readApv(apvId);
+    if (apv == null) {
+      return;
+    }
+    writeCheckpoint(apv, nextStep, 'FAILED_RETRYABLE', message, null);
+  }
+
+  private static void writeCheckpoint(
+    AXF_OBJ_AccessProvisioning__c apv,
+    String step,
+    String status,
+    String message,
+    Id producedUserId
+  ) {
+    apv.AXF_APV_PKL_CurrentStep__c = step;
+    apv.AXF_APV_PKL_Status__c = status;
+    if (message != null) {
+      apv.AXF_APV_TXT_Message__c = message.abbreviate(255);
+    }
     if (producedUserId != null && apv.AXF_APV_LKP_User__c == null) {
       apv.AXF_APV_LKP_User__c = producedUserId;
     }
     apv.AXF_APV_TAL_StepLog__c = appendLog(
       apv.AXF_APV_TAL_StepLog__c,
-      apv.AXF_APV_PKL_CurrentStep__c,
-      apv.AXF_APV_PKL_Status__c,
+      step,
+      status,
       message
     );
     Database.update(apv, AccessLevel.SYSTEM_MODE);
@@ -431,6 +574,12 @@ public with sharing class ALT_CLS_AxonUserProvisioning {
     if (!hasSalesforceLicense()) {
       throw new StepException(MSG_NO_LICENSE, true);
     }
+    // Resume-safe (AXF-107): a stalled request that already created its user must
+    // not create a second one when this step is re-run from the checkpoint.
+    Id created = findCreatedUser(apv);
+    if (created != null) {
+      return new StepResult('Usuario ja criado; retomando o vinculo.', created);
+    }
     Id profileId = [SELECT Id FROM Profile WHERE Name = :MIN_PROFILE LIMIT 1]
     .Id;
     String last = apv.AXF_APV_TXT_TargetName__c;
@@ -458,7 +607,17 @@ public with sharing class ALT_CLS_AxonUserProvisioning {
       EmailEncodingKey = 'UTF-8',
       IsActive = true
     );
-    Database.insert(u, AccessLevel.SYSTEM_MODE);
+    try {
+      Database.insert(u, AccessLevel.SYSTEM_MODE);
+    } catch (System.DmlException e) {
+      // A concurrent confirmation of the same request created this deterministic
+      // username first: reconcile with it instead of duplicating or failing.
+      Id raced = findCreatedUser(apv);
+      if (raced == null) {
+        throw e;
+      }
+      return new StepResult('Usuario ja criado; retomando o vinculo.', raced);
+    }
     // The APV lookup is set in the COMMIT phase (non-setup) via producedUserId,
     // or re-derived from the deterministic username on resume.
     return new StepResult('Usuario criado.', u.Id);
@@ -529,15 +688,34 @@ public with sharing class ALT_CLS_AxonUserProvisioning {
       return apv.AXF_APV_LKP_User__c;
     }
     // CREATE + resume: the user was created with a deterministic username.
-    String prefix = 'axf82.' + apv.Id + '@%';
-    List<User> u = [SELECT Id FROM User WHERE Username LIKE :prefix LIMIT 1];
-    if (u.isEmpty()) {
+    Id created = findCreatedUser(apv);
+    if (created == null) {
       throw new StepException(
         'Usuario nao encontrado para esta requisicao.',
         false
       );
     }
-    return u[0].Id;
+    return created;
+  }
+
+  /**
+   * @description Finds the User this request created, by its deterministic
+   * username. Used for resume safety: re-running a step must reuse that user
+   * instead of creating a second one (AXF-107, AC3).
+   */
+  private static Id findCreatedUser(AXF_OBJ_AccessProvisioning__c apv) {
+    if (apv == null || apv.Id == null) {
+      return null;
+    }
+    String prefix = 'axf82.' + apv.Id + '@%';
+    List<User> users = [
+      SELECT Id
+      FROM User
+      WHERE Username LIKE :prefix
+      ORDER BY CreatedDate
+      LIMIT 1
+    ];
+    return users.isEmpty() ? null : users[0].Id;
   }
 
   private Result validateExistingUser(Id userId, Result r) {
@@ -742,22 +920,40 @@ public with sharing class ALT_CLS_AxonUserProvisioning {
     }
   }
 
-  // ---- test seam: run the whole chain synchronously (bypasses Queueable) ----
+  // ---- test seam: run the scheduled transactions as the platform would ----
 
+  /**
+   * @description Executes every transaction the step logic scheduled, in order and
+   * through the same `Chain.execute` entry point the platform uses, so tests
+   * exercise the continuation decisions instead of a synchronous-only path. The
+   * loop is bounded: a chain that does not settle is a defect, not a test need.
+   */
   @TestVisible
   private static void driveSync(Id apvId) {
-    for (Integer guard = 0; guard < 10; guard++) {
-      AXF_OBJ_AccessProvisioning__c apv = readApv(apvId);
-      if (
-        apv == null ||
-        apv.AXF_APV_PKL_CurrentStep__c == 'DONE' ||
-        apv.AXF_APV_PKL_Status__c == 'FAILED_TERMINAL' ||
-        apv.AXF_APV_PKL_Status__c == 'FAILED_RETRYABLE'
-      ) {
-        return;
-      }
+    driveSyncFor(40);
+    System.assert(
+      scheduledChains.isEmpty(),
+      'A cadeia de provisionamento nao terminou no limite de transacoes: ' +
+      apvId
+    );
+  }
+
+  /**
+   * @description Executes at most `maxTransactions` scheduled transactions, so a
+   * test can observe what a single step (or a single COMMIT) planned before the
+   * next one runs.
+   */
+  @TestVisible
+  private static void driveSyncFor(Integer maxTransactions) {
+    for (
+      Integer guard = 0;
+      guard < maxTransactions && !scheduledChains.isEmpty();
+      guard++
+    ) {
+      Chain next = scheduledChains.remove(0);
+      scheduledPhases.remove(0);
       System.runAs(new User(Id = UserInfo.getUserId())) {
-        runStep(apvId);
+        next.execute(null);
       }
     }
   }
