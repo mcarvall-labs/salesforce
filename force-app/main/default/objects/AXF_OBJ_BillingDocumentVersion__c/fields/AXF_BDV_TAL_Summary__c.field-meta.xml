@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<CustomField xmlns="http://soap.sforce.com/2006/04/metadata">
+    <fullName>AXF_BDV_TAL_Summary__c</fullName>
+    <label>Resumo Fixo</label>
+    <type>LongTextArea</type>
+    <length>32768</length>
+    <visibleLines>5</visibleLines>
+    <required>false</required>
+    <description
+  >Resumo fixo (JSON) da composicao: contrato, contraparte, titular, moeda, periodo, tipo, totais e origem das linhas. Snapshot redigido para revisao (UX-DR19-25).</description>
+</CustomField>

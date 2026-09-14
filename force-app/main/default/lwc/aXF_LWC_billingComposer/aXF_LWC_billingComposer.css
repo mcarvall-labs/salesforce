@@ -1,0 +1,17 @@
+.axf-summary {
+  position: sticky;
+  top: 0.5rem;
+}
+.axf-table-wrap {
+  overflow-x: auto;
+}
+.axf-row_selected {
+  background-color: rgb(244, 246, 249);
+}
+.axf-reasons {
+  margin: 0;
+  padding-left: 1rem;
+}
+.axf-allocations td {
+  background-color: rgb(250, 250, 249);
+}

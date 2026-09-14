@@ -149,4 +149,247 @@
   ><fullName>AXF_Realization_reportingCurrencyRequired</fullName><language
     >en_US</language><protected>false</protected><shortDescription
     >Realization reportingCurrencyRequired</shortDescription><value
-    >Configure the organization reporting currency before recording realization.</value></labels></CustomLabels>
+    >Configure the organization reporting currency before recording realization.</value></labels><labels
+  ><fullName>AXF_BillingComposer_title</fullName><language
+    >en_US</language><protected>false</protected><shortDescription
+    >Composer title</shortDescription><value
+    >Billing draft composer</value></labels><labels><fullName
+    >AXF_BillingComposer_intro</fullName><language>en_US</language><protected
+    >false</protected><shortDescription>Composer intro</shortDescription><value
+    >Select compatible planned entries of one contract to review a traceable billing draft before issuance.</value></labels><labels
+  ><fullName>AXF_BillingComposer_holder</fullName><language
+    >en_US</language><protected>false</protected><shortDescription
+    >Holder</shortDescription><value>Holder</value></labels><labels><fullName
+    >AXF_BillingComposer_contract</fullName><language>en_US</language><protected
+    >false</protected><shortDescription>Contract</shortDescription><value
+    >Contract</value></labels><labels><fullName
+    >AXF_BillingComposer_counterparty</fullName><language
+    >en_US</language><protected>false</protected><shortDescription
+    >Counterparty</shortDescription><value>Counterparty</value></labels><labels
+  ><fullName>AXF_BillingComposer_currency</fullName><language
+    >en_US</language><protected>false</protected><shortDescription
+    >Currency</shortDescription><value>Currency</value></labels><labels
+  ><fullName>AXF_BillingComposer_documentKind</fullName><language
+    >en_US</language><protected>false</protected><shortDescription
+    >Document kind</shortDescription><value
+    >Document kind</value></labels><labels><fullName
+    >AXF_BillingComposer_genericInvoice</fullName><language
+    >en_US</language><protected>false</protected><shortDescription
+    >Generic invoice</shortDescription><value
+    >Generic invoice</value></labels><labels><fullName
+    >AXF_BillingComposer_genericReceipt</fullName><language
+    >en_US</language><protected>false</protected><shortDescription
+    >Generic receipt</shortDescription><value
+    >Generic receipt</value></labels><labels><fullName
+    >AXF_BillingComposer_seriesKey</fullName><language
+    >en_US</language><protected>false</protected><shortDescription
+    >Series</shortDescription><value>Series</value></labels><labels><fullName
+    >AXF_BillingComposer_periodStart</fullName><language
+    >en_US</language><protected>false</protected><shortDescription
+    >Period start</shortDescription><value>Period start</value></labels><labels
+  ><fullName>AXF_BillingComposer_periodEnd</fullName><language
+    >en_US</language><protected>false</protected><shortDescription
+    >Period end</shortDescription><value>Period end</value></labels><labels
+  ><fullName>AXF_BillingComposer_loadCandidates</fullName><language
+    >en_US</language><protected>false</protected><shortDescription
+    >Load candidates</shortDescription><value
+    >Load candidates</value></labels><labels><fullName
+    >AXF_BillingComposer_candidates</fullName><language
+    >en_US</language><protected>false</protected><shortDescription
+    >Candidates</shortDescription><value
+    >Candidate entries</value></labels><labels><fullName
+    >AXF_BillingComposer_select</fullName><language>en_US</language><protected
+    >false</protected><shortDescription>Select</shortDescription><value
+    >Select</value></labels><labels><fullName
+    >AXF_BillingComposer_entry</fullName><language>en_US</language><protected
+    >false</protected><shortDescription>Entry</shortDescription><value
+    >Entry</value></labels><labels><fullName
+    >AXF_BillingComposer_snapshot</fullName><language>en_US</language><protected
+    >false</protected><shortDescription>Snapshot</shortDescription><value
+    >Contract snapshot</value></labels><labels><fullName
+    >AXF_BillingComposer_amount</fullName><language>en_US</language><protected
+    >false</protected><shortDescription>Amount</shortDescription><value
+    >Amount</value></labels><labels><fullName
+    >AXF_BillingComposer_serviceDate</fullName><language
+    >en_US</language><protected>false</protected><shortDescription
+    >Service date</shortDescription><value>Service date</value></labels><labels
+  ><fullName>AXF_BillingComposer_lineType</fullName><language
+    >en_US</language><protected>false</protected><shortDescription
+    >Line type</shortDescription><value>Type</value></labels><labels><fullName
+    >AXF_BillingComposer_incompatibilities</fullName><language
+    >en_US</language><protected>false</protected><shortDescription
+    >Incompatibilities</shortDescription><value
+    >Incompatibilities</value></labels><labels><fullName
+    >AXF_BillingComposer_eligible</fullName><language>en_US</language><protected
+    >false</protected><shortDescription>Eligible</shortDescription><value
+    >Eligible</value></labels><labels><fullName
+    >AXF_BillingComposer_noCandidates</fullName><language
+    >en_US</language><protected>false</protected><shortDescription
+    >No candidates</shortDescription><value
+    >No planned entry was found for this contract and period.</value></labels><labels
+  ><fullName>AXF_BillingComposer_workAllocations</fullName><language
+    >en_US</language><protected>false</protected><shortDescription
+    >Work allocations</shortDescription><value
+    >Approved work allocations</value></labels><labels><fullName
+    >AXF_BillingComposer_workRecord</fullName><language
+    >en_US</language><protected>false</protected><shortDescription
+    >Work record</shortDescription><value>Work record</value></labels><labels
+  ><fullName>AXF_BillingComposer_remaining</fullName><language
+    >en_US</language><protected>false</protected><shortDescription
+    >Remaining</shortDescription><value>Remaining</value></labels><labels
+  ><fullName>AXF_BillingComposer_quantity</fullName><language
+    >en_US</language><protected>false</protected><shortDescription
+    >Quantity</shortDescription><value>Quantity</value></labels><labels
+  ><fullName>AXF_BillingComposer_addAllocation</fullName><language
+    >en_US</language><protected>false</protected><shortDescription
+    >Add allocation</shortDescription><value
+    >Add allocation</value></labels><labels><fullName
+    >AXF_BillingComposer_removeAllocation</fullName><language
+    >en_US</language><protected>false</protected><shortDescription
+    >Remove allocation</shortDescription><value
+    >Remove allocation</value></labels><labels><fullName
+    >AXF_BillingComposer_noWork</fullName><language>en_US</language><protected
+    >false</protected><shortDescription
+    >No approved work</shortDescription><value
+    >No approved work record with remaining balance.</value></labels><labels
+  ><fullName>AXF_BillingComposer_summary</fullName><language
+    >en_US</language><protected>false</protected><shortDescription
+    >Summary</shortDescription><value>Summary</value></labels><labels><fullName
+    >AXF_BillingComposer_selectedLines</fullName><language
+    >en_US</language><protected>false</protected><shortDescription
+    >Selected lines</shortDescription><value
+    >Selected lines</value></labels><labels><fullName
+    >AXF_BillingComposer_total</fullName><language>en_US</language><protected
+    >false</protected><shortDescription>Total</shortDescription><value
+    >Total</value></labels><labels><fullName
+    >AXF_BillingComposer_compose</fullName><language>en_US</language><protected
+    >false</protected><shortDescription>Compose draft</shortDescription><value
+    >Compose draft</value></labels><labels><fullName
+    >AXF_BillingComposer_composing</fullName><language
+    >en_US</language><protected>false</protected><shortDescription
+    >Composing</shortDescription><value>Composing draft…</value></labels><labels
+  ><fullName>AXF_BillingComposer_loading</fullName><language
+    >en_US</language><protected>false</protected><shortDescription
+    >Loading</shortDescription><value>Loading…</value></labels><labels><fullName
+    >AXF_BillingComposer_draft</fullName><language>en_US</language><protected
+    >false</protected><shortDescription>Draft</shortDescription><value
+    >Billing draft</value></labels><labels><fullName
+    >AXF_BillingComposer_document</fullName><language>en_US</language><protected
+    >false</protected><shortDescription>Document</shortDescription><value
+    >Document</value></labels><labels><fullName
+    >AXF_BillingComposer_revision</fullName><language>en_US</language><protected
+    >false</protected><shortDescription>Revision</shortDescription><value
+    >Revision</value></labels><labels><fullName
+    >AXF_BillingComposer_state</fullName><language>en_US</language><protected
+    >false</protected><shortDescription>State</shortDescription><value
+    >State</value></labels><labels><fullName
+    >AXF_BillingComposer_origin</fullName><language>en_US</language><protected
+    >false</protected><shortDescription>Origin</shortDescription><value
+    >Origin</value></labels><labels><fullName
+    >AXF_BillingComposer_lines</fullName><language>en_US</language><protected
+    >false</protected><shortDescription>Lines</shortDescription><value
+    >Lines</value></labels><labels><fullName
+    >AXF_BillingComposer_linesTotal</fullName><language
+    >en_US</language><protected>false</protected><shortDescription
+    >Lines total</shortDescription><value>Lines total</value></labels><labels
+  ><fullName>AXF_BillingComposer_newDraft</fullName><language
+    >en_US</language><protected>false</protected><shortDescription
+    >New draft</shortDescription><value>New draft</value></labels><labels
+  ><fullName>AXF_BillingComposer_success</fullName><language
+    >en_US</language><protected>false</protected><shortDescription
+    >Success</shortDescription><value
+    >Draft composed. Review the lines, origin and totals before issuance.</value></labels><labels
+  ><fullName>AXF_BillingComposer_error</fullName><language
+    >en_US</language><protected>false</protected><shortDescription
+    >Generic error</shortDescription><value
+    >The draft could not be composed.</value></labels><labels><fullName
+    >AXF_BillingComposer_selectionRequired</fullName><language
+    >en_US</language><protected>false</protected><shortDescription
+    >Selection required</shortDescription><value
+    >Select at least one eligible entry.</value></labels><labels><fullName
+    >AXF_BillingComposer_stepRequired</fullName><language
+    >en_US</language><protected>false</protected><shortDescription
+    >Step required</shortDescription><value
+    >Fill in holder, contract, series and period first.</value></labels><labels
+  ><fullName>AXF_BillingComposer_reasonNotAccessible</fullName><language
+    >en_US</language><protected>false</protected><shortDescription
+    >Reason</shortDescription><value
+    >Not accessible or not found</value></labels><labels><fullName
+    >AXF_BillingComposer_reasonContractMismatch</fullName><language
+    >en_US</language><protected>false</protected><shortDescription
+    >Reason</shortDescription><value
+    >Belongs to another contract</value></labels><labels><fullName
+    >AXF_BillingComposer_reasonCounterpartyMismatch</fullName><language
+    >en_US</language><protected>false</protected><shortDescription
+    >Reason</shortDescription><value
+    >Counterparty differs from the document</value></labels><labels><fullName
+    >AXF_BillingComposer_reasonAccountMismatch</fullName><language
+    >en_US</language><protected>false</protected><shortDescription
+    >Reason</shortDescription><value
+    >Holder differs from the document</value></labels><labels><fullName
+    >AXF_BillingComposer_reasonBlockedFx</fullName><language
+    >en_US</language><protected>false</protected><shortDescription
+    >Reason</shortDescription><value
+    >Currency differs; FX rule unavailable (blocked, no conversion)</value></labels><labels
+  ><fullName>AXF_BillingComposer_reasonPeriodMismatch</fullName><language
+    >en_US</language><protected>false</protected><shortDescription
+    >Reason</shortDescription><value
+    >Outside the billing period</value></labels><labels><fullName
+    >AXF_BillingComposer_reasonTypeMismatch</fullName><language
+    >en_US</language><protected>false</protected><shortDescription
+    >Reason</shortDescription><value
+    >Type differs from the other lines</value></labels><labels><fullName
+    >AXF_BillingComposer_reasonSnapshotMissing</fullName><language
+    >en_US</language><protected>false</protected><shortDescription
+    >Reason</shortDescription><value
+    >No contract snapshot</value></labels><labels><fullName
+    >AXF_BillingComposer_reasonSnapshotStale</fullName><language
+    >en_US</language><protected>false</protected><shortDescription
+    >Reason</shortDescription><value
+    >Contract snapshot is not active</value></labels><labels><fullName
+    >AXF_BillingComposer_reasonAlreadyBilled</fullName><language
+    >en_US</language><protected>false</protected><shortDescription
+    >Reason</shortDescription><value
+    >Already on an effective billing version</value></labels><labels><fullName
+    >AXF_BillingComposer_reasonNotPlanned</fullName><language
+    >en_US</language><protected>false</protected><shortDescription
+    >Reason</shortDescription><value>Not a planned entry</value></labels><labels
+  ><fullName>AXF_BillingComposer_reasonWorkNotApproved</fullName><language
+    >en_US</language><protected>false</protected><shortDescription
+    >Reason</shortDescription><value
+    >Work record not approved for this contract</value></labels><labels
+  ><fullName>AXF_BillingComposer_reasonWorkOverAllocated</fullName><language
+    >en_US</language><protected>false</protected><shortDescription
+    >Reason</shortDescription><value
+    >Work allocation exceeds the approved balance</value></labels><labels
+  ><fullName>AXF_BillingComposer_reasonWorkInvalidQuantity</fullName><language
+    >en_US</language><protected>false</protected><shortDescription
+    >Reason</shortDescription><value
+    >Work allocation quantity must be positive</value></labels><labels><fullName
+    >AXF_BillingComposer_reasonDuplicateLine</fullName><language
+    >en_US</language><protected>false</protected><shortDescription
+    >Reason</shortDescription><value
+    >Entry selected more than once</value></labels><labels><fullName
+    >AXF_BillingComposer_codeConflict</fullName><language
+    >en_US</language><protected>false</protected><shortDescription
+    >Code</shortDescription><value
+    >A different draft was already composed with this request key.</value></labels><labels
+  ><fullName>AXF_BillingComposer_codeDocumentExists</fullName><language
+    >en_US</language><protected>false</protected><shortDescription
+    >Code</shortDescription><value
+    >A document already exists for this holder, contract, kind and series.</value></labels><labels
+  ><fullName>AXF_BillingComposer_codeIncompatible</fullName><language
+    >en_US</language><protected>false</protected><shortDescription
+    >Code</shortDescription><value
+    >Some lines are incompatible; nothing was saved.</value></labels><labels
+  ><fullName>AXF_BillingComposer_codeInvalidInput</fullName><language
+    >en_US</language><protected>false</protected><shortDescription
+    >Code</shortDescription><value>Invalid request.</value></labels><labels
+  ><fullName>AXF_BillingComposer_codeNotAccessible</fullName><language
+    >en_US</language><protected>false</protected><shortDescription
+    >Code</shortDescription><value
+    >You do not have access to every record involved.</value></labels><labels
+  ><fullName>AXF_BillingComposer_codeTotalNotConserved</fullName><language
+    >en_US</language><protected>false</protected><shortDescription
+    >Code</shortDescription><value
+    >The document total does not match its lines; nothing was saved.</value></labels></CustomLabels>

@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<CustomField xmlns="http://soap.sforce.com/2006/04/metadata">
+    <fullName>AXF_BDL_EXI_LineKey__c</fullName>
+    <label>Chave da Linha</label>
+    <type>Text</type>
+    <length>64</length>
+    <unique>true</unique>
+    <externalId>true</externalId>
+    <caseSensitive>true</caseSensitive>
+    <required>true</required>
+    <description>Unique = DocumentVersion+LineNumber (GBI-3).</description>
+</CustomField>

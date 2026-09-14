@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<CustomField xmlns="http://soap.sforce.com/2006/04/metadata">
+    <fullName>AXF_BDL_DAT_ServiceDate__c</fullName>
+    <label>Data de Competencia</label>
+    <type>Date</type>
+    <required>false</required>
+    <description
+  >Data efetiva do lancamento usada na compatibilidade de periodo.</description>
+</CustomField>
