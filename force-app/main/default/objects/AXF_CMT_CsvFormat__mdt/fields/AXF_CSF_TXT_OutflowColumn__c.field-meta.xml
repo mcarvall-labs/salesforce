@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<CustomField xmlns="http://soap.sforce.com/2006/04/metadata">
+    <fullName>AXF_CSF_TXT_OutflowColumn__c</fullName>
+    <label>Coluna de saida</label>
+    <type>Text</type>
+    <length>60</length>
+    <required>false</required>
+    <description
+  >Cabecalho do valor de debito. Vazio quando o formato usa coluna unica assinada.</description>
+    <fieldManageability>SubscriberControlled</fieldManageability>
+</CustomField>

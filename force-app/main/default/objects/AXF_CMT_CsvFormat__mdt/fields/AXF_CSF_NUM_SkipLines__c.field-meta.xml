@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<CustomField xmlns="http://soap.sforce.com/2006/04/metadata">
+    <fullName>AXF_CSF_NUM_SkipLines__c</fullName>
+    <label>Linhas ignoradas antes do cabecalho</label>
+    <type>Number</type>
+    <precision>3</precision>
+    <scale>0</scale>
+    <required>false</required>
+    <description
+  >Quantidade de linhas iniciais (titulos/metadados do banco) ignoradas antes do cabecalho.</description>
+    <fieldManageability>SubscriberControlled</fieldManageability>
+</CustomField>

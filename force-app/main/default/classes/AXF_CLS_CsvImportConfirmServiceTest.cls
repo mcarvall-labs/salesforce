@@ -96,7 +96,8 @@ private class AXF_CLS_CsvImportConfirmServiceTest {
       'extrato.csv',
       EncodingUtil.base64Encode(Blob.valueOf(csv)),
       expectedParserVersion,
-      ack
+      ack,
+      null
     );
   }
 
@@ -245,6 +246,17 @@ private class AXF_CLS_CsvImportConfirmServiceTest {
     System.assertEquals(r.evidenceDocumentId, bat.AXF_BAT_TXT_EvidenceRef__c);
     System.assertEquals('CSV', bat.AXF_BAT_PKL_Source__c);
     System.assertEquals('BRL', bat.AXF_BAT_TXT_CurrencyIsoCode__c);
+    // AXF-72 — parser and normalization versions travel with the evidence.
+    ContentVersion evidence = [
+      SELECT Description
+      FROM ContentVersion
+      WHERE ContentDocumentId = :r.evidenceDocumentId
+      LIMIT 1
+    ];
+    System.assertEquals(
+      PARSER_VERSION + ' | ' + ALT_CLS_CsvFormatParser.NORMALIZATION_VERSION,
+      evidence.Description
+    );
   }
 
   @IsTest
@@ -257,7 +269,8 @@ private class AXF_CLS_CsvImportConfirmServiceTest {
         null,
         null,
         null,
-        false
+        false,
+        null
       );
     }
     System.assertEquals('INVALID_FILE', r.outcome);

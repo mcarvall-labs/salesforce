@@ -2,11 +2,15 @@ import { LightningElement, api } from "lwc";
 import getPolicy from "@salesforce/apex/AXF_CLS_CTRL_CsvImportPreview.getPolicy";
 import previewCsv from "@salesforce/apex/AXF_CLS_CTRL_CsvImportPreview.previewCsv";
 import confirmCsv from "@salesforce/apex/AXF_CLS_CTRL_CsvImportPreview.confirmCsv";
+import getFormats from "@salesforce/apex/AXF_CLS_CTRL_CsvImportPreview.getFormats";
 
 const ERROR_LABELS = {
   EMPTY_FILE: "O arquivo está vazio.",
   UNSUPPORTED_STRUCTURE:
-    "O arquivo não tem as colunas esperadas (Data, Descrição, Entrada, Saída, Saldo).",
+    "O arquivo não tem as colunas esperadas pelo formato selecionado.",
+  FORMAT_MISSING: "Formato CSV não configurado ou inativo.",
+  FORMAT_BLOCKED:
+    "Formato aprovado, mas sua família de parsing ainda não está implementada (BLOCKED).",
   ROW_LIMIT_EXCEEDED: "O arquivo tem mais linhas do que o permitido.",
   INVALID_DATE: "Data inválida.",
   INVALID_AMOUNT: "Valor de entrada ou saída inválido.",
@@ -31,6 +35,8 @@ export default class AXF_LWC_csvImportPreview extends LightningElement {
   step = "FILE";
   policy;
   policyError;
+  formats = [];
+  formatKey = "Contabilizei_Bank";
   fileName;
   errorMessage;
   loading = false;
@@ -42,6 +48,20 @@ export default class AXF_LWC_csvImportPreview extends LightningElement {
   focusStepHeading = false;
 
   connectedCallback() {
+    getFormats()
+      .then((rows) => {
+        this.formats = rows || [];
+        const selected = this.formats.find(
+          (f) => f.formatKey === this.formatKey
+        );
+        if (!selected || selected.blocked) {
+          const first = this.formats.find((f) => !f.blocked);
+          this.formatKey = first ? first.formatKey : "";
+        }
+      })
+      .catch(() => {
+        this.formats = [];
+      });
     getPolicy()
       .then((data) => {
         this.policy = data;
@@ -89,12 +109,40 @@ export default class AXF_LWC_csvImportPreview extends LightningElement {
     return this.step === "RESULT";
   }
 
+  get formatOptions() {
+    return this.formats.map((f) => ({
+      label: f.blocked
+        ? `${f.label} (BLOCKED)`
+        : `${f.label} · ${f.parserVersion}`,
+      value: f.formatKey
+    }));
+  }
+
+  get selectedFormat() {
+    return this.formats.find((f) => f.formatKey === this.formatKey);
+  }
+
+  get formatBlocked() {
+    const selected = this.selectedFormat;
+    return !!(selected && selected.blocked);
+  }
+
+  handleFormatChange(event) {
+    this.formatKey = event.detail.value;
+    this.errorMessage = undefined;
+  }
+
   get acceptedFormats() {
     return this.policy ? "." + this.policy.allowedExtensions : ".csv";
   }
 
   get disableUpload() {
-    return this.loading || !!this.policyError;
+    return (
+      this.loading ||
+      !!this.policyError ||
+      !this.formatKey ||
+      this.formatBlocked
+    );
   }
 
   get hasSample() {
@@ -169,7 +217,8 @@ export default class AXF_LWC_csvImportPreview extends LightningElement {
         input: {
           accountId: this.recordId,
           fileName: file.name,
-          base64Content
+          base64Content,
+          formatKey: this.formatKey
         }
       });
       this.previewResult = result;
@@ -231,7 +280,8 @@ export default class AXF_LWC_csvImportPreview extends LightningElement {
         fileName: this.pendingFileName,
         base64Content: this.pendingContent,
         expectedParserVersion: this.previewResult.parseResult.parserVersion,
-        acknowledgeRejections: this.acknowledge
+        acknowledgeRejections: this.acknowledge,
+        formatKey: this.formatKey
       });
       this.confirmResult = result;
       if (result.outcome === "PUBLISHED") {

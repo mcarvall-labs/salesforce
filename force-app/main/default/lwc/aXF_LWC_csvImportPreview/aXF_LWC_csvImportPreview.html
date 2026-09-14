@@ -29,10 +29,25 @@
 
       <template if:true={isFileStep}>
         <p class="slds-var-m-bottom_small">
-          Envie um arquivo {acceptedFormats} exportado do Contabilizei.bank.
-          Esta etapa apenas mostra uma prévia: nenhum lançamento é publicado
-          aqui.
+          Envie um arquivo {acceptedFormats} no formato selecionado. Esta etapa
+          apenas mostra uma prévia: nenhum lançamento é publicado aqui.
         </p>
+        <lightning-combobox
+          class="slds-var-m-bottom_small"
+          label="Formato do arquivo"
+          value={formatKey}
+          options={formatOptions}
+          onchange={handleFormatChange}
+          disabled={loading}
+          data-id="format"
+          required
+        ></lightning-combobox>
+        <template if:true={formatBlocked}>
+          <p class="slds-text-color_error slds-var-m-bottom_small" role="alert">
+            Este formato está aprovado, mas sua família de parsing ainda não
+            está implementada (BLOCKED). Escolha outro formato.
+          </p>
+        </template>
         <div class="slds-form-element">
           <label class="slds-form-element__label" for="csv-file-input"
             >Arquivo CSV</label
@@ -62,7 +77,11 @@
         <template if:true={previewResult.targetAccountLabel}>
           <p>Conta: {previewResult.targetAccountLabel}</p>
         </template>
-        <p>Versão do analisador: {previewResult.parseResult.parserVersion}</p>
+        <p>
+          Formato: {previewResult.parseResult.formatKey} · Versão do analisador:
+          {previewResult.parseResult.parserVersion} · Normalização:
+          {previewResult.parseResult.normalizationVersion}
+        </p>
         <template if:true={summaryCounts}>
           <ul class="slds-list_horizontal slds-var-m-vertical_small">
             <li class="slds-var-p-right_medium">

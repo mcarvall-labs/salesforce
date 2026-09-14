@@ -3,6 +3,7 @@ import CsvImportPreview from "c/aXF_LWC_csvImportPreview";
 import getPolicy from "@salesforce/apex/AXF_CLS_CTRL_CsvImportPreview.getPolicy";
 import previewCsv from "@salesforce/apex/AXF_CLS_CTRL_CsvImportPreview.previewCsv";
 import confirmCsv from "@salesforce/apex/AXF_CLS_CTRL_CsvImportPreview.confirmCsv";
+import getFormats from "@salesforce/apex/AXF_CLS_CTRL_CsvImportPreview.getFormats";
 
 jest.mock(
   "@salesforce/apex/AXF_CLS_CTRL_CsvImportPreview.getPolicy",
@@ -19,6 +20,28 @@ jest.mock(
   () => ({ default: jest.fn() }),
   { virtual: true }
 );
+jest.mock(
+  "@salesforce/apex/AXF_CLS_CTRL_CsvImportPreview.getFormats",
+  () => ({ default: jest.fn() }),
+  { virtual: true }
+);
+
+const FORMATS = [
+  {
+    formatKey: "Contabilizei_Bank",
+    label: "Contabilizei.bank",
+    family: "BANK_STATEMENT_V1",
+    parserVersion: "contabilizei-bank-csv@1.0.0",
+    blocked: false
+  },
+  {
+    formatKey: "Other_Bank",
+    label: "Other bank",
+    family: "OTHER",
+    parserVersion: "other@0.1.0",
+    blocked: true
+  }
+];
 
 const OK_PREVIEW = {
   outcome: "OK",
@@ -26,6 +49,8 @@ const OK_PREVIEW = {
   targetAccountLabel: "Contabilizei.bank · BA-0000001",
   parseResult: {
     parserVersion: "contabilizei-bank-csv@1.0.0",
+    normalizationVersion: "csv-normalization@1.0.0",
+    formatKey: "Contabilizei_Bank",
     structureValid: true,
     totalRows: 1,
     validRows: 1,
@@ -79,6 +104,7 @@ const selectFile = (element, fileName = "extrato.csv") => {
 describe("c-a-x-f_-l-w-c_csv-import-preview", () => {
   beforeEach(() => {
     global.FileReader = FakeFileReader;
+    getFormats.mockResolvedValue(FORMATS);
     getPolicy.mockResolvedValue({
       allowedExtensions: "csv",
       requiredEncoding: "UTF-8",
@@ -122,7 +148,8 @@ describe("c-a-x-f_-l-w-c_csv-import-preview", () => {
       input: {
         accountId: "a0X000000000001AAA",
         fileName: "extrato.csv",
-        base64Content: "ZmFrZS1jc3Y="
+        base64Content: "ZmFrZS1jc3Y=",
+        formatKey: "Contabilizei_Bank"
       }
     });
     const heading = element.shadowRoot.querySelector(
@@ -169,7 +196,8 @@ describe("c-a-x-f_-l-w-c_csv-import-preview", () => {
       fileName: "extrato.csv",
       base64Content: "ZmFrZS1jc3Y=",
       expectedParserVersion: "contabilizei-bank-csv@1.0.0",
-      acknowledgeRejections: false
+      acknowledgeRejections: false,
+      formatKey: "Contabilizei_Bank"
     });
     const heading = element.shadowRoot.querySelector(
       '[data-id="step-heading"]'
@@ -220,5 +248,28 @@ describe("c-a-x-f_-l-w-c_csv-import-preview", () => {
     );
     const input = element.shadowRoot.querySelector("input[type='file']");
     expect(input.disabled).toBe(true);
+  });
+
+  it("lists versioned formats, blocks unsupported families and disables upload", async () => {
+    const element = build();
+    await flush();
+    const combo = element.shadowRoot.querySelector('[data-id="format"]');
+    expect(combo.options.map((o) => o.value)).toEqual([
+      "Contabilizei_Bank",
+      "Other_Bank"
+    ]);
+    expect(combo.options[1].label).toContain("BLOCKED");
+    expect(
+      element.shadowRoot.querySelector("input[type='file']").disabled
+    ).toBe(false);
+    combo.dispatchEvent(
+      new CustomEvent("change", { detail: { value: "Other_Bank" } })
+    );
+    await flush();
+    expect(
+      element.shadowRoot.querySelector("input[type='file']").disabled
+    ).toBe(true);
+    expect(element.shadowRoot.textContent).toContain("BLOCKED");
+    expect(previewCsv).not.toHaveBeenCalled();
   });
 });

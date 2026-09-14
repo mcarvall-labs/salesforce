@@ -11,7 +11,7 @@ private class ALT_CLS_ContabilizeiCsvParserTest {
       '\n01/03/2026;Salario;5000,00;;5000,00' +
       '\n02/03/2026;Mercado;;150,50;4849,50';
 
-    ALT_CLS_ContabilizeiCsvParser.ParseResult result = ALT_CLS_ContabilizeiCsvParser.parse(
+    ALT_CLS_CsvFormatParser.ParseResult result = ALT_CLS_ContabilizeiCsvParser.parse(
       csv,
       100
     );
@@ -34,7 +34,7 @@ private class ALT_CLS_ContabilizeiCsvParserTest {
       '\n01/03/2026;Salario;5000,00;;5000,00' +
       '\n02/03/2026;Mercado;;150,50;5000,00';
 
-    ALT_CLS_ContabilizeiCsvParser.ParseResult result = ALT_CLS_ContabilizeiCsvParser.parse(
+    ALT_CLS_CsvFormatParser.ParseResult result = ALT_CLS_ContabilizeiCsvParser.parse(
       csv,
       100
     );
@@ -53,7 +53,7 @@ private class ALT_CLS_ContabilizeiCsvParserTest {
       '\ndata-invalida;Descricao;abc;;100,00' +
       '\n01/03/2026;Descricao;;;100,00';
 
-    ALT_CLS_ContabilizeiCsvParser.ParseResult result = ALT_CLS_ContabilizeiCsvParser.parse(
+    ALT_CLS_CsvFormatParser.ParseResult result = ALT_CLS_ContabilizeiCsvParser.parse(
       csv,
       100
     );
@@ -68,7 +68,7 @@ private class ALT_CLS_ContabilizeiCsvParserTest {
   static void blocksUnsupportedStructure() {
     String csv = 'ColunaA;ColunaB\nx;y';
 
-    ALT_CLS_ContabilizeiCsvParser.ParseResult result = ALT_CLS_ContabilizeiCsvParser.parse(
+    ALT_CLS_CsvFormatParser.ParseResult result = ALT_CLS_ContabilizeiCsvParser.parse(
       csv,
       100
     );
@@ -79,7 +79,7 @@ private class ALT_CLS_ContabilizeiCsvParserTest {
 
   @IsTest
   static void blocksEmptyFile() {
-    ALT_CLS_ContabilizeiCsvParser.ParseResult result = ALT_CLS_ContabilizeiCsvParser.parse(
+    ALT_CLS_CsvFormatParser.ParseResult result = ALT_CLS_ContabilizeiCsvParser.parse(
       '',
       100
     );
@@ -95,7 +95,7 @@ private class ALT_CLS_ContabilizeiCsvParserTest {
       '\n01/03/2026;Salario;5000,00;;5000,00' +
       '\n02/03/2026;Mercado;;150,50;4849,50';
 
-    ALT_CLS_ContabilizeiCsvParser.ParseResult result = ALT_CLS_ContabilizeiCsvParser.parse(
+    ALT_CLS_CsvFormatParser.ParseResult result = ALT_CLS_ContabilizeiCsvParser.parse(
       csv,
       1
     );
@@ -115,7 +115,7 @@ private class ALT_CLS_ContabilizeiCsvParserTest {
       nbsp +
       'mensal,5000,0,5000';
 
-    ALT_CLS_ContabilizeiCsvParser.ParseResult result = ALT_CLS_ContabilizeiCsvParser.parse(
+    ALT_CLS_CsvFormatParser.ParseResult result = ALT_CLS_ContabilizeiCsvParser.parse(
       csv,
       100
     );
@@ -129,7 +129,7 @@ private class ALT_CLS_ContabilizeiCsvParserTest {
   static void neutralizesFormulaPrefixedDescription() {
     String csv = HEADER + '\n01/03/2026;=CMD|/c calc|;5000,00;;5000,00';
 
-    ALT_CLS_ContabilizeiCsvParser.ParseResult result = ALT_CLS_ContabilizeiCsvParser.parse(
+    ALT_CLS_CsvFormatParser.ParseResult result = ALT_CLS_ContabilizeiCsvParser.parse(
       csv,
       100
     );
@@ -141,15 +141,15 @@ private class ALT_CLS_ContabilizeiCsvParserTest {
   static void parseBrDecimalHandlesThousandsAndNegative() {
     System.assertEquals(
       1234.56,
-      ALT_CLS_ContabilizeiCsvParser.parseBrDecimal('1.234,56')
+      ALT_CLS_CsvFormatParser.parseDecimal('1.234,56', 'BR')
     );
     System.assertEquals(
       -50.00,
-      ALT_CLS_ContabilizeiCsvParser.parseBrDecimal('-50,00')
+      ALT_CLS_CsvFormatParser.parseDecimal('-50,00', 'BR')
     );
     System.assertEquals(
       null,
-      ALT_CLS_ContabilizeiCsvParser.parseBrDecimal('abc')
+      ALT_CLS_CsvFormatParser.parseDecimal('abc', 'BR')
     );
   }
 
@@ -157,12 +157,15 @@ private class ALT_CLS_ContabilizeiCsvParserTest {
   static void parseBrDateRejectsMalformedInput() {
     System.assertEquals(
       Date.newInstance(2026, 3, 1),
-      ALT_CLS_ContabilizeiCsvParser.parseBrDate('01/03/2026')
+      ALT_CLS_CsvFormatParser.parseDate('01/03/2026', 'DMY_SLASH')
     );
     System.assertEquals(
       null,
-      ALT_CLS_ContabilizeiCsvParser.parseBrDate('2026-03-01')
+      ALT_CLS_CsvFormatParser.parseDate('2026-03-01', 'DMY_SLASH')
     );
-    System.assertEquals(null, ALT_CLS_ContabilizeiCsvParser.parseBrDate(null));
+    System.assertEquals(
+      null,
+      ALT_CLS_CsvFormatParser.parseDate(null, 'DMY_SLASH')
+    );
   }
 }

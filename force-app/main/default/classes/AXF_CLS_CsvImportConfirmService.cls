@@ -20,6 +20,8 @@ public with sharing class AXF_CLS_CsvImportConfirmService {
     public String expectedParserVersion;
     @AuraEnabled
     public Boolean acknowledgeRejections;
+    @AuraEnabled
+    public String formatKey;
   }
 
   public class ConfirmResult {
@@ -108,18 +110,42 @@ public with sharing class AXF_CLS_CsvImportConfirmService {
       );
     }
 
+    // AXF-72 — the versioned format comes from metadata; unsupported families stay BLOCKED.
+    ALT_CLS_CsvFormatParser.Format format = ALT_CLS_CsvFormatRegistry.resolve(
+      input.formatKey
+    );
+    if (format == null) {
+      return outcome(
+        'FORMAT_MISSING',
+        'Formato CSV não configurado ou inativo. Peça ao Gestor Financeiro para configurar.'
+      );
+    }
+    if (!ALT_CLS_CsvFormatRegistry.isSupported(format)) {
+      return outcome(
+        'FORMAT_BLOCKED',
+        'Formato CSV aprovado, mas sua família de parsing ainda não está implementada (BLOCKED).'
+      );
+    }
+    String institutionMismatch = institutionMismatch(account.Id, format);
+    if (institutionMismatch != null) {
+      return outcome('INSTITUTION_MISMATCH', institutionMismatch);
+    }
+
     String rawCsv = content.toString();
-    ALT_CLS_ContabilizeiCsvParser.ParseResult parsed = ALT_CLS_ContabilizeiCsvParser.parse(
+    ALT_CLS_CsvFormatParser.ParseResult parsed = ALT_CLS_CsvFormatParser.parse(
       rawCsv,
       policy.AXF_CIP_NUM_MaxRows__c == null
         ? null
         : Integer.valueOf(policy.AXF_CIP_NUM_MaxRows__c),
-      2000000000
+      2000000000,
+      format
     );
     if (!parsed.structureValid) {
       return outcome(
         'INVALID_FILE',
-        'Arquivo não segue a estrutura esperada do CSV Contabilizei.bank.'
+        'Arquivo não segue a estrutura esperada do formato ' +
+          format.label +
+          '.'
       );
     }
 
@@ -144,8 +170,8 @@ public with sharing class AXF_CLS_CsvImportConfirmService {
       return result;
     }
 
-    List<ALT_CLS_ContabilizeiCsvParser.RowResult> validRows = new List<ALT_CLS_ContabilizeiCsvParser.RowResult>();
-    for (ALT_CLS_ContabilizeiCsvParser.RowResult row : parsed.sample) {
+    List<ALT_CLS_CsvFormatParser.RowResult> validRows = new List<ALT_CLS_CsvFormatParser.RowResult>();
+    for (ALT_CLS_CsvFormatParser.RowResult row : parsed.sample) {
       if (row.valid) {
         validRows.add(row);
       }
@@ -163,11 +189,11 @@ public with sharing class AXF_CLS_CsvImportConfirmService {
       ? 'BRL'
       : account.AXF_BA_TXT_CurrencyIsoCode__c;
     Datetime now = Datetime.now();
-    Map<String, ALT_CLS_ContabilizeiCsvParser.RowResult> rowByKey = new Map<String, ALT_CLS_ContabilizeiCsvParser.RowResult>();
+    Map<String, ALT_CLS_CsvFormatParser.RowResult> rowByKey = new Map<String, ALT_CLS_CsvFormatParser.RowResult>();
     Map<String, String> normDescByKey = new Map<String, String>();
     Date firstDate;
     Date lastDate;
-    for (ALT_CLS_ContabilizeiCsvParser.RowResult row : validRows) {
+    for (ALT_CLS_CsvFormatParser.RowResult row : validRows) {
       Date effective = Date.valueOf(row.parsedDate);
       String normalizedDesc = AXF_CLS_TextNormalization.normalize(
         row.description
@@ -204,10 +230,15 @@ public with sharing class AXF_CLS_CsvImportConfirmService {
     Savepoint sp = Database.setSavepoint();
     Id evidenceDocId;
     try {
-      evidenceDocId = storeEvidence(input.fileName, content, account.Id);
+      evidenceDocId = storeEvidence(
+        input.fileName,
+        content,
+        account.Id,
+        parsed.parserVersion + ' | ' + parsed.normalizationVersion
+      );
       List<AXF_OBJ_BankAccountTransaction__c> toUpsert = new List<AXF_OBJ_BankAccountTransaction__c>();
       for (String key : rowByKey.keySet()) {
-        ALT_CLS_ContabilizeiCsvParser.RowResult row = rowByKey.get(key);
+        ALT_CLS_CsvFormatParser.RowResult row = rowByKey.get(key);
         Boolean isCredit = row.inflow != null && row.inflow > 0;
         Decimal signed = isCredit ? row.inflow : row.outflow;
         toUpsert.add(
@@ -310,11 +341,17 @@ public with sharing class AXF_CLS_CsvImportConfirmService {
     return Schema.SObjectType.AXF_OBJ_BankAccountTransaction__c.isCreateable();
   }
 
-  private static Id storeEvidence(String fileName, Blob content, Id linkedTo) {
+  private static Id storeEvidence(
+    String fileName,
+    Blob content,
+    Id linkedTo,
+    String versions
+  ) {
     String safeName = String.isBlank(fileName) ? 'extrato.csv' : fileName;
     ContentVersion cv = new ContentVersion(
       Title = safeName,
       PathOnClient = safeName,
+      Description = versions,
       VersionData = content
     );
     insert cv;
@@ -327,6 +364,35 @@ public with sharing class AXF_CLS_CsvImportConfirmService {
       Visibility = 'AllUsers'
     );
     return docId;
+  }
+
+  /**
+   * AXF-106/AXF-72 — a format may pin the institution (COMPE bank number) it belongs to; the
+   * target account must then resolve to that institution in the shared directory. Nothing is
+   * inferred from names and no holder is derived from the bank.
+   */
+  public static String institutionMismatch(
+    Id accountId,
+    ALT_CLS_CsvFormatParser.Format format
+  ) {
+    if (format == null || String.isBlank(format.institutionBankNumber)) {
+      return null;
+    }
+    List<AXF_OBJ_BankAccount__c> rows = [
+      SELECT AXF_BA_LKP_BankInstitution__r.AXF_BI_EXI_Bank_Number__c
+      FROM AXF_OBJ_BankAccount__c
+      WHERE Id = :accountId
+      WITH USER_MODE
+    ];
+    String bankNumber = rows.isEmpty()
+      ? null
+      : rows[0].AXF_BA_LKP_BankInstitution__r?.AXF_BI_EXI_Bank_Number__c;
+    if (bankNumber != format.institutionBankNumber) {
+      return 'O formato ' +
+        format.label +
+        ' pertence a outra instituição; selecione a conta bancária correta.';
+    }
+    return null;
   }
 
   private static ConfirmResult outcome(String code, String message) {
