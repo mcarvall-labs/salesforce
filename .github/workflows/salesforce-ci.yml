@@ -61,8 +61,10 @@ jobs:
           if ((${#files[@]})); then npx eslint "${files[@]}"; fi
       - name: Run LWC unit tests
         run: npm run test:unit -- -- --runInBand
+      - name: Check trigger handler boundary
+        run: node scripts/ci/trigger-handler-boundary.mjs
       - name: Test delivery automation
-        run: node --test scripts/ci/salesforce-delivery.test.mjs
+        run: node --test scripts/ci/salesforce-delivery.test.mjs scripts/ci/trigger-handler-boundary.test.mjs
 
   salesforce-validation:
     name: Validate Salesforce delta
