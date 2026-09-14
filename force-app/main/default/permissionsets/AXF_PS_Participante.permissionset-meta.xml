@@ -80,6 +80,18 @@
     <apexClass>AXF_CLS_ReportCurrencyService</apexClass>
     <enabled>true</enabled>
   </classAccesses>
+  <classAccesses>
+    <apexClass>ALT_CLS_SharedExpenseService</apexClass>
+    <enabled>true</enabled>
+  </classAccesses>
+  <classAccesses>
+    <apexClass>AXF_CLS_CTRL_SharedExpense</apexClass>
+    <enabled>true</enabled>
+  </classAccesses>
+  <customPermissions>
+    <enabled>true</enabled>
+    <name>AXF_CanCollaborateExpense</name>
+  </customPermissions>
   <fieldPermissions>
     <editable>false</editable>
     <field>AXF_OBJ_BankAccountTransaction__c.AXF_BAT_DTM_ImportedAt__c</field>
@@ -615,6 +627,16 @@
     <field>AXF_OBJ_CreditCard__c.AXF_CC_LKP_BankInstitution__c</field>
     <readable>true</readable>
   </fieldPermissions>
+  <fieldPermissions>
+    <editable>true</editable>
+    <field>AXF_OBJ_FinancialTransaction__c.AXF_FTX_TXT_Description__c</field>
+    <readable>true</readable>
+  </fieldPermissions>
+  <fieldPermissions>
+    <editable>true</editable>
+    <field>AXF_OBJ_FinancialTransaction__c.AXF_FTX_TXT_UserCategory__c</field>
+    <readable>true</readable>
+  </fieldPermissions>
   <objectPermissions>
     <allowCreate>false</allowCreate>
     <allowDelete>false</allowDelete>
@@ -789,6 +811,10 @@
   </tabSettings>
   <tabSettings>
     <tab>AXF_ReportCurrency</tab>
+    <visibility>Visible</visibility>
+  </tabSettings>
+  <tabSettings>
+    <tab>AXF_CT_SharedExpenses</tab>
     <visibility>Visible</visibility>
   </tabSettings>
 </PermissionSet>

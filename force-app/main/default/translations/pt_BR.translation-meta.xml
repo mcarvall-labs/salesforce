@@ -77,4 +77,102 @@
     >O valor excede o disponível na origem ou o saldo do plano.</label><name
     >AXF_Realization_unavailableAmount</name></customLabels><customLabels><label
     >Configure a moeda de relatório da organização antes de registrar a realização.</label><name
-    >AXF_Realization_reportingCurrencyRequired</name></customLabels></Translations>
+    >AXF_Realization_reportingCurrencyRequired</name></customLabels><customLabels
+  ><label>Despesa compartilhada</label><name
+    >AXF_SharedExpense_title</name></customLabels><customLabels><label
+    >Conceda a um participante acesso limitado a esta despesa: ele vê apenas descrição, categoria, valor e vencimento, nunca a conta de origem ou outros dados.</label><name
+    >AXF_SharedExpense_ownerIntro</name></customLabels><customLabels><label
+    >Despesas compartilhadas com você. Você pode visualizar e, quando permitido, editar apenas os campos autorizados.</label><name
+    >AXF_SharedExpense_collaboratorIntro</name></customLabels><customLabels
+  ><label>Colaborador</label><name
+    >AXF_SharedExpense_collaborator</name></customLabels><customLabels><label
+    >Permissão</label><name
+    >AXF_SharedExpense_permission</name></customLabels><customLabels><label
+    >Pode visualizar</label><name
+    >AXF_SharedExpense_canView</name></customLabels><customLabels><label
+    >Pode editar</label><name
+    >AXF_SharedExpense_canEdit</name></customLabels><customLabels><label
+    >Compartilhar</label><name
+    >AXF_SharedExpense_share</name></customLabels><customLabels><label
+    >Remover acesso</label><name
+    >AXF_SharedExpense_revoke</name></customLabels><customLabels><label
+    >Quem tem acesso</label><name
+    >AXF_SharedExpense_grants</name></customLabels><customLabels><label
+    >Ninguém mais tem acesso a esta despesa.</label><name
+    >AXF_SharedExpense_noGrants</name></customLabels><customLabels><label
+    >Estado</label><name
+    >AXF_SharedExpense_status</name></customLabels><customLabels><label
+    >Ativa</label><name
+    >AXF_SharedExpense_active</name></customLabels><customLabels><label
+    >Revogada</label><name
+    >AXF_SharedExpense_revoked</name></customLabels><customLabels><label
+    >Compartilhadas comigo</label><name
+    >AXF_SharedExpense_sharedList</name></customLabels><customLabels><label
+    >Nenhuma despesa foi compartilhada com você.</label><name
+    >AXF_SharedExpense_noShared</name></customLabels><customLabels><label
+    >Despesa</label><name
+    >AXF_SharedExpense_expense</name></customLabels><customLabels><label
+    >Descrição</label><name
+    >AXF_SharedExpense_description</name></customLabels><customLabels><label
+    >Categoria</label><name
+    >AXF_SharedExpense_category</name></customLabels><customLabels><label
+    >Valor</label><name
+    >AXF_SharedExpense_amount</name></customLabels><customLabels><label
+    >Vencimento</label><name
+    >AXF_SharedExpense_dueDate</name></customLabels><customLabels><label
+    >Seu acesso</label><name
+    >AXF_SharedExpense_yourAccess</name></customLabels><customLabels><label
+    >Você pode visualizar esta despesa. Edição não permitida.</label><name
+    >AXF_SharedExpense_viewOnly</name></customLabels><customLabels><label
+    >Você pode visualizar e editar descrição e categoria.</label><name
+    >AXF_SharedExpense_editAllowed</name></customLabels><customLabels><label
+    >Abrir</label><name
+    >AXF_SharedExpense_open</name></customLabels><customLabels><label
+    >Voltar</label><name
+    >AXF_SharedExpense_back</name></customLabels><customLabels><label
+    >Salvar alterações</label><name
+    >AXF_SharedExpense_save</name></customLabels><customLabels><label
+    >Confirmar alteração</label><name
+    >AXF_SharedExpense_confirmTitle</name></customLabels><customLabels><label
+    >Você vai alterar os campos permitidos da despesa {0} compartilhada com você. O titular será notificado.</label><name
+    >AXF_SharedExpense_confirmBody</name></customLabels><customLabels><label
+    >Você vai confirmar a realização da despesa {0} no valor {1}. Isso cria um efeito financeiro imutável e notifica o titular.</label><name
+    >AXF_SharedExpense_confirmRealizeBody</name></customLabels><customLabels
+  ><label>Confirmar</label><name
+    >AXF_SharedExpense_confirm</name></customLabels><customLabels><label
+    >Cancelar</label><name
+    >AXF_SharedExpense_cancel</name></customLabels><customLabels><label
+    >Marcar como paga</label><name
+    >AXF_SharedExpense_markPaid</name></customLabels><customLabels><label
+    >Valor pago</label><name
+    >AXF_SharedExpense_realizationAmount</name></customLabels><customLabels
+  ><label>Data do pagamento</label><name
+    >AXF_SharedExpense_realizationDate</name></customLabels><customLabels><label
+    >Alterações salvas.</label><name
+    >AXF_SharedExpense_saved</name></customLabels><customLabels><label
+    >Realização confirmada.</label><name
+    >AXF_SharedExpense_realized</name></customLabels><customLabels><label
+    >Acesso concedido.</label><name
+    >AXF_SharedExpense_shared</name></customLabels><customLabels><label
+    >Acesso removido. Direitos independentes do colaborador foram preservados.</label><name
+    >AXF_SharedExpense_revokedDone</name></customLabels><customLabels><label
+    >Carregando…</label><name
+    >AXF_SharedExpense_loading</name></customLabels><customLabels><label
+    >Não foi possível concluir a operação.</label><name
+    >AXF_SharedExpense_error</name></customLabels><customLabels><label
+    >Você não tem permissão para esta ação.</label><name
+    >AXF_SharedExpense_codeForbidden</name></customLabels><customLabels><label
+    >Esta despesa não está disponível para você.</label><name
+    >AXF_SharedExpense_codeNotAccessible</name></customLabels><customLabels
+  ><label
+    >A despesa mudou desde que você a abriu. Recarregue e tente novamente.</label><name
+    >AXF_SharedExpense_codeConflict</name></customLabels><customLabels><label
+    >Requisição inválida.</label><name
+    >AXF_SharedExpense_codeInvalidInput</name></customLabels><customLabels
+  ><label>Você não pode confirmar a realização desta despesa.</label><name
+    >AXF_SharedExpense_codeRealizationDenied</name></customLabels><customLabels
+  ><label
+    >A alteração foi rejeitada por uma regra de proteção financeira.</label><name
+    >AXF_SharedExpense_codeRejected</name></customLabels><customLabels><label
+    >Colaborador não encontrado ou inativo.</label><name
+    >AXF_SharedExpense_codeCollaboratorNotFound</name></customLabels></Translations>

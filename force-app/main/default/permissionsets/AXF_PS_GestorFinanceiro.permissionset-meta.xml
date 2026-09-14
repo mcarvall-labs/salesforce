@@ -172,9 +172,21 @@
     <apexClass>AXF_CLS_PluggySyncScheduler</apexClass>
     <enabled>true</enabled>
   </classAccesses>
+  <classAccesses>
+    <apexClass>ALT_CLS_SharedExpenseService</apexClass>
+    <enabled>true</enabled>
+  </classAccesses>
+  <classAccesses>
+    <apexClass>AXF_CLS_CTRL_SharedExpense</apexClass>
+    <enabled>true</enabled>
+  </classAccesses>
   <customPermissions>
     <enabled>true</enabled>
     <name>AXF_CanConfigure</name>
+  </customPermissions>
+  <customPermissions>
+    <enabled>true</enabled>
+    <name>AXF_CanShareExpense</name>
   </customPermissions>
   <fieldPermissions>
     <editable>true</editable>
@@ -1093,6 +1105,31 @@
     <field>AXF_OBJ_PluggyConnection__c.AXF_CON_LKP_Account__c</field>
     <readable>true</readable>
   </fieldPermissions>
+  <fieldPermissions>
+    <editable>true</editable>
+    <field>AXF_OBJ_SharedExpenseGrant__c.AXF_SEG_LKP_Collaborator__c</field>
+    <readable>true</readable>
+  </fieldPermissions>
+  <fieldPermissions>
+    <editable>true</editable>
+    <field>AXF_OBJ_SharedExpenseGrant__c.AXF_SEG_DT_RevokedAt__c</field>
+    <readable>true</readable>
+  </fieldPermissions>
+  <fieldPermissions>
+    <editable>true</editable>
+    <field>AXF_OBJ_SharedExpenseGrant__c.AXF_SEG_LKP_RevokedBy__c</field>
+    <readable>true</readable>
+  </fieldPermissions>
+  <fieldPermissions>
+    <editable>true</editable>
+    <field>AXF_OBJ_SharedExpenseGrant__c.AXF_SEG_NUM_Version__c</field>
+    <readable>true</readable>
+  </fieldPermissions>
+  <fieldPermissions>
+    <editable>true</editable>
+    <field>AXF_OBJ_SharedExpenseGrant__c.AXF_SEG_TXT_LastRequestId__c</field>
+    <readable>true</readable>
+  </fieldPermissions>
   <objectPermissions>
     <allowCreate>true</allowCreate>
     <allowDelete>false</allowDelete>
@@ -1318,6 +1355,15 @@
     <object>AXF_OBJ_FxSettlementCharge__c</object>
     <viewAllRecords>false</viewAllRecords>
   </objectPermissions>
+  <objectPermissions>
+    <allowCreate>true</allowCreate>
+    <allowDelete>false</allowDelete>
+    <allowEdit>true</allowEdit>
+    <allowRead>true</allowRead>
+    <modifyAllRecords>false</modifyAllRecords>
+    <object>AXF_OBJ_SharedExpenseGrant__c</object>
+    <viewAllRecords>false</viewAllRecords>
+  </objectPermissions>
   <recordTypeVisibilities>
     <recordType>Account.AXF_Business</recordType>
     <visible>true</visible>
@@ -1372,6 +1418,10 @@
   </tabSettings>
   <tabSettings>
     <tab>AXF_SourceHealth</tab>
+    <visibility>Visible</visibility>
+  </tabSettings>
+  <tabSettings>
+    <tab>AXF_CT_SharedExpenses</tab>
     <visibility>Visible</visibility>
   </tabSettings>
 </PermissionSet>
