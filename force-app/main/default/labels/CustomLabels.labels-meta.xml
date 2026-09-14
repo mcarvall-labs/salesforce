@@ -149,4 +149,172 @@
   ><fullName>AXF_Realization_reportingCurrencyRequired</fullName><language
     >en_US</language><protected>false</protected><shortDescription
     >Realization reportingCurrencyRequired</shortDescription><value
-    >Configure the organization reporting currency before recording realization.</value></labels></CustomLabels>
+    >Configure the organization reporting currency before recording realization.</value></labels><labels
+  ><fullName>AXF_ClosureRun_title</fullName><language>en_US</language><protected
+    >false</protected><shortDescription>Title</shortDescription><value
+    >Local closure</value></labels><labels><fullName
+    >AXF_ClosureRun_intro</fullName><language>en_US</language><protected
+    >false</protected><shortDescription>Intro</shortDescription><value
+    >Runs the auditable closure sequence for one holder: export, withdraw local access, stop collection and publication, policy-governed purge, retain minimal evidence. Each stage is idempotent and resumable; CLOSED is terminal.</value></labels><labels
+  ><fullName>AXF_ClosureRun_holder</fullName><language
+    >en_US</language><protected>false</protected><shortDescription
+    >Holder</shortDescription><value>Holder</value></labels><labels><fullName
+    >AXF_ClosureRun_legalHold</fullName><language>en_US</language><protected
+    >false</protected><shortDescription>Legal hold</shortDescription><value
+    >Legal hold declared for this scope</value></labels><labels><fullName
+    >AXF_ClosureRun_start</fullName><language>en_US</language><protected
+    >false</protected><shortDescription>Start</shortDescription><value
+    >Request closure</value></labels><labels><fullName
+    >AXF_ClosureRun_runs</fullName><language>en_US</language><protected
+    >false</protected><shortDescription>Runs</shortDescription><value
+    >Closure runs</value></labels><labels><fullName
+    >AXF_ClosureRun_noRuns</fullName><language>en_US</language><protected
+    >false</protected><shortDescription>No runs</shortDescription><value
+    >No closure has been requested yet.</value></labels><labels><fullName
+    >AXF_ClosureRun_status</fullName><language>en_US</language><protected
+    >false</protected><shortDescription>Status</shortDescription><value
+    >Status</value></labels><labels><fullName
+    >AXF_ClosureRun_progress</fullName><language>en_US</language><protected
+    >false</protected><shortDescription>Progress</shortDescription><value
+    >Progress</value></labels><labels><fullName
+    >AXF_ClosureRun_lastStage</fullName><language>en_US</language><protected
+    >false</protected><shortDescription>Last stage</shortDescription><value
+    >Last completed stage</value></labels><labels><fullName
+    >AXF_ClosureRun_correlation</fullName><language>en_US</language><protected
+    >false</protected><shortDescription>Correlation</shortDescription><value
+    >Correlation</value></labels><labels><fullName
+    >AXF_ClosureRun_attempt</fullName><language>en_US</language><protected
+    >false</protected><shortDescription>Attempt</shortDescription><value
+    >Attempt</value></labels><labels><fullName
+    >AXF_ClosureRun_blockReason</fullName><language>en_US</language><protected
+    >false</protected><shortDescription>Block reason</shortDescription><value
+    >Block reason</value></labels><labels><fullName
+    >AXF_ClosureRun_nextAction</fullName><language>en_US</language><protected
+    >false</protected><shortDescription>Next action</shortDescription><value
+    >Next safe action</value></labels><labels><fullName
+    >AXF_ClosureRun_externalRevocation</fullName><language
+    >en_US</language><protected>false</protected><shortDescription
+    >External revocation</shortDescription><value
+    >Pluggy revocation (external)</value></labels><labels><fullName
+    >AXF_ClosureRun_open</fullName><language>en_US</language><protected
+    >false</protected><shortDescription>Open</shortDescription><value
+    >Open</value></labels><labels><fullName
+    >AXF_ClosureRun_back</fullName><language>en_US</language><protected
+    >false</protected><shortDescription>Back</shortDescription><value
+    >Back</value></labels><labels><fullName
+    >AXF_ClosureRun_resume</fullName><language>en_US</language><protected
+    >false</protected><shortDescription>Resume</shortDescription><value
+    >Run remaining stages</value></labels><labels><fullName
+    >AXF_ClosureRun_reconcile</fullName><language>en_US</language><protected
+    >false</protected><shortDescription>Reconcile</shortDescription><value
+    >Result reconciled — allow retry</value></labels><labels><fullName
+    >AXF_ClosureRun_attachEvidence</fullName><language
+    >en_US</language><protected>false</protected><shortDescription
+    >Attach evidence</shortDescription><value
+    >Attach export evidence</value></labels><labels><fullName
+    >AXF_ClosureRun_evidenceRef</fullName><language>en_US</language><protected
+    >false</protected><shortDescription>Evidence ref</shortDescription><value
+    >Export evidence reference</value></labels><labels><fullName
+    >AXF_ClosureRun_stages</fullName><language>en_US</language><protected
+    >false</protected><shortDescription>Stages</shortDescription><value
+    >Stage checkpoints</value></labels><labels><fullName
+    >AXF_ClosureRun_stage</fullName><language>en_US</language><protected
+    >false</protected><shortDescription>Stage</shortDescription><value
+    >Stage</value></labels><labels><fullName
+    >AXF_ClosureRun_impact</fullName><language>en_US</language><protected
+    >false</protected><shortDescription>Impact</shortDescription><value
+    >Impact</value></labels><labels><fullName
+    >AXF_ClosureRun_effectKey</fullName><language>en_US</language><protected
+    >false</protected><shortDescription>Effect key</shortDescription><value
+    >Effect</value></labels><labels><fullName
+    >AXF_ClosureRun_completedAt</fullName><language>en_US</language><protected
+    >false</protected><shortDescription>Completed at</shortDescription><value
+    >At</value></labels><labels><fullName
+    >AXF_ClosureRun_closedBanner</fullName><language>en_US</language><protected
+    >false</protected><shortDescription>Closed banner</shortDescription><value
+    >Axon closed for this holder. External Pluggy revocation is shown separately and never restarts collection.</value></labels><labels
+  ><fullName>AXF_ClosureRun_unknownBanner</fullName><language
+    >en_US</language><protected>false</protected><shortDescription
+    >Unknown banner</shortDescription><value
+    >The last stage ended with an unknown result. Verify its effect before allowing a retry.</value></labels><labels
+  ><fullName>AXF_ClosureRun_blockedBanner</fullName><language
+    >en_US</language><protected>false</protected><shortDescription
+    >Blocked banner</shortDescription><value
+    >The run is blocked with a safe reason. Resolve the next action before resuming.</value></labels><labels
+  ><fullName>AXF_ClosureRun_loading</fullName><language
+    >en_US</language><protected>false</protected><shortDescription
+    >Loading</shortDescription><value>Loading…</value></labels><labels><fullName
+    >AXF_ClosureRun_error</fullName><language>en_US</language><protected
+    >false</protected><shortDescription>Error</shortDescription><value
+    >The operation could not be completed.</value></labels><labels><fullName
+    >AXF_ClosureRun_codeForbidden</fullName><language>en_US</language><protected
+    >false</protected><shortDescription>Forbidden</shortDescription><value
+    >You are not allowed to close this scope.</value></labels><labels><fullName
+    >AXF_ClosureRun_codeNotAccessible</fullName><language
+    >en_US</language><protected>false</protected><shortDescription
+    >Not accessible</shortDescription><value
+    >Scope or run not available to you.</value></labels><labels><fullName
+    >AXF_ClosureRun_codeConflict</fullName><language>en_US</language><protected
+    >false</protected><shortDescription>Conflict</shortDescription><value
+    >The run changed since you opened it. Reload and try again.</value></labels><labels
+  ><fullName>AXF_ClosureRun_codeTerminal</fullName><language
+    >en_US</language><protected>false</protected><shortDescription
+    >Terminal</shortDescription><value
+    >This closure is already CLOSED (terminal).</value></labels><labels
+  ><fullName>AXF_ClosureRun_codeReconcileFirst</fullName><language
+    >en_US</language><protected>false</protected><shortDescription
+    >Reconcile first</shortDescription><value
+    >Reconcile the unknown result before repeating a material stage.</value></labels><labels
+  ><fullName>AXF_ClosureRun_codeNotReconcilable</fullName><language
+    >en_US</language><protected>false</protected><shortDescription
+    >Not reconcilable</shortDescription><value
+    >There is no unknown result to reconcile.</value></labels><labels><fullName
+    >AXF_ClosureRun_codeInvalidInput</fullName><language
+    >en_US</language><protected>false</protected><shortDescription
+    >Invalid input</shortDescription><value
+    >Invalid request.</value></labels><labels><fullName
+    >AXF_ClosureRun_stageEXPORT</fullName><language>en_US</language><protected
+    >false</protected><shortDescription>Stage</shortDescription><value
+    >Export</value></labels><labels><fullName
+    >AXF_ClosureRun_stageREVOKE_ACCESS</fullName><language
+    >en_US</language><protected>false</protected><shortDescription
+    >Stage</shortDescription><value
+    >Withdraw local access</value></labels><labels><fullName
+    >AXF_ClosureRun_stageSTOP_COLLECTION</fullName><language
+    >en_US</language><protected>false</protected><shortDescription
+    >Stage</shortDescription><value
+    >Stop collection, jobs and publication</value></labels><labels><fullName
+    >AXF_ClosureRun_stagePURGE</fullName><language>en_US</language><protected
+    >false</protected><shortDescription>Stage</shortDescription><value
+    >Policy-governed purge / pseudonymization</value></labels><labels><fullName
+    >AXF_ClosureRun_stageRETAIN_EVIDENCE</fullName><language
+    >en_US</language><protected>false</protected><shortDescription
+    >Stage</shortDescription><value
+    >Retain minimal evidence</value></labels><labels><fullName
+    >AXF_ClosureRun_stageNONE</fullName><language>en_US</language><protected
+    >false</protected><shortDescription>Stage</shortDescription><value
+    >Not started</value></labels><labels><fullName
+    >AXF_ClosureRun_actionATTACH_EXPORT_EVIDENCE</fullName><language
+    >en_US</language><protected>false</protected><shortDescription
+    >Action</shortDescription><value
+    >Complete the authorized export and attach its evidence.</value></labels><labels
+  ><fullName>AXF_ClosureRun_actionRESUME</fullName><language
+    >en_US</language><protected>false</protected><shortDescription
+    >Action</shortDescription><value
+    >Resume the remaining stages.</value></labels><labels><fullName
+    >AXF_ClosureRun_actionRECONCILE</fullName><language
+    >en_US</language><protected>false</protected><shortDescription
+    >Action</shortDescription><value
+    >Verify the effect of the last stage and reconcile.</value></labels><labels
+  ><fullName>AXF_ClosureRun_actionRELEASE_LEGAL_HOLD</fullName><language
+    >en_US</language><protected>false</protected><shortDescription
+    >Action</shortDescription><value
+    >Content is preserved under legal hold; release the hold to continue.</value></labels><labels
+  ><fullName>AXF_ClosureRun_actionRESOLVE_DEPENDENCIES</fullName><language
+    >en_US</language><protected>false</protected><shortDescription
+    >Action</shortDescription><value
+    >Resolve active contracts or open reviews before purging.</value></labels><labels
+  ><fullName>AXF_ClosureRun_actionNONE</fullName><language
+    >en_US</language><protected>false</protected><shortDescription
+    >Action</shortDescription><value
+    >Nothing else to do.</value></labels></CustomLabels>

@@ -1,0 +1,21 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<CustomField xmlns="http://soap.sforce.com/2006/04/metadata">
+    <fullName>AXF_CLR_PKL_ExternalRevocation__c</fullName>
+    <label>Revogacao Externa (Pluggy)</label>
+    <type>Picklist</type>
+    <required>true</required>
+    <valueSet>
+        <restricted>true</restricted>
+        <valueSetDefinition>
+            <sorted>false</sorted>
+            <value><fullName>NOT_CONFIRMED</fullName><default
+        >true</default><label>Nao confirmada</label></value>
+            <value><fullName>CONFIRMED</fullName><default>false</default><label
+        >Confirmada</label></value>
+            <value><fullName>NOT_APPLICABLE</fullName><default
+        >false</default><label>Nao aplicavel</label></value>
+        </valueSetDefinition>
+    </valueSet>
+    <description
+  >Estado da revogacao externa, exibido separadamente; nunca executa DELETE /items nem reativa coleta. Detalhe na historia irma de estados bloqueados/Pluggy.</description>
+</CustomField>
