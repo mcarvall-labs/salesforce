@@ -77,4 +77,92 @@
     >O valor excede o disponível na origem ou o saldo do plano.</label><name
     >AXF_Realization_unavailableAmount</name></customLabels><customLabels><label
     >Configure a moeda de relatório da organização antes de registrar a realização.</label><name
-    >AXF_Realization_reportingCurrencyRequired</name></customLabels></Translations>
+    >AXF_Realization_reportingCurrencyRequired</name></customLabels><customLabels
+  ><label>Rateio econômico</label><name
+    >AXF_EconomicAllocation_title</name></customLabels><customLabels><label
+    >Distribua este fato economicamente entre pessoas/empresas autorizadas. A propriedade da conta permanece separada da atribuição; a confirmação exige exatamente 100%.</label><name
+    >AXF_EconomicAllocation_intro</name></customLabels><customLabels><label
+    >Fato</label><name
+    >AXF_EconomicAllocation_fact</name></customLabels><customLabels><label
+    >Titular da conta</label><name
+    >AXF_EconomicAllocation_holder</name></customLabels><customLabels><label
+    >Valor</label><name
+    >AXF_EconomicAllocation_amount</name></customLabels><customLabels><label
+    >Pessoa / empresa</label><name
+    >AXF_EconomicAllocation_person</name></customLabels><customLabels><label
+    >Percentual</label><name
+    >AXF_EconomicAllocation_percent</name></customLabels><customLabels><label
+    >Parcela</label><name
+    >AXF_EconomicAllocation_share</name></customLabels><customLabels><label
+    >Adicionar parcela</label><name
+    >AXF_EconomicAllocation_addShare</name></customLabels><customLabels><label
+    >Remover</label><name
+    >AXF_EconomicAllocation_removeShare</name></customLabels><customLabels
+  ><label>Total</label><name
+    >AXF_EconomicAllocation_total</name></customLabels><customLabels><label
+    >Propor rateio</label><name
+    >AXF_EconomicAllocation_propose</name></customLabels><customLabels><label
+    >Confirmar (100% exato)</label><name
+    >AXF_EconomicAllocation_confirm</name></customLabels><customLabels><label
+    >Confirmar rateio econômico</label><name
+    >AXF_EconomicAllocation_confirmTitle</name></customLabels><customLabels
+  ><label
+    >Você vai confirmar a revisão {0} do rateio de {1}. As parcelas ficam imutáveis; correções criam nova revisão.</label><name
+    >AXF_EconomicAllocation_confirmBody</name></customLabels><customLabels
+  ><label>Confirmar</label><name
+    >AXF_EconomicAllocation_yes</name></customLabels><customLabels><label
+    >Cancelar</label><name
+    >AXF_EconomicAllocation_cancel</name></customLabels><customLabels><label
+    >Revisões</label><name
+    >AXF_EconomicAllocation_revisions</name></customLabels><customLabels><label
+    >Revisão</label><name
+    >AXF_EconomicAllocation_revision</name></customLabels><customLabels><label
+    >Estado</label><name
+    >AXF_EconomicAllocation_state</name></customLabels><customLabels><label
+    >Efetivo em</label><name
+    >AXF_EconomicAllocation_effectiveAt</name></customLabels><customLabels
+  ><label>Nenhum rateio proposto para este fato ainda.</label><name
+    >AXF_EconomicAllocation_noSets</name></customLabels><customLabels><label
+    >Rateio proposto como rascunho.</label><name
+    >AXF_EconomicAllocation_proposed</name></customLabels><customLabels><label
+    >Rateio confirmado.</label><name
+    >AXF_EconomicAllocation_confirmed</name></customLabels><customLabels><label
+    >Carregando…</label><name
+    >AXF_EconomicAllocation_loading</name></customLabels><customLabels><label
+    >Não foi possível concluir a operação.</label><name
+    >AXF_EconomicAllocation_error</name></customLabels><customLabels><label
+    >Você não tem permissão para ratear este fato.</label><name
+    >AXF_EconomicAllocation_codeForbidden</name></customLabels><customLabels
+  ><label>Fato ou rateio indisponível para você.</label><name
+    >AXF_EconomicAllocation_codeNotAccessible</name></customLabels><customLabels
+  ><label
+    >O rateio mudou desde que você o abriu. Recarregue e tente novamente.</label><name
+    >AXF_EconomicAllocation_codeConflict</name></customLabels><customLabels
+  ><label>Há parcelas inválidas; nada foi gravado.</label><name
+    >AXF_EconomicAllocation_codeInvalidShares</name></customLabels><customLabels
+  ><label>Confirmação rejeitada; nada foi gravado.</label><name
+    >AXF_EconomicAllocation_codeConfirmationRejected</name></customLabels><customLabels
+  ><label
+    >Já existe um rateio confirmado para este fato; revise-o em vez de propor outro.</label><name
+    >AXF_EconomicAllocation_codeActiveSetExists</name></customLabels><customLabels
+  ><label>Só um rascunho pode ser confirmado.</label><name
+    >AXF_EconomicAllocation_codeNotDraft</name></customLabels><customLabels
+  ><label
+    >Este fato não pode ser rateado (sem valor, moeda ou titular).</label><name
+    >AXF_EconomicAllocation_codeFactNotAllocatable</name></customLabels><customLabels
+  ><label>Requisição inválida.</label><name
+    >AXF_EconomicAllocation_codeInvalidInput</name></customLabels><customLabels
+  ><label>Parcela deve ser positiva e no máximo 100%</label><name
+    >AXF_EconomicAllocation_reasonNonPositive</name></customLabels><customLabels
+  ><label>Pessoa/empresa selecionada mais de uma vez</label><name
+    >AXF_EconomicAllocation_reasonDuplicate</name></customLabels><customLabels
+  ><label>Pessoa/empresa não autorizada nesta instalação</label><name
+    >AXF_EconomicAllocation_reasonUnauthorized</name></customLabels><customLabels
+  ><label>Total excede 100%</label><name
+    >AXF_EconomicAllocation_reasonTotalExceeds</name></customLabels><customLabels
+  ><label>Total deve ser exatamente 100%</label><name
+    >AXF_EconomicAllocation_reasonTotalNot100</name></customLabels><customLabels
+  ><label>O fato mudou desde a proposta</label><name
+    >AXF_EconomicAllocation_reasonFactChanged</name></customLabels><customLabels
+  ><label>Já existe rateio confirmado</label><name
+    >AXF_EconomicAllocation_reasonActiveExists</name></customLabels></Translations>

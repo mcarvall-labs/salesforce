@@ -1,0 +1,23 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<CustomObject xmlns="http://soap.sforce.com/2006/04/metadata">
+    <deploymentStatus>Deployed</deploymentStatus>
+    <description
+  >Raiz do agregado de revisao do rateio economico de um fato (AXF-126/AXF-5, contrato ratificado 13/09/2026, alloc-v2). Ancora XOR no fato de origem tipado (BAT / CCT / FTX manual); revisao imutavel; DRAFT -> CONFIRMED (soma exata 100%) -> SUPERSEDED | REVERSED por registros compensatorios, nunca edicao. OWD Private, owner-sync a partir do Account titular do fato; sem Delete. Propriedade da conta permanece separada da atribuicao economica.</description>
+    <enableActivities>false</enableActivities>
+    <enableBulkApi>true</enableBulkApi>
+    <enableFeeds>false</enableFeeds>
+    <enableHistory>true</enableHistory>
+    <enableReports>true</enableReports>
+    <enableSearch>false</enableSearch>
+    <enableSharing>true</enableSharing>
+    <enableStreamingApi>true</enableStreamingApi>
+    <label>Rateio Economico</label>
+    <nameField>
+        <displayFormat>EAS-{000000}</displayFormat>
+        <label>Numero do Rateio</label>
+        <type>AutoNumber</type>
+    </nameField>
+    <pluralLabel>Rateios Economicos</pluralLabel>
+    <sharingModel>Private</sharingModel>
+    <visibility>Public</visibility>
+</CustomObject>

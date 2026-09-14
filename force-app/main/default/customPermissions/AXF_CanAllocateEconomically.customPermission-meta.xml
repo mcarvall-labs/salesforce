@@ -1,0 +1,4 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<CustomPermission xmlns="http://soap.sforce.com/2006/04/metadata"><description
+  >Allows the holder of a financial fact to propose and confirm its economic allocation among authorized holders (AXF-126). Record access is always revalidated; no Delete.</description><label
+  >Allocate a fact economically</label></CustomPermission>

@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<CustomField xmlns="http://soap.sforce.com/2006/04/metadata">
+    <fullName>AXF_EA_NUM_Percent__c</fullName>
+    <label>Percentual</label>
+    <type>Percent</type>
+    <precision>9</precision>
+    <scale>6</scale>
+    <required>true</required>
+    <description
+  >Parcela percentual entre 0 (exclusivo) e 100; soma exata 100% na confirmacao.</description>
+</CustomField>
