@@ -7,9 +7,6 @@
  *   estado final — apenas libera o token ativo (nunca o move para outro valor) e exige o conjunto
  *   compensatorio do mesmo fato, em revisao maior, ja existente na mesma transacao.
  * - Parcela: nasce/muda so pelo servico e so em set DRAFT; magnitude positiva; percentual em (0,100].
- * - AXF-129: o agregado so expressa cota de uma movimentacao positiva — o set nasce com magnitude
- *   de fato positiva e nenhuma parcela excede essa magnitude, de modo que nenhum valor exista ao
- *   lado ou alem da movimentacao (a forma de um saldo/obrigacao) e nenhuma divida seja gerada.
  */
 public without sharing class ALT_CLS_EconomicAllocationGuard {
   private static Boolean writing = false;
@@ -93,15 +90,6 @@ public without sharing class ALT_CLS_EconomicAllocationGuard {
         }
         if (row.AXF_EAS_PKL_State__c != 'DRAFT') {
           row.addError('An economic allocation set starts as DRAFT.');
-        }
-        // AXF-129/AC-1: the aggregate only ever expresses a share of a positive movement, so a set
-        // with no positive movement cannot exist — an amount that stands without a movement is the
-        // shape of a balance, not of a share.
-        if (
-          row.AXF_EAS_NUM_FactMagnitude__c == null ||
-          row.AXF_EAS_NUM_FactMagnitude__c <= 0
-        ) {
-          row.addError('An economic allocation shares a positive movement.');
         }
         continue;
       }
@@ -287,7 +275,7 @@ public without sharing class ALT_CLS_EconomicAllocationGuard {
     }
     Map<Id, AXF_OBJ_EconomicAllocationSet__c> parents = new Map<Id, AXF_OBJ_EconomicAllocationSet__c>(
       [
-        SELECT Id, AXF_EAS_PKL_State__c, AXF_EAS_NUM_FactMagnitude__c
+        SELECT Id, AXF_EAS_PKL_State__c
         FROM AXF_OBJ_EconomicAllocationSet__c
         WHERE Id IN :setIds
       ]
@@ -321,16 +309,6 @@ public without sharing class ALT_CLS_EconomicAllocationGuard {
         row.AXF_EA_NUM_Percent__c > 100
       ) {
         row.addError('Allocation magnitude and percent must be positive.');
-      } else if (
-        parent.AXF_EAS_NUM_FactMagnitude__c != null &&
-        row.AXF_EA_NUM_Magnitude__c > parent.AXF_EAS_NUM_FactMagnitude__c
-      ) {
-        // AXF-129/AC-1: a parcel is a share of the movement, never an amount beside or beyond it.
-        // An amount outside the movement is the shape of an obligation — a debt or a balance
-        // created on top of the fact — and the aggregate cannot express one.
-        row.addError(
-          'An allocation share cannot exceed the movement it shares.'
-        );
       }
     }
   }
