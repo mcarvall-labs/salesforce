@@ -59,7 +59,7 @@ const holders = [
 
 const panel = {
   policyVersion: "confidence-panel@1.0.0",
-  policyAuthority: ["AXF-FORECASTING@1.0.0", "AXF-MATCHING@1.0.0"],
+  gatePolicy: "AXF-FORECASTING@1.0.0",
   asOf: "2026-09-14T12:00:00.000Z",
   level: "DEGRADED",
   reasons: ["STALE_SOURCE", "FRESHNESS_EXCEEDED"],
@@ -277,34 +277,60 @@ describe("c-aXF_LWC_confidencePanel", () => {
     expect(refreshApex).toHaveBeenCalled();
   });
 
-  it("renders the canonical policy state, authority, coverage and fallbacks without recomputing the gate", async () => {
+  it("renders the canonical state, its declaring policy, coverage and fallbacks without recomputing the gate", async () => {
+    // Reachable DEGRADED payload whose included rows all look current: what degrades the panel is
+    // the excluded holder, so a client deriving the state from the rows would show INFORMATIVE.
     explain.mockResolvedValue({
       ...panel,
-      level: "INFORMATIVE",
-      reasons: [],
-      fallbacks: []
+      level: "DEGRADED",
+      reasons: ["HOLDER_NOT_AUTHORIZED"],
+      fallbacks: [],
+      includedCount: 3,
+      excludedCount: 0,
+      sources: [
+        { ...panel.sources[0], factCount: 0 },
+        {
+          ...panel.sources[1],
+          freshness: "CURRENT",
+          lastSuccessAt: "2026-09-14T11:00:00.000Z",
+          factCount: 5,
+          exceptions: []
+        },
+        {
+          ...panel.sources[2],
+          included: true,
+          exclusionReason: undefined,
+          freshness: "CURRENT",
+          lastSuccessAt: "2026-09-14T11:30:00.000Z",
+          factCount: 3,
+          navigable: true
+        }
+      ]
     });
     const element = build("001A");
     getHolders.emit(holders);
     await flush();
     const level = element.shadowRoot.querySelector('[data-id="level"]');
-    expect(level.textContent).toContain("levelInformative");
-    expect(level.className).toContain("slds-badge_success");
-    // A stale row must never turn the server state into one derived here.
-    expect(
-      element.shadowRoot.querySelector('[data-source="a07S"] [data-freshness]')
-        .dataset.freshness
-    ).toBe("STALE");
+    expect(level.textContent).toContain("levelDegraded");
+    expect(level.className).toContain("slds-badge_warning");
+    // Every rendered row is current, and the state is still the server's degraded one.
+    const rows = element.shadowRoot.querySelectorAll("[data-freshness]");
+    expect(rows.length).toBe(3);
+    rows.forEach((row) => expect(row.dataset.freshness).toBe("CURRENT"));
     expect(
       element.shadowRoot.querySelector('[data-id="policy"]').textContent
     ).toContain("AXF-FORECASTING@1.0.0");
+    // The matching policy declares other states and never enters this panel.
+    expect(
+      element.shadowRoot.querySelector('[data-id="policy"]').textContent
+    ).not.toContain("AXF-MATCHING");
     const coverage = element.shadowRoot.querySelector(
       '[data-id="coverage"]'
     ).textContent;
-    expect(coverage).toMatch(/2 \S*_included · 1 \S*_excluded/);
+    expect(coverage).toMatch(/3 \S*_included · 0 \S*_excluded/);
     expect(
-      element.shadowRoot.querySelector('[data-id="gate-reasons"]')
-    ).toBeNull();
+      element.shadowRoot.querySelectorAll('[data-id="gate-reasons"] li').length
+    ).toBe(1);
     expect(
       element.shadowRoot.querySelector('[data-id="fallbacks"]')
     ).toBeNull();
@@ -326,6 +352,82 @@ describe("c-aXF_LWC_confidencePanel", () => {
     );
     expect(fallbacks.length).toBe(1);
     expect(fallbacks[0].textContent).toContain("fallbackFreshnessLimitDefault");
+  });
+
+  it("names the IMPORT_DATE_MISSING fallback and exception instead of the internal code", async () => {
+    // Reachable payload: one manual source without its own freshness limit whose hand-keyed facts
+    // carry no import timestamp, so both fallbacks and the row exception are reported together.
+    explain.mockResolvedValue({
+      ...panel,
+      level: "DEGRADED",
+      reasons: ["IMPORT_DATE_MISSING"],
+      fallbacks: ["FRESHNESS_LIMIT_DEFAULT", "IMPORT_DATE_MISSING"],
+      exclusions: [],
+      includedCount: 1,
+      excludedCount: 0,
+      currencies: ["BRL"],
+      sources: [
+        {
+          ...panel.sources[0],
+          origin: "MANUAL",
+          freshness: "CURRENT",
+          lastSuccessAt: "2026-09-14T11:00:00.000Z",
+          factCount: 4,
+          exceptions: ["IMPORT_DATE_MISSING"]
+        }
+      ]
+    });
+    const element = build("001A");
+    getHolders.emit(holders);
+    await flush();
+    const fallbacks = element.shadowRoot.querySelectorAll(
+      '[data-id="fallbacks"] li'
+    );
+    expect(fallbacks.length).toBe(2);
+    expect(fallbacks[0].textContent).toContain("fallbackFreshnessLimitDefault");
+    expect(fallbacks[1].textContent).toContain("exImportDateMissing");
+    expect(fallbacks[1].textContent).not.toContain("IMPORT_DATE_MISSING");
+    const exception = element.shadowRoot.querySelector(
+      '[data-id="exceptions"] li'
+    );
+    expect(exception.textContent).toContain("exImportDateMissing");
+    expect(exception.textContent).not.toContain("IMPORT_DATE_MISSING");
+  });
+
+  it("asserts no derivation it cannot know: no fallback claim on a blocked or older payload", async () => {
+    explain.mockResolvedValue({
+      ...panel,
+      level: "BLOCKED",
+      reasons: ["NO_READABLE_SOURCE"],
+      allowedActions: [],
+      sources: [],
+      exclusions: [],
+      currencies: [],
+      fallbacks: [],
+      includedCount: undefined,
+      excludedCount: undefined
+    });
+    const blocked = build("001A");
+    getHolders.emit(holders);
+    await flush();
+    // No result was derived, so "no fallback was needed" may not be asserted.
+    expect(
+      blocked.shadowRoot.querySelector('[data-id="no-fallbacks"]')
+    ).toBeNull();
+    const coverage = blocked.shadowRoot.querySelector(
+      '[data-id="coverage"]'
+    ).textContent;
+    expect(coverage).toContain("coverageUnknown");
+    expect(coverage).not.toContain("undefined");
+
+    // An older response that omits the fallback list asserts nothing either.
+    explain.mockResolvedValue({ ...panel, fallbacks: undefined });
+    const older = build("001A");
+    getHolders.emit(holders);
+    await flush();
+    expect(
+      older.shadowRoot.querySelector('[data-id="no-fallbacks"]')
+    ).toBeNull();
   });
 
   it("shows unknown FX and hides the currency when the server has none", async () => {

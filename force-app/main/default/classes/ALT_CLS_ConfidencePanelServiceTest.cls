@@ -318,7 +318,7 @@ private class ALT_CLS_ConfidencePanelServiceTest {
   }
 
   @IsTest
-  static void canonicalPolicyStatesAuthorityAndFallbacksComeFromThePolicies() {
+  static void canonicalPolicyStatesAndFallbacksComeFromThePolicy() {
     System.runAs(byAlias('axf143g')) {
       Datetime now = Datetime.newInstance(2026, 9, 14, 12, 0, 0);
       ALT_CLS_ConfidencePanelService.nowOverride = now;
@@ -339,12 +339,20 @@ private class ALT_CLS_ConfidencePanelServiceTest {
         'AVAILABLE',
         null
       );
+      // Own limit on the included source, no limit on the excluded one: only the first may
+      // report a fallback, because only it contributes to the derivation.
+      Account withExcluded = holder('Ana Limite Excluido');
+      bank(withExcluded.Id, 'e', fresh.Id, 'AVAILABLE', 24);
+      bank(withExcluded.Id, 'x', null, 'CUSTODY', null);
       Test.startTest();
       ALT_CLS_ConfidencePanelService.Panel informative = service.explain(
         new List<Id>{ withOwnLimit.Id }
       );
       ALT_CLS_ConfidencePanelService.Panel degraded = service.explain(
         new List<Id>{ withDefaultLimit.Id }
+      );
+      ALT_CLS_ConfidencePanelService.Panel mixed = service.explain(
+        new List<Id>{ withExcluded.Id }
       );
       Test.stopTest();
 
@@ -358,12 +366,13 @@ private class ALT_CLS_ConfidencePanelServiceTest {
         degraded.level
       );
       Assert.areEqual(
-        new List<String>{
-          ALT_CLS_ForecastComparisonService.POLICY_VERSION,
-          ALT_CLS_MatchEvidence.MATCHING_POLICY
-        },
-        informative.policyAuthority,
-        'autoridade canonica dos estados e das acoes permitidas'
+        ALT_CLS_ForecastComparisonService.POLICY_VERSION,
+        informative.gatePolicy,
+        'a policy canonica que declara os estados e as acoes'
+      );
+      Assert.isFalse(
+        informative.gatePolicy.contains(ALT_CLS_MatchEvidence.MATCHING_POLICY),
+        'a policy de matching declara outros estados e nao entra aqui'
       );
       Assert.isTrue(
         informative.fallbacks.isEmpty(),
@@ -379,6 +388,13 @@ private class ALT_CLS_ConfidencePanelServiceTest {
         source(degraded, defaulted.Id).freshnessLimitHours,
         'padrao da politica'
       );
+      Assert.isTrue(
+        mixed.fallbacks.isEmpty(),
+        'fonte excluida usa o padrao mas nao deriva nada: nenhum fallback'
+      );
+      Assert.areEqual(1, mixed.includedCount);
+      Assert.areEqual(1, mixed.excludedCount);
+      Assert.areEqual('DEGRADED', mixed.level);
     }
   }
 
@@ -810,6 +826,10 @@ private class ALT_CLS_ConfidencePanelServiceTest {
       Assert.areEqual('BLOCKED', blocked.level);
       Assert.isTrue(blocked.reasons.contains('SOURCE_EXCLUDED'));
       Assert.isTrue(blocked.reasons.contains('NO_READABLE_SOURCE'));
+      Assert.isTrue(
+        blocked.fallbacks.isEmpty(),
+        'painel bloqueado nao deriva resultado: nenhum fallback declarado'
+      );
     }
     System.runAs(byAlias('axf143f')) {
       ALT_CLS_ConfidencePanelService.Panel gaps = new ALT_CLS_ConfidencePanelService()

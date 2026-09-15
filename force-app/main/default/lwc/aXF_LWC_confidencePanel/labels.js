@@ -67,6 +67,7 @@ import exImportDateMissing from "@salesforce/label/c.AXF_ConfidencePanel_exImpor
 import codeNotAccessible from "@salesforce/label/c.AXF_ConfidencePanel_codeNotAccessible";
 import authority from "@salesforce/label/c.AXF_ConfidencePanel_authority";
 import coverage from "@salesforce/label/c.AXF_ConfidencePanel_coverage";
+import coverageUnknown from "@salesforce/label/c.AXF_ConfidencePanel_coverageUnknown";
 import fallbacks from "@salesforce/label/c.AXF_ConfidencePanel_fallbacks";
 import noFallbacks from "@salesforce/label/c.AXF_ConfidencePanel_noFallbacks";
 import fallbackFreshnessLimitDefault from "@salesforce/label/c.AXF_ConfidencePanel_fallbackFreshnessLimitDefault";
@@ -140,6 +141,7 @@ export default {
   codeNotAccessible,
   authority,
   coverage,
+  coverageUnknown,
   fallbacks,
   noFallbacks,
   fallbackFreshnessLimitDefault

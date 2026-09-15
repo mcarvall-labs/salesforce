@@ -90,7 +90,7 @@
                 minute="2-digit"
               ></lightning-formatted-date-time>
               · {labels.policy}: {panel.policyVersion} · {labels.authority}:
-              {policyAuthorityText}
+              {gatePolicyText}
             </span>
           </p>
           <p class="slds-m-top_x-small" data-id="impact">{impactText}</p>
@@ -269,7 +269,7 @@
               </template>
             </ul>
           </template>
-          <template lwc:else
+          <template lwc:elseif={showsNoFallbacks}
             ><p class="slds-text-color_weak" data-id="no-fallbacks">
               {labels.noFallbacks}
             </p></template

@@ -1358,11 +1358,15 @@
     >Some of the data this panel depends on is not accessible to you.</value></labels><labels
   ><fullName>AXF_ConfidencePanel_authority</fullName><language
     >en_US</language><protected>false</protected><shortDescription
-    >Policy authority</shortDescription><value
-    >Forecasting and matching policies that authorize these states and actions.</value></labels><labels
-  ><fullName>AXF_ConfidencePanel_coverage</fullName><language
+    >Canonical policy</shortDescription><value
+    >Canonical policy</value></labels><labels><fullName
+    >AXF_ConfidencePanel_coverage</fullName><language>en_US</language><protected
+    >false</protected><shortDescription>Coverage</shortDescription><value
+    >Coverage</value></labels><labels><fullName
+    >AXF_ConfidencePanel_coverageUnknown</fullName><language
     >en_US</language><protected>false</protected><shortDescription
-    >Coverage</shortDescription><value>Coverage</value></labels><labels
+    >Coverage not reported</shortDescription><value
+    >Coverage was not reported for this result.</value></labels><labels
   ><fullName>AXF_ConfidencePanel_fallbacks</fullName><language
     >en_US</language><protected>false</protected><shortDescription
     >Fallbacks</shortDescription><value

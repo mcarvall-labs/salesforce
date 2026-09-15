@@ -80,12 +80,19 @@ private class AXF_CLS_CTRL_ConfidencePanelTest {
       );
       Assert.areEqual(1, panel.sources.size());
       Assert.areEqual(
-        new List<String>{
-          ALT_CLS_ForecastComparisonService.POLICY_VERSION,
-          ALT_CLS_MatchEvidence.MATCHING_POLICY
-        },
-        panel.policyAuthority,
-        'autoridade canonica chega intacta ao LWC'
+        ALT_CLS_ForecastComparisonService.POLICY_VERSION,
+        panel.gatePolicy,
+        'a policy canonica do gate chega intacta ao LWC'
+      );
+      Assert.areEqual(
+        1,
+        panel.includedCount,
+        'o controlador repassa o painel derivado, nao o reconstroi'
+      );
+      Assert.areEqual(
+        new List<String>{ 'FRESHNESS_LIMIT_DEFAULT' },
+        panel.fallbacks,
+        'os fallbacks aplicados chegam intactos ao LWC'
       );
       try {
         AXF_CLS_CTRL_ConfidencePanel.explain(new List<Id>());

@@ -176,15 +176,20 @@ export default class AxfConfidencePanel extends NavigationMixin(
   get hasHolders() {
     return this.holderOptions.length > 0;
   }
-  /** Canonical policies that authorize the states and actions; never derived here. */
-  get policyAuthorityText() {
-    return this.panel && this.panel.policyAuthority
-      ? this.panel.policyAuthority.join(" · ")
-      : "";
+  /** The canonical policy that declares the states and actions; never derived here. */
+  get gatePolicyText() {
+    return (this.panel && this.panel.gatePolicy) || "";
   }
+  /** Coverage counts may be absent from an older response; never render "undefined". */
   get coverageText() {
     if (!this.panel) {
       return "";
+    }
+    if (
+      typeof this.panel.includedCount !== "number" ||
+      typeof this.panel.excludedCount !== "number"
+    ) {
+      return labels.coverageUnknown;
     }
     return (
       this.panel.includedCount +
@@ -198,6 +203,18 @@ export default class AxfConfidencePanel extends NavigationMixin(
   }
   get hasFallbacks() {
     return this.fallbacks.length > 0;
+  }
+  /**
+   * "No fallback was needed" is asserted only for a derived result whose fallback list the server
+   * actually returned: a blocked panel derives nothing, and an older response may omit the field.
+   */
+  get showsNoFallbacks() {
+    return (
+      !!this.panel &&
+      this.panel.level !== "BLOCKED" &&
+      Array.isArray(this.panel.fallbacks) &&
+      this.panel.fallbacks.length === 0
+    );
   }
   get fallbacks() {
     if (!this.panel) {

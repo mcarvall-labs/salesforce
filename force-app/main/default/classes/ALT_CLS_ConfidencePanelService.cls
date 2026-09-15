@@ -21,13 +21,13 @@
  *   carry `IMPORT_DATE_MISSING`, so a source with facts is never reported as "never succeeded".
  * - Exceptions of excluded sources stay on the row but never become panel reasons.
  *
- * AXF-144 — canonical policy states: the gate vocabulary is consumed from the policies that
- * declare it (`ALT_CLS_ForecastComparisonService.CONFIDENCE_*` and the matching policy), never
- * redeclared here, and no parallel score exists on either side. The panel reports which policies
- * authorize the states (`policyAuthority`), the fallbacks actually applied while deriving it
- * (`FRESHNESS_LIMIT_DEFAULT` when the source declares no limit of its own, `IMPORT_DATE_MISSING`
- * when a hand-keyed fact carries no import timestamp), and the gate reason at every
- * non-informative level.
+ * AXF-144 — canonical policy states: the gate vocabulary is consumed from the policy that
+ * declares it (`ALT_CLS_ForecastComparisonService.CONFIDENCE_*`), never redeclared here, and no
+ * parallel score exists on either side. The panel reports that declaring policy (`gatePolicy`),
+ * the fallbacks actually applied while deriving it (`FRESHNESS_LIMIT_DEFAULT` when a contributing
+ * source declares no limit of its own, `IMPORT_DATE_MISSING` when a hand-keyed fact carries no
+ * import timestamp), and the gate reason at every non-informative level. It carries no evidence
+ * precedence, so it claims no authority: see `docs/implementation/AXF-144.md`.
  */
 public with sharing class ALT_CLS_ConfidencePanelService {
   private static final String CP_EXPLAIN = 'AXF_CanExplainConfidence';
@@ -101,12 +101,9 @@ public with sharing class ALT_CLS_ConfidencePanelService {
   public class Panel {
     @AuraEnabled
     public String policyVersion;
-    /** Canonical policies that declare the gate states and the allowed actions (AXF-144). */
+    /** The canonical policy that declares the gate states and the allowed actions (AXF-144). */
     @AuraEnabled
-    public List<String> policyAuthority = new List<String>{
-      ALT_CLS_ForecastComparisonService.POLICY_VERSION,
-      ALT_CLS_MatchEvidence.MATCHING_POLICY
-    };
+    public String gatePolicy = ALT_CLS_ForecastComparisonService.POLICY_VERSION;
     @AuraEnabled
     public Datetime asOf;
     @AuraEnabled
@@ -383,15 +380,16 @@ public with sharing class ALT_CLS_ConfidencePanelService {
     view.currencyIso = currencyIso;
     view.origin = 'MANUAL';
     Boolean usesDefaultLimit = ownLimit == null || ownLimit <= 0;
-    if (usesDefaultLimit) {
-      addFallback(panel, 'FRESHNESS_LIMIT_DEFAULT');
-    }
     view.freshnessLimitHours = usesDefaultLimit
       ? defaultLimit
       : ownLimit.intValue();
     view.navigable = true;
     view.included = availability != 'CUSTODY';
     view.exclusionReason = view.included ? null : 'CUSTODY';
+    if (usesDefaultLimit && view.included) {
+      // Only a source that contributes to the result reports the fallback it used.
+      addFallback(panel, 'FRESHNESS_LIMIT_DEFAULT');
+    }
     view.freshness = 'UNKNOWN';
     return view;
   }
@@ -501,7 +499,9 @@ public with sharing class ALT_CLS_ConfidencePanelService {
         // Hand-keyed facts carry no import timestamp; their creation is the recorded success.
         view.lastSuccessAt = (Datetime) row.get('created');
         view.exceptions.add('IMPORT_DATE_MISSING');
-        addFallback(panel, 'IMPORT_DATE_MISSING');
+        if (view.included) {
+          addFallback(panel, 'IMPORT_DATE_MISSING');
+        }
       }
     }
   }
