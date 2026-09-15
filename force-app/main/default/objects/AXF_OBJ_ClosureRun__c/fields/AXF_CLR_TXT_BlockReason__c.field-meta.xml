@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<CustomField xmlns="http://soap.sforce.com/2006/04/metadata">
+    <fullName>AXF_CLR_TXT_BlockReason__c</fullName>
+    <label>Motivo do Bloqueio</label>
+    <type>Text</type>
+    <length>80</length>
+    <required>false</required>
+    <description
+  >Codigo seguro do bloqueio (ex.: EXPORT_PENDING, LEGAL_HOLD, ACTIVE_DEPENDENCIES, REVOCATION_FAILED); nunca PII.</description>
+</CustomField>

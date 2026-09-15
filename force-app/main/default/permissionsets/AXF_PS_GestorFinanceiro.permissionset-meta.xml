@@ -207,6 +207,14 @@
     <apexClass>AXF_CLS_CTRL_SharedExpense</apexClass>
     <enabled>true</enabled>
   </classAccesses>
+  <classAccesses>
+    <apexClass>ALT_CLS_ClosureOrchestrator</apexClass>
+    <enabled>true</enabled>
+  </classAccesses>
+  <classAccesses>
+    <apexClass>AXF_CLS_CTRL_ClosureRun</apexClass>
+    <enabled>true</enabled>
+  </classAccesses>
   <customPermissions>
     <enabled>true</enabled>
     <name>AXF_CanConfigure</name>
@@ -218,6 +226,10 @@
   <customPermissions>
     <enabled>true</enabled>
     <name>AXF_CanShareExpense</name>
+  </customPermissions>
+  <customPermissions>
+    <enabled>true</enabled>
+    <name>AXF_CanCloseInstallation</name>
   </customPermissions>
   <fieldPermissions>
     <editable>true</editable>
@@ -1283,6 +1295,66 @@
     >AXF_OBJ_SharedExpenseGrant__c.AXF_SEG_TXT_LastEditRequestId__c</field>
     <readable>true</readable>
   </fieldPermissions>
+  <fieldPermissions>
+    <editable>true</editable>
+    <field>AXF_OBJ_ClosureRun__c.AXF_CLR_BOL_LegalHold__c</field>
+    <readable>true</readable>
+  </fieldPermissions>
+  <fieldPermissions>
+    <editable>true</editable>
+    <field>AXF_OBJ_ClosureRun__c.AXF_CLR_DT_LastCompletedAt__c</field>
+    <readable>true</readable>
+  </fieldPermissions>
+  <fieldPermissions>
+    <editable>true</editable>
+    <field>AXF_OBJ_ClosureRun__c.AXF_CLR_NUM_Attempt__c</field>
+    <readable>true</readable>
+  </fieldPermissions>
+  <fieldPermissions>
+    <editable>true</editable>
+    <field>AXF_OBJ_ClosureRun__c.AXF_CLR_NUM_Version__c</field>
+    <readable>true</readable>
+  </fieldPermissions>
+  <fieldPermissions>
+    <editable>true</editable>
+    <field>AXF_OBJ_ClosureRun__c.AXF_CLR_TAL_Checkpoints__c</field>
+    <readable>true</readable>
+  </fieldPermissions>
+  <fieldPermissions>
+    <editable>true</editable>
+    <field>AXF_OBJ_ClosureRun__c.AXF_CLR_TAL_EvidenceSummary__c</field>
+    <readable>true</readable>
+  </fieldPermissions>
+  <fieldPermissions>
+    <editable>true</editable>
+    <field>AXF_OBJ_ClosureRun__c.AXF_CLR_TXT_BlockReason__c</field>
+    <readable>true</readable>
+  </fieldPermissions>
+  <fieldPermissions>
+    <editable>true</editable>
+    <field>AXF_OBJ_ClosureRun__c.AXF_CLR_TXT_ExportEvidenceRef__c</field>
+    <readable>true</readable>
+  </fieldPermissions>
+  <fieldPermissions>
+    <editable>true</editable>
+    <field>AXF_OBJ_ClosureRun__c.AXF_CLR_TXT_LastEffectKey__c</field>
+    <readable>true</readable>
+  </fieldPermissions>
+  <fieldPermissions>
+    <editable>true</editable>
+    <field>AXF_OBJ_ClosureRun__c.AXF_CLR_TXT_NextAction__c</field>
+    <readable>true</readable>
+  </fieldPermissions>
+  <fieldPermissions>
+    <editable>true</editable>
+    <field>AXF_OBJ_ClosureRun__c.AXF_CLR_TXT_PolicyVersion__c</field>
+    <readable>true</readable>
+  </fieldPermissions>
+  <fieldPermissions>
+    <editable>true</editable>
+    <field>AXF_OBJ_FinancialTransaction__c.AXF_FTX_TXT_Description__c</field>
+    <readable>true</readable>
+  </fieldPermissions>
   <objectPermissions>
     <allowCreate>true</allowCreate>
     <allowDelete>false</allowDelete>
@@ -1553,6 +1625,15 @@
     <object>AXF_OBJ_SharedExpenseGrant__c</object>
     <viewAllRecords>false</viewAllRecords>
   </objectPermissions>
+  <objectPermissions>
+    <allowCreate>true</allowCreate>
+    <allowDelete>false</allowDelete>
+    <allowEdit>true</allowEdit>
+    <allowRead>true</allowRead>
+    <modifyAllRecords>false</modifyAllRecords>
+    <object>AXF_OBJ_ClosureRun__c</object>
+    <viewAllRecords>false</viewAllRecords>
+  </objectPermissions>
   <recordTypeVisibilities>
     <recordType>Account.AXF_Business</recordType>
     <visible>true</visible>
@@ -1615,6 +1696,10 @@
   </tabSettings>
 <tabSettings>
     <tab>AXF_CT_SharedExpenses</tab>
+    <visibility>Visible</visibility>
+  </tabSettings>
+<tabSettings>
+    <tab>AXF_CT_ClosureRun</tab>
     <visibility>Visible</visibility>
   </tabSettings>
 </PermissionSet>

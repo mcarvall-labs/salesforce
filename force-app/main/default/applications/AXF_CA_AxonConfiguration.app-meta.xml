@@ -21,5 +21,6 @@
     <tabs>AXF_ConfirmHolders</tabs>
     <tabs>AXF_SourceDiscovery</tabs>
     <tabs>AXF_SourceHealth</tabs>
+    <tabs>AXF_CT_ClosureRun</tabs>
     <uiType>Lightning</uiType>
 </CustomApplication>

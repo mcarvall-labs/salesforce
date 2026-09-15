@@ -373,4 +373,172 @@
     >Confirmada</label><name
     >AXF_SharedExpense_statusConfirmed</name></customLabels><customLabels><label
     >A despesa mudou nesse meio-tempo; os valores mais recentes foram recarregados.</label><name
-    >AXF_SharedExpense_conflictReloaded</name></customLabels></Translations>
+    >AXF_SharedExpense_conflictReloaded</name></customLabels><customLabels
+  ><label>Encerramento local</label><name
+    >AXF_ClosureRun_title</name></customLabels><customLabels><label
+    >Executa a sequência auditável de encerramento de um titular: exportar, remover acessos locais, interromper coleta e publicação, expurgo governado por policy, reter evidência mínima. Cada etapa é idempotente e retomável; CLOSED é terminal.</label><name
+    >AXF_ClosureRun_intro</name></customLabels><customLabels><label
+    >Titular</label><name
+    >AXF_ClosureRun_holder</name></customLabels><customLabels><label
+    >Retenção legal declarada para este escopo</label><name
+    >AXF_ClosureRun_legalHold</name></customLabels><customLabels><label
+    >Solicitar encerramento</label><name
+    >AXF_ClosureRun_start</name></customLabels><customLabels><label
+    >Encerramentos</label><name
+    >AXF_ClosureRun_runs</name></customLabels><customLabels><label
+    >Nenhum encerramento foi solicitado ainda.</label><name
+    >AXF_ClosureRun_noRuns</name></customLabels><customLabels><label
+    >Estado</label><name
+    >AXF_ClosureRun_status</name></customLabels><customLabels><label
+    >Progresso</label><name
+    >AXF_ClosureRun_progress</name></customLabels><customLabels><label
+    >Última etapa concluída</label><name
+    >AXF_ClosureRun_lastStage</name></customLabels><customLabels><label
+    >Correlação</label><name
+    >AXF_ClosureRun_correlation</name></customLabels><customLabels><label
+    >Tentativa</label><name
+    >AXF_ClosureRun_attempt</name></customLabels><customLabels><label
+    >Motivo do bloqueio</label><name
+    >AXF_ClosureRun_blockReason</name></customLabels><customLabels><label
+    >Próxima ação segura</label><name
+    >AXF_ClosureRun_nextAction</name></customLabels><customLabels><label
+    >Revogação na Pluggy (externa)</label><name
+    >AXF_ClosureRun_externalRevocation</name></customLabels><customLabels><label
+    >Abrir</label><name>AXF_ClosureRun_open</name></customLabels><customLabels
+  ><label>Voltar</label><name
+    >AXF_ClosureRun_back</name></customLabels><customLabels><label
+    >Executar etapas restantes</label><name
+    >AXF_ClosureRun_resume</name></customLabels><customLabels><label
+    >Resultado reconciliado — liberar nova tentativa</label><name
+    >AXF_ClosureRun_reconcile</name></customLabels><customLabels><label
+    >Anexar evidência da exportação</label><name
+    >AXF_ClosureRun_attachEvidence</name></customLabels><customLabels><label
+    >Referência da evidência de exportação</label><name
+    >AXF_ClosureRun_evidenceRef</name></customLabels><customLabels><label
+    >Checkpoints por etapa</label><name
+    >AXF_ClosureRun_stages</name></customLabels><customLabels><label
+    >Etapa</label><name>AXF_ClosureRun_stage</name></customLabels><customLabels
+  ><label>Impacto</label><name
+    >AXF_ClosureRun_impact</name></customLabels><customLabels><label
+    >Efeito</label><name
+    >AXF_ClosureRun_effectKey</name></customLabels><customLabels><label
+    >Em</label><name
+    >AXF_ClosureRun_completedAt</name></customLabels><customLabels><label
+    >Axon encerrado para este titular. A revogação externa na Pluggy é exibida separadamente e nunca reativa a coleta.</label><name
+    >AXF_ClosureRun_closedBanner</name></customLabels><customLabels><label
+    >A última etapa terminou com resultado desconhecido. Verifique o efeito antes de liberar nova tentativa.</label><name
+    >AXF_ClosureRun_unknownBanner</name></customLabels><customLabels><label
+    >O encerramento está bloqueado com motivo seguro. Resolva a próxima ação antes de retomar.</label><name
+    >AXF_ClosureRun_blockedBanner</name></customLabels><customLabels><label
+    >Carregando…</label><name
+    >AXF_ClosureRun_loading</name></customLabels><customLabels><label
+    >Não foi possível concluir a operação.</label><name
+    >AXF_ClosureRun_error</name></customLabels><customLabels><label
+    >Você não tem permissão para encerrar este escopo.</label><name
+    >AXF_ClosureRun_codeForbidden</name></customLabels><customLabels><label
+    >Escopo ou encerramento indisponível para você.</label><name
+    >AXF_ClosureRun_codeNotAccessible</name></customLabels><customLabels><label
+    >O encerramento mudou desde que você o abriu. Recarregue e tente novamente.</label><name
+    >AXF_ClosureRun_codeConflict</name></customLabels><customLabels><label
+    >Este encerramento já está CLOSED (terminal).</label><name
+    >AXF_ClosureRun_codeTerminal</name></customLabels><customLabels><label
+    >Reconcilie o resultado desconhecido antes de repetir uma etapa material.</label><name
+    >AXF_ClosureRun_codeReconcileFirst</name></customLabels><customLabels><label
+    >Não há resultado desconhecido para reconciliar.</label><name
+    >AXF_ClosureRun_codeNotReconcilable</name></customLabels><customLabels
+  ><label>Requisição inválida.</label><name
+    >AXF_ClosureRun_codeInvalidInput</name></customLabels><customLabels><label
+    >Exportação</label><name
+    >AXF_ClosureRun_stageEXPORT</name></customLabels><customLabels><label
+    >Remoção de acessos locais</label><name
+    >AXF_ClosureRun_stageREVOKE_ACCESS</name></customLabels><customLabels><label
+    >Interrupção de coleta, jobs e publicação</label><name
+    >AXF_ClosureRun_stageSTOP_COLLECTION</name></customLabels><customLabels
+  ><label>Expurgo / pseudonimização por policy</label><name
+    >AXF_ClosureRun_stagePURGE</name></customLabels><customLabels><label
+    >Retenção de evidência mínima</label><name
+    >AXF_ClosureRun_stageRETAIN_EVIDENCE</name></customLabels><customLabels
+  ><label>Não iniciado</label><name
+    >AXF_ClosureRun_stageNONE</name></customLabels><customLabels><label
+    >Conclua a exportação autorizada e anexe a evidência.</label><name
+    >AXF_ClosureRun_actionATTACH_EXPORT_EVIDENCE</name></customLabels><customLabels
+  ><label>Retome as etapas restantes.</label><name
+    >AXF_ClosureRun_actionRESUME</name></customLabels><customLabels><label
+    >Verifique o efeito da última etapa e reconcilie.</label><name
+    >AXF_ClosureRun_actionRECONCILE</name></customLabels><customLabels><label
+    >Conteúdo preservado sob retenção legal; libere a retenção para continuar.</label><name
+    >AXF_ClosureRun_actionRELEASE_LEGAL_HOLD</name></customLabels><customLabels
+  ><label
+    >Resolva contratos ativos ou revisões abertas antes do expurgo.</label><name
+    >AXF_ClosureRun_actionRESOLVE_DEPENDENCIES</name></customLabels><customLabels
+  ><label>Nada mais a fazer.</label><name
+    >AXF_ClosureRun_actionNONE</name></customLabels><customLabels><label
+    >Você não tem a permissão de encerramento desta instalação.</label><name
+    >AXF_ClosureRun_noAccess</name></customLabels><customLabels><label
+    >Retomar o encerramento?</label><name
+    >AXF_ClosureRun_confirmResumeTitle</name></customLabels><customLabels><label
+    >As próximas etapas revogam acessos derivados, encerram a coleta e pseudonimizam descrições de {0}. Esses efeitos não podem ser desfeitos.</label><name
+    >AXF_ClosureRun_confirmResumeBody</name></customLabels><customLabels><label
+    >Confirmar</label><name
+    >AXF_ClosureRun_confirm</name></customLabels><customLabels><label
+    >Cancelar</label><name
+    >AXF_ClosureRun_cancel</name></customLabels><customLabels><label
+    >Liberar retenção legal</label><name
+    >AXF_ClosureRun_releaseLegalHold</name></customLabels><customLabels><label
+    >Retenção legal ativa</label><name
+    >AXF_ClosureRun_legalHoldActive</name></customLabels><customLabels><label
+    >Evidência da exportação</label><name
+    >AXF_ClosureRun_evidenceRefLabel</name></customLabels><customLabels><label
+    >Última etapa concluída em</label><name
+    >AXF_ClosureRun_lastCompletedAt</name></customLabels><customLabels><label
+    >Ações</label><name
+    >AXF_ClosureRun_actions</name></customLabels><customLabels><label
+    >O encerramento mudou nesse meio-tempo; o estado mais recente foi recarregado.</label><name
+    >AXF_ClosureRun_conflictReloaded</name></customLabels><customLabels><label
+    >Os checkpoints do encerramento estão ilegíveis; contate o administrador.</label><name
+    >AXF_ClosureRun_codeCheckpointsCorrupt</name></customLabels><customLabels
+  ><label>Solicitado</label><name
+    >AXF_ClosureRun_statusREQUESTED</name></customLabels><customLabels><label
+    >Em execução</label><name
+    >AXF_ClosureRun_statusRUNNING</name></customLabels><customLabels><label
+    >Bloqueado</label><name
+    >AXF_ClosureRun_statusBLOCKED</name></customLabels><customLabels><label
+    >Resultado desconhecido</label><name
+    >AXF_ClosureRun_statusRESULT_UNKNOWN</name></customLabels><customLabels
+  ><label>Encerrado</label><name
+    >AXF_ClosureRun_statusCLOSED</name></customLabels><customLabels><label
+    >Concluída</label><name
+    >AXF_ClosureRun_statusDONE</name></customLabels><customLabels><label
+    >Reconciliada</label><name
+    >AXF_ClosureRun_statusRECONCILED</name></customLabels><customLabels><label
+    >Liberada</label><name
+    >AXF_ClosureRun_statusRELEASED</name></customLabels><customLabels><label
+    >Entradas anteriores</label><name
+    >AXF_ClosureRun_statusFOLDED</name></customLabels><customLabels><label
+    >Evidência de exportação pendente</label><name
+    >AXF_ClosureRun_reasonEXPORT_PENDING</name></customLabels><customLabels
+  ><label>Retenção legal</label><name
+    >AXF_ClosureRun_reasonLEGAL_HOLD</name></customLabels><customLabels><label
+    >Contratos ativos dependem deste escopo</label><name
+    >AXF_ClosureRun_reasonACTIVE_DEPENDENCIES</name></customLabels><customLabels
+  ><label>Itens de revisão em aberto</label><name
+    >AXF_ClosureRun_reasonOPEN_REVIEW</name></customLabels><customLabels><label
+    >Concessões de colaboração inacessíveis</label><name
+    >AXF_ClosureRun_reasonGRANTS_NOT_ACCESSIBLE</name></customLabels><customLabels
+  ><label>Uma responsabilidade não pôde ser revogada</label><name
+    >AXF_ClosureRun_reasonREVOCATION_FAILED</name></customLabels><customLabels
+  ><label
+    >Coleta não pôde ser pausada (exige permissão de configuração)</label><name
+    >AXF_ClosureRun_reasonCOLLECTION_NOT_PAUSABLE</name></customLabels><customLabels
+  ><label>Expurgo incompleto; retome para continuar</label><name
+    >AXF_ClosureRun_reasonPURGE_INCOMPLETE</name></customLabels><customLabels
+  ><label>Resultado desconhecido</label><name
+    >AXF_ClosureRun_reasonRESULT_UNKNOWN</name></customLabels><customLabels
+  ><label>Etapa falhou</label><name
+    >AXF_ClosureRun_reasonSTAGE_FAILED</name></customLabels><customLabels><label
+    >Não se aplica</label><name
+    >AXF_ClosureRun_externalNOT_APPLICABLE</name></customLabels><customLabels
+  ><label>Não confirmada no provedor</label><name
+    >AXF_ClosureRun_externalNOT_CONFIRMED</name></customLabels><customLabels
+  ><label>Confirmada</label><name
+    >AXF_ClosureRun_externalCONFIRMED</name></customLabels></Translations>
