@@ -30,6 +30,17 @@ public without sharing class ALT_CLS_EconomicAllocationGuard {
     'AXF_EAS_PKL_State__c',
     'AXF_EAS_NUM_Version__c'
   };
+  /**
+   * Fields a CONFIRMED set may still move *while its authority ends* (CONFIRMED -> SUPERSEDED |
+   * REVERSED, AXF-128): the single active token is released to the compensating set in the same
+   * transaction, and the derived singular projection does not outlive the set's authority
+   * (AXF-127). Both are transition bookkeeping, never content, and neither is accepted while the
+   * set stays CONFIRMED — so the projection still cannot be turned into an authority.
+   */
+  private static final Set<String> ENDING_AUTHORITY_MUTABLE = new Set<String>{
+    'AXF_EAS_EXI_ActiveToken__c',
+    'AXF_EAS_LKP_AttributedAccount__c'
+  };
   private static final Set<String> ALLOCATION_FROZEN = new Set<String>{
     'AXF_EA_MDR_AllocationSet__c',
     'AXF_EA_LKP_Account__c',
@@ -81,15 +92,22 @@ public without sharing class ALT_CLS_EconomicAllocationGuard {
         before.AXF_EAS_PKL_State__c != 'DRAFT' &&
         before.AXF_EAS_PKL_State__c != null
       ) {
+        Boolean endingAuthority =
+          row.AXF_EAS_PKL_State__c == 'SUPERSEDED' ||
+          row.AXF_EAS_PKL_State__c == 'REVERSED';
         for (String field : row.getPopulatedFieldsAsMap().keySet()) {
           if (
-            field.endsWith('__c') &&
-            !CONFIRMED_MUTABLE.contains(field) &&
-            row.get(field) != before.get(field)
+            !field.endsWith('__c') ||
+            CONFIRMED_MUTABLE.contains(field) ||
+            row.get(field) == before.get(field)
           ) {
-            row.addError('Confirmed economic allocation content is immutable.');
-            break;
+            continue;
           }
+          if (endingAuthority && ENDING_AUTHORITY_MUTABLE.contains(field)) {
+            continue;
+          }
+          row.addError('Confirmed economic allocation content is immutable.');
+          break;
         }
       }
       if (row.AXF_EAS_PKL_State__c != before.AXF_EAS_PKL_State__c) {

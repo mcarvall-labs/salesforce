@@ -1406,4 +1406,415 @@ private class ALT_CLS_EconomicAllocationServiceTest {
       Test.stopTest();
     }
   }
+
+  // ------------------------------------------------------- AXF-128 reversal
+
+  private static ALT_CLS_EconomicAllocationService.ReverseInput reversal(
+    Id setId,
+    Decimal version,
+    String key
+  ) {
+    ALT_CLS_EconomicAllocationService.ReverseInput input = new ALT_CLS_EconomicAllocationService.ReverseInput();
+    input.setId = setId;
+    input.expectedVersion = version;
+    input.operationKey = key;
+    return input;
+  }
+
+  private static ALT_CLS_EconomicAllocationService.EconomicAllocationException expectReverseFailure(
+    ALT_CLS_EconomicAllocationService service,
+    ALT_CLS_EconomicAllocationService.ReverseInput input
+  ) {
+    try {
+      service.reverse(input);
+      Assert.fail('Reversao deveria falhar.');
+    } catch (ALT_CLS_EconomicAllocationService.EconomicAllocationException expected) {
+      return expected;
+    }
+    return null;
+  }
+
+  private static AXF_OBJ_EconomicAllocationSet__c storedSet(Id setId) {
+    return [
+      SELECT
+        AXF_EAS_PKL_State__c,
+        AXF_EAS_NUM_Version__c,
+        AXF_EAS_TXT_FactIdentity__c,
+        AXF_EAS_EXI_SetKey__c,
+        AXF_EAS_NUM_Revision__c,
+        AXF_EAS_NUM_FactMagnitude__c,
+        AXF_EAS_TXT_CurrencyIsoCode__c,
+        AXF_EAS_LKP_HolderAccount__c,
+        AXF_EAS_LKP_BankTransaction__c,
+        AXF_EAS_TXT_OperationKey__c,
+        AXF_EAS_TXT_ConfirmOperationKey__c,
+        AXF_EAS_EXI_ActiveToken__c,
+        AXF_EAS_LKP_AttributedAccount__c
+      FROM AXF_OBJ_EconomicAllocationSet__c
+      WHERE Id = :setId
+    ];
+  }
+
+  /** Every stored parcel of a set, as a comparable string: proves none of them was edited. */
+  private static String storedParcels(Id setId) {
+    List<String> rows = new List<String>();
+    for (AXF_OBJ_EconomicAllocation__c row : [
+      SELECT
+        Id,
+        AXF_EA_LKP_Account__c,
+        AXF_EA_NUM_Percent__c,
+        AXF_EA_NUM_Magnitude__c,
+        AXF_EA_TXT_CurrencyIsoCode__c,
+        AXF_EA_EXI_AllocationKey__c,
+        AXF_EA_PKL_RedactionPolicy__c
+      FROM AXF_OBJ_EconomicAllocation__c
+      WHERE AXF_EA_MDR_AllocationSet__c = :setId
+      ORDER BY AXF_EA_EXI_AllocationKey__c
+    ]) {
+      rows.add(
+        String.join(
+          new List<String>{
+            String.valueOf(row.Id),
+            String.valueOf(row.AXF_EA_LKP_Account__c),
+            String.valueOf(row.AXF_EA_NUM_Percent__c),
+            String.valueOf(row.AXF_EA_NUM_Magnitude__c),
+            row.AXF_EA_TXT_CurrencyIsoCode__c,
+            row.AXF_EA_EXI_AllocationKey__c,
+            row.AXF_EA_PKL_RedactionPolicy__c
+          },
+          '|'
+        )
+      );
+    }
+    return String.join(rows, ';');
+  }
+
+  private static Integer setsOfFact(String factIdentity) {
+    return [
+      SELECT COUNT()
+      FROM AXF_OBJ_EconomicAllocationSet__c
+      WHERE AXF_EAS_TXT_FactIdentity__c = :factIdentity
+    ];
+  }
+
+  /**
+   * AXF-128 / AC-2: a reversal creates compensating records and never edits the confirmation.
+   * The compensation is a new set of the next revision of the same fact whose single 100% parcel
+   * gives the fact back to its holder, so the fact keeps exactly one attribution authority and
+   * one active token. Every content field and every parcel of the confirmed set survives byte for
+   * byte; only state, optimistic version and the two fields that must not outlive the authority
+   * move. An equivalent replay returns the durable compensation instead of appending a second.
+   */
+  @IsTest
+  static void reversalCompensatesWithoutEditingTheConfirmationAndReplaysSafely() {
+    System.runAs(gestor()) {
+      Account owner = holder('Titular Reversao', 'AXF_Person');
+      Account partner = holder('Socio Reversao', 'AXF_Person');
+      AXF_OBJ_BankAccountTransaction__c fact = bankFact(owner, 'v');
+      ALT_CLS_EconomicAllocationService service = new ALT_CLS_EconomicAllocationService();
+      Test.startTest();
+      ALT_CLS_EconomicAllocationService.SetView draft = service.propose(
+        proposal(
+          'BANK',
+          fact.Id,
+          'op-v1',
+          new Map<Id, Decimal>{ owner.Id => 60, partner.Id => 40 }
+        )
+      );
+      ALT_CLS_EconomicAllocationService.SetView confirmed = service.confirm(
+        draft.setId,
+        draft.version,
+        'op-v1c'
+      );
+      AXF_OBJ_EconomicAllocationSet__c before = storedSet(confirmed.setId);
+      String beforeParcels = storedParcels(confirmed.setId);
+      Assert.areEqual('CONFIRMED', before.AXF_EAS_PKL_State__c);
+      Assert.isNotNull(
+        before.AXF_EAS_EXI_ActiveToken__c,
+        'Pre-condicao: a confirmacao detem o token ativo.'
+      );
+      Assert.isNull(
+        before.AXF_EAS_LKP_AttributedAccount__c,
+        'Pre-condicao: rateio nao projeta atribuicao singular.'
+      );
+      ALT_CLS_EconomicAllocationService.SetView compensation = service.reverse(
+        reversal(confirmed.setId, confirmed.version, 'op-v2')
+      );
+      Test.stopTest();
+      Assert.areEqual(
+        'CONFIRMED',
+        compensation.state,
+        'o conjunto compensatorio e a autoridade vigente.'
+      );
+      Assert.areEqual(
+        before.AXF_EAS_NUM_Revision__c + 1,
+        compensation.revision,
+        'revisao seguinte do mesmo fato.'
+      );
+      Assert.areEqual(100, compensation.totalPercent.setScale(2));
+      Assert.areEqual(1, compensation.shares.size());
+      Assert.areEqual(
+        owner.Id,
+        compensation.shares[0].accountId,
+        'a compensacao devolve o fato ao titular.'
+      );
+      Assert.areEqual(
+        before.AXF_EAS_NUM_FactMagnitude__c,
+        compensation.shares[0].magnitude,
+        'a compensacao conserva o fato na moeda original.'
+      );
+      Assert.areEqual(
+        before.AXF_EAS_TXT_CurrencyIsoCode__c,
+        compensation.currencyIso
+      );
+      // Nothing of the confirmation was edited.
+      Assert.areEqual(
+        beforeParcels,
+        storedParcels(confirmed.setId),
+        'nenhuma parcela confirmada foi editada, criada ou removida.'
+      );
+      AXF_OBJ_EconomicAllocationSet__c ended = storedSet(confirmed.setId);
+      Assert.areEqual('REVERSED', ended.AXF_EAS_PKL_State__c);
+      Assert.areEqual(
+        before.AXF_EAS_TXT_FactIdentity__c,
+        ended.AXF_EAS_TXT_FactIdentity__c
+      );
+      Assert.areEqual(
+        before.AXF_EAS_EXI_SetKey__c,
+        ended.AXF_EAS_EXI_SetKey__c
+      );
+      Assert.areEqual(
+        before.AXF_EAS_NUM_FactMagnitude__c,
+        ended.AXF_EAS_NUM_FactMagnitude__c
+      );
+      Assert.areEqual(
+        before.AXF_EAS_LKP_HolderAccount__c,
+        ended.AXF_EAS_LKP_HolderAccount__c
+      );
+      Assert.areEqual(
+        before.AXF_EAS_LKP_BankTransaction__c,
+        ended.AXF_EAS_LKP_BankTransaction__c
+      );
+      Assert.areEqual(
+        'op-v1',
+        ended.AXF_EAS_TXT_OperationKey__c,
+        'chave da proposta intacta.'
+      );
+      Assert.areEqual(
+        'op-v1c',
+        ended.AXF_EAS_TXT_ConfirmOperationKey__c,
+        'chave da confirmacao intacta.'
+      );
+      Assert.areEqual(
+        before.AXF_EAS_NUM_Version__c + 1,
+        ended.AXF_EAS_NUM_Version__c,
+        'versao otimista incrementada uma vez.'
+      );
+      // Only the transition bookkeeping moved with the state.
+      Assert.isNull(
+        ended.AXF_EAS_EXI_ActiveToken__c,
+        'o token ativo e liberado para a compensacao.'
+      );
+      AXF_OBJ_EconomicAllocationSet__c live = storedSet(compensation.setId);
+      Assert.areEqual(
+        before.AXF_EAS_EXI_ActiveToken__c,
+        live.AXF_EAS_EXI_ActiveToken__c,
+        'um unico token ativo por fato (G6).'
+      );
+      Assert.areEqual(
+        owner.Id,
+        live.AXF_EAS_LKP_AttributedAccount__c,
+        'a projecao singular segue o titular apos a reversao.'
+      );
+      Assert.isFalse(
+        before.AXF_EAS_EXI_SetKey__c == live.AXF_EAS_EXI_SetKey__c,
+        'o conjunto compensatorio tem identidade propria.'
+      );
+      Assert.areEqual(
+        1,
+        [
+          SELECT COUNT()
+          FROM AXF_OBJ_EconomicAllocationSet__c
+          WHERE
+            AXF_EAS_PKL_State__c = 'CONFIRMED'
+            AND AXF_EAS_TXT_FactIdentity__c = :before.AXF_EAS_TXT_FactIdentity__c
+        ],
+        'uma unica autoridade vigente por fato.'
+      );
+      // Equivalent replay: the same command returns the durable compensation.
+      ALT_CLS_EconomicAllocationService.SetView replay = service.reverse(
+        reversal(confirmed.setId, confirmed.version, 'op-v2')
+      );
+      Assert.areEqual(
+        compensation.setId,
+        replay.setId,
+        'replay equivalente devolve o resultado duravel.'
+      );
+      Assert.areEqual(
+        2,
+        setsOfFact(before.AXF_EAS_TXT_FactIdentity__c),
+        'replay nao duplica o efeito.'
+      );
+    }
+  }
+
+  /**
+   * AXF-128 / AC-2 negative paths: only a confirmation is reversible, a divergent payload never
+   * produces a second compensation, a stale version leaves the original untouched, and the ended
+   * set stays frozen against every later write.
+   */
+  @IsTest
+  static void reversalRejectsDraftStaleVersionAndDivergentReplays() {
+    Account owner;
+    Account partner;
+    AXF_OBJ_BankAccountTransaction__c draftFact;
+    AXF_OBJ_BankAccountTransaction__c fact;
+    AXF_OBJ_BankAccountTransaction__c liveFact;
+    Id draftSetId;
+    Id reversedSetId;
+    Id compensationSetId;
+    Id liveSetId;
+    String identity;
+    Decimal draftVersion;
+    Decimal reversedVersion;
+    System.runAs(gestor()) {
+      owner = holder('Titular Recusa', 'AXF_Person');
+      partner = holder('Socio Recusa', 'AXF_Person');
+      draftFact = bankFact(owner, 'w');
+      fact = bankFact(owner, 'x');
+      liveFact = bankFact(owner, 'y');
+      ALT_CLS_EconomicAllocationService service = new ALT_CLS_EconomicAllocationService();
+      Test.startTest();
+      ALT_CLS_EconomicAllocationService.SetView draft = service.propose(
+        proposal(
+          'BANK',
+          draftFact.Id,
+          'op-w1',
+          new Map<Id, Decimal>{ owner.Id => 100 }
+        )
+      );
+      draftSetId = draft.setId;
+      draftVersion = draft.version;
+      ALT_CLS_EconomicAllocationService.SetView open = service.propose(
+        proposal(
+          'BANK',
+          fact.Id,
+          'op-x1',
+          new Map<Id, Decimal>{ owner.Id => 70, partner.Id => 30 }
+        )
+      );
+      ALT_CLS_EconomicAllocationService.SetView confirmed = service.confirm(
+        open.setId,
+        open.version,
+        'op-x1c'
+      );
+      reversedSetId = confirmed.setId;
+      reversedVersion = confirmed.version;
+      identity = storedSet(confirmed.setId).AXF_EAS_TXT_FactIdentity__c;
+      compensationSetId = service.reverse(
+          reversal(confirmed.setId, confirmed.version, 'op-x2')
+        )
+        .setId;
+      ALT_CLS_EconomicAllocationService.SetView liveOpen = service.propose(
+        proposal(
+          'BANK',
+          liveFact.Id,
+          'op-y1',
+          new Map<Id, Decimal>{ owner.Id => 100 }
+        )
+      );
+      liveSetId = service.confirm(liveOpen.setId, liveOpen.version, 'op-y1c')
+        .setId;
+      // Same command, different version: divergent payload, nothing appended.
+      Assert.areEqual(
+        'CONFLICT',
+        expectReverseFailure(
+            service,
+            reversal(reversedSetId, reversedVersion - 1, 'op-x2')
+          )
+          .code
+      );
+      // Another command against an already reversed target: refused, never a second compensation.
+      Assert.areEqual(
+        'CONFLICT',
+        expectReverseFailure(
+            service,
+            reversal(reversedSetId, reversedVersion, 'op-x3')
+          )
+          .code
+      );
+      // Stale version on a live confirmation: the original is preserved.
+      Assert.areEqual(
+        'CONFLICT',
+        expectReverseFailure(service, reversal(liveSetId, 99, 'op-y2')).code
+      );
+      Assert.areEqual('CONFIRMED', service.read(liveSetId).state);
+      Assert.areEqual(
+        2,
+        setsOfFact(identity),
+        'nenhum replay divergente criou um conjunto a mais.'
+      );
+      Test.stopTest();
+    }
+    System.runAs(gestor()) {
+      // A DRAFT is discarded, never reversed.
+      ALT_CLS_EconomicAllocationService.EconomicAllocationException notConfirmed = expectReverseFailure(
+        new ALT_CLS_EconomicAllocationService(),
+        reversal(draftSetId, draftVersion, 'op-w2')
+      );
+      Assert.areEqual('NOT_CONFIRMED', notConfirmed.code);
+    }
+    System.runAs(participant()) {
+      // Capability first: the participant is refused before any set is even read.
+      ALT_CLS_EconomicAllocationService.EconomicAllocationException forbidden = expectReverseFailure(
+        new ALT_CLS_EconomicAllocationService(),
+        reversal(liveSetId, 1, 'op-z1')
+      );
+      Assert.areEqual('FORBIDDEN', forbidden.code);
+    }
+    System.runAs(gestor()) {
+      // The ended set is frozen: not even the service write window edits its content.
+      ALT_CLS_EconomicAllocationGuard.beginWrite();
+      try {
+        Assert.isTrue(
+          firstError(
+              Database.update(
+                new AXF_OBJ_EconomicAllocationSet__c(
+                  Id = reversedSetId,
+                  AXF_EAS_TXT_OperationKey__c = 'op-x9'
+                ),
+                false
+              )
+            )
+            .contains('Confirmed economic allocation content is immutable'),
+          'Conteudo de conjunto encerrado permanece imutavel.'
+        );
+        Assert.isTrue(
+          firstError(
+              Database.update(
+                new AXF_OBJ_EconomicAllocationSet__c(
+                  Id = reversedSetId,
+                  AXF_EAS_PKL_State__c = 'CONFIRMED'
+                ),
+                false
+              )
+            )
+            .contains('state transition'),
+          'REVERSED nao volta a CONFIRMED.'
+        );
+      } finally {
+        ALT_CLS_EconomicAllocationGuard.endWrite();
+      }
+      Assert.areEqual(
+        'REVERSED',
+        storedSet(reversedSetId).AXF_EAS_PKL_State__c,
+        'nada das tentativas persistiu.'
+      );
+      Assert.areEqual(
+        compensationSetId,
+        storedSet(compensationSetId).Id,
+        'a compensacao permanece a autoridade.'
+      );
+    }
+  }
 }

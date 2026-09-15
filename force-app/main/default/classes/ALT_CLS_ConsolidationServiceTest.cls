@@ -582,15 +582,25 @@ private class ALT_CLS_ConsolidationServiceTest {
         f.bankB.Id
       );
       Assert.areEqual(100, aFromBankB.outflow);
-      Assert.isNull(
-        contribution(result, f.businessB.Id, f.bankB.Id),
-        'titular nao recebe cota nao atribuida'
+      // AXF-128: this allocation has a participant outside the authorized scope, so its internal
+      // counter-entries are not netted. The holder keeps its own material contribution and the
+      // authorized parcel is still attributed to its participant — neither view loses anything.
+      ALT_CLS_ConsolidationService.Contribution bFromBankB = contribution(
+        result,
+        f.businessB.Id,
+        f.bankB.Id
       );
+      Assert.areEqual(
+        'HOLDER',
+        bFromBankB.attribution,
+        'contrapartida pendente: o titular mantem o proprio fato'
+      );
+      Assert.areEqual(200, bFromBankB.outflow);
       Assert.areEqual(1000, total(result, 'BRL').inflow);
       Assert.areEqual(
-        400,
+        600,
         total(result, 'BRL').outflow,
-        '210 + 90 + 100; cota externa fora'
+        '210 + 90 + 100 + 200; a contrapartida com participante externo nao foi neutralizada'
       );
       Assert.areEqual(
         ALT_CLS_ConsolidationService.CONFIDENCE_DEGRADED,
@@ -611,6 +621,91 @@ private class ALT_CLS_ConsolidationServiceTest {
         }
       }
       Assert.isTrue(counted);
+    }
+  }
+
+  /**
+   * AXF-128: a confirmed allocation derives internal counter-entries between the fact's holder
+   * and each allocated person/company. They are neutralized atomically only when the calculation
+   * receives every participant as an authorized holder — the consolidated view, where the fact
+   * counts once; in any narrower view nothing is netted and each side keeps its own redacted
+   * contribution instead of losing it to an attribution it cannot see.
+   */
+  @IsTest
+  static void internalCounterEntriesAreNeutralizedOnlyInTheConsolidatedView() {
+    System.runAs(byAlias('axf122g')) {
+      Fixture f = fixture();
+      ALT_CLS_ConsolidationService.allocationOverride = new Map<Id, List<ALT_CLS_ConsolidationService.AllocationShare>>{
+        f.debitA.Id => new List<ALT_CLS_ConsolidationService.AllocationShare>{
+          new ALT_CLS_ConsolidationService.AllocationShare(f.personA.Id, 70),
+          new ALT_CLS_ConsolidationService.AllocationShare(f.businessB.Id, 30)
+        }
+      };
+      // One day: only the 300 debit allocated 70/30 is in play.
+      Date only = Date.newInstance(2026, 8, 10);
+      Test.startTest();
+      ALT_CLS_ConsolidationService.Result consolidated = new ALT_CLS_ConsolidationService()
+        .consolidate(
+          scope(new List<Id>{ f.personA.Id, f.businessB.Id }, only, only)
+        );
+      ALT_CLS_ConsolidationService.Result individual = new ALT_CLS_ConsolidationService()
+        .consolidate(scope(new List<Id>{ f.personA.Id }, only, only));
+      Test.stopTest();
+      ALT_CLS_ConsolidationService.Contribution holderInConsolidated = contribution(
+        consolidated,
+        f.personA.Id,
+        f.bankA.Id
+      );
+      Assert.areEqual(
+        'ALLOCATION',
+        holderInConsolidated.attribution,
+        'consolidado: o titular contribui pela atribuicao, nao pelo fato material'
+      );
+      Assert.areEqual(210, holderInConsolidated.outflow);
+      Assert.areEqual(
+        90,
+        contribution(consolidated, f.businessB.Id, f.bankA.Id).outflow
+      );
+      Assert.areEqual(
+        300,
+        total(consolidated, 'BRL').outflow,
+        'fato contado uma vez: as contrapartidas internas foram neutralizadas'
+      );
+      Assert.areEqual(
+        ALT_CLS_ConsolidationService.CONFIDENCE_FULL,
+        consolidated.confidence,
+        'todos os participantes autorizados: nada degradado'
+      );
+      Assert.areEqual(0, consolidated.exclusions.size());
+      // Individual view of the holder: the pair cannot be netted, so the material fact stays
+      // with it and its own 70% parcel is not added on top of it.
+      ALT_CLS_ConsolidationService.Contribution holderIndividual = contribution(
+        individual,
+        f.personA.Id,
+        f.bankA.Id
+      );
+      Assert.areEqual('HOLDER', holderIndividual.attribution);
+      Assert.areEqual(300, holderIndividual.outflow);
+      Assert.areEqual(300, total(individual, 'BRL').outflow);
+      Assert.areEqual(
+        ALT_CLS_ConsolidationService.CONFIDENCE_DEGRADED,
+        individual.confidence,
+        'contrapartida pendente nao e apresentada como neutralizada'
+      );
+      Assert.isTrue(individual.reasons.contains('ALLOCATED_OUTSIDE_SCOPE'));
+      Assert.isTrue(
+        hasExclusion(individual, null, 'ALLOCATED_OUTSIDE_SCOPE'),
+        'a parcela fora do escopo nao e nomeada'
+      );
+      for (
+        ALT_CLS_ConsolidationService.Contribution c : individual.contributions
+      ) {
+        Assert.areEqual(
+          f.personA.Id,
+          c.accountId,
+          'visao individual nao nomeia outro participante'
+        );
+      }
     }
   }
 
@@ -908,8 +1003,10 @@ private class ALT_CLS_ConsolidationServiceTest {
         f.personA.Id,
         f.bankA.Id
       );
-      // holder: debitA 300 (incomplete shares) + 33.33 + 0.02333334
-      Assert.areEqual(333.35333334, aFromBankA.outflow);
+      // holder: debitA 300 (incomplete shares) + third 100 (AXF-128: the counter-entry has a
+      // participant without verified coverage, so nothing is netted and the material fact stays
+      // with its holder) + 0.02333334 (stored magnitude, neutralized)
+      Assert.areEqual(400.02333334, aFromBankA.outflow);
       Assert.areEqual('MIXED', aFromBankA.attribution);
       ALT_CLS_ConsolidationService.Contribution bFromBankA = contribution(
         result,
