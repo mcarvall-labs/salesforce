@@ -801,6 +801,18 @@
   ><label
     >Parte dos dados de que este painel depende não está acessível para você.</label><name
     >AXF_ConfidencePanel_codeNotAccessible</name></customLabels><customLabels
+  ><label>Política canônica</label><name
+    >AXF_ConfidencePanel_authority</name></customLabels><customLabels><label
+    >Cobertura</label><name
+    >AXF_ConfidencePanel_coverage</name></customLabels><customLabels><label
+    >A cobertura não foi informada para este resultado.</label><name
+    >AXF_ConfidencePanel_coverageUnknown</name></customLabels><customLabels
+  ><label>Fallbacks aplicados</label><name
+    >AXF_ConfidencePanel_fallbacks</name></customLabels><customLabels><label
+    >Nenhum fallback foi necessário para derivar este resultado.</label><name
+    >AXF_ConfidencePanel_noFallbacks</name></customLabels><customLabels><label
+    >A fonte não declara limite próprio de atualidade; foi usado o padrão da política.</label><name
+    >AXF_ConfidencePanel_fallbackFreshnessLimitDefault</name></customLabels><customLabels
   ><label>Arquivo de transações</label><name
     >AXF_ArchiveExplorer_title</name></customLabels><customLabels><label
     >Transações anteriores à janela quente ficam arquivadas e podem ser consultadas aqui, somente leitura. Nada é reidratado para os objetos ativos.</label><name
