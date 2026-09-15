@@ -2512,4 +2512,31 @@
     >AXF_ReconciliationReversal_doneSourceUnknown</fullName><language
     >en_US</language><protected>false</protected><shortDescription
     >Done source unknown</shortDescription><value
-    >source remaining not verifiable with your access</value></labels></CustomLabels>
+    >source remaining not verifiable with your access</value></labels><labels
+  ><fullName>AXF_SourceLink_evBlocked</fullName><language
+    >en_US</language><protected>false</protected><shortDescription
+    >Blocked</shortDescription><value>Blocked</value></labels><labels><fullName
+    >AXF_SourceLink_factResidualAfter</fullName><language
+    >en_US</language><protected>false</protected><shortDescription
+    >Remaining after</shortDescription><value
+    >Remaining after:</value></labels><labels><fullName
+    >AXF_SourceLink_convEstimatedLine</fullName><language
+    >en_US</language><protected>false</protected><shortDescription
+    >Conversion estimated</shortDescription><value
+    >Converted for comparison:</value></labels><labels><fullName
+    >AXF_SourceLink_convStaleLine</fullName><language>en_US</language><protected
+    >false</protected><shortDescription
+    >Conversion stale</shortDescription><value
+    >Quote older than the approved limit, amount omitted:</value></labels><labels
+  ><fullName>AXF_SourceLink_convUnavailableLine</fullName><language
+    >en_US</language><protected>false</protected><shortDescription
+    >Conversion unavailable</shortDescription><value
+    >No material rate, confirmation blocked:</value></labels><labels><fullName
+    >AXF_SourceLink_codeMISSING_MATERIAL_FX</fullName><language
+    >en_US</language><protected>false</protected><shortDescription
+    >Code missing material fx</shortDescription><value
+    >No material exchange rate for this currency pair; confirmation is blocked.</value></labels><labels
+  ><fullName>AXF_SourceLink_evPartial</fullName><language
+    >en_US</language><protected>false</protected><shortDescription
+    >Partial</shortDescription><value
+    >Partial — remainder left</value></labels></CustomLabels>

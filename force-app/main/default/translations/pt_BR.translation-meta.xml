@@ -1471,4 +1471,19 @@
   ><label>remanescente da fonte (efeitos visíveis)</label><name
     >AXF_ReconciliationReversal_doneSourceRemaining</name></customLabels><customLabels
   ><label>remanescente da fonte não verificável com o seu acesso</label><name
-    >AXF_ReconciliationReversal_doneSourceUnknown</name></customLabels></Translations>
+    >AXF_ReconciliationReversal_doneSourceUnknown</name></customLabels><customLabels
+  ><label>Bloqueado</label><name
+    >AXF_SourceLink_evBlocked</name></customLabels><customLabels><label
+    >Remanescente depois:</label><name
+    >AXF_SourceLink_factResidualAfter</name></customLabels><customLabels><label
+    >Convertido para comparação:</label><name
+    >AXF_SourceLink_convEstimatedLine</name></customLabels><customLabels><label
+    >Cotação mais antiga que o limite aprovado, valor omitido:</label><name
+    >AXF_SourceLink_convStaleLine</name></customLabels><customLabels><label
+    >Sem taxa material, confirmação bloqueada:</label><name
+    >AXF_SourceLink_convUnavailableLine</name></customLabels><customLabels
+  ><label
+    >Sem taxa de câmbio material para este par de moedas; a confirmação fica bloqueada.</label><name
+    >AXF_SourceLink_codeMISSING_MATERIAL_FX</name></customLabels><customLabels
+  ><label>Parcial — remanescente</label><name
+    >AXF_SourceLink_evPartial</name></customLabels></Translations>

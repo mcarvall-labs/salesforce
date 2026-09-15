@@ -545,4 +545,142 @@ describe("c-a-x-f-_-l-w-c-_source-link", () => {
     ).toContain("c.AXF_SourceLink_noCapability");
     expect(byId(denied, "holder")).toBeNull();
   });
+
+  it("renders the server state, the separated conversion evidence and the explicit remainder", async () => {
+    const element = await mount();
+    const partial = {
+      ...candidates.items[0],
+      residual: 100.01,
+      residualAfter: 0.01,
+      state: "PARTIAL",
+      linkable: true,
+      conversion: undefined
+    };
+    const foreign = {
+      ...candidates.items[0],
+      targetId: "a0C2",
+      amount: 100,
+      residual: 100,
+      currencyIso: "EUR",
+      residualAfter: null,
+      state: "BLOCKED",
+      reasons: ["CURRENCY_MISMATCH"],
+      linkable: false,
+      conversion: {
+        state: "UNAVAILABLE",
+        originalAmount: 100,
+        originalIso: "EUR",
+        reportingIso: "BRL"
+      }
+    };
+    const priced = {
+      ...foreign,
+      targetId: "a0C3",
+      conversion: {
+        state: "ESTIMATED",
+        originalAmount: 100,
+        originalIso: "USD",
+        reportingIso: "BRL",
+        rate: 5.05,
+        provider: "BCB_PTAX",
+        convertedAmount: 505
+      }
+    };
+    const stale = {
+      ...foreign,
+      targetId: "a0C4",
+      conversion: {
+        state: "STALE",
+        originalAmount: 100,
+        originalIso: "GBP",
+        reportingIso: "BRL",
+        rate: 6.1,
+        provider: "BCB_PTAX"
+      }
+    };
+    const projected = {
+      ...candidates.items[1],
+      amount: 200,
+      residual: 200,
+      residualAfter: 50,
+      reasons: ["MATERIALIZATION_REQUIRED"]
+    };
+    listSources.mockResolvedValue({
+      pageNumber: 1,
+      pageSize: 25,
+      hasMore: false,
+      scannedCount: 1,
+      excludedCount: 0,
+      items: [source]
+    });
+    listCandidates.mockResolvedValue({
+      ...candidates,
+      tieCount: 0,
+      items: [partial, foreign, priced, stale, projected]
+    });
+    byId(element, "holder").dispatchEvent(
+      new CustomEvent("change", { detail: { value: "001A" } })
+    );
+    await flush();
+    byId(element, "loadSources").click();
+    await flush();
+    element.shadowRoot.querySelector('[data-id="a0B1"]').click();
+    await flush();
+    const rows = element.shadowRoot.querySelectorAll(
+      '[data-id="candidateTable"] tbody tr'
+    );
+    expect(rows.length).toBe(5);
+    // The state comes from the server: a non-zero remainder is PARTIAL, a blocked candidate is
+    // never presented as consultative, and no raw server token reaches the user.
+    expect(
+      rows[0].querySelector('[data-id="evidenceCell"] lightning-badge').label
+    ).toBe("c.AXF_SourceLink_evPartial");
+    expect(
+      rows[1].querySelector('[data-id="evidenceCell"] lightning-badge').label
+    ).toBe("c.AXF_SourceLink_evBlocked");
+    // A blocked candidate offers no draft allocation at all, and it states why it is blocked.
+    expect(rows[0].querySelector("[data-index]")).not.toBeNull();
+    for (const row of [rows[1], rows[2], rows[3]]) {
+      expect(row.querySelector("[data-index]")).toBeNull();
+    }
+    expect(
+      rows[1].querySelector('[data-id="candidateReasons"]').textContent
+    ).toContain("c.AXF_SourceLink_codeCURRENCY_MISMATCH");
+    expect(rows[0].querySelector('[data-id="candidateReasons"]')).toBeNull();
+    // The remainder stays explicit: a non-zero residual is shown as it is, never zeroed.
+    expect(
+      rows[0].querySelector('[data-id="residualAfter"]').textContent
+    ).toContain("c.AXF_SourceLink_factResidualAfter");
+    expect(
+      rows[0].querySelector('[data-id="residualAfter"]').textContent.trim()
+    ).toBe("c.AXF_SourceLink_factResidualAfter 0.01 BRL");
+    // A candidate without a rate states it, keeps its original amount and shows no remainder.
+    expect(
+      rows[1].querySelector('[data-id="conversion"]').textContent.trim()
+    ).toBe("c.AXF_SourceLink_convUnavailableLine EUR/BRL");
+    expect(rows[1].querySelector('[data-id="residualAfter"]')).toBeNull();
+    // An indicative conversion names the original side, the rate, the provider and the result.
+    expect(
+      rows[2].querySelector('[data-id="conversion"]').textContent.trim()
+    ).toBe(
+      "c.AXF_SourceLink_convEstimatedLine 505 BRL · 1 USD = 5.05 BRL (BCB_PTAX)"
+    );
+    // A stale quote keeps the rate as a fact and never invents a converted amount.
+    expect(
+      rows[3].querySelector('[data-id="conversion"]').textContent.trim()
+    ).toBe(
+      "c.AXF_SourceLink_convStaleLine GBP/BRL · 1 GBP = 6.1 BRL (BCB_PTAX)"
+    );
+    // A projected occurrence is never left blank: it carries the same remainder fact and names what
+    // it still needs before it can be linked.
+    expect(
+      rows[4].querySelector('[data-id="residualAfter"]').textContent.trim()
+    ).toBe("c.AXF_SourceLink_factResidualAfter 50 BRL");
+    expect(
+      rows[4].querySelector('[data-id="candidateReasons"]').textContent
+    ).toContain("c.AXF_SourceLink_codeMATERIALIZATION_REQUIRED");
+    expect(
+      rows[4].querySelector('[data-id="evidenceCell"] lightning-badge').label
+    ).toBe("c.AXF_SourceLink_evConsultative");
+  });
 });

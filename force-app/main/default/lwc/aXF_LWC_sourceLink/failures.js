@@ -17,6 +17,7 @@ const CODE_LABEL = {
   TARGET_REALIZED: labels.codeTARGET_REALIZED,
   FUNDING_MISMATCH: labels.codeFUNDING_MISMATCH,
   CURRENCY_MISMATCH: labels.codeCURRENCY_MISMATCH,
+  MISSING_MATERIAL_FX: labels.codeMISSING_MATERIAL_FX,
   ALREADY_LINKED: labels.codeALREADY_LINKED,
   REVIEW_REQUIRED: labels.codeREVIEW_REQUIRED,
   CONFLICT: labels.codeCONFLICT,
@@ -29,6 +30,14 @@ const CODE_LABEL = {
 export function parseFailure(error) {
   const raw = error && error.body && error.body.message;
   return CODE_LABEL[raw] || labels.error;
+}
+
+/**
+ * AXF-140: a candidate reason is the same sanitized server code, so it resolves through the same
+ * map; a code this component does not know is shown as the code itself rather than dropped.
+ */
+export function reasonLabel(code) {
+  return CODE_LABEL[code] || code;
 }
 
 export function format(template, ...args) {
