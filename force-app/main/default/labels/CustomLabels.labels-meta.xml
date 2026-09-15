@@ -2142,6 +2142,10 @@
     >en_US</language><protected>false</protected><shortDescription
     >Incomplete</shortDescription><value
     >A contribution without currency or date was ignored.</value></labels><labels
+  ><fullName>AXF_ForecastComparison_reasonNO_APPROVED_METHOD</fullName><language
+    >en_US</language><protected>false</protected><shortDescription
+    >No approved method</shortDescription><value
+    >A category in the horizon has no method approved by the forecasting policy version; nothing is estimated for it.</value></labels><labels
   ><fullName>AXF_ForecastComparison_reasonSCHEDULE_STALE</fullName><language
     >en_US</language><protected>false</protected><shortDescription
     >Stale</shortDescription><value

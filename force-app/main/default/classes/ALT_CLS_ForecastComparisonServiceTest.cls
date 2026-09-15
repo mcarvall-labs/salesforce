@@ -326,7 +326,8 @@ private class ALT_CLS_ForecastComparisonServiceTest {
         ),
         plan(ana.Id, 'far', 100, 'DEBIT', 'PLANNED', today.addMonths(30), false)
       };
-      // Estimated recurrence: reference value, PROBABLE tier.
+      // Estimated recurrence (reference value): AXF-138 applies the policy, which approves no
+      // method for that class, so it is not summed — see the reason, fallback and exclusion below.
       schedule(ana.Id, 'ESTIMATED', 6, 1, nextMonth, 'fc-est');
       ALT_CLS_ForecastComparisonService service = new ALT_CLS_ForecastComparisonService();
       Test.startTest();
@@ -345,17 +346,17 @@ private class ALT_CLS_ForecastComparisonServiceTest {
       );
       Assert.areEqual(5000, h3.confirmedIn, 'confirmado futuro entra integral');
       Assert.areEqual(0, h3.confirmedOut);
-      // rent 2000 + estimated occurrences of 500 in months +1 and +2 (horizon = current + 2)
+      // rent 2000: the estimated recurrence of 500 is no longer a probable contribution.
       Assert.areEqual(
-        2000 + 1000,
+        2000,
         h3.probableOut,
-        'provavel: plano + estimados'
+        'provavel: apenas o plano; a recorrencia estimada nao tem metodo aprovado'
       );
       Assert.areEqual(0, h3.uncertainOut, 'viagem estimada so daqui a 5 meses');
       Assert.areEqual(5000, h3.conservativeNet);
-      Assert.areEqual(5000 - 3000, h3.intermediateNet);
+      Assert.areEqual(5000 - 2000, h3.intermediateNet);
       Assert.areEqual(
-        5000 - 3000,
+        5000 - 2000,
         h3.optimisticNet,
         'sem incertos nos 3 meses'
       );
@@ -389,10 +390,15 @@ private class ALT_CLS_ForecastComparisonServiceTest {
       Assert.areEqual(300, three.overdue[0].amountOut, 'vencido nunca some');
       Assert.isTrue(three.reasons.contains('OVERDUE_OBLIGATIONS'));
       Assert.isTrue(three.reasons.contains('OBLIGATIONS_BEYOND_HORIZON'));
+      Assert.isTrue(three.reasons.contains('NO_APPROVED_METHOD'));
       Assert.areEqual(
-        ALT_CLS_ForecastComparisonService.CONFIDENCE_DEGRADED,
-        three.confidence
+        ALT_CLS_ForecastComparisonService.CONFIDENCE_BLOCKED,
+        three.confidence,
+        'omitir a recorrencia estimada de uma obrigacao poderia aumentar a capacidade'
       );
+      Assert.areEqual(1, three.exclusions.size(), 'a omissao fica registrada');
+      Assert.areEqual(ana.Id, three.exclusions[0].accountId);
+      Assert.areEqual('NO_APPROVED_METHOD', three.exclusions[0].reason);
       Assert.areEqual(
         2,
         three.sources.size(),
@@ -510,7 +516,8 @@ private class ALT_CLS_ForecastComparisonServiceTest {
         'vencido ha 13 meses fica fora da janela'
       );
 
-      // Indefinite recurrence: coverage incomplete, DEGRADED, never a closed total.
+      // Indefinite recurrence: coverage incomplete and no method approved for its reference
+      // amounts, so the commitment is reported and never closed into a total.
       ALT_CLS_FinancialScheduleService.CreateInput open = new ALT_CLS_FinancialScheduleService.CreateInput();
       open.accountId = ana.Id;
       open.direction = 'DEBIT';
@@ -547,9 +554,11 @@ private class ALT_CLS_ForecastComparisonServiceTest {
       Assert.isTrue(scheduleView.unbounded, 'recorrencia indefinida');
       Assert.isTrue(unbounded.unboundedCommitment);
       Assert.isTrue(unbounded.reasons.contains('COMMITMENT_UNBOUNDED'));
+      Assert.isTrue(unbounded.reasons.contains('NO_APPROVED_METHOD'));
       Assert.areEqual(
-        ALT_CLS_ForecastComparisonService.CONFIDENCE_DEGRADED,
-        unbounded.confidence
+        ALT_CLS_ForecastComparisonService.CONFIDENCE_BLOCKED,
+        unbounded.confidence,
+        'a recorrencia estimada nao tem metodo aprovado: omite-la poderia aumentar a capacidade'
       );
 
       // Plan ceiling refuses instead of truncating (seam mirrors scheduleLimit).
@@ -771,6 +780,362 @@ private class ALT_CLS_ForecastComparisonServiceTest {
         Assert.areEqual('FORBIDDEN', expected.code);
       }
     }
+  }
+
+  /**
+   * AXF-138, GF-76 — every contribution is placed in a §3 class with the §2 evidence authority
+   * and the method v1.0.0 permits for it; the overlap between a schedule and the persisted row
+   * that restates it is resolved once, and the taxonomy, cutoff, currencies and policy identity
+   * travel with the result.
+   */
+  @IsTest
+  static void policyClassificationRecordsAuthorityMethodAndResolvedOverlaps() {
+    System.runAs(byAlias('axf137g')) {
+      Account ana = holder('Ana PolÃ­tica');
+      Date today = Date.today();
+      Date nextMonth = today.addMonths(1).toStartOfMonth().addDays(6);
+      ALT_CLS_FinancialScheduleService.CreateResult created = schedule(
+        ana.Id,
+        'INSTALLMENT',
+        6,
+        1,
+        nextMonth,
+        'policy-authority'
+      );
+      insert new List<AXF_OBJ_FinancialTransaction__c>{
+        plan(ana.Id, 'fact', 400, 'CREDIT', 'CONFIRMED', nextMonth, false),
+        plan(ana.Id, 'scenario', 150, 'DEBIT', 'PLANNED', nextMonth, false)
+      };
+      ALT_CLS_ScheduleProjection.ProjectionInput read = new ALT_CLS_ScheduleProjection.ProjectionInput();
+      read.scheduleId = created.scheduleId;
+      read.asOfDate = today;
+      ALT_CLS_ScheduleProjection.ProjectionResult projection = ALT_CLS_FinancialScheduleService.readProjection(
+        read
+      );
+      Assert.areEqual('OK', projection.outcome, projection.message);
+      Integer persisted = 0;
+      for (ALT_CLS_ScheduleProjection.OccurrenceLine line : projection.lines) {
+        if (line.persisted == true) {
+          persisted++;
+        }
+      }
+      Assert.isTrue(
+        persisted > 0,
+        'a janela operacional ja tem linhas persistidas'
+      );
+      ALT_CLS_ForecastComparisonService service = new ALT_CLS_ForecastComparisonService();
+      Test.startTest();
+      ALT_CLS_ForecastComparisonService.Result result = service.compare(
+        input(
+          new List<Id>{ ana.Id },
+          6,
+          ALT_CLS_ForecastComparisonService.SCENARIO_OPTIMISTIC
+        )
+      );
+      Test.stopTest();
+      Assert.areEqual(
+        ALT_CLS_ForecastComparisonService.CATEGORY_TAXONOMY,
+        result.categoryTaxonomy
+      );
+      Assert.areEqual(
+        ALT_CLS_ForecastComparisonService.POLICY_VERSION,
+        result.policyVersion
+      );
+      Assert.areEqual(today, result.asOf, 'o corte e a data de posicao');
+      Assert.areEqual(
+        new List<String>{ 'BRL' },
+        result.currencies,
+        'FX preservado'
+      );
+      Assert.isTrue(
+        result.fallbacks.isEmpty(),
+        'nenhum fallback foi necessario'
+      );
+      Map<String, ALT_CLS_ForecastComparisonService.CategoryView> byClass = new Map<String, ALT_CLS_ForecastComparisonService.CategoryView>();
+      for (
+        ALT_CLS_ForecastComparisonService.CategoryView view : result.categories
+      ) {
+        byClass.put(view.category + '|' + String.valueOf(view.authority), view);
+      }
+      ALT_CLS_ForecastComparisonService.CategoryView contractual = byClass.get(
+        ALT_CLS_ForecastComparisonService.CATEGORY_CONTRACTUAL_INSTALLMENT +
+          '|' +
+          ALT_CLS_ForecastComparisonService.AUTHORITY_CONTRACT_INSTALLMENT
+      );
+      Assert.isNotNull(contractual, 'cronograma de parcelamento e contratual');
+      Assert.areEqual(
+        ALT_CLS_ForecastComparisonService.METHOD_AUTHORITATIVE_SCHEDULE,
+        contractual.method
+      );
+      Assert.areEqual(
+        projection.lines.size(),
+        contractual.contributionCount,
+        'cada ocorrencia do cronograma entra uma vez'
+      );
+      Assert.areEqual(
+        ALT_CLS_ForecastComparisonService.METHOD_INTEGRAL_SCENARIO_INCLUSION,
+        byClass.get(
+            ALT_CLS_ForecastComparisonService.CATEGORY_EXPLICIT_SCENARIO_ITEM +
+              '|' +
+              ALT_CLS_ForecastComparisonService.AUTHORITY_CONFIRMED_FACT
+          )
+          .method,
+        'fato confirmado e evidencia de autoridade 1'
+      );
+      Assert.areEqual(
+        1,
+        byClass.get(
+            ALT_CLS_ForecastComparisonService.CATEGORY_EXPLICIT_SCENARIO_ITEM +
+              '|' +
+              ALT_CLS_ForecastComparisonService.AUTHORITY_CONFIRMED_FACT
+          )
+          .contributionCount
+      );
+      Assert.areEqual(
+        1,
+        byClass.get(
+            ALT_CLS_ForecastComparisonService.CATEGORY_EXPLICIT_SCENARIO_ITEM +
+              '|' +
+              ALT_CLS_ForecastComparisonService.AUTHORITY_SCENARIO_ITEM
+          )
+          .contributionCount,
+        'o item explicito de cenario e autoridade 5'
+      );
+      // §2: the persisted occurrence is counted once, by the schedule that owns it.
+      ALT_CLS_ForecastComparisonService.SourceView scheduleView;
+      for (
+        ALT_CLS_ForecastComparisonService.SourceView source : result.sources
+      ) {
+        if (source.kind == 'SCHEDULE') {
+          scheduleView = source;
+        }
+      }
+      Assert.isNotNull(scheduleView);
+      Assert.areEqual(persisted, scheduleView.resolvedOverlapCount);
+      // No duplication: inside + beyond still equals the single remaining commitment.
+      ALT_CLS_ForecastComparisonService.HorizonTotal h24 = horizon(
+        result,
+        24,
+        'BRL'
+      );
+      Assert.areEqual(
+        projection.totalRemaining.setScale(2),
+        (h24.confirmedOut + h24.beyondOut).setScale(2)
+      );
+      Assert.areEqual(
+        150,
+        h24.probableOut,
+        'o item de cenario nao foi duplicado'
+      );
+    }
+  }
+
+  /**
+   * AXF-138, GF-77 — a class v1.0.0 gives no method to is never estimated. The occurrence of a
+   * schedule whose amount comes from a reference value instead of the approved formula — created
+   * through the normal schedule command, no field blanked — asserts no amount, tier or
+   * probability and is recorded as an exclusion of its holder; because its omission could
+   * increase the capacity shown the result is BLOCKED, while the same occurrence as an inflow
+   * cannot increase capacity and stays display-only.
+   */
+  @IsTest
+  static void classWithoutApprovedMethodIsNotEstimatedAndGatesByMaterialImpact() {
+    System.runAs(byAlias('axf137g')) {
+      Account debitHolder = holder('Ana Sem Metodo Debito');
+      Account creditHolder = holder('Ana Sem Metodo Credito');
+      Date today = Date.today();
+      Date nextMonth = today.addMonths(1).toStartOfMonth().addDays(6);
+      // Both schedules are created by the normal command path: the estimated one takes its
+      // amounts from a reference value, the permitted one from the approved formula.
+      ALT_CLS_FinancialScheduleService.CreateResult unauthorized = schedule(
+        debitHolder.Id,
+        'ESTIMATED',
+        6,
+        1,
+        nextMonth,
+        'policy-noauthority'
+      );
+      ALT_CLS_FinancialScheduleService.CreateResult permitted = schedule(
+        debitHolder.Id,
+        'INSTALLMENT',
+        6,
+        1,
+        nextMonth,
+        'policy-permitted'
+      );
+      ALT_CLS_FinancialScheduleService.CreateInput credit = new ALT_CLS_FinancialScheduleService.CreateInput();
+      credit.accountId = creditHolder.Id;
+      credit.direction = 'CREDIT';
+      credit.currencyIsoCode = 'BRL';
+      credit.method = 'ESTIMATED';
+      credit.totalInstallments = 6;
+      credit.firstSequence = 1;
+      credit.trackingStartSequence = 1;
+      credit.trackingDueDate = nextMonth;
+      credit.periodMonths = 1;
+      credit.referenceAmount = 500;
+      credit.legacyGroupKey = 'policy-noauthority-cred';
+      ALT_CLS_FinancialScheduleService.CreateResult creditSchedule = ALT_CLS_FinancialScheduleService.createSchedule(
+        credit
+      );
+      Assert.areEqual(
+        'CREATED',
+        creditSchedule.outcome,
+        creditSchedule.message
+      );
+      // The estimated schedule projects normally: its amounts exist and are readable. Only the
+      // policy's category → method table has no method for the class that produced them.
+      ALT_CLS_ScheduleProjection.ProjectionInput read = new ALT_CLS_ScheduleProjection.ProjectionInput();
+      read.scheduleId = unauthorized.scheduleId;
+      read.asOfDate = today;
+      ALT_CLS_ScheduleProjection.ProjectionResult projection = ALT_CLS_FinancialScheduleService.readProjection(
+        read
+      );
+      Assert.areEqual(
+        'OK',
+        projection.outcome,
+        'o cronograma continua projetavel: ' + projection.message
+      );
+      Assert.isTrue(projection.totalRemaining > 0);
+      ALT_CLS_ForecastComparisonService service = new ALT_CLS_ForecastComparisonService();
+      Test.startTest();
+      ALT_CLS_ForecastComparisonService.Result debit = service.compare(
+        input(
+          new List<Id>{ debitHolder.Id },
+          6,
+          ALT_CLS_ForecastComparisonService.SCENARIO_OPTIMISTIC
+        )
+      );
+      ALT_CLS_ForecastComparisonService.Result creditResult = service.compare(
+        input(
+          new List<Id>{ creditHolder.Id },
+          6,
+          ALT_CLS_ForecastComparisonService.SCENARIO_OPTIMISTIC
+        )
+      );
+      Test.stopTest();
+      Assert.isTrue(debit.reasons.contains('NO_APPROVED_METHOD'));
+      Assert.areEqual(
+        ALT_CLS_ForecastComparisonService.CONFIDENCE_BLOCKED,
+        debit.confidence,
+        'omitir uma obrigacao poderia aumentar a capacidade mostrada'
+      );
+      Assert.isTrue(
+        debit.fallbacks.contains(
+          ALT_CLS_ForecastComparisonService.FALLBACK_BLOCKED_MATERIAL_OMISSION
+        ),
+        String.join(debit.fallbacks, ',')
+      );
+      // The class is recorded with no method and with no authority that was never established,
+      // and it counts no contribution: the occurrence never became one.
+      ALT_CLS_ForecastComparisonService.CategoryView unclassified = categoryOf(
+        debit,
+        ALT_CLS_ForecastComparisonService.CATEGORY_UNPREDICTABLE_STATISTICAL
+      );
+      Assert.isNotNull(unclassified, 'a classe sem metodo e registrada');
+      Assert.isNull(
+        unclassified.method,
+        'v1.0.0 nao aprova metodo para a classe'
+      );
+      Assert.isNull(
+        unclassified.authority,
+        'nenhuma autoridade foi estabelecida para a classe'
+      );
+      Assert.areEqual(
+        0,
+        unclassified.contributionCount,
+        'a ocorrencia sem metodo nao virou contribuicao'
+      );
+      // The omission is recorded against its holder, so the total is not silently short.
+      Assert.areEqual(
+        1,
+        debit.exclusions.size(),
+        'uma exclusao por titular e motivo'
+      );
+      Assert.areEqual(debitHolder.Id, debit.exclusions[0].accountId);
+      Assert.areEqual('NO_APPROVED_METHOD', debit.exclusions[0].reason);
+      // Nothing is asserted for the class without a method: only the permitted schedule counts.
+      ALT_CLS_ScheduleProjection.ProjectionInput permittedRead = new ALT_CLS_ScheduleProjection.ProjectionInput();
+      permittedRead.scheduleId = permitted.scheduleId;
+      permittedRead.asOfDate = today;
+      ALT_CLS_ScheduleProjection.ProjectionResult permittedProjection = ALT_CLS_FinancialScheduleService.readProjection(
+        permittedRead
+      );
+      Assert.areEqual(
+        'OK',
+        permittedProjection.outcome,
+        permittedProjection.message
+      );
+      Decimal permittedTotal = 0;
+      for (
+        ALT_CLS_ScheduleProjection.OccurrenceLine line : permittedProjection.lines
+      ) {
+        if (line.effectiveDueDate <= debit.horizonEnd) {
+          permittedTotal += line.amount;
+        }
+      }
+      ALT_CLS_ForecastComparisonService.HorizonTotal debitTotal = horizon(
+        debit,
+        6,
+        'BRL'
+      );
+      Assert.areEqual(
+        permittedTotal.setScale(2),
+        (debitTotal.confirmedOut + debitTotal.probableOut).setScale(2),
+        'nenhuma media, peso ou probabilidade foi inventada para a classe sem metodo'
+      );
+      Assert.areEqual(0, debitTotal.uncertainOut, 'nada incerto foi inventado');
+      ALT_CLS_ForecastComparisonService.CategoryView contractual = categoryOf(
+        debit,
+        ALT_CLS_ForecastComparisonService.CATEGORY_CONTRACTUAL_INSTALLMENT
+      );
+      Assert.areEqual(
+        permittedProjection.lines.size(),
+        contractual.contributionCount,
+        'so a ocorrencia com metodo aprovado vira contribuicao'
+      );
+      // An inflow omission cannot increase the capacity shown: display-only, never a total.
+      Assert.areEqual(
+        ALT_CLS_ForecastComparisonService.CONFIDENCE_INFORMATIVE,
+        creditResult.confidence
+      );
+      Assert.isTrue(
+        creditResult.fallbacks.contains(
+          ALT_CLS_ForecastComparisonService.FALLBACK_INFORMATIVE_DISPLAY
+        ),
+        String.join(creditResult.fallbacks, ',')
+      );
+      Assert.isTrue(creditResult.reasons.contains('NO_APPROVED_METHOD'));
+      Assert.areEqual(1, creditResult.exclusions.size());
+      Assert.areEqual(creditHolder.Id, creditResult.exclusions[0].accountId);
+      Assert.areEqual('NO_APPROVED_METHOD', creditResult.exclusions[0].reason);
+      Assert.areEqual(
+        0,
+        categoryOf(
+            creditResult,
+            ALT_CLS_ForecastComparisonService.CATEGORY_UNPREDICTABLE_STATISTICAL
+          )
+          .contributionCount
+      );
+      Assert.isTrue(
+        creditResult.horizons.isEmpty(),
+        'a classe sem metodo nao contribui com nenhum total'
+      );
+    }
+  }
+
+  private static ALT_CLS_ForecastComparisonService.CategoryView categoryOf(
+    ALT_CLS_ForecastComparisonService.Result result,
+    String category
+  ) {
+    for (
+      ALT_CLS_ForecastComparisonService.CategoryView view : result.categories
+    ) {
+      if (view.category == category) {
+        return view;
+      }
+    }
+    return null;
   }
 
   @IsTest
