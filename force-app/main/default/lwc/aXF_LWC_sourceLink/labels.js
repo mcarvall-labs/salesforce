@@ -84,6 +84,40 @@ import codeCONFLICT from "@salesforce/label/c.AXF_SourceLink_codeCONFLICT";
 import codeUNAVAILABLE_AMOUNT from "@salesforce/label/c.AXF_SourceLink_codeUNAVAILABLE_AMOUNT";
 import codeREPORTING_CURRENCY_REQUIRED from "@salesforce/label/c.AXF_SourceLink_codeREPORTING_CURRENCY_REQUIRED";
 import codeMATERIALIZATION_REQUIRED from "@salesforce/label/c.AXF_SourceLink_codeMATERIALIZATION_REQUIRED";
+import evIntro from "@salesforce/label/c.AXF_SourceLink_evIntro";
+import evColumn from "@salesforce/label/c.AXF_SourceLink_evColumn";
+import evConsultative from "@salesforce/label/c.AXF_SourceLink_evConsultative";
+import evTied from "@salesforce/label/c.AXF_SourceLink_evTied";
+import evLowEvidence from "@salesforce/label/c.AXF_SourceLink_evLowEvidence";
+import evTieCount from "@salesforce/label/c.AXF_SourceLink_evTieCount";
+import evSort from "@salesforce/label/c.AXF_SourceLink_evSort";
+import evSortPOLICY from "@salesforce/label/c.AXF_SourceLink_evSortPOLICY";
+import evSortDUE_DATE from "@salesforce/label/c.AXF_SourceLink_evSortDUE_DATE";
+import evfEXTERNAL_IDENTITY from "@salesforce/label/c.AXF_SourceLink_evfEXTERNAL_IDENTITY";
+import evfSOURCE_IDENTITY from "@salesforce/label/c.AXF_SourceLink_evfSOURCE_IDENTITY";
+import evfHOLDER from "@salesforce/label/c.AXF_SourceLink_evfHOLDER";
+import evfCURRENCY from "@salesforce/label/c.AXF_SourceLink_evfCURRENCY";
+import evfAMOUNT from "@salesforce/label/c.AXF_SourceLink_evfAMOUNT";
+import evfRESIDUAL from "@salesforce/label/c.AXF_SourceLink_evfRESIDUAL";
+import evfDATE from "@salesforce/label/c.AXF_SourceLink_evfDATE";
+import evfDESCRIPTION from "@salesforce/label/c.AXF_SourceLink_evfDESCRIPTION";
+import evfCATEGORY from "@salesforce/label/c.AXF_SourceLink_evfCATEGORY";
+import evrEXACT from "@salesforce/label/c.AXF_SourceLink_evrEXACT";
+import evrCONTAINS from "@salesforce/label/c.AXF_SourceLink_evrCONTAINS";
+import evrCOVERS from "@salesforce/label/c.AXF_SourceLink_evrCOVERS";
+import evrPARTIAL from "@salesforce/label/c.AXF_SourceLink_evrPARTIAL";
+import evrDIFFERENT from "@salesforce/label/c.AXF_SourceLink_evrDIFFERENT";
+import evrUNKNOWN from "@salesforce/label/c.AXF_SourceLink_evrUNKNOWN";
+import evrREDACTED from "@salesforce/label/c.AXF_SourceLink_evrREDACTED";
+import evxEXACT from "@salesforce/label/c.AXF_SourceLink_evxEXACT";
+import evxCONTAINS from "@salesforce/label/c.AXF_SourceLink_evxCONTAINS";
+import evxCOVERS from "@salesforce/label/c.AXF_SourceLink_evxCOVERS";
+import evxPARTIAL from "@salesforce/label/c.AXF_SourceLink_evxPARTIAL";
+import evxDIFFERENT from "@salesforce/label/c.AXF_SourceLink_evxDIFFERENT";
+import evxUNKNOWN from "@salesforce/label/c.AXF_SourceLink_evxUNKNOWN";
+import evxREDACTED from "@salesforce/label/c.AXF_SourceLink_evxREDACTED";
+import evxDATE_AFTER from "@salesforce/label/c.AXF_SourceLink_evxDATE_AFTER";
+import evxDATE_BEFORE from "@salesforce/label/c.AXF_SourceLink_evxDATE_BEFORE";
 
 export default {
   title,
@@ -171,5 +205,39 @@ export default {
   codeCONFLICT,
   codeUNAVAILABLE_AMOUNT,
   codeREPORTING_CURRENCY_REQUIRED,
-  codeMATERIALIZATION_REQUIRED
+  codeMATERIALIZATION_REQUIRED,
+  evIntro,
+  evColumn,
+  evConsultative,
+  evTied,
+  evLowEvidence,
+  evTieCount,
+  evSort,
+  evSortPOLICY,
+  evSortDUE_DATE,
+  evfEXTERNAL_IDENTITY,
+  evfSOURCE_IDENTITY,
+  evfHOLDER,
+  evfCURRENCY,
+  evfAMOUNT,
+  evfRESIDUAL,
+  evfDATE,
+  evfDESCRIPTION,
+  evfCATEGORY,
+  evrEXACT,
+  evrCONTAINS,
+  evrCOVERS,
+  evrPARTIAL,
+  evrDIFFERENT,
+  evrUNKNOWN,
+  evrREDACTED,
+  evxEXACT,
+  evxCONTAINS,
+  evxCOVERS,
+  evxPARTIAL,
+  evxDIFFERENT,
+  evxUNKNOWN,
+  evxREDACTED,
+  evxDATE_AFTER,
+  evxDATE_BEFORE
 };

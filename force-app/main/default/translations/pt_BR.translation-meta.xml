@@ -1091,4 +1091,72 @@
     >AXF_SourceLink_codeREPORTING_CURRENCY_REQUIRED</name></customLabels><customLabels
   ><label
     >Ocorrências projetadas precisam ser materializadas antes do vínculo (AXF-136).</label><name
-    >AXF_SourceLink_codeMATERIALIZATION_REQUIRED</name></customLabels></Translations>
+    >AXF_SourceLink_codeMATERIALIZATION_REQUIRED</name></customLabels><customLabels
+  ><label
+    >As evidências são fatos independentes sob {0} (corte {1}). Não há pontuação, peso ou tolerância; empates e incertezas ficam explícitos e nada é confirmado automaticamente.</label><name
+    >AXF_SourceLink_evIntro</name></customLabels><customLabels><label
+    >Evidências</label><name
+    >AXF_SourceLink_evColumn</name></customLabels><customLabels><label
+    >Consultivo</label><name
+    >AXF_SourceLink_evConsultative</name></customLabels><customLabels><label
+    >Empate — evidências idênticas</label><name
+    >AXF_SourceLink_evTied</name></customLabels><customLabels><label
+    >Pouca evidência — incerto</label><name
+    >AXF_SourceLink_evLowEvidence</name></customLabels><customLabels><label
+    >{0} candidato(s) em empate; {1} com pouca evidência. Nenhum vencedor é escolhido.</label><name
+    >AXF_SourceLink_evTieCount</name></customLabels><customLabels><label
+    >Ordem de apresentação</label><name
+    >AXF_SourceLink_evSort</name></customLabels><customLabels><label
+    >Ordem da política (identidade, tipo, registro)</label><name
+    >AXF_SourceLink_evSortPOLICY</name></customLabels><customLabels><label
+    >Vencimento</label><name
+    >AXF_SourceLink_evSortDUE_DATE</name></customLabels><customLabels><label
+    >Identidade externa</label><name
+    >AXF_SourceLink_evfEXTERNAL_IDENTITY</name></customLabels><customLabels
+  ><label>Conta/cartão de origem</label><name
+    >AXF_SourceLink_evfSOURCE_IDENTITY</name></customLabels><customLabels><label
+    >Titular</label><name
+    >AXF_SourceLink_evfHOLDER</name></customLabels><customLabels><label
+    >Moeda</label><name
+    >AXF_SourceLink_evfCURRENCY</name></customLabels><customLabels><label
+    >Valor</label><name
+    >AXF_SourceLink_evfAMOUNT</name></customLabels><customLabels><label
+    >Remanescente</label><name
+    >AXF_SourceLink_evfRESIDUAL</name></customLabels><customLabels><label
+    >Data</label><name>AXF_SourceLink_evfDATE</name></customLabels><customLabels
+  ><label>Descrição</label><name
+    >AXF_SourceLink_evfDESCRIPTION</name></customLabels><customLabels><label
+    >Categoria</label><name
+    >AXF_SourceLink_evfCATEGORY</name></customLabels><customLabels><label
+    >idêntico</label><name
+    >AXF_SourceLink_evrEXACT</name></customLabels><customLabels><label
+    >um contém o outro</label><name
+    >AXF_SourceLink_evrCONTAINS</name></customLabels><customLabels><label
+    >fonte cobre o candidato</label><name
+    >AXF_SourceLink_evrCOVERS</name></customLabels><customLabels><label
+    >fonte cobre parte</label><name
+    >AXF_SourceLink_evrPARTIAL</name></customLabels><customLabels><label
+    >diferente</label><name
+    >AXF_SourceLink_evrDIFFERENT</name></customLabels><customLabels><label
+    >desconhecido</label><name
+    >AXF_SourceLink_evrUNKNOWN</name></customLabels><customLabels><label
+    >redigido</label><name
+    >AXF_SourceLink_evrREDACTED</name></customLabels><customLabels><label
+    >Idêntico dos dois lados.</label><name
+    >AXF_SourceLink_evxEXACT</name></customLabels><customLabels><label
+    >Após normalizar maiúsculas, espaços e acentos, um texto contém o outro. Nenhuma similaridade fuzzy é aplicada.</label><name
+    >AXF_SourceLink_evxCONTAINS</name></customLabels><customLabels><label
+    >O remanescente da fonte extingue o remanescente do candidato (diferença {0}).</label><name
+    >AXF_SourceLink_evxCOVERS</name></customLabels><customLabels><label
+    >O remanescente da fonte cobre só parte do candidato (faltam {0}).</label><name
+    >AXF_SourceLink_evxPARTIAL</name></customLabels><customLabels><label
+    >Diferente dos dois lados ({0}). Exibido como fato — nenhuma tolerância decide por você.</label><name
+    >AXF_SourceLink_evxDIFFERENT</name></customLabels><customLabels><label
+    >Indisponível de um dos lados. Desconhecido nunca é sinal negativo.</label><name
+    >AXF_SourceLink_evxUNKNOWN</name></customLabels><customLabels><label
+    >Não autorizado para você; redigido e fora da ordenação.</label><name
+    >AXF_SourceLink_evxREDACTED</name></customLabels><customLabels><label
+    >O candidato vence {0} dia(s) depois da data da fonte.</label><name
+    >AXF_SourceLink_evxDATE_AFTER</name></customLabels><customLabels><label
+    >O candidato vence {0} dia(s) antes da data da fonte.</label><name
+    >AXF_SourceLink_evxDATE_BEFORE</name></customLabels></Translations>

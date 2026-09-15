@@ -5,6 +5,8 @@
  * without any undocumented amount/date tolerance, and confirms the link through the AXF-25
  * realization contract (typed allocation, idempotent operation key, CONFLICT on divergence).
  * The source fact is never copied or altered; only its optimistic version is bumped by AXF-25.
+ * AXF-139: every candidate carries independent observable evidence (ALT_CLS_MatchEvidence,
+ * AXF-MATCHING@1.0.0), stays CONSULTATIVE, and is ordered by the policy's presentation order.
  */
 public with sharing class ALT_CLS_SourceLinkService {
   public static final String POLICY_VERSION = 'AXF-SOURCE-LINK@1.0.0';
@@ -62,6 +64,10 @@ public with sharing class ALT_CLS_SourceLinkService {
     @AuraEnabled
     public String description;
     @AuraEnabled
+    public String category;
+    @AuraEnabled
+    public String sourceKey;
+    @AuraEnabled
     public Decimal version;
     @AuraEnabled
     public Boolean eligible = false;
@@ -100,6 +106,17 @@ public with sharing class ALT_CLS_SourceLinkService {
     public Boolean linkable = false;
     @AuraEnabled
     public List<String> reasons = new List<String>();
+    /** AXF-139: consultative state, independent evidence, explicit tie / low-evidence flags. */
+    @AuraEnabled
+    public String state = ALT_CLS_MatchEvidence.STATE_CONSULTATIVE;
+    @AuraEnabled
+    public List<ALT_CLS_MatchEvidence.EvidenceView> evidence = new List<ALT_CLS_MatchEvidence.EvidenceView>();
+    @AuraEnabled
+    public Boolean tied = false;
+    @AuraEnabled
+    public Boolean lowEvidence = false;
+    public Id fundingId;
+    public Id holderId;
   }
 
   public class SourceQuery {
@@ -138,6 +155,16 @@ public with sharing class ALT_CLS_SourceLinkService {
   public class CandidatePage {
     @AuraEnabled
     public String policyVersion = POLICY_VERSION;
+    @AuraEnabled
+    public String matchingPolicy = ALT_CLS_MatchEvidence.MATCHING_POLICY;
+    @AuraEnabled
+    public String state = ALT_CLS_MatchEvidence.STATE_CONSULTATIVE;
+    @AuraEnabled
+    public Datetime evidenceCutoff;
+    @AuraEnabled
+    public Integer tieCount = 0;
+    @AuraEnabled
+    public Integer lowEvidenceCount = 0;
     @AuraEnabled
     public SourceView source;
     @AuraEnabled
@@ -312,6 +339,7 @@ public with sharing class ALT_CLS_SourceLinkService {
     String soql =
       'SELECT Id, AXF_BAT_MDR_BankAccount__c, AXF_BAT_NUM_Magnitude__c, AXF_BAT_TXT_CurrencyIsoCode__c,' +
       ' AXF_BAT_PKL_Direction__c, AXF_BAT_DAT_Date__c, AXF_BAT_TXT_Description__c, AXF_BAT_PKL_Source__c,' +
+      ' AXF_BAT_TXT_ProviderCategory__c, AXF_BAT_EXI_SourceKey__c,' +
       ' AXF_BAT_PKL_Status__c, AXF_BAT_NUM_Version__c, AXF_BAT_MDR_BankAccount__r.AXF_BA_LKP_Account__c,' +
       ' AXF_BAT_MDR_BankAccount__r.AXF_BA_PKL_AvailabilityState__c, AXF_BAT_MDR_BankAccount__r.AXF_BA_TXT_InstitutionName__c,' +
       ' AXF_BAT_MDR_BankAccount__r.AXF_BA_TXT_NumberMasked__c' +
@@ -345,6 +373,7 @@ public with sharing class ALT_CLS_SourceLinkService {
     String soql =
       'SELECT Id, AXF_CCT_MDR_CreditCard__c, AXF_CCT_NUM_Magnitude__c, AXF_CCT_TXT_CurrencyIsoCode__c,' +
       ' AXF_CCT_PKL_Direction__c, AXF_CCT_DAT_Date__c, AXF_CCT_TXT_Description__c, AXF_CCT_PKL_Source__c,' +
+      ' AXF_CCT_TXT_ProviderCategory__c, AXF_CCT_EXI_SourceKey__c,' +
       ' AXF_CCT_PKL_Status__c, AXF_CCT_NUM_Version__c, AXF_CCT_MDR_CreditCard__r.AXF_CC_LKP_Account__c,' +
       ' AXF_CCT_MDR_CreditCard__r.AXF_CC_PKL_AvailabilityState__c, AXF_CCT_MDR_CreditCard__r.AXF_CC_TXT_InstitutionName__c,' +
       ' AXF_CCT_MDR_CreditCard__r.AXF_CC_TXT_LastFourMasked__c' +
@@ -389,6 +418,8 @@ public with sharing class ALT_CLS_SourceLinkService {
     v.direction = row.AXF_BAT_PKL_Direction__c;
     v.factDate = row.AXF_BAT_DAT_Date__c;
     v.description = row.AXF_BAT_TXT_Description__c;
+    v.category = row.AXF_BAT_TXT_ProviderCategory__c;
+    v.sourceKey = row.AXF_BAT_EXI_SourceKey__c;
     v.version = row.AXF_BAT_NUM_Version__c == null
       ? 0
       : row.AXF_BAT_NUM_Version__c;
@@ -420,6 +451,8 @@ public with sharing class ALT_CLS_SourceLinkService {
     v.direction = row.AXF_CCT_PKL_Direction__c;
     v.factDate = row.AXF_CCT_DAT_Date__c;
     v.description = row.AXF_CCT_TXT_Description__c;
+    v.category = row.AXF_CCT_TXT_ProviderCategory__c;
+    v.sourceKey = row.AXF_CCT_EXI_SourceKey__c;
     v.version = row.AXF_CCT_NUM_Version__c == null
       ? 0
       : row.AXF_CCT_NUM_Version__c;
@@ -552,6 +585,8 @@ public with sharing class ALT_CLS_SourceLinkService {
           AXF_BAT_DAT_Date__c,
           AXF_BAT_TXT_Description__c,
           AXF_BAT_PKL_Source__c,
+          AXF_BAT_TXT_ProviderCategory__c,
+          AXF_BAT_EXI_SourceKey__c,
           AXF_BAT_PKL_Status__c,
           AXF_BAT_NUM_Version__c,
           AXF_BAT_MDR_BankAccount__r.AXF_BA_LKP_Account__c,
@@ -575,6 +610,8 @@ public with sharing class ALT_CLS_SourceLinkService {
           AXF_CCT_DAT_Date__c,
           AXF_CCT_TXT_Description__c,
           AXF_CCT_PKL_Source__c,
+          AXF_CCT_TXT_ProviderCategory__c,
+          AXF_CCT_EXI_SourceKey__c,
           AXF_CCT_PKL_Status__c,
           AXF_CCT_NUM_Version__c,
           AXF_CCT_MDR_CreditCard__r.AXF_CC_LKP_Account__c,
@@ -610,14 +647,42 @@ public with sharing class ALT_CLS_SourceLinkService {
       all.addAll(persistedCandidates(result.source, query.term, result));
       all.addAll(virtualCandidates(result.source, query.term, result));
     }
-    List<CandidateKey> keys = new List<CandidateKey>();
+    result.evidenceCutoff = System.now();
+    List<ALT_CLS_MatchEvidence.OrderKey> keys = new List<ALT_CLS_MatchEvidence.OrderKey>();
+    Map<String, Integer> signatures = new Map<String, Integer>();
     for (CandidateView c : all) {
-      keys.add(new CandidateKey(c));
+      c.evidence = ALT_CLS_MatchEvidence.evaluate(side(result.source), side(c));
+      c.lowEvidence = ALT_CLS_MatchEvidence.lowEvidence(c.evidence);
+      String signature = ALT_CLS_MatchEvidence.signature(c.evidence);
+      signatures.put(
+        signature,
+        (signatures.containsKey(signature) ? signatures.get(signature) : 0) + 1
+      );
+      keys.add(
+        new ALT_CLS_MatchEvidence.OrderKey(
+          c.evidence,
+          c.persisted ? 0 : 1,
+          c.persisted
+            ? String.valueOf(c.targetId)
+            : String.valueOf(c.scheduleId) + '#' + String.valueOf(c.sequence),
+          c
+        )
+      );
+    }
+    for (CandidateView c : all) {
+      // A tie is explicit: identical evidence on every feature never selects a winner.
+      c.tied = signatures.get(ALT_CLS_MatchEvidence.signature(c.evidence)) > 1;
+      if (c.tied) {
+        result.tieCount++;
+      }
+      if (c.lowEvidence) {
+        result.lowEvidenceCount++;
+      }
     }
     keys.sort();
     Integer skip = (result.pageNumber - 1) * result.pageSize;
     for (Integer i = skip; i < keys.size() && i < skip + result.pageSize; i++) {
-      result.items.add(keys[i].view);
+      result.items.add((CandidateView) keys[i].payload);
     }
     result.hasMore = keys.size() > skip + result.pageSize;
     result.suggestedAmount = result.source.eligible
@@ -626,34 +691,34 @@ public with sharing class ALT_CLS_SourceLinkService {
     return result;
   }
 
-  private class CandidateKey implements Comparable {
-    public CandidateView view;
-    public CandidateKey(CandidateView view) {
-      this.view = view;
-    }
-    public Integer compareTo(Object other) {
-      CandidateView b = ((CandidateKey) other).view;
-      // Due date, amount, persisted before virtual, then stable identity; never a score.
-      if (view.dueDate != b.dueDate) {
-        if (view.dueDate == null || b.dueDate == null) {
-          return view.dueDate == null ? 1 : -1;
-        }
-        return view.dueDate < b.dueDate ? -1 : 1;
-      }
-      if (view.amount != b.amount) {
-        return view.amount < b.amount ? -1 : 1;
-      }
-      if (view.persisted != b.persisted) {
-        return view.persisted ? -1 : 1;
-      }
-      String a = view.persisted
-        ? String.valueOf(view.targetId)
-        : String.valueOf(view.scheduleId) + '#' + String.valueOf(view.sequence);
-      String c = b.persisted
-        ? String.valueOf(b.targetId)
-        : String.valueOf(b.scheduleId) + '#' + String.valueOf(b.sequence);
-      return a.compareTo(c);
-    }
+  private static ALT_CLS_MatchEvidence.Side side(SourceView source) {
+    ALT_CLS_MatchEvidence.Side result = new ALT_CLS_MatchEvidence.Side();
+    // The fact's own identity: origin + provider key. Forecasts carry no external identity in v1.
+    result.externalIdentity = source.sourceKey == null
+      ? null
+      : source.origin + ':' + source.sourceKey;
+    result.sourceIdentity = source.fundingId;
+    result.holderId = source.accountId;
+    result.currencyIso = source.currencyIso;
+    result.amount = source.amount;
+    result.residual = source.residual;
+    result.onDate = source.factDate;
+    result.description = source.description;
+    result.category = source.category;
+    return result;
+  }
+
+  private static ALT_CLS_MatchEvidence.Side side(CandidateView candidate) {
+    ALT_CLS_MatchEvidence.Side result = new ALT_CLS_MatchEvidence.Side();
+    result.sourceIdentity = candidate.fundingId;
+    result.holderId = candidate.holderId;
+    result.currencyIso = candidate.currencyIso;
+    result.amount = candidate.amount;
+    result.residual = candidate.residual;
+    result.onDate = candidate.dueDate;
+    result.description = candidate.description;
+    result.category = candidate.category;
+    return result;
   }
 
   private static String fundingField(String kind) {
@@ -752,6 +817,8 @@ public with sharing class ALT_CLS_SourceLinkService {
         ? 0
         : row.AXF_FTX_NUM_Version__c;
       c.linkable = true;
+      c.fundingId = (Id) row.get(fundingField(source.sourceKind));
+      c.holderId = source.accountId;
       result.add(c);
     }
     return result;
@@ -850,6 +917,7 @@ public with sharing class ALT_CLS_SourceLinkService {
         c.description = schedule.Name;
         c.status = line.estimated == true ? 'ESTIMATED' : 'PLANNED';
         c.linkable = false;
+        c.holderId = source.accountId;
         c.reasons.add('MATERIALIZATION_REQUIRED');
         result.add(c);
         page.virtualCount++;

@@ -59,7 +59,70 @@ const source = {
   eligible: true,
   reasons: []
 };
+const evidence = [
+  {
+    feature: "EXTERNAL_IDENTITY",
+    relation: "UNKNOWN",
+    explanation: "EXTERNAL_IDENTITY_UNKNOWN"
+  },
+  {
+    feature: "SOURCE_IDENTITY",
+    relation: "EXACT",
+    sourceValue: "a0A1",
+    candidateValue: "a0A1",
+    explanation: "SOURCE_IDENTITY_EXACT"
+  },
+  { feature: "HOLDER", relation: "EXACT", explanation: "HOLDER_EXACT" },
+  {
+    feature: "CURRENCY",
+    relation: "EXACT",
+    sourceValue: "BRL",
+    candidateValue: "BRL",
+    explanation: "CURRENCY_EXACT"
+  },
+  {
+    feature: "AMOUNT",
+    relation: "DIFFERENT",
+    sourceValue: "150.00",
+    candidateValue: "200.00",
+    delta: 50,
+    explanation: "AMOUNT_DIFFERENT"
+  },
+  {
+    feature: "RESIDUAL",
+    relation: "COVERS",
+    sourceValue: "150.00",
+    candidateValue: "120.00",
+    delta: -30,
+    explanation: "RESIDUAL_COVERS"
+  },
+  {
+    feature: "DATE",
+    relation: "DIFFERENT",
+    sourceValue: "2026-09-14",
+    candidateValue: "2026-09-20",
+    delta: 6,
+    explanation: "DATE_AFTER"
+  },
+  {
+    feature: "DESCRIPTION",
+    relation: "CONTAINS",
+    sourceValue: "Aluguel",
+    candidateValue: "Aluguel set",
+    explanation: "DESCRIPTION_CONTAINS"
+  },
+  {
+    feature: "CATEGORY",
+    relation: "REDACTED",
+    explanation: "CATEGORY_REDACTED"
+  }
+];
 const candidates = {
+  matchingPolicy: "AXF-MATCHING@1.0.0",
+  state: "CONSULTATIVE",
+  evidenceCutoff: "2026-09-15T12:00:00.000Z",
+  tieCount: 1,
+  lowEvidenceCount: 0,
   source,
   suggestedAmount: 150,
   suggestedDate: "2026-09-14",
@@ -82,7 +145,11 @@ const candidates = {
       status: "PLANNED",
       version: 3,
       linkable: true,
-      reasons: []
+      reasons: [],
+      state: "CONSULTATIVE",
+      evidence,
+      tied: true,
+      lowEvidence: false
     },
     {
       scheduleId: "a0D1",
@@ -97,7 +164,11 @@ const candidates = {
       status: "ESTIMATED",
       version: null,
       linkable: false,
-      reasons: ["MATERIALIZATION_REQUIRED"]
+      reasons: ["MATERIALIZATION_REQUIRED"],
+      state: "CONSULTATIVE",
+      evidence: evidence.map((v) => ({ ...v, relation: "UNKNOWN" })),
+      tied: false,
+      lowEvidence: true
     }
   ]
 };
@@ -223,6 +294,65 @@ describe("c-a-x-f-_-l-w-c-_source-link", () => {
     expect(byId(element, "done").textContent).toContain(
       "c.AXF_SourceLink_doneReplayed"
     );
+  });
+
+  it("shows independent evidence per candidate with explicit ties and no automatic selection", async () => {
+    const element = await mount();
+    listSources.mockResolvedValue({
+      pageNumber: 1,
+      pageSize: 25,
+      hasMore: false,
+      scannedCount: 1,
+      excludedCount: 0,
+      items: [source]
+    });
+    listCandidates.mockResolvedValue(candidates);
+    byId(element, "holder").dispatchEvent(
+      new CustomEvent("change", { detail: { value: "001A" } })
+    );
+    await flush();
+    byId(element, "loadSources").click();
+    await flush();
+    element.shadowRoot.querySelector('[data-id="a0B1"]').click();
+    await flush();
+    expect(byId(element, "evidenceIntro").textContent).toContain(
+      "c.AXF_SourceLink_evIntro"
+    );
+    expect(byId(element, "tieText").textContent).toContain(
+      "c.AXF_SourceLink_evTieCount"
+    );
+    const cells = element.shadowRoot.querySelectorAll(
+      '[data-id="evidenceCell"]'
+    );
+    expect(cells.length).toBe(2);
+    const chips = cells[0].querySelectorAll("span.slds-badge");
+    expect(chips.length).toBe(9);
+    expect(chips[4].textContent).toContain("c.AXF_SourceLink_evfAMOUNT");
+    expect(chips[4].textContent).toContain("c.AXF_SourceLink_evrDIFFERENT");
+    expect(chips[4].getAttribute("title")).toContain("150.00 → 200.00");
+    expect(chips[6].getAttribute("title")).toContain(
+      "c.AXF_SourceLink_evxDATE_AFTER"
+    );
+    expect(chips[8].getAttribute("title")).toContain(
+      "c.AXF_SourceLink_evxREDACTED"
+    );
+    expect(chips[8].getAttribute("title")).not.toContain("→");
+    const badges = cells[0].querySelectorAll("lightning-badge");
+    expect(badges[0].label).toBe("c.AXF_SourceLink_evConsultative");
+    expect(badges[1].label).toBe("c.AXF_SourceLink_evTied");
+    expect(cells[1].querySelectorAll("lightning-badge")[1].label).toBe(
+      "c.AXF_SourceLink_evLowEvidence"
+    );
+    // Nothing is pre-selected: the review step is reached only through an explicit click.
+    expect(byId(element, "confirm")).toBeNull();
+    expect(byId(element, "targetSummary")).toBeNull();
+    byId(element, "sortMode").dispatchEvent(
+      new CustomEvent("change", { detail: { value: "DUE_DATE" } })
+    );
+    await flush();
+    expect(
+      element.shadowRoot.querySelectorAll('[data-id="evidenceCell"]').length
+    ).toBe(2);
   });
 
   it("offers the no-forecast path and hides everything without the capability", async () => {

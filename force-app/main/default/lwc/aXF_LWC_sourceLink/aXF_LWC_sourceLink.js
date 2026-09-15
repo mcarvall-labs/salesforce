@@ -21,6 +21,48 @@ const DIRECTION_LABEL = {
   DEBIT: labels.directionDEBIT,
   CREDIT: labels.directionCREDIT
 };
+const SORT_OPTIONS = [
+  { label: labels.evSortPOLICY, value: "POLICY" },
+  { label: labels.evSortDUE_DATE, value: "DUE_DATE" }
+];
+const RELATION_VARIANT = {
+  EXACT: "success",
+  CONTAINS: "inverse",
+  COVERS: "success",
+  PARTIAL: "warning",
+  DIFFERENT: "inverse",
+  UNKNOWN: "inverse",
+  REDACTED: "inverse"
+};
+
+/** Evidence stays a fact: feature + relation + explanation resolved from codes, values as sent. */
+function evidenceChip(v) {
+  const feature = labels["evf" + v.feature] || v.feature;
+  const relation = labels["evr" + v.relation] || v.relation;
+  let explanation;
+  if (v.explanation === "DATE_AFTER" || v.explanation === "DATE_BEFORE") {
+    explanation = format(
+      labels["evx" + v.explanation],
+      Math.abs(Number(v.delta))
+    );
+  } else {
+    explanation = format(
+      labels["evx" + v.relation] || labels.evxUNKNOWN,
+      v.delta === null || v.delta === undefined ? "" : Math.abs(Number(v.delta))
+    );
+  }
+  const values =
+    v.sourceValue || v.candidateValue
+      ? ` ${v.sourceValue ?? "?"} → ${v.candidateValue ?? "?"}`
+      : "";
+  return {
+    key: v.feature,
+    label: `${feature}: ${relation}`,
+    title: `${explanation}${values}`,
+    variant: RELATION_VARIANT[v.relation] || "inverse"
+  };
+}
+
 const STATUS_LABEL = {
   PLANNED: labels.statusPLANNED,
   CONFIRMED: labels.statusCONFIRMED,
@@ -49,6 +91,8 @@ export default class AxfSourceLink extends LightningElement {
   sources = [];
   sourcePage;
   candidateTerm = "";
+  sortMode = "POLICY";
+  sortOptions = SORT_OPTIONS;
   candidates = [];
   candidatePage;
   source;
@@ -137,14 +181,50 @@ export default class AxfSourceLink extends LightningElement {
       : "";
   }
   get candidateRows() {
-    return this.candidates.map((c, i) => ({
+    const rows = this.candidates.map((c, i) => ({
       ...c,
       key: c.persisted ? c.targetId : `${c.scheduleId}#${c.sequence}`,
       index: i,
       statusLabel: STATUS_LABEL[c.status] || c.status,
       isSelected:
-        this.target && c.persisted && this.target.targetId === c.targetId
+        this.target && c.persisted && this.target.targetId === c.targetId,
+      evidenceChips: (c.evidence || []).map(evidenceChip)
     }));
+    if (this.sortMode === "DUE_DATE") {
+      // Presentation only: a stable, deterministic re-sort of the same page — never a score.
+      rows.sort(
+        (a, b) =>
+          (a.dueDate || "").localeCompare(b.dueDate || "") ||
+          a.key.localeCompare(b.key)
+      );
+    }
+    return rows;
+  }
+  get evidenceIntro() {
+    if (!this.candidatePage) {
+      return "";
+    }
+    return format(
+      labels.evIntro,
+      this.candidatePage.matchingPolicy,
+      this.candidatePage.evidenceCutoff
+    );
+  }
+  get tieText() {
+    if (
+      !this.candidatePage ||
+      (!this.candidatePage.tieCount && !this.candidatePage.lowEvidenceCount)
+    ) {
+      return "";
+    }
+    return format(
+      labels.evTieCount,
+      this.candidatePage.tieCount || 0,
+      this.candidatePage.lowEvidenceCount || 0
+    );
+  }
+  handleSort(event) {
+    this.sortMode = event.detail.value;
   }
   get hasCandidates() {
     return this.candidates.length > 0;

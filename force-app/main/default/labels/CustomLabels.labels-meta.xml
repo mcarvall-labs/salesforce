@@ -1847,4 +1847,124 @@
   ><fullName>AXF_SourceLink_codeMATERIALIZATION_REQUIRED</fullName><language
     >en_US</language><protected>false</protected><shortDescription
     >Code materialization</shortDescription><value
-    >Projected occurrences must be materialized before linking (AXF-136).</value></labels></CustomLabels>
+    >Projected occurrences must be materialized before linking (AXF-136).</value></labels><labels
+  ><fullName>AXF_SourceLink_evIntro</fullName><language
+    >en_US</language><protected>false</protected><shortDescription
+    >Evidence intro</shortDescription><value
+    >Evidence is shown as independent facts under {0} (cutoff {1}). There is no score, weight or tolerance; ties and uncertainty stay explicit and nothing is confirmed automatically.</value></labels><labels
+  ><fullName>AXF_SourceLink_evColumn</fullName><language
+    >en_US</language><protected>false</protected><shortDescription
+    >Evidence column</shortDescription><value>Evidence</value></labels><labels
+  ><fullName>AXF_SourceLink_evConsultative</fullName><language
+    >en_US</language><protected>false</protected><shortDescription
+    >Consultative</shortDescription><value>Consultative</value></labels><labels
+  ><fullName>AXF_SourceLink_evTied</fullName><language
+    >en_US</language><protected>false</protected><shortDescription
+    >Tied</shortDescription><value
+    >Tie — identical evidence</value></labels><labels><fullName
+    >AXF_SourceLink_evLowEvidence</fullName><language>en_US</language><protected
+    >false</protected><shortDescription>Low evidence</shortDescription><value
+    >Low evidence — uncertain</value></labels><labels><fullName
+    >AXF_SourceLink_evTieCount</fullName><language>en_US</language><protected
+    >false</protected><shortDescription>Tie count</shortDescription><value
+    >{0} candidate(s) in a tie; {1} with low evidence. No winner is selected.</value></labels><labels
+  ><fullName>AXF_SourceLink_evSort</fullName><language
+    >en_US</language><protected>false</protected><shortDescription
+    >Sort</shortDescription><value>Presentation order</value></labels><labels
+  ><fullName>AXF_SourceLink_evSortPOLICY</fullName><language
+    >en_US</language><protected>false</protected><shortDescription
+    >Sort policy</shortDescription><value
+    >Policy order (identity, type, record)</value></labels><labels><fullName
+    >AXF_SourceLink_evSortDUE_DATE</fullName><language
+    >en_US</language><protected>false</protected><shortDescription
+    >Sort due date</shortDescription><value>Due date</value></labels><labels
+  ><fullName>AXF_SourceLink_evfEXTERNAL_IDENTITY</fullName><language
+    >en_US</language><protected>false</protected><shortDescription
+    >Feature external identity</shortDescription><value
+    >External identity</value></labels><labels><fullName
+    >AXF_SourceLink_evfSOURCE_IDENTITY</fullName><language
+    >en_US</language><protected>false</protected><shortDescription
+    >Feature source identity</shortDescription><value
+    >Source account/card</value></labels><labels><fullName
+    >AXF_SourceLink_evfHOLDER</fullName><language>en_US</language><protected
+    >false</protected><shortDescription>Feature holder</shortDescription><value
+    >Holder</value></labels><labels><fullName
+    >AXF_SourceLink_evfCURRENCY</fullName><language>en_US</language><protected
+    >false</protected><shortDescription
+    >Feature currency</shortDescription><value>Currency</value></labels><labels
+  ><fullName>AXF_SourceLink_evfAMOUNT</fullName><language
+    >en_US</language><protected>false</protected><shortDescription
+    >Feature amount</shortDescription><value>Amount</value></labels><labels
+  ><fullName>AXF_SourceLink_evfRESIDUAL</fullName><language
+    >en_US</language><protected>false</protected><shortDescription
+    >Feature residual</shortDescription><value>Remaining</value></labels><labels
+  ><fullName>AXF_SourceLink_evfDATE</fullName><language
+    >en_US</language><protected>false</protected><shortDescription
+    >Feature date</shortDescription><value>Date</value></labels><labels
+  ><fullName>AXF_SourceLink_evfDESCRIPTION</fullName><language
+    >en_US</language><protected>false</protected><shortDescription
+    >Feature description</shortDescription><value
+    >Description</value></labels><labels><fullName
+    >AXF_SourceLink_evfCATEGORY</fullName><language>en_US</language><protected
+    >false</protected><shortDescription
+    >Feature category</shortDescription><value>Category</value></labels><labels
+  ><fullName>AXF_SourceLink_evrEXACT</fullName><language
+    >en_US</language><protected>false</protected><shortDescription
+    >Relation exact</shortDescription><value>identical</value></labels><labels
+  ><fullName>AXF_SourceLink_evrCONTAINS</fullName><language
+    >en_US</language><protected>false</protected><shortDescription
+    >Relation contains</shortDescription><value
+    >one contains the other</value></labels><labels><fullName
+    >AXF_SourceLink_evrCOVERS</fullName><language>en_US</language><protected
+    >false</protected><shortDescription>Relation covers</shortDescription><value
+    >source covers candidate</value></labels><labels><fullName
+    >AXF_SourceLink_evrPARTIAL</fullName><language>en_US</language><protected
+    >false</protected><shortDescription
+    >Relation partial</shortDescription><value
+    >source covers part</value></labels><labels><fullName
+    >AXF_SourceLink_evrDIFFERENT</fullName><language>en_US</language><protected
+    >false</protected><shortDescription
+    >Relation different</shortDescription><value
+    >different</value></labels><labels><fullName
+    >AXF_SourceLink_evrUNKNOWN</fullName><language>en_US</language><protected
+    >false</protected><shortDescription
+    >Relation unknown</shortDescription><value>unknown</value></labels><labels
+  ><fullName>AXF_SourceLink_evrREDACTED</fullName><language
+    >en_US</language><protected>false</protected><shortDescription
+    >Relation redacted</shortDescription><value>redacted</value></labels><labels
+  ><fullName>AXF_SourceLink_evxEXACT</fullName><language
+    >en_US</language><protected>false</protected><shortDescription
+    >Explain exact</shortDescription><value
+    >Identical on both sides.</value></labels><labels><fullName
+    >AXF_SourceLink_evxCONTAINS</fullName><language>en_US</language><protected
+    >false</protected><shortDescription
+    >Explain contains</shortDescription><value
+    >After folding case, spaces and accents, one text contains the other. No fuzzy similarity is applied.</value></labels><labels
+  ><fullName>AXF_SourceLink_evxCOVERS</fullName><language
+    >en_US</language><protected>false</protected><shortDescription
+    >Explain covers</shortDescription><value
+    >The source remaining amount extinguishes the candidate remaining amount (difference {0}).</value></labels><labels
+  ><fullName>AXF_SourceLink_evxPARTIAL</fullName><language
+    >en_US</language><protected>false</protected><shortDescription
+    >Explain partial</shortDescription><value
+    >The source remaining amount covers only part of the candidate (missing {0}).</value></labels><labels
+  ><fullName>AXF_SourceLink_evxDIFFERENT</fullName><language
+    >en_US</language><protected>false</protected><shortDescription
+    >Explain different</shortDescription><value
+    >Different on both sides ({0}). Shown as a fact — no tolerance decides for you.</value></labels><labels
+  ><fullName>AXF_SourceLink_evxUNKNOWN</fullName><language
+    >en_US</language><protected>false</protected><shortDescription
+    >Explain unknown</shortDescription><value
+    >Not available on one side. Unknown is never a negative signal.</value></labels><labels
+  ><fullName>AXF_SourceLink_evxREDACTED</fullName><language
+    >en_US</language><protected>false</protected><shortDescription
+    >Explain redacted</shortDescription><value
+    >Not authorized for you; redacted and excluded from ordering.</value></labels><labels
+  ><fullName>AXF_SourceLink_evxDATE_AFTER</fullName><language
+    >en_US</language><protected>false</protected><shortDescription
+    >Explain date after</shortDescription><value
+    >Candidate is due {0} day(s) after the source date.</value></labels><labels
+  ><fullName>AXF_SourceLink_evxDATE_BEFORE</fullName><language
+    >en_US</language><protected>false</protected><shortDescription
+    >Explain date before</shortDescription><value
+    >Candidate is due {0} day(s) before the source date.</value></labels></CustomLabels>

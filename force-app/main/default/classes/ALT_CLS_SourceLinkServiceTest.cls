@@ -450,9 +450,9 @@ private class ALT_CLS_SourceLinkServiceTest {
         }
       }
       Assert.areEqual(
-        new List<Id>{ plans[2].Id, plans[1].Id, plans[0].Id, plans[3].Id },
+        new List<Id>{ plans[3].Id, plans[0].Id, plans[1].Id, plans[2].Id },
         persisted,
-        'due date, then amount, then id; funding-matched plan included'
+        'AXF-MATCHING presentation order: exact source identity first, then record identity; never the closest amount or date'
       );
       Assert.isTrue(
         scheduled > 0,
@@ -472,10 +472,50 @@ private class ALT_CLS_SourceLinkServiceTest {
         page.items[0].targetId,
         'pages follow the same deterministic order'
       );
-      Assert.isNotNull(
-        page.items[0].scheduleId,
-        'occurrence due today comes first'
+      Assert.areEqual(plans[3].Id, page.items[0].targetId);
+      // AXF-139: evidence is independent, explicit and consultative.
+      Assert.areEqual(
+        ALT_CLS_MatchEvidence.MATCHING_POLICY,
+        all.matchingPolicy
       );
+      Assert.areEqual('CONSULTATIVE', all.state);
+      Assert.isNotNull(all.evidenceCutoff);
+      Map<String, ALT_CLS_MatchEvidence.EvidenceView> funded = new Map<String, ALT_CLS_MatchEvidence.EvidenceView>();
+      CandidateViewByTarget lookup = new CandidateViewByTarget(all.items);
+      for (
+        ALT_CLS_MatchEvidence.EvidenceView v : lookup.get(plans[3].Id).evidence
+      ) {
+        funded.put(v.feature, v);
+      }
+      Assert.areEqual(9, funded.size(), 'every feature is reported');
+      Assert.areEqual('EXACT', funded.get('SOURCE_IDENTITY').relation);
+      Assert.areEqual('EXACT', funded.get('HOLDER').relation);
+      Assert.areEqual('EXACT', funded.get('AMOUNT').relation);
+      Assert.areEqual('EXACT', funded.get('RESIDUAL').relation);
+      Assert.areEqual('DIFFERENT', funded.get('DATE').relation);
+      Assert.areEqual(
+        10,
+        funded.get('DATE').delta,
+        'signed days, no tolerance'
+      );
+      Assert.areEqual('DIFFERENT', funded.get('DESCRIPTION').relation);
+      Assert.areEqual('UNKNOWN', funded.get('CATEGORY').relation);
+      Assert.areEqual('UNKNOWN', funded.get('EXTERNAL_IDENTITY').relation);
+      Assert.isFalse(lookup.get(plans[3].Id).tied);
+      Assert.isTrue(
+        lookup.get(plans[0].Id).tied,
+        'identical evidence is an explicit tie'
+      );
+      Assert.isTrue(lookup.get(plans[2].Id).tied);
+      Assert.isTrue(all.tieCount >= 2, 'ties counted: ' + all.tieCount);
+      for (ALT_CLS_SourceLinkService.CandidateView c : all.items) {
+        Assert.areEqual(
+          'CONSULTATIVE',
+          c.state,
+          'nothing is confirmed automatically'
+        );
+        Assert.areEqual(9, c.evidence.size());
+      }
       Assert.areEqual(
         1,
         searched.items.size(),
@@ -895,5 +935,25 @@ private class ALT_CLS_SourceLinkServiceTest {
       Assert.isNotNull(result.allocationId);
     }
     Test.stopTest();
+  }
+
+  private class CandidateViewByTarget {
+    private Map<Id, ALT_CLS_SourceLinkService.CandidateView> rows = new Map<Id, ALT_CLS_SourceLinkService.CandidateView>();
+    public CandidateViewByTarget(
+      List<ALT_CLS_SourceLinkService.CandidateView> items
+    ) {
+      for (ALT_CLS_SourceLinkService.CandidateView c : items) {
+        if (c.targetId != null) {
+          rows.put(c.targetId, c);
+        }
+      }
+    }
+    public ALT_CLS_SourceLinkService.CandidateView get(Id targetId) {
+      Assert.isTrue(
+        rows.containsKey(targetId),
+        'candidate present: ' + targetId
+      );
+      return rows.get(targetId);
+    }
   }
 }

@@ -201,6 +201,14 @@
           <p class="slds-text-body_small slds-m-bottom_small">
             {labels.candidatesIntro}
           </p>
+          <template lwc:if={candidatePage}>
+            <p
+              class="slds-text-body_small slds-m-bottom_small"
+              data-id="evidenceIntro"
+            >
+              {evidenceIntro}
+            </p>
+          </template>
           <div class="slds-grid slds-gutters slds-wrap">
             <div class="slds-col slds-size_1-of-1 slds-medium-size_6-of-12">
               <lightning-input
@@ -217,6 +225,15 @@
                 disabled={busy}
                 data-id="searchCandidates"
               ></lightning-button>
+            </div>
+            <div class="slds-col slds-size_1-of-1 slds-medium-size_3-of-12">
+              <lightning-combobox
+                label={labels.evSort}
+                options={sortOptions}
+                value={sortMode}
+                onchange={handleSort}
+                data-id="sortMode"
+              ></lightning-combobox>
             </div>
           </div>
           <template lwc:if={busy}>
@@ -235,6 +252,11 @@
             <p class="slds-text-body_small slds-m-top_small">
               {virtualCountText} {excludedCandidatesText} {scanTruncatedText}
             </p>
+            <template lwc:if={tieText}>
+              <p class="slds-text-body_small" role="status" data-id="tieText">
+                {tieText}
+              </p>
+            </template>
             <table
               class="slds-table slds-table_cell-buffer slds-table_bordered slds-m-top_x-small"
               data-id="candidateTable"
@@ -247,6 +269,7 @@
                   <th scope="col">{labels.colStatus}</th>
                   <th scope="col">{labels.colAmount}</th>
                   <th scope="col">{labels.colResidual}</th>
+                  <th scope="col">{labels.evColumn}</th>
                   <th scope="col">{labels.colAction}</th>
                 </tr>
               </thead>
@@ -283,6 +306,39 @@
                         format-style="currency"
                         currency-code={row.currencyIso}
                       ></lightning-formatted-number>
+                    </td>
+                    <td data-id="evidenceCell">
+                      <lightning-badge
+                        label={labels.evConsultative}
+                        class="slds-m-right_xx-small"
+                      ></lightning-badge>
+                      <template lwc:if={row.tied}>
+                        <lightning-badge
+                          label={labels.evTied}
+                          class="slds-theme_warning slds-m-right_xx-small"
+                        ></lightning-badge>
+                      </template>
+                      <template lwc:if={row.lowEvidence}>
+                        <lightning-badge
+                          label={labels.evLowEvidence}
+                          class="slds-theme_warning slds-m-right_xx-small"
+                        ></lightning-badge>
+                      </template>
+                      <ul class="slds-list_horizontal slds-wrap">
+                        <template for:each={row.evidenceChips} for:item="chip">
+                          <li
+                            key={chip.key}
+                            class="slds-m-right_xx-small slds-m-top_xx-small"
+                          >
+                            <span
+                              class="slds-badge"
+                              title={chip.title}
+                              data-variant={chip.variant}
+                              >{chip.label}</span
+                            >
+                          </li>
+                        </template>
+                      </ul>
                     </td>
                     <td>
                       <template lwc:if={row.linkable}>
