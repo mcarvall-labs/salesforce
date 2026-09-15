@@ -98,11 +98,21 @@ public with sharing class ALT_CLS_ArchiveReadService {
       input.toDate >= policy.hotWindowStart
       ? policy.hotWindowStart.addDays(-1)
       : input.toDate;
-    result.fromDate = input.fromDate == null
-      ? Date.newInstance(1700, 1, 1)
+    Date floor = Date.newInstance(1700, 1, 1);
+    result.fromDate = input.fromDate == null ||
+      input.fromDate < floor
+      ? floor
       : input.fromDate;
     if (result.fromDate > result.toDate) {
       return result; // the requested period lies inside the hot window: nothing archived
+    }
+    if (
+      input.cursorDate != null &&
+      (input.cursorDate > result.toDate ||
+      input.cursorDate < result.fromDate)
+    ) {
+      // A cursor is only valid inside the bounded window it was issued for.
+      throw failure('INVALID_INPUT');
     }
     Integer size = input.pageSize == null ||
       input.pageSize < 1 ||

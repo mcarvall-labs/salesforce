@@ -54,6 +54,8 @@ import codePolicy from "@salesforce/label/c.AXF_ArchiveExplorer_codePolicy";
 import codeRunInProgress from "@salesforce/label/c.AXF_ArchiveExplorer_codeRunInProgress";
 import codeAsync from "@salesforce/label/c.AXF_ArchiveExplorer_codeAsync";
 import updated from "@salesforce/label/c.AXF_ArchiveExplorer_updated";
+import holderSearch from "@salesforce/label/c.AXF_ArchiveExplorer_holderSearch";
+import colReason from "@salesforce/label/c.AXF_ArchiveExplorer_colReason";
 
 export default {
   title,
@@ -111,5 +113,7 @@ export default {
   codePolicy,
   codeRunInProgress,
   codeAsync,
-  updated
+  updated,
+  holderSearch,
+  colReason
 };

@@ -914,4 +914,8 @@
     >A plataforma não conseguiu agendar a execução agora. Tente mais tarde.</label><name
     >AXF_ArchiveExplorer_codeAsync</name></customLabels><customLabels><label
     >Resultados do arquivo atualizados.</label><name
-    >AXF_ArchiveExplorer_updated</name></customLabels></Translations>
+    >AXF_ArchiveExplorer_updated</name></customLabels><customLabels><label
+    >Buscar titular</label><name
+    >AXF_ArchiveExplorer_holderSearch</name></customLabels><customLabels><label
+    >Motivo</label><name
+    >AXF_ArchiveExplorer_colReason</name></customLabels></Translations>

@@ -28,6 +28,11 @@ jest.mock(
   () => ({ default: jest.fn() }),
   { virtual: true }
 );
+jest.mock(
+  "@salesforce/apex",
+  () => ({ refreshApex: jest.fn(() => Promise.resolve()) }),
+  { virtual: true }
+);
 
 const flush = async () => {
   for (let i = 0; i < 8; i++) {
@@ -103,7 +108,7 @@ describe("c-aXF_LWC_archiveExplorer", () => {
       element.shadowRoot.querySelector('[data-id="hot-window"]').textContent
     ).toContain("hotWindow");
     expect(element.shadowRoot.querySelector('[data-id="from"]').max).toBe(
-      "2024-09-01"
+      "2024-08-31"
     );
     expect(element.shadowRoot.querySelector('[data-id="idle"]')).not.toBeNull();
     await selectHolder(element);
@@ -209,6 +214,65 @@ describe("c-aXF_LWC_archiveExplorer", () => {
     expect(
       element.shadowRoot.querySelector('[data-run="a01"]').textContent
     ).toContain("hotBlocked");
+  });
+
+  it("reports a failing family without hiding the others, refreshes the wire on retry and hides everything without capability", async () => {
+    listRuns.mockResolvedValue([]);
+    startArchive
+      .mockResolvedValueOnce({ runId: "a01" })
+      .mockRejectedValueOnce({ body: { message: "RUN_IN_PROGRESS" } })
+      .mockResolvedValueOnce({ runId: "a03" });
+    const element = build();
+    getContext.emit(context);
+    await flush();
+    await selectHolder(element);
+    element.shadowRoot.querySelector('[data-id="start"]').click();
+    await flush();
+    element.shadowRoot.querySelector('[data-id="confirm-cancel"]').click();
+    await flush();
+    expect(element.shadowRoot.querySelector('[data-id="confirm"]')).toBeNull();
+    expect(startArchive).not.toHaveBeenCalled();
+    element.shadowRoot.querySelector('[data-id="start"]').click();
+    await flush();
+    element.shadowRoot.querySelector('[data-id="confirm-start"]').click();
+    await flush();
+    expect(startArchive).toHaveBeenCalledTimes(3);
+    const runsError = element.shadowRoot.querySelector(
+      '[data-id="runs-error"]'
+    );
+    expect(runsError.textContent).toContain("codeRunInProgress");
+    expect(runsError.textContent).toContain("familyCCT");
+    expect(element.shadowRoot.querySelector('[data-id="error"]')).toBeNull();
+
+    const { refreshApex } = require("@salesforce/apex");
+    const failing = build();
+    getContext.error({ message: "FORBIDDEN" });
+    await flush();
+    expect(
+      failing.shadowRoot.querySelector('[data-id="error"]').textContent
+    ).toContain("codeForbidden");
+    failing.shadowRoot.querySelector('[data-id="retry"]').click();
+    await flush();
+    expect(refreshApex).toHaveBeenCalled();
+
+    const denied = build();
+    getContext.emit({ ...context, canRead: false, canArchive: false });
+    await flush();
+    expect(denied.shadowRoot.querySelector("lightning-card")).toBeNull();
+    expect(
+      denied.shadowRoot.querySelector('[data-id="forbidden"]')
+    ).not.toBeNull();
+
+    const blocked = build();
+    getContext.emit({
+      ...context,
+      hotWindowStart: null,
+      policyVersion: "POLICY_MISSING"
+    });
+    await flush();
+    expect(
+      blocked.shadowRoot.querySelector('[data-id="policy-blocked"]')
+    ).not.toBeNull();
   });
 
   it("hides the start button without the archive capability", async () => {

@@ -13,9 +13,15 @@ public with sharing class AXF_CLS_ArchiveRunBatch implements Database.Batchable<
   }
 
   public Database.QueryLocator start(Database.BatchableContext context) {
-    return ALT_CLS_ArchiveRunService.locator(
-      ALT_CLS_ArchiveRunService.read(runId)
-    );
+    try {
+      return ALT_CLS_ArchiveRunService.locator(
+        ALT_CLS_ArchiveRunService.read(runId)
+      );
+    } catch (Exception failure) {
+      failed = true;
+      record(reason('START_FAILED', failure));
+      throw failure;
+    }
   }
 
   public void execute(Database.BatchableContext context, List<SObject> scope) {
@@ -26,10 +32,11 @@ public with sharing class AXF_CLS_ArchiveRunBatch implements Database.Batchable<
       ALT_CLS_ArchiveRunService.archiveChunk(runId, scope);
     } catch (Exception failure) {
       failed = true;
-      ALT_CLS_ArchiveRunService.fail(
-        runId,
-        'CHUNK_FAILED:' + failure.getTypeName()
-      );
+      record(reason('CHUNK_FAILED', failure));
+      if (context != null) {
+        // No further chunk is useful once the checkpoint stopped moving.
+        System.abortJob(context.getJobId());
+      }
     }
   }
 
@@ -40,10 +47,29 @@ public with sharing class AXF_CLS_ArchiveRunBatch implements Database.Batchable<
     try {
       ALT_CLS_ArchiveRunService.verify(runId);
     } catch (Exception failure) {
-      ALT_CLS_ArchiveRunService.fail(
-        runId,
-        'VERIFY_FAILED:' + failure.getTypeName()
+      record(reason('VERIFY_FAILED', failure));
+    }
+  }
+
+  /** Recording the failure must never itself throw (row lock, trigger, visibility). */
+  private void record(String reason) {
+    try {
+      ALT_CLS_ArchiveRunService.fail(runId, reason);
+    } catch (Exception ignored) {
+      System.debug(
+        LoggingLevel.ERROR,
+        'Archive run ' + runId + ' could not record: ' + reason
       );
     }
+  }
+
+  /** Typed service codes are kept verbatim; platform failures contribute only their type. */
+  private static String reason(String prefix, Exception failure) {
+    if (failure instanceof ALT_CLS_ArchiveRunService.ArchiveRunException) {
+      return prefix +
+        ':' +
+        ((ALT_CLS_ArchiveRunService.ArchiveRunException) failure).code;
+    }
+    return prefix + ':' + failure.getTypeName();
   }
 }

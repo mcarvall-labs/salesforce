@@ -6,14 +6,37 @@
   >
     <div class="slds-p-horizontal_medium slds-p-bottom_medium">
       <p class="slds-text-body_small slds-m-bottom_small">{labels.intro}</p>
-      <p class="slds-text-body_small slds-m-bottom_small" data-id="hot-window">
-        {hotWindowText}
-      </p>
+      <template lwc:if={policyBlocked}>
+        <div
+          class="slds-notify slds-notify_alert slds-alert_warning slds-m-bottom_small"
+          role="alert"
+          data-id="policy-blocked"
+        >
+          {labels.codePolicy}
+        </div>
+      </template>
+      <template lwc:else>
+        <p
+          class="slds-text-body_small slds-m-bottom_small"
+          data-id="hot-window"
+        >
+          {hotWindowText}
+        </p>
+      </template>
       <div class="slds-assistive-text" aria-live="polite" data-id="announcer">
         {announcement}
       </div>
 
       <div class="slds-grid slds-gutters slds-wrap">
+        <div class="slds-col slds-size_1-of-1 slds-medium-size_1-of-5">
+          <lightning-input
+            data-id="holder-search"
+            type="search"
+            label={labels.holderSearch}
+            value={holderSearch}
+            onchange={handleHolderSearch}
+          ></lightning-input>
+        </div>
         <div class="slds-col slds-size_1-of-1 slds-medium-size_2-of-5">
           <lightning-combobox
             data-id="holder"
@@ -24,7 +47,7 @@
             onchange={handleHolderChange}
           ></lightning-combobox>
         </div>
-        <div class="slds-col slds-size_1-of-2 slds-medium-size_1-of-5">
+        <div class="slds-col slds-size_1-of-2 slds-medium-size_1-of-10">
           <lightning-input
             data-id="from"
             type="date"
@@ -34,7 +57,7 @@
             onchange={handleFromChange}
           ></lightning-input>
         </div>
-        <div class="slds-col slds-size_1-of-2 slds-medium-size_1-of-5">
+        <div class="slds-col slds-size_1-of-2 slds-medium-size_1-of-10">
           <lightning-input
             data-id="to"
             type="date"
@@ -172,6 +195,7 @@
               data-id="start"
               variant="neutral"
               label={labels.startArchive}
+              disabled={startDisabled}
               onclick={handleStartArchive}
             ></lightning-button>
           </template>
@@ -183,6 +207,15 @@
             onclick={handleRefreshRuns}
           ></lightning-button>
         </div>
+        <template lwc:if={runsError}>
+          <div
+            class="slds-notify slds-notify_alert slds-alert_error slds-m-top_x-small"
+            role="alert"
+            data-id="runs-error"
+          >
+            {runsError}
+          </div>
+        </template>
         <template lwc:if={hasRuns}>
           <div class="slds-scrollable_x">
             <table
@@ -196,6 +229,7 @@
                   <th scope="col">{labels.colCounts}</th>
                   <th scope="col">{labels.colWatermark}</th>
                   <th scope="col">{labels.colHotRemoval}</th>
+                  <th scope="col">{labels.colReason}</th>
                   <th scope="col">{labels.colCheckpoint}</th>
                 </tr>
               </thead>
@@ -205,8 +239,9 @@
                     <th scope="row">{run.familyLabel}</th>
                     <td data-phase={run.phase}>{run.phaseLabel}</td>
                     <td>{run.counts}</td>
-                    <td>{run.watermark}</td>
+                    <td>{run.watermarkLabel}</td>
                     <td>{run.hotRemovalLabel}</td>
+                    <td data-id="run-reason">{run.reasonLabel}</td>
                     <td>
                       <lightning-formatted-date-time
                         value={run.lastCheckpointAt}
@@ -238,6 +273,7 @@
           aria-labelledby="axf-ae-confirm"
           class="slds-modal slds-fade-in-open"
           data-id="confirm"
+          onkeydown={handleDialogKeydown}
         >
           <div class="slds-modal__container">
             <header class="slds-modal__header">
@@ -268,4 +304,9 @@
       </template>
     </div>
   </lightning-card>
+  <template lwc:if={isForbidden}>
+    <p class="slds-p-around_medium slds-text-color_weak" data-id="forbidden">
+      {labels.codeForbidden}
+    </p>
+  </template>
 </template>

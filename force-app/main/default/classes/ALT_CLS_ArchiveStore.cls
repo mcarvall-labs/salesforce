@@ -2,12 +2,16 @@
  * @description AXF-95 — the only gateway to AXF_OBJ_TransactionArchive__b. Big Object DML is
  * immediate (never rolled back) and rows are addressed by the immutable index
  * (AccountKey, BookingDate DESC, ArchiveKey), so writes are idempotent upserts and reads are
- * always bounded by the index plus a LIMIT. Ordinary sharing does not exist for big objects:
+ * always bounded by the index plus a LIMIT (SYSTEM_MODE: big-object SOQL enforces FLS, and no
+ * user is granted the object directly). Ordinary sharing does not exist for big objects:
  * callers (ALT_CLS_ArchiveRunService / ALT_CLS_ArchiveReadService) revalidate the holder before
  * and after every call. Tests replace the store through `storeOverride` (DML would persist).
  */
 public without sharing class ALT_CLS_ArchiveStore {
   public static final Integer MAX_PAGE = 200;
+
+  public class ArchiveStoreException extends Exception {
+  }
 
   public interface Store {
     void write(List<AXF_OBJ_TransactionArchive__b> rows);
@@ -58,7 +62,14 @@ public without sharing class ALT_CLS_ArchiveStore {
       if (rows.isEmpty()) {
         return;
       }
-      Database.insertImmediate(rows);
+      for (Database.SaveResult result : Database.insertImmediate(rows)) {
+        if (!result.isSuccess()) {
+          // A partial write must stop the checkpoint from moving.
+          throw new ArchiveStoreException(
+            result.getErrors()[0].getStatusCode().name()
+          );
+        }
+      }
     }
 
     public List<AXF_OBJ_TransactionArchive__b> sameDay(
@@ -93,6 +104,7 @@ public without sharing class ALT_CLS_ArchiveStore {
           AXF_ARC_TXT_AccountKey__c = :accountKey
           AND AXF_ARC_DT_BookingDate__c = :bookingDate
           AND AXF_ARC_TXT_ArchiveKey__c > :afterKey
+        WITH SYSTEM_MODE
         LIMIT :top
       ];
     }
@@ -129,6 +141,7 @@ public without sharing class ALT_CLS_ArchiveStore {
           AXF_ARC_TXT_AccountKey__c = :accountKey
           AND AXF_ARC_DT_BookingDate__c < :beforeDate
           AND AXF_ARC_DT_BookingDate__c >= :fromDate
+        WITH SYSTEM_MODE
         LIMIT :top
       ];
     }
@@ -165,6 +178,7 @@ public without sharing class ALT_CLS_ArchiveStore {
           AXF_ARC_TXT_AccountKey__c = :accountKey
           AND AXF_ARC_DT_BookingDate__c <= :toDate
           AND AXF_ARC_DT_BookingDate__c >= :fromDate
+        WITH SYSTEM_MODE
         LIMIT :top
       ];
     }

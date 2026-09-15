@@ -14,12 +14,16 @@ public with sharing class ALT_CLS_ArchiveRunService {
     'CCT',
     'FTX'
   };
-  public static final Integer VERIFY_LIMIT = 2000;
+  /** Rows re-read in finish(): its own transaction, well under the 50k SOQL row limit. */
+  public static final Integer VERIFY_LIMIT = 10000;
+  @TestVisible
+  private static Integer verifyLimit = VERIFY_LIMIT;
   private static final Set<String> AXON_RECORD_TYPES = new Set<String>{
     ALT_CLS_AxonHolder.RT_PERSON,
     ALT_CLS_AxonHolder.RT_BUSINESS
   };
 
+  @TestVisible
   private static Boolean writing = false;
   public static Boolean isWriting() {
     return writing;
@@ -96,6 +100,18 @@ public with sharing class ALT_CLS_ArchiveRunService {
     requireFullAccess(accountId);
     String runKey = runKey(family, accountId, policy);
     AXF_OBJ_ArchiveRun__c run = existing(runKey);
+    if (run == null && ALT_CLS_ArchiveRunIntegrity.exists(runKey)) {
+      // Another archivist owns the checkpoint (OWD Private): resuming it needs that user or a share.
+      throw failure('RUN_OWNED_BY_OTHER');
+    }
+    if (
+      (run != null &&
+      ALT_CLS_ArchiveRunIntegrity.isJobActive(run.AXF_ARR_TXT_JobId__c)) ||
+      ALT_CLS_ArchiveRunIntegrity.anotherRunActive(family, accountId, runKey)
+    ) {
+      // Same checkpoint still executing, or a sibling run (e.g. previous month's window).
+      throw failure('RUN_IN_PROGRESS');
+    }
     Boolean resumed = run != null;
     Savepoint point = Database.setSavepoint();
     try {
@@ -118,9 +134,12 @@ public with sharing class ALT_CLS_ArchiveRunService {
       } else {
         if (
           run.AXF_ARR_PKL_Phase__c == 'HOT_RETAINED' ||
-          run.AXF_ARR_PKL_Phase__c == 'COMPLETED'
+          run.AXF_ARR_PKL_Phase__c == 'COMPLETED' ||
+          String.valueOf(run.AXF_ARR_TXT_Reason__c)
+            .startsWith('PARITY_MISMATCH')
         ) {
-          // Re-scan the whole window: upserts by ArchiveKey make this safe.
+          // Re-scan the whole window (a parity failure may sit before the watermark): upserts
+          // by ArchiveKey make this safe.
           run.AXF_ARR_DAT_Watermark__c = null;
           run.AXF_ARR_NUM_ScannedCount__c = 0;
           run.AXF_ARR_NUM_ArchivedCount__c = 0;
@@ -143,10 +162,19 @@ public with sharing class ALT_CLS_ArchiveRunService {
       writing = false;
     }
     if (enqueueBatches) {
-      Database.executeBatch(
-        new AXF_CLS_ArchiveRunBatch(run.Id),
-        policy.batchSize
-      );
+      Id jobId;
+      try {
+        jobId = Database.executeBatch(
+          new AXF_CLS_ArchiveRunBatch(run.Id),
+          policy.batchSize
+        );
+      } catch (AsyncException unavailable) {
+        fail(read(run.Id), 'ENQUEUE_FAILED');
+        throw failure('ASYNC_UNAVAILABLE');
+      }
+      run = read(run.Id);
+      run.AXF_ARR_TXT_JobId__c = jobId;
+      checkpoint(run);
     }
     RunView view = toView(read(run.Id));
     view.resumed = resumed;
@@ -298,8 +326,8 @@ public with sharing class ALT_CLS_ArchiveRunService {
     try {
       ALT_CLS_ArchiveStore.instance().write(rows);
     } catch (Exception writeFailure) {
-      fail(run, 'ARCHIVE_WRITE_FAILED');
-      throw writeFailure;
+      // The batch records the reason once and stops; the checkpoint is not moved.
+      throw failure('ARCHIVE_WRITE_FAILED:' + writeFailure.getTypeName());
     }
     // Checkpoint after the write: an interruption between the two replays this chunk, and the
     // upsert-by-key makes the replay harmless.
@@ -310,11 +338,6 @@ public with sharing class ALT_CLS_ArchiveRunService {
       nz(run.AXF_ARR_NUM_ArchivedCount__c) + rows.size();
     run.AXF_ARR_DAT_Watermark__c = lastDate;
     run.AXF_ARR_LTX_AmountsByCurrency__c = JSON.serialize(totals);
-    run.AXF_ARR_TXT_ContentHash__c = ALT_CLS_ArchiveStore.sha256(
-      (run.AXF_ARR_TXT_ContentHash__c == null
-        ? ''
-        : run.AXF_ARR_TXT_ContentHash__c) + String.join(keys, '|')
-    );
     run.AXF_ARR_DTM_LastCheckpointAt__c = Datetime.now();
     checkpoint(run);
   }
@@ -336,6 +359,8 @@ public with sharing class ALT_CLS_ArchiveRunService {
     String cursorKey;
     Boolean sampled = false;
     Map<String, CurrencyTotal> archiveTotals = new Map<String, CurrencyTotal>();
+    List<String> verifiedKeys = new List<String>();
+    Integer pageSize = Math.min(ALT_CLS_ArchiveStore.MAX_PAGE, verifyLimit);
     while (true) {
       List<AXF_OBJ_TransactionArchive__b> page = ALT_CLS_ArchiveReadService.page(
         accountKey,
@@ -343,7 +368,7 @@ public with sharing class ALT_CLS_ArchiveRunService {
         toDate,
         cursorDate,
         cursorKey,
-        ALT_CLS_ArchiveStore.MAX_PAGE
+        pageSize
       );
       for (AXF_OBJ_TransactionArchive__b row : page) {
         read++;
@@ -354,12 +379,13 @@ public with sharing class ALT_CLS_ArchiveRunService {
         ) {
           verified++;
           accumulate(archiveTotals, row);
+          verifiedKeys.add(row.AXF_ARC_TXT_ArchiveKey__c);
         }
       }
-      if (page.size() < ALT_CLS_ArchiveStore.MAX_PAGE) {
+      if (page.size() < pageSize) {
         break;
       }
-      if (read >= VERIFY_LIMIT) {
+      if (read >= verifyLimit) {
         sampled = true;
         break;
       }
@@ -373,14 +399,26 @@ public with sharing class ALT_CLS_ArchiveRunService {
     if (!sampled) {
       // Parity: what the archive holds for this run equals what the hot copy holds in scope
       // (count and amounts per currency), independently recounted on both sides.
-      String mismatch = mismatch(hotTotals(run), archiveTotals);
+      Map<String, CurrencyTotal> hotTotals = hotTotals(run);
+      String mismatch = mismatch(hotTotals, archiveTotals);
       if (mismatch != null) {
         fail(run, 'PARITY_MISMATCH:' + mismatch);
         return;
       }
+      // Authoritative numbers replace the progress counters (resume/replay may have inflated them).
+      Integer hotCount = 0;
+      for (CurrencyTotal total : hotTotals.values()) {
+        hotCount += total.count;
+      }
+      run.AXF_ARR_NUM_ScannedCount__c = hotCount;
       run.AXF_ARR_NUM_ArchivedCount__c = verified;
       run.AXF_ARR_LTX_AmountsByCurrency__c = JSON.serialize(archiveTotals);
     }
+    // Reproducible run hash: the sorted set of verified archive keys, independent of chunking.
+    verifiedKeys.sort();
+    run.AXF_ARR_TXT_ContentHash__c = ALT_CLS_ArchiveStore.sha256(
+      String.join(verifiedKeys, '|')
+    );
     ALT_CLS_ArchivePolicy.Resolved policy;
     try {
       policy = ALT_CLS_ArchivePolicy.resolve();
@@ -390,10 +428,13 @@ public with sharing class ALT_CLS_ArchiveRunService {
     }
     run.AXF_ARR_PKL_Phase__c = 'HOT_RETAINED';
     run.AXF_ARR_TXT_Reason__c = sampled ? 'VERIFY_SAMPLED:' + read : null;
-    // The verified redundant hot copy is only removed under the recovery/cutover gate.
-    run.AXF_ARR_TXT_HotRemoval__c = policy.allowHotRemoval
-      ? 'BLOCKED:RECOVERY_GATE_OPEN'
-      : 'BLOCKED:HOT_REMOVAL_NOT_AUTHORIZED';
+    // The verified redundant hot copy is only removed under the recovery/cutover gate; an
+    // unverified (sampled) archive never qualifies.
+    run.AXF_ARR_TXT_HotRemoval__c = sampled
+      ? 'BLOCKED:VERIFY_SAMPLED'
+      : (policy.allowHotRemoval
+          ? 'BLOCKED:RECOVERY_GATE_OPEN'
+          : 'BLOCKED:HOT_REMOVAL_NOT_AUTHORIZED');
     run.AXF_ARR_DTM_LastCheckpointAt__c = Datetime.now();
     checkpoint(run);
   }
@@ -485,21 +526,40 @@ public with sharing class ALT_CLS_ArchiveRunService {
     row.AXF_ARC_TXT_RunKey__c = run.AXF_ARR_EXI_RunKey__c;
     row.AXF_ARC_TXT_ContentHash__c = contentHash(row);
     row.AXF_ARC_DT_ArchivedAt__c = Datetime.now();
-    row.AXF_ARC_LTX_Snapshot__c = JSON.serialize(
-        source.getPopulatedFieldsAsMap()
-      )
-      .left(32000);
+    row.AXF_ARC_LTX_Snapshot__c = snapshot(source);
     return row;
   }
 
+  /** The fact's own fields only (no parent objects); truncation is explicit, never silent. */
+  public static String snapshot(SObject source) {
+    Map<String, Object> own = new Map<String, Object>();
+    for (String field : source.getPopulatedFieldsAsMap().keySet()) {
+      if (!field.endsWith('__r')) {
+        own.put(field, source.get(field));
+      }
+    }
+    String json = JSON.serialize(own);
+    return json.length() <= 32000
+      ? json
+      : json.left(32000 - 16) + '"...TRUNCATED"}';
+  }
+
+  /**
+   * Scale- and timezone-independent: the hot field (scale 2) and the archive field (scale 8)
+   * must hash identically, and the day is rendered in UTC regardless of the running user.
+   */
   public static String contentHash(AXF_OBJ_TransactionArchive__b row) {
     return ALT_CLS_ArchiveStore.sha256(
       String.join(
         new List<String>{
           row.AXF_ARC_TXT_SourceFamily__c,
           row.AXF_ARC_TXT_SourceKey__c,
-          String.valueOf(row.AXF_ARC_DT_BookingDate__c),
-          String.valueOf(row.AXF_ARC_NUM_Magnitude__c),
+          row.AXF_ARC_DT_BookingDate__c == null
+            ? ''
+            : row.AXF_ARC_DT_BookingDate__c.formatGmt('yyyy-MM-dd'),
+          row.AXF_ARC_NUM_Magnitude__c == null
+            ? ''
+            : row.AXF_ARC_NUM_Magnitude__c.setScale(8).toPlainString(),
           row.AXF_ARC_TXT_Direction__c,
           row.AXF_ARC_TXT_CurrencyIsoCode__c,
           row.AXF_ARC_TXT_Status__c
@@ -694,6 +754,7 @@ public with sharing class ALT_CLS_ArchiveRunService {
         AXF_ARR_TXT_ContentHash__c,
         AXF_ARR_TXT_HotRemoval__c,
         AXF_ARR_TXT_Reason__c,
+        AXF_ARR_TXT_JobId__c,
         AXF_ARR_NUM_Version__c
       FROM AXF_OBJ_ArchiveRun__c
       WHERE AXF_ARR_EXI_RunKey__c = :runKey
@@ -704,7 +765,7 @@ public with sharing class ALT_CLS_ArchiveRunService {
   }
 
   public static AXF_OBJ_ArchiveRun__c read(Id runId) {
-    return [
+    List<AXF_OBJ_ArchiveRun__c> rows = [
       SELECT
         Id,
         Name,
@@ -723,17 +784,23 @@ public with sharing class ALT_CLS_ArchiveRunService {
         AXF_ARR_TXT_HotRemoval__c,
         AXF_ARR_TXT_Reason__c,
         AXF_ARR_DTM_LastCheckpointAt__c,
+        AXF_ARR_TXT_JobId__c,
         AXF_ARR_NUM_Version__c
       FROM AXF_OBJ_ArchiveRun__c
       WHERE Id = :runId
       WITH USER_MODE
       LIMIT 1
     ];
+    if (rows.isEmpty()) {
+      throw failure('RUN_NOT_ACCESSIBLE');
+    }
+    return rows[0];
   }
 
   private static void fail(AXF_OBJ_ArchiveRun__c run, String reason) {
     run.AXF_ARR_PKL_Phase__c = 'FAILED';
     run.AXF_ARR_TXT_Reason__c = reason.left(255);
+    run.AXF_ARR_TXT_HotRemoval__c = null;
     run.AXF_ARR_DTM_LastCheckpointAt__c = Datetime.now();
     checkpoint(run);
   }
