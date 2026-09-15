@@ -1,6 +1,6 @@
 /**
  * @description Trigger para AXF_OBJ_FxApplicationSnapshot__c (AXF-24 / AXF-105).
- * Sem delete; imutavel; ACTIVE -> SUPERSEDED via servico. Nenhuma regra vive aqui: tudo delega ao handler.
+ * Nenhuma regra vive aqui: tudo delega a AXF_CLS_FxSnapshotTriggerHandler (imutabilidade e transicoes de estado).
  */
 trigger AXF_TRG_FxApplicationSnapshot on AXF_OBJ_FxApplicationSnapshot__c(
   before insert,

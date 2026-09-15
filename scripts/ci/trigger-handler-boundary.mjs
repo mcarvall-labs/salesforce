@@ -8,38 +8,53 @@ import { pathToFileURL } from "node:url";
  * validation, calculations, field changes) belong in handlers and domain
  * services. The check recognizes actual delegation (a static call whose
  * arguments are Trigger context collections) instead of a class-name-only rule.
+ *
+ * Accepted trigger shape (Apex keywords are case-insensitive):
+ *   trigger X on Obj(before insert, ...) {
+ *     if (Trigger.isBefore && Trigger.isInsert) { AXF_CLS_XHandler.m(Trigger.new); }
+ *     // or: switch on Trigger.operationType { when BEFORE_INSERT { ... } }
+ *   }
+ * Rule: agent-docs / Agent Tooling "Mandatory trigger -> handler ->
+ * business-service boundary" (axon-salesforce-change, 4-apex.md).
  */
 
-const TRIGGER_DIRECTORY = path.join("force-app", "main", "default", "triggers");
-const CLASS_DIRECTORY = path.join("force-app", "main", "default", "classes");
+const GUIDANCE =
+  "Triggers may only dispatch on Trigger context and call one AXF_CLS_*Handler " +
+  "with Trigger.new/old/newMap/oldMap (optionally cast); rules live in the handler.";
+const DEFAULT_PACKAGE_DIRECTORY = path.join("force-app", "main", "default");
 const CONTEXT_ARGUMENT =
-  /^Trigger\.(new|old|newMap|oldMap|isInsert|isUpdate|isDelete|isUndelete|isBefore|isAfter|operationType)$/;
+  /^(?:\(\s*(?:List|Map)\s*<[^>]+>\s*\)\s*)?Trigger\.(new|old|newMap|oldMap|size|isInsert|isUpdate|isDelete|isUndelete|isBefore|isAfter|operationType)$/i;
 const CONTEXT_CONDITION =
-  /^[\s()!&|]*(Trigger\.(isBefore|isAfter|isInsert|isUpdate|isDelete|isUndelete)[\s()!&|]*)+$/;
+  /^[\s()!&|]*((Trigger\.(isBefore|isAfter|isInsert|isUpdate|isDelete|isUndelete)|Trigger\.operationType\s*[!=]=\s*TriggerOperation\.[A-Z_]+)[\s()!&|]*)+$/i;
 const FORBIDDEN = [
   { pattern: /\[\s*SELECT\b/i, reason: "SOQL query" },
   {
-    pattern: /\b(insert|update|delete|upsert|undelete|merge)\s+[A-Za-z_(]/,
+    pattern: /\b(insert|update|delete|upsert|undelete|merge)\s*[A-Za-z_(]/i,
     reason: "DML statement"
   },
-  { pattern: /\bDatabase\.\w+\s*\(/, reason: "Database DML or query" },
-  { pattern: /\.addError\s*\(/, reason: "record validation" },
-  { pattern: /\bTrigger\.(new|old)\s*\[/, reason: "record indexing" },
-  { pattern: /\bfor\s*\(|\bwhile\s*\(/, reason: "record iteration" },
+  { pattern: /\bDatabase\.\w+\s*\(/i, reason: "Database DML or query" },
+  { pattern: /\.addError\s*\(/i, reason: "record validation" },
+  { pattern: /\bTrigger\.(new|old)\s*\[/i, reason: "record indexing" },
+  { pattern: /\bfor\s*\(|\bwhile\s*\(/i, reason: "record iteration" },
   { pattern: /(?<![=!<>])=(?!=)/, reason: "assignment" },
-  { pattern: /\btry\s*\{|\bcatch\s*\(/, reason: "exception handling" },
-  { pattern: /\bnew\s+[A-Za-z_]\w*\s*[({]/, reason: "object construction" }
+  { pattern: /\btry\s*\{|\bcatch\s*\(/i, reason: "exception handling" },
+  { pattern: /\bnew\s+[A-Za-z_]\w*\s*[({]/i, reason: "object construction" }
 ];
 
+// Strings first so that '//' or '/*' inside a literal cannot swallow code.
 function stripComments(source) {
   return source
+    .replace(/'(?:[^'\\\n]|\\.)*'/g, "''")
     .replace(/\/\*[\s\S]*?\*\//g, "")
-    .replace(/\/\/[^\n]*/g, "")
-    .replace(/'(?:[^'\\]|\\.)*'/g, "''");
+    .replace(/\/\/[^\n]*/g, "");
 }
 
 function triggerBody(source) {
-  const start = source.indexOf("{", source.search(/\btrigger\s+\w+\s+on\b/));
+  const head = source.search(/\btrigger\s+\w+\s+on\b/i);
+  if (head < 0) {
+    return null;
+  }
+  const start = source.indexOf("{", head);
   const end = source.lastIndexOf("}");
   if (start < 0 || end <= start) {
     return null;
@@ -63,7 +78,7 @@ function splitStatements(body) {
   if (current.trim()) {
     statements.push(current.trim());
   }
-  return statements;
+  return { statements, balanced: depth === 0 };
 }
 
 function stripDispatch(body) {
@@ -71,14 +86,26 @@ function stripDispatch(body) {
   let changed = true;
   while (changed) {
     changed = false;
-    text = text.replace(/\bif\s*\(([^{}]*?)\)\s*\{/g, (match, condition) => {
+    text = text.replace(/\bif\s*\(([^{}]*?)\)\s*\{/gi, (match, condition) => {
       if (CONTEXT_CONDITION.test(condition.trim())) {
         changed = true;
         return "{";
       }
       return match;
     });
-    text = text.replace(/\belse\s*\{/g, () => {
+    text = text.replace(/\bswitch\s+on\s+Trigger\.operationType\s*\{/gi, () => {
+      changed = true;
+      return "{";
+    });
+    // `when else {` must be consumed before the plain `else {` rule below.
+    text = text.replace(
+      /\bwhen\s+(?:else|[A-Z_]+(?:\s*,\s*[A-Z_]+)*)\s*\{/gi,
+      () => {
+        changed = true;
+        return "{";
+      }
+    );
+    text = text.replace(/\belse\s*\{/gi, () => {
       changed = true;
       return "{";
     });
@@ -95,7 +122,7 @@ export function delegations(statement) {
   }
   const [, handlerClass, method, argumentList] = match;
   const args = argumentList
-    .split(",")
+    .split(/,(?![^<]*>)/)
     .map((argument) => argument.trim())
     .filter(Boolean);
   if (
@@ -120,7 +147,10 @@ export function analyzeTrigger(name, source, classExists) {
     }
   }
   const handlers = new Set();
-  const statements = splitStatements(stripDispatch(body));
+  const { statements, balanced } = splitStatements(stripDispatch(body));
+  if (!balanced) {
+    violations.push(`${name}: unbalanced parentheses in the trigger body`);
+  }
   if (statements.length === 0) {
     violations.push(`${name}: no handler delegation found`);
   }
@@ -151,29 +181,57 @@ export function analyzeTrigger(name, source, classExists) {
   return violations;
 }
 
+export function packageDirectories(root) {
+  const projectFile = path.join(root, "sfdx-project.json");
+  if (!fs.existsSync(projectFile)) {
+    return [DEFAULT_PACKAGE_DIRECTORY];
+  }
+  try {
+    const project = JSON.parse(fs.readFileSync(projectFile, "utf8"));
+    const directories = (project.packageDirectories ?? [])
+      .map((entry) => entry && entry.path)
+      .filter((entry) => typeof entry === "string" && entry.trim());
+    return directories.length
+      ? directories.map((entry) => path.join(entry, "main", "default"))
+      : [DEFAULT_PACKAGE_DIRECTORY];
+  } catch {
+    return [DEFAULT_PACKAGE_DIRECTORY];
+  }
+}
+
 export function analyzeRepository(root = process.cwd()) {
-  const triggerDirectory = path.join(root, TRIGGER_DIRECTORY);
-  const classDirectory = path.join(root, CLASS_DIRECTORY);
+  const directories = packageDirectories(root);
+  const classDirectories = directories.map((directory) =>
+    path.join(root, directory, "classes")
+  );
   const classExists = (className) =>
-    fs.existsSync(path.join(classDirectory, `${className}.cls`));
+    classDirectories.some((directory) =>
+      fs.existsSync(path.join(directory, `${className}.cls`))
+    );
   const objects = new Map();
   const violations = [];
-  const triggers = fs.existsSync(triggerDirectory)
-    ? fs
-        .readdirSync(triggerDirectory)
-        .filter((file) => file.endsWith(".trigger"))
-    : [];
-  for (const file of triggers) {
-    const source = fs.readFileSync(path.join(triggerDirectory, file), "utf8");
-    const name = file.replace(/\.trigger$/, "");
-    violations.push(...analyzeTrigger(name, source, classExists));
-    const objectMatch = stripComments(source).match(
-      /\btrigger\s+\w+\s+on\s+([\w.]+)/
-    );
-    if (objectMatch) {
-      const list = objects.get(objectMatch[1]) ?? [];
-      list.push(name);
-      objects.set(objectMatch[1], list);
+  let triggers = 0;
+  for (const directory of directories) {
+    const triggerDirectory = path.join(root, directory, "triggers");
+    const files = fs.existsSync(triggerDirectory)
+      ? fs
+          .readdirSync(triggerDirectory)
+          .filter((file) => file.endsWith(".trigger"))
+      : [];
+    triggers += files.length;
+    for (const file of files) {
+      const source = fs.readFileSync(path.join(triggerDirectory, file), "utf8");
+      const name = file.replace(/\.trigger$/, "");
+      violations.push(...analyzeTrigger(name, source, classExists));
+      const objectMatch = stripComments(source).match(
+        /\btrigger\s+\w+\s+on\s+([\w.]+)/i
+      );
+      if (objectMatch) {
+        const key = objectMatch[1].toLowerCase();
+        const list = objects.get(key) ?? [];
+        list.push(name);
+        objects.set(key, list);
+      }
     }
   }
   for (const [object, names] of objects) {
@@ -181,7 +239,7 @@ export function analyzeRepository(root = process.cwd()) {
       violations.push(`${object}: more than one trigger (${names.join(", ")})`);
     }
   }
-  return { triggers: triggers.length, violations };
+  return { triggers, violations };
 }
 
 if (
@@ -194,6 +252,13 @@ if (
     for (const violation of violations) {
       console.error(` - ${violation}`);
     }
+    console.error(GUIDANCE);
+    process.exit(1);
+  }
+  if (triggers === 0) {
+    console.error(
+      "Trigger handler boundary: no trigger found under the package directories; refusing to pass vacuously."
+    );
     process.exit(1);
   }
   console.log(`Trigger handler boundary verified for ${triggers} trigger(s).`);

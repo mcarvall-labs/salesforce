@@ -1,10 +1,19 @@
 import test from "node:test";
 import assert from "node:assert/strict";
+import path from "node:path";
+import { fileURLToPath } from "node:url";
 import {
   analyzeTrigger,
   analyzeRepository,
-  delegations
+  delegations,
+  packageDirectories
 } from "./trigger-handler-boundary.mjs";
+
+const repositoryRoot = path.resolve(
+  path.dirname(fileURLToPath(import.meta.url)),
+  "..",
+  ".."
+);
 
 const exists = (name) => name === "AXF_CLS_ExampleTriggerHandler";
 
@@ -103,8 +112,72 @@ test("delegation requires trigger context arguments", () => {
   assert.equal(delegations("AXF_CLS_XHandler.run();"), null);
 });
 
+test("switch dispatch, casts, Trigger.size and mixed-case keywords pass", () => {
+  const source = `Trigger AXF_TRG_Switch On AXF_OBJ_Example__c(before insert, after update) {
+  switch on Trigger.operationType {
+    when BEFORE_INSERT {
+      AXF_CLS_ExampleTriggerHandler.handleBeforeInsert((List<AXF_OBJ_Example__c>) Trigger.new, Trigger.size);
+    }
+    when AFTER_UPDATE, AFTER_INSERT {
+      AXF_CLS_ExampleTriggerHandler.handleAfter((Map<Id, AXF_OBJ_Example__c>) Trigger.newMap, trigger.OldMap);
+    }
+    when else {
+      AXF_CLS_ExampleTriggerHandler.handleOther(Trigger.operationType);
+    }
+  }
+}`;
+  assert.deepEqual(analyzeTrigger("AXF_TRG_Switch", source, exists), []);
+});
+
+test("string literals cannot hide code and keywords are case-insensitive", () => {
+  const source = `trigger AXF_TRG_Hidden on AXF_OBJ_Example__c(before insert) {
+  AXF_CLS_ExampleTriggerHandler.handleBeforeInsert(Trigger.new);
+  System.debug('// not a comment');
+  INSERT(Trigger.new);
+}`;
+  const violations = analyzeTrigger("AXF_TRG_Hidden", source, exists);
+  assert.ok(
+    violations.some((violation) => violation.includes("DML statement"))
+  );
+  assert.ok(
+    violations.some((violation) =>
+      violation.includes("not a handler delegation")
+    )
+  );
+});
+
+test("unbalanced parentheses and multiple handlers are reported", () => {
+  const unbalanced = `trigger AXF_TRG_Unbalanced on AXF_OBJ_Example__c(before insert) {
+  AXF_CLS_ExampleTriggerHandler.handleBeforeInsert((Trigger.new);
+}`;
+  assert.ok(
+    analyzeTrigger("AXF_TRG_Unbalanced", unbalanced, exists).some((violation) =>
+      violation.includes("unbalanced parentheses")
+    )
+  );
+  const two = `trigger AXF_TRG_Two on AXF_OBJ_Example__c(before insert) {
+  AXF_CLS_ExampleTriggerHandler.handleBeforeInsert(Trigger.new);
+  AXF_CLS_OtherHandler.handleBeforeInsert(Trigger.new);
+}`;
+  assert.ok(
+    analyzeTrigger("AXF_TRG_Two", two, (name) =>
+      ["AXF_CLS_ExampleTriggerHandler", "AXF_CLS_OtherHandler"].includes(name)
+    ).some((violation) => violation.includes("more than one handler"))
+  );
+});
+
+test("package directories come from sfdx-project.json", () => {
+  const directories = packageDirectories(repositoryRoot);
+  assert.ok(directories.length >= 1);
+  assert.ok(
+    directories.some((directory) =>
+      directory.split(path.sep).join("/").endsWith("force-app/main/default")
+    )
+  );
+});
+
 test("repository triggers honor the handler boundary", () => {
-  const { triggers, violations } = analyzeRepository();
+  const { triggers, violations } = analyzeRepository(repositoryRoot);
   assert.ok(triggers > 0);
   assert.deepEqual(violations, []);
 });

@@ -1,11 +1,14 @@
 /**
  * @description AXF-105: the realization triggers dispatch through explicit handlers while every
  * externally observable protection of ALT_CLS_RealizationGuard is preserved (service-only writes,
- * immutable referenced originals, forged financial roles, recognition evidence, bulk 200 rows).
+ * immutable referenced originals, forged financial roles, recognition evidence; 200-row inserts and
+ * bulk update/delete of service-created effects).
  */
 @IsTest
 private class AXF_CLS_RealizationTriggerHandlerTest {
   private static final Integer BATCH_SIZE = 200;
+  // Service-created effects for bulk update/delete (each apply costs several DML rows).
+  private static final Integer BULK_EFFECTS = 3;
 
   private static User actor() {
     return [SELECT Id FROM User WHERE Alias = 'axf105' LIMIT 1];
@@ -44,6 +47,7 @@ private class AXF_CLS_RealizationTriggerHandlerTest {
         )
       );
     }
+    Assert.areEqual(3, assignments.size(), 'All permission sets must exist.');
     insert assignments;
     PermissionSet capability = new PermissionSet(
       Name = 'AXF105TestCapability',
@@ -92,23 +96,28 @@ private class AXF_CLS_RealizationTriggerHandlerTest {
           )
         );
       }
+      // A second batch of allocations, created by the service, exercises bulk update/delete.
       Test.startTest();
-      Database.SaveResult[] inserts = Database.insert(forged, false);
-      Database.SaveResult[] updates = Database.update(
-        new List<AXF_OBJ_ReconciliationAllocation__c>{
+      List<AXF_OBJ_ReconciliationAllocation__c> persisted = new List<AXF_OBJ_ReconciliationAllocation__c>();
+      for (Integer i = 0; i < BULK_EFFECTS; i++) {
+        AXF_OBJ_FinancialTransaction__c other = plan('BRL');
+        persisted.add(
           new AXF_OBJ_ReconciliationAllocation__c(
-            Id = allocationId,
+            Id = new ALT_CLS_RealizationService()
+              .apply(request(other.Id, 1, 0, 'axf105-bulk-' + i)),
             AXF_RA_NUM_Magnitude__c = 20
           )
-        },
-        false
+        );
+      }
+      persisted.add(
+        new AXF_OBJ_ReconciliationAllocation__c(
+          Id = allocationId,
+          AXF_RA_NUM_Magnitude__c = 20
+        )
       );
-      Database.DeleteResult[] deletes = Database.delete(
-        new List<AXF_OBJ_ReconciliationAllocation__c>{
-          new AXF_OBJ_ReconciliationAllocation__c(Id = allocationId)
-        },
-        false
-      );
+      Database.SaveResult[] inserts = Database.insert(forged, false);
+      Database.SaveResult[] updates = Database.update(persisted, false);
+      Database.DeleteResult[] deletes = Database.delete(persisted, false);
       Test.stopTest();
       Assert.areEqual(BATCH_SIZE, inserts.size());
       for (Database.SaveResult result : inserts) {
@@ -117,10 +126,15 @@ private class AXF_CLS_RealizationTriggerHandlerTest {
           result.getErrors()[0].getMessage().contains('realization service')
         );
       }
-      Assert.isFalse(updates[0].isSuccess(), 'Direct allocation update');
-      Assert.isFalse(deletes[0].isSuccess(), 'Historical effect delete');
+      Assert.areEqual(BULK_EFFECTS + 1, updates.size());
+      for (Database.SaveResult result : updates) {
+        rejected(result, 'realization service', 'Direct allocation update');
+      }
+      for (Database.DeleteResult result : deletes) {
+        rejected(result, 'cannot be deleted', 'Historical effect delete');
+      }
       Assert.areEqual(
-        1,
+        BULK_EFFECTS + 1,
         [SELECT COUNT() FROM AXF_OBJ_ReconciliationAllocation__c]
       );
     }
@@ -166,7 +180,7 @@ private class AXF_CLS_RealizationTriggerHandlerTest {
         row.AXF_FTX_PKL_PlanKind__c = 'CASH_FACT';
       }
       for (Database.SaveResult result : Database.update(saved, false)) {
-        Assert.isFalse(result.isSuccess(), 'Financial role is immutable');
+        rejected(result, 'immutable', 'Financial role is immutable');
       }
     }
   }
@@ -222,33 +236,39 @@ private class AXF_CLS_RealizationTriggerHandlerTest {
         Id = cardFactId,
         AXF_CCT_NUM_Magnitude__c = 999
       );
-      Assert.isFalse(
-        Database.update(cardFact, false).isSuccess(),
+      rejected(
+        Database.update(cardFact, false),
+        'immutable',
         'Referenced card fact content'
       );
-      Assert.isFalse(
-        Database.delete(cardFact, false).isSuccess(),
+      rejected(
+        Database.delete(cardFact, false),
+        'cannot be deleted',
         'Referenced card fact delete'
       );
       AXF_OBJ_BankAccountTransaction__c fact = new AXF_OBJ_BankAccountTransaction__c(
         Id = bankFactId,
         AXF_BAT_NUM_Magnitude__c = 999
       );
-      Assert.isFalse(
-        Database.update(fact, false).isSuccess(),
+      rejected(
+        Database.update(fact, false),
+        'immutable',
         'Referenced bank fact content'
       );
-      Assert.isFalse(
-        Database.delete(fact, false).isSuccess(),
+      rejected(
+        Database.delete(fact, false),
+        'cannot be deleted',
         'Referenced bank fact delete'
       );
       target.AXF_FTX_NUM_Magnitude__c = 200;
-      Assert.isFalse(
-        Database.update(target, false).isSuccess(),
+      rejected(
+        Database.update(target, false),
+        'immutable',
         'Referenced plan content'
       );
-      Assert.isFalse(
-        Database.delete(target, false).isSuccess(),
+      rejected(
+        Database.delete(target, false),
+        'cannot be deleted',
         'Referenced plan delete'
       );
       free.AXF_FTX_NUM_Magnitude__c = 55;
@@ -270,7 +290,49 @@ private class AXF_CLS_RealizationTriggerHandlerTest {
         ]
         .AXF_BAT_NUM_Magnitude__c
       );
+      Assert.areEqual(
+        20,
+        [
+          SELECT AXF_CCT_NUM_Magnitude__c
+          FROM AXF_OBJ_CreditCardTransaction__c
+          WHERE Id = :cardFactId
+        ]
+        .AXF_CCT_NUM_Magnitude__c
+      );
+      Assert.areEqual(
+        100,
+        [
+          SELECT AXF_FTX_NUM_Magnitude__c
+          FROM AXF_OBJ_FinancialTransaction__c
+          WHERE Id = :target.Id
+        ]
+        .AXF_FTX_NUM_Magnitude__c
+      );
     }
+  }
+
+  private static void rejected(
+    Database.SaveResult result,
+    String fragment,
+    String label
+  ) {
+    Assert.isFalse(result.isSuccess(), label);
+    Assert.isTrue(
+      result.getErrors()[0].getMessage().contains(fragment),
+      label + ': ' + result.getErrors()[0].getMessage()
+    );
+  }
+
+  private static void rejected(
+    Database.DeleteResult result,
+    String fragment,
+    String label
+  ) {
+    Assert.isFalse(result.isSuccess(), label);
+    Assert.isTrue(
+      result.getErrors()[0].getMessage().contains(fragment),
+      label + ': ' + result.getErrors()[0].getMessage()
+    );
   }
 
   @IsTest
@@ -325,9 +387,22 @@ private class AXF_CLS_RealizationTriggerHandlerTest {
         'Non-recognition snapshot insert stays allowed'
       );
       history.AXF_FXS_NUM_Version__c = 2;
-      Assert.isFalse(
-        Database.update(history, false).isSuccess(),
+      rejected(
+        Database.update(history, false),
+        'historicos',
         'SUPERSEDED history is immutable'
+      );
+      // Reopening history (SUPERSEDED -> ACTIVE) on a fresh record is the invalid transition.
+      rejected(
+        Database.update(
+          new AXF_OBJ_FxApplicationSnapshot__c(
+            Id = history.Id,
+            AXF_FXS_PKL_State__c = 'ACTIVE'
+          ),
+          false
+        ),
+        'historicos',
+        'Invalid state transition'
       );
       List<AXF_OBJ_FxApplicationSnapshot__c> existing = [
         SELECT Id, AXF_FXS_PKL_State__c
@@ -335,20 +410,21 @@ private class AXF_CLS_RealizationTriggerHandlerTest {
         WHERE AXF_FXS_LKP_ReconciliationAllocation__c = :allocationId
       ];
       for (AXF_OBJ_FxApplicationSnapshot__c snapshot : existing) {
-        Assert.isFalse(
-          Database.delete(snapshot, false).isSuccess(),
+        rejected(
+          Database.delete(snapshot, false),
+          'nao pode ser excluido',
           'Snapshot delete'
         );
-        snapshot.AXF_FXS_NUM_OriginalAmount__c = 1;
-        Assert.isFalse(
-          Database.update(snapshot, false).isSuccess(),
+        rejected(
+          Database.update(
+            new AXF_OBJ_FxApplicationSnapshot__c(
+              Id = snapshot.Id,
+              AXF_FXS_NUM_OriginalAmount__c = 1
+            ),
+            false
+          ),
+          'imutavel',
           'Snapshot content'
-        );
-        snapshot.AXF_FXS_NUM_OriginalAmount__c = null;
-        snapshot.AXF_FXS_PKL_State__c = 'CANCELLED';
-        Assert.isFalse(
-          Database.update(snapshot, false).isSuccess(),
-          'Invalid state transition'
         );
       }
     }
