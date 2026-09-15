@@ -1,6 +1,5 @@
 <?xml version="1.0" encoding="UTF-8" ?>
-<PermissionSet xmlns="http://soap.sforce.com/2006/04/metadata"><description
-  >Componente do PSG AXF_PSG_GestorFinanceiro. Titulares (Account/Contact): consultar/cadastrar/editar; sem Delete/ViewAll/ModifyAll. Concede AXF_CanConfigure. AXF-7 / AXF-80 / AXF-82 / AXF-88 / AXF-11.</description>
+<PermissionSet xmlns="http://soap.sforce.com/2006/04/metadata"><description>Componente do PSG AXF_PSG_GestorFinanceiro. Titulares (Account/Contact): consultar/cadastrar/editar; sem Delete/ViewAll/ModifyAll. Concede AXF_CanConfigure. AXF-7 / AXF-80 / AXF-82 / AXF-88 / AXF-11.</description>
   <hasActivationRequired>false</hasActivationRequired>
   <label>Axon - Gestor Financeiro (componente)</label>
   <applicationVisibilities>
@@ -291,6 +290,14 @@
     <apexClass>AXF_CLS_CTRL_ArchiveExplorer</apexClass>
     <enabled>true</enabled>
   </classAccesses>
+  <classAccesses>
+    <apexClass>ALT_CLS_ForecastComparisonService</apexClass>
+    <enabled>true</enabled>
+  </classAccesses>
+  <classAccesses>
+    <apexClass>AXF_CLS_CTRL_ForecastComparison</apexClass>
+    <enabled>true</enabled>
+  </classAccesses>
   <customPermissions>
     <enabled>true</enabled>
     <name>AXF_CanConfigure</name>
@@ -330,6 +337,10 @@
   <customPermissions>
     <enabled>true</enabled>
     <name>AXF_CanLinkSource</name>
+  </customPermissions>
+  <customPermissions>
+    <enabled>true</enabled>
+    <name>AXF_CanCompareForecast</name>
   </customPermissions>
   <fieldPermissions>
     <editable>true</editable>
@@ -393,20 +404,17 @@
   </fieldPermissions>
   <fieldPermissions>
     <editable>false</editable>
-    <field
-    >AXF_OBJ_BankAccountTransaction__c.AXF_BAT_NUM_RunningBalance__c</field>
+    <field>AXF_OBJ_BankAccountTransaction__c.AXF_BAT_NUM_RunningBalance__c</field>
     <readable>true</readable>
   </fieldPermissions>
   <fieldPermissions>
     <editable>false</editable>
-    <field
-    >AXF_OBJ_BankAccountTransaction__c.AXF_BAT_PKL_ReconciliationStatus__c</field>
+    <field>AXF_OBJ_BankAccountTransaction__c.AXF_BAT_PKL_ReconciliationStatus__c</field>
     <readable>true</readable>
   </fieldPermissions>
   <fieldPermissions>
     <editable>false</editable>
-    <field
-    >AXF_OBJ_BankAccountTransaction__c.AXF_BAT_TXT_CorrelationId__c</field>
+    <field>AXF_OBJ_BankAccountTransaction__c.AXF_BAT_TXT_CorrelationId__c</field>
     <readable>true</readable>
   </fieldPermissions>
   <fieldPermissions>
@@ -421,14 +429,12 @@
   </fieldPermissions>
   <fieldPermissions>
     <editable>false</editable>
-    <field
-    >AXF_OBJ_BankAccountTransaction__c.AXF_BAT_TXT_NormalizedDescription__c</field>
+    <field>AXF_OBJ_BankAccountTransaction__c.AXF_BAT_TXT_NormalizedDescription__c</field>
     <readable>true</readable>
   </fieldPermissions>
   <fieldPermissions>
     <editable>false</editable>
-    <field
-    >AXF_OBJ_BankAccountTransaction__c.AXF_BAT_TXT_ParserVersion__c</field>
+    <field>AXF_OBJ_BankAccountTransaction__c.AXF_BAT_TXT_ParserVersion__c</field>
     <readable>true</readable>
   </fieldPermissions>
   <fieldPermissions>
@@ -493,8 +499,7 @@
   </fieldPermissions>
   <fieldPermissions>
     <editable>true</editable>
-    <field
-    >AXF_OBJ_ContractTermVersion__c.AXF_CTV_CUR_ContractedAmount__c</field>
+    <field>AXF_OBJ_ContractTermVersion__c.AXF_CTV_CUR_ContractedAmount__c</field>
     <readable>true</readable>
   </fieldPermissions>
   <fieldPermissions>
@@ -514,20 +519,17 @@
   </fieldPermissions>
   <fieldPermissions>
     <editable>true</editable>
-    <field
-    >AXF_OBJ_ContractTermVersion__c.AXF_CTV_LKP_PredecessorTermVersion__c</field>
+    <field>AXF_OBJ_ContractTermVersion__c.AXF_CTV_LKP_PredecessorTermVersion__c</field>
     <readable>true</readable>
   </fieldPermissions>
   <fieldPermissions>
     <editable>true</editable>
-    <field
-    >AXF_OBJ_ContractTermVersion__c.AXF_CTV_LKP_PreferredBankAccount__c</field>
+    <field>AXF_OBJ_ContractTermVersion__c.AXF_CTV_LKP_PreferredBankAccount__c</field>
     <readable>true</readable>
   </fieldPermissions>
   <fieldPermissions>
     <editable>true</editable>
-    <field
-    >AXF_OBJ_ContractTermVersion__c.AXF_CTV_LKP_SuccessorTermVersion__c</field>
+    <field>AXF_OBJ_ContractTermVersion__c.AXF_CTV_LKP_SuccessorTermVersion__c</field>
     <readable>true</readable>
   </fieldPermissions>
   <fieldPermissions>
@@ -547,8 +549,7 @@
   </fieldPermissions>
   <fieldPermissions>
     <editable>true</editable>
-    <field
-    >AXF_OBJ_ContractTermVersion__c.AXF_CTV_PKL_ProportionalityPolicy__c</field>
+    <field>AXF_OBJ_ContractTermVersion__c.AXF_CTV_PKL_ProportionalityPolicy__c</field>
     <readable>true</readable>
   </fieldPermissions>
   <fieldPermissions>
@@ -623,44 +624,37 @@
   </fieldPermissions>
   <fieldPermissions>
     <editable>true</editable>
-    <field
-    >AXF_OBJ_CounterpartyEntityRelationship__c.AXF_CER_DAT_ValidFrom__c</field>
+    <field>AXF_OBJ_CounterpartyEntityRelationship__c.AXF_CER_DAT_ValidFrom__c</field>
     <readable>true</readable>
   </fieldPermissions>
   <fieldPermissions>
     <editable>true</editable>
-    <field
-    >AXF_OBJ_CounterpartyEntityRelationship__c.AXF_CER_DAT_ValidTo__c</field>
+    <field>AXF_OBJ_CounterpartyEntityRelationship__c.AXF_CER_DAT_ValidTo__c</field>
     <readable>true</readable>
   </fieldPermissions>
   <fieldPermissions>
     <editable>true</editable>
-    <field
-    >AXF_OBJ_CounterpartyEntityRelationship__c.AXF_CER_EML_Email__c</field>
+    <field>AXF_OBJ_CounterpartyEntityRelationship__c.AXF_CER_EML_Email__c</field>
     <readable>true</readable>
   </fieldPermissions>
   <fieldPermissions>
     <editable>true</editable>
-    <field
-    >AXF_OBJ_CounterpartyEntityRelationship__c.AXF_CER_PHN_Phone__c</field>
+    <field>AXF_OBJ_CounterpartyEntityRelationship__c.AXF_CER_PHN_Phone__c</field>
     <readable>true</readable>
   </fieldPermissions>
   <fieldPermissions>
     <editable>true</editable>
-    <field
-    >AXF_OBJ_CounterpartyEntityRelationship__c.AXF_CER_TAL_AddressSnapshot__c</field>
+    <field>AXF_OBJ_CounterpartyEntityRelationship__c.AXF_CER_TAL_AddressSnapshot__c</field>
     <readable>true</readable>
   </fieldPermissions>
   <fieldPermissions>
     <editable>true</editable>
-    <field
-    >AXF_OBJ_CounterpartyEntityRelationship__c.AXF_CER_TXT_ContactName__c</field>
+    <field>AXF_OBJ_CounterpartyEntityRelationship__c.AXF_CER_TXT_ContactName__c</field>
     <readable>true</readable>
   </fieldPermissions>
   <fieldPermissions>
     <editable>true</editable>
-    <field
-    >AXF_OBJ_CounterpartyEntityRelationship__c.AXF_CER_TXT_EntitySpecificDisplay__c</field>
+    <field>AXF_OBJ_CounterpartyEntityRelationship__c.AXF_CER_TXT_EntitySpecificDisplay__c</field>
     <readable>true</readable>
   </fieldPermissions>
   <fieldPermissions>
@@ -880,8 +874,7 @@
   </fieldPermissions>
   <fieldPermissions>
     <editable>true</editable>
-    <field
-    >AXF_OBJ_PluggyConnection__c.AXF_CON_TXT_ConsentObservedItemId__c</field>
+    <field>AXF_OBJ_PluggyConnection__c.AXF_CON_TXT_ConsentObservedItemId__c</field>
     <readable>true</readable>
   </fieldPermissions>
   <fieldPermissions>
@@ -966,8 +959,7 @@
   </fieldPermissions>
   <fieldPermissions>
     <editable>false</editable>
-    <field
-    >AXF_OBJ_CreditCardTransaction__c.AXF_CCT_PKL_ReconciliationStatus__c</field>
+    <field>AXF_OBJ_CreditCardTransaction__c.AXF_CCT_PKL_ReconciliationStatus__c</field>
     <readable>true</readable>
   </fieldPermissions>
   <fieldPermissions>
@@ -977,8 +969,7 @@
   </fieldPermissions>
   <fieldPermissions>
     <editable>false</editable>
-    <field
-    >AXF_OBJ_CreditCardTransaction__c.AXF_CCT_TXT_BillForecastPeriod__c</field>
+    <field>AXF_OBJ_CreditCardTransaction__c.AXF_CCT_TXT_BillForecastPeriod__c</field>
     <readable>true</readable>
   </fieldPermissions>
   <fieldPermissions>
@@ -1003,8 +994,7 @@
   </fieldPermissions>
   <fieldPermissions>
     <editable>false</editable>
-    <field
-    >AXF_OBJ_CreditCardTransaction__c.AXF_CCT_TXT_NormalizedDescription__c</field>
+    <field>AXF_OBJ_CreditCardTransaction__c.AXF_CCT_TXT_NormalizedDescription__c</field>
     <readable>true</readable>
   </fieldPermissions>
   <fieldPermissions>
@@ -1029,8 +1019,7 @@
   </fieldPermissions>
   <fieldPermissions>
     <editable>true</editable>
-    <field
-    >AXF_OBJ_ContractScheduleRun__c.AXF_CSR_EXI_ActiveScopeToken__c</field>
+    <field>AXF_OBJ_ContractScheduleRun__c.AXF_CSR_EXI_ActiveScopeToken__c</field>
     <readable>true</readable>
   </fieldPermissions>
   <fieldPermissions>
@@ -1305,8 +1294,7 @@
   </fieldPermissions>
   <fieldPermissions>
     <editable>false</editable>
-    <field
-    >AXF_OBJ_ScheduleDefinition__c.AXF_SDF_NUM_InitialReferenceAmount__c</field>
+    <field>AXF_OBJ_ScheduleDefinition__c.AXF_SDF_NUM_InitialReferenceAmount__c</field>
     <readable>true</readable>
   </fieldPermissions>
   <fieldPermissions>
@@ -1326,8 +1314,7 @@
   </fieldPermissions>
   <fieldPermissions>
     <editable>false</editable>
-    <field
-    >AXF_OBJ_ScheduleDefinition__c.AXF_SDF_NUM_TotalInstallments__c</field>
+    <field>AXF_OBJ_ScheduleDefinition__c.AXF_SDF_NUM_TotalInstallments__c</field>
     <readable>true</readable>
   </fieldPermissions>
   <fieldPermissions>
@@ -1337,8 +1324,7 @@
   </fieldPermissions>
   <fieldPermissions>
     <editable>false</editable>
-    <field
-    >AXF_OBJ_ScheduleDefinition__c.AXF_SDF_TAL_InputCanonicalJson__c</field>
+    <field>AXF_OBJ_ScheduleDefinition__c.AXF_SDF_TAL_InputCanonicalJson__c</field>
     <readable>true</readable>
   </fieldPermissions>
   <fieldPermissions>
@@ -1383,8 +1369,7 @@
   </fieldPermissions>
   <fieldPermissions>
     <editable>false</editable>
-    <field
-    >AXF_OBJ_ScheduleChange__c.AXF_SCH_BOL_IncludeManualOverrides__c</field>
+    <field>AXF_OBJ_ScheduleChange__c.AXF_SCH_BOL_IncludeManualOverrides__c</field>
     <readable>true</readable>
   </fieldPermissions>
   <fieldPermissions>
@@ -1444,14 +1429,12 @@
   </fieldPermissions>
   <fieldPermissions>
     <editable>false</editable>
-    <field
-    >AXF_OBJ_FinancialTransaction__c.AXF_FTX_LKP_ScheduleDefinition__c</field>
+    <field>AXF_OBJ_FinancialTransaction__c.AXF_FTX_LKP_ScheduleDefinition__c</field>
     <readable>true</readable>
   </fieldPermissions>
   <fieldPermissions>
     <editable>false</editable>
-    <field
-    >AXF_OBJ_FinancialTransaction__c.AXF_FTX_LKP_ScheduleReference__c</field>
+    <field>AXF_OBJ_FinancialTransaction__c.AXF_FTX_LKP_ScheduleReference__c</field>
     <readable>true</readable>
   </fieldPermissions>
   <fieldPermissions>
@@ -1461,8 +1444,7 @@
   </fieldPermissions>
   <fieldPermissions>
     <editable>false</editable>
-    <field
-    >AXF_OBJ_FinancialTransaction__c.AXF_FTX_NUM_ProjectionRevision__c</field>
+    <field>AXF_OBJ_FinancialTransaction__c.AXF_FTX_NUM_ProjectionRevision__c</field>
     <readable>true</readable>
   </fieldPermissions>
   <fieldPermissions>
@@ -1472,8 +1454,7 @@
   </fieldPermissions>
   <fieldPermissions>
     <editable>false</editable>
-    <field
-    >AXF_OBJ_FinancialTransaction__c.AXF_FTX_TAL_OverrideFieldsJson__c</field>
+    <field>AXF_OBJ_FinancialTransaction__c.AXF_FTX_TAL_OverrideFieldsJson__c</field>
     <readable>true</readable>
   </fieldPermissions>
   <fieldPermissions>
@@ -1518,8 +1499,7 @@
   </fieldPermissions>
   <fieldPermissions>
     <editable>true</editable>
-    <field
-    >AXF_OBJ_BillingDocumentVersion__c.AXF_BDV_LKP_PredecessorVersion__c</field>
+    <field>AXF_OBJ_BillingDocumentVersion__c.AXF_BDV_LKP_PredecessorVersion__c</field>
     <readable>true</readable>
   </fieldPermissions>
   <fieldPermissions>
@@ -1559,8 +1539,7 @@
   </fieldPermissions>
   <fieldPermissions>
     <editable>true</editable>
-    <field
-    >AXF_OBJ_BillingDocumentWorkAllocation__c.AXF_BWA_CUR_AllocatedAmount__c</field>
+    <field>AXF_OBJ_BillingDocumentWorkAllocation__c.AXF_BWA_CUR_AllocatedAmount__c</field>
     <readable>true</readable>
   </fieldPermissions>
   <fieldPermissions>
@@ -1570,26 +1549,22 @@
   </fieldPermissions>
   <fieldPermissions>
     <editable>false</editable>
-    <field
-    >AXF_OBJ_FinancialTransaction__c.AXF_FTX_LKP_ContractApplicationSnapshot__c</field>
+    <field>AXF_OBJ_FinancialTransaction__c.AXF_FTX_LKP_ContractApplicationSnapshot__c</field>
     <readable>true</readable>
   </fieldPermissions>
   <fieldPermissions>
     <editable>false</editable>
-    <field
-    >AXF_OBJ_ContractApplicationSnapshot__c.AXF_CAS_PKL_RemunerationModel__c</field>
+    <field>AXF_OBJ_ContractApplicationSnapshot__c.AXF_CAS_PKL_RemunerationModel__c</field>
     <readable>true</readable>
   </fieldPermissions>
   <fieldPermissions>
     <editable>false</editable>
-    <field
-    >AXF_OBJ_ContractApplicationSnapshot__c.AXF_CAS_NUM_HoursQuantity__c</field>
+    <field>AXF_OBJ_ContractApplicationSnapshot__c.AXF_CAS_NUM_HoursQuantity__c</field>
     <readable>true</readable>
   </fieldPermissions>
   <fieldPermissions>
     <editable>false</editable>
-    <field
-    >AXF_OBJ_ContractApplicationSnapshot__c.AXF_CAS_CUR_AppliedAmount__c</field>
+    <field>AXF_OBJ_ContractApplicationSnapshot__c.AXF_CAS_CUR_AppliedAmount__c</field>
     <readable>true</readable>
   </fieldPermissions>
   <fieldPermissions>
@@ -1629,8 +1604,7 @@
   </fieldPermissions>
   <fieldPermissions>
     <editable>false</editable>
-    <field
-    >AXF_OBJ_SharedExpenseGrant__c.AXF_SEG_TXT_LastEditRequestId__c</field>
+    <field>AXF_OBJ_SharedExpenseGrant__c.AXF_SEG_TXT_LastEditRequestId__c</field>
     <readable>true</readable>
   </fieldPermissions>
   <fieldPermissions>
@@ -1705,26 +1679,22 @@
   </fieldPermissions>
   <fieldPermissions>
     <editable>true</editable>
-    <field
-    >AXF_OBJ_EconomicAllocationSet__c.AXF_EAS_LKP_AttributedAccount__c</field>
+    <field>AXF_OBJ_EconomicAllocationSet__c.AXF_EAS_LKP_AttributedAccount__c</field>
     <readable>true</readable>
   </fieldPermissions>
   <fieldPermissions>
     <editable>true</editable>
-    <field
-    >AXF_OBJ_EconomicAllocationSet__c.AXF_EAS_LKP_BankTransaction__c</field>
+    <field>AXF_OBJ_EconomicAllocationSet__c.AXF_EAS_LKP_BankTransaction__c</field>
     <readable>true</readable>
   </fieldPermissions>
   <fieldPermissions>
     <editable>true</editable>
-    <field
-    >AXF_OBJ_EconomicAllocationSet__c.AXF_EAS_LKP_CardTransaction__c</field>
+    <field>AXF_OBJ_EconomicAllocationSet__c.AXF_EAS_LKP_CardTransaction__c</field>
     <readable>true</readable>
   </fieldPermissions>
   <fieldPermissions>
     <editable>true</editable>
-    <field
-    >AXF_OBJ_EconomicAllocationSet__c.AXF_EAS_LKP_FinancialTransaction__c</field>
+    <field>AXF_OBJ_EconomicAllocationSet__c.AXF_EAS_LKP_FinancialTransaction__c</field>
     <readable>true</readable>
   </fieldPermissions>
   <fieldPermissions>
@@ -1739,32 +1709,27 @@
   </fieldPermissions>
   <fieldPermissions>
     <editable>true</editable>
-    <field
-    >AXF_OBJ_EconomicAllocationSet__c.AXF_EAS_TXT_ConfirmOperationKey__c</field>
+    <field>AXF_OBJ_EconomicAllocationSet__c.AXF_EAS_TXT_ConfirmOperationKey__c</field>
     <readable>true</readable>
   </fieldPermissions>
   <fieldPermissions>
     <editable>false</editable>
-    <field
-    >AXF_OBJ_BankAccountTransaction__c.AXF_BAT_TXT_RawSourceStatus__c</field>
+    <field>AXF_OBJ_BankAccountTransaction__c.AXF_BAT_TXT_RawSourceStatus__c</field>
     <readable>true</readable>
   </fieldPermissions>
   <fieldPermissions>
     <editable>false</editable>
-    <field
-    >AXF_OBJ_BankAccountTransaction__c.AXF_BAT_TXT_OperationType__c</field>
+    <field>AXF_OBJ_BankAccountTransaction__c.AXF_BAT_TXT_OperationType__c</field>
     <readable>true</readable>
   </fieldPermissions>
   <fieldPermissions>
     <editable>false</editable>
-    <field
-    >AXF_OBJ_BankAccountTransaction__c.AXF_BAT_TXT_ProviderCategory__c</field>
+    <field>AXF_OBJ_BankAccountTransaction__c.AXF_BAT_TXT_ProviderCategory__c</field>
     <readable>true</readable>
   </fieldPermissions>
   <fieldPermissions>
     <editable>false</editable>
-    <field
-    >AXF_OBJ_CreditCardTransaction__c.AXF_CCT_TXT_RawSourceStatus__c</field>
+    <field>AXF_OBJ_CreditCardTransaction__c.AXF_CCT_TXT_RawSourceStatus__c</field>
     <readable>true</readable>
   </fieldPermissions>
   <fieldPermissions>
@@ -1774,20 +1739,17 @@
   </fieldPermissions>
   <fieldPermissions>
     <editable>false</editable>
-    <field
-    >AXF_OBJ_CreditCardTransaction__c.AXF_CCT_TXT_ProviderCategory__c</field>
+    <field>AXF_OBJ_CreditCardTransaction__c.AXF_CCT_TXT_ProviderCategory__c</field>
     <readable>true</readable>
   </fieldPermissions>
   <fieldPermissions>
     <editable>false</editable>
-    <field
-    >AXF_OBJ_CreditCardTransaction__c.AXF_CCT_NUM_InstallmentNumber__c</field>
+    <field>AXF_OBJ_CreditCardTransaction__c.AXF_CCT_NUM_InstallmentNumber__c</field>
     <readable>true</readable>
   </fieldPermissions>
   <fieldPermissions>
     <editable>false</editable>
-    <field
-    >AXF_OBJ_CreditCardTransaction__c.AXF_CCT_NUM_TotalInstallments__c</field>
+    <field>AXF_OBJ_CreditCardTransaction__c.AXF_CCT_NUM_TotalInstallments__c</field>
     <readable>true</readable>
   </fieldPermissions>
   <fieldPermissions>
@@ -1797,32 +1759,27 @@
   </fieldPermissions>
   <fieldPermissions>
     <editable>true</editable>
-    <field
-    >AXF_OBJ_TransactionObservation__c.AXF_TOB_LKP_BankTransaction__c</field>
+    <field>AXF_OBJ_TransactionObservation__c.AXF_TOB_LKP_BankTransaction__c</field>
     <readable>true</readable>
   </fieldPermissions>
   <fieldPermissions>
     <editable>true</editable>
-    <field
-    >AXF_OBJ_TransactionObservation__c.AXF_TOB_LKP_CardTransaction__c</field>
+    <field>AXF_OBJ_TransactionObservation__c.AXF_TOB_LKP_CardTransaction__c</field>
     <readable>true</readable>
   </fieldPermissions>
   <fieldPermissions>
     <editable>true</editable>
-    <field
-    >AXF_OBJ_TransactionObservation__c.AXF_TOB_TXT_MerchantEvidence__c</field>
+    <field>AXF_OBJ_TransactionObservation__c.AXF_TOB_TXT_MerchantEvidence__c</field>
     <readable>true</readable>
   </fieldPermissions>
   <fieldPermissions>
     <editable>true</editable>
-    <field
-    >AXF_OBJ_TransactionObservation__c.AXF_TOB_TXT_NormalizedMerchant__c</field>
+    <field>AXF_OBJ_TransactionObservation__c.AXF_TOB_TXT_NormalizedMerchant__c</field>
     <readable>true</readable>
   </fieldPermissions>
   <fieldPermissions>
     <editable>true</editable>
-    <field
-    >AXF_OBJ_TransactionObservation__c.AXF_TOB_TXT_RawSourceStatus__c</field>
+    <field>AXF_OBJ_TransactionObservation__c.AXF_TOB_TXT_RawSourceStatus__c</field>
     <readable>true</readable>
   </fieldPermissions>
   <fieldPermissions>
@@ -2408,6 +2365,10 @@
   </tabSettings>
   <tabSettings>
     <tab>AXF_CT_SourceLink</tab>
+    <visibility>Visible</visibility>
+  </tabSettings>
+  <tabSettings>
+    <tab>AXF_CT_ForecastComparison</tab>
     <visibility>Visible</visibility>
   </tabSettings>
   </PermissionSet>

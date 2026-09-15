@@ -1,0 +1,7 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<CustomPermission xmlns="http://soap.sforce.com/2006/04/metadata">
+    <isLicensed>false</isLicensed>
+    <label>AXF - Pode Comparar Previsoes</label>
+    <description
+  >Capacidade de abrir a comparacao de horizontes e cenarios (AXF-137). Concedida por AXF_PS_GestorFinanceiro. Nao concede acesso a registros: cronogramas e lancamentos entram apenas conforme ownership/sharing, CRUD e FLS.</description>
+</CustomPermission>
