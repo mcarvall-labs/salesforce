@@ -97,8 +97,10 @@ private class ALT_CLS_CsvFormatParserTest {
       '2026-03-02,=SUM(A1),-40.25\n' +
       '2026-03-03,Bad date 03/2026,10\n' +
       '03/04/2026,Wrong format,10\n' +
-      '2026-03-05,Blank amount,\n';
-    csv = csv.replace('"1,250.50"', '1250.50');
+      '2026-03-05,Blank amount,\n' +
+      '2026-03-06,Zero movement,0\n' +
+      '2026-02-31,Day overflow,5\n' +
+      '2026-03-07,"Quoted, with ""inner"" quotes",7.5\n';
 
     Test.startTest();
     ALT_CLS_CsvFormatParser.ParseResult result = ALT_CLS_CsvFormatParser.parse(
@@ -113,10 +115,31 @@ private class ALT_CLS_CsvFormatParserTest {
       String.join(result.structureErrorCodes, ',')
     );
     Assert.areEqual('other-bank-csv@2.1.0', result.parserVersion);
-    Assert.areEqual(5, result.totalRows);
-    Assert.areEqual(3, result.validRows);
-    Assert.areEqual(2, result.rejectedRows);
-    Assert.areEqual(1250.50, result.sample[0].inflow);
+    Assert.areEqual(8, result.totalRows);
+    Assert.areEqual(4, result.validRows);
+    Assert.areEqual(4, result.rejectedRows);
+    Assert.areEqual(
+      1250.50,
+      result.sample[0].inflow,
+      'Celula com aspas e separador de milhar.'
+    );
+    ALT_CLS_CsvFormatParser.RowResult quotedRow;
+    for (ALT_CLS_CsvFormatParser.RowResult candidate : result.sample) {
+      if (candidate.lineNumber == 10) {
+        quotedRow = candidate;
+      }
+    }
+    Assert.isNotNull(quotedRow, 'Linha com aspas e valida.');
+    Assert.areEqual('Quoted, with "inner" quotes', quotedRow.description);
+    Assert.areEqual(7.5, quotedRow.inflow);
+    Assert.isTrue(
+      result.rejections[2].errorCodes.contains('MISSING_AMOUNT'),
+      'Zero nao e movimento.'
+    );
+    Assert.isTrue(
+      result.rejections[3].errorCodes.contains('INVALID_DATE'),
+      '31/02 nao transborda.'
+    );
     Assert.isNull(result.sample[0].outflow);
     Assert.isNull(result.sample[0].balance, 'Saldo nao exigido pelo formato.');
     Assert.areEqual(
@@ -184,13 +207,34 @@ private class ALT_CLS_CsvFormatParserTest {
     Test.stopTest();
 
     Assert.areEqual(3, listed.size(), 'Inativo nao e listado.');
-    Boolean sawBlocked = false;
+    Map<String, ALT_CLS_CsvFormatRegistry.FormatView> byKey = new Map<String, ALT_CLS_CsvFormatRegistry.FormatView>();
     for (ALT_CLS_CsvFormatRegistry.FormatView view : listed) {
-      if (view.formatKey == 'Future_Format') {
-        sawBlocked = view.blocked;
-      }
+      byKey.put(view.formatKey, view);
     }
-    Assert.isTrue(sawBlocked, 'Familia nao implementada aparece como BLOCKED.');
+    Assert.isTrue(
+      byKey.get('Future_Format').blocked,
+      'Familia nao implementada aparece como BLOCKED.'
+    );
+    Assert.areEqual(
+      'UNSUPPORTED_FAMILY',
+      byKey.get('Future_Format').blockedReason
+    );
+    Assert.isTrue(
+      byKey.get('Broken_Format').blocked,
+      'Definicao incompleta e bloqueada na listagem.'
+    );
+    Assert.areEqual(
+      'INVALID_DEFINITION',
+      byKey.get('Broken_Format').blockedReason
+    );
+    Assert.isFalse(
+      byKey.get(ALT_CLS_CsvFormatRegistry.CONTABILIZEI_BANK).blocked
+    );
+    Assert.isFalse(
+      ALT_CLS_CsvFormatRegistry.isSupported(
+        ALT_CLS_CsvFormatRegistry.resolve('Broken_Format')
+      )
+    );
     Assert.isFalse(ALT_CLS_CsvFormatRegistry.isSupported(blocked));
     Assert.isFalse(blockedResult.structureValid);
     Assert.isTrue(blockedResult.structureErrorCodes.contains('FORMAT_BLOCKED'));
@@ -209,6 +253,10 @@ private class ALT_CLS_CsvFormatParserTest {
     pinned.DeveloperName = 'Pinned_Bank';
     pinned.AXF_CSF_TXT_InstitutionBankNumber__c = '999';
     ALT_CLS_CsvFormatRegistry.recordsOverride.add(pinned);
+    AXF_CMT_CsvFormat__mdt matching = contabilizei();
+    matching.DeveloperName = 'Matching_Bank';
+    matching.AXF_CSF_TXT_InstitutionBankNumber__c = ' 0123 ';
+    ALT_CLS_CsvFormatRegistry.recordsOverride.add(matching);
 
     Account holder = new Account(
       LastName = 'Titular AXF72',
@@ -261,6 +309,27 @@ private class ALT_CLS_CsvFormatParserTest {
     AXF_CLS_CTRL_CsvImportPreview.PreviewResult okPreview = AXF_CLS_CTRL_CsvImportPreview.previewCsv(
       input
     );
+    input.formatKey = 'Matching_Bank';
+    AXF_CLS_CTRL_CsvImportPreview.PreviewResult matchingPreview = AXF_CLS_CTRL_CsvImportPreview.previewCsv(
+      input
+    );
+    AXF_CLS_CsvImportConfirmService.ConfirmResult missingConfirm = AXF_CLS_CTRL_CsvImportPreview.confirmCsv(
+      bank.Id,
+      'extrato.csv',
+      csv,
+      null,
+      true,
+      'Unknown'
+    );
+    AXF_CLS_CsvImportConfirmService.ConfirmInput staleInput = new AXF_CLS_CsvImportConfirmService.ConfirmInput();
+    staleInput.accountId = bank.Id;
+    staleInput.fileName = 'extrato.csv';
+    staleInput.base64Content = csv;
+    staleInput.acknowledgeRejections = true;
+    staleInput.formatKey = ALT_CLS_CsvFormatRegistry.CONTABILIZEI_BANK;
+    staleInput.expectedFormatKey = 'Matching_Bank';
+    AXF_CLS_CsvImportConfirmService.ConfirmResult staleConfirm = new AXF_CLS_CsvImportConfirmService()
+      .confirm(staleInput);
     AXF_CLS_CsvImportConfirmService.ConfirmResult blockedConfirm = AXF_CLS_CTRL_CsvImportPreview.confirmCsv(
       bank.Id,
       'extrato.csv',
@@ -288,9 +357,20 @@ private class ALT_CLS_CsvFormatParserTest {
       ALT_CLS_CsvFormatRegistry.CONTABILIZEI_BANK,
       okPreview.parseResult.formatKey
     );
+    Assert.areEqual(
+      'OK',
+      matchingPreview.outcome,
+      'Instituicao fixada igual a da conta (normalizada) passa.'
+    );
     Assert.areEqual('FORMAT_BLOCKED', blockedConfirm.outcome);
     Assert.areEqual('INSTITUTION_MISMATCH', mismatchConfirm.outcome);
-    Assert.areEqual(3, formats.size());
+    Assert.areEqual('FORMAT_MISSING', missingConfirm.outcome);
+    Assert.areEqual(
+      'STALE_PREVIEW',
+      staleConfirm.outcome,
+      'Formato revisado difere do confirmado.'
+    );
+    Assert.areEqual(4, formats.size());
     Assert.areEqual(
       0,
       [
@@ -307,5 +387,124 @@ private class ALT_CLS_CsvFormatParserTest {
       ),
       'Formato sem instituicao fixada nao restringe.'
     );
+  }
+
+  @IsTest
+  static void explicitDelimitersAutoDetectionAndSkipLinesBeyondFile() {
+    AXF_CMT_CsvFormat__mdt pipe = record(
+      'Pipe_Bank',
+      'BANK_STATEMENT_V1',
+      'pipe@1.0.0',
+      true
+    );
+    pipe.AXF_CSF_PKL_Delimiter__c = 'PIPE';
+    pipe.AXF_CSF_NUM_SkipLines__c = 0;
+    AXF_CMT_CsvFormat__mdt tab = record(
+      'Tab_Bank',
+      'BANK_STATEMENT_V1',
+      'tab@1.0.0',
+      true
+    );
+    tab.AXF_CSF_PKL_Delimiter__c = 'TAB';
+    tab.AXF_CSF_NUM_SkipLines__c = 0;
+    AXF_CMT_CsvFormat__mdt semi = record(
+      'Semi_Bank',
+      'BANK_STATEMENT_V1',
+      'semi@1.0.0',
+      true
+    );
+    semi.AXF_CSF_PKL_Delimiter__c = 'SEMICOLON';
+    semi.AXF_CSF_NUM_SkipLines__c = 0;
+    AXF_CMT_CsvFormat__mdt auto = record(
+      'Auto_Bank',
+      'BANK_STATEMENT_V1',
+      'auto@1.0.0',
+      true
+    );
+    auto.AXF_CSF_PKL_Delimiter__c = 'AUTO';
+    auto.AXF_CSF_NUM_SkipLines__c = 0;
+    AXF_CMT_CsvFormat__mdt deep = record(
+      'Deep_Bank',
+      'BANK_STATEMENT_V1',
+      'deep@1.0.0',
+      true
+    );
+    deep.AXF_CSF_NUM_SkipLines__c = 9;
+    ALT_CLS_CsvFormatRegistry.recordsOverride = new List<AXF_CMT_CsvFormat__mdt>{
+      contabilizei(),
+      pipe,
+      tab,
+      semi,
+      auto,
+      deep
+    };
+
+    Test.startTest();
+    ALT_CLS_CsvFormatParser.ParseResult piped = ALT_CLS_CsvFormatParser.parse(
+      'Date|Memo|Amount\n2026-03-01|Payroll|10',
+      100,
+      ALT_CLS_CsvFormatRegistry.resolve('Pipe_Bank')
+    );
+    ALT_CLS_CsvFormatParser.ParseResult tabbed = ALT_CLS_CsvFormatParser.parse(
+      'Date\tMemo\tAmount\n2026-03-01\tPayroll\t-20',
+      100,
+      ALT_CLS_CsvFormatRegistry.resolve('Tab_Bank')
+    );
+    ALT_CLS_CsvFormatParser.ParseResult semis = ALT_CLS_CsvFormatParser.parse(
+      'Date;Memo;Amount\n2026-03-01;Payroll;30',
+      100,
+      ALT_CLS_CsvFormatRegistry.resolve('Semi_Bank')
+    );
+    ALT_CLS_CsvFormatParser.ParseResult autoPipe = ALT_CLS_CsvFormatParser.parse(
+      'Date|Memo|Amount\n2026-03-01|Payroll, net|40',
+      100,
+      ALT_CLS_CsvFormatRegistry.resolve('Auto_Bank')
+    );
+    ALT_CLS_CsvFormatParser.ParseResult tooDeep = ALT_CLS_CsvFormatParser.parse(
+      'Date,Memo,Amount\n2026-03-01,Payroll,40',
+      100,
+      ALT_CLS_CsvFormatRegistry.resolve('Deep_Bank')
+    );
+    Test.stopTest();
+
+    Assert.isTrue(
+      piped.structureValid,
+      String.join(piped.structureErrorCodes, ',')
+    );
+    Assert.areEqual(10, piped.sample[0].inflow);
+    Assert.isTrue(
+      tabbed.structureValid,
+      String.join(tabbed.structureErrorCodes, ',')
+    );
+    Assert.areEqual(20, tabbed.sample[0].outflow);
+    Assert.isTrue(
+      semis.structureValid,
+      String.join(semis.structureErrorCodes, ',')
+    );
+    Assert.areEqual(30, semis.sample[0].inflow);
+    Assert.isTrue(
+      autoPipe.structureValid,
+      'AUTO detecta pipe mesmo com virgula no texto.'
+    );
+    Assert.areEqual('Payroll, net', autoPipe.sample[0].description);
+    Assert.isFalse(
+      tooDeep.structureValid,
+      'skipLines alem do arquivo nao encontra cabecalho.'
+    );
+    Assert.isTrue(tooDeep.structureErrorCodes.contains('EMPTY_FILE'));
+  }
+
+  @IsTest
+  static void shippedContabilizeiVersionMatchesTheFacadeConstant() {
+    ALT_CLS_CsvFormatParser.Format format = ALT_CLS_CsvFormatRegistry.resolve(
+      ALT_CLS_CsvFormatRegistry.CONTABILIZEI_BANK
+    );
+    Assert.isNotNull(format, 'Registro entregue com o build.');
+    Assert.areEqual(
+      ALT_CLS_ContabilizeiCsvParser.PARSER_VERSION,
+      format.parserVersion,
+      'Versao do metadado e a constante da fachada devem coincidir.'
+    );
+    Assert.areEqual('UTF-8', format.encoding.trim().toUpperCase());
   }
 }

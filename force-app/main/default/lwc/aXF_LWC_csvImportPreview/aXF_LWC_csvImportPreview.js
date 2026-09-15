@@ -10,7 +10,7 @@ const ERROR_LABELS = {
     "O arquivo não tem as colunas esperadas pelo formato selecionado.",
   FORMAT_MISSING: "Formato CSV não configurado ou inativo.",
   FORMAT_BLOCKED:
-    "Formato aprovado, mas sua família de parsing ainda não está implementada (BLOCKED).",
+    "Formato aprovado, mas ainda não pode ser processado (família não implementada ou definição incompleta).",
   ROW_LIMIT_EXCEEDED: "O arquivo tem mais linhas do que o permitido.",
   INVALID_DATE: "Data inválida.",
   INVALID_AMOUNT: "Valor de entrada ou saída inválido.",
@@ -36,7 +36,8 @@ export default class AXF_LWC_csvImportPreview extends LightningElement {
   policy;
   policyError;
   formats = [];
-  formatKey = "Contabilizei_Bank";
+  formatsLoaded = false;
+  formatKey = "";
   fileName;
   errorMessage;
   loading = false;
@@ -51,16 +52,21 @@ export default class AXF_LWC_csvImportPreview extends LightningElement {
     getFormats()
       .then((rows) => {
         this.formats = rows || [];
-        const selected = this.formats.find(
-          (f) => f.formatKey === this.formatKey
-        );
-        if (!selected || selected.blocked) {
-          const first = this.formats.find((f) => !f.blocked);
-          this.formatKey = first ? first.formatKey : "";
+        // The server list drives the default: first usable format, never a client constant.
+        const first = this.formats.find((f) => !f.blocked);
+        this.formatKey = first ? first.formatKey : "";
+        if (!first) {
+          this.errorMessage =
+            "Nenhum formato CSV ativo e utilizável. Peça ao Gestor Financeiro para configurar um formato.";
         }
       })
       .catch(() => {
         this.formats = [];
+        this.formatKey = "";
+        this.errorMessage = "Não foi possível carregar os formatos CSV.";
+      })
+      .finally(() => {
+        this.formatsLoaded = true;
       });
     getPolicy()
       .then((data) => {
@@ -112,10 +118,25 @@ export default class AXF_LWC_csvImportPreview extends LightningElement {
   get formatOptions() {
     return this.formats.map((f) => ({
       label: f.blocked
-        ? `${f.label} (BLOCKED)`
+        ? `${f.label} (indisponível)`
         : `${f.label} · ${f.parserVersion}`,
       value: f.formatKey
     }));
+  }
+
+  get selectedFormatLabel() {
+    const selected = this.selectedFormat;
+    return selected ? selected.label : this.formatKey;
+  }
+
+  get formatBlockedMessage() {
+    const selected = this.selectedFormat;
+    if (!selected || !selected.blocked) {
+      return "";
+    }
+    return selected.blockedReason === "INVALID_DEFINITION"
+      ? "Este formato tem definição incompleta (colunas, versão ou codificação). Peça ao Gestor Financeiro para corrigir o registro ou escolha outro formato."
+      : "Este formato está aprovado, mas sua família de parsing ainda não está implementada. Escolha outro formato.";
   }
 
   get selectedFormat() {
@@ -139,6 +160,7 @@ export default class AXF_LWC_csvImportPreview extends LightningElement {
   get disableUpload() {
     return (
       this.loading ||
+      !this.formatsLoaded ||
       !!this.policyError ||
       !this.formatKey ||
       this.formatBlocked
@@ -281,7 +303,8 @@ export default class AXF_LWC_csvImportPreview extends LightningElement {
         base64Content: this.pendingContent,
         expectedParserVersion: this.previewResult.parseResult.parserVersion,
         acknowledgeRejections: this.acknowledge,
-        formatKey: this.formatKey
+        // Commit the format that was previewed, not whatever is selected now.
+        formatKey: this.previewResult.parseResult.formatKey
       });
       this.confirmResult = result;
       if (result.outcome === "PUBLISHED") {

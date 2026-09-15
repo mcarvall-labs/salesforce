@@ -161,7 +161,7 @@ public with sharing class AXF_CLS_CTRL_CsvImportPreview {
     if (!ALT_CLS_CsvFormatRegistry.isSupported(format)) {
       return outcome(
         'FORMAT_BLOCKED',
-        'Formato CSV aprovado, mas sua família de parsing ainda não está implementada (BLOCKED).'
+        AXF_CLS_CsvImportConfirmService.blockedMessage(format)
       );
     }
     String institutionMismatch = AXF_CLS_CsvImportConfirmService.institutionMismatch(
@@ -229,10 +229,15 @@ public with sharing class AXF_CLS_CTRL_CsvImportPreview {
     input.expectedParserVersion = expectedParserVersion;
     input.acknowledgeRejections = acknowledgeRejections;
     input.formatKey = formatKey;
+    // The reviewed format is the one being committed (STALE_PREVIEW otherwise).
+    input.expectedFormatKey = formatKey;
     return new AXF_CLS_CsvImportConfirmService().confirm(input);
   }
 
-  /** AXF-72 — active versioned formats; blocked families are shown but not selectable. */
+  /**
+   * AXF-72 — active versioned formats. Blocked entries (unsupported family or incomplete
+   * definition) are listed with their reason; the LWC keeps the upload disabled for them.
+   */
   @AuraEnabled(cacheable=true)
   public static List<ALT_CLS_CsvFormatRegistry.FormatView> getFormats() {
     return ALT_CLS_CsvFormatRegistry.listActive();

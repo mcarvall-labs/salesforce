@@ -18,6 +18,9 @@ public with sharing class AXF_CLS_CsvImportConfirmService {
     public String base64Content;
     @AuraEnabled
     public String expectedParserVersion;
+    /** Format reviewed in the preview; confirmation must use the same one. */
+    @AuraEnabled
+    public String expectedFormatKey;
     @AuraEnabled
     public Boolean acknowledgeRejections;
     @AuraEnabled
@@ -121,10 +124,7 @@ public with sharing class AXF_CLS_CsvImportConfirmService {
       );
     }
     if (!ALT_CLS_CsvFormatRegistry.isSupported(format)) {
-      return outcome(
-        'FORMAT_BLOCKED',
-        'Formato CSV aprovado, mas sua família de parsing ainda não está implementada (BLOCKED).'
-      );
+      return outcome('FORMAT_BLOCKED', blockedMessage(format));
     }
     String institutionMismatch = institutionMismatch(account.Id, format);
     if (institutionMismatch != null) {
@@ -149,10 +149,12 @@ public with sharing class AXF_CLS_CsvImportConfirmService {
       );
     }
 
-    // AC1 — the reviewed preview must match what is being committed.
+    // AC1 — the reviewed preview (format and version) must match what is being committed.
     if (
-      String.isNotBlank(input.expectedParserVersion) &&
-      input.expectedParserVersion != parsed.parserVersion
+      (String.isNotBlank(input.expectedParserVersion) &&
+      input.expectedParserVersion != parsed.parserVersion) ||
+      (String.isNotBlank(input.expectedFormatKey) &&
+      input.expectedFormatKey != parsed.formatKey)
     ) {
       return outcome(
         'STALE_PREVIEW',
@@ -378,21 +380,47 @@ public with sharing class AXF_CLS_CsvImportConfirmService {
     if (format == null || String.isBlank(format.institutionBankNumber)) {
       return null;
     }
-    List<AXF_OBJ_BankAccount__c> rows = [
-      SELECT AXF_BA_LKP_BankInstitution__r.AXF_BI_EXI_Bank_Number__c
-      FROM AXF_OBJ_BankAccount__c
-      WHERE Id = :accountId
-      WITH USER_MODE
-    ];
+    List<AXF_OBJ_BankAccount__c> rows;
+    try {
+      rows = [
+        SELECT AXF_BA_LKP_BankInstitution__r.AXF_BI_EXI_Bank_Number__c
+        FROM AXF_OBJ_BankAccount__c
+        WHERE Id = :accountId
+        WITH USER_MODE
+      ];
+    } catch (QueryException denied) {
+      return 'Sem permissão para validar a instituição da conta; peça ao Gestor Financeiro.';
+    }
     String bankNumber = rows.isEmpty()
       ? null
       : rows[0].AXF_BA_LKP_BankInstitution__r?.AXF_BI_EXI_Bank_Number__c;
-    if (bankNumber != format.institutionBankNumber) {
+    if (bankNumber == null) {
+      return 'A conta bancária não está vinculada a uma instituição do diretório; conclua o vínculo antes de importar com o formato ' +
+        format.label +
+        '.';
+    }
+    if (
+      bankNumberKey(bankNumber) != bankNumberKey(format.institutionBankNumber)
+    ) {
       return 'O formato ' +
         format.label +
         ' pertence a outra instituição; selecione a conta bancária correta.';
     }
     return null;
+  }
+
+  /** COMPE numbers compare without surrounding whitespace or leading zeros ('001' == '1'). */
+  private static String bankNumberKey(String value) {
+    String trimmed = value == null ? '' : value.trim();
+    return trimmed.replaceFirst('^0+(?=\\d)', '');
+  }
+
+  public static String blockedMessage(ALT_CLS_CsvFormatParser.Format format) {
+    String reason = ALT_CLS_CsvFormatRegistry.blockedReason(format);
+    if (reason == 'INVALID_DEFINITION') {
+      return 'Formato CSV com definição incompleta (colunas, versão ou codificação); peça ao Gestor Financeiro para corrigir o registro.';
+    }
+    return 'Formato CSV aprovado, mas sua família de parsing ainda não está implementada; aguarde a liberação.';
   }
 
   private static ConfirmResult outcome(String code, String message) {

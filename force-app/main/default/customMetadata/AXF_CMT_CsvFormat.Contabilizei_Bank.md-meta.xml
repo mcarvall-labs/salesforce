@@ -6,6 +6,8 @@
 >
     <label>Contabilizei.bank</label>
     <protected>false</protected>
+    <description
+  >Contrato de cabecalho Data/Descricao/Entrada/Saida/Saldo (AXF-14). Nao respaldado por arquivo de exemplo real da Contabilizei; validar com um extrato real antes de produzir (G9). AXF_CSF_TXT_ParserVersion__c deve coincidir com ALT_CLS_ContabilizeiCsvParser.PARSER_VERSION.</description>
     <values><field>AXF_CSF_PKL_Family__c</field><value
       xsi:type="xsd:string"
     >BANK_STATEMENT_V1</value></values>

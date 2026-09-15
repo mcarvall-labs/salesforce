@@ -1,8 +1,10 @@
 /**
  * AXF-72 registry of versioned CSV formats backed by AXF_CMT_CsvFormat__mdt. Adding a format of
  * the BANK_STATEMENT_V1 family is a metadata-only change; a format whose family the parser does
- * not implement is exposed as BLOCKED and never parsed. No default is invented when a format is
- * missing.
+ * not implement, or whose definition is incomplete, is exposed as BLOCKED and never parsed. No
+ * default is invented when a format is missing: a blank key resolves to the Contabilizei record
+ * only for the legacy facade (`ALT_CLS_ContabilizeiCsvParser`) and pre-AXF-72 callers, and that
+ * record still has to exist and be active.
  */
 public inherited sharing class ALT_CLS_CsvFormatRegistry {
   public static final String CONTABILIZEI_BANK = 'Contabilizei_Bank';
@@ -24,6 +26,9 @@ public inherited sharing class ALT_CLS_CsvFormatRegistry {
     public String parserVersion;
     @AuraEnabled
     public Boolean blocked;
+    /** UNSUPPORTED_FAMILY | INVALID_DEFINITION when blocked. */
+    @AuraEnabled
+    public String blockedReason;
   }
 
   /** Active formats for selection; unsupported families are listed as blocked, never hidden. */
@@ -38,7 +43,8 @@ public inherited sharing class ALT_CLS_CsvFormatRegistry {
       view.label = record.MasterLabel;
       view.family = record.AXF_CSF_PKL_Family__c;
       view.parserVersion = record.AXF_CSF_TXT_ParserVersion__c;
-      view.blocked = !SUPPORTED_FAMILIES.contains(record.AXF_CSF_PKL_Family__c);
+      view.blockedReason = blockedReason(toFormat(record));
+      view.blocked = view.blockedReason != null;
       result.add(view);
     }
     return result;
@@ -56,7 +62,18 @@ public inherited sharing class ALT_CLS_CsvFormatRegistry {
   }
 
   public static Boolean isSupported(ALT_CLS_CsvFormatParser.Format format) {
-    return format != null && SUPPORTED_FAMILIES.contains(format.family);
+    return blockedReason(format) == null;
+  }
+
+  /** @return null when parseable, otherwise why the format is blocked (never a file problem). */
+  public static String blockedReason(ALT_CLS_CsvFormatParser.Format format) {
+    if (format == null || !SUPPORTED_FAMILIES.contains(format.family)) {
+      return 'UNSUPPORTED_FAMILY';
+    }
+    if (!ALT_CLS_CsvFormatParser.isDefinitionValid(format)) {
+      return 'INVALID_DEFINITION';
+    }
+    return null;
   }
 
   private static List<AXF_CMT_CsvFormat__mdt> records() {

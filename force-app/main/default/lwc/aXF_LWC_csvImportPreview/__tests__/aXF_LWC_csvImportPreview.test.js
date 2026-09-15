@@ -39,7 +39,8 @@ const FORMATS = [
     label: "Other bank",
     family: "OTHER",
     parserVersion: "other@0.1.0",
-    blocked: true
+    blocked: true,
+    blockedReason: "UNSUPPORTED_FAMILY"
   }
 ];
 
@@ -258,7 +259,7 @@ describe("c-a-x-f_-l-w-c_csv-import-preview", () => {
       "Contabilizei_Bank",
       "Other_Bank"
     ]);
-    expect(combo.options[1].label).toContain("BLOCKED");
+    expect(combo.options[1].label).toContain("indisponível");
     expect(
       element.shadowRoot.querySelector("input[type='file']").disabled
     ).toBe(false);
@@ -269,7 +270,59 @@ describe("c-a-x-f_-l-w-c_csv-import-preview", () => {
     expect(
       element.shadowRoot.querySelector("input[type='file']").disabled
     ).toBe(true);
-    expect(element.shadowRoot.textContent).toContain("BLOCKED");
+    expect(element.shadowRoot.textContent).toContain(
+      "família de parsing ainda não está implementada"
+    );
+    expect(previewCsv).not.toHaveBeenCalled();
+  });
+
+  it("defaults to the first usable format from the server, never a client constant", async () => {
+    getFormats.mockResolvedValue([
+      {
+        formatKey: "Contabilizei_Bank",
+        label: "Contabilizei.bank",
+        family: "BANK_STATEMENT_V1",
+        parserVersion: "contabilizei-bank-csv@1.0.0",
+        blocked: true,
+        blockedReason: "INVALID_DEFINITION"
+      },
+      {
+        formatKey: "Third_Bank",
+        label: "Third bank",
+        family: "BANK_STATEMENT_V1",
+        parserVersion: "third@1.0.0",
+        blocked: false
+      }
+    ]);
+    const element = build();
+    await flush();
+    expect(element.shadowRoot.querySelector('[data-id="format"]').value).toBe(
+      "Third_Bank"
+    );
+    expect(
+      element.shadowRoot.querySelector("input[type='file']").disabled
+    ).toBe(false);
+  });
+
+  it("keeps upload disabled with a message when no usable format exists or the list fails", async () => {
+    getFormats.mockResolvedValue([]);
+    const element = build();
+    await flush();
+    expect(
+      element.shadowRoot.querySelector("input[type='file']").disabled
+    ).toBe(true);
+    expect(element.shadowRoot.textContent).toContain(
+      "Nenhum formato CSV ativo"
+    );
+    getFormats.mockRejectedValue(new Error("boom"));
+    const failed = build();
+    await flush();
+    expect(failed.shadowRoot.querySelector("input[type='file']").disabled).toBe(
+      true
+    );
+    expect(failed.shadowRoot.textContent).toContain(
+      "Não foi possível carregar os formatos CSV"
+    );
     expect(previewCsv).not.toHaveBeenCalled();
   });
 });

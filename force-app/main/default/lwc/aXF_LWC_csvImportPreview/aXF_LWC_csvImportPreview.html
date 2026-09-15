@@ -1,5 +1,5 @@
 <template>
-  <lightning-card title="Importar CSV Contabilizei.bank">
+  <lightning-card title="Importar extrato CSV">
     <div class="slds-var-p-around_medium">
       <h2
         data-id="step-heading"
@@ -44,8 +44,7 @@
         ></lightning-combobox>
         <template if:true={formatBlocked}>
           <p class="slds-text-color_error slds-var-m-bottom_small" role="alert">
-            Este formato está aprovado, mas sua família de parsing ainda não
-            está implementada (BLOCKED). Escolha outro formato.
+            {formatBlockedMessage}
           </p>
         </template>
         <div class="slds-form-element">
@@ -78,7 +77,7 @@
           <p>Conta: {previewResult.targetAccountLabel}</p>
         </template>
         <p>
-          Formato: {previewResult.parseResult.formatKey} · Versão do analisador:
+          Formato: {selectedFormatLabel} · Versão do analisador:
           {previewResult.parseResult.parserVersion} · Normalização:
           {previewResult.parseResult.normalizationVersion}
         </p>

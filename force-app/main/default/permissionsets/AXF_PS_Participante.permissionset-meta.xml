@@ -17,6 +17,14 @@
     <enabled>true</enabled>
   </classAccesses>
   <classAccesses>
+    <apexClass>ALT_CLS_CsvFormatParser</apexClass>
+    <enabled>true</enabled>
+  </classAccesses>
+  <classAccesses>
+    <apexClass>ALT_CLS_CsvFormatRegistry</apexClass>
+    <enabled>true</enabled>
+  </classAccesses>
+  <classAccesses>
     <apexClass>ALT_CLS_ContractRemunerationService</apexClass>
     <enabled>true</enabled>
   </classAccesses>

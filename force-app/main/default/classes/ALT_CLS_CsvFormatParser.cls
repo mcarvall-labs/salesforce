@@ -118,7 +118,8 @@ public inherited sharing class ALT_CLS_CsvFormatParser {
     result.parserVersion = format.parserVersion;
     result.formatKey = format.formatKey;
     if (
-      format.family != FAMILY_BANK_STATEMENT_V1 || !isDefinitionValid(format)
+      !ALT_CLS_CsvFormatRegistry.SUPPORTED_FAMILIES.contains(format.family) ||
+      !isDefinitionValid(format)
     ) {
       result.structureErrorCodes.add('FORMAT_BLOCKED');
       return result;
@@ -198,18 +199,31 @@ public inherited sharing class ALT_CLS_CsvFormatParser {
     return result;
   }
 
-  private static Boolean isDefinitionValid(Format format) {
+  /**
+   * A definition is usable when it names the date and description columns, exactly one amount
+   * strategy (signed amount XOR inflow/outflow), a balance column when the balance is required,
+   * a parser version and a supported encoding. Checked by the registry (listing/selection) and
+   * by parse.
+   */
+  public static Boolean isDefinitionValid(Format format) {
+    if (format == null) {
+      return false;
+    }
     Boolean split =
       String.isNotBlank(format.inflowColumn) &&
       String.isNotBlank(format.outflowColumn);
     Boolean single = String.isNotBlank(format.amountColumn);
+    Boolean anySplit =
+      String.isNotBlank(format.inflowColumn) ||
+      String.isNotBlank(format.outflowColumn);
     return String.isNotBlank(format.dateColumn) &&
-      (split || single) &&
+      String.isNotBlank(format.descriptionColumn) &&
+      ((split && !single) || (single && !anySplit)) &&
       (format.balanceRequired != true ||
       String.isNotBlank(format.balanceColumn)) &&
       String.isNotBlank(format.parserVersion) &&
       (String.isBlank(format.encoding) ||
-      format.encoding.toUpperCase() == 'UTF-8');
+      format.encoding.trim().toUpperCase() == 'UTF-8');
   }
 
   private static RowResult parseRow(
@@ -255,6 +269,10 @@ public inherited sharing class ALT_CLS_CsvFormatParser {
         if (amount == null) {
           row.valid = false;
           row.errorCodes.add('INVALID_AMOUNT');
+        } else if (amount == 0) {
+          // A zero movement carries no fact; same answer as an empty amount.
+          row.valid = false;
+          row.errorCodes.add('MISSING_AMOUNT');
         } else if (amount < 0) {
           row.outflow = amount.abs();
         } else {
@@ -354,13 +372,57 @@ public inherited sharing class ALT_CLS_CsvFormatParser {
     if (choice == 'PIPE') {
       return '\\|';
     }
-    Integer semicolons = headerLine.countMatches(';');
-    Integer commas = headerLine.countMatches(',');
-    return semicolons >= commas ? ';' : ',';
+    // AUTO: the most frequent candidate wins; ties favour the Brazilian default (;).
+    Map<String, Integer> counts = new Map<String, Integer>{
+      ';' => headerLine.countMatches(';'),
+      ',' => headerLine.countMatches(','),
+      '\t' => headerLine.countMatches('\t'),
+      '\\|' => headerLine.countMatches('|')
+    };
+    String best = ';';
+    for (String candidate : new List<String>{ ';', ',', '\t', '\\|' }) {
+      if (counts.get(candidate) > counts.get(best)) {
+        best = candidate;
+      }
+    }
+    return best;
   }
 
+  /** RFC 4180-style split: quoted cells may contain the delimiter and doubled quotes. */
+  @TestVisible
   private static List<String> splitRow(String line, String delimiter) {
-    return line.split(delimiter, -1);
+    if (!line.contains('"')) {
+      return line.split(delimiter, -1);
+    }
+    String separator = delimiter == '\\|' ? '|' : delimiter;
+    List<String> cells = new List<String>();
+    String current = '';
+    Boolean quoted = false;
+    Integer length = line.length();
+    for (Integer i = 0; i < length; i++) {
+      String character = line.substring(i, i + 1);
+      if (quoted) {
+        if (character == '"') {
+          if (i + 1 < length && line.substring(i + 1, i + 2) == '"') {
+            current += '"';
+            i++;
+          } else {
+            quoted = false;
+          }
+        } else {
+          current += character;
+        }
+      } else if (character == '"') {
+        quoted = true;
+      } else if (character == separator) {
+        cells.add(current);
+        current = '';
+      } else {
+        current += character;
+      }
+    }
+    cells.add(current);
+    return cells;
   }
 
   private static Map<String, Integer> indexHeader(List<String> header) {
@@ -460,7 +522,12 @@ public inherited sharing class ALT_CLS_CsvFormatParser {
       if (year < 100) {
         year += 2000;
       }
-      if (month < 1 || month > 12 || day < 1 || day > 31) {
+      if (
+        month < 1 ||
+        month > 12 ||
+        day < 1 ||
+        day > Date.daysInMonth(year, month)
+      ) {
         return null;
       }
       return Date.newInstance(year, month, day);
