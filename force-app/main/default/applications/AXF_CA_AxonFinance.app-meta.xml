@@ -22,5 +22,6 @@
     <tabs>AXF_ReportCurrency</tabs>
     <tabs>AXF_CT_BillingComposer</tabs>
     <tabs>AXF_CT_SharedExpenses</tabs>
+    <tabs>AXF_CT_SourceLink</tabs>
     <uiType>Lightning</uiType>
 </CustomApplication>

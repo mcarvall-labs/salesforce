@@ -1,0 +1,439 @@
+<template>
+  <lightning-card title={labels.title} icon-name="standard:link">
+    <div class="slds-p-horizontal_medium slds-p-bottom_medium">
+      <p class="slds-text-body_small slds-m-bottom_small">{labels.intro}</p>
+      <template lwc:if={cannotLink}>
+        <div class="slds-box slds-theme_shade" role="status">
+          {labels.noCapability}
+        </div>
+      </template>
+      <template lwc:if={error}>
+        <div
+          class="slds-notify slds-notify_alert slds-theme_alert-texture slds-theme_error slds-m-bottom_small"
+          role="alert"
+        >
+          <span>{error}</span>
+        </div>
+      </template>
+      <template lwc:if={canLink}>
+        <lightning-progress-indicator
+          current-step={step}
+          type="path"
+          variant="base"
+          class="slds-m-bottom_medium"
+        >
+          <lightning-progress-step
+            label={labels.stepSource}
+            value="SOURCE"
+          ></lightning-progress-step>
+          <lightning-progress-step
+            label={labels.stepCandidate}
+            value="CANDIDATE"
+          ></lightning-progress-step>
+          <lightning-progress-step
+            label={labels.stepReview}
+            value="REVIEW"
+          ></lightning-progress-step>
+          <lightning-progress-step
+            label={labels.done}
+            value="DONE"
+          ></lightning-progress-step>
+        </lightning-progress-indicator>
+
+        <template lwc:if={isSourceStep}>
+          <div class="slds-grid slds-gutters slds-wrap">
+            <div class="slds-col slds-size_1-of-1 slds-medium-size_4-of-12">
+              <lightning-combobox
+                label={labels.holder}
+                placeholder={labels.holderPlaceholder}
+                options={holderOptions}
+                value={holderId}
+                onchange={handleHolder}
+                data-id="holder"
+              ></lightning-combobox>
+            </div>
+            <div class="slds-col slds-size_1-of-1 slds-medium-size_3-of-12">
+              <lightning-combobox
+                label={labels.kind}
+                options={kindOptions}
+                value={kind}
+                onchange={handleKind}
+                data-id="kind"
+              ></lightning-combobox>
+            </div>
+            <div class="slds-col slds-size_1-of-1 slds-medium-size_3-of-12">
+              <lightning-input
+                label={labels.search}
+                value={sourceTerm}
+                onchange={handleSourceTerm}
+                data-id="sourceTerm"
+              ></lightning-input>
+            </div>
+            <div
+              class="slds-col slds-size_1-of-1 slds-medium-size_2-of-12 slds-align-bottom"
+            >
+              <lightning-button
+                variant="brand"
+                label={labels.loadSources}
+                onclick={handleLoadSources}
+                disabled={loadDisabled}
+                data-id="loadSources"
+              ></lightning-button>
+            </div>
+          </div>
+          <template lwc:if={busy}>
+            <p class="slds-m-top_small" role="status">{labels.loading}</p>
+          </template>
+          <template lwc:if={showNoSources}>
+            <div
+              class="slds-box slds-theme_shade slds-m-top_small"
+              role="status"
+              data-id="noSources"
+            >
+              {labels.noSources}
+            </div>
+          </template>
+          <template lwc:if={hasSources}>
+            <p
+              class="slds-text-body_small slds-m-top_small"
+              data-id="excludedSources"
+            >
+              {excludedSourcesText}
+            </p>
+            <table
+              class="slds-table slds-table_cell-buffer slds-table_bordered slds-m-top_x-small"
+              data-id="sourceTable"
+            >
+              <thead>
+                <tr class="slds-line-height_reset">
+                  <th scope="col">{labels.colDate}</th>
+                  <th scope="col">{labels.colDescription}</th>
+                  <th scope="col">{labels.colFunding}</th>
+                  <th scope="col">{labels.colOrigin}</th>
+                  <th scope="col">{labels.colDirection}</th>
+                  <th scope="col">{labels.colAmount}</th>
+                  <th scope="col">{labels.colResidual}</th>
+                  <th scope="col">{labels.colAction}</th>
+                </tr>
+              </thead>
+              <tbody>
+                <template for:each={sourceRows} for:item="row">
+                  <tr key={row.key} class="slds-hint-parent">
+                    <td>
+                      <lightning-formatted-date-time
+                        value={row.factDate}
+                      ></lightning-formatted-date-time>
+                    </td>
+                    <td>{row.description}</td>
+                    <td>{row.kindLabel} · {row.fundingLabel}</td>
+                    <td>{row.origin}</td>
+                    <td>{row.directionLabel}</td>
+                    <td>
+                      <lightning-formatted-number
+                        value={row.amount}
+                        format-style="currency"
+                        currency-code={row.currencyIso}
+                      ></lightning-formatted-number>
+                    </td>
+                    <td>
+                      <lightning-formatted-number
+                        value={row.residual}
+                        format-style="currency"
+                        currency-code={row.currencyIso}
+                      ></lightning-formatted-number>
+                    </td>
+                    <td>
+                      <lightning-button
+                        label={labels.select}
+                        data-id={row.sourceId}
+                        onclick={handleSelectSource}
+                        disabled={busy}
+                      ></lightning-button>
+                    </td>
+                  </tr>
+                </template>
+              </tbody>
+            </table>
+            <template lwc:if={sourcesHasMore}>
+              <lightning-button
+                class="slds-m-top_small"
+                label={labels.loadMore}
+                onclick={handleMoreSources}
+                disabled={busy}
+                data-id="moreSources"
+              ></lightning-button>
+            </template>
+          </template>
+        </template>
+
+        <template lwc:if={isCandidateStep}>
+          <div
+            class="slds-box slds-theme_shade slds-m-bottom_small"
+            data-id="sourceSummary"
+          >
+            <p class="slds-text-title_caps">{labels.sourceSummary}</p>
+            <p>
+              <lightning-formatted-date-time
+                value={source.factDate}
+              ></lightning-formatted-date-time>
+              · {source.description} · {source.fundingLabel} · {source.origin} ·
+              {sourceDirectionLabel} ·
+              <lightning-formatted-number
+                value={source.amount}
+                format-style="currency"
+                currency-code={source.currencyIso}
+              ></lightning-formatted-number>
+              ({labels.colResidual}:
+              <lightning-formatted-number
+                value={source.residual}
+                format-style="currency"
+                currency-code={source.currencyIso}
+              ></lightning-formatted-number
+              >)
+            </p>
+            <lightning-button
+              label={labels.changeSource}
+              onclick={handleChangeSource}
+              disabled={busy}
+              data-id="changeSource"
+            ></lightning-button>
+          </div>
+          <p class="slds-text-body_small slds-m-bottom_small">
+            {labels.candidatesIntro}
+          </p>
+          <div class="slds-grid slds-gutters slds-wrap">
+            <div class="slds-col slds-size_1-of-1 slds-medium-size_6-of-12">
+              <lightning-input
+                label={labels.search}
+                value={candidateTerm}
+                onchange={handleCandidateTerm}
+                data-id="candidateTerm"
+              ></lightning-input>
+            </div>
+            <div class="slds-col slds-align-bottom">
+              <lightning-button
+                label={labels.search}
+                onclick={handleSearchCandidates}
+                disabled={busy}
+                data-id="searchCandidates"
+              ></lightning-button>
+            </div>
+          </div>
+          <template lwc:if={busy}>
+            <p class="slds-m-top_small" role="status">{labels.loading}</p>
+          </template>
+          <template lwc:if={showNoCandidates}>
+            <div
+              class="slds-box slds-theme_shade slds-m-top_small"
+              role="status"
+              data-id="noCandidates"
+            >
+              {labels.noCandidates}
+            </div>
+          </template>
+          <template lwc:if={hasCandidates}>
+            <p class="slds-text-body_small slds-m-top_small">
+              {virtualCountText} {excludedCandidatesText} {scanTruncatedText}
+            </p>
+            <table
+              class="slds-table slds-table_cell-buffer slds-table_bordered slds-m-top_x-small"
+              data-id="candidateTable"
+            >
+              <thead>
+                <tr class="slds-line-height_reset">
+                  <th scope="col">{labels.colDue}</th>
+                  <th scope="col">{labels.colDescription}</th>
+                  <th scope="col">{labels.colCategory}</th>
+                  <th scope="col">{labels.colStatus}</th>
+                  <th scope="col">{labels.colAmount}</th>
+                  <th scope="col">{labels.colResidual}</th>
+                  <th scope="col">{labels.colAction}</th>
+                </tr>
+              </thead>
+              <tbody>
+                <template for:each={candidateRows} for:item="row">
+                  <tr key={row.key} class="slds-hint-parent">
+                    <td>
+                      <lightning-formatted-date-time
+                        value={row.dueDate}
+                      ></lightning-formatted-date-time>
+                    </td>
+                    <td>{row.description}</td>
+                    <td>{row.category}</td>
+                    <td>
+                      {row.statusLabel}
+                      <template lwc:if={row.persisted}></template>
+                      <template lwc:else>
+                        <lightning-badge
+                          label={labels.virtualBadge}
+                          class="slds-m-left_x-small"
+                        ></lightning-badge>
+                      </template>
+                    </td>
+                    <td>
+                      <lightning-formatted-number
+                        value={row.amount}
+                        format-style="currency"
+                        currency-code={row.currencyIso}
+                      ></lightning-formatted-number>
+                    </td>
+                    <td>
+                      <lightning-formatted-number
+                        value={row.residual}
+                        format-style="currency"
+                        currency-code={row.currencyIso}
+                      ></lightning-formatted-number>
+                    </td>
+                    <td>
+                      <template lwc:if={row.linkable}>
+                        <lightning-button
+                          label={labels.select}
+                          data-index={row.index}
+                          onclick={handleSelectCandidate}
+                          disabled={busy}
+                        ></lightning-button>
+                      </template>
+                    </td>
+                  </tr>
+                </template>
+              </tbody>
+            </table>
+            <template lwc:if={candidatesHasMore}>
+              <lightning-button
+                class="slds-m-top_small"
+                label={labels.loadMore}
+                onclick={handleMoreCandidates}
+                disabled={busy}
+                data-id="moreCandidates"
+              ></lightning-button>
+            </template>
+          </template>
+          <template lwc:if={source.eligible}>
+            <div class="slds-m-top_medium">
+              <lightning-button
+                variant="neutral"
+                label={labels.noForecastOption}
+                onclick={handleNoForecast}
+                disabled={busy}
+                data-id="noForecast"
+              ></lightning-button>
+            </div>
+          </template>
+        </template>
+
+        <template lwc:if={isReviewStep}>
+          <p class="slds-text-body_small slds-m-bottom_small">
+            {labels.reviewIntro}
+          </p>
+          <dl
+            class="slds-dl_horizontal slds-m-bottom_small"
+            data-id="reviewSummary"
+          >
+            <dt class="slds-dl_horizontal__label">{labels.sourceSummary}</dt>
+            <dd class="slds-dl_horizontal__detail">
+              {source.description} · {source.fundingLabel} ·
+              {sourceDirectionLabel} ·
+              <lightning-formatted-number
+                value={source.amount}
+                format-style="currency"
+                currency-code={source.currencyIso}
+              ></lightning-formatted-number>
+              · {source.currencyIso}
+            </dd>
+            <dt class="slds-dl_horizontal__label">{labels.target}</dt>
+            <dd class="slds-dl_horizontal__detail" data-id="targetSummary">
+              {targetSummary}
+            </dd>
+          </dl>
+          <div class="slds-grid slds-gutters slds-wrap">
+            <div class="slds-col slds-size_1-of-1 slds-medium-size_4-of-12">
+              <lightning-input
+                type="number"
+                step="0.01"
+                min="0.01"
+                label={labels.amount}
+                value={amount}
+                field-level-help={labels.amountHelp}
+                onchange={handleAmount}
+                data-id="amount"
+                required
+              ></lightning-input>
+            </div>
+            <div class="slds-col slds-size_1-of-1 slds-medium-size_4-of-12">
+              <lightning-input
+                type="date"
+                label={labels.recognitionDate}
+                value={recognitionDate}
+                onchange={handleDate}
+                data-id="recognitionDate"
+                required
+              ></lightning-input>
+            </div>
+          </div>
+          <template lwc:if={changed}>
+            <div
+              class="slds-box slds-theme_warning slds-m-top_small"
+              role="status"
+              data-id="changed"
+            >
+              <p>{labels.changed}</p>
+              <lightning-input
+                type="checkbox"
+                label={labels.reviewed}
+                checked={reviewed}
+                onchange={handleReviewed}
+                data-id="reviewed"
+              ></lightning-input>
+            </div>
+          </template>
+          <div class="slds-m-top_medium">
+            <lightning-button
+              label={labels.back}
+              onclick={handleBack}
+              disabled={busy}
+              data-id="back"
+            ></lightning-button>
+            <lightning-button
+              class="slds-m-left_small"
+              variant="brand"
+              label={confirmLabel}
+              onclick={handleConfirm}
+              disabled={confirmDisabled}
+              data-id="confirm"
+            ></lightning-button>
+          </div>
+        </template>
+
+        <template lwc:if={isDone}>
+          <div class="slds-box slds-theme_success" role="status" data-id="done">
+            <p class="slds-text-heading_small">{labels.done}</p>
+            <template lwc:if={resultReplayed}
+              ><p>{labels.doneReplayed}</p></template
+            >
+            <template lwc:if={resultActualOnly}
+              ><p>{labels.doneActualOnly}</p></template
+            >
+            <p>{labels.doneAllocation}: {result.allocationId}</p>
+            <p>{labels.doneTarget}: {result.targetId}</p>
+            <p>
+              <lightning-formatted-number
+                value={result.amount}
+                format-style="currency"
+                currency-code={result.currencyIso}
+              ></lightning-formatted-number>
+            </p>
+          </div>
+          <lightning-button
+            class="slds-m-top_small"
+            label={labels.newLink}
+            onclick={handleNewLink}
+            data-id="newLink"
+          ></lightning-button>
+        </template>
+        <p class="slds-text-body_small slds-text-color_weak slds-m-top_medium">
+          {labels.policy}: {policyVersion}
+        </p>
+      </template>
+    </div>
+  </lightning-card>
+</template>

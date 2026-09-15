@@ -918,4 +918,177 @@
     >Buscar titular</label><name
     >AXF_ArchiveExplorer_holderSearch</name></customLabels><customLabels><label
     >Motivo</label><name
-    >AXF_ArchiveExplorer_colReason</name></customLabels></Translations>
+    >AXF_ArchiveExplorer_colReason</name></customLabels><customLabels><label
+    >Vincular fonte bancária a previsão</label><name
+    >AXF_SourceLink_title</name></customLabels><customLabels><label
+    >Escolha uma transação importada elegível, revise as previsões sugeridas e confirme o vínculo explicitamente. O fato importado nunca é copiado nem alterado.</label><name
+    >AXF_SourceLink_intro</name></customLabels><customLabels><label
+    >Você não tem a capacidade de vincular fontes.</label><name
+    >AXF_SourceLink_noCapability</name></customLabels><customLabels><label
+    >1. Fonte</label><name
+    >AXF_SourceLink_stepSource</name></customLabels><customLabels><label
+    >2. Previsão</label><name
+    >AXF_SourceLink_stepCandidate</name></customLabels><customLabels><label
+    >3. Revisar e confirmar</label><name
+    >AXF_SourceLink_stepReview</name></customLabels><customLabels><label
+    >Titular</label><name
+    >AXF_SourceLink_holder</name></customLabels><customLabels><label
+    >Selecione um titular</label><name
+    >AXF_SourceLink_holderPlaceholder</name></customLabels><customLabels><label
+    >Tipo de fonte</label><name
+    >AXF_SourceLink_kind</name></customLabels><customLabels><label
+    >Banco e cartão</label><name
+    >AXF_SourceLink_kindALL</name></customLabels><customLabels><label
+    >Conta bancária</label><name
+    >AXF_SourceLink_kindBANK</name></customLabels><customLabels><label
+    >Cartão de crédito</label><name
+    >AXF_SourceLink_kindCARD</name></customLabels><customLabels><label
+    >Buscar por descrição</label><name
+    >AXF_SourceLink_search</name></customLabels><customLabels><label
+    >Carregar fontes elegíveis</label><name
+    >AXF_SourceLink_loadSources</name></customLabels><customLabels><label
+    >Carregar mais</label><name
+    >AXF_SourceLink_loadMore</name></customLabels><customLabels><label
+    >Carregando…</label><name
+    >AXF_SourceLink_loading</name></customLabels><customLabels><label
+    >Nenhuma fonte elegível para este titular. Só entram transações bancárias/de cartão POSTED de conta disponível, sem revisão aberta e com valor remanescente.</label><name
+    >AXF_SourceLink_noSources</name></customLabels><customLabels><label
+    >{0} transação(ões) verificadas, {1} não elegíveis.</label><name
+    >AXF_SourceLink_excludedSources</name></customLabels><customLabels><label
+    >Data</label><name>AXF_SourceLink_colDate</name></customLabels><customLabels
+  ><label>Descrição</label><name
+    >AXF_SourceLink_colDescription</name></customLabels><customLabels><label
+    >Conta / cartão</label><name
+    >AXF_SourceLink_colFunding</name></customLabels><customLabels><label
+    >Origem</label><name
+    >AXF_SourceLink_colOrigin</name></customLabels><customLabels><label
+    >Valor</label><name
+    >AXF_SourceLink_colAmount</name></customLabels><customLabels><label
+    >Remanescente</label><name
+    >AXF_SourceLink_colResidual</name></customLabels><customLabels><label
+    >Direção</label><name
+    >AXF_SourceLink_colDirection</name></customLabels><customLabels><label
+    >Vencimento</label><name
+    >AXF_SourceLink_colDue</name></customLabels><customLabels><label
+    >Categoria</label><name
+    >AXF_SourceLink_colCategory</name></customLabels><customLabels><label
+    >Situação</label><name
+    >AXF_SourceLink_colStatus</name></customLabels><customLabels><label
+    >Ação</label><name
+    >AXF_SourceLink_colAction</name></customLabels><customLabels><label
+    >Selecionar</label><name
+    >AXF_SourceLink_select</name></customLabels><customLabels><label
+    >Selecionado</label><name
+    >AXF_SourceLink_selected</name></customLabels><customLabels><label
+    >Saída</label><name
+    >AXF_SourceLink_directionDEBIT</name></customLabels><customLabels><label
+    >Entrada</label><name
+    >AXF_SourceLink_directionCREDIT</name></customLabels><customLabels><label
+    >Fonte selecionada</label><name
+    >AXF_SourceLink_sourceSummary</name></customLabels><customLabels><label
+    >Trocar fonte</label><name
+    >AXF_SourceLink_changeSource</name></customLabels><customLabels><label
+    >Previsões do mesmo titular, moeda e direção, compatíveis com a conta de origem. Ordenadas por vencimento, valor e identidade — nunca por pontuação. Nenhuma previsão é vinculada automaticamente.</label><name
+    >AXF_SourceLink_candidatesIntro</name></customLabels><customLabels><label
+    >Nenhuma previsão elegível. Você ainda pode registrar a fonte como lançamento realizado sem previsão.</label><name
+    >AXF_SourceLink_noCandidates</name></customLabels><customLabels><label
+    >Projetada — materialização pendente (AXF-136)</label><name
+    >AXF_SourceLink_virtualBadge</name></customLabels><customLabels><label
+    >{0} ocorrência(s) projetada(s) exibidas para contexto; ainda não podem ser vinculadas.</label><name
+    >AXF_SourceLink_virtualCount</name></customLabels><customLabels><label
+    >Apenas as primeiras {0} previsões foram verificadas. Refine a busca para ver as demais.</label><name
+    >AXF_SourceLink_scanTruncated</name></customLabels><customLabels><label
+    >{0} previsão(ões) excluída(s) (já realizadas ou canceladas).</label><name
+    >AXF_SourceLink_excludedCandidates</name></customLabels><customLabels><label
+    >Registrar sem previsão (lançamento apenas realizado)</label><name
+    >AXF_SourceLink_noForecastOption</name></customLabels><customLabels><label
+    >Prevista</label><name
+    >AXF_SourceLink_statusPLANNED</name></customLabels><customLabels><label
+    >Confirmada</label><name
+    >AXF_SourceLink_statusCONFIRMED</name></customLabels><customLabels><label
+    >Estimada</label><name
+    >AXF_SourceLink_statusESTIMATED</name></customLabels><customLabels><label
+    >Valor, moeda e fonte permanecem visíveis. Qualquer alteração no valor ou na data sugeridos exige revisão explícita antes de confirmar.</label><name
+    >AXF_SourceLink_reviewIntro</name></customLabels><customLabels><label
+    >Previsão</label><name
+    >AXF_SourceLink_target</name></customLabels><customLabels><label
+    >Sem previsão — um lançamento realizado será criado a partir da fonte.</label><name
+    >AXF_SourceLink_targetNone</name></customLabels><customLabels><label
+    >Valor a vincular</label><name
+    >AXF_SourceLink_amount</name></customLabels><customLabels><label
+    >Sugerido: o remanescente da fonte, limitado ao residual da previsão.</label><name
+    >AXF_SourceLink_amountHelp</name></customLabels><customLabels><label
+    >Data de reconhecimento</label><name
+    >AXF_SourceLink_recognitionDate</name></customLabels><customLabels><label
+    >Você alterou o valor ou a data sugeridos.</label><name
+    >AXF_SourceLink_changed</name></customLabels><customLabels><label
+    >Revisei as alterações e as confirmo</label><name
+    >AXF_SourceLink_reviewed</name></customLabels><customLabels><label
+    >Confirmar vínculo</label><name
+    >AXF_SourceLink_confirm</name></customLabels><customLabels><label
+    >Confirmando…</label><name
+    >AXF_SourceLink_confirming</name></customLabels><customLabels><label
+    >Voltar</label><name>AXF_SourceLink_back</name></customLabels><customLabels
+  ><label>Vínculo confirmado</label><name
+    >AXF_SourceLink_done</name></customLabels><customLabels><label
+    >Esta confirmação já havia sido processada; o resultado anterior foi devolvido.</label><name
+    >AXF_SourceLink_doneReplayed</name></customLabels><customLabels><label
+    >Um lançamento realizado foi criado a partir da fonte.</label><name
+    >AXF_SourceLink_doneActualOnly</name></customLabels><customLabels><label
+    >Alocação</label><name
+    >AXF_SourceLink_doneAllocation</name></customLabels><customLabels><label
+    >Lançamento financeiro</label><name
+    >AXF_SourceLink_doneTarget</name></customLabels><customLabels><label
+    >Novo vínculo</label><name
+    >AXF_SourceLink_newLink</name></customLabels><customLabels><label
+    >Política</label><name
+    >AXF_SourceLink_policy</name></customLabels><customLabels><label
+    >Não foi possível concluir a operação. Nada foi salvo.</label><name
+    >AXF_SourceLink_error</name></customLabels><customLabels><label
+    >Fonte, titular ou previsão indisponível para você.</label><name
+    >AXF_SourceLink_codeUNAVAILABLE</name></customLabels><customLabels><label
+    >Alguns registros não estão acessíveis para você.</label><name
+    >AXF_SourceLink_codeNOT_ACCESSIBLE</name></customLabels><customLabels><label
+    >A solicitação está malformada.</label><name
+    >AXF_SourceLink_codeINVALID_INPUT</name></customLabels><customLabels><label
+    >Verifique valor, data e chave da operação.</label><name
+    >AXF_SourceLink_codeINVALID</name></customLabels><customLabels><label
+    >Só transações bancárias ou de cartão existentes podem ser vinculadas.</label><name
+    >AXF_SourceLink_codeINVALID_SOURCE</name></customLabels><customLabels><label
+    >A fonte não tem data, valor, moeda ou direção válidos.</label><name
+    >AXF_SourceLink_codeINVALID_SOURCE_DATA</name></customLabels><customLabels
+  ><label>A fonte não está POSTED.</label><name
+    >AXF_SourceLink_codeNOT_POSTED</name></customLabels><customLabels><label
+    >A conta bancária ou cartão não está disponível.</label><name
+    >AXF_SourceLink_codeFUNDING_NOT_AVAILABLE</name></customLabels><customLabels
+  ><label>A fonte tem revisão aberta; resolva-a primeiro.</label><name
+    >AXF_SourceLink_codeREVIEW_OPEN</name></customLabels><customLabels><label
+    >A fonte não tem valor remanescente.</label><name
+    >AXF_SourceLink_codeSOURCE_EXHAUSTED</name></customLabels><customLabels
+  ><label
+    >As alocações existentes não puderam ser verificadas com o seu acesso.</label><name
+    >AXF_SourceLink_codeALLOCATIONS_UNVERIFIED</name></customLabels><customLabels
+  ><label>A previsão não é um alvo válido para esta fonte.</label><name
+    >AXF_SourceLink_codeINVALID_TARGET</name></customLabels><customLabels><label
+    >A previsão foi cancelada.</label><name
+    >AXF_SourceLink_codeTARGET_CANCELLED</name></customLabels><customLabels
+  ><label>A previsão já está totalmente realizada.</label><name
+    >AXF_SourceLink_codeTARGET_REALIZED</name></customLabels><customLabels
+  ><label>A previsão espera outra conta ou cartão de origem.</label><name
+    >AXF_SourceLink_codeFUNDING_MISMATCH</name></customLabels><customLabels
+  ><label>As moedas da fonte e da previsão são diferentes.</label><name
+    >AXF_SourceLink_codeCURRENCY_MISMATCH</name></customLabels><customLabels
+  ><label>Esta fonte já está vinculada a esta previsão.</label><name
+    >AXF_SourceLink_codeALREADY_LINKED</name></customLabels><customLabels><label
+    >Confirme que revisou o valor ou a data alterados.</label><name
+    >AXF_SourceLink_codeREVIEW_REQUIRED</name></customLabels><customLabels
+  ><label
+    >A fonte ou a previsão mudou desde que você as carregou, ou esta chave foi usada com dados diferentes. Recarregue e revise.</label><name
+    >AXF_SourceLink_codeCONFLICT</name></customLabels><customLabels><label
+    >O valor excede a capacidade remanescente da fonte ou da previsão.</label><name
+    >AXF_SourceLink_codeUNAVAILABLE_AMOUNT</name></customLabels><customLabels
+  ><label>Defina a moeda de relatório antes de vincular.</label><name
+    >AXF_SourceLink_codeREPORTING_CURRENCY_REQUIRED</name></customLabels><customLabels
+  ><label
+    >Ocorrências projetadas precisam ser materializadas antes do vínculo (AXF-136).</label><name
+    >AXF_SourceLink_codeMATERIALIZATION_REQUIRED</name></customLabels></Translations>

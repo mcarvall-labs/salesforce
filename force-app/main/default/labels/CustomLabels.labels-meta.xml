@@ -1550,5 +1550,301 @@
     >Search holder</value></labels><labels><fullName
     >AXF_ArchiveExplorer_colReason</fullName><language
     >en_US</language><protected>false</protected><shortDescription
-    >Reason column</shortDescription><value
-    >Reason</value></labels></CustomLabels>
+    >Reason column</shortDescription><value>Reason</value></labels><labels
+  ><fullName>AXF_SourceLink_title</fullName><language>en_US</language><protected
+    >false</protected><shortDescription>Title</shortDescription><value
+    >Link bank source to forecast</value></labels><labels><fullName
+    >AXF_SourceLink_intro</fullName><language>en_US</language><protected
+    >false</protected><shortDescription>Intro</shortDescription><value
+    >Pick an eligible imported transaction, review the suggested forecasts and confirm the link explicitly. The imported fact is never copied or changed.</value></labels><labels
+  ><fullName>AXF_SourceLink_noCapability</fullName><language
+    >en_US</language><protected>false</protected><shortDescription
+    >No capability</shortDescription><value
+    >You do not have the capability to link sources.</value></labels><labels
+  ><fullName>AXF_SourceLink_stepSource</fullName><language
+    >en_US</language><protected>false</protected><shortDescription
+    >Step source</shortDescription><value>1. Source</value></labels><labels
+  ><fullName>AXF_SourceLink_stepCandidate</fullName><language
+    >en_US</language><protected>false</protected><shortDescription
+    >Step candidate</shortDescription><value>2. Forecast</value></labels><labels
+  ><fullName>AXF_SourceLink_stepReview</fullName><language
+    >en_US</language><protected>false</protected><shortDescription
+    >Step review</shortDescription><value
+    >3. Review and confirm</value></labels><labels><fullName
+    >AXF_SourceLink_holder</fullName><language>en_US</language><protected
+    >false</protected><shortDescription>Holder</shortDescription><value
+    >Holder</value></labels><labels><fullName
+    >AXF_SourceLink_holderPlaceholder</fullName><language
+    >en_US</language><protected>false</protected><shortDescription
+    >Holder placeholder</shortDescription><value
+    >Select a holder</value></labels><labels><fullName
+    >AXF_SourceLink_kind</fullName><language>en_US</language><protected
+    >false</protected><shortDescription>Kind</shortDescription><value
+    >Source kind</value></labels><labels><fullName
+    >AXF_SourceLink_kindALL</fullName><language>en_US</language><protected
+    >false</protected><shortDescription>Kind all</shortDescription><value
+    >Bank and card</value></labels><labels><fullName
+    >AXF_SourceLink_kindBANK</fullName><language>en_US</language><protected
+    >false</protected><shortDescription>Kind bank</shortDescription><value
+    >Bank account</value></labels><labels><fullName
+    >AXF_SourceLink_kindCARD</fullName><language>en_US</language><protected
+    >false</protected><shortDescription>Kind card</shortDescription><value
+    >Credit card</value></labels><labels><fullName
+    >AXF_SourceLink_search</fullName><language>en_US</language><protected
+    >false</protected><shortDescription>Search</shortDescription><value
+    >Search description</value></labels><labels><fullName
+    >AXF_SourceLink_loadSources</fullName><language>en_US</language><protected
+    >false</protected><shortDescription>Load sources</shortDescription><value
+    >Load eligible sources</value></labels><labels><fullName
+    >AXF_SourceLink_loadMore</fullName><language>en_US</language><protected
+    >false</protected><shortDescription>Load more</shortDescription><value
+    >Load more</value></labels><labels><fullName
+    >AXF_SourceLink_loading</fullName><language>en_US</language><protected
+    >false</protected><shortDescription>Loading</shortDescription><value
+    >Loading…</value></labels><labels><fullName
+    >AXF_SourceLink_noSources</fullName><language>en_US</language><protected
+    >false</protected><shortDescription>No sources</shortDescription><value
+    >No eligible source for this holder. Only POSTED bank/card transactions of an available account without open review and with remaining amount are listed.</value></labels><labels
+  ><fullName>AXF_SourceLink_excludedSources</fullName><language
+    >en_US</language><protected>false</protected><shortDescription
+    >Excluded sources</shortDescription><value
+    >{0} transaction(s) scanned, {1} not eligible.</value></labels><labels
+  ><fullName>AXF_SourceLink_colDate</fullName><language
+    >en_US</language><protected>false</protected><shortDescription
+    >Column date</shortDescription><value>Date</value></labels><labels><fullName
+    >AXF_SourceLink_colDescription</fullName><language
+    >en_US</language><protected>false</protected><shortDescription
+    >Column description</shortDescription><value
+    >Description</value></labels><labels><fullName
+    >AXF_SourceLink_colFunding</fullName><language>en_US</language><protected
+    >false</protected><shortDescription>Column funding</shortDescription><value
+    >Account / card</value></labels><labels><fullName
+    >AXF_SourceLink_colOrigin</fullName><language>en_US</language><protected
+    >false</protected><shortDescription>Column origin</shortDescription><value
+    >Origin</value></labels><labels><fullName
+    >AXF_SourceLink_colAmount</fullName><language>en_US</language><protected
+    >false</protected><shortDescription>Column amount</shortDescription><value
+    >Amount</value></labels><labels><fullName
+    >AXF_SourceLink_colResidual</fullName><language>en_US</language><protected
+    >false</protected><shortDescription>Column residual</shortDescription><value
+    >Remaining</value></labels><labels><fullName
+    >AXF_SourceLink_colDirection</fullName><language>en_US</language><protected
+    >false</protected><shortDescription
+    >Column direction</shortDescription><value>Direction</value></labels><labels
+  ><fullName>AXF_SourceLink_colDue</fullName><language
+    >en_US</language><protected>false</protected><shortDescription
+    >Column due</shortDescription><value>Due</value></labels><labels><fullName
+    >AXF_SourceLink_colCategory</fullName><language>en_US</language><protected
+    >false</protected><shortDescription>Column category</shortDescription><value
+    >Category</value></labels><labels><fullName
+    >AXF_SourceLink_colStatus</fullName><language>en_US</language><protected
+    >false</protected><shortDescription>Column status</shortDescription><value
+    >Status</value></labels><labels><fullName
+    >AXF_SourceLink_colAction</fullName><language>en_US</language><protected
+    >false</protected><shortDescription>Column action</shortDescription><value
+    >Action</value></labels><labels><fullName
+    >AXF_SourceLink_select</fullName><language>en_US</language><protected
+    >false</protected><shortDescription>Select</shortDescription><value
+    >Select</value></labels><labels><fullName
+    >AXF_SourceLink_selected</fullName><language>en_US</language><protected
+    >false</protected><shortDescription>Selected</shortDescription><value
+    >Selected</value></labels><labels><fullName
+    >AXF_SourceLink_directionDEBIT</fullName><language
+    >en_US</language><protected>false</protected><shortDescription
+    >Direction debit</shortDescription><value>Outflow</value></labels><labels
+  ><fullName>AXF_SourceLink_directionCREDIT</fullName><language
+    >en_US</language><protected>false</protected><shortDescription
+    >Direction credit</shortDescription><value>Inflow</value></labels><labels
+  ><fullName>AXF_SourceLink_sourceSummary</fullName><language
+    >en_US</language><protected>false</protected><shortDescription
+    >Source summary</shortDescription><value
+    >Selected source</value></labels><labels><fullName
+    >AXF_SourceLink_changeSource</fullName><language>en_US</language><protected
+    >false</protected><shortDescription>Change source</shortDescription><value
+    >Change source</value></labels><labels><fullName
+    >AXF_SourceLink_candidatesIntro</fullName><language
+    >en_US</language><protected>false</protected><shortDescription
+    >Candidates intro</shortDescription><value
+    >Forecasts of the same holder, currency and direction, compatible with the funding account. Ordered by due date, amount and identity — never by a score. No forecast is linked automatically.</value></labels><labels
+  ><fullName>AXF_SourceLink_noCandidates</fullName><language
+    >en_US</language><protected>false</protected><shortDescription
+    >No candidates</shortDescription><value
+    >No eligible forecast. You can still register the source as a realized entry without a forecast.</value></labels><labels
+  ><fullName>AXF_SourceLink_virtualBadge</fullName><language
+    >en_US</language><protected>false</protected><shortDescription
+    >Virtual badge</shortDescription><value
+    >Projected — materialization pending (AXF-136)</value></labels><labels
+  ><fullName>AXF_SourceLink_virtualCount</fullName><language
+    >en_US</language><protected>false</protected><shortDescription
+    >Virtual count</shortDescription><value
+    >{0} projected occurrence(s) shown for context; they cannot be linked yet.</value></labels><labels
+  ><fullName>AXF_SourceLink_scanTruncated</fullName><language
+    >en_US</language><protected>false</protected><shortDescription
+    >Scan truncated</shortDescription><value
+    >Only the first {0} forecasts were scanned. Narrow the search to see the rest.</value></labels><labels
+  ><fullName>AXF_SourceLink_excludedCandidates</fullName><language
+    >en_US</language><protected>false</protected><shortDescription
+    >Excluded candidates</shortDescription><value
+    >{0} forecast(s) excluded (already realized or cancelled).</value></labels><labels
+  ><fullName>AXF_SourceLink_noForecastOption</fullName><language
+    >en_US</language><protected>false</protected><shortDescription
+    >No forecast option</shortDescription><value
+    >Register without a forecast (realized entry only)</value></labels><labels
+  ><fullName>AXF_SourceLink_statusPLANNED</fullName><language
+    >en_US</language><protected>false</protected><shortDescription
+    >Status planned</shortDescription><value>Planned</value></labels><labels
+  ><fullName>AXF_SourceLink_statusCONFIRMED</fullName><language
+    >en_US</language><protected>false</protected><shortDescription
+    >Status confirmed</shortDescription><value>Confirmed</value></labels><labels
+  ><fullName>AXF_SourceLink_statusESTIMATED</fullName><language
+    >en_US</language><protected>false</protected><shortDescription
+    >Status estimated</shortDescription><value>Estimated</value></labels><labels
+  ><fullName>AXF_SourceLink_reviewIntro</fullName><language
+    >en_US</language><protected>false</protected><shortDescription
+    >Review intro</shortDescription><value
+    >Amount, currency and source stay visible. Any change to the suggested amount or date requires explicit review before confirming.</value></labels><labels
+  ><fullName>AXF_SourceLink_target</fullName><language
+    >en_US</language><protected>false</protected><shortDescription
+    >Target</shortDescription><value>Forecast</value></labels><labels><fullName
+    >AXF_SourceLink_targetNone</fullName><language>en_US</language><protected
+    >false</protected><shortDescription>Target none</shortDescription><value
+    >No forecast — a realized entry will be created from the source.</value></labels><labels
+  ><fullName>AXF_SourceLink_amount</fullName><language
+    >en_US</language><protected>false</protected><shortDescription
+    >Amount</shortDescription><value>Amount to link</value></labels><labels
+  ><fullName>AXF_SourceLink_amountHelp</fullName><language
+    >en_US</language><protected>false</protected><shortDescription
+    >Amount help</shortDescription><value
+    >Suggested: the remaining amount of the source, capped by the forecast residual.</value></labels><labels
+  ><fullName>AXF_SourceLink_recognitionDate</fullName><language
+    >en_US</language><protected>false</protected><shortDescription
+    >Recognition date</shortDescription><value
+    >Recognition date</value></labels><labels><fullName
+    >AXF_SourceLink_changed</fullName><language>en_US</language><protected
+    >false</protected><shortDescription>Changed</shortDescription><value
+    >You changed the suggested amount or date.</value></labels><labels><fullName
+    >AXF_SourceLink_reviewed</fullName><language>en_US</language><protected
+    >false</protected><shortDescription>Reviewed</shortDescription><value
+    >I reviewed the changes and confirm them</value></labels><labels><fullName
+    >AXF_SourceLink_confirm</fullName><language>en_US</language><protected
+    >false</protected><shortDescription>Confirm</shortDescription><value
+    >Confirm link</value></labels><labels><fullName
+    >AXF_SourceLink_confirming</fullName><language>en_US</language><protected
+    >false</protected><shortDescription>Confirming</shortDescription><value
+    >Confirming…</value></labels><labels><fullName
+    >AXF_SourceLink_back</fullName><language>en_US</language><protected
+    >false</protected><shortDescription>Back</shortDescription><value
+    >Back</value></labels><labels><fullName
+    >AXF_SourceLink_done</fullName><language>en_US</language><protected
+    >false</protected><shortDescription>Done</shortDescription><value
+    >Link confirmed</value></labels><labels><fullName
+    >AXF_SourceLink_doneReplayed</fullName><language>en_US</language><protected
+    >false</protected><shortDescription>Done replayed</shortDescription><value
+    >This confirmation had already been processed; the previous result was returned.</value></labels><labels
+  ><fullName>AXF_SourceLink_doneActualOnly</fullName><language
+    >en_US</language><protected>false</protected><shortDescription
+    >Done actual only</shortDescription><value
+    >A realized entry was created from the source.</value></labels><labels
+  ><fullName>AXF_SourceLink_doneAllocation</fullName><language
+    >en_US</language><protected>false</protected><shortDescription
+    >Done allocation</shortDescription><value>Allocation</value></labels><labels
+  ><fullName>AXF_SourceLink_doneTarget</fullName><language
+    >en_US</language><protected>false</protected><shortDescription
+    >Done target</shortDescription><value
+    >Financial transaction</value></labels><labels><fullName
+    >AXF_SourceLink_newLink</fullName><language>en_US</language><protected
+    >false</protected><shortDescription>New link</shortDescription><value
+    >New link</value></labels><labels><fullName
+    >AXF_SourceLink_policy</fullName><language>en_US</language><protected
+    >false</protected><shortDescription>Policy</shortDescription><value
+    >Policy</value></labels><labels><fullName
+    >AXF_SourceLink_error</fullName><language>en_US</language><protected
+    >false</protected><shortDescription>Error</shortDescription><value
+    >The operation could not be completed. Nothing was saved.</value></labels><labels
+  ><fullName>AXF_SourceLink_codeUNAVAILABLE</fullName><language
+    >en_US</language><protected>false</protected><shortDescription
+    >Code unavailable</shortDescription><value
+    >Source, holder or forecast unavailable to you.</value></labels><labels
+  ><fullName>AXF_SourceLink_codeNOT_ACCESSIBLE</fullName><language
+    >en_US</language><protected>false</protected><shortDescription
+    >Code not accessible</shortDescription><value
+    >Some records are not accessible to you.</value></labels><labels><fullName
+    >AXF_SourceLink_codeINVALID_INPUT</fullName><language
+    >en_US</language><protected>false</protected><shortDescription
+    >Code invalid input</shortDescription><value
+    >The request is malformed.</value></labels><labels><fullName
+    >AXF_SourceLink_codeINVALID</fullName><language>en_US</language><protected
+    >false</protected><shortDescription>Code invalid</shortDescription><value
+    >Check amount, date and operation key.</value></labels><labels><fullName
+    >AXF_SourceLink_codeINVALID_SOURCE</fullName><language
+    >en_US</language><protected>false</protected><shortDescription
+    >Code invalid source</shortDescription><value
+    >Only existing bank or card transactions can be linked.</value></labels><labels
+  ><fullName>AXF_SourceLink_codeINVALID_SOURCE_DATA</fullName><language
+    >en_US</language><protected>false</protected><shortDescription
+    >Code invalid source data</shortDescription><value
+    >The source lacks valid date, amount, currency or direction.</value></labels><labels
+  ><fullName>AXF_SourceLink_codeNOT_POSTED</fullName><language
+    >en_US</language><protected>false</protected><shortDescription
+    >Code not posted</shortDescription><value
+    >The source is not POSTED.</value></labels><labels><fullName
+    >AXF_SourceLink_codeFUNDING_NOT_AVAILABLE</fullName><language
+    >en_US</language><protected>false</protected><shortDescription
+    >Code funding not available</shortDescription><value
+    >The bank account or card is not available.</value></labels><labels
+  ><fullName>AXF_SourceLink_codeREVIEW_OPEN</fullName><language
+    >en_US</language><protected>false</protected><shortDescription
+    >Code review open</shortDescription><value
+    >The source has an open review; resolve it first.</value></labels><labels
+  ><fullName>AXF_SourceLink_codeSOURCE_EXHAUSTED</fullName><language
+    >en_US</language><protected>false</protected><shortDescription
+    >Code source exhausted</shortDescription><value
+    >The source has no remaining amount.</value></labels><labels><fullName
+    >AXF_SourceLink_codeALLOCATIONS_UNVERIFIED</fullName><language
+    >en_US</language><protected>false</protected><shortDescription
+    >Code allocations unverified</shortDescription><value
+    >Existing allocations could not be verified with your access.</value></labels><labels
+  ><fullName>AXF_SourceLink_codeINVALID_TARGET</fullName><language
+    >en_US</language><protected>false</protected><shortDescription
+    >Code invalid target</shortDescription><value
+    >The forecast is not a valid target for this source.</value></labels><labels
+  ><fullName>AXF_SourceLink_codeTARGET_CANCELLED</fullName><language
+    >en_US</language><protected>false</protected><shortDescription
+    >Code target cancelled</shortDescription><value
+    >The forecast was cancelled.</value></labels><labels><fullName
+    >AXF_SourceLink_codeTARGET_REALIZED</fullName><language
+    >en_US</language><protected>false</protected><shortDescription
+    >Code target realized</shortDescription><value
+    >The forecast is already fully realized.</value></labels><labels><fullName
+    >AXF_SourceLink_codeFUNDING_MISMATCH</fullName><language
+    >en_US</language><protected>false</protected><shortDescription
+    >Code funding mismatch</shortDescription><value
+    >The forecast expects another funding account or card.</value></labels><labels
+  ><fullName>AXF_SourceLink_codeCURRENCY_MISMATCH</fullName><language
+    >en_US</language><protected>false</protected><shortDescription
+    >Code currency mismatch</shortDescription><value
+    >Source and forecast currencies differ.</value></labels><labels><fullName
+    >AXF_SourceLink_codeALREADY_LINKED</fullName><language
+    >en_US</language><protected>false</protected><shortDescription
+    >Code already linked</shortDescription><value
+    >This source is already linked to this forecast.</value></labels><labels
+  ><fullName>AXF_SourceLink_codeREVIEW_REQUIRED</fullName><language
+    >en_US</language><protected>false</protected><shortDescription
+    >Code review required</shortDescription><value
+    >Confirm that you reviewed the changed amount or date.</value></labels><labels
+  ><fullName>AXF_SourceLink_codeCONFLICT</fullName><language
+    >en_US</language><protected>false</protected><shortDescription
+    >Code conflict</shortDescription><value
+    >Source or forecast changed since you loaded them, or this key was used with different data. Reload and review.</value></labels><labels
+  ><fullName>AXF_SourceLink_codeUNAVAILABLE_AMOUNT</fullName><language
+    >en_US</language><protected>false</protected><shortDescription
+    >Code unavailable amount</shortDescription><value
+    >Amount exceeds the remaining capacity of the source or forecast.</value></labels><labels
+  ><fullName>AXF_SourceLink_codeREPORTING_CURRENCY_REQUIRED</fullName><language
+    >en_US</language><protected>false</protected><shortDescription
+    >Code reporting currency</shortDescription><value
+    >Set the reporting currency before linking.</value></labels><labels
+  ><fullName>AXF_SourceLink_codeMATERIALIZATION_REQUIRED</fullName><language
+    >en_US</language><protected>false</protected><shortDescription
+    >Code materialization</shortDescription><value
+    >Projected occurrences must be materialized before linking (AXF-136).</value></labels></CustomLabels>

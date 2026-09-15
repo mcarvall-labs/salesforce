@@ -1,0 +1,7 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<CustomPermission xmlns="http://soap.sforce.com/2006/04/metadata">
+    <isLicensed>false</isLicensed>
+    <label>AXF - Pode Vincular Fonte</label>
+    <description
+  >Vincular transacao bancaria/cartao importada a um Lancamento previsto (AXF-134). Concedida por AXF_PS_GestorFinanceiro; exige AXF_CanRealize. Nao concede acesso a registros (ownership/sharing, CRUD e FLS).</description>
+</CustomPermission>

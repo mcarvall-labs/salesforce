@@ -1,0 +1,288 @@
+import { createElement } from "lwc";
+import SourceLink from "c/aXF_LWC_sourceLink";
+import getContext from "@salesforce/apex/AXF_CLS_CTRL_SourceLink.getContext";
+import listSources from "@salesforce/apex/AXF_CLS_CTRL_SourceLink.listSources";
+import listCandidates from "@salesforce/apex/AXF_CLS_CTRL_SourceLink.listCandidates";
+import confirm from "@salesforce/apex/AXF_CLS_CTRL_SourceLink.confirm";
+
+jest.mock(
+  "@salesforce/apex/AXF_CLS_CTRL_SourceLink.getContext",
+  () => {
+    const { createApexTestWireAdapter } = require("@salesforce/sfdx-lwc-jest");
+    return { default: createApexTestWireAdapter(jest.fn()) };
+  },
+  { virtual: true }
+);
+jest.mock(
+  "@salesforce/apex/AXF_CLS_CTRL_SourceLink.listSources",
+  () => ({ default: jest.fn() }),
+  { virtual: true }
+);
+jest.mock(
+  "@salesforce/apex/AXF_CLS_CTRL_SourceLink.listCandidates",
+  () => ({ default: jest.fn() }),
+  { virtual: true }
+);
+jest.mock(
+  "@salesforce/apex/AXF_CLS_CTRL_SourceLink.confirm",
+  () => ({ default: jest.fn() }),
+  { virtual: true }
+);
+
+const flush = async () => {
+  for (let i = 0; i < 8; i++) {
+    // eslint-disable-next-line no-await-in-loop
+    await Promise.resolve();
+  }
+};
+
+const context = {
+  canLink: true,
+  policyVersion: "AXF-SOURCE-LINK@1.0.0",
+  pageSize: 25,
+  holders: [{ accountId: "001A", name: "Ana" }]
+};
+const source = {
+  sourceId: "a0B1",
+  sourceKind: "BANK",
+  accountId: "001A",
+  fundingId: "a0A1",
+  fundingLabel: "Banco ****1234",
+  origin: "CSV",
+  amount: 150,
+  residual: 150,
+  currencyIso: "BRL",
+  direction: "DEBIT",
+  factDate: "2026-09-14",
+  description: "Aluguel",
+  version: 0,
+  eligible: true,
+  reasons: []
+};
+const candidates = {
+  source,
+  suggestedAmount: 150,
+  suggestedDate: "2026-09-14",
+  pageNumber: 1,
+  pageSize: 25,
+  hasMore: false,
+  scanTruncated: false,
+  excludedCount: 1,
+  virtualCount: 1,
+  items: [
+    {
+      targetId: "a0C1",
+      persisted: true,
+      amount: 200,
+      residual: 120,
+      currencyIso: "BRL",
+      direction: "DEBIT",
+      dueDate: "2026-09-20",
+      description: "Aluguel set",
+      status: "PLANNED",
+      version: 3,
+      linkable: true,
+      reasons: []
+    },
+    {
+      scheduleId: "a0D1",
+      sequence: 4,
+      persisted: false,
+      amount: 150,
+      residual: 150,
+      currencyIso: "BRL",
+      direction: "DEBIT",
+      dueDate: "2026-10-20",
+      description: "Cronograma",
+      status: "ESTIMATED",
+      version: null,
+      linkable: false,
+      reasons: ["MATERIALIZATION_REQUIRED"]
+    }
+  ]
+};
+
+async function mount() {
+  const element = createElement("c-a-x-f-_-l-w-c-_source-link", {
+    is: SourceLink
+  });
+  document.body.appendChild(element);
+  getContext.emit(context);
+  await flush();
+  return element;
+}
+function byId(element, id) {
+  return element.shadowRoot.querySelector(`[data-id="${id}"]`);
+}
+async function reachReview(element) {
+  listSources.mockResolvedValue({
+    pageNumber: 1,
+    pageSize: 25,
+    hasMore: false,
+    scannedCount: 3,
+    excludedCount: 2,
+    items: [source]
+  });
+  listCandidates.mockResolvedValue(candidates);
+  byId(element, "holder").dispatchEvent(
+    new CustomEvent("change", { detail: { value: "001A" } })
+  );
+  await flush();
+  byId(element, "loadSources").click();
+  await flush();
+  element.shadowRoot.querySelector('[data-id="a0B1"]').click();
+  await flush();
+  element.shadowRoot.querySelector('[data-index="0"]').click();
+  await flush();
+}
+
+describe("c-a-x-f-_-l-w-c-_source-link", () => {
+  afterEach(() => {
+    while (document.body.firstChild) {
+      document.body.removeChild(document.body.firstChild);
+    }
+    jest.clearAllMocks();
+  });
+
+  it("lists eligible sources, shows candidates with the virtual badge and confirms with the suggestion", async () => {
+    const element = await mount();
+    await reachReview(element);
+    expect(listSources).toHaveBeenCalledTimes(1);
+    const sourcesRequest = JSON.parse(listSources.mock.calls[0][0].request);
+    expect(sourcesRequest).toMatchObject({
+      accountId: "001A",
+      sourceKind: null,
+      pageNumber: 1
+    });
+    expect(JSON.parse(listCandidates.mock.calls[0][0].request)).toMatchObject({
+      sourceId: "a0B1",
+      sourceKind: "BANK"
+    });
+    expect(byId(element, "targetSummary").textContent).toContain("Aluguel set");
+    expect(byId(element, "changed")).toBeNull();
+    confirm.mockResolvedValue({
+      allocationId: "a0E1",
+      targetId: "a0C1",
+      replayed: false,
+      createdActualOnly: false,
+      amount: 120,
+      currencyIso: "BRL"
+    });
+    byId(element, "confirm").click();
+    await flush();
+    const request = JSON.parse(confirm.mock.calls[0][0].request);
+    expect(request).toMatchObject({
+      sourceId: "a0B1",
+      sourceKind: "BANK",
+      sourceVersion: 0,
+      targetId: "a0C1",
+      targetVersion: 3,
+      amount: 120,
+      recognitionDate: "2026-09-14",
+      changesReviewed: false
+    });
+    expect(request.operationKey).toMatch(/^axf134-/);
+    expect(byId(element, "done")).not.toBeNull();
+  });
+
+  it("requires explicit review after changing the amount and keeps the draft with the same key on failure", async () => {
+    const element = await mount();
+    await reachReview(element);
+    const amount = byId(element, "amount");
+    amount.value = "100";
+    amount.dispatchEvent(new CustomEvent("change"));
+    await flush();
+    expect(byId(element, "changed")).not.toBeNull();
+    expect(byId(element, "confirm").disabled).toBe(true);
+    const reviewed = byId(element, "reviewed");
+    reviewed.checked = true;
+    reviewed.dispatchEvent(new CustomEvent("change"));
+    await flush();
+    expect(byId(element, "confirm").disabled).toBe(false);
+    confirm.mockRejectedValueOnce({ body: { message: "CONFLICT" } });
+    byId(element, "confirm").click();
+    await flush();
+    expect(
+      element.shadowRoot.querySelector('[role="alert"]').textContent
+    ).toContain("c.AXF_SourceLink_codeCONFLICT");
+    expect(byId(element, "confirm")).not.toBeNull();
+    const firstKey = JSON.parse(confirm.mock.calls[0][0].request).operationKey;
+    confirm.mockResolvedValueOnce({
+      allocationId: "a0E1",
+      targetId: "a0C1",
+      replayed: true,
+      createdActualOnly: false,
+      amount: 100,
+      currencyIso: "BRL"
+    });
+    byId(element, "confirm").click();
+    await flush();
+    const second = JSON.parse(confirm.mock.calls[1][0].request);
+    expect(second.operationKey).toBe(firstKey);
+    expect(second).toMatchObject({ amount: 100, changesReviewed: true });
+    expect(byId(element, "done").textContent).toContain(
+      "c.AXF_SourceLink_doneReplayed"
+    );
+  });
+
+  it("offers the no-forecast path and hides everything without the capability", async () => {
+    const element = await mount();
+    listSources.mockResolvedValue({
+      pageNumber: 1,
+      pageSize: 25,
+      hasMore: false,
+      scannedCount: 1,
+      excludedCount: 0,
+      items: [source]
+    });
+    listCandidates.mockResolvedValue({
+      ...candidates,
+      items: [],
+      virtualCount: 0,
+      excludedCount: 0
+    });
+    byId(element, "holder").dispatchEvent(
+      new CustomEvent("change", { detail: { value: "001A" } })
+    );
+    await flush();
+    byId(element, "loadSources").click();
+    await flush();
+    element.shadowRoot.querySelector('[data-id="a0B1"]').click();
+    await flush();
+    expect(byId(element, "noCandidates")).not.toBeNull();
+    byId(element, "noForecast").click();
+    await flush();
+    expect(byId(element, "targetSummary").textContent).toContain(
+      "c.AXF_SourceLink_targetNone"
+    );
+    confirm.mockResolvedValue({
+      allocationId: "a0E2",
+      targetId: "a0C9",
+      replayed: false,
+      createdActualOnly: true,
+      amount: 150,
+      currencyIso: "BRL"
+    });
+    byId(element, "confirm").click();
+    await flush();
+    expect(JSON.parse(confirm.mock.calls[0][0].request)).toMatchObject({
+      targetId: null,
+      targetVersion: null,
+      amount: 150
+    });
+    expect(byId(element, "done").textContent).toContain(
+      "c.AXF_SourceLink_doneActualOnly"
+    );
+
+    const denied = createElement("c-a-x-f-_-l-w-c-_source-link", {
+      is: SourceLink
+    });
+    document.body.appendChild(denied);
+    getContext.emit({ ...context, canLink: false, holders: [] });
+    await flush();
+    expect(
+      denied.shadowRoot.querySelector('[role="status"]').textContent
+    ).toContain("c.AXF_SourceLink_noCapability");
+    expect(byId(denied, "holder")).toBeNull();
+  });
+});
