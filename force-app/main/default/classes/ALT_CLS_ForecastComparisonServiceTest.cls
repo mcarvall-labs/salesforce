@@ -326,7 +326,8 @@ private class ALT_CLS_ForecastComparisonServiceTest {
         ),
         plan(ana.Id, 'far', 100, 'DEBIT', 'PLANNED', today.addMonths(30), false)
       };
-      // Estimated recurrence: reference value, PROBABLE tier.
+      // Estimated recurrence (reference value): AXF-138 applies the policy, which approves no
+      // method for that class, so it is not summed — see the reason, fallback and exclusion below.
       schedule(ana.Id, 'ESTIMATED', 6, 1, nextMonth, 'fc-est');
       ALT_CLS_ForecastComparisonService service = new ALT_CLS_ForecastComparisonService();
       Test.startTest();
@@ -345,17 +346,17 @@ private class ALT_CLS_ForecastComparisonServiceTest {
       );
       Assert.areEqual(5000, h3.confirmedIn, 'confirmado futuro entra integral');
       Assert.areEqual(0, h3.confirmedOut);
-      // rent 2000 + estimated occurrences of 500 in months +1 and +2 (horizon = current + 2)
+      // rent 2000: the estimated recurrence of 500 is no longer a probable contribution.
       Assert.areEqual(
-        2000 + 1000,
+        2000,
         h3.probableOut,
-        'provavel: plano + estimados'
+        'provavel: apenas o plano; a recorrencia estimada nao tem metodo aprovado'
       );
       Assert.areEqual(0, h3.uncertainOut, 'viagem estimada so daqui a 5 meses');
       Assert.areEqual(5000, h3.conservativeNet);
-      Assert.areEqual(5000 - 3000, h3.intermediateNet);
+      Assert.areEqual(5000 - 2000, h3.intermediateNet);
       Assert.areEqual(
-        5000 - 3000,
+        5000 - 2000,
         h3.optimisticNet,
         'sem incertos nos 3 meses'
       );
@@ -389,10 +390,15 @@ private class ALT_CLS_ForecastComparisonServiceTest {
       Assert.areEqual(300, three.overdue[0].amountOut, 'vencido nunca some');
       Assert.isTrue(three.reasons.contains('OVERDUE_OBLIGATIONS'));
       Assert.isTrue(three.reasons.contains('OBLIGATIONS_BEYOND_HORIZON'));
+      Assert.isTrue(three.reasons.contains('NO_APPROVED_METHOD'));
       Assert.areEqual(
-        ALT_CLS_ForecastComparisonService.CONFIDENCE_DEGRADED,
-        three.confidence
+        ALT_CLS_ForecastComparisonService.CONFIDENCE_BLOCKED,
+        three.confidence,
+        'omitir a recorrencia estimada de uma obrigacao poderia aumentar a capacidade'
       );
+      Assert.areEqual(1, three.exclusions.size(), 'a omissao fica registrada');
+      Assert.areEqual(ana.Id, three.exclusions[0].accountId);
+      Assert.areEqual('NO_APPROVED_METHOD', three.exclusions[0].reason);
       Assert.areEqual(
         2,
         three.sources.size(),
@@ -510,7 +516,8 @@ private class ALT_CLS_ForecastComparisonServiceTest {
         'vencido ha 13 meses fica fora da janela'
       );
 
-      // Indefinite recurrence: coverage incomplete, DEGRADED, never a closed total.
+      // Indefinite recurrence: coverage incomplete and no method approved for its reference
+      // amounts, so the commitment is reported and never closed into a total.
       ALT_CLS_FinancialScheduleService.CreateInput open = new ALT_CLS_FinancialScheduleService.CreateInput();
       open.accountId = ana.Id;
       open.direction = 'DEBIT';
@@ -547,9 +554,11 @@ private class ALT_CLS_ForecastComparisonServiceTest {
       Assert.isTrue(scheduleView.unbounded, 'recorrencia indefinida');
       Assert.isTrue(unbounded.unboundedCommitment);
       Assert.isTrue(unbounded.reasons.contains('COMMITMENT_UNBOUNDED'));
+      Assert.isTrue(unbounded.reasons.contains('NO_APPROVED_METHOD'));
       Assert.areEqual(
-        ALT_CLS_ForecastComparisonService.CONFIDENCE_DEGRADED,
-        unbounded.confidence
+        ALT_CLS_ForecastComparisonService.CONFIDENCE_BLOCKED,
+        unbounded.confidence,
+        'a recorrencia estimada nao tem metodo aprovado: omite-la poderia aumentar a capacidade'
       );
 
       // Plan ceiling refuses instead of truncating (seam mirrors scheduleLimit).
@@ -923,9 +932,11 @@ private class ALT_CLS_ForecastComparisonServiceTest {
 
   /**
    * AXF-138, GF-77 — a class v1.0.0 gives no method to is never estimated. The occurrence of a
-   * definition that records no permitted authority asserts no amount, tier or probability, and
-   * because its omission could increase the capacity shown the result is BLOCKED; the same
-   * occurrence as an inflow cannot increase capacity and stays display-only.
+   * schedule whose amount comes from a reference value instead of the approved formula — created
+   * through the normal schedule command, no field blanked — asserts no amount, tier or
+   * probability and is recorded as an exclusion of its holder; because its omission could
+   * increase the capacity shown the result is BLOCKED, while the same occurrence as an inflow
+   * cannot increase capacity and stays display-only.
    */
   @IsTest
   static void classWithoutApprovedMethodIsNotEstimatedAndGatesByMaterialImpact() {
@@ -934,6 +945,16 @@ private class ALT_CLS_ForecastComparisonServiceTest {
       Account creditHolder = holder('Ana Sem Metodo Credito');
       Date today = Date.today();
       Date nextMonth = today.addMonths(1).toStartOfMonth().addDays(6);
+      // Both schedules are created by the normal command path: the estimated one takes its
+      // amounts from a reference value, the permitted one from the approved formula.
+      ALT_CLS_FinancialScheduleService.CreateResult unauthorized = schedule(
+        debitHolder.Id,
+        'ESTIMATED',
+        6,
+        1,
+        nextMonth,
+        'policy-noauthority'
+      );
       ALT_CLS_FinancialScheduleService.CreateResult permitted = schedule(
         debitHolder.Id,
         'INSTALLMENT',
@@ -942,26 +963,17 @@ private class ALT_CLS_ForecastComparisonServiceTest {
         nextMonth,
         'policy-permitted'
       );
-      ALT_CLS_FinancialScheduleService.CreateResult unauthorized = schedule(
-        debitHolder.Id,
-        'INSTALLMENT',
-        6,
-        1,
-        nextMonth,
-        'policy-unauthorized'
-      );
       ALT_CLS_FinancialScheduleService.CreateInput credit = new ALT_CLS_FinancialScheduleService.CreateInput();
       credit.accountId = creditHolder.Id;
       credit.direction = 'CREDIT';
       credit.currencyIsoCode = 'BRL';
-      credit.method = 'INSTALLMENT';
+      credit.method = 'ESTIMATED';
       credit.totalInstallments = 6;
       credit.firstSequence = 1;
       credit.trackingStartSequence = 1;
       credit.trackingDueDate = nextMonth;
       credit.periodMonths = 1;
-      credit.principal = 360000;
-      credit.periodRate = 0.01;
+      credit.referenceAmount = 500;
       credit.legacyGroupKey = 'policy-noauthority-cred';
       ALT_CLS_FinancialScheduleService.CreateResult creditSchedule = ALT_CLS_FinancialScheduleService.createSchedule(
         credit
@@ -971,10 +983,8 @@ private class ALT_CLS_ForecastComparisonServiceTest {
         creditSchedule.outcome,
         creditSchedule.message
       );
-      // A definition that records no permitted authority supersedes the approved one: the
-      // amount was produced by no authority the forecasting policy names.
-      replaceAuthorityWithNone(unauthorized.scheduleId);
-      replaceAuthorityWithNone(creditSchedule.scheduleId);
+      // The estimated schedule projects normally: its amounts exist and are readable. Only the
+      // policy's category → method table has no method for the class that produced them.
       ALT_CLS_ScheduleProjection.ProjectionInput read = new ALT_CLS_ScheduleProjection.ProjectionInput();
       read.scheduleId = unauthorized.scheduleId;
       read.asOfDate = today;
@@ -1016,47 +1026,74 @@ private class ALT_CLS_ForecastComparisonServiceTest {
         ),
         String.join(debit.fallbacks, ',')
       );
+      // The class is recorded with no method and with no authority that was never established,
+      // and it counts no contribution: the occurrence never became one.
+      ALT_CLS_ForecastComparisonService.CategoryView unclassified = categoryOf(
+        debit,
+        ALT_CLS_ForecastComparisonService.CATEGORY_UNPREDICTABLE_STATISTICAL
+      );
+      Assert.isNotNull(unclassified, 'a classe sem metodo e registrada');
+      Assert.isNull(
+        unclassified.method,
+        'v1.0.0 nao aprova metodo para a classe'
+      );
+      Assert.isNull(
+        unclassified.authority,
+        'nenhuma autoridade foi estabelecida para a classe'
+      );
+      Assert.areEqual(
+        0,
+        unclassified.contributionCount,
+        'a ocorrencia sem metodo nao virou contribuicao'
+      );
+      // The omission is recorded against its holder, so the total is not silently short.
+      Assert.areEqual(
+        1,
+        debit.exclusions.size(),
+        'uma exclusao por titular e motivo'
+      );
+      Assert.areEqual(debitHolder.Id, debit.exclusions[0].accountId);
+      Assert.areEqual('NO_APPROVED_METHOD', debit.exclusions[0].reason);
       // Nothing is asserted for the class without a method: only the permitted schedule counts.
+      ALT_CLS_ScheduleProjection.ProjectionInput permittedRead = new ALT_CLS_ScheduleProjection.ProjectionInput();
+      permittedRead.scheduleId = permitted.scheduleId;
+      permittedRead.asOfDate = today;
+      ALT_CLS_ScheduleProjection.ProjectionResult permittedProjection = ALT_CLS_FinancialScheduleService.readProjection(
+        permittedRead
+      );
+      Assert.areEqual(
+        'OK',
+        permittedProjection.outcome,
+        permittedProjection.message
+      );
+      Decimal permittedTotal = 0;
+      for (
+        ALT_CLS_ScheduleProjection.OccurrenceLine line : permittedProjection.lines
+      ) {
+        if (line.effectiveDueDate <= debit.horizonEnd) {
+          permittedTotal += line.amount;
+        }
+      }
       ALT_CLS_ForecastComparisonService.HorizonTotal debitTotal = horizon(
         debit,
         6,
         'BRL'
       );
       Assert.areEqual(
-        ALT_CLS_ForecastComparisonService.AUTHORITY_CONTRACT_INSTALLMENT,
-        authorityOf(
-          debit,
-          ALT_CLS_ForecastComparisonService.CATEGORY_UNPREDICTABLE_STATISTICAL
-        ),
-        'a classe sem metodo e registrada com a autoridade do cronograma de parcelamento'
-      );
-      Assert.isNull(
-        methodOf(
-          debit,
-          ALT_CLS_ForecastComparisonService.CATEGORY_UNPREDICTABLE_STATISTICAL
-        ),
-        'v1.0.0 nao aprova metodo para a classe'
-      );
-      ALT_CLS_ScheduleProjection.ProjectionInput permittedRead = new ALT_CLS_ScheduleProjection.ProjectionInput();
-      permittedRead.scheduleId = permitted.scheduleId;
-      permittedRead.asOfDate = today;
-      Decimal permittedTotal = 0;
-      for (
-        ALT_CLS_ScheduleProjection.OccurrenceLine line : ALT_CLS_FinancialScheduleService.readProjection(
-            permittedRead
-          )
-          .lines
-      ) {
-        if (line.effectiveDueDate <= debit.horizonEnd) {
-          permittedTotal += line.amount;
-        }
-      }
-      Assert.areEqual(
         permittedTotal.setScale(2),
         (debitTotal.confirmedOut + debitTotal.probableOut).setScale(2),
         'nenhuma media, peso ou probabilidade foi inventada para a classe sem metodo'
       );
       Assert.areEqual(0, debitTotal.uncertainOut, 'nada incerto foi inventado');
+      ALT_CLS_ForecastComparisonService.CategoryView contractual = categoryOf(
+        debit,
+        ALT_CLS_ForecastComparisonService.CATEGORY_CONTRACTUAL_INSTALLMENT
+      );
+      Assert.areEqual(
+        permittedProjection.lines.size(),
+        contractual.contributionCount,
+        'so a ocorrencia com metodo aprovado vira contribuicao'
+      );
       // An inflow omission cannot increase the capacity shown: display-only, never a total.
       Assert.areEqual(
         ALT_CLS_ForecastComparisonService.CONFIDENCE_INFORMATIVE,
@@ -1069,6 +1106,17 @@ private class ALT_CLS_ForecastComparisonServiceTest {
         String.join(creditResult.fallbacks, ',')
       );
       Assert.isTrue(creditResult.reasons.contains('NO_APPROVED_METHOD'));
+      Assert.areEqual(1, creditResult.exclusions.size());
+      Assert.areEqual(creditHolder.Id, creditResult.exclusions[0].accountId);
+      Assert.areEqual('NO_APPROVED_METHOD', creditResult.exclusions[0].reason);
+      Assert.areEqual(
+        0,
+        categoryOf(
+            creditResult,
+            ALT_CLS_ForecastComparisonService.CATEGORY_UNPREDICTABLE_STATISTICAL
+          )
+          .contributionCount
+      );
       Assert.isTrue(
         creditResult.horizons.isEmpty(),
         'a classe sem metodo nao contribui com nenhum total'
@@ -1076,59 +1124,7 @@ private class ALT_CLS_ForecastComparisonServiceTest {
     }
   }
 
-  /**
-   * Supersedes the schedule's approved definition with one that records no authority, which is
-   * what an amount produced by no permitted method looks like in the evidence.
-   */
-  private static void replaceAuthorityWithNone(Id scheduleId) {
-    AXF_OBJ_ScheduleDefinition__c approved = [
-      SELECT
-        Id,
-        AXF_SDF_LKP_Schedule__c,
-        AXF_SDF_EXI_DefinitionKey__c,
-        AXF_SDF_PKL_Method__c,
-        AXF_SDF_NUM_Revision__c,
-        AXF_SDF_NUM_FirstSequence__c,
-        AXF_SDF_DAT_FirstDueDate__c,
-        AXF_SDF_NUM_PeriodMonths__c,
-        AXF_SDF_NUM_AnchorDay__c,
-        AXF_SDF_NUM_TotalInstallments__c,
-        AXF_SDF_NUM_Principal__c,
-        AXF_SDF_NUM_PeriodRate__c,
-        AXF_SDF_NUM_FixedValue__c,
-        AXF_SDF_NUM_RecurringFee__c,
-        AXF_SDF_NUM_UpfrontFee__c,
-        AXF_SDF_NUM_InitialReferenceAmount__c,
-        AXF_SDF_TXT_TimeZone__c,
-        AXF_SDF_TAL_InputCanonicalJson__c
-      FROM AXF_OBJ_ScheduleDefinition__c
-      WHERE AXF_SDF_LKP_Schedule__c = :scheduleId
-      ORDER BY AXF_SDF_NUM_Revision__c DESC
-      LIMIT 1
-    ];
-    insert new AXF_OBJ_ScheduleDefinition__c(
-      AXF_SDF_LKP_Schedule__c = approved.AXF_SDF_LKP_Schedule__c,
-      AXF_SDF_EXI_DefinitionKey__c = 'axf138-no-authority-' + scheduleId,
-      AXF_SDF_PKL_Method__c = approved.AXF_SDF_PKL_Method__c,
-      AXF_SDF_NUM_Revision__c = approved.AXF_SDF_NUM_Revision__c + 1,
-      AXF_SDF_NUM_EffectiveSequence__c = 1,
-      AXF_SDF_NUM_FirstSequence__c = approved.AXF_SDF_NUM_FirstSequence__c,
-      AXF_SDF_DAT_FirstDueDate__c = approved.AXF_SDF_DAT_FirstDueDate__c,
-      AXF_SDF_NUM_PeriodMonths__c = approved.AXF_SDF_NUM_PeriodMonths__c,
-      AXF_SDF_NUM_AnchorDay__c = approved.AXF_SDF_NUM_AnchorDay__c,
-      AXF_SDF_NUM_TotalInstallments__c = approved.AXF_SDF_NUM_TotalInstallments__c,
-      AXF_SDF_NUM_Principal__c = approved.AXF_SDF_NUM_Principal__c,
-      AXF_SDF_NUM_PeriodRate__c = approved.AXF_SDF_NUM_PeriodRate__c,
-      AXF_SDF_NUM_FixedValue__c = approved.AXF_SDF_NUM_FixedValue__c,
-      AXF_SDF_NUM_RecurringFee__c = approved.AXF_SDF_NUM_RecurringFee__c,
-      AXF_SDF_NUM_UpfrontFee__c = approved.AXF_SDF_NUM_UpfrontFee__c,
-      AXF_SDF_NUM_InitialReferenceAmount__c = approved.AXF_SDF_NUM_InitialReferenceAmount__c,
-      AXF_SDF_TXT_TimeZone__c = approved.AXF_SDF_TXT_TimeZone__c,
-      AXF_SDF_TAL_InputCanonicalJson__c = approved.AXF_SDF_TAL_InputCanonicalJson__c
-    );
-  }
-
-  private static Integer authorityOf(
+  private static ALT_CLS_ForecastComparisonService.CategoryView categoryOf(
     ALT_CLS_ForecastComparisonService.Result result,
     String category
   ) {
@@ -1136,21 +1132,7 @@ private class ALT_CLS_ForecastComparisonServiceTest {
       ALT_CLS_ForecastComparisonService.CategoryView view : result.categories
     ) {
       if (view.category == category) {
-        return view.authority;
-      }
-    }
-    return null;
-  }
-
-  private static String methodOf(
-    ALT_CLS_ForecastComparisonService.Result result,
-    String category
-  ) {
-    for (
-      ALT_CLS_ForecastComparisonService.CategoryView view : result.categories
-    ) {
-      if (view.category == category) {
-        return view.method;
+        return view;
       }
     }
     return null;

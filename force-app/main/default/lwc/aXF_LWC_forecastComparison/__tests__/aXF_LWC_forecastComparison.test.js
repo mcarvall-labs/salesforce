@@ -235,6 +235,8 @@ describe("c-aXF_LWC_forecastComparison", () => {
       ...result,
       confidence: "BLOCKED",
       reasons: ["NO_APPROVED_METHOD"],
+      // The omitted occurrence is recorded against its holder, not dropped in silence.
+      exclusions: [{ accountId: "001A", reason: "NO_APPROVED_METHOD" }],
       allowedActions: []
     });
     const element = build();
@@ -248,6 +250,12 @@ describe("c-aXF_LWC_forecastComparison", () => {
     ).textContent;
     // The label, not the raw server code the fallback would print.
     expect(reasons).toContain(
+      "AXF_ForecastComparison_reasonNO_APPROVED_METHOD"
+    );
+    const exclusions = element.shadowRoot.querySelector(
+      '[data-id="exclusions"]'
+    ).textContent;
+    expect(exclusions).toContain(
       "AXF_ForecastComparison_reasonNO_APPROVED_METHOD"
     );
   });
