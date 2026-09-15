@@ -69,6 +69,19 @@ public with sharing class AXF_CLS_CTRL_EconomicAllocation {
     }
   }
 
+  @AuraEnabled
+  public static ALT_CLS_EconomicAllocationService.SetView discard(
+    Id setId,
+    Decimal expectedVersion
+  ) {
+    try {
+      return new ALT_CLS_EconomicAllocationService()
+        .discard(setId, expectedVersion);
+    } catch (Exception failure) {
+      throw safe(failure);
+    }
+  }
+
   private static String kindOf(Id factId) {
     Schema.SObjectType type = factId.getSObjectType();
     if (type == AXF_OBJ_BankAccountTransaction__c.SObjectType) {
@@ -110,8 +123,20 @@ public with sharing class AXF_CLS_CTRL_EconomicAllocation {
       ALT_CLS_EconomicAllocationService.EconomicAllocationException typed = (ALT_CLS_EconomicAllocationService.EconomicAllocationException) failure;
       return sanitized(typed.code, typed.reasons);
     }
-    if (failure instanceof JSONException) {
+    if (
+      failure instanceof JSONException ||
+      failure instanceof System.StringException ||
+      failure instanceof System.TypeException
+    ) {
       return invalid();
+    }
+    if (
+      failure instanceof System.QueryException &&
+      failure.getMessage() != null &&
+      failure.getMessage().contains('UNABLE_TO_LOCK_ROW')
+    ) {
+      // Lock contention is transient: tell the client a retry may succeed.
+      return sanitized('LOCKED', new List<String>());
     }
     if (
       failure instanceof System.QueryException ||
@@ -121,8 +146,19 @@ public with sharing class AXF_CLS_CTRL_EconomicAllocation {
       return sanitized('NOT_ACCESSIBLE', new List<String>());
     }
     if (failure instanceof DmlException) {
+      DmlException dml = (DmlException) failure;
+      if (dml.getDmlType(0) == StatusCode.DUPLICATE_VALUE) {
+        return sanitized('ACTIVE_SET_EXISTS', new List<String>());
+      }
       return sanitized('REJECTED', new List<String>());
     }
+    System.debug(
+      LoggingLevel.ERROR,
+      'AXF-126 UNEXPECTED: ' +
+        failure.getTypeName() +
+        ' ' +
+        failure.getMessage()
+    );
     return sanitized('UNEXPECTED', new List<String>());
   }
 }

@@ -165,4 +165,32 @@
   ><label>O fato mudou desde a proposta</label><name
     >AXF_EconomicAllocation_reasonFactChanged</name></customLabels><customLabels
   ><label>Já existe rateio confirmado</label><name
-    >AXF_EconomicAllocation_reasonActiveExists</name></customLabels></Translations>
+    >AXF_EconomicAllocation_reasonActiveExists</name></customLabels><customLabels
+  ><label
+    >O rateio foi rejeitado por uma regra de dados; nada foi gravado.</label><name
+    >AXF_EconomicAllocation_codeRejected</name></customLabels><customLabels
+  ><label
+    >Outra operação está usando este fato; tente novamente em instantes.</label><name
+    >AXF_EconomicAllocation_codeLocked</name></customLabels><customLabels><label
+    >Fato ainda não liquidado</label><name
+    >AXF_EconomicAllocation_reasonFactNotSettled</name></customLabels><customLabels
+  ><label>Parcelas não conservam o valor do fato</label><name
+    >AXF_EconomicAllocation_reasonMagnitude</name></customLabels><customLabels
+  ><label>Você pode ver rateios, mas não propor ou confirmar.</label><name
+    >AXF_EconomicAllocation_readOnlyNotice</name></customLabels><customLabels
+  ><label>Descartar rascunho</label><name
+    >AXF_EconomicAllocation_discard</name></customLabels><customLabels><label
+    >Rascunho descartado.</label><name
+    >AXF_EconomicAllocation_discarded</name></customLabels><customLabels><label
+    >Rascunho</label><name
+    >AXF_EconomicAllocation_stateDRAFT</name></customLabels><customLabels><label
+    >Confirmado</label><name
+    >AXF_EconomicAllocation_stateCONFIRMED</name></customLabels><customLabels
+  ><label>Substituído</label><name
+    >AXF_EconomicAllocation_stateSUPERSEDED</name></customLabels><customLabels
+  ><label>Revertido</label><name
+    >AXF_EconomicAllocation_stateREVERSED</name></customLabels><customLabels
+  ><label>Descartado</label><name
+    >AXF_EconomicAllocation_stateDISCARDED</name></customLabels><customLabels
+  ><label>A mesma pessoa/empresa foi selecionada duas vezes.</label><name
+    >AXF_EconomicAllocation_duplicateHolder</name></customLabels></Translations>

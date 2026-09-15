@@ -94,6 +94,14 @@ private class ALT_CLS_EconomicAllocationServiceTest {
     Account owner,
     String key
   ) {
+    return bankFact(owner, key, 300);
+  }
+
+  private static AXF_OBJ_BankAccountTransaction__c bankFact(
+    Account owner,
+    String key,
+    Decimal magnitude
+  ) {
     AXF_OBJ_BankAccount__c bank = new AXF_OBJ_BankAccount__c(
       AXF_BA_LKP_Account__c = owner.Id,
       AXF_BA_PKL_AvailabilityState__c = 'AVAILABLE',
@@ -109,7 +117,7 @@ private class ALT_CLS_EconomicAllocationServiceTest {
       AXF_BAT_EXI_SourceKey__c = 'bat-' + key + '-' + System.now().getTime(),
       AXF_BAT_PKL_Source__c = 'MANUAL',
       AXF_BAT_DAT_Date__c = Date.today(),
-      AXF_BAT_NUM_Magnitude__c = 300,
+      AXF_BAT_NUM_Magnitude__c = magnitude,
       AXF_BAT_PKL_Direction__c = 'DEBIT',
       AXF_BAT_TXT_CurrencyIsoCode__c = 'BRL',
       AXF_BAT_TXT_Description__c = 'Mercado',
@@ -117,6 +125,69 @@ private class ALT_CLS_EconomicAllocationServiceTest {
     );
     insert fact;
     return fact;
+  }
+
+  private static AXF_OBJ_CreditCardTransaction__c cardFact(
+    Account owner,
+    String key,
+    String status
+  ) {
+    AXF_OBJ_CreditCard__c card = new AXF_OBJ_CreditCard__c(
+      AXF_CC_LKP_Account__c = owner.Id,
+      AXF_CC_PKL_AvailabilityState__c = 'AVAILABLE',
+      AXF_CC_TXT_CurrencyIsoCode__c = 'BRL',
+      AXF_CC_EXI_ManualKey__c = 'card-' + key + '-' + System.now().getTime()
+    );
+    insert card;
+    AXF_OBJ_CreditCardTransaction__c fact = new AXF_OBJ_CreditCardTransaction__c(
+      AXF_CCT_MDR_CreditCard__c = card.Id,
+      AXF_CCT_EXI_SourceKey__c = 'cct-' + key + '-' + System.now().getTime(),
+      AXF_CCT_PKL_Source__c = 'MANUAL',
+      AXF_CCT_DAT_Date__c = Date.today(),
+      AXF_CCT_NUM_Magnitude__c = 120,
+      AXF_CCT_PKL_Direction__c = 'DEBIT',
+      AXF_CCT_PKL_Status__c = status,
+      AXF_CCT_TXT_CurrencyIsoCode__c = 'BRL',
+      AXF_CCT_TXT_Description__c = 'Restaurante'
+    );
+    insert fact;
+    return fact;
+  }
+
+  private static AXF_OBJ_FinancialTransaction__c manualFact(
+    Account owner,
+    String key
+  ) {
+    AXF_OBJ_FinancialTransaction__c fact = new AXF_OBJ_FinancialTransaction__c(
+      AXF_FTX_LKP_Account__c = owner.Id,
+      AXF_FTX_NUM_Magnitude__c = 90,
+      AXF_FTX_PKL_Direction__c = 'DEBIT',
+      AXF_FTX_TXT_CurrencyIsoCode__c = 'BRL',
+      AXF_FTX_DAT_PurchaseDate__c = Date.today(),
+      AXF_FTX_PKL_Status__c = 'PLANNED',
+      AXF_FTX_EXI_ClientRequestId__c = 'ftx-' +
+        key +
+        '-' +
+        System.now().getTime()
+    );
+    insert fact;
+    return fact;
+  }
+
+  private static void expectAura(String expectedCode, String forbiddenText) {
+    try {
+      AXF_CLS_CTRL_EconomicAllocation.getContext(null);
+      Assert.fail('Controller deveria falhar.');
+    } catch (AuraHandledException expected) {
+      Assert.isTrue(
+        expected.getMessage().contains(expectedCode),
+        'Codigo esperado: ' + expectedCode + ' em ' + expected.getMessage()
+      );
+      Assert.isFalse(
+        expected.getMessage().contains(forbiddenText),
+        'Detalhe interno vazou: ' + expected.getMessage()
+      );
+    }
   }
 
   private static ALT_CLS_EconomicAllocationService.ProposeInput proposal(
@@ -528,5 +599,484 @@ private class ALT_CLS_EconomicAllocationServiceTest {
       );
     }
     Test.stopTest();
+  }
+
+  @IsTest
+  static void cardAndManualFactsRoundTripAndUnsettledCardIsRejected() {
+    System.runAs(gestor()) {
+      Account owner = holder('Titular Cartao', 'AXF_Person');
+      Account partner = holder('Socio Cartao', 'AXF_Person');
+      AXF_OBJ_CreditCardTransaction__c posted = cardFact(owner, 'e1', 'POSTED');
+      AXF_OBJ_CreditCardTransaction__c pending = cardFact(
+        owner,
+        'e2',
+        'PENDING'
+      );
+      AXF_OBJ_FinancialTransaction__c manual = manualFact(owner, 'e3');
+      ALT_CLS_EconomicAllocationService service = new ALT_CLS_EconomicAllocationService();
+      Test.startTest();
+      ALT_CLS_EconomicAllocationService.SetView card = service.propose(
+        proposal(
+          'CARD',
+          posted.Id,
+          'op-e1',
+          new Map<Id, Decimal>{ owner.Id => 25, partner.Id => 75 }
+        )
+      );
+      Assert.areEqual('CARD', card.factKind);
+      Assert.areEqual(120, card.factMagnitude);
+      Assert.areEqual(owner.Id, card.holderAccountId);
+      Decimal cardTotal = 0;
+      for (ALT_CLS_EconomicAllocationService.ShareView share : card.shares) {
+        cardTotal += share.magnitude;
+        Assert.isTrue(String.isNotBlank(share.allocationKey));
+      }
+      Assert.areEqual(120, cardTotal);
+      Assert.areEqual(
+        'CONFIRMED',
+        service.confirm(card.setId, card.version, 'op-e1c').state
+      );
+      ALT_CLS_EconomicAllocationService.EconomicAllocationException unsettled = expectFailure(
+        service,
+        proposal(
+          'CARD',
+          pending.Id,
+          'op-e2',
+          new Map<Id, Decimal>{ owner.Id => 100 }
+        )
+      );
+      Assert.areEqual('INVALID_SHARES', unsettled.code);
+      Assert.isTrue(unsettled.reasons.contains('FACT_NOT_SETTLED'));
+
+      ALT_CLS_EconomicAllocationService.SetView manualSet = service.propose(
+        proposal(
+          'MANUAL',
+          manual.Id,
+          'op-e3',
+          new Map<Id, Decimal>{ partner.Id => 100 }
+        )
+      );
+      Assert.areEqual('MANUAL', manualSet.factKind);
+      Assert.areEqual(90, manualSet.factMagnitude);
+      Assert.areEqual(
+        'CONFIRMED',
+        service.confirm(manualSet.setId, manualSet.version, 'op-e3c').state
+      );
+      // A second manual occurrence of the same plan keeps its own identity.
+      AXF_OBJ_FinancialTransaction__c sibling = manualFact(owner, 'e4');
+      Assert.areEqual(
+        'DRAFT',
+        service.propose(
+            proposal(
+              'MANUAL',
+              sibling.Id,
+              'op-e4',
+              new Map<Id, Decimal>{ owner.Id => 100 }
+            )
+          )
+          .state
+      );
+      Assert.areEqual(
+        1,
+        AXF_CLS_CTRL_EconomicAllocation.getContext(posted.Id).sets.size()
+      );
+      Test.stopTest();
+    }
+  }
+
+  @IsTest
+  static void factChangesDuplicateHoldersAndActiveSetsAreRejected() {
+    System.runAs(gestor()) {
+      Account owner = holder('Titular Mutavel', 'AXF_Person');
+      Account partner = holder('Socio Mutavel', 'AXF_Person');
+      AXF_OBJ_BankAccountTransaction__c fact = bankFact(owner, 'f');
+      ALT_CLS_EconomicAllocationService service = new ALT_CLS_EconomicAllocationService();
+      Test.startTest();
+      ALT_CLS_EconomicAllocationService.ProposeInput duplicate = proposal(
+        'BANK',
+        fact.Id,
+        'op-f0',
+        new Map<Id, Decimal>{ owner.Id => 50 }
+      );
+      ALT_CLS_EconomicAllocationService.ShareInput again = new ALT_CLS_EconomicAllocationService.ShareInput();
+      again.accountId = owner.Id;
+      again.percent = 50;
+      duplicate.shares.add(again);
+      ALT_CLS_EconomicAllocationService.EconomicAllocationException rejected = expectFailure(
+        service,
+        duplicate
+      );
+      Assert.areEqual('INVALID_SHARES', rejected.code);
+      Assert.isTrue(
+        rejected.reasons.contains('DUPLICATE_ACCOUNT:' + owner.Id),
+        String.join(rejected.reasons, ',')
+      );
+
+      ALT_CLS_EconomicAllocationService.SetView draft = service.propose(
+        proposal(
+          'BANK',
+          fact.Id,
+          'op-f1',
+          new Map<Id, Decimal>{ owner.Id => 40, partner.Id => 60 }
+        )
+      );
+      fact.AXF_BAT_NUM_Magnitude__c = 301;
+      update fact;
+      try {
+        service.confirm(draft.setId, draft.version, 'op-f1c');
+        Assert.fail('Fato alterado apos a proposta nao confirma.');
+      } catch (ALT_CLS_EconomicAllocationService.EconomicAllocationException expected) {
+        Assert.areEqual('CONFIRMATION_REJECTED', expected.code);
+        Assert.isTrue(expected.reasons.contains('FACT_CHANGED'));
+      }
+      Assert.areEqual('DRAFT', service.read(draft.setId).state);
+
+      ALT_CLS_EconomicAllocationService.SetView fresh = service.propose(
+        proposal(
+          'BANK',
+          fact.Id,
+          'op-f2',
+          new Map<Id, Decimal>{ owner.Id => 100 }
+        )
+      );
+      Assert.areEqual(
+        'CONFIRMED',
+        service.confirm(fresh.setId, fresh.version, 'op-f2c').state
+      );
+      ALT_CLS_EconomicAllocationService.EconomicAllocationException active = expectFailure(
+        service,
+        proposal(
+          'BANK',
+          fact.Id,
+          'op-f3',
+          new Map<Id, Decimal>{ partner.Id => 100 }
+        )
+      );
+      Assert.areEqual('ACTIVE_SET_EXISTS', active.code);
+      try {
+        service.confirm(draft.setId, draft.version, 'op-f1d');
+        Assert.fail('Rascunho antigo nao confirma sobre conjunto ativo.');
+      } catch (ALT_CLS_EconomicAllocationService.EconomicAllocationException expected) {
+        Assert.areEqual('CONFIRMATION_REJECTED', expected.code);
+        Assert.isTrue(expected.reasons.contains('ACTIVE_SET_EXISTS'));
+      }
+      Test.stopTest();
+    }
+  }
+
+  @IsTest
+  static void discardEndsDraftsAndReadOnlyUsersSeeSanitizedContext() {
+    Account owner;
+    AXF_OBJ_BankAccountTransaction__c fact;
+    ALT_CLS_EconomicAllocationService.SetView draft;
+    System.runAs(gestor()) {
+      owner = holder('Titular Descarte', 'AXF_Person');
+      fact = bankFact(owner, 'g');
+      Test.startTest();
+      draft = new ALT_CLS_EconomicAllocationService()
+        .propose(
+          proposal(
+            'BANK',
+            fact.Id,
+            'op-g1',
+            new Map<Id, Decimal>{ owner.Id => 100 }
+          )
+        );
+      try {
+        AXF_CLS_CTRL_EconomicAllocation.discard(draft.setId, 99);
+        Assert.fail('Versao obsoleta');
+      } catch (AuraHandledException expected) {
+        Assert.isTrue(expected.getMessage().contains('CONFLICT'));
+      }
+      ALT_CLS_EconomicAllocationService.SetView discarded = AXF_CLS_CTRL_EconomicAllocation.discard(
+        draft.setId,
+        draft.version
+      );
+      Assert.areEqual('DISCARDED', discarded.state);
+      Assert.areEqual(draft.version + 1, discarded.version);
+      // Idempotent: discarding again is a no-op read.
+      Assert.areEqual(
+        'DISCARDED',
+        AXF_CLS_CTRL_EconomicAllocation.discard(draft.setId, 0).state
+      );
+      try {
+        new ALT_CLS_EconomicAllocationService()
+          .confirm(draft.setId, discarded.version, 'op-g2');
+        Assert.fail('Descartado nao confirma.');
+      } catch (ALT_CLS_EconomicAllocationService.EconomicAllocationException expected) {
+        Assert.areEqual('NOT_DRAFT', expected.code);
+      }
+      // A discarded draft no longer blocks a new proposal.
+      ALT_CLS_EconomicAllocationService.SetView replacement = new ALT_CLS_EconomicAllocationService()
+        .propose(
+          proposal(
+            'BANK',
+            fact.Id,
+            'op-g3',
+            new Map<Id, Decimal>{ owner.Id => 100 }
+          )
+        );
+      Assert.areEqual(
+        'CONFIRMED',
+        new ALT_CLS_EconomicAllocationService()
+          .confirm(replacement.setId, replacement.version, 'op-g3c')
+          .state
+      );
+      try {
+        new ALT_CLS_EconomicAllocationService()
+          .discard(replacement.setId, replacement.version + 1);
+        Assert.fail('Confirmado nao descarta.');
+      } catch (ALT_CLS_EconomicAllocationService.EconomicAllocationException expected) {
+        Assert.areEqual('NOT_DRAFT', expected.code);
+      }
+      AXF_CLS_AuthorizedContextService.simulateSecurityFailure = true;
+      try {
+        AXF_CLS_CTRL_EconomicAllocation.getContext(fact.Id);
+        Assert.fail('Falha de seguranca deve ser sanitizada.');
+      } catch (AuraHandledException expected) {
+        Assert.isTrue(expected.getMessage().contains('NOT_ACCESSIBLE'));
+        Assert.isFalse(expected.getMessage().contains('test-only'));
+      } finally {
+        AXF_CLS_AuthorizedContextService.simulateSecurityFailure = null;
+      }
+      Test.stopTest();
+    }
+    // The participant shares the holder through an explicit share row and only reads.
+    insert new AccountShare(
+      AccountId = owner.Id,
+      UserOrGroupId = participant().Id,
+      AccountAccessLevel = 'Read',
+      OpportunityAccessLevel = 'None',
+      CaseAccessLevel = 'None'
+    );
+    System.runAs(participant()) {
+      try {
+        AXF_CLS_CTRL_EconomicAllocation.discard(draft.setId, 0);
+        Assert.fail('Participante nao descarta.');
+      } catch (AuraHandledException expected) {
+        Assert.isTrue(
+          expected.getMessage().contains('FORBIDDEN') ||
+          expected.getMessage().contains('NOT_ACCESSIBLE'),
+          expected.getMessage()
+        );
+      }
+    }
+  }
+
+  @IsTest
+  static void roundingConservesMagnitudeAndGuardFreezesConfirmedContent() {
+    System.runAs(gestor()) {
+      Account owner = holder('Titular Centavos', 'AXF_Person');
+      Account second = holder('Socio Dois', 'AXF_Person');
+      Account third = holder('Socio Tres', 'AXF_Person');
+      AXF_OBJ_BankAccountTransaction__c fact = bankFact(owner, 'h', 0.07);
+      ALT_CLS_EconomicAllocationService service = new ALT_CLS_EconomicAllocationService();
+      Test.startTest();
+      ALT_CLS_EconomicAllocationService.SetView draft = service.propose(
+        proposal(
+          'BANK',
+          fact.Id,
+          'op-h1',
+          new Map<Id, Decimal>{
+            owner.Id => 33.333334,
+            second.Id => 33.333333,
+            third.Id => 33.333333
+          }
+        )
+      );
+      Decimal total = 0;
+      Decimal largest = 0;
+      for (ALT_CLS_EconomicAllocationService.ShareView share : draft.shares) {
+        total += share.magnitude;
+        largest = share.magnitude > largest ? share.magnitude : largest;
+      }
+      Assert.areEqual(0.07, total, 'Parcelas conservam a magnitude original.');
+      Assert.areEqual(100, draft.totalPercent);
+      Assert.isTrue(largest > 0.02333333, 'Residuo vai para a maior parcela.');
+      ALT_CLS_EconomicAllocationService.SetView confirmed = service.confirm(
+        draft.setId,
+        draft.version,
+        'op-h1c'
+      );
+      Assert.areEqual('CONFIRMED', confirmed.state);
+
+      AXF_OBJ_EconomicAllocation__c allocation = [
+        SELECT Id, AXF_EA_LKP_Account__c, AXF_EA_NUM_Percent__c
+        FROM AXF_OBJ_EconomicAllocation__c
+        WHERE AXF_EA_MDR_AllocationSet__c = :confirmed.setId
+        LIMIT 1
+      ];
+      allocation.AXF_EA_LKP_Account__c = third.Id;
+      Database.SaveResult moved = Database.update(allocation, false);
+      Assert.isFalse(
+        moved.isSuccess(),
+        'Parcela nao troca de pessoa por fora.'
+      );
+      Assert.isTrue(
+        moved.getErrors()[0].getMessage().contains('service'),
+        moved.getErrors()[0].getMessage()
+      );
+      AXF_OBJ_EconomicAllocationSet__c allocationSet = new AXF_OBJ_EconomicAllocationSet__c(
+        Id = confirmed.setId,
+        AXF_EAS_NUM_FactMagnitude__c = 1
+      );
+      Database.SaveResult edited = Database.update(allocationSet, false);
+      Assert.isFalse(edited.isSuccess(), 'Conteudo confirmado e imutavel.');
+      Database.DeleteResult removed = Database.delete(allocation, false);
+      Assert.isFalse(removed.isSuccess(), 'Parcela nao e apagada.');
+      Test.stopTest();
+    }
+  }
+
+  private static String firstError(Database.SaveResult result) {
+    Assert.isFalse(result.isSuccess(), 'Escrita direta deveria falhar.');
+    return result.getErrors()[0].getMessage();
+  }
+
+  @IsTest
+  static void guardRejectsIllegalContentEvenInsideTheServiceWriteWindow() {
+    System.runAs(gestor()) {
+      Account owner = holder('Titular Guarda', 'AXF_Person');
+      Account other = holder('Outro Guarda', 'AXF_Person');
+      AXF_OBJ_BankAccountTransaction__c fact = bankFact(owner, 'i');
+      ALT_CLS_EconomicAllocationService service = new ALT_CLS_EconomicAllocationService();
+      Test.startTest();
+      ALT_CLS_EconomicAllocationService.SetView draft = service.propose(
+        proposal(
+          'BANK',
+          fact.Id,
+          'op-i1',
+          new Map<Id, Decimal>{ owner.Id => 100 }
+        )
+      );
+      AXF_OBJ_EconomicAllocation__c allocation = [
+        SELECT Id, AXF_EA_MDR_AllocationSet__c
+        FROM AXF_OBJ_EconomicAllocation__c
+        WHERE AXF_EA_MDR_AllocationSet__c = :draft.setId
+        LIMIT 1
+      ];
+      try {
+        ALT_CLS_EconomicAllocationGuard.beginWrite();
+        Assert.isTrue(ALT_CLS_EconomicAllocationGuard.isWriting());
+        Assert.isTrue(
+          firstError(
+              Database.insert(
+                new AXF_OBJ_EconomicAllocationSet__c(
+                  AXF_EAS_LKP_BankTransaction__c = fact.Id,
+                  AXF_EAS_LKP_HolderAccount__c = owner.Id,
+                  AXF_EAS_TXT_FactIdentity__c = 'x',
+                  AXF_EAS_NUM_Revision__c = 9,
+                  AXF_EAS_EXI_SetKey__c = 'x-9',
+                  AXF_EAS_PKL_State__c = 'CONFIRMED',
+                  AXF_EAS_NUM_FactMagnitude__c = 1,
+                  AXF_EAS_TXT_CurrencyIsoCode__c = 'BRL',
+                  AXF_EAS_TXT_OperationKey__c = 'op-i9',
+                  AXF_EAS_NUM_Version__c = 1
+                ),
+                false
+              )
+            )
+            .contains('starts as DRAFT')
+        );
+        Assert.isTrue(
+          firstError(
+              Database.update(
+                new AXF_OBJ_EconomicAllocationSet__c(
+                  Id = draft.setId,
+                  AXF_EAS_LKP_HolderAccount__c = other.Id
+                ),
+                false
+              )
+            )
+            .contains('identity is immutable')
+        );
+        Assert.isTrue(
+          firstError(
+              Database.update(
+                new AXF_OBJ_EconomicAllocationSet__c(
+                  Id = draft.setId,
+                  AXF_EAS_PKL_State__c = 'SUPERSEDED'
+                ),
+                false
+              )
+            )
+            .contains('state transition')
+        );
+        Assert.isTrue(
+          firstError(
+              Database.update(
+                new AXF_OBJ_EconomicAllocation__c(
+                  Id = allocation.Id,
+                  AXF_EA_LKP_Account__c = other.Id
+                ),
+                false
+              )
+            )
+            .contains('share identity is immutable')
+        );
+        Assert.isTrue(
+          firstError(
+              Database.update(
+                new AXF_OBJ_EconomicAllocation__c(
+                  Id = allocation.Id,
+                  AXF_EA_NUM_Percent__c = 0
+                ),
+                false
+              )
+            )
+            .contains('must be positive')
+        );
+      } finally {
+        ALT_CLS_EconomicAllocationGuard.endWrite();
+      }
+      Assert.isFalse(ALT_CLS_EconomicAllocationGuard.isWriting());
+      ALT_CLS_EconomicAllocationService.SetView confirmed = service.confirm(
+        draft.setId,
+        draft.version,
+        'op-i1c'
+      );
+      try {
+        ALT_CLS_EconomicAllocationGuard.beginWrite();
+        Assert.isTrue(
+          firstError(
+              Database.update(
+                new AXF_OBJ_EconomicAllocation__c(
+                  Id = allocation.Id,
+                  AXF_EA_NUM_Percent__c = 50
+                ),
+                false
+              )
+            )
+            .contains('Only DRAFT sets')
+        );
+        Assert.isTrue(
+          firstError(
+              Database.update(
+                new AXF_OBJ_EconomicAllocationSet__c(
+                  Id = confirmed.setId,
+                  AXF_EAS_TXT_OperationKey__c = 'op-i1x'
+                ),
+                false
+              )
+            )
+            .contains('Confirmed economic allocation content is immutable')
+        );
+      } finally {
+        ALT_CLS_EconomicAllocationGuard.endWrite();
+      }
+      Assert.isTrue(
+        firstError(
+            Database.update(
+              new AXF_OBJ_EconomicAllocationSet__c(
+                Id = confirmed.setId,
+                AXF_EAS_PKL_State__c = 'REVERSED'
+              ),
+              false
+            )
+          )
+          .contains('service')
+      );
+      Test.stopTest();
+    }
   }
 }

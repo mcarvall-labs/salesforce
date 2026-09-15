@@ -17,6 +17,8 @@
         >Substituido</label></value>
             <value><fullName>REVERSED</fullName><default>false</default><label
         >Revertido</label></value>
+            <value><fullName>DISCARDED</fullName><default>false</default><label
+        >Descartado</label></value>
         </valueSetDefinition>
     </valueSet>
     <description

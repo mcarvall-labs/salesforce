@@ -103,7 +103,11 @@ public with sharing class ALT_CLS_EconomicAllocationService {
     Id holderId;
     Decimal magnitude;
     String currencyIso;
+    String status;
   }
+  public static final String STATE_DISCARDED = 'DISCARDED';
+  private static final Integer KEY_MAX = 64;
+  private static final Integer SHARES_MAX = 200;
 
   // ------------------------------------------------------------------ propose
 
@@ -121,22 +125,39 @@ public with sharing class ALT_CLS_EconomicAllocationService {
       }
       throw failure('CONFLICT', new List<String>());
     }
-    if (activeSet(fact.identity) != null) {
+    if (
+      ALT_CLS_EconomicAllocationIntegrity.activeSetId(
+        activeToken(fact.identity)
+      ) != null
+    ) {
       // Revising a confirmed allocation is the sibling story; a new proposal cannot bypass it.
       throw failure('ACTIVE_SET_EXISTS', new List<String>());
     }
     List<String> reasons = new List<String>();
+    if (fact.status != null && fact.status != 'POSTED') {
+      reasons.add('FACT_NOT_SETTLED');
+    }
     Map<Id, Account> holders = authorizedHolders(input.shares, reasons);
+    // Validation and persistence use the same normalized values (scale 6 / 8).
     Decimal total = 0;
     Set<Id> seen = new Set<Id>();
     for (ShareInput share : input.shares) {
-      if (share.percent == null || share.percent <= 0 || share.percent > 100) {
+      Decimal percent = share.percent == null
+        ? null
+        : share.percent.setScale(6);
+      Decimal magnitude = percent == null
+        ? null
+        : (fact.magnitude *
+            percent /
+            100)
+            .setScale(8, System.RoundingMode.HALF_EVEN);
+      if (percent == null || percent <= 0 || percent > 100 || magnitude <= 0) {
         reasons.add('NON_POSITIVE_SHARE:' + share.accountId);
       }
       if (!seen.add(share.accountId)) {
         reasons.add('DUPLICATE_ACCOUNT:' + share.accountId);
       }
-      total += nz(share.percent);
+      total += nz(percent);
     }
     if (total > 100) {
       reasons.add('TOTAL_EXCEEDS_100');
@@ -169,17 +190,19 @@ public with sharing class ALT_CLS_EconomicAllocationService {
         OwnerId = holderOwner(fact.holderId)
       );
       Database.insert(allocationSet, AccessLevel.USER_MODE);
+      grantProposerAccess(allocationSet.Id, allocationSet.OwnerId);
       List<AXF_OBJ_EconomicAllocation__c> allocations = new List<AXF_OBJ_EconomicAllocation__c>();
+      Map<Id, Decimal> magnitudes = shareMagnitudes(
+        fact.magnitude,
+        input.shares
+      );
       for (ShareInput share : input.shares) {
         allocations.add(
           new AXF_OBJ_EconomicAllocation__c(
             AXF_EA_MDR_AllocationSet__c = allocationSet.Id,
             AXF_EA_LKP_Account__c = share.accountId,
             AXF_EA_NUM_Percent__c = share.percent.setScale(6),
-            AXF_EA_NUM_Magnitude__c = (fact.magnitude *
-              share.percent /
-              100)
-              .setScale(8, System.RoundingMode.HALF_EVEN),
+            AXF_EA_NUM_Magnitude__c = magnitudes.get(share.accountId),
             AXF_EA_TXT_CurrencyIsoCode__c = fact.currencyIso,
             AXF_EA_PKL_RedactionPolicy__c = 'OWN_SHARE_ONLY',
             AXF_EA_EXI_AllocationKey__c = AXF_CLS_IdentityFraming.key(
@@ -216,11 +239,15 @@ public with sharing class ALT_CLS_EconomicAllocationService {
     if (setId == null || String.isBlank(operationKey)) {
       throw failure('INVALID_INPUT', new List<String>());
     }
+    requireKey(operationKey);
     requireCapability();
+    // Lock order: the fact (30) before the set (60), as in propose.
+    AXF_OBJ_EconomicAllocationSet__c anchor = readSet(setId);
+    Fact fact = lockFact(factKind(anchor), factId(anchor));
     AXF_OBJ_EconomicAllocationSet__c allocationSet = lockSet(setId);
     if (
       allocationSet.AXF_EAS_PKL_State__c == STATE_CONFIRMED &&
-      allocationSet.AXF_EAS_TXT_OperationKey__c == operationKey
+      allocationSet.AXF_EAS_TXT_ConfirmOperationKey__c == operationKey
     ) {
       return read(setId);
     }
@@ -233,7 +260,6 @@ public with sharing class ALT_CLS_EconomicAllocationService {
     ) {
       throw failure('CONFLICT', new List<String>());
     }
-    Fact fact = lockFact(factKind(allocationSet), factId(allocationSet));
     List<String> reasons = new List<String>();
     List<AXF_OBJ_EconomicAllocation__c> allocations = [
       SELECT
@@ -247,12 +273,14 @@ public with sharing class ALT_CLS_EconomicAllocationService {
     ];
     List<ShareInput> shares = new List<ShareInput>();
     Decimal total = 0;
+    Decimal magnitudeTotal = 0;
     for (AXF_OBJ_EconomicAllocation__c allocation : allocations) {
       ShareInput share = new ShareInput();
       share.accountId = allocation.AXF_EA_LKP_Account__c;
       share.percent = allocation.AXF_EA_NUM_Percent__c;
       shares.add(share);
       total += nz(allocation.AXF_EA_NUM_Percent__c);
+      magnitudeTotal += nz(allocation.AXF_EA_NUM_Magnitude__c);
       if (nz(allocation.AXF_EA_NUM_Magnitude__c) <= 0) {
         reasons.add('NON_POSITIVE_SHARE:' + allocation.AXF_EA_LKP_Account__c);
       }
@@ -261,10 +289,28 @@ public with sharing class ALT_CLS_EconomicAllocationService {
     if (allocations.isEmpty() || total.setScale(6) != 100) {
       reasons.add('TOTAL_NOT_100:' + total.setScale(6));
     }
-    if (fact.magnitude != allocationSet.AXF_EAS_NUM_FactMagnitude__c) {
+    if (
+      fact.magnitude != allocationSet.AXF_EAS_NUM_FactMagnitude__c ||
+      fact.currencyIso != allocationSet.AXF_EAS_TXT_CurrencyIsoCode__c ||
+      fact.holderId != allocationSet.AXF_EAS_LKP_HolderAccount__c
+    ) {
       reasons.add('FACT_CHANGED');
     }
-    if (activeSet(fact.identity) != null) {
+    if (fact.status != null && fact.status != 'POSTED') {
+      reasons.add('FACT_NOT_SETTLED');
+    }
+    if (
+      !allocations.isEmpty() &&
+      magnitudeTotal.setScale(8) != nz(fact.magnitude).setScale(8)
+    ) {
+      // Shares must conserve the fact in its original currency, not only in percent.
+      reasons.add('MAGNITUDE_NOT_CONSERVED:' + magnitudeTotal.setScale(8));
+    }
+    if (
+      ALT_CLS_EconomicAllocationIntegrity.activeSetId(
+        activeToken(fact.identity)
+      ) != null
+    ) {
       reasons.add('ACTIVE_SET_EXISTS');
     }
     if (!reasons.isEmpty()) {
@@ -276,7 +322,48 @@ public with sharing class ALT_CLS_EconomicAllocationService {
       allocationSet.AXF_EAS_PKL_State__c = STATE_CONFIRMED;
       allocationSet.AXF_EAS_DT_EffectiveAt__c = Datetime.now();
       allocationSet.AXF_EAS_EXI_ActiveToken__c = activeToken(fact.identity);
-      allocationSet.AXF_EAS_TXT_OperationKey__c = operationKey;
+      // The proposal key stays so a propose replay still finds this set.
+      allocationSet.AXF_EAS_TXT_ConfirmOperationKey__c = operationKey;
+      allocationSet.AXF_EAS_NUM_Version__c =
+        nz(allocationSet.AXF_EAS_NUM_Version__c) + 1;
+      try {
+        Database.update(allocationSet, AccessLevel.USER_MODE);
+      } catch (DmlException race) {
+        if (race.getDmlType(0) == StatusCode.DUPLICATE_VALUE) {
+          // A concurrent confirmation won the active token.
+          throw failure('ACTIVE_SET_EXISTS', new List<String>());
+        }
+        throw race;
+      }
+      return read(setId);
+    } catch (Exception failure) {
+      Database.rollback(point);
+      throw failure;
+    } finally {
+      ALT_CLS_EconomicAllocationGuard.endWrite();
+    }
+  }
+
+  /** economicallocation.set.discard.v1 — closes a DRAFT that will not be confirmed. */
+  public SetView discard(Id setId, Decimal expectedVersion) {
+    if (setId == null || expectedVersion == null) {
+      throw failure('INVALID_INPUT', new List<String>());
+    }
+    requireCapability();
+    AXF_OBJ_EconomicAllocationSet__c allocationSet = lockSet(setId);
+    if (allocationSet.AXF_EAS_PKL_State__c == STATE_DISCARDED) {
+      return read(setId);
+    }
+    if (allocationSet.AXF_EAS_PKL_State__c != STATE_DRAFT) {
+      throw failure('NOT_DRAFT', new List<String>());
+    }
+    if (expectedVersion != nz(allocationSet.AXF_EAS_NUM_Version__c)) {
+      throw failure('CONFLICT', new List<String>());
+    }
+    Savepoint point = Database.setSavepoint();
+    try {
+      ALT_CLS_EconomicAllocationGuard.beginWrite();
+      allocationSet.AXF_EAS_PKL_State__c = STATE_DISCARDED;
       allocationSet.AXF_EAS_NUM_Version__c =
         nz(allocationSet.AXF_EAS_NUM_Version__c) + 1;
       Database.update(allocationSet, AccessLevel.USER_MODE);
@@ -295,7 +382,38 @@ public with sharing class ALT_CLS_EconomicAllocationService {
     if (setId == null) {
       throw failure('INVALID_INPUT', new List<String>());
     }
-    List<AXF_OBJ_EconomicAllocationSet__c> rows = [
+    List<AXF_OBJ_EconomicAllocationSet__c> rows = querySets(
+      new Set<Id>{ setId },
+      null
+    );
+    if (rows.isEmpty()) {
+      throw failure('NOT_ACCESSIBLE', new List<String>());
+    }
+    return toView(rows[0]);
+  }
+
+  /** Sets of one fact (all revisions), newest first, in one query. */
+  public List<SetView> listForFact(String kind, Id factId) {
+    if (factId == null) {
+      throw failure('INVALID_INPUT', new List<String>());
+    }
+    List<SetView> result = new List<SetView>();
+    for (AXF_OBJ_EconomicAllocationSet__c row : querySets(null, factId)) {
+      result.add(toView(row));
+    }
+    return result;
+  }
+
+  private static List<AXF_OBJ_EconomicAllocationSet__c> querySets(
+    Set<Id> setIds,
+    Id factId
+  ) {
+    // A null bind in "= :factId" would match every set without that lookup; bind sets instead.
+    Set<Id> factIds = factId == null ? new Set<Id>() : new Set<Id>{ factId };
+    if (setIds == null) {
+      setIds = new Set<Id>();
+    }
+    return [
       SELECT
         Id,
         Name,
@@ -326,6 +444,25 @@ public with sharing class ALT_CLS_EconomicAllocationService {
           ORDER BY AXF_EA_LKP_Account__r.Name
         )
       FROM AXF_OBJ_EconomicAllocationSet__c
+      WHERE
+        Id IN :setIds
+        OR AXF_EAS_LKP_BankTransaction__c IN :factIds
+        OR AXF_EAS_LKP_CardTransaction__c IN :factIds
+        OR AXF_EAS_LKP_FinancialTransaction__c IN :factIds
+      WITH USER_MODE
+      ORDER BY AXF_EAS_NUM_Revision__c DESC
+      LIMIT 200
+    ];
+  }
+
+  private static AXF_OBJ_EconomicAllocationSet__c readSet(Id setId) {
+    List<AXF_OBJ_EconomicAllocationSet__c> rows = [
+      SELECT
+        Id,
+        AXF_EAS_LKP_BankTransaction__c,
+        AXF_EAS_LKP_CardTransaction__c,
+        AXF_EAS_LKP_FinancialTransaction__c
+      FROM AXF_OBJ_EconomicAllocationSet__c
       WHERE Id = :setId
       WITH USER_MODE
       LIMIT 1
@@ -333,29 +470,7 @@ public with sharing class ALT_CLS_EconomicAllocationService {
     if (rows.isEmpty()) {
       throw failure('NOT_ACCESSIBLE', new List<String>());
     }
-    return toView(rows[0]);
-  }
-
-  /** Sets of one fact (all revisions), newest first. */
-  public List<SetView> listForFact(String kind, Id factId) {
-    if (factId == null) {
-      throw failure('INVALID_INPUT', new List<String>());
-    }
-    List<SetView> result = new List<SetView>();
-    for (AXF_OBJ_EconomicAllocationSet__c row : [
-      SELECT Id
-      FROM AXF_OBJ_EconomicAllocationSet__c
-      WHERE
-        AXF_EAS_LKP_BankTransaction__c = :factId
-        OR AXF_EAS_LKP_CardTransaction__c = :factId
-        OR AXF_EAS_LKP_FinancialTransaction__c = :factId
-      WITH USER_MODE
-      ORDER BY AXF_EAS_NUM_Revision__c DESC
-      LIMIT 50
-    ]) {
-      result.add(read(row.Id));
-    }
-    return result;
+    return rows[0];
   }
 
   // ------------------------------------------------------------------ guards
@@ -369,6 +484,10 @@ public with sharing class ALT_CLS_EconomicAllocationService {
       input.shares == null ||
       input.shares.isEmpty()
     ) {
+      throw failure('INVALID_INPUT', new List<String>());
+    }
+    requireKey(input.operationKey);
+    if (input.shares.size() > SHARES_MAX) {
       throw failure('INVALID_INPUT', new List<String>());
     }
     input.factKind = input.factKind.toUpperCase();
@@ -392,6 +511,63 @@ public with sharing class ALT_CLS_EconomicAllocationService {
     }
   }
 
+  private static void requireKey(String key) {
+    if (String.isBlank(key) || key.length() > KEY_MAX) {
+      throw failure('INVALID_INPUT', new List<String>());
+    }
+  }
+
+  /**
+   * Magnitudes per share in the original currency; rounding residue goes to the largest share
+   * so the shares always conserve the fact (largest-remainder).
+   */
+  private static Map<Id, Decimal> shareMagnitudes(
+    Decimal factMagnitude,
+    List<ShareInput> shares
+  ) {
+    Map<Id, Decimal> result = new Map<Id, Decimal>();
+    Decimal assigned = 0;
+    Decimal totalPercent = 0;
+    Id largest;
+    Decimal largestPercent = -1;
+    for (ShareInput share : shares) {
+      Decimal percent = share.percent.setScale(6);
+      totalPercent += percent;
+      Decimal magnitude = (factMagnitude *
+        percent /
+        100)
+        .setScale(8, System.RoundingMode.HALF_EVEN);
+      result.put(share.accountId, magnitude);
+      assigned += magnitude;
+      if (percent > largestPercent) {
+        largestPercent = percent;
+        largest = share.accountId;
+      }
+    }
+    if (totalPercent == 100 && largest != null) {
+      result.put(largest, result.get(largest) + (factMagnitude - assigned));
+    }
+    return result;
+  }
+
+  /** The set follows the holder's owner (G2); the proposer keeps access through a share row. */
+  @SuppressWarnings('PMD.ApexCRUDViolation')
+  private static void grantProposerAccess(Id setId, Id ownerId) {
+    Id me = UserInfo.getUserId();
+    if (me == ownerId) {
+      return;
+    }
+    Database.insert(
+      new AXF_OBJ_EconomicAllocationSet__Share(
+        ParentId = setId,
+        UserOrGroupId = me,
+        AccessLevel = 'Edit',
+        RowCause = Schema.AXF_OBJ_EconomicAllocationSet__Share.RowCause.Manual
+      ),
+      false
+    );
+  }
+
   /** Lock order 30: the source fact, revalidated for access, positivity and currency. */
   private Fact lockFact(String kind, Id factId) {
     Fact fact = new Fact();
@@ -405,6 +581,7 @@ public with sharing class ALT_CLS_EconomicAllocationService {
           AXF_BAT_EXI_SourceKey__c,
           AXF_BAT_NUM_Magnitude__c,
           AXF_BAT_TXT_CurrencyIsoCode__c,
+          AXF_BAT_PKL_Status__c,
           AXF_BAT_MDR_BankAccount__r.AXF_BA_LKP_Account__c
         FROM AXF_OBJ_BankAccountTransaction__c
         WHERE Id = :factId
@@ -418,6 +595,7 @@ public with sharing class ALT_CLS_EconomicAllocationService {
       fact.identity = rows[0].AXF_BAT_EXI_SourceKey__c;
       fact.magnitude = rows[0].AXF_BAT_NUM_Magnitude__c;
       fact.currencyIso = rows[0].AXF_BAT_TXT_CurrencyIsoCode__c;
+      fact.status = rows[0].AXF_BAT_PKL_Status__c;
       fact.holderId = rows[0].AXF_BAT_MDR_BankAccount__r?.AXF_BA_LKP_Account__c;
     } else if (kind == 'CARD') {
       List<AXF_OBJ_CreditCardTransaction__c> rows = [
@@ -427,6 +605,7 @@ public with sharing class ALT_CLS_EconomicAllocationService {
           AXF_CCT_EXI_SourceKey__c,
           AXF_CCT_NUM_Magnitude__c,
           AXF_CCT_TXT_CurrencyIsoCode__c,
+          AXF_CCT_PKL_Status__c,
           AXF_CCT_MDR_CreditCard__r.AXF_CC_LKP_Account__c
         FROM AXF_OBJ_CreditCardTransaction__c
         WHERE Id = :factId
@@ -440,14 +619,13 @@ public with sharing class ALT_CLS_EconomicAllocationService {
       fact.identity = rows[0].AXF_CCT_EXI_SourceKey__c;
       fact.magnitude = rows[0].AXF_CCT_NUM_Magnitude__c;
       fact.currencyIso = rows[0].AXF_CCT_TXT_CurrencyIsoCode__c;
+      fact.status = rows[0].AXF_CCT_PKL_Status__c;
       fact.holderId = rows[0].AXF_CCT_MDR_CreditCard__r?.AXF_CC_LKP_Account__c;
     } else {
       List<AXF_OBJ_FinancialTransaction__c> rows = [
         SELECT
           Id,
           Name,
-          AXF_FTX_EXI_ClientRequestId__c,
-          AXF_FTX_EXI_PlanIdentityHash__c,
           AXF_FTX_NUM_Magnitude__c,
           AXF_FTX_TXT_CurrencyIsoCode__c,
           AXF_FTX_LKP_Account__c
@@ -460,9 +638,9 @@ public with sharing class ALT_CLS_EconomicAllocationService {
         throw failure('NOT_ACCESSIBLE', new List<String>());
       }
       fact.name = rows[0].Name;
-      fact.identity = String.isBlank(rows[0].AXF_FTX_EXI_PlanIdentityHash__c)
-        ? rows[0].AXF_FTX_EXI_ClientRequestId__c
-        : rows[0].AXF_FTX_EXI_PlanIdentityHash__c;
+      // Manual occurrences share plan hashes across rows and gain hashes over time; the record
+      // itself is the only identity that is both unique and stable.
+      fact.identity = 'FTX:' + rows[0].Id;
       fact.magnitude = rows[0].AXF_FTX_NUM_Magnitude__c;
       fact.currencyIso = rows[0].AXF_FTX_TXT_CurrencyIsoCode__c;
       fact.holderId = rows[0].AXF_FTX_LKP_Account__c;
@@ -490,10 +668,13 @@ public with sharing class ALT_CLS_EconomicAllocationService {
         AXF_EAS_LKP_BankTransaction__c,
         AXF_EAS_LKP_CardTransaction__c,
         AXF_EAS_LKP_FinancialTransaction__c,
+        AXF_EAS_LKP_HolderAccount__c,
         AXF_EAS_PKL_State__c,
         AXF_EAS_NUM_FactMagnitude__c,
+        AXF_EAS_TXT_CurrencyIsoCode__c,
         AXF_EAS_NUM_Version__c,
-        AXF_EAS_TXT_OperationKey__c
+        AXF_EAS_TXT_OperationKey__c,
+        AXF_EAS_TXT_ConfirmOperationKey__c
       FROM AXF_OBJ_EconomicAllocationSet__c
       WHERE Id = :setId
       WITH USER_MODE
@@ -545,32 +726,8 @@ public with sharing class ALT_CLS_EconomicAllocationService {
     return rows[0].OwnerId;
   }
 
-  private AXF_OBJ_EconomicAllocationSet__c activeSet(String identity) {
-    String token = activeToken(identity);
-    List<AXF_OBJ_EconomicAllocationSet__c> rows = [
-      SELECT Id
-      FROM AXF_OBJ_EconomicAllocationSet__c
-      WHERE AXF_EAS_EXI_ActiveToken__c = :token
-      WITH USER_MODE
-      LIMIT 1
-    ];
-    return rows.isEmpty() ? null : rows[0];
-  }
-
   private Integer nextRevision(String identity) {
-    Integer revision = 0;
-    for (AXF_OBJ_EconomicAllocationSet__c row : [
-      SELECT AXF_EAS_NUM_Revision__c
-      FROM AXF_OBJ_EconomicAllocationSet__c
-      WHERE AXF_EAS_TXT_FactIdentity__c = :identity
-      WITH USER_MODE
-    ]) {
-      revision = Math.max(
-        revision,
-        Integer.valueOf(nz(row.AXF_EAS_NUM_Revision__c))
-      );
-    }
-    return revision + 1;
+    return ALT_CLS_EconomicAllocationIntegrity.maxRevision(identity) + 1;
   }
 
   private List<AXF_OBJ_EconomicAllocationSet__c> existingByOperation(
@@ -588,7 +745,7 @@ public with sharing class ALT_CLS_EconomicAllocationService {
         )
       FROM AXF_OBJ_EconomicAllocationSet__c
       WHERE AXF_EAS_TXT_OperationKey__c = :operationKey
-      WITH USER_MODE
+      WITH SYSTEM_MODE
       LIMIT 1
     ];
   }

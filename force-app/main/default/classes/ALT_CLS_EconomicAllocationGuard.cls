@@ -19,10 +19,22 @@ public without sharing class ALT_CLS_EconomicAllocationGuard {
     'AXF_EAS_TXT_CurrencyIsoCode__c'
   };
   private static final Map<String, Set<String>> TRANSITIONS = new Map<String, Set<String>>{
-    'DRAFT' => new Set<String>{ 'CONFIRMED' },
+    'DRAFT' => new Set<String>{ 'CONFIRMED', 'DISCARDED' },
     'CONFIRMED' => new Set<String>{ 'SUPERSEDED', 'REVERSED' },
     'SUPERSEDED' => new Set<String>(),
-    'REVERSED' => new Set<String>()
+    'REVERSED' => new Set<String>(),
+    'DISCARDED' => new Set<String>()
+  };
+  /** Once confirmed only the state (and the optimistic version) may move. */
+  private static final Set<String> CONFIRMED_MUTABLE = new Set<String>{
+    'AXF_EAS_PKL_State__c',
+    'AXF_EAS_NUM_Version__c'
+  };
+  private static final Set<String> ALLOCATION_FROZEN = new Set<String>{
+    'AXF_EA_MDR_AllocationSet__c',
+    'AXF_EA_LKP_Account__c',
+    'AXF_EA_EXI_AllocationKey__c',
+    'AXF_EA_TXT_CurrencyIsoCode__c'
   };
 
   public static void beginWrite() {
@@ -65,6 +77,21 @@ public without sharing class ALT_CLS_EconomicAllocationGuard {
           break;
         }
       }
+      if (
+        before.AXF_EAS_PKL_State__c != 'DRAFT' &&
+        before.AXF_EAS_PKL_State__c != null
+      ) {
+        for (String field : row.getPopulatedFieldsAsMap().keySet()) {
+          if (
+            field.endsWith('__c') &&
+            !CONFIRMED_MUTABLE.contains(field) &&
+            row.get(field) != before.get(field)
+          ) {
+            row.addError('Confirmed economic allocation content is immutable.');
+            break;
+          }
+        }
+      }
       if (row.AXF_EAS_PKL_State__c != before.AXF_EAS_PKL_State__c) {
         Set<String> allowed = TRANSITIONS.get(before.AXF_EAS_PKL_State__c);
         if (allowed == null || !allowed.contains(row.AXF_EAS_PKL_State__c)) {
@@ -81,6 +108,17 @@ public without sharing class ALT_CLS_EconomicAllocationGuard {
     Map<Id, AXF_OBJ_EconomicAllocation__c> oldMap,
     Boolean deleting
   ) {
+    if (deleting || !writing) {
+      // Unconditional refusals need no parent lookup.
+      for (AXF_OBJ_EconomicAllocation__c row : rows) {
+        row.addError(
+          deleting
+            ? 'Economic allocations cannot be deleted; reverse with a compensating set.'
+            : 'Use the economic allocation service.'
+        );
+      }
+      return;
+    }
     Set<Id> setIds = new Set<Id>();
     for (AXF_OBJ_EconomicAllocation__c row : rows) {
       setIds.add(row.AXF_EA_MDR_AllocationSet__c);
@@ -93,15 +131,18 @@ public without sharing class ALT_CLS_EconomicAllocationGuard {
       ]
     );
     for (AXF_OBJ_EconomicAllocation__c row : rows) {
-      if (deleting) {
-        row.addError(
-          'Economic allocations cannot be deleted; reverse with a compensating set.'
-        );
-        continue;
-      }
-      if (!writing) {
-        row.addError('Use the economic allocation service.');
-        continue;
+      if (oldMap != null) {
+        AXF_OBJ_EconomicAllocation__c before = oldMap.get(row.Id);
+        Boolean frozenChanged = false;
+        for (String field : ALLOCATION_FROZEN) {
+          if (row.get(field) != before.get(field)) {
+            frozenChanged = true;
+          }
+        }
+        if (frozenChanged) {
+          row.addError('Economic allocation share identity is immutable.');
+          continue;
+        }
       }
       AXF_OBJ_EconomicAllocationSet__c parent = parents.get(
         row.AXF_EA_MDR_AllocationSet__c

@@ -3,6 +3,7 @@ import EconomicAllocation, { parseFailure } from "c/aXF_LWC_economicAllocation";
 import getContext from "@salesforce/apex/AXF_CLS_CTRL_EconomicAllocation.getContext";
 import propose from "@salesforce/apex/AXF_CLS_CTRL_EconomicAllocation.propose";
 import confirm from "@salesforce/apex/AXF_CLS_CTRL_EconomicAllocation.confirm";
+import discard from "@salesforce/apex/AXF_CLS_CTRL_EconomicAllocation.discard";
 
 jest.mock(
   "@salesforce/apex/AXF_CLS_CTRL_EconomicAllocation.getContext",
@@ -16,6 +17,11 @@ jest.mock(
 );
 jest.mock(
   "@salesforce/apex/AXF_CLS_CTRL_EconomicAllocation.confirm",
+  () => ({ default: jest.fn() }),
+  { virtual: true }
+);
+jest.mock(
+  "@salesforce/apex/AXF_CLS_CTRL_EconomicAllocation.discard",
   () => ({ default: jest.fn() }),
   { virtual: true }
 );
@@ -122,7 +128,7 @@ describe("c-aXF_LWC_economicAllocation", () => {
     await flush();
     expect(
       element.shadowRoot.querySelector('[data-id="total"]').textContent
-    ).toBe("100.000000%");
+    ).toBe("100.00%");
     element.shadowRoot.querySelector('[data-id="propose"]').click();
     await flush();
     const request = JSON.parse(propose.mock.calls[0][0].request);
@@ -209,5 +215,99 @@ describe("c-aXF_LWC_economicAllocation", () => {
     expect(parseFailure({ body: { message: "boom" } }).message).toBe(
       parseFailure({}).message
     );
+  });
+  it("hides the composer for read-only users, blocks duplicate holders and discards a draft", async () => {
+    getContext.mockResolvedValueOnce({
+      canAllocate: false,
+      factKind: "BANK",
+      holders,
+      sets: [draft]
+    });
+    const readOnly = build();
+    await flush();
+    expect(
+      readOnly.shadowRoot.querySelector('[data-id="read-only"]')
+    ).not.toBeNull();
+    expect(readOnly.shadowRoot.querySelector('[data-id="add"]')).toBeNull();
+    expect(
+      [...readOnly.shadowRoot.querySelectorAll("lightning-button")].find(
+        (button) => button.dataset.id === "eas1"
+      )
+    ).toBeUndefined();
+    document.body.removeChild(readOnly);
+
+    getContext
+      .mockResolvedValueOnce({
+        canAllocate: true,
+        factKind: "BANK",
+        holders,
+        sets: []
+      })
+      .mockResolvedValue({
+        canAllocate: true,
+        factKind: "BANK",
+        holders,
+        sets: [draft]
+      });
+    discard.mockResolvedValue({ ...draft, state: "DISCARDED" });
+    const element = build();
+    await flush();
+    element.shadowRoot.querySelector('[data-id="add"]').click();
+    await flush();
+    element.shadowRoot.querySelector('[data-id="add"]').click();
+    await flush();
+    const combos = element.shadowRoot.querySelectorAll("lightning-combobox");
+    combos[0].dispatchEvent(
+      new CustomEvent("change", { detail: { value: "001A" } })
+    );
+    combos[1].dispatchEvent(
+      new CustomEvent("change", { detail: { value: "001A" } })
+    );
+    const inputs = element.shadowRoot.querySelectorAll(
+      'lightning-input[data-field="percent"]'
+    );
+    inputs[0].value = "50";
+    inputs[0].dispatchEvent(new CustomEvent("change"));
+    inputs[1].value = "50";
+    inputs[1].dispatchEvent(new CustomEvent("change"));
+    await flush();
+    expect(
+      element.shadowRoot.querySelector('[data-id="propose"]').disabled
+    ).toBe(true);
+    // Escape closes the confirmation dialog; discard closes the draft.
+    const cancel = [
+      ...element.shadowRoot.querySelectorAll("lightning-button")
+    ].find((button) => button.dataset.index === "1");
+    cancel.click();
+    await flush();
+    combos[0].dispatchEvent(
+      new CustomEvent("change", { detail: { value: "001B" } })
+    );
+    await flush();
+    expect(
+      element.shadowRoot.querySelector('[data-id="propose"]').disabled
+    ).toBe(false);
+    propose.mockResolvedValue(draft);
+    element.shadowRoot.querySelector('[data-id="propose"]').click();
+    await flush();
+    const confirmButton = [
+      ...element.shadowRoot.querySelectorAll("lightning-button")
+    ].find((button) => button.dataset.id === "eas1" && !button.dataset.action);
+    confirmButton.click();
+    await flush();
+    const dialog = element.shadowRoot.querySelector('[data-id="confirmation"]');
+    dialog.dispatchEvent(new KeyboardEvent("keydown", { key: "Escape" }));
+    await flush();
+    expect(
+      element.shadowRoot.querySelector('[data-id="confirmation"]')
+    ).toBeNull();
+    [...element.shadowRoot.querySelectorAll("lightning-button")]
+      .find((button) => button.dataset.action === "discard")
+      .click();
+    await flush();
+    expect(discard).toHaveBeenCalledWith({ setId: "eas1", expectedVersion: 1 });
+    expect(
+      element.shadowRoot.querySelector('[data-id="success"]')
+    ).not.toBeNull();
   });
 });

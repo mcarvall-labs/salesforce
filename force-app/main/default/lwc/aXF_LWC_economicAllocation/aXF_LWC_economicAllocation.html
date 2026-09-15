@@ -5,7 +5,7 @@
   >
     <div class="slds-var-p-horizontal_medium">
       <p class="slds-text-body_small slds-var-m-bottom_small">{labels.intro}</p>
-      <div role="status" aria-live="polite" class="slds-var-m-bottom_small">
+      <div class="slds-var-m-bottom_small">
         <template lwc:if={busy}>
           <lightning-spinner
             alternative-text={labels.loading}
@@ -22,8 +22,8 @@
             <span>{error}</span>
             <template lwc:if={hasReasons}>
               <ul class="slds-list_dotted slds-var-m-left_small">
-                <template for:each={reasons} for:item="reason">
-                  <li key={reason}>{reason}</li>
+                <template for:each={reasonRows} for:item="reason">
+                  <li key={reason.key}>{reason.text}</li>
                 </template>
               </ul>
             </template>
@@ -32,20 +32,26 @@
         <template lwc:if={success}>
           <div
             class="slds-notify slds-notify_alert slds-alert_success"
+            role="status"
             data-id="success"
           >
             <span>{success}</span>
           </div>
+        </template>
+        <template lwc:if={readOnly}>
+          <p class="slds-text-color_weak" data-id="read-only">
+            {labels.readOnlyNotice}
+          </p>
         </template>
       </div>
 
       <template lwc:if={confirmation}>
         <section
           role="dialog"
-          aria-modal="true"
           aria-labelledby="ea-confirm-title"
           class="slds-box slds-theme_warning slds-var-m-bottom_small"
           data-id="confirmation"
+          onkeydown={handleDialogKey}
         >
           <h2 id="ea-confirm-title" class="slds-text-heading_small">
             {labels.confirmTitle}
@@ -154,12 +160,13 @@
           >
             <div class="slds-grid slds-wrap slds-grid_vertical-align-center">
               <div class="slds-col slds-size_1-of-1 slds-medium-size_2-of-3">
-                <strong>{labels.revision} {set.revision}</strong> · {set.state}
-                · {labels.fact} {set.factName} · {labels.holder}
-                {set.holderAccountName} ·
+                <strong>{labels.revision} {set.revision}</strong> ·
+                {set.stateLabel} · {labels.fact} {set.factName} ·
+                {labels.holder} {set.holderAccountName} ·
                 <lightning-formatted-number
                   value={set.factMagnitude}
                   minimum-fraction-digits="2"
+                  maximum-fraction-digits="2"
                 ></lightning-formatted-number>
                 {set.currencyIso}
                 <template lwc:if={set.effectiveAt}>
@@ -180,6 +187,14 @@
                     onclick={askConfirm}
                     disabled={busy}
                   ></lightning-button>
+                  <lightning-button
+                    label={labels.discard}
+                    data-id={set.setId}
+                    data-action="discard"
+                    onclick={handleDiscard}
+                    disabled={busy}
+                    class="slds-var-m-left_x-small"
+                  ></lightning-button>
                 </template>
               </div>
             </div>
@@ -199,11 +214,12 @@
                   <template for:each={set.shares} for:item="share">
                     <tr key={share.allocationId} class="slds-hint-parent">
                       <td>{share.accountName}</td>
-                      <td>{share.percent}%</td>
+                      <td>{share.percentText}%</td>
                       <td>
                         <lightning-formatted-number
                           value={share.magnitude}
                           minimum-fraction-digits="2"
+                          maximum-fraction-digits="2"
                         ></lightning-formatted-number>
                         {share.currencyIso}
                       </td>
@@ -211,7 +227,7 @@
                   </template>
                   <tr>
                     <td><strong>{labels.total}</strong></td>
-                    <td><strong>{set.totalPercent}%</strong></td>
+                    <td><strong>{set.totalPercentText}%</strong></td>
                     <td></td>
                   </tr>
                 </tbody>

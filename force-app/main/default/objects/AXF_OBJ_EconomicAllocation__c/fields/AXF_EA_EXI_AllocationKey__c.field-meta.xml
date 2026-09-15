@@ -9,5 +9,5 @@
     <caseSensitive>true</caseSensitive>
     <required>true</required>
     <description
-  >Unique = alloc-v2 = SHA-256(frame(alloc-v2, fato identidade, ACCOUNT, accountId, SHARE)) por set.</description>
+  >Unique = alloc-v2 = SHA-256(frame(alloc-v2, fato identidade, ACCOUNT, accountId, SHARE)) por set. A revisao do set integra o frame, de modo que cada revisao tem sua propria parcela por conta.</description>
 </CustomField>

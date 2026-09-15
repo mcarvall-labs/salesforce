@@ -297,4 +297,49 @@
     >AXF_EconomicAllocation_reasonActiveExists</fullName><language
     >en_US</language><protected>false</protected><shortDescription
     >Reason</shortDescription><value
-    >A confirmed allocation already exists</value></labels></CustomLabels>
+    >A confirmed allocation already exists</value></labels><labels><fullName
+    >AXF_EconomicAllocation_codeRejected</fullName><language
+    >en_US</language><protected>false</protected><shortDescription
+    >Rejected</shortDescription><value
+    >The allocation was rejected by a data rule; nothing was saved.</value></labels><labels
+  ><fullName>AXF_EconomicAllocation_codeLocked</fullName><language
+    >en_US</language><protected>false</protected><shortDescription
+    >Locked</shortDescription><value
+    >Another operation holds this fact; try again in a moment.</value></labels><labels
+  ><fullName>AXF_EconomicAllocation_reasonFactNotSettled</fullName><language
+    >en_US</language><protected>false</protected><shortDescription
+    >Reason</shortDescription><value
+    >Fact not settled yet</value></labels><labels><fullName
+    >AXF_EconomicAllocation_reasonMagnitude</fullName><language
+    >en_US</language><protected>false</protected><shortDescription
+    >Reason</shortDescription><value
+    >Shares do not conserve the fact amount</value></labels><labels><fullName
+    >AXF_EconomicAllocation_readOnlyNotice</fullName><language
+    >en_US</language><protected>false</protected><shortDescription
+    >Read only</shortDescription><value
+    >You can view allocations but not propose or confirm them.</value></labels><labels
+  ><fullName>AXF_EconomicAllocation_discard</fullName><language
+    >en_US</language><protected>false</protected><shortDescription
+    >Discard</shortDescription><value>Discard draft</value></labels><labels
+  ><fullName>AXF_EconomicAllocation_discarded</fullName><language
+    >en_US</language><protected>false</protected><shortDescription
+    >Discarded</shortDescription><value>Draft discarded.</value></labels><labels
+  ><fullName>AXF_EconomicAllocation_stateDRAFT</fullName><language
+    >en_US</language><protected>false</protected><shortDescription
+    >State</shortDescription><value>Draft</value></labels><labels><fullName
+    >AXF_EconomicAllocation_stateCONFIRMED</fullName><language
+    >en_US</language><protected>false</protected><shortDescription
+    >State</shortDescription><value>Confirmed</value></labels><labels><fullName
+    >AXF_EconomicAllocation_stateSUPERSEDED</fullName><language
+    >en_US</language><protected>false</protected><shortDescription
+    >State</shortDescription><value>Superseded</value></labels><labels><fullName
+    >AXF_EconomicAllocation_stateREVERSED</fullName><language
+    >en_US</language><protected>false</protected><shortDescription
+    >State</shortDescription><value>Reversed</value></labels><labels><fullName
+    >AXF_EconomicAllocation_stateDISCARDED</fullName><language
+    >en_US</language><protected>false</protected><shortDescription
+    >State</shortDescription><value>Discarded</value></labels><labels><fullName
+    >AXF_EconomicAllocation_duplicateHolder</fullName><language
+    >en_US</language><protected>false</protected><shortDescription
+    >Duplicate holder</shortDescription><value
+    >The same person/company was selected twice.</value></labels></CustomLabels>

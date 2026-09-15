@@ -40,6 +40,19 @@ import reasonTotalExceeds from "@salesforce/label/c.AXF_EconomicAllocation_reaso
 import reasonTotalNot100 from "@salesforce/label/c.AXF_EconomicAllocation_reasonTotalNot100";
 import reasonFactChanged from "@salesforce/label/c.AXF_EconomicAllocation_reasonFactChanged";
 import reasonActiveExists from "@salesforce/label/c.AXF_EconomicAllocation_reasonActiveExists";
+import codeRejected from "@salesforce/label/c.AXF_EconomicAllocation_codeRejected";
+import codeLocked from "@salesforce/label/c.AXF_EconomicAllocation_codeLocked";
+import reasonFactNotSettled from "@salesforce/label/c.AXF_EconomicAllocation_reasonFactNotSettled";
+import reasonMagnitude from "@salesforce/label/c.AXF_EconomicAllocation_reasonMagnitude";
+import readOnlyNotice from "@salesforce/label/c.AXF_EconomicAllocation_readOnlyNotice";
+import discard from "@salesforce/label/c.AXF_EconomicAllocation_discard";
+import discarded from "@salesforce/label/c.AXF_EconomicAllocation_discarded";
+import stateDRAFT from "@salesforce/label/c.AXF_EconomicAllocation_stateDRAFT";
+import stateCONFIRMED from "@salesforce/label/c.AXF_EconomicAllocation_stateCONFIRMED";
+import stateSUPERSEDED from "@salesforce/label/c.AXF_EconomicAllocation_stateSUPERSEDED";
+import stateREVERSED from "@salesforce/label/c.AXF_EconomicAllocation_stateREVERSED";
+import stateDISCARDED from "@salesforce/label/c.AXF_EconomicAllocation_stateDISCARDED";
+import duplicateHolder from "@salesforce/label/c.AXF_EconomicAllocation_duplicateHolder";
 export default {
   title,
   intro,
@@ -82,5 +95,18 @@ export default {
   reasonTotalExceeds,
   reasonTotalNot100,
   reasonFactChanged,
-  reasonActiveExists
+  reasonActiveExists,
+  codeRejected,
+  codeLocked,
+  reasonFactNotSettled,
+  reasonMagnitude,
+  readOnlyNotice,
+  discard,
+  discarded,
+  stateDRAFT,
+  stateCONFIRMED,
+  stateSUPERSEDED,
+  stateREVERSED,
+  stateDISCARDED,
+  duplicateHolder
 };
