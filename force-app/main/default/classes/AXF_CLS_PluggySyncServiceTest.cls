@@ -175,7 +175,9 @@ private class AXF_CLS_PluggySyncServiceTest {
         AXF_BAT_PKL_Status__c,
         AXF_BAT_TXT_CurrencyIsoCode__c,
         AXF_BAT_TXT_Description__c,
-        AXF_BAT_TXT_NormalizedDescription__c
+        AXF_BAT_TXT_NormalizedDescription__c,
+        AXF_BAT_TXT_RawSourceStatus__c,
+        AXF_BAT_TXT_OperationType__c
       FROM AXF_OBJ_BankAccountTransaction__c
     ]) {
       byKey.put(t.AXF_BAT_EXI_SourceKey__c, t);
@@ -191,6 +193,9 @@ private class AXF_CLS_PluggySyncServiceTest {
       String.isNotBlank(debit.AXF_BAT_TXT_NormalizedDescription__c),
       'AC3 normalized description'
     );
+    // AXF-109: raw provider status and rail retained as evidence.
+    System.assertEquals('POSTED', debit.AXF_BAT_TXT_RawSourceStatus__c);
+    System.assertEquals('PIX', debit.AXF_BAT_TXT_OperationType__c);
 
     AXF_OBJ_IntegrationRun__c run = runFor(bank.runKey);
     System.assertNotEquals(null, run.AXF_INR_DT_CompleteThrough__c, 'AC6');

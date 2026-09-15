@@ -543,9 +543,13 @@ public with sharing class AXF_CLS_PluggySyncService {
         strOf(t.get('descriptionRaw')),
         strOf(t.get('description'))
       );
-      String status = ('PENDING' == strOf(t.get('status')))
-        ? 'PENDING'
-        : 'POSTED';
+      // AXF-109: the mapped picklist keeps its default, but the raw provider status, the
+      // operation rail and the provider category are retained as minimal enrichment so the
+      // evidence qualifier never infers settlement from the default mapping.
+      String rawStatus = strOf(t.get('status'));
+      String status = ('PENDING' == rawStatus) ? 'PENDING' : 'POSTED';
+      String operationType = clip(strOf(t.get('operationType')), 40);
+      String providerCategory = clip(strOf(t.get('category')), 120);
       String ccy = firstNonBlank(strOf(t.get('currencyCode')), s.currencyIso);
 
       if (s.kind == 'BANK') {
@@ -559,6 +563,9 @@ public with sharing class AXF_CLS_PluggySyncService {
             AXF_BAT_NUM_Magnitude__c = magnitude,
             AXF_BAT_PKL_Direction__c = direction,
             AXF_BAT_PKL_Status__c = status,
+            AXF_BAT_TXT_RawSourceStatus__c = clip(rawStatus, 40),
+            AXF_BAT_TXT_OperationType__c = operationType,
+            AXF_BAT_TXT_ProviderCategory__c = providerCategory,
             AXF_BAT_TXT_CurrencyIsoCode__c = ccy,
             AXF_BAT_TXT_Description__c = clip(rawDesc, 255),
             AXF_BAT_TXT_NormalizedDescription__c = clip(
@@ -582,6 +589,26 @@ public with sharing class AXF_CLS_PluggySyncService {
         String billPeriod = ccMeta == null
           ? null
           : forecastPeriod(ccMeta.get('billForecastDate'));
+        Decimal installmentNumber = ccMeta == null
+          ? null
+          : decimalOf(ccMeta.get('installmentNumber'));
+        Decimal totalInstallments = ccMeta == null
+          ? null
+          : decimalOf(ccMeta.get('totalInstallments'));
+        Map<String, Object> merchant = (t.get(
+            'merchant'
+          ) instanceof Map<String, Object>)
+          ? (Map<String, Object>) t.get('merchant')
+          : null;
+        String merchantName = merchant == null
+          ? null
+          : clip(
+              firstNonBlank(
+                strOf(merchant.get('name')),
+                strOf(merchant.get('businessName'))
+              ),
+              120
+            );
         cardByKey.put(
           key,
           new AXF_OBJ_CreditCardTransaction__c(
@@ -592,6 +619,12 @@ public with sharing class AXF_CLS_PluggySyncService {
             AXF_CCT_NUM_Magnitude__c = magnitude,
             AXF_CCT_PKL_Direction__c = direction,
             AXF_CCT_PKL_Status__c = status,
+            AXF_CCT_TXT_RawSourceStatus__c = clip(rawStatus, 40),
+            AXF_CCT_TXT_OperationType__c = operationType,
+            AXF_CCT_TXT_ProviderCategory__c = providerCategory,
+            AXF_CCT_NUM_InstallmentNumber__c = installmentNumber,
+            AXF_CCT_NUM_TotalInstallments__c = totalInstallments,
+            AXF_CCT_TXT_MerchantName__c = merchantName,
             AXF_CCT_TXT_CurrencyIsoCode__c = ccy,
             AXF_CCT_TXT_Description__c = clip(rawDesc, 255),
             AXF_CCT_TXT_NormalizedDescription__c = clip(

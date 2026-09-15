@@ -1,0 +1,25 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<CustomField xmlns="http://soap.sforce.com/2006/04/metadata">
+    <fullName>AXF_TOB_PKL_ClassificationProvenance__c</fullName>
+    <label>Proveniencia da Classificacao</label>
+    <type>Picklist</type>
+    <required>true</required>
+    <valueSet>
+        <restricted>true</restricted>
+        <valueSetDefinition>
+            <sorted>false</sorted>
+            <value><fullName>NONE</fullName><default>true</default><label
+        >Nenhuma</label></value>
+            <value><fullName>PROVIDER_CATEGORY</fullName><default
+        >false</default><label>Categoria do provedor</label></value>
+            <value><fullName>MERCHANT_IDENTITY</fullName><default
+        >false</default><label>Identidade do estabelecimento</label></value>
+            <value><fullName>OPERATION_TYPE</fullName><default
+        >false</default><label>Tipo de operacao</label></value>
+            <value><fullName>DESCRIPTION_RULE</fullName><default
+        >false</default><label>Regra de descricao</label></value>
+        </valueSetDefinition>
+    </valueSet>
+    <description
+  >Origem da evidencia que sustentou a classificacao; nome de estabelecimento sozinho nunca afirma servico.</description>
+</CustomField>

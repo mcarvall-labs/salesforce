@@ -172,9 +172,17 @@
     <apexClass>AXF_CLS_PluggySyncScheduler</apexClass>
     <enabled>true</enabled>
   </classAccesses>
+  <classAccesses>
+    <apexClass>ALT_CLS_TransactionObservationService</apexClass>
+    <enabled>true</enabled>
+  </classAccesses>
   <customPermissions>
     <enabled>true</enabled>
     <name>AXF_CanConfigure</name>
+  </customPermissions>
+  <customPermissions>
+    <enabled>true</enabled>
+    <name>AXF_CanObserveTransactions</name>
   </customPermissions>
   <fieldPermissions>
     <editable>true</editable>
@@ -1093,6 +1101,88 @@
     <field>AXF_OBJ_PluggyConnection__c.AXF_CON_LKP_Account__c</field>
     <readable>true</readable>
   </fieldPermissions>
+  <fieldPermissions>
+    <editable>false</editable>
+    <field
+    >AXF_OBJ_BankAccountTransaction__c.AXF_BAT_TXT_RawSourceStatus__c</field>
+    <readable>true</readable>
+  </fieldPermissions>
+  <fieldPermissions>
+    <editable>false</editable>
+    <field
+    >AXF_OBJ_BankAccountTransaction__c.AXF_BAT_TXT_OperationType__c</field>
+    <readable>true</readable>
+  </fieldPermissions>
+  <fieldPermissions>
+    <editable>false</editable>
+    <field
+    >AXF_OBJ_BankAccountTransaction__c.AXF_BAT_TXT_ProviderCategory__c</field>
+    <readable>true</readable>
+  </fieldPermissions>
+  <fieldPermissions>
+    <editable>false</editable>
+    <field
+    >AXF_OBJ_CreditCardTransaction__c.AXF_CCT_TXT_RawSourceStatus__c</field>
+    <readable>true</readable>
+  </fieldPermissions>
+  <fieldPermissions>
+    <editable>false</editable>
+    <field>AXF_OBJ_CreditCardTransaction__c.AXF_CCT_TXT_OperationType__c</field>
+    <readable>true</readable>
+  </fieldPermissions>
+  <fieldPermissions>
+    <editable>false</editable>
+    <field
+    >AXF_OBJ_CreditCardTransaction__c.AXF_CCT_TXT_ProviderCategory__c</field>
+    <readable>true</readable>
+  </fieldPermissions>
+  <fieldPermissions>
+    <editable>false</editable>
+    <field
+    >AXF_OBJ_CreditCardTransaction__c.AXF_CCT_NUM_InstallmentNumber__c</field>
+    <readable>true</readable>
+  </fieldPermissions>
+  <fieldPermissions>
+    <editable>false</editable>
+    <field
+    >AXF_OBJ_CreditCardTransaction__c.AXF_CCT_NUM_TotalInstallments__c</field>
+    <readable>true</readable>
+  </fieldPermissions>
+  <fieldPermissions>
+    <editable>false</editable>
+    <field>AXF_OBJ_CreditCardTransaction__c.AXF_CCT_TXT_MerchantName__c</field>
+    <readable>true</readable>
+  </fieldPermissions>
+  <fieldPermissions>
+    <editable>true</editable>
+    <field
+    >AXF_OBJ_TransactionObservation__c.AXF_TOB_LKP_BankTransaction__c</field>
+    <readable>true</readable>
+  </fieldPermissions>
+  <fieldPermissions>
+    <editable>true</editable>
+    <field
+    >AXF_OBJ_TransactionObservation__c.AXF_TOB_LKP_CardTransaction__c</field>
+    <readable>true</readable>
+  </fieldPermissions>
+  <fieldPermissions>
+    <editable>true</editable>
+    <field
+    >AXF_OBJ_TransactionObservation__c.AXF_TOB_TXT_MerchantEvidence__c</field>
+    <readable>true</readable>
+  </fieldPermissions>
+  <fieldPermissions>
+    <editable>true</editable>
+    <field
+    >AXF_OBJ_TransactionObservation__c.AXF_TOB_TXT_NormalizedMerchant__c</field>
+    <readable>true</readable>
+  </fieldPermissions>
+  <fieldPermissions>
+    <editable>true</editable>
+    <field
+    >AXF_OBJ_TransactionObservation__c.AXF_TOB_TXT_RawSourceStatus__c</field>
+    <readable>true</readable>
+  </fieldPermissions>
   <objectPermissions>
     <allowCreate>true</allowCreate>
     <allowDelete>false</allowDelete>
@@ -1316,6 +1406,15 @@
     <allowRead>true</allowRead>
     <modifyAllRecords>false</modifyAllRecords>
     <object>AXF_OBJ_FxSettlementCharge__c</object>
+    <viewAllRecords>false</viewAllRecords>
+  </objectPermissions>
+  <objectPermissions>
+    <allowCreate>true</allowCreate>
+    <allowDelete>false</allowDelete>
+    <allowEdit>false</allowEdit>
+    <allowRead>true</allowRead>
+    <modifyAllRecords>false</modifyAllRecords>
+    <object>AXF_OBJ_TransactionObservation__c</object>
     <viewAllRecords>false</viewAllRecords>
   </objectPermissions>
   <recordTypeVisibilities>
