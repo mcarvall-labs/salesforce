@@ -1072,4 +1072,8 @@
   ><label>Requisição inválida.</label><name
     >AXF_ForecastComparison_codeInvalidInput</name></customLabels><customLabels
   ><label>Comparação atualizada: {0}, {1} meses, confiança {2}.</label><name
-    >AXF_ForecastComparison_updated</name></customLabels></Translations>
+    >AXF_ForecastComparison_updated</name></customLabels><customLabels><label
+    >O escopo está temporariamente indisponível. Tente novamente.</label><name
+    >AXF_ForecastComparison_codeUnavailable</name></customLabels><customLabels
+  ><label>Ocorreu um erro inesperado. Nada foi alterado.</label><name
+    >AXF_ForecastComparison_codeUnexpected</name></customLabels></Translations>

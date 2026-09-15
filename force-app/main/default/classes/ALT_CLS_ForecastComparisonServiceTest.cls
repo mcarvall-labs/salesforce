@@ -278,6 +278,16 @@ private class ALT_CLS_ForecastComparisonServiceTest {
     return count;
   }
 
+  private static Integer monthsBetween(Date fromDate, Date toDate) {
+    Integer count = 0;
+    Date month = fromDate.toStartOfMonth();
+    while (month <= toDate) {
+      count++;
+      month = month.addMonths(1);
+    }
+    return count;
+  }
+
   @IsTest
   static void scenariosIncludeTiersIntegrallyAndOverdueStaysVisible() {
     System.runAs(byAlias('axf137g')) {
@@ -388,18 +398,179 @@ private class ALT_CLS_ForecastComparisonServiceTest {
         three.sources.size(),
         'cronograma estimado + planos avulsos'
       );
-      Boolean paidCounted = false;
+      Decimal confirmedOutTotal = 0;
       for (
         ALT_CLS_ForecastComparisonService.PeriodView period : three.periods
       ) {
-        if (period.confirmedOut == 999) {
-          paidCounted = true;
+        confirmedOutTotal += period.confirmedOut;
+      }
+      Assert.areEqual(
+        0,
+        confirmedOutTotal,
+        'confirmado no passado e historico: nem periodo nem vencido'
+      );
+      Assert.areEqual(
+        300,
+        three.overdue[0].amountOut,
+        'apenas o plano vencido nao confirmado entra no vencido'
+      );
+      for (
+        ALT_CLS_ForecastComparisonService.SourceView source : three.sources
+      ) {
+        if (source.kind == 'PLAN') {
+          Assert.areEqual(
+            5,
+            source.occurrenceCount,
+            'historico realizado (paid) nao conta como ocorrencia de previsao'
+          );
         }
       }
-      Assert.isFalse(
-        paidCounted,
-        'confirmado no passado e historico, nao previsao'
+      // Every month of the selected horizon is listed, zero rows included.
+      Set<String> months = new Set<String>();
+      for (
+        ALT_CLS_ForecastComparisonService.PeriodView period : three.periods
+      ) {
+        months.add(period.periodKey);
+      }
+      Assert.areEqual(
+        monthsBetween(today, three.horizonEnd),
+        months.size(),
+        'nenhum mes do horizonte fica implicito'
       );
+    }
+  }
+
+  @IsTest
+  static void multiCurrencyUnboundedFloorAndPlanCeilingAreExplicit() {
+    System.runAs(byAlias('axf137g')) {
+      Account ana = holder('Ana Moedas');
+      Date today = Date.today();
+      Date nextMonth = today.addMonths(1).toStartOfMonth().addDays(4);
+      AXF_OBJ_FinancialTransaction__c usd = plan(
+        ana.Id,
+        'usd',
+        100,
+        'DEBIT',
+        'PLANNED',
+        nextMonth,
+        false
+      );
+      usd.AXF_FTX_TXT_CurrencyIsoCode__c = 'USD';
+      // Purchased 13 months ago, due last month: overdue and still visible.
+      AXF_OBJ_FinancialTransaction__c oldPurchase = plan(
+        ana.Id,
+        'old-purchase',
+        40,
+        'DEBIT',
+        'PLANNED',
+        today.addDays(-20),
+        false
+      );
+      oldPurchase.AXF_FTX_DAT_PurchaseDate__c = today.addMonths(-13);
+      // Due 13 months ago: outside the one-year window by due date.
+      AXF_OBJ_FinancialTransaction__c ancient = plan(
+        ana.Id,
+        'ancient',
+        7,
+        'DEBIT',
+        'PLANNED',
+        today.addMonths(-13),
+        false
+      );
+      insert new List<AXF_OBJ_FinancialTransaction__c>{
+        plan(ana.Id, 'brl', 300, 'DEBIT', 'PLANNED', nextMonth, false),
+        usd,
+        oldPurchase,
+        ancient
+      };
+      ALT_CLS_ForecastComparisonService service = new ALT_CLS_ForecastComparisonService();
+      Test.startTest();
+      ALT_CLS_ForecastComparisonService.Result mixed = service.compare(
+        input(
+          new List<Id>{ ana.Id },
+          3,
+          ALT_CLS_ForecastComparisonService.SCENARIO_INTERMEDIATE
+        )
+      );
+      Test.stopTest();
+      Assert.areEqual(new List<String>{ 'BRL', 'USD' }, mixed.currencies);
+      Assert.isTrue(mixed.reasons.contains('MULTI_CURRENCY'));
+      Assert.areEqual(16, mixed.horizons.size(), 'oito horizontes por moeda');
+      Assert.areEqual(300, horizon(mixed, 3, 'BRL').probableOut, 'BRL isolado');
+      Assert.areEqual(100, horizon(mixed, 3, 'USD').probableOut, 'USD isolado');
+      Assert.areEqual(1, mixed.overdue.size());
+      Assert.areEqual(
+        40,
+        mixed.overdue[0].amountOut,
+        'compra antiga com vencimento recente continua vencida e visivel'
+      );
+      Assert.areEqual(
+        1,
+        mixed.overdue[0].count,
+        'vencido ha 13 meses fica fora da janela'
+      );
+
+      // Indefinite recurrence: coverage incomplete, DEGRADED, never a closed total.
+      ALT_CLS_FinancialScheduleService.CreateInput open = new ALT_CLS_FinancialScheduleService.CreateInput();
+      open.accountId = ana.Id;
+      open.direction = 'DEBIT';
+      open.currencyIsoCode = 'BRL';
+      open.method = 'ESTIMATED';
+      open.totalInstallments = null;
+      open.firstSequence = 1;
+      open.trackingStartSequence = 1;
+      open.trackingDueDate = nextMonth;
+      open.periodMonths = 1;
+      open.referenceAmount = 90;
+      open.legacyGroupKey = 'fc-open';
+      ALT_CLS_FinancialScheduleService.CreateResult created = ALT_CLS_FinancialScheduleService.createSchedule(
+        open
+      );
+      Assert.areEqual('CREATED', created.outcome, created.message);
+      ALT_CLS_ForecastComparisonService.Result unbounded = service.compare(
+        input(
+          new List<Id>{ ana.Id },
+          3,
+          ALT_CLS_ForecastComparisonService.SCENARIO_CONSERVATIVE
+        )
+      );
+      ALT_CLS_ForecastComparisonService.SourceView scheduleView;
+      for (
+        ALT_CLS_ForecastComparisonService.SourceView source : unbounded.sources
+      ) {
+        if (source.kind == 'SCHEDULE') {
+          scheduleView = source;
+        }
+      }
+      Assert.isNotNull(scheduleView);
+      Assert.isFalse(scheduleView.coverageComplete, 'cobertura incompleta');
+      Assert.isTrue(scheduleView.unbounded, 'recorrencia indefinida');
+      Assert.isTrue(unbounded.unboundedCommitment);
+      Assert.isTrue(unbounded.reasons.contains('COMMITMENT_UNBOUNDED'));
+      Assert.areEqual(
+        ALT_CLS_ForecastComparisonService.CONFIDENCE_DEGRADED,
+        unbounded.confidence
+      );
+
+      // Plan ceiling refuses instead of truncating (seam mirrors scheduleLimit).
+      try {
+        ALT_CLS_ForecastComparisonService.planLimit = 0;
+        ALT_CLS_ForecastComparisonService.Result volume = service.compare(
+          input(
+            new List<Id>{ ana.Id },
+            3,
+            ALT_CLS_ForecastComparisonService.SCENARIO_CONSERVATIVE
+          )
+        );
+        Assert.isTrue(volume.reasons.contains('VOLUME_EXCEEDED'));
+        Assert.areEqual(
+          ALT_CLS_ForecastComparisonService.CONFIDENCE_BLOCKED,
+          volume.confidence
+        );
+        Assert.isTrue(volume.horizons.isEmpty(), 'recusa, nao trunca');
+      } finally {
+        ALT_CLS_ForecastComparisonService.planLimit = ALT_CLS_ForecastComparisonService.MAX_PLANS;
+      }
     }
   }
 
@@ -451,11 +622,48 @@ private class ALT_CLS_ForecastComparisonServiceTest {
         ALT_CLS_ForecastComparisonService.CONFIDENCE_DEGRADED,
         mixed.confidence
       );
-      Assert.isFalse(
-        JSON.serialize(mixed).contains('700'),
-        'valor do titular parcial nao vaza'
-      );
+      Map<Id, String> states = new Map<Id, String>();
+      for (
+        ALT_CLS_ForecastComparisonService.HolderScope scope : mixed.holders
+      ) {
+        states.put(scope.accountId, scope.state);
+      }
+      Assert.areEqual('AUTHORIZED', states.get(mine.Id));
+      Assert.areEqual('UNKNOWN', states.get(shared.Id), 'parcial e retido');
+      Assert.areEqual(1, mixed.exclusions.size(), 'uma exclusao explicita');
+      Assert.areEqual(shared.Id, mixed.exclusions[0].accountId);
+      Assert.areEqual('COVERAGE_UNVERIFIED', mixed.exclusions[0].reason);
+      // The withheld holder never contributes: no total, period or source carries 700.
+      for (
+        ALT_CLS_ForecastComparisonService.HorizonTotal total : mixed.horizons
+      ) {
+        Assert.areNotEqual(
+          700,
+          total.probableOut,
+          'valor do titular parcial nao vaza'
+        );
+        Assert.areNotEqual(750, total.probableOut);
+      }
       Assert.areEqual(50, horizon(mixed, 12, 'BRL').probableOut);
+      Assert.areEqual(
+        1,
+        mixed.sources.size(),
+        'so a fonte do titular autorizado'
+      );
+      Assert.areEqual(1, mixed.sources[0].occurrenceCount);
+
+      // A non-Axon account and an invisible account are excluded with their own reason.
+      Account plain = new Account(Name = 'Sem tipo Axon');
+      insert plain;
+      ALT_CLS_ForecastComparisonService.Result typed = service.compare(
+        input(
+          new List<Id>{ mine.Id, plain.Id },
+          12,
+          ALT_CLS_ForecastComparisonService.SCENARIO_OPTIMISTIC
+        )
+      );
+      Assert.areEqual(1, typed.exclusions.size());
+      Assert.areEqual('NOT_A_HOLDER', typed.exclusions[0].reason);
       ALT_CLS_ForecastComparisonService.Result none = service.compare(
         input(
           new List<Id>{ shared.Id },
@@ -480,19 +688,23 @@ private class ALT_CLS_ForecastComparisonServiceTest {
         Date.today().addMonths(1),
         'fc-stale'
       );
-      ALT_CLS_ScheduleProjection.recheckOverride = new AXF_OBJ_FinancialSchedule__c(
-        Id = created.scheduleId,
-        AXF_FSC_NUM_ProjectionRevision__c = 999,
-        AXF_FSC_NUM_FinancialVersion__c = 999
-      );
-      ALT_CLS_ForecastComparisonService.Result stale = service.compare(
-        input(
-          new List<Id>{ mine.Id },
-          12,
-          ALT_CLS_ForecastComparisonService.SCENARIO_CONSERVATIVE
-        )
-      );
-      ALT_CLS_ScheduleProjection.recheckOverride = null;
+      ALT_CLS_ForecastComparisonService.Result stale;
+      try {
+        ALT_CLS_ScheduleProjection.recheckOverride = new AXF_OBJ_FinancialSchedule__c(
+          Id = created.scheduleId,
+          AXF_FSC_NUM_ProjectionRevision__c = 999,
+          AXF_FSC_NUM_FinancialVersion__c = 999
+        );
+        stale = service.compare(
+          input(
+            new List<Id>{ mine.Id },
+            12,
+            ALT_CLS_ForecastComparisonService.SCENARIO_CONSERVATIVE
+          )
+        );
+      } finally {
+        ALT_CLS_ScheduleProjection.recheckOverride = null;
+      }
       Assert.areEqual(
         ALT_CLS_ForecastComparisonService.CONFIDENCE_BLOCKED,
         stale.confidence
@@ -504,15 +716,19 @@ private class ALT_CLS_ForecastComparisonServiceTest {
       Assert.areEqual('STALE', stale.sources[0].outcome);
 
       // Volume ceiling refuses instead of truncating.
-      ALT_CLS_ForecastComparisonService.scheduleLimit = 0;
-      ALT_CLS_ForecastComparisonService.Result volume = service.compare(
-        input(
-          new List<Id>{ mine.Id },
-          12,
-          ALT_CLS_ForecastComparisonService.SCENARIO_CONSERVATIVE
-        )
-      );
-      ALT_CLS_ForecastComparisonService.scheduleLimit = ALT_CLS_ForecastComparisonService.MAX_SCHEDULES;
+      ALT_CLS_ForecastComparisonService.Result volume;
+      try {
+        ALT_CLS_ForecastComparisonService.scheduleLimit = 0;
+        volume = service.compare(
+          input(
+            new List<Id>{ mine.Id },
+            12,
+            ALT_CLS_ForecastComparisonService.SCENARIO_CONSERVATIVE
+          )
+        );
+      } finally {
+        ALT_CLS_ForecastComparisonService.scheduleLimit = ALT_CLS_ForecastComparisonService.MAX_SCHEDULES;
+      }
       Assert.isTrue(volume.reasons.contains('VOLUME_EXCEEDED'));
       Assert.areEqual(
         ALT_CLS_ForecastComparisonService.CONFIDENCE_BLOCKED,

@@ -3,7 +3,9 @@ import labels from "./labels";
 const CODE_LABEL = {
   FORBIDDEN: labels.codeForbidden,
   NOT_ACCESSIBLE: labels.codeNotAccessible,
-  INVALID_INPUT: labels.codeInvalidInput
+  INVALID_INPUT: labels.codeInvalidInput,
+  UNAVAILABLE: labels.codeUnavailable,
+  UNEXPECTED: labels.codeUnexpected
 };
 
 /** Server failures arrive as a sanitized {code}; anything else is the generic message. */

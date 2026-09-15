@@ -204,6 +204,14 @@ describe("c-aXF_LWC_forecastComparison", () => {
     expect(
       element.shadowRoot.querySelector('[data-id="empty"]')
     ).not.toBeNull();
+    // A BLOCKED result is explained, never rendered as a silent empty state.
+    expect(
+      element.shadowRoot.querySelector('[data-id="confidence"]').textContent
+    ).toContain("confidenceBLOCKED");
+    expect(
+      element.shadowRoot.querySelector('[data-id="reasons"]').textContent
+    ).toContain("reasonNO_AUTHORIZED_SCOPE");
+    expect(element.shadowRoot.querySelector('[data-id="horizons"]')).toBeNull();
     element.shadowRoot.querySelector('[data-id="compare"]').click();
     await flush();
     expect(

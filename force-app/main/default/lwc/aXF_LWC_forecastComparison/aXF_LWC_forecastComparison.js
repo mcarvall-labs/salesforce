@@ -10,7 +10,6 @@ const STATE = {
   IDLE: "IDLE",
   LOADING: "LOADING",
   READY: "READY",
-  EMPTY: "EMPTY",
   ERROR: "ERROR"
 };
 const SCENARIOS = ["CONSERVATIVE", "INTERMEDIATE", "OPTIMISTIC"];
@@ -138,8 +137,19 @@ export default class AxfForecastComparison extends LightningElement {
   get isReady() {
     return this.state === STATE.READY && !!this.result;
   }
-  get isEmpty() {
-    return this.state === STATE.EMPTY;
+  get noContributions() {
+    return (
+      this.isReady &&
+      this.result.periods.length === 0 &&
+      this.result.horizons.length === 0 &&
+      this.result.overdue.length === 0
+    );
+  }
+  get hasHorizons() {
+    return this.isReady && this.result.horizons.length > 0;
+  }
+  get hasPeriods() {
+    return this.isReady && this.result.periods.length > 0;
   }
   get isError() {
     return this.state === STATE.ERROR;
@@ -217,7 +227,6 @@ export default class AxfForecastComparison extends LightningElement {
     return this.result.horizons.map((row) => ({
       ...row,
       key: row.horizonMonths + row.currencyIso,
-      selected: row.horizonMonths === this.result.horizonMonths,
       rowClass:
         row.horizonMonths === this.result.horizonMonths
           ? "slds-is-selected axf-selected"
@@ -271,6 +280,12 @@ export default class AxfForecastComparison extends LightningElement {
 
   handleScopeChange(event) {
     this.selected = event.detail.value || [];
+    if (this.result) {
+      // A displayed result belongs to the previous scope: never leave it on screen as if current.
+      this.result = undefined;
+      this.state = STATE.IDLE;
+      this.announcement = "";
+    }
   }
   handleHorizonChange(event) {
     this.horizonMonths = parseInt(event.detail.value, 10);
@@ -330,10 +345,9 @@ export default class AxfForecastComparison extends LightningElement {
         return;
       }
       this.result = result;
-      this.state =
-        result.periods.length === 0 && result.horizons.length === 0
-          ? STATE.EMPTY
-          : STATE.READY;
+      // Every response renders confidence, reasons and exclusions; "empty" is a fact
+      // inside the result (no contributions), never a substitute for a BLOCKED explanation.
+      this.state = STATE.READY;
       this.announce();
     } catch (error) {
       if (token !== this.requestToken) {

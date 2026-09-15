@@ -1817,4 +1817,12 @@
     >AXF_ForecastComparison_updated</fullName><language
     >en_US</language><protected>false</protected><shortDescription
     >Updated</shortDescription><value
-    >Comparison updated: {0}, {1} months, confidence {2}.</value></labels></CustomLabels>
+    >Comparison updated: {0}, {1} months, confidence {2}.</value></labels><labels
+  ><fullName>AXF_ForecastComparison_codeUnavailable</fullName><language
+    >en_US</language><protected>false</protected><shortDescription
+    >Code unavailable</shortDescription><value
+    >The scope is temporarily unavailable. Try again.</value></labels><labels
+  ><fullName>AXF_ForecastComparison_codeUnexpected</fullName><language
+    >en_US</language><protected>false</protected><shortDescription
+    >Code unexpected</shortDescription><value
+    >An unexpected error occurred. Nothing was changed.</value></labels></CustomLabels>

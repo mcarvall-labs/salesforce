@@ -57,6 +57,8 @@ public with sharing class ALT_CLS_ForecastComparisonService {
   private static Date todayOverride;
   @TestVisible
   private static Integer scheduleLimit = MAX_SCHEDULES;
+  @TestVisible
+  private static Integer planLimit = MAX_PLANS;
 
   public class ForecastException extends Exception {
     public String code;
@@ -220,6 +222,11 @@ public with sharing class ALT_CLS_ForecastComparisonService {
     Decimal amount;
   }
 
+  private class PendingLine {
+    AXF_OBJ_FinancialSchedule__c schedule;
+    ALT_CLS_ScheduleProjection.OccurrenceLine line;
+  }
+
   // ------------------------------------------------------------------ entry point
 
   public Result compare(Input input) {
@@ -336,6 +343,8 @@ public with sharing class ALT_CLS_ForecastComparisonService {
 
     // ---- contributions
     List<Contribution> contributions = new List<Contribution>();
+    List<PendingLine> pendingLines = new List<PendingLine>();
+    Set<Id> definitionIds = new Set<Id>();
     Boolean materialFailure = false;
     Integer scheduleCap = scheduleLimit + 1;
     List<AXF_OBJ_FinancialSchedule__c> schedules = [
@@ -381,50 +390,55 @@ public with sharing class ALT_CLS_ForecastComparisonService {
         result.unboundedCommitment = true;
         addReason(result, 'COMMITMENT_UNBOUNDED');
       }
-      // The projection flags every unconfirmed line as "estimated"; the tier needs the
-      // definition method: an ESTIMATED method (reference value) is PROBABLE, a contractual
-      // amount (fixed/calculated) is a confirmed commitment.
-      Set<Id> definitionIds = new Set<Id>();
       for (ALT_CLS_ScheduleProjection.OccurrenceLine line : projection.lines) {
+        PendingLine pending = new PendingLine();
+        pending.schedule = schedule;
+        pending.line = line;
+        pendingLines.add(pending);
         if (line.definitionId != null) {
           definitionIds.add(line.definitionId);
         }
       }
-      Set<Id> estimatedDefinitions = new Set<Id>();
-      if (!definitionIds.isEmpty()) {
-        for (AXF_OBJ_ScheduleDefinition__c definition : [
-          SELECT Id
-          FROM AXF_OBJ_ScheduleDefinition__c
-          WHERE
-            Id IN :definitionIds
-            AND AXF_SDF_PKL_Method__c = :ALT_CLS_ScheduleProjection.METHOD_ESTIMATED
-          WITH USER_MODE
-        ]) {
-          estimatedDefinitions.add(definition.Id);
-        }
-      }
-      for (ALT_CLS_ScheduleProjection.OccurrenceLine line : projection.lines) {
-        Contribution c = new Contribution();
-        c.currencyIso = schedule.AXF_FSC_TXT_CurrencyIsoCode__c;
-        c.direction = schedule.AXF_FSC_PKL_Direction__c;
-        c.tier = line.confirmed == true ||
-          !estimatedDefinitions.contains(line.definitionId)
-          ? TIER_CONFIRMED
-          : TIER_PROBABLE;
-        c.dueDate = line.effectiveDueDate == null
-          ? line.nominalDueDate
-          : line.effectiveDueDate;
-        c.amount = nz(line.amount);
-        contributions.add(c);
+    }
+    // The projection flags every unconfirmed line as "estimated"; the tier needs the
+    // definition method: an ESTIMATED method (reference value) is PROBABLE, a contractual
+    // amount (fixed/calculated) is a confirmed commitment. One query for every schedule.
+    Set<Id> estimatedDefinitions = new Set<Id>();
+    if (!definitionIds.isEmpty()) {
+      for (AXF_OBJ_ScheduleDefinition__c definition : [
+        SELECT Id
+        FROM AXF_OBJ_ScheduleDefinition__c
+        WHERE
+          Id IN :definitionIds
+          AND AXF_SDF_PKL_Method__c = :ALT_CLS_ScheduleProjection.METHOD_ESTIMATED
+        WITH USER_MODE
+      ]) {
+        estimatedDefinitions.add(definition.Id);
       }
     }
+    for (PendingLine pending : pendingLines) {
+      Contribution c = new Contribution();
+      c.currencyIso = pending.schedule.AXF_FSC_TXT_CurrencyIsoCode__c;
+      c.direction = pending.schedule.AXF_FSC_PKL_Direction__c;
+      // A line without a resolvable definition is never promoted to CONFIRMED by default.
+      c.tier = pending.line.confirmed == true
+        ? TIER_CONFIRMED
+        : (pending.line.definitionId == null ||
+            estimatedDefinitions.contains(pending.line.definitionId)
+            ? TIER_PROBABLE
+            : TIER_CONFIRMED);
+      c.dueDate = pending.line.effectiveDueDate == null
+        ? pending.line.nominalDueDate
+        : pending.line.effectiveDueDate;
+      c.amount = pending.line.amount;
+      contributions.add(c);
+    }
+    // Floor on the effective due date: an old purchase with a recent or future due date
+    // stays in; only obligations due more than a year before asOf are outside the window.
     Date planFloor = result.asOf.addYears(-1);
-    Date horizon24 = ALT_CLS_ScheduleCalendar.monthEndShifted(
-      result.asOf,
-      MAX_HORIZON - 1
-    );
-    Integer planCap = MAX_PLANS + 1;
+    Integer planCap = planLimit + 1;
     Integer plans = 0;
+    Integer planContributions = 0;
     for (AXF_OBJ_FinancialTransaction__c plan : [
       SELECT
         Id,
@@ -440,13 +454,15 @@ public with sharing class ALT_CLS_ForecastComparisonService {
         AXF_FTX_LKP_Account__c IN :fullScope
         AND AXF_FTX_LKP_Schedule__c = NULL
         AND AXF_FTX_PKL_ScheduleState__c != 'CANCELLED'
-        AND AXF_FTX_DAT_PurchaseDate__c >= :planFloor
+        AND (AXF_FTX_DAT_DueDate__c >= :planFloor
+        OR (AXF_FTX_DAT_DueDate__c = NULL
+        AND AXF_FTX_DAT_PurchaseDate__c >= :planFloor))
       WITH USER_MODE
       ORDER BY AXF_FTX_DAT_PurchaseDate__c
       LIMIT :planCap
     ]) {
       plans++;
-      if (plans > MAX_PLANS) {
+      if (plans > planLimit) {
         return blocked(result, 'VOLUME_EXCEEDED');
       }
       Date due = plan.AXF_FTX_DAT_DueDate__c == null
@@ -465,15 +481,17 @@ public with sharing class ALT_CLS_ForecastComparisonService {
             ? TIER_UNCERTAIN
             : TIER_PROBABLE);
       c.dueDate = due;
-      c.amount = nz(plan.AXF_FTX_NUM_Magnitude__c);
+      c.amount = plan.AXF_FTX_NUM_Magnitude__c;
       contributions.add(c);
+      planContributions++;
     }
     if (plans > 0) {
       SourceView view = new SourceView();
       view.kind = 'PLAN';
       view.label = 'FinancialTransaction';
       view.outcome = ALT_CLS_ScheduleProjection.OUTCOME_OK;
-      view.occurrenceCount = plans;
+      // Only rows that contribute; realized history is not a forecast input.
+      view.occurrenceCount = planContributions;
       result.sources.add(view);
     }
 
@@ -483,7 +501,14 @@ public with sharing class ALT_CLS_ForecastComparisonService {
     Map<String, Map<Integer, HorizonTotal>> byCurrency = new Map<String, Map<Integer, HorizonTotal>>();
     Set<String> currencies = new Set<String>();
     for (Contribution c : contributions) {
-      if (String.isBlank(c.currencyIso) || c.dueDate == null) {
+      if (
+        String.isBlank(c.currencyIso) ||
+        c.dueDate == null ||
+        c.amount == null ||
+        (c.direction != 'CREDIT' &&
+        c.direction != 'DEBIT')
+      ) {
+        // A missing amount or direction is never zero: it degrades the result instead.
         addReason(result, 'INCOMPLETE_CONTRIBUTION');
         continue;
       }
@@ -566,6 +591,21 @@ public with sharing class ALT_CLS_ForecastComparisonService {
           total.uncertainIn -
           total.uncertainOut;
         result.horizons.add(total);
+      }
+    }
+    // Every calendar month of the selected horizon is listed per currency, zero rows
+    // included, so a gap reads as "nothing due" instead of "nothing known".
+    for (String currencyIso : byCurrency.keySet()) {
+      Date month = result.asOf.toStartOfMonth();
+      while (month <= result.horizonEnd) {
+        String key = periodKey(month) + '|' + currencyIso;
+        if (!periods.containsKey(key)) {
+          PeriodView period = new PeriodView();
+          period.periodKey = periodKey(month);
+          period.currencyIso = currencyIso;
+          periods.put(key, period);
+        }
+        month = month.addMonths(1);
       }
     }
     List<String> periodKeys = new List<String>(periods.keySet());

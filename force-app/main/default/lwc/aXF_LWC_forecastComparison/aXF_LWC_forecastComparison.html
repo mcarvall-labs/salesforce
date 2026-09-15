@@ -164,135 +164,148 @@
           </section>
         </template>
 
-        <section
-          class="slds-m-top_medium"
-          aria-labelledby="axf-fc-h"
-          role="region"
-        >
-          <h2 id="axf-fc-h" class="slds-text-heading_small">
-            {labels.horizons}
-          </h2>
-          <div class="slds-scrollable_x">
-            <table
-              class="slds-table slds-table_bordered slds-table_cell-buffer slds-m-top_x-small"
-              data-id="horizons"
-            >
-              <thead>
-                <tr class="slds-line-height_reset">
-                  <th scope="col">{labels.colHorizon}</th>
-                  <th scope="col">{labels.colConservative}</th>
-                  <th scope="col">{labels.colIntermediate}</th>
-                  <th scope="col">{labels.colOptimistic}</th>
-                  <th scope="col">{labels.colBeyond}</th>
-                </tr>
-              </thead>
-              <tbody>
-                <template for:each={horizonRows} for:item="row">
-                  <tr
-                    key={row.key}
-                    class={row.rowClass}
-                    data-horizon={row.horizonMonths}
-                    data-currency={row.currencyIso}
-                  >
-                    <th scope="row">{row.horizonMonths} · {row.currencyIso}</th>
-                    <td data-id="conservative">
-                      <lightning-formatted-number
-                        value={row.conservativeNet}
-                        minimum-fraction-digits="2"
-                        maximum-fraction-digits="2"
-                      ></lightning-formatted-number>
-                    </td>
-                    <td data-id="intermediate">
-                      <lightning-formatted-number
-                        value={row.intermediateNet}
-                        minimum-fraction-digits="2"
-                        maximum-fraction-digits="2"
-                      ></lightning-formatted-number>
-                    </td>
-                    <td data-id="optimistic">
-                      <lightning-formatted-number
-                        value={row.optimisticNet}
-                        minimum-fraction-digits="2"
-                        maximum-fraction-digits="2"
-                      ></lightning-formatted-number>
-                    </td>
-                    <td data-id="beyond-cell">
-                      <lightning-formatted-number
-                        value={row.beyondOut}
-                        minimum-fraction-digits="2"
-                        maximum-fraction-digits="2"
-                      ></lightning-formatted-number>
-                      /
-                      <lightning-formatted-number
-                        value={row.beyondIn}
-                        minimum-fraction-digits="2"
-                        maximum-fraction-digits="2"
-                      ></lightning-formatted-number>
-                    </td>
+        <template lwc:if={hasHorizons}>
+          <section
+            class="slds-m-top_medium"
+            aria-labelledby="axf-fc-h"
+            role="region"
+          >
+            <h2 id="axf-fc-h" class="slds-text-heading_small">
+              {labels.horizons}
+            </h2>
+            <div class="slds-scrollable_x">
+              <table
+                class="slds-table slds-table_bordered slds-table_cell-buffer slds-m-top_x-small"
+                data-id="horizons"
+              >
+                <thead>
+                  <tr class="slds-line-height_reset">
+                    <th scope="col">{labels.colHorizon}</th>
+                    <th scope="col">{labels.colConservative}</th>
+                    <th scope="col">{labels.colIntermediate}</th>
+                    <th scope="col">{labels.colOptimistic}</th>
+                    <th scope="col">{labels.colBeyond}</th>
                   </tr>
-                </template>
-              </tbody>
-            </table>
-          </div>
-        </section>
+                </thead>
+                <tbody>
+                  <template for:each={horizonRows} for:item="row">
+                    <tr
+                      key={row.key}
+                      class={row.rowClass}
+                      data-horizon={row.horizonMonths}
+                      data-currency={row.currencyIso}
+                    >
+                      <th scope="row">
+                        {row.horizonMonths} · {row.currencyIso}
+                      </th>
+                      <td data-id="conservative">
+                        <lightning-formatted-number
+                          value={row.conservativeNet}
+                          minimum-fraction-digits="2"
+                          maximum-fraction-digits="2"
+                        ></lightning-formatted-number>
+                      </td>
+                      <td data-id="intermediate">
+                        <lightning-formatted-number
+                          value={row.intermediateNet}
+                          minimum-fraction-digits="2"
+                          maximum-fraction-digits="2"
+                        ></lightning-formatted-number>
+                      </td>
+                      <td data-id="optimistic">
+                        <lightning-formatted-number
+                          value={row.optimisticNet}
+                          minimum-fraction-digits="2"
+                          maximum-fraction-digits="2"
+                        ></lightning-formatted-number>
+                      </td>
+                      <td data-id="beyond-cell">
+                        <lightning-formatted-number
+                          value={row.beyondOut}
+                          minimum-fraction-digits="2"
+                          maximum-fraction-digits="2"
+                        ></lightning-formatted-number>
+                        /
+                        <lightning-formatted-number
+                          value={row.beyondIn}
+                          minimum-fraction-digits="2"
+                          maximum-fraction-digits="2"
+                        ></lightning-formatted-number>
+                      </td>
+                    </tr>
+                  </template>
+                </tbody>
+              </table>
+            </div>
+          </section>
+        </template>
 
-        <section
-          class="slds-m-top_medium"
-          aria-labelledby="axf-fc-p"
-          role="region"
-        >
-          <h2 id="axf-fc-p" class="slds-text-heading_small">{periodsTitle}</h2>
-          <div class="slds-scrollable_x">
-            <table
-              class="slds-table slds-table_bordered slds-table_cell-buffer slds-m-top_x-small"
-              data-id="periods"
-            >
-              <thead>
-                <tr class="slds-line-height_reset">
-                  <th scope="col">{labels.colPeriod}</th>
-                  <th scope="col">{labels.colIn}</th>
-                  <th scope="col">{labels.colOut}</th>
-                  <th scope="col">{labels.colNet}</th>
-                  <th scope="col">{labels.colConfirmed}</th>
-                  <th scope="col">{labels.colProbable}</th>
-                  <th scope="col">{labels.colUncertain}</th>
-                </tr>
-              </thead>
-              <tbody>
-                <template for:each={periodRows} for:item="row">
-                  <tr key={row.key} data-period={row.periodKey}>
-                    <th scope="row">{row.periodKey} · {row.currencyIso}</th>
-                    <td>
-                      <lightning-formatted-number
-                        value={row.inflow}
-                        minimum-fraction-digits="2"
-                        maximum-fraction-digits="2"
-                      ></lightning-formatted-number>
-                    </td>
-                    <td>
-                      <lightning-formatted-number
-                        value={row.outflow}
-                        minimum-fraction-digits="2"
-                        maximum-fraction-digits="2"
-                      ></lightning-formatted-number>
-                    </td>
-                    <td data-id="net">
-                      <lightning-formatted-number
-                        value={row.net}
-                        minimum-fraction-digits="2"
-                        maximum-fraction-digits="2"
-                      ></lightning-formatted-number>
-                    </td>
-                    <td>{row.confirmedOut} / {row.confirmedIn}</td>
-                    <td>{row.probableOut} / {row.probableIn}</td>
-                    <td>{row.uncertainOut} / {row.uncertainIn}</td>
+        <template lwc:if={hasPeriods}>
+          <section
+            class="slds-m-top_medium"
+            aria-labelledby="axf-fc-p"
+            role="region"
+          >
+            <h2 id="axf-fc-p" class="slds-text-heading_small">
+              {periodsTitle}
+            </h2>
+            <div class="slds-scrollable_x">
+              <table
+                class="slds-table slds-table_bordered slds-table_cell-buffer slds-m-top_x-small"
+                data-id="periods"
+              >
+                <thead>
+                  <tr class="slds-line-height_reset">
+                    <th scope="col">{labels.colPeriod}</th>
+                    <th scope="col">{labels.colIn}</th>
+                    <th scope="col">{labels.colOut}</th>
+                    <th scope="col">{labels.colNet}</th>
+                    <th scope="col">{labels.colConfirmed}</th>
+                    <th scope="col">{labels.colProbable}</th>
+                    <th scope="col">{labels.colUncertain}</th>
                   </tr>
-                </template>
-              </tbody>
-            </table>
-          </div>
-        </section>
+                </thead>
+                <tbody>
+                  <template for:each={periodRows} for:item="row">
+                    <tr key={row.key} data-period={row.periodKey}>
+                      <th scope="row">{row.periodKey} · {row.currencyIso}</th>
+                      <td>
+                        <lightning-formatted-number
+                          value={row.inflow}
+                          minimum-fraction-digits="2"
+                          maximum-fraction-digits="2"
+                        ></lightning-formatted-number>
+                      </td>
+                      <td>
+                        <lightning-formatted-number
+                          value={row.outflow}
+                          minimum-fraction-digits="2"
+                          maximum-fraction-digits="2"
+                        ></lightning-formatted-number>
+                      </td>
+                      <td data-id="net">
+                        <lightning-formatted-number
+                          value={row.net}
+                          minimum-fraction-digits="2"
+                          maximum-fraction-digits="2"
+                        ></lightning-formatted-number>
+                      </td>
+                      <td>{row.confirmedOut} / {row.confirmedIn}</td>
+                      <td>{row.probableOut} / {row.probableIn}</td>
+                      <td>{row.uncertainOut} / {row.uncertainIn}</td>
+                    </tr>
+                  </template>
+                </tbody>
+              </table>
+            </div>
+          </section>
+        </template>
 
+        <template lwc:if={noContributions}>
+          <p class="slds-m-top_medium slds-text-color_weak" data-id="empty">
+            {labels.empty}
+          </p>
+        </template>
         <section class="slds-m-top_medium" data-id="sources">
           <h2 class="slds-text-heading_small">{labels.sources}</h2>
           <ul class="slds-list_dotted">
@@ -304,11 +317,6 @@
             </template>
           </ul>
         </section>
-      </template>
-      <template lwc:if={isEmpty}>
-        <p class="slds-m-top_medium slds-text-color_weak" data-id="empty">
-          {labels.empty}
-        </p>
       </template>
     </div>
   </lightning-card>

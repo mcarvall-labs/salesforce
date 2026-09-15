@@ -70,6 +70,8 @@ import codeForbidden from "@salesforce/label/c.AXF_ForecastComparison_codeForbid
 import codeNotAccessible from "@salesforce/label/c.AXF_ForecastComparison_codeNotAccessible";
 import codeInvalidInput from "@salesforce/label/c.AXF_ForecastComparison_codeInvalidInput";
 import updated from "@salesforce/label/c.AXF_ForecastComparison_updated";
+import codeUnavailable from "@salesforce/label/c.AXF_ForecastComparison_codeUnavailable";
+import codeUnexpected from "@salesforce/label/c.AXF_ForecastComparison_codeUnexpected";
 
 export default {
   title,
@@ -143,5 +145,7 @@ export default {
   codeForbidden,
   codeNotAccessible,
   codeInvalidInput,
-  updated
+  updated,
+  codeUnavailable,
+  codeUnexpected
 };
