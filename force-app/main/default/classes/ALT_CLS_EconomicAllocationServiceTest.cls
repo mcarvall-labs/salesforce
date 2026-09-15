@@ -1817,4 +1817,623 @@ private class ALT_CLS_EconomicAllocationServiceTest {
       );
     }
   }
+
+  /**
+   * AXF-128 / AC-2 (F1): the replay is recognised by the ratified operation key plus the fact
+   * identity, never by an inferred revision. `nextRevision()` takes the highest revision of the
+   * fact in *any* state, so an intervening DRAFT — a revision the confirmation never used — pushes
+   * the compensation past `reversed.Revision + 1`. The same command must still return its own
+   * durable compensation instead of conflicting against itself.
+   */
+  @IsTest
+  static void reversalReplayIsIdentifiedByTheOperationKeyNotByAnInferredRevision() {
+    System.runAs(gestor()) {
+      Account owner = holder('Titular Replay', 'AXF_Person');
+      Account partner = holder('Socio Replay', 'AXF_Person');
+      AXF_OBJ_BankAccountTransaction__c fact = bankFact(owner, 'n');
+      ALT_CLS_EconomicAllocationService service = new ALT_CLS_EconomicAllocationService();
+      Test.startTest();
+      ALT_CLS_EconomicAllocationService.SetView first = service.propose(
+        proposal(
+          'BANK',
+          fact.Id,
+          'op-n1',
+          new Map<Id, Decimal>{ owner.Id => 100 }
+        )
+      );
+      // A higher revision of the same fact stays a DRAFT through the whole reversal.
+      ALT_CLS_EconomicAllocationService.SetView intervening = service.propose(
+        proposal(
+          'BANK',
+          fact.Id,
+          'op-n2',
+          new Map<Id, Decimal>{ partner.Id => 100 }
+        )
+      );
+      Assert.areEqual(2, intervening.revision, 'revisao interveniente.');
+      ALT_CLS_EconomicAllocationService.SetView confirmed = service.confirm(
+        first.setId,
+        first.version,
+        'op-n1c'
+      );
+      String identity = storedSet(confirmed.setId).AXF_EAS_TXT_FactIdentity__c;
+      ALT_CLS_EconomicAllocationService.SetView compensation = service.reverse(
+        reversal(confirmed.setId, confirmed.version, 'op-n3')
+      );
+      Test.stopTest();
+      Assert.areEqual(
+        3,
+        compensation.revision,
+        'a compensacao respeita a revisao interveniente.'
+      );
+      ALT_CLS_EconomicAllocationService.SetView replay = service.reverse(
+        reversal(confirmed.setId, confirmed.version, 'op-n3')
+      );
+      Assert.areEqual(
+        compensation.setId,
+        replay.setId,
+        'replay equivalente devolve o proprio efeito duravel.'
+      );
+      Assert.areEqual('CONFIRMED', replay.state);
+      Assert.areEqual(
+        3,
+        setsOfFact(identity),
+        'replay nao anexou um segundo conjunto.'
+      );
+      Assert.areEqual(
+        1,
+        [
+          SELECT COUNT()
+          FROM AXF_OBJ_EconomicAllocationSet__c
+          WHERE
+            AXF_EAS_PKL_State__c = 'CONFIRMED'
+            AND AXF_EAS_TXT_FactIdentity__c = :identity
+        ],
+        'uma unica autoridade vigente por fato.'
+      );
+    }
+  }
+
+  /** The G6 identity of a reversal effect, exactly as the service frames it. */
+  private static String framedReverseKey(String operationKey) {
+    return AXF_CLS_IdentityFraming.key(
+      new List<Object>{
+        ALT_CLS_EconomicAllocationService.OP_REVERSE,
+        operationKey
+      }
+    );
+  }
+
+  /**
+   * AXF-128 / AC-2 (F2): `AXF_EAS_TXT_OperationKey__c` is not unique, so a framed key already
+   * stored anywhere is refused *before* anything is written. A key spent on one fact can neither
+   * append a second compensating set for another target nor be re-spent on the compensation
+   * itself.
+   */
+  @IsTest
+  static void reverseRefusesAKeyAlreadySpentOnAnotherTarget() {
+    System.runAs(gestor()) {
+      Account owner = holder('Titular Chave', 'AXF_Person');
+      Account partner = holder('Socio Chave', 'AXF_Person');
+      AXF_OBJ_BankAccountTransaction__c first = bankFact(owner, 'o1');
+      AXF_OBJ_BankAccountTransaction__c second = bankFact(owner, 'o2');
+      ALT_CLS_EconomicAllocationService service = new ALT_CLS_EconomicAllocationService();
+      Test.startTest();
+      ALT_CLS_EconomicAllocationService.SetView firstDraft = service.propose(
+        proposal(
+          'BANK',
+          first.Id,
+          'op-o1',
+          new Map<Id, Decimal>{ owner.Id => 100 }
+        )
+      );
+      ALT_CLS_EconomicAllocationService.SetView firstConfirmed = service.confirm(
+        firstDraft.setId,
+        firstDraft.version,
+        'op-o1c'
+      );
+      ALT_CLS_EconomicAllocationService.SetView compensation = service.reverse(
+        reversal(firstConfirmed.setId, firstConfirmed.version, 'op-o1r')
+      );
+      ALT_CLS_EconomicAllocationService.SetView secondDraft = service.propose(
+        proposal(
+          'BANK',
+          second.Id,
+          'op-o2',
+          new Map<Id, Decimal>{ partner.Id => 100 }
+        )
+      );
+      ALT_CLS_EconomicAllocationService.SetView secondConfirmed = service.confirm(
+        secondDraft.setId,
+        secondDraft.version,
+        'op-o2c'
+      );
+      String secondIdentity = storedSet(secondConfirmed.setId)
+        .AXF_EAS_TXT_FactIdentity__c;
+      // The very same operation key, a different still-confirmed target: refused, not replayed.
+      Assert.areEqual(
+        'CONFLICT',
+        expectReverseFailure(
+            service,
+            reversal(secondConfirmed.setId, secondConfirmed.version, 'op-o1r')
+          )
+          .code,
+        'chave ja gasta nao compensa outro alvo.'
+      );
+      Assert.areEqual(
+        'CONFIRMED',
+        storedSet(secondConfirmed.setId).AXF_EAS_PKL_State__c,
+        'o alvo recusado permanece confirmado.'
+      );
+      Assert.isNotNull(
+        storedSet(secondConfirmed.setId).AXF_EAS_EXI_ActiveToken__c,
+        'o alvo recusado mantem o proprio token.'
+      );
+      Assert.areEqual(
+        1,
+        setsOfFact(secondIdentity),
+        'nenhum compensatorio foi anexado ao outro fato.'
+      );
+      // And the compensation is itself a confirmation: the key is spent once, never twice.
+      Assert.areEqual(
+        'CONFLICT',
+        expectReverseFailure(
+            service,
+            reversal(compensation.setId, compensation.version, 'op-o1r')
+          )
+          .code,
+        'a chave nao se gasta duas vezes.'
+      );
+      Test.stopTest();
+      Assert.areEqual(
+        1,
+        [
+          SELECT COUNT()
+          FROM AXF_OBJ_EconomicAllocationSet__c
+          WHERE AXF_EAS_TXT_OperationKey__c = :framedReverseKey('op-o1r')
+        ],
+        'uma unica linha carrega a chave enquadrada.'
+      );
+    }
+  }
+
+  /**
+   * AXF-128 / AC-2 (F2): the key lookup must never trust the key alone. A foreign set can carry
+   * the very same framed key — the field is not unique — and the equivalent replay must still
+   * answer with its own durable compensation instead of conflicting on the wrong row.
+   */
+  @IsTest
+  static void reversalReplayIgnoresAForeignRowThatReusesTheSameKey() {
+    System.runAs(gestor()) {
+      Account owner = holder('Titular Colisao', 'AXF_Person');
+      Account partner = holder('Socio Colisao', 'AXF_Person');
+      AXF_OBJ_BankAccountTransaction__c fact = bankFact(owner, 'p1');
+      AXF_OBJ_BankAccountTransaction__c other = bankFact(partner, 'p2');
+      ALT_CLS_EconomicAllocationService service = new ALT_CLS_EconomicAllocationService();
+      Test.startTest();
+      ALT_CLS_EconomicAllocationService.SetView draft = service.propose(
+        proposal(
+          'BANK',
+          fact.Id,
+          'op-p1',
+          new Map<Id, Decimal>{ owner.Id => 100 }
+        )
+      );
+      ALT_CLS_EconomicAllocationService.SetView confirmed = service.confirm(
+        draft.setId,
+        draft.version,
+        'op-p1c'
+      );
+      ALT_CLS_EconomicAllocationService.SetView compensation = service.reverse(
+        reversal(confirmed.setId, confirmed.version, 'op-p1r')
+      );
+      // A draft of another fact reuses the same framed key through the service write window.
+      ALT_CLS_EconomicAllocationGuard.beginWrite();
+      try {
+        Assert.isTrue(
+          Database.insert(
+              new AXF_OBJ_EconomicAllocationSet__c(
+                AXF_EAS_LKP_BankTransaction__c = other.Id,
+                AXF_EAS_LKP_HolderAccount__c = partner.Id,
+                AXF_EAS_TXT_FactIdentity__c = 'colisao-' + other.Id,
+                AXF_EAS_NUM_Revision__c = 1,
+                AXF_EAS_PKL_State__c = 'DRAFT',
+                AXF_EAS_EXI_SetKey__c = 'colisao-' + other.Id,
+                AXF_EAS_NUM_FactMagnitude__c = 300,
+                AXF_EAS_TXT_CurrencyIsoCode__c = 'BRL',
+                AXF_EAS_TXT_OperationKey__c = framedReverseKey('op-p1r'),
+                AXF_EAS_NUM_Version__c = 1
+              ),
+              AccessLevel.USER_MODE
+            )
+            .isSuccess(),
+          'Pre-condicao: a chave nao e unica no objeto.'
+        );
+      } finally {
+        ALT_CLS_EconomicAllocationGuard.endWrite();
+      }
+      Test.stopTest();
+      ALT_CLS_EconomicAllocationService.SetView replay = service.reverse(
+        reversal(confirmed.setId, confirmed.version, 'op-p1r')
+      );
+      Assert.areEqual(
+        compensation.setId,
+        replay.setId,
+        'a identidade do fato filtra a linha estranha.'
+      );
+    }
+  }
+
+  /**
+   * AXF-128 / AC-2 (F4): the reversal gate is what stops a compensation from being written over
+   * an altered fact or over a holder the service can no longer authorize. Both negatives are
+   * asserted through `REVERSAL_REJECTED`, so deleting either check turns this test red — and the
+   * altered fact is altered *only* in its identity, so the identity comparison is what is pinned.
+   */
+  @IsTest
+  static void reversalRejectsAnAlteredFactAndAnUnauthorizedHolder() {
+    System.runAs(gestor()) {
+      Account owner = holder('Titular Alterado', 'AXF_Person');
+      AXF_OBJ_BankAccountTransaction__c fact = bankFact(owner, 'q1');
+      ALT_CLS_EconomicAllocationService service = new ALT_CLS_EconomicAllocationService();
+      Test.startTest();
+      ALT_CLS_EconomicAllocationService.SetView draft = service.propose(
+        proposal(
+          'BANK',
+          fact.Id,
+          'op-q1',
+          new Map<Id, Decimal>{ owner.Id => 100 }
+        )
+      );
+      ALT_CLS_EconomicAllocationService.SetView confirmed = service.confirm(
+        draft.setId,
+        draft.version,
+        'op-q1c'
+      );
+      String identity = storedSet(confirmed.setId).AXF_EAS_TXT_FactIdentity__c;
+      // Only the source key — that is, the fact's identity — moves; magnitude, currency and
+      // holder stay exactly as confirmed.
+      fact.AXF_BAT_EXI_SourceKey__c = 'bat-movido-' + System.now().getTime();
+      update fact;
+      ALT_CLS_EconomicAllocationService.EconomicAllocationException altered = expectReverseFailure(
+        service,
+        reversal(confirmed.setId, confirmed.version, 'op-q1r')
+      );
+      Assert.areEqual('REVERSAL_REJECTED', altered.code);
+      Assert.isTrue(
+        altered.reasons.contains('FACT_CHANGED'),
+        String.join(altered.reasons, ',')
+      );
+      Test.stopTest();
+      Assert.areEqual(
+        'CONFIRMED',
+        storedSet(confirmed.setId).AXF_EAS_PKL_State__c,
+        'fato alterado nao e compensado.'
+      );
+      Assert.isNotNull(
+        storedSet(confirmed.setId).AXF_EAS_EXI_ActiveToken__c,
+        'a autoridade original segue vigente.'
+      );
+      Assert.areEqual(
+        1,
+        setsOfFact(identity),
+        'nenhum conjunto compensatorio foi anexado.'
+      );
+      Assert.areEqual(300, fact.AXF_BAT_NUM_Magnitude__c, 'nada mais mudou.');
+    }
+
+    // (2) The holder is no longer an authorized person/company: the compensating parcel goes back
+    // to it, so the reversal must be refused. The fact itself is untouched, so only the
+    // authorization gate can produce this rejection.
+    Account transferred = null;
+    Id setId = null;
+    Decimal version = null;
+    String manualIdentity = null;
+    System.runAs(gestor()) {
+      transferred = holder('Titular Nao Autorizado', 'AXF_Person');
+      AXF_OBJ_FinancialTransaction__c manual = manualFact(transferred, 'q2');
+      ALT_CLS_EconomicAllocationService service = new ALT_CLS_EconomicAllocationService();
+      ALT_CLS_EconomicAllocationService.SetView draft = service.propose(
+        proposal(
+          'MANUAL',
+          manual.Id,
+          'op-q2',
+          new Map<Id, Decimal>{ transferred.Id => 100 }
+        )
+      );
+      ALT_CLS_EconomicAllocationService.SetView confirmed = service.confirm(
+        draft.setId,
+        draft.version,
+        'op-q2c'
+      );
+      setId = confirmed.setId;
+      version = confirmed.version;
+      manualIdentity = storedSet(setId).AXF_EAS_TXT_FactIdentity__c;
+    }
+    // The account changes owner, outside the gestor session: with Account OWD private and no
+    // role-based rule for its new owner, the gestor can no longer read it.
+    update new Account(Id = transferred.Id, OwnerId = participant().Id);
+    System.runAs(gestor()) {
+      ALT_CLS_EconomicAllocationService.EconomicAllocationException unauthorized = expectReverseFailure(
+        new ALT_CLS_EconomicAllocationService(),
+        reversal(setId, version, 'op-q2r')
+      );
+      Assert.areEqual('REVERSAL_REJECTED', unauthorized.code);
+      Assert.isTrue(
+        unauthorized.reasons.contains('UNAUTHORIZED_ACCOUNT:' + transferred.Id),
+        String.join(unauthorized.reasons, ',')
+      );
+    }
+    Assert.areEqual(
+      'CONFIRMED',
+      storedSet(setId).AXF_EAS_PKL_State__c,
+      'titular nao autorizado nao e compensado.'
+    );
+    Assert.isNotNull(storedSet(setId).AXF_EAS_EXI_ActiveToken__c);
+    Assert.areEqual(
+      1,
+      setsOfFact(manualIdentity),
+      'nenhum conjunto compensatorio foi anexado.'
+    );
+  }
+
+  /**
+   * AXF-128 / AC-2 + AXF-127 (F5): ending an integral confirmation clears the derived singular
+   * projection of the ended set in the same DML. Every other reversal fixture reverses an
+   * apportioned set — whose projection was already null — so this is the only one where the
+   * clearing is observable: here the projection holds the *allocated* person, which is not the
+   * fact's holder.
+   */
+  @IsTest
+  static void reversalClearsTheSingularProjectionOfAnIntegralConfirmation() {
+    System.runAs(gestor()) {
+      Account holderAccount = holder(
+        'Titular Projecao Reversa',
+        'AXF_Business'
+      );
+      Account allocated = holder('Pessoa Alocada Reversa', 'AXF_Person');
+      AXF_OBJ_BankAccountTransaction__c fact = bankFact(holderAccount, 's1');
+      ALT_CLS_EconomicAllocationService service = new ALT_CLS_EconomicAllocationService();
+      Test.startTest();
+      ALT_CLS_EconomicAllocationService.SetView draft = service.propose(
+        proposal(
+          'BANK',
+          fact.Id,
+          'op-s1',
+          new Map<Id, Decimal>{ allocated.Id => 100 }
+        )
+      );
+      ALT_CLS_EconomicAllocationService.SetView confirmed = service.confirm(
+        draft.setId,
+        draft.version,
+        'op-s1c'
+      );
+      Assert.areEqual(
+        allocated.Id,
+        storedProjection(confirmed.setId),
+        'Pre-condicao: atribuicao integral projeta a pessoa alocada.'
+      );
+      Assert.isTrue(
+        allocated.Id != holderAccount.Id,
+        'Pre-condicao: a projecao nao e a conta do proprio fato.'
+      );
+      ALT_CLS_EconomicAllocationService.SetView compensation = service.reverse(
+        reversal(confirmed.setId, confirmed.version, 'op-s1r')
+      );
+      Test.stopTest();
+      Assert.isNull(
+        storedProjection(confirmed.setId),
+        'AXF-127: o conjunto encerrado nao mantem projecao singular.'
+      );
+      Assert.areEqual(
+        holderAccount.Id,
+        storedProjection(compensation.setId),
+        'a compensacao devolve o fato ao titular e projeta o titular.'
+      );
+      Assert.isNotNull(
+        storedProjection(compensation.setId),
+        'a autoridade vigente segue projetada.'
+      );
+    }
+  }
+
+  /**
+   * AXF-128 / AC-2 (F3): the release of the active token and of the projection is derived from the
+   * actual transition. Re-asserting an already-ended state frees nothing, so no foreign token can
+   * be planted on an ended set; and a confirmation can neither end without a live successor of the
+   * same fact nor hand the token to any value other than null.
+   */
+  @IsTest
+  static void guardDerivesTheReleaseFromTheTransitionAndRequiresACompensation() {
+    System.runAs(gestor()) {
+      Account owner = holder('Titular Transicao', 'AXF_Person');
+      Account partner = holder('Socio Transicao', 'AXF_Person');
+      AXF_OBJ_BankAccountTransaction__c fact = bankFact(owner, 'r1');
+      AXF_OBJ_BankAccountTransaction__c foreignFact = bankFact(owner, 'r2');
+      AXF_OBJ_BankAccountTransaction__c aloneFact = bankFact(partner, 'r3');
+      ALT_CLS_EconomicAllocationService service = new ALT_CLS_EconomicAllocationService();
+      Test.startTest();
+      ALT_CLS_EconomicAllocationService.SetView draft = service.propose(
+        proposal(
+          'BANK',
+          fact.Id,
+          'op-r1',
+          new Map<Id, Decimal>{ owner.Id => 100 }
+        )
+      );
+      ALT_CLS_EconomicAllocationService.SetView confirmed = service.confirm(
+        draft.setId,
+        draft.version,
+        'op-r1c'
+      );
+      service.reverse(reversal(confirmed.setId, confirmed.version, 'op-r1r'));
+      String foreignToken = AXF_CLS_IdentityFraming.key(
+        new List<Object>{ foreignFact.AXF_BAT_EXI_SourceKey__c, 'ACTIVE' }
+      );
+      // REVERSED -> REVERSED is not a transition: neither bookkeeping field is released.
+      ALT_CLS_EconomicAllocationGuard.beginWrite();
+      try {
+        Assert.isTrue(
+          firstError(
+              Database.update(
+                new AXF_OBJ_EconomicAllocationSet__c(
+                  Id = confirmed.setId,
+                  AXF_EAS_PKL_State__c = 'REVERSED',
+                  AXF_EAS_EXI_ActiveToken__c = foreignToken
+                ),
+                false
+              )
+            )
+            .contains('Confirmed economic allocation content is immutable'),
+          'reenunciar REVERSED nao libera o token.'
+        );
+        Assert.isTrue(
+          firstError(
+              Database.update(
+                new AXF_OBJ_EconomicAllocationSet__c(
+                  Id = confirmed.setId,
+                  AXF_EAS_PKL_State__c = 'REVERSED',
+                  AXF_EAS_LKP_AttributedAccount__c = partner.Id
+                ),
+                false
+              )
+            )
+            .contains('Confirmed economic allocation content is immutable'),
+          'reenunciar REVERSED nao libera a projecao.'
+        );
+      } finally {
+        ALT_CLS_EconomicAllocationGuard.endWrite();
+      }
+      // A confirmation ends only into an existing live successor of the same fact.
+      ALT_CLS_EconomicAllocationService.SetView alone = service.propose(
+        proposal(
+          'BANK',
+          aloneFact.Id,
+          'op-r4',
+          new Map<Id, Decimal>{ partner.Id => 100 }
+        )
+      );
+      ALT_CLS_EconomicAllocationService.SetView aloneConfirmed = service.confirm(
+        alone.setId,
+        alone.version,
+        'op-r4c'
+      );
+      ALT_CLS_EconomicAllocationGuard.beginWrite();
+      try {
+        Assert.isTrue(
+          firstError(
+              Database.update(
+                new AXF_OBJ_EconomicAllocationSet__c(
+                  Id = aloneConfirmed.setId,
+                  AXF_EAS_PKL_State__c = 'REVERSED',
+                  AXF_EAS_EXI_ActiveToken__c = null,
+                  AXF_EAS_NUM_Version__c = aloneConfirmed.version + 1
+                ),
+                false
+              )
+            )
+            .contains('live successor'),
+          'autoridade nao termina sem o conjunto compensatorio.'
+        );
+      } finally {
+        ALT_CLS_EconomicAllocationGuard.endWrite();
+      }
+      // The token is released, never moved to another value. The fixture carries a live successor
+      // of the same fact, so the successor rule cannot be what refuses this write.
+      AXF_OBJ_BankAccountTransaction__c handFact = bankFact(owner, 'r4');
+      ALT_CLS_EconomicAllocationService.SetView handing = service.propose(
+        proposal(
+          'BANK',
+          handFact.Id,
+          'op-r6',
+          new Map<Id, Decimal>{ owner.Id => 100 }
+        )
+      );
+      ALT_CLS_EconomicAllocationService.SetView successorDraft = service.propose(
+        proposal(
+          'BANK',
+          handFact.Id,
+          'op-r7',
+          new Map<Id, Decimal>{ partner.Id => 100 }
+        )
+      );
+      ALT_CLS_EconomicAllocationService.SetView handingConfirmed = service.confirm(
+        handing.setId,
+        handing.version,
+        'op-r6c'
+      );
+      Assert.isTrue(
+        successorDraft.revision > handingConfirmed.revision,
+        'Pre-condicao: existe sucessor vivo em revisao maior.'
+      );
+      ALT_CLS_EconomicAllocationGuard.beginWrite();
+      try {
+        Database.SaveResult planted = Database.update(
+          new AXF_OBJ_EconomicAllocationSet__c(
+            Id = handingConfirmed.setId,
+            AXF_EAS_PKL_State__c = 'REVERSED',
+            AXF_EAS_EXI_ActiveToken__c = foreignToken,
+            AXF_EAS_NUM_Version__c = handingConfirmed.version + 1
+          ),
+          false
+        );
+        Assert.isTrue(
+          firstError(planted).contains('releases the active token'),
+          'token estranho nao e plantado: ' + firstError(planted)
+        );
+      } finally {
+        ALT_CLS_EconomicAllocationGuard.endWrite();
+      }
+      Test.stopTest();
+      Assert.areEqual(
+        'CONFIRMED',
+        storedSet(aloneConfirmed.setId).AXF_EAS_PKL_State__c,
+        'nada das tentativas persistiu.'
+      );
+      Assert.areEqual(
+        'CONFIRMED',
+        storedSet(handingConfirmed.setId).AXF_EAS_PKL_State__c,
+        'o conjunto com sucessor tambem segue confirmado.'
+      );
+      String aliveToken = storedSet(aloneConfirmed.setId)
+        .AXF_EAS_EXI_ActiveToken__c;
+      Assert.isNotNull(aliveToken, 'a autoridade original segue vigente.');
+      Assert.areEqual(
+        1,
+        [
+          SELECT COUNT()
+          FROM AXF_OBJ_EconomicAllocationSet__c
+          WHERE AXF_EAS_EXI_ActiveToken__c = :aliveToken
+        ],
+        'a autoridade original segue vigente e unica.'
+      );
+      Assert.areEqual(
+        0,
+        [
+          SELECT COUNT()
+          FROM AXF_OBJ_EconomicAllocationSet__c
+          WHERE AXF_EAS_EXI_ActiveToken__c = :foreignToken
+        ],
+        'nenhum token estranho foi plantado.'
+      );
+      Assert.isNull(
+        storedSet(confirmed.setId).AXF_EAS_LKP_AttributedAccount__c,
+        'a projecao do conjunto encerrado nao foi reescrita.'
+      );
+      // The fact that would have been blocked by a planted token still proposes normally.
+      Assert.areEqual(
+        'DRAFT',
+        service.propose(
+            proposal(
+              'BANK',
+              foreignFact.Id,
+              'op-r5',
+              new Map<Id, Decimal>{ owner.Id => 100 }
+            )
+          )
+          .state,
+        'nenhum fato estranho ficou bloqueado.'
+      );
+    }
+  }
 }

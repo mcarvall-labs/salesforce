@@ -3,6 +3,9 @@
  * proteger referencias ocultas; chamado apenas pelos handlers de trigger.
  * - Sem Delete em set/parcela. - Set: identidade/ancora imutaveis; CONFIRMED imutavel exceto
  *   transicao para SUPERSEDED|REVERSED via servico; escrita somente pelo servico.
+ * - AXF-128: a transicao que encerra a autoridade — o estado tem de realmente mudar para um
+ *   estado final — apenas libera o token ativo (nunca o move para outro valor) e exige o conjunto
+ *   compensatorio do mesmo fato, em revisao maior, ja existente na mesma transacao.
  * - Parcela: nasce/muda so pelo servico e so em set DRAFT; magnitude positiva; percentual em (0,100].
  */
 public without sharing class ALT_CLS_EconomicAllocationGuard {
@@ -41,6 +44,10 @@ public without sharing class ALT_CLS_EconomicAllocationGuard {
     'AXF_EAS_EXI_ActiveToken__c',
     'AXF_EAS_LKP_AttributedAccount__c'
   };
+  private static final Set<String> ENDING_STATES = new Set<String>{
+    'SUPERSEDED',
+    'REVERSED'
+  };
   private static final Set<String> ALLOCATION_FROZEN = new Set<String>{
     'AXF_EA_MDR_AllocationSet__c',
     'AXF_EA_LKP_Account__c',
@@ -63,6 +70,11 @@ public without sharing class ALT_CLS_EconomicAllocationGuard {
     Map<Id, AXF_OBJ_EconomicAllocationSet__c> oldMap,
     Boolean deleting
   ) {
+    // An authority never ends into nothing: the compensating set of the same fact is written in
+    // the same transaction, so the handover is looked up once for the whole DML, never per row.
+    Map<Id, Boolean> handedOver = oldMap == null
+      ? new Map<Id, Boolean>()
+      : liveSuccessorExists(rows, oldMap);
     for (AXF_OBJ_EconomicAllocationSet__c row : rows) {
       if (deleting) {
         row.addError('Economic allocation sets cannot be deleted.');
@@ -88,13 +100,15 @@ public without sharing class ALT_CLS_EconomicAllocationGuard {
           break;
         }
       }
+      // AXF-128: the release of the active token and of the projection is derived from the actual
+      // transition — the state must really change into an ending state — and never from the
+      // incoming state value, so re-asserting a state the set already has (REVERSED -> REVERSED,
+      // SUPERSEDED -> SUPERSEDED) frees nothing.
+      Boolean endingAuthority = endsAuthority(before, row);
       if (
         before.AXF_EAS_PKL_State__c != 'DRAFT' &&
         before.AXF_EAS_PKL_State__c != null
       ) {
-        Boolean endingAuthority =
-          row.AXF_EAS_PKL_State__c == 'SUPERSEDED' ||
-          row.AXF_EAS_PKL_State__c == 'REVERSED';
         for (String field : row.getPopulatedFieldsAsMap().keySet()) {
           if (
             !field.endsWith('__c') ||
@@ -110,6 +124,23 @@ public without sharing class ALT_CLS_EconomicAllocationGuard {
           break;
         }
       }
+      if (endingAuthority) {
+        // The token is only ever released, never moved to another value: it is unique, so a value
+        // planted here would block another fact's propose for good (ACTIVE_SET_EXISTS). The record
+        // under write is what the database will hold, so a non-null value there is the attack.
+        if (row.AXF_EAS_EXI_ActiveToken__c != null) {
+          row.addError(
+            'Ending the authority releases the active token; it never moves.'
+          );
+        }
+        // And the handover must already exist: no confirmation ends without its compensation.
+        Boolean successor = handedOver.get(row.Id);
+        if (successor == null || !successor) {
+          row.addError(
+            'Ending the authority requires a live successor set of the same fact.'
+          );
+        }
+      }
       if (row.AXF_EAS_PKL_State__c != before.AXF_EAS_PKL_State__c) {
         Set<String> allowed = TRANSITIONS.get(before.AXF_EAS_PKL_State__c);
         if (allowed == null || !allowed.contains(row.AXF_EAS_PKL_State__c)) {
@@ -117,6 +148,107 @@ public without sharing class ALT_CLS_EconomicAllocationGuard {
         }
       }
     }
+  }
+
+  /** The authority ends only when the state really changes into an ending state. */
+  private static Boolean endsAuthority(
+    AXF_OBJ_EconomicAllocationSet__c before,
+    AXF_OBJ_EconomicAllocationSet__c incoming
+  ) {
+    return before != null &&
+      before.AXF_EAS_PKL_State__c == 'CONFIRMED' &&
+      incoming.AXF_EAS_PKL_State__c != before.AXF_EAS_PKL_State__c &&
+      ENDING_STATES.contains(incoming.AXF_EAS_PKL_State__c);
+  }
+
+  /** The typed fact anchor, the only fact key a partial update always carries. */
+  private static Id anchorOf(AXF_OBJ_EconomicAllocationSet__c row) {
+    if (row.AXF_EAS_LKP_BankTransaction__c != null) {
+      return row.AXF_EAS_LKP_BankTransaction__c;
+    }
+    if (row.AXF_EAS_LKP_CardTransaction__c != null) {
+      return row.AXF_EAS_LKP_CardTransaction__c;
+    }
+    return row.AXF_EAS_LKP_FinancialTransaction__c;
+  }
+
+  private static Integer revisionOf(AXF_OBJ_EconomicAllocationSet__c row) {
+    return row.AXF_EAS_NUM_Revision__c == null
+      ? 0
+      : Integer.valueOf(row.AXF_EAS_NUM_Revision__c);
+  }
+
+  /**
+   * Whether every set ending its authority in this DML already has a handover: a live set (DRAFT
+   * or CONFIRMED) of the same fact, at a strictly higher revision, present in the same transaction.
+   * Keyed by the Id of the ending set. The sets being ended are excluded from the successors — they
+   * are still CONFIRMED in the database at this point — so a set can never be its own successor,
+   * and their revision is taken from the database, never from the update payload. Anchors are used
+   * because a partial update carries no fact identity.
+   */
+  @SuppressWarnings('PMD.ApexCRUDViolation')
+  private static Map<Id, Boolean> liveSuccessorExists(
+    List<AXF_OBJ_EconomicAllocationSet__c> rows,
+    Map<Id, AXF_OBJ_EconomicAllocationSet__c> oldMap
+  ) {
+    Map<Id, Boolean> result = new Map<Id, Boolean>();
+    Map<Id, Integer> ownRevision = new Map<Id, Integer>();
+    Map<Id, Id> anchorBySet = new Map<Id, Id>();
+    Set<Id> endingIds = new Set<Id>();
+    Set<Id> bankIds = new Set<Id>();
+    Set<Id> cardIds = new Set<Id>();
+    Set<Id> manualIds = new Set<Id>();
+    for (AXF_OBJ_EconomicAllocationSet__c row : rows) {
+      if (!endsAuthority(oldMap.get(row.Id), row)) {
+        continue;
+      }
+      endingIds.add(row.Id);
+      anchorBySet.put(row.Id, anchorOf(row));
+      ownRevision.put(row.Id, revisionOf(oldMap.get(row.Id)));
+      if (row.AXF_EAS_LKP_BankTransaction__c != null) {
+        bankIds.add(row.AXF_EAS_LKP_BankTransaction__c);
+      } else if (row.AXF_EAS_LKP_CardTransaction__c != null) {
+        cardIds.add(row.AXF_EAS_LKP_CardTransaction__c);
+      } else if (row.AXF_EAS_LKP_FinancialTransaction__c != null) {
+        manualIds.add(row.AXF_EAS_LKP_FinancialTransaction__c);
+      }
+    }
+    if (endingIds.isEmpty()) {
+      return result;
+    }
+    Map<Id, Integer> best = new Map<Id, Integer>();
+    for (AXF_OBJ_EconomicAllocationSet__c row : [
+      SELECT
+        Id,
+        AXF_EAS_LKP_BankTransaction__c,
+        AXF_EAS_LKP_CardTransaction__c,
+        AXF_EAS_LKP_FinancialTransaction__c,
+        AXF_EAS_NUM_Revision__c
+      FROM AXF_OBJ_EconomicAllocationSet__c
+      WHERE
+        Id IN :endingIds
+        OR (AXF_EAS_PKL_State__c IN ('DRAFT', 'CONFIRMED')
+        AND (AXF_EAS_LKP_BankTransaction__c IN :bankIds
+        OR AXF_EAS_LKP_CardTransaction__c IN :cardIds
+        OR AXF_EAS_LKP_FinancialTransaction__c IN :manualIds))
+    ]) {
+      if (endingIds.contains(row.Id)) {
+        ownRevision.put(row.Id, revisionOf(row));
+        continue;
+      }
+      Id anchor = anchorOf(row);
+      Integer revision = revisionOf(row);
+      Integer current = best.get(anchor);
+      if (current == null || revision > current) {
+        best.put(anchor, revision);
+      }
+    }
+    for (Id setId : endingIds) {
+      Integer successor = best.get(anchorBySet.get(setId));
+      Integer own = ownRevision.get(setId);
+      result.put(setId, successor != null && own != null && successor > own);
+    }
+    return result;
   }
 
   // Trigger integrity must see the parent set regardless of the caller's CRUD permissions.

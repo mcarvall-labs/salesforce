@@ -13,10 +13,12 @@
  * CONFIRMED tem exatamente uma parcela de 100% e fica vazia em rateio; G1 apenas fixa a forma do
  * sujeito (Account AXF_Person|AXF_Business). Enquanto um set tem autoridade, a projecao pode
  * existir; ao terminar a autoridade ela e limpa (discard e reversao). A reversao (AXF-128) cria
- * um set compensatorio de mesma identidade e revisao seguinte com uma unica parcela de 100% para
- * o titular do fato, de modo que o fato volta a ter uma unica autoridade de atribuicao e um unico
- * token ativo; a confirmacao revertida nunca e editada. Revisao (supersessao) e neutralizacao no
- * consolidado sao historias irmas (AXF-128/129).
+ * um set compensatorio de mesma identidade, na maior revisao do fato em qualquer estado mais uma,
+ * com uma unica parcela de 100% para o titular do fato, de modo que o fato volta a ter uma unica
+ * autoridade de atribuicao e um unico token ativo; a confirmacao revertida nunca e editada e o
+ * replay e reconhecido pela chave de operacao enquadrada mais a identidade do fato, nunca por uma
+ * revisao inferida. Revisao (supersessao) e neutralizacao no consolidado sao historias irmas
+ * (AXF-128/129).
  */
 public with sharing class ALT_CLS_EconomicAllocationService {
   public static final String IDENTITY_VERSION = 'alloc-v2';
@@ -415,8 +417,8 @@ public with sharing class ALT_CLS_EconomicAllocationService {
    * to its own holder, so the fact keeps one attribution authority and one active token. The
    * confirmed set is never edited: only its state, its optimistic version and the two fields
    * that must not outlive the authority move, in the same transaction. A replay of the same
-   * command returns the durable compensation; a divergent payload conflicts and never appends a
-   * second compensation.
+   * command returns the durable compensation; a divergent payload — including a key already spent
+   * on another target — conflicts and never appends a second compensation.
    */
   public SetView reverse(ReverseInput input) {
     if (
@@ -444,13 +446,22 @@ public with sharing class ALT_CLS_EconomicAllocationService {
     if (input.expectedVersion != nz(allocationSet.AXF_EAS_NUM_Version__c)) {
       throw failure('CONFLICT', new List<String>());
     }
+    // G6: the framed key is the identity of this effect, and `AXF_EAS_TXT_OperationKey__c` is not
+    // unique, so a key already stored anywhere — on another fact, on another confirmation, or by
+    // an earlier reversal of this very fact — is refused before anything is written. An
+    // equivalent replay never reaches this point: it is recognised by the REVERSED state above.
+    if (!setsStoringKey(reverseKey).isEmpty()) {
+      throw failure('CONFLICT', new List<String>());
+    }
     List<String> reasons = new List<String>();
     if (
+      fact.identity != allocationSet.AXF_EAS_TXT_FactIdentity__c ||
       fact.magnitude != allocationSet.AXF_EAS_NUM_FactMagnitude__c ||
       fact.currencyIso != allocationSet.AXF_EAS_TXT_CurrencyIsoCode__c ||
       fact.holderId != allocationSet.AXF_EAS_LKP_HolderAccount__c
     ) {
-      // The compensation conserves the fact; a fact that moved cannot be compensated here.
+      // The compensation conserves the fact *and its identity*; a fact that moved, or whose
+      // source key changed after the confirmation, cannot be compensated here.
       reasons.add('FACT_CHANGED');
     }
     // The compensating parcel goes back to the fact's own holder, so that person/company must
@@ -540,6 +551,13 @@ public with sharing class ALT_CLS_EconomicAllocationService {
    * already reversed by another command conflicts. The command is recognised by its framed key
    * plus the version it consumed: the reversal bumped the set's version exactly once and a
    * REVERSED set has no other writer (the guard freezes it and the service has no method for it).
+   *
+   * The compensation is *not* identified by an inferred revision: `nextRevision()` takes the
+   * highest revision of the fact in **any** state, so an intervening draft — or a discarded one —
+   * pushes the compensation beyond `reversed.Revision + 1` and the same command would conflict
+   * against its own durable effect. Its identity is the ratified operation key plus the fact
+   * identity, exactly as the AXF-25 sibling identifies its prior reversal by the original
+   * allocation it compensated.
    */
   private SetView priorCompensation(
     Fact fact,
@@ -550,27 +568,42 @@ public with sharing class ALT_CLS_EconomicAllocationService {
     if (input.expectedVersion != nz(reversed.AXF_EAS_NUM_Version__c) - 1) {
       throw failure('CONFLICT', new List<String>());
     }
-    for (AXF_OBJ_EconomicAllocationSet__c row : [
+    AXF_OBJ_EconomicAllocationSet__c found;
+    for (AXF_OBJ_EconomicAllocationSet__c row : setsStoringKey(reverseKey)) {
+      if (
+        row.AXF_EAS_TXT_FactIdentity__c == fact.identity &&
+        row.AXF_EAS_PKL_State__c == STATE_CONFIRMED &&
+        (found == null ||
+        nz(row.AXF_EAS_NUM_Revision__c) > nz(found.AXF_EAS_NUM_Revision__c))
+      ) {
+        found = row;
+      }
+    }
+    if (found == null) {
+      throw failure('CONFLICT', new List<String>());
+    }
+    return read(found.Id);
+  }
+
+  /**
+   * Every set that already stores this framed key. `AXF_EAS_TXT_OperationKey__c` is not unique
+   * and the field is shared with the raw `propose` key, so the key is never trusted on its own:
+   * there is no blind `LIMIT 1`, and every caller filters by the fact identity and by state, so a
+   * row of another fact can never answer for this one.
+   */
+  private static List<AXF_OBJ_EconomicAllocationSet__c> setsStoringKey(
+    String operationKey
+  ) {
+    return [
       SELECT
         Id,
         AXF_EAS_TXT_FactIdentity__c,
         AXF_EAS_NUM_Revision__c,
         AXF_EAS_PKL_State__c
       FROM AXF_OBJ_EconomicAllocationSet__c
-      WHERE AXF_EAS_TXT_OperationKey__c = :reverseKey
+      WHERE AXF_EAS_TXT_OperationKey__c = :operationKey
       WITH SYSTEM_MODE
-      LIMIT 1
-    ]) {
-      if (
-        row.AXF_EAS_TXT_FactIdentity__c == fact.identity &&
-        row.AXF_EAS_NUM_Revision__c ==
-        nz(reversed.AXF_EAS_NUM_Revision__c) + 1 &&
-        row.AXF_EAS_PKL_State__c == STATE_CONFIRMED
-      ) {
-        return read(row.Id);
-      }
-    }
-    throw failure('CONFLICT', new List<String>());
+    ];
   }
 
   /** G6 identity of the reversal effect: the operation key framed under its own operationId. */
@@ -893,6 +926,7 @@ public with sharing class ALT_CLS_EconomicAllocationService {
         AXF_EAS_LKP_CardTransaction__c,
         AXF_EAS_LKP_FinancialTransaction__c,
         AXF_EAS_LKP_HolderAccount__c,
+        AXF_EAS_TXT_FactIdentity__c,
         AXF_EAS_PKL_State__c,
         AXF_EAS_NUM_FactMagnitude__c,
         AXF_EAS_TXT_CurrencyIsoCode__c,
