@@ -1160,6 +1160,11 @@
     <field>AXF_OBJ_ClosureRun__c.AXF_CLR_TXT_PolicyVersion__c</field>
     <readable>true</readable>
   </fieldPermissions>
+  <fieldPermissions>
+    <editable>true</editable>
+    <field>AXF_OBJ_FinancialTransaction__c.AXF_FTX_TXT_Description__c</field>
+    <readable>true</readable>
+  </fieldPermissions>
   <objectPermissions>
     <allowCreate>true</allowCreate>
     <allowDelete>false</allowDelete>

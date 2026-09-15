@@ -21,6 +21,47 @@
         </template>
       </div>
 
+      <template lwc:if={noAccess}>
+        <p class="slds-text-color_weak" data-id="no-access">
+          {labels.noAccess}
+        </p>
+      </template>
+      <template lwc:if={info}>
+        <div
+          class="slds-notify slds-notify_alert slds-alert_info"
+          role="status"
+          data-id="info"
+        >
+          <span>{info}</span>
+        </div>
+      </template>
+      <template lwc:if={confirmation}>
+        <section
+          role="dialog"
+          aria-labelledby="closure-confirm-title"
+          class="slds-box slds-theme_warning slds-var-m-bottom_small"
+          data-id="confirmation"
+          onkeydown={handleDialogKey}
+        >
+          <h2 id="closure-confirm-title" class="slds-text-heading_small">
+            {labels.confirmResumeTitle}
+          </h2>
+          <p class="slds-var-m-vertical_x-small">{confirmationBody}</p>
+          <lightning-button
+            variant="brand"
+            label={labels.confirm}
+            onclick={acceptConfirmation}
+            data-id="confirm-yes"
+          ></lightning-button>
+          <lightning-button
+            label={labels.cancel}
+            onclick={cancelConfirmation}
+            class="slds-var-m-left_x-small"
+            data-id="confirm-no"
+          ></lightning-button>
+        </section>
+      </template>
+
       <template lwc:if={allowed}>
         <template lwc:if={detail}>
           <lightning-button
@@ -69,7 +110,7 @@
             <dl class="slds-dl_horizontal slds-var-m-top_x-small">
               <dt class="slds-dl_horizontal__label">{labels.status}</dt>
               <dd class="slds-dl_horizontal__detail" data-id="status">
-                {detail.status}
+                {detail.statusLabel}
               </dd>
               <dt class="slds-dl_horizontal__label">{labels.progress}</dt>
               <dd class="slds-dl_horizontal__detail">
@@ -89,7 +130,7 @@
               <dd class="slds-dl_horizontal__detail">{detail.attempt}</dd>
               <dt class="slds-dl_horizontal__label">{labels.blockReason}</dt>
               <dd class="slds-dl_horizontal__detail" data-id="reason">
-                {detail.blockReason}
+                {detail.reasonLabel}
               </dd>
               <dt class="slds-dl_horizontal__label">{labels.nextAction}</dt>
               <dd class="slds-dl_horizontal__detail" data-id="next-action">
@@ -98,8 +139,32 @@
               <dt class="slds-dl_horizontal__label">
                 {labels.externalRevocation}
               </dt>
+              <dd class="slds-dl_horizontal__detail">{detail.externalLabel}</dd>
+              <dt class="slds-dl_horizontal__label">{labels.legalHold}</dt>
+              <dd class="slds-dl_horizontal__detail" data-id="legal-hold-state">
+                <template lwc:if={detail.legalHold}
+                  >{labels.legalHoldActive}</template
+                >
+                <template lwc:else>—</template>
+              </dd>
+              <dt class="slds-dl_horizontal__label">
+                {labels.evidenceRefLabel}
+              </dt>
+              <dd class="slds-dl_horizontal__detail" data-id="evidence-ref">
+                {detail.exportEvidenceRef}
+              </dd>
+              <dt class="slds-dl_horizontal__label">
+                {labels.lastCompletedAt}
+              </dt>
               <dd class="slds-dl_horizontal__detail">
-                {detail.externalRevocation}
+                <lightning-formatted-date-time
+                  value={detail.lastCompletedAt}
+                  year="numeric"
+                  month="short"
+                  day="2-digit"
+                  hour="2-digit"
+                  minute="2-digit"
+                ></lightning-formatted-date-time>
               </dd>
             </dl>
             <div class="slds-var-m-top_small">
@@ -107,9 +172,18 @@
                 <lightning-button
                   variant="brand"
                   label={labels.resume}
-                  onclick={handleAdvance}
+                  onclick={askAdvance}
                   disabled={busy}
                   data-id="advance"
+                ></lightning-button>
+              </template>
+              <template lwc:if={detail.canReleaseHold}>
+                <lightning-button
+                  label={labels.releaseLegalHold}
+                  onclick={handleReleaseHold}
+                  disabled={busy}
+                  class="slds-var-m-left_x-small"
+                  data-id="release-hold"
                 ></lightning-button>
               </template>
               <template lwc:if={detail.canReconcile}>
@@ -171,12 +245,21 @@
                 <template for:each={detail.checkpoints} for:item="checkpoint">
                   <tr key={checkpoint.key} class="slds-hint-parent">
                     <td>{checkpoint.stageLabel}</td>
-                    <td>{checkpoint.status}</td>
+                    <td>{checkpoint.statusLabel}</td>
                     <td>{checkpoint.attempt}</td>
                     <td>{checkpoint.effectKey}</td>
                     <td>{checkpoint.impactText}</td>
-                    <td>{checkpoint.reason}</td>
-                    <td>{checkpoint.completedAt}</td>
+                    <td>{checkpoint.reasonLabel}</td>
+                    <td>
+                      <lightning-formatted-date-time
+                        value={checkpoint.completedAt}
+                        year="numeric"
+                        month="short"
+                        day="2-digit"
+                        hour="2-digit"
+                        minute="2-digit"
+                      ></lightning-formatted-date-time>
+                    </td>
                   </tr>
                 </template>
               </tbody>
@@ -234,14 +317,16 @@
                     <th scope="col">{labels.status}</th>
                     <th scope="col">{labels.lastStage}</th>
                     <th scope="col">{labels.progress}</th>
-                    <th scope="col"></th>
+                    <th scope="col">
+                      <span class="slds-assistive-text">{labels.actions}</span>
+                    </th>
                   </tr>
                 </thead>
                 <tbody>
                   <template for:each={runRows} for:item="row">
                     <tr key={row.runId} class="slds-hint-parent">
                       <td>{row.accountName}</td>
-                      <td>{row.status}</td>
+                      <td>{row.statusLabel}</td>
                       <td>{row.stageLabel}</td>
                       <td>{row.progressPercent}%</td>
                       <td>

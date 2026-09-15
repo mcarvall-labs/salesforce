@@ -12,6 +12,7 @@ import advance from "@salesforce/apex/AXF_CLS_CTRL_ClosureRun.advance";
 import reconcile from "@salesforce/apex/AXF_CLS_CTRL_ClosureRun.reconcile";
 import attachExportEvidence from "@salesforce/apex/AXF_CLS_CTRL_ClosureRun.attachExportEvidence";
 import read from "@salesforce/apex/AXF_CLS_CTRL_ClosureRun.read";
+import releaseLegalHold from "@salesforce/apex/AXF_CLS_CTRL_ClosureRun.releaseLegalHold";
 
 jest.mock(
   "@salesforce/apex/AXF_CLS_CTRL_ClosureRun.canClose",
@@ -51,6 +52,11 @@ jest.mock(
 );
 jest.mock(
   "@salesforce/apex/AXF_CLS_CTRL_ClosureRun.attachExportEvidence",
+  () => ({ default: jest.fn() }),
+  { virtual: true }
+);
+jest.mock(
+  "@salesforce/apex/AXF_CLS_CTRL_ClosureRun.releaseLegalHold",
   () => ({ default: jest.fn() }),
   { virtual: true }
 );
@@ -95,12 +101,12 @@ const blocked = {
   ]
 };
 
-function build() {
+function build(allowed = true) {
   const element = createElement("c-a-x-f_-l-w-c_closure-run", {
     is: ClosureRun
   });
   document.body.appendChild(element);
-  canClose.emit(true);
+  canClose.emit(allowed);
   getHolders.emit([{ accountId: "001A", label: "Empresa A" }]);
   return element;
 }
@@ -124,16 +130,22 @@ describe("c-aXF_LWC_closureRun", () => {
     element.shadowRoot
       .querySelector('[data-id="holder"]')
       .dispatchEvent(new CustomEvent("change", { detail: { value: "001A" } }));
+    const hold = element.shadowRoot.querySelector('[data-id="legal-hold"]');
+    hold.checked = true;
+    hold.dispatchEvent(new CustomEvent("change"));
     await flush();
     element.shadowRoot.querySelector('[data-id="start"]').click();
     await flush();
     expect(request).toHaveBeenCalledWith({
       accountId: "001A",
-      legalHold: false
+      legalHold: true
     });
     expect(
       element.shadowRoot.querySelector('[data-id="status"]').textContent
-    ).toBe("BLOCKED");
+    ).toContain("statusBLOCKED");
+    expect(
+      element.shadowRoot.querySelector('[data-id="reason"]').textContent
+    ).toContain("reasonEXPORT_PENDING");
     expect(
       element.shadowRoot.querySelector('[data-id="blocked"]')
     ).not.toBeNull();
@@ -178,7 +190,13 @@ describe("c-aXF_LWC_closureRun", () => {
       evidenceRef: "069x",
       expectedVersion: 2
     });
+    // The evidence input disappears once the block is lifted.
+    expect(element.shadowRoot.querySelector('[data-id="evidence"]')).toBeNull();
     element.shadowRoot.querySelector('[data-id="advance"]').click();
+    await flush();
+    // Resume is irreversible: it asks for confirmation first.
+    expect(advance).not.toHaveBeenCalled();
+    element.shadowRoot.querySelector('[data-id="confirm-yes"]').click();
     await flush();
     expect(advance).toHaveBeenCalledWith({ runId: "clr1", expectedVersion: 2 });
     expect(
@@ -190,7 +208,62 @@ describe("c-aXF_LWC_closureRun", () => {
     expect(reconcile).toHaveBeenCalled();
     expect(
       element.shadowRoot.querySelector('[data-id="status"]').textContent
-    ).toBe("REQUESTED");
+    ).toContain("statusREQUESTED");
+  });
+
+  it("shows the no-access state, releases a legal hold and reloads on conflict", async () => {
+    const denied = build(false);
+    await flush();
+    expect(
+      denied.shadowRoot.querySelector('[data-id="no-access"]')
+    ).not.toBeNull();
+    expect(listRuns).not.toHaveBeenCalled();
+    document.body.removeChild(denied);
+
+    const held = {
+      ...blocked,
+      status: "BLOCKED",
+      blockReason: "LEGAL_HOLD",
+      nextAction: "RELEASE_LEGAL_HOLD",
+      legalHold: true,
+      version: 3
+    };
+    listRuns.mockResolvedValue([held]);
+    read.mockResolvedValueOnce(held).mockResolvedValue({ ...held, version: 4 });
+    releaseLegalHold.mockRejectedValueOnce({ body: { message: "CONFLICT" } });
+    const element = build();
+    await flush();
+    [...element.shadowRoot.querySelectorAll("lightning-button")]
+      .find((button) => button.dataset.id === "clr1")
+      .click();
+    await flush();
+    expect(
+      element.shadowRoot.querySelector('[data-id="legal-hold-state"]')
+        .textContent
+    ).toContain("legalHoldActive");
+    element.shadowRoot.querySelector('[data-id="release-hold"]').click();
+    await flush();
+    expect(releaseLegalHold).toHaveBeenCalledWith({
+      runId: "clr1",
+      expectedVersion: 3
+    });
+    // Conflict: the run is re-read and the stale version replaced.
+    expect(read).toHaveBeenCalledTimes(2);
+    expect(element.shadowRoot.querySelector('[data-id="info"]')).not.toBeNull();
+    releaseLegalHold.mockResolvedValue({
+      ...held,
+      legalHold: false,
+      version: 5
+    });
+    element.shadowRoot.querySelector('[data-id="release-hold"]').click();
+    await flush();
+    expect(releaseLegalHold).toHaveBeenLastCalledWith({
+      runId: "clr1",
+      expectedVersion: 4
+    });
+    expect(
+      element.shadowRoot.querySelector('[data-id="release-hold"]')
+    ).toBeNull();
   });
 
   it("shows sanitized errors and the closed banner", async () => {

@@ -1,6 +1,7 @@
 /**
- * @description Handler de trigger para AXF_OBJ_ClosureRun__c (AXF-119). Somente despacho de
- * contexto e integridade local: sem delete, escopo/correlacao imutaveis, CLOSED terminal.
+ * @description Handler de trigger para AXF_OBJ_ClosureRun__c (AXF-119). Integridade local:
+ * sem delete; escrita apenas pelo orquestrador (checkpoints, estagio e versao nunca por DML
+ * direta); escopo/correlacao imutaveis; CLOSED terminal e imutavel (evidencia).
  */
 public with sharing class AXF_CLS_CLRTriggerHandler {
   private static final Set<String> FROZEN = new Set<String>{
@@ -11,6 +12,10 @@ public with sharing class AXF_CLS_CLRTriggerHandler {
 
   public static void handleBeforeInsert(List<AXF_OBJ_ClosureRun__c> newList) {
     for (AXF_OBJ_ClosureRun__c run : newList) {
+      if (!ALT_CLS_ClosureOrchestrator.isWriting()) {
+        run.addError('Use o orquestrador de encerramento (AXF-119).');
+        continue;
+      }
       if (run.AXF_CLR_PKL_Status__c == null) {
         run.AXF_CLR_PKL_Status__c = 'REQUESTED';
       }
@@ -35,11 +40,20 @@ public with sharing class AXF_CLS_CLRTriggerHandler {
           break;
         }
       }
-      if (
-        before.AXF_CLR_PKL_Status__c == 'CLOSED' &&
-        run.AXF_CLR_PKL_Status__c != 'CLOSED'
-      ) {
-        run.addError('CLOSED e terminal (AXF-119).');
+      if (before.AXF_CLR_PKL_Status__c == 'CLOSED') {
+        // Terminal: neither the status nor the evidence can change afterwards.
+        for (String field : run.getPopulatedFieldsAsMap().keySet()) {
+          if (field.endsWith('__c') && run.get(field) != before.get(field)) {
+            run.addError(
+              'CLOSED e terminal: o encerramento e evidencia imutavel (AXF-119).'
+            );
+            break;
+          }
+        }
+        continue;
+      }
+      if (!ALT_CLS_ClosureOrchestrator.isWriting()) {
+        run.addError('Use o orquestrador de encerramento (AXF-119).');
       }
     }
   }

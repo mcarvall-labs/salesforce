@@ -316,5 +316,121 @@
     >Resolve active contracts or open reviews before purging.</value></labels><labels
   ><fullName>AXF_ClosureRun_actionNONE</fullName><language
     >en_US</language><protected>false</protected><shortDescription
-    >Action</shortDescription><value
-    >Nothing else to do.</value></labels></CustomLabels>
+    >Action</shortDescription><value>Nothing else to do.</value></labels><labels
+  ><fullName>AXF_ClosureRun_noAccess</fullName><language
+    >en_US</language><protected>false</protected><shortDescription
+    >No access</shortDescription><value
+    >You do not have the closure permission for this installation.</value></labels><labels
+  ><fullName>AXF_ClosureRun_confirmResumeTitle</fullName><language
+    >en_US</language><protected>false</protected><shortDescription
+    >Confirm resume</shortDescription><value
+    >Resume the closure?</value></labels><labels><fullName
+    >AXF_ClosureRun_confirmResumeBody</fullName><language
+    >en_US</language><protected>false</protected><shortDescription
+    >Confirm resume body</shortDescription><value
+    >The next stages revoke derived access, stop collection and pseudonymize descriptions for {0}. These effects cannot be undone.</value></labels><labels
+  ><fullName>AXF_ClosureRun_confirm</fullName><language
+    >en_US</language><protected>false</protected><shortDescription
+    >Confirm</shortDescription><value>Confirm</value></labels><labels><fullName
+    >AXF_ClosureRun_cancel</fullName><language>en_US</language><protected
+    >false</protected><shortDescription>Cancel</shortDescription><value
+    >Cancel</value></labels><labels><fullName
+    >AXF_ClosureRun_releaseLegalHold</fullName><language
+    >en_US</language><protected>false</protected><shortDescription
+    >Release hold</shortDescription><value
+    >Release legal hold</value></labels><labels><fullName
+    >AXF_ClosureRun_legalHoldActive</fullName><language
+    >en_US</language><protected>false</protected><shortDescription
+    >Hold active</shortDescription><value
+    >Legal hold active</value></labels><labels><fullName
+    >AXF_ClosureRun_evidenceRefLabel</fullName><language
+    >en_US</language><protected>false</protected><shortDescription
+    >Evidence</shortDescription><value>Export evidence</value></labels><labels
+  ><fullName>AXF_ClosureRun_lastCompletedAt</fullName><language
+    >en_US</language><protected>false</protected><shortDescription
+    >Last completed</shortDescription><value
+    >Last stage completed at</value></labels><labels><fullName
+    >AXF_ClosureRun_actions</fullName><language>en_US</language><protected
+    >false</protected><shortDescription>Actions</shortDescription><value
+    >Actions</value></labels><labels><fullName
+    >AXF_ClosureRun_conflictReloaded</fullName><language
+    >en_US</language><protected>false</protected><shortDescription
+    >Conflict</shortDescription><value
+    >The run changed meanwhile; the latest state was reloaded.</value></labels><labels
+  ><fullName>AXF_ClosureRun_codeCheckpointsCorrupt</fullName><language
+    >en_US</language><protected>false</protected><shortDescription
+    >Corrupt</shortDescription><value
+    >The run checkpoints are unreadable; contact the administrator.</value></labels><labels
+  ><fullName>AXF_ClosureRun_statusREQUESTED</fullName><language
+    >en_US</language><protected>false</protected><shortDescription
+    >Status</shortDescription><value>Requested</value></labels><labels><fullName
+    >AXF_ClosureRun_statusRUNNING</fullName><language>en_US</language><protected
+    >false</protected><shortDescription>Status</shortDescription><value
+    >Running</value></labels><labels><fullName
+    >AXF_ClosureRun_statusBLOCKED</fullName><language>en_US</language><protected
+    >false</protected><shortDescription>Status</shortDescription><value
+    >Blocked</value></labels><labels><fullName
+    >AXF_ClosureRun_statusRESULT_UNKNOWN</fullName><language
+    >en_US</language><protected>false</protected><shortDescription
+    >Status</shortDescription><value>Result unknown</value></labels><labels
+  ><fullName>AXF_ClosureRun_statusCLOSED</fullName><language
+    >en_US</language><protected>false</protected><shortDescription
+    >Status</shortDescription><value>Closed</value></labels><labels><fullName
+    >AXF_ClosureRun_statusDONE</fullName><language>en_US</language><protected
+    >false</protected><shortDescription>Status</shortDescription><value
+    >Done</value></labels><labels><fullName
+    >AXF_ClosureRun_statusRECONCILED</fullName><language
+    >en_US</language><protected>false</protected><shortDescription
+    >Status</shortDescription><value>Reconciled</value></labels><labels
+  ><fullName>AXF_ClosureRun_statusRELEASED</fullName><language
+    >en_US</language><protected>false</protected><shortDescription
+    >Status</shortDescription><value>Released</value></labels><labels><fullName
+    >AXF_ClosureRun_statusFOLDED</fullName><language>en_US</language><protected
+    >false</protected><shortDescription>Status</shortDescription><value
+    >Older entries</value></labels><labels><fullName
+    >AXF_ClosureRun_reasonEXPORT_PENDING</fullName><language
+    >en_US</language><protected>false</protected><shortDescription
+    >Reason</shortDescription><value
+    >Export evidence pending</value></labels><labels><fullName
+    >AXF_ClosureRun_reasonLEGAL_HOLD</fullName><language
+    >en_US</language><protected>false</protected><shortDescription
+    >Reason</shortDescription><value>Legal hold</value></labels><labels
+  ><fullName>AXF_ClosureRun_reasonACTIVE_DEPENDENCIES</fullName><language
+    >en_US</language><protected>false</protected><shortDescription
+    >Reason</shortDescription><value
+    >Active contracts depend on this scope</value></labels><labels><fullName
+    >AXF_ClosureRun_reasonOPEN_REVIEW</fullName><language
+    >en_US</language><protected>false</protected><shortDescription
+    >Reason</shortDescription><value>Open review items</value></labels><labels
+  ><fullName>AXF_ClosureRun_reasonGRANTS_NOT_ACCESSIBLE</fullName><language
+    >en_US</language><protected>false</protected><shortDescription
+    >Reason</shortDescription><value
+    >Collaboration grants not accessible</value></labels><labels><fullName
+    >AXF_ClosureRun_reasonREVOCATION_FAILED</fullName><language
+    >en_US</language><protected>false</protected><shortDescription
+    >Reason</shortDescription><value
+    >A responsibility could not be revoked</value></labels><labels><fullName
+    >AXF_ClosureRun_reasonCOLLECTION_NOT_PAUSABLE</fullName><language
+    >en_US</language><protected>false</protected><shortDescription
+    >Reason</shortDescription><value
+    >Collection could not be paused (needs configuration permission)</value></labels><labels
+  ><fullName>AXF_ClosureRun_reasonPURGE_INCOMPLETE</fullName><language
+    >en_US</language><protected>false</protected><shortDescription
+    >Reason</shortDescription><value
+    >Purge incomplete; resume to continue</value></labels><labels><fullName
+    >AXF_ClosureRun_reasonRESULT_UNKNOWN</fullName><language
+    >en_US</language><protected>false</protected><shortDescription
+    >Reason</shortDescription><value>Result unknown</value></labels><labels
+  ><fullName>AXF_ClosureRun_reasonSTAGE_FAILED</fullName><language
+    >en_US</language><protected>false</protected><shortDescription
+    >Reason</shortDescription><value>Stage failed</value></labels><labels
+  ><fullName>AXF_ClosureRun_externalNOT_APPLICABLE</fullName><language
+    >en_US</language><protected>false</protected><shortDescription
+    >External</shortDescription><value>Not applicable</value></labels><labels
+  ><fullName>AXF_ClosureRun_externalNOT_CONFIRMED</fullName><language
+    >en_US</language><protected>false</protected><shortDescription
+    >External</shortDescription><value
+    >Not confirmed at the provider</value></labels><labels><fullName
+    >AXF_ClosureRun_externalCONFIRMED</fullName><language
+    >en_US</language><protected>false</protected><shortDescription
+    >External</shortDescription><value>Confirmed</value></labels></CustomLabels>

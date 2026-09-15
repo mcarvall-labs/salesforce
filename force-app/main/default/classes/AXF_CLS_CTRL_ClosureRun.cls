@@ -80,6 +80,19 @@ public with sharing class AXF_CLS_CTRL_ClosureRun {
   }
 
   @AuraEnabled
+  public static ALT_CLS_ClosureOrchestrator.RunView releaseLegalHold(
+    Id runId,
+    Decimal expectedVersion
+  ) {
+    try {
+      return new ALT_CLS_ClosureOrchestrator()
+        .releaseLegalHold(runId, expectedVersion);
+    } catch (Exception failure) {
+      throw safe(failure);
+    }
+  }
+
+  @AuraEnabled
   public static ALT_CLS_ClosureOrchestrator.RunView read(Id runId) {
     try {
       return new ALT_CLS_ClosureOrchestrator().read(runId);

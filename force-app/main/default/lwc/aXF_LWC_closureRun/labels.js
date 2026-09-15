@@ -48,6 +48,40 @@ import actionRECONCILE from "@salesforce/label/c.AXF_ClosureRun_actionRECONCILE"
 import actionRELEASE_LEGAL_HOLD from "@salesforce/label/c.AXF_ClosureRun_actionRELEASE_LEGAL_HOLD";
 import actionRESOLVE_DEPENDENCIES from "@salesforce/label/c.AXF_ClosureRun_actionRESOLVE_DEPENDENCIES";
 import actionNONE from "@salesforce/label/c.AXF_ClosureRun_actionNONE";
+import noAccess from "@salesforce/label/c.AXF_ClosureRun_noAccess";
+import confirmResumeTitle from "@salesforce/label/c.AXF_ClosureRun_confirmResumeTitle";
+import confirmResumeBody from "@salesforce/label/c.AXF_ClosureRun_confirmResumeBody";
+import confirm from "@salesforce/label/c.AXF_ClosureRun_confirm";
+import cancel from "@salesforce/label/c.AXF_ClosureRun_cancel";
+import releaseLegalHold from "@salesforce/label/c.AXF_ClosureRun_releaseLegalHold";
+import legalHoldActive from "@salesforce/label/c.AXF_ClosureRun_legalHoldActive";
+import evidenceRefLabel from "@salesforce/label/c.AXF_ClosureRun_evidenceRefLabel";
+import lastCompletedAt from "@salesforce/label/c.AXF_ClosureRun_lastCompletedAt";
+import actions from "@salesforce/label/c.AXF_ClosureRun_actions";
+import conflictReloaded from "@salesforce/label/c.AXF_ClosureRun_conflictReloaded";
+import codeCheckpointsCorrupt from "@salesforce/label/c.AXF_ClosureRun_codeCheckpointsCorrupt";
+import statusREQUESTED from "@salesforce/label/c.AXF_ClosureRun_statusREQUESTED";
+import statusRUNNING from "@salesforce/label/c.AXF_ClosureRun_statusRUNNING";
+import statusBLOCKED from "@salesforce/label/c.AXF_ClosureRun_statusBLOCKED";
+import statusRESULT_UNKNOWN from "@salesforce/label/c.AXF_ClosureRun_statusRESULT_UNKNOWN";
+import statusCLOSED from "@salesforce/label/c.AXF_ClosureRun_statusCLOSED";
+import statusDONE from "@salesforce/label/c.AXF_ClosureRun_statusDONE";
+import statusRECONCILED from "@salesforce/label/c.AXF_ClosureRun_statusRECONCILED";
+import statusRELEASED from "@salesforce/label/c.AXF_ClosureRun_statusRELEASED";
+import statusFOLDED from "@salesforce/label/c.AXF_ClosureRun_statusFOLDED";
+import reasonEXPORT_PENDING from "@salesforce/label/c.AXF_ClosureRun_reasonEXPORT_PENDING";
+import reasonLEGAL_HOLD from "@salesforce/label/c.AXF_ClosureRun_reasonLEGAL_HOLD";
+import reasonACTIVE_DEPENDENCIES from "@salesforce/label/c.AXF_ClosureRun_reasonACTIVE_DEPENDENCIES";
+import reasonOPEN_REVIEW from "@salesforce/label/c.AXF_ClosureRun_reasonOPEN_REVIEW";
+import reasonGRANTS_NOT_ACCESSIBLE from "@salesforce/label/c.AXF_ClosureRun_reasonGRANTS_NOT_ACCESSIBLE";
+import reasonREVOCATION_FAILED from "@salesforce/label/c.AXF_ClosureRun_reasonREVOCATION_FAILED";
+import reasonCOLLECTION_NOT_PAUSABLE from "@salesforce/label/c.AXF_ClosureRun_reasonCOLLECTION_NOT_PAUSABLE";
+import reasonPURGE_INCOMPLETE from "@salesforce/label/c.AXF_ClosureRun_reasonPURGE_INCOMPLETE";
+import reasonRESULT_UNKNOWN from "@salesforce/label/c.AXF_ClosureRun_reasonRESULT_UNKNOWN";
+import reasonSTAGE_FAILED from "@salesforce/label/c.AXF_ClosureRun_reasonSTAGE_FAILED";
+import externalNOT_APPLICABLE from "@salesforce/label/c.AXF_ClosureRun_externalNOT_APPLICABLE";
+import externalNOT_CONFIRMED from "@salesforce/label/c.AXF_ClosureRun_externalNOT_CONFIRMED";
+import externalCONFIRMED from "@salesforce/label/c.AXF_ClosureRun_externalCONFIRMED";
 export default {
   title,
   intro,
@@ -98,5 +132,39 @@ export default {
   actionRECONCILE,
   actionRELEASE_LEGAL_HOLD,
   actionRESOLVE_DEPENDENCIES,
-  actionNONE
+  actionNONE,
+  noAccess,
+  confirmResumeTitle,
+  confirmResumeBody,
+  confirm,
+  cancel,
+  releaseLegalHold,
+  legalHoldActive,
+  evidenceRefLabel,
+  lastCompletedAt,
+  actions,
+  conflictReloaded,
+  codeCheckpointsCorrupt,
+  statusREQUESTED,
+  statusRUNNING,
+  statusBLOCKED,
+  statusRESULT_UNKNOWN,
+  statusCLOSED,
+  statusDONE,
+  statusRECONCILED,
+  statusRELEASED,
+  statusFOLDED,
+  reasonEXPORT_PENDING,
+  reasonLEGAL_HOLD,
+  reasonACTIVE_DEPENDENCIES,
+  reasonOPEN_REVIEW,
+  reasonGRANTS_NOT_ACCESSIBLE,
+  reasonREVOCATION_FAILED,
+  reasonCOLLECTION_NOT_PAUSABLE,
+  reasonPURGE_INCOMPLETE,
+  reasonRESULT_UNKNOWN,
+  reasonSTAGE_FAILED,
+  externalNOT_APPLICABLE,
+  externalNOT_CONFIRMED,
+  externalCONFIRMED
 };

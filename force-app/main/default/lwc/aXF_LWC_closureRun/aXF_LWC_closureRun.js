@@ -7,6 +7,7 @@ import advance from "@salesforce/apex/AXF_CLS_CTRL_ClosureRun.advance";
 import reconcile from "@salesforce/apex/AXF_CLS_CTRL_ClosureRun.reconcile";
 import attachExportEvidence from "@salesforce/apex/AXF_CLS_CTRL_ClosureRun.attachExportEvidence";
 import read from "@salesforce/apex/AXF_CLS_CTRL_ClosureRun.read";
+import releaseLegalHold from "@salesforce/apex/AXF_CLS_CTRL_ClosureRun.releaseLegalHold";
 import labels from "./labels";
 
 const CODE_LABELS = {
@@ -16,8 +17,31 @@ const CODE_LABELS = {
   TERMINAL: "codeTerminal",
   RECONCILE_FIRST: "codeReconcileFirst",
   NOT_RECONCILABLE: "codeNotReconcilable",
-  INVALID_INPUT: "codeInvalidInput"
+  INVALID_INPUT: "codeInvalidInput",
+  CHECKPOINTS_CORRUPT: "codeCheckpointsCorrupt"
 };
+
+export function failureCode(error) {
+  return error?.body?.message;
+}
+export function statusLabel(status) {
+  return labels[`status${status}`] || status || "";
+}
+export function reasonLabel(reason) {
+  if (!reason) return "";
+  const base = reason.split(":")[0];
+  const label = labels[`reason${base}`] || base;
+  return reason.includes(":") ? `${label} (${reason.split(":")[1]})` : label;
+}
+export function externalLabel(value) {
+  return labels[`external${value}`] || value || "";
+}
+function format(template, ...values) {
+  return values.reduce(
+    (text, value, index) => text.replace(`{${index}}`, value),
+    template
+  );
+}
 
 export function failureMessage(error) {
   const code = error?.body?.message;
@@ -38,16 +62,31 @@ export default class ClosureRun extends LightningElement {
   run;
   busy = false;
   error;
+  info;
+  confirmation;
+  allowedLoaded = false;
   form = { accountId: "", legalHold: false, evidenceRef: "" };
 
   @wire(canClose)
-  wiredAllowed({ data }) {
+  wiredAllowed({ data, error }) {
+    this.allowedLoaded = true;
+    if (error) {
+      this.error = failureMessage(error);
+      return;
+    }
     this.allowed = data === true;
     if (this.allowed) this.loadRuns();
   }
   @wire(getHolders)
-  wiredHolders({ data }) {
+  wiredHolders({ data, error }) {
+    if (error) {
+      this.error = failureMessage(error);
+      return;
+    }
     if (data) this.holders = data;
+  }
+  get noAccess() {
+    return this.allowedLoaded && !this.allowed;
   }
 
   get holderOptions() {
@@ -65,7 +104,8 @@ export default class ClosureRun extends LightningElement {
   get runRows() {
     return this.runs.map((row) => ({
       ...row,
-      stageLabel: stageLabel(row.lastCompletedStage)
+      stageLabel: stageLabel(row.lastCompletedStage),
+      statusLabel: statusLabel(row.status)
     }));
   }
   get detail() {
@@ -73,16 +113,27 @@ export default class ClosureRun extends LightningElement {
     return {
       ...this.run,
       stageLabel: stageLabel(this.run.lastCompletedStage),
+      statusLabel: statusLabel(this.run.status),
+      reasonLabel: reasonLabel(this.run.blockReason),
+      externalLabel: externalLabel(this.run.externalRevocation),
       actionLabel: actionLabel(this.run.nextAction),
+      canReleaseHold: this.run.legalHold === true && !this.run.closed,
       checkpoints: (this.run.checkpoints || []).map((checkpoint, index) => ({
         ...checkpoint,
         key: `${checkpoint.stage}-${index}`,
         stageLabel: stageLabel(checkpoint.stage),
+        statusLabel: statusLabel(checkpoint.status),
+        reasonLabel: reasonLabel(checkpoint.reason),
         impactText: Object.entries(checkpoint.impact || {})
           .map(([name, value]) => `${name}=${value}`)
           .join(", ")
       }))
     };
+  }
+  get confirmationBody() {
+    return this.confirmation
+      ? format(labels.confirmResumeBody, this.run?.accountName || "")
+      : "";
   }
   get isBlocked() {
     return this.run?.status === "BLOCKED";
@@ -130,9 +181,34 @@ export default class ClosureRun extends LightningElement {
     this.error = undefined;
     this.loadRuns();
   }
+  askAdvance() {
+    this.error = undefined;
+    this.confirmation = { kind: "RESUME" };
+  }
+  cancelConfirmation() {
+    this.confirmation = undefined;
+  }
+  handleDialogKey(event) {
+    if (event.key === "Escape") this.cancelConfirmation();
+  }
+  async acceptConfirmation() {
+    const pending = this.confirmation;
+    this.confirmation = undefined;
+    if (pending?.kind === "RESUME") {
+      await this.handleAdvance();
+    }
+  }
   async handleAdvance() {
     await this.call(() =>
       advance({ runId: this.run.runId, expectedVersion: this.run.version })
+    );
+  }
+  async handleReleaseHold() {
+    await this.call(() =>
+      releaseLegalHold({
+        runId: this.run.runId,
+        expectedVersion: this.run.version
+      })
     );
   }
   async handleReconcile() {
@@ -148,14 +224,27 @@ export default class ClosureRun extends LightningElement {
         expectedVersion: this.run.version
       })
     );
+    if (!this.error) {
+      this.form = { ...this.form, evidenceRef: "" };
+    }
   }
   async call(action) {
     this.error = undefined;
+    this.info = undefined;
     this.busy = true;
     try {
       this.run = await action();
     } catch (failure) {
       this.error = failureMessage(failure);
+      if (failureCode(failure) === "CONFLICT" && this.run) {
+        // Stale version: reload so the next action carries the current state.
+        try {
+          this.run = await read({ runId: this.run.runId });
+          this.info = labels.conflictReloaded;
+        } catch (reload) {
+          this.error = failureMessage(reload);
+        }
+      }
     } finally {
       this.busy = false;
     }
