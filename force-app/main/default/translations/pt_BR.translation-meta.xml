@@ -657,4 +657,147 @@
   ><label>Descartado</label><name
     >AXF_EconomicAllocation_stateDISCARDED</name></customLabels><customLabels
   ><label>A mesma pessoa/empresa foi selecionada duas vezes.</label><name
-    >AXF_EconomicAllocation_duplicateHolder</name></customLabels></Translations>
+    >AXF_EconomicAllocation_duplicateHolder</name></customLabels><customLabels
+  ><label>Painel de confiança</label><name
+    >AXF_ConfidencePanel_title</name></customLabels><customLabels><label
+    >De quais fontes e datas este indicador depende, para decidir se pode confiar, adiar ou corrigir os dados. Os níveis vêm do servidor; nada é recalculado aqui.</label><name
+    >AXF_ConfidencePanel_intro</name></customLabels><customLabels><label
+    >Pessoas / empresas</label><name
+    >AXF_ConfidencePanel_scope</name></customLabels><customLabels><label
+    >Só pessoas e empresas que você está autorizado a ver são listadas.</label><name
+    >AXF_ConfidencePanel_scopeHelp</name></customLabels><customLabels><label
+    >Explicar confiança</label><name
+    >AXF_ConfidencePanel_explain</name></customLabels><customLabels><label
+    >Nível de confiança</label><name
+    >AXF_ConfidencePanel_level</name></customLabels><customLabels><label
+    >Informativo</label><name
+    >AXF_ConfidencePanel_levelInformative</name></customLabels><customLabels
+  ><label>Degradado</label><name
+    >AXF_ConfidencePanel_levelDegraded</name></customLabels><customLabels><label
+    >Bloqueado</label><name
+    >AXF_ConfidencePanel_levelBlocked</name></customLabels><customLabels><label
+    >Avaliado em</label><name
+    >AXF_ConfidencePanel_asOf</name></customLabels><customLabels><label
+    >Política</label><name
+    >AXF_ConfidencePanel_policy</name></customLabels><customLabels><label
+    >Fontes</label><name
+    >AXF_ConfidencePanel_sources</name></customLabels><customLabels><label
+    >Fonte</label><name
+    >AXF_ConfidencePanel_source</name></customLabels><customLabels><label
+    >Pessoa / empresa</label><name
+    >AXF_ConfidencePanel_holder</name></customLabels><customLabels><label
+    >Origem</label><name
+    >AXF_ConfidencePanel_origin</name></customLabels><customLabels><label
+    >Open Finance (Pluggy)</label><name
+    >AXF_ConfidencePanel_originPluggy</name></customLabels><customLabels><label
+    >Manual / CSV</label><name
+    >AXF_ConfidencePanel_originManual</name></customLabels><customLabels><label
+    >Último sucesso</label><name
+    >AXF_ConfidencePanel_lastSuccess</name></customLabels><customLabels><label
+    >Sem sucesso registrado</label><name
+    >AXF_ConfidencePanel_never</name></customLabels><customLabels><label
+    >Atualidade</label><name
+    >AXF_ConfidencePanel_freshness</name></customLabels><customLabels><label
+    >Atual</label><name
+    >AXF_ConfidencePanel_freshnessCurrent</name></customLabels><customLabels
+  ><label>Antigo (limite excedido)</label><name
+    >AXF_ConfidencePanel_freshnessStale</name></customLabels><customLabels
+  ><label>Desconhecida</label><name
+    >AXF_ConfidencePanel_freshnessUnknown</name></customLabels><customLabels
+  ><label>Limite (h)</label><name
+    >AXF_ConfidencePanel_limit</name></customLabels><customLabels><label
+    >Fatos</label><name
+    >AXF_ConfidencePanel_facts</name></customLabels><customLabels><label
+    >desconhecido</label><name
+    >AXF_ConfidencePanel_factsUnknown</name></customLabels><customLabels><label
+    >Incluída</label><name
+    >AXF_ConfidencePanel_included</name></customLabels><customLabels><label
+    >Excluída</label><name
+    >AXF_ConfidencePanel_excluded</name></customLabels><customLabels><label
+    >Abrir fonte</label><name
+    >AXF_ConfidencePanel_openSource</name></customLabels><customLabels><label
+    >Exceções</label><name
+    >AXF_ConfidencePanel_exceptions</name></customLabels><customLabels><label
+    >Sem exceções.</label><name
+    >AXF_ConfidencePanel_noExceptions</name></customLabels><customLabels><label
+    >Exclusões</label><name
+    >AXF_ConfidencePanel_exclusions</name></customLabels><customLabels><label
+    >Sem exclusões.</label><name
+    >AXF_ConfidencePanel_noExclusions</name></customLabels><customLabels><label
+    >Câmbio</label><name
+    >AXF_ConfidencePanel_fx</name></customLabels><customLabels><label
+    >Moeda única; nenhuma conversão envolvida.</label><name
+    >AXF_ConfidencePanel_fxSingle</name></customLabels><customLabels><label
+    >Várias moedas ({0}); valores originais preservados e nenhuma conversão é aplicada por este painel.</label><name
+    >AXF_ConfidencePanel_fxMulti</name></customLabels><customLabels><label
+    >Impacto</label><name
+    >AXF_ConfidencePanel_impact</name></customLabels><customLabels><label
+    >Todas as fontes incluídas estão atuais. O indicador pode ser lido como atualizado.</label><name
+    >AXF_ConfidencePanel_impactInformative</name></customLabels><customLabels
+  ><label
+    >Parte dos dados está antiga, desconhecida ou excluída. O indicador continua visível, mas não deve ser lido como atual.</label><name
+    >AXF_ConfidencePanel_impactDegraded</name></customLabels><customLabels
+  ><label
+    >Nenhuma fonte autorizada e legível neste escopo. O indicador não pode ser considerado confiável.</label><name
+    >AXF_ConfidencePanel_impactBlocked</name></customLabels><customLabels><label
+    >Ações permitidas</label><name
+    >AXF_ConfidencePanel_allowedActions</name></customLabels><customLabels
+  ><label>Abrir a fonte afetada</label><name
+    >AXF_ConfidencePanel_actionOpenSource</name></customLabels><customLabels
+  ><label>Revisar saúde das fontes</label><name
+    >AXF_ConfidencePanel_actionReviewHealth</name></customLabels><customLabels
+  ><label>Nenhuma ação disponível</label><name
+    >AXF_ConfidencePanel_actionNone</name></customLabels><customLabels><label
+    >Pessoa/empresa indisponível para você</label><name
+    >AXF_ConfidencePanel_reasonNotAuthorized</name></customLabels><customLabels
+  ><label>Fonte em custódia (coleta encerrada)</label><name
+    >AXF_ConfidencePanel_reasonCustody</name></customLabels><customLabels><label
+    >Acesso a campo ausente</label><name
+    >AXF_ConfidencePanel_reasonFieldAccess</name></customLabels><customLabels
+  ><label>Nenhum escopo autorizado</label><name
+    >AXF_ConfidencePanel_reasonNoScope</name></customLabels><customLabels><label
+    >Política de confiança não configurada</label><name
+    >AXF_ConfidencePanel_reasonPolicyMissing</name></customLabels><customLabels
+  ><label>Consentimento revogado no provedor</label><name
+    >AXF_ConfidencePanel_exConsentRevoked</name></customLabels><customLabels
+  ><label>Consentimento expirado ou desatualizado</label><name
+    >AXF_ConfidencePanel_exConsentStale</name></customLabels><customLabels
+  ><label>Coleta pausada</label><name
+    >AXF_ConfidencePanel_exCollectionPaused</name></customLabels><customLabels
+  ><label>Fonte mais antiga que o limite de atualidade</label><name
+    >AXF_ConfidencePanel_exStale</name></customLabels><customLabels><label
+    >Fonte sem sucesso registrado</label><name
+    >AXF_ConfidencePanel_exUnknown</name></customLabels><customLabels><label
+    >Carregando…</label><name
+    >AXF_ConfidencePanel_loading</name></customLabels><customLabels><label
+    >Selecione ao menos uma pessoa ou empresa.</label><name
+    >AXF_ConfidencePanel_empty</name></customLabels><customLabels><label
+    >Não foi possível carregar o painel.</label><name
+    >AXF_ConfidencePanel_error</name></customLabels><customLabels><label
+    >Tentar novamente</label><name
+    >AXF_ConfidencePanel_retry</name></customLabels><customLabels><label
+    >Você não tem permissão para abrir o painel de confiança.</label><name
+    >AXF_ConfidencePanel_codeForbidden</name></customLabels><customLabels><label
+    >Requisição inválida.</label><name
+    >AXF_ConfidencePanel_codeInvalidInput</name></customLabels><customLabels
+  ><label>Painel de confiança atualizado.</label><name
+    >AXF_ConfidencePanel_updated</name></customLabels><customLabels><label
+    >Pessoas e empresas disponíveis</label><name
+    >AXF_ConfidencePanel_scopeAvailable</name></customLabels><customLabels
+  ><label
+    >Nenhuma moeda pôde ser determinada para as fontes incluídas.</label><name
+    >AXF_ConfidencePanel_fxUnknown</name></customLabels><customLabels><label
+    >Este registro não é uma pessoa ou empresa do Axon.</label><name
+    >AXF_ConfidencePanel_reasonNotAHolder</name></customLabels><customLabels
+  ><label
+    >A conexão do provedor existe, mas você não pode lê-la; seu estado não é afirmado.</label><name
+    >AXF_ConfidencePanel_exConnectionNotReadable</name></customLabels><customLabels
+  ><label
+    >O último sucesso registrado é posterior ao instante de avaliação; atualidade desconhecida.</label><name
+    >AXF_ConfidencePanel_exFutureSuccess</name></customLabels><customLabels
+  ><label
+    >Há fatos sem data de importação; a data de criação foi usada.</label><name
+    >AXF_ConfidencePanel_exImportDateMissing</name></customLabels><customLabels
+  ><label
+    >Parte dos dados de que este painel depende não está acessível para você.</label><name
+    >AXF_ConfidencePanel_codeNotAccessible</name></customLabels></Translations>

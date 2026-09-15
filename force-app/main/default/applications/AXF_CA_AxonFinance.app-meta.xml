@@ -16,6 +16,7 @@
     <tabs>AXF_Home</tabs>
     <tabs>AXF_AuthorizedContext</tabs>
     <tabs>AXF_SourceHealth</tabs>
+    <tabs>AXF_CT_ConfidencePanel</tabs>
     <tabs>AXF_Holders</tabs>
     <tabs>AXF_ReportCurrency</tabs>
     <tabs>AXF_CT_BillingComposer</tabs>

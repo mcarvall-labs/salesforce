@@ -662,6 +662,16 @@
     >AXF_OBJ_BankAccountTransaction__c.AXF_BAT_TXT_ProviderCategory__c</field>
     <readable>true</readable>
   </fieldPermissions>
+  <fieldPermissions>
+    <editable>false</editable>
+    <field>AXF_OBJ_BankAccount__c.AXF_BA_NUM_FreshnessLimitHours__c</field>
+    <readable>true</readable>
+  </fieldPermissions>
+  <fieldPermissions>
+    <editable>false</editable>
+    <field>AXF_OBJ_CreditCard__c.AXF_CC_NUM_FreshnessLimitHours__c</field>
+    <readable>true</readable>
+  </fieldPermissions>
   <objectPermissions>
     <allowCreate>false</allowCreate>
     <allowDelete>false</allowDelete>

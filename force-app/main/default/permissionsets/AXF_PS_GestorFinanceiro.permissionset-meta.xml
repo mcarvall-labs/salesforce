@@ -235,6 +235,14 @@
     <apexClass>ALT_CLS_TransactionObservationService</apexClass>
     <enabled>true</enabled>
   </classAccesses>
+  <classAccesses>
+    <apexClass>ALT_CLS_ConfidencePanelService</apexClass>
+    <enabled>true</enabled>
+  </classAccesses>
+  <classAccesses>
+    <apexClass>AXF_CLS_CTRL_ConfidencePanel</apexClass>
+    <enabled>true</enabled>
+  </classAccesses>
   <customPermissions>
     <enabled>true</enabled>
     <name>AXF_CanConfigure</name>
@@ -258,6 +266,10 @@
   <customPermissions>
     <enabled>true</enabled>
     <name>AXF_CanObserveTransactions</name>
+  </customPermissions>
+  <customPermissions>
+    <enabled>true</enabled>
+    <name>AXF_CanExplainConfidence</name>
   </customPermissions>
   <fieldPermissions>
     <editable>true</editable>
@@ -1515,6 +1527,16 @@
     >AXF_OBJ_TransactionObservation__c.AXF_TOB_TXT_RawSourceStatus__c</field>
     <readable>true</readable>
   </fieldPermissions>
+  <fieldPermissions>
+    <editable>true</editable>
+    <field>AXF_OBJ_BankAccount__c.AXF_BA_NUM_FreshnessLimitHours__c</field>
+    <readable>true</readable>
+  </fieldPermissions>
+  <fieldPermissions>
+    <editable>true</editable>
+    <field>AXF_OBJ_CreditCard__c.AXF_CC_NUM_FreshnessLimitHours__c</field>
+    <readable>true</readable>
+  </fieldPermissions>
   <objectPermissions>
     <allowCreate>true</allowCreate>
     <allowDelete>false</allowDelete>
@@ -1887,6 +1909,10 @@
   </tabSettings>
 <tabSettings>
     <tab>AXF_CT_ClosureRun</tab>
+    <visibility>Visible</visibility>
+  </tabSettings>
+<tabSettings>
+    <tab>AXF_CT_ConfidencePanel</tab>
     <visibility>Visible</visibility>
   </tabSettings>
 </PermissionSet>
