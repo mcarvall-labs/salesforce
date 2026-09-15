@@ -1259,6 +1259,9 @@
   ><label>Uma contribuição sem moeda ou data foi ignorada.</label><name
     >AXF_ForecastComparison_reasonINCOMPLETE_CONTRIBUTION</name></customLabels><customLabels
   ><label
+    >Uma categoria no horizonte não tem método aprovado pela versão da política de previsão; nada é estimado para ela.</label><name
+    >AXF_ForecastComparison_reasonNO_APPROVED_METHOD</name></customLabels><customLabels
+  ><label
     >Um cronograma mudou durante a leitura; seu compromisso não foi somado.</label><name
     >AXF_ForecastComparison_reasonSCHEDULE_STALE</name></customLabels><customLabels
   ><label

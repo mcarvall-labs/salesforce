@@ -18,6 +18,23 @@
  * never dropped; absence, error or a stale projection never becomes zero — the result derives
  * DEGRADED or BLOCKED on the server with explicit reasons. Results are display-only
  * (INFORMATIVE at best) and never authorize a material action.
+ *
+ * AXF-138 applies `AXF-FORECASTING@1.0.0` to that result. Every contribution is placed in one
+ * category class of §3 and carries the evidence authority of §2; the class, the authority and the
+ * method v1.0.0 permits for it are reported per class (`categories`), the fallbacks actually
+ * applied are named (`fallbacks`), the cutoff is `asOf`, the FX references are the preserved
+ * original `currencies` (no conversion is applied, so no rate is consumed) and the taxonomy and
+ * policy identity travel with the result. §2 rank 3 (approved WorkRecords and billing schedules)
+ * is not an evidence source of this engine, so no contribution carries it.
+ *
+ * A class v1.0.0 gives no method to — §3 row 5, the variable, seasonal, discretionary and
+ * exceptional classes — is never estimated: no average, weight, tier or probability is asserted
+ * for such a contribution, which is reported with reason `NO_APPROVED_METHOD` and the fallback of
+ * its row. The class is reached by an occurrence whose amount no permitted authority produced (the
+ * definition records the authority that computed it) or whose class is not a contractual or
+ * recurrence schedule. Omitting an obligation could increase the capacity shown, so that omission
+ * only stays display-only (`INFORMATIVE_DISPLAY`) when it cannot: an inflow; anything else is
+ * `BLOCKED_MATERIAL_OMISSION`.
  */
 public with sharing class ALT_CLS_ForecastComparisonService {
   public static final String POLICY_VERSION = 'AXF-FORECASTING@1.0.0';
@@ -43,6 +60,38 @@ public with sharing class ALT_CLS_ForecastComparisonService {
   public static final String CONFIDENCE_INFORMATIVE = 'INFORMATIVE';
   public static final String CONFIDENCE_DEGRADED = 'DEGRADED';
   public static final String CONFIDENCE_BLOCKED = 'BLOCKED';
+  // ---- AXF-138 — the applied clauses of AXF-FORECASTING@1.0.0 ----
+  /** §2 evidence precedence, ranked. Rank 6 (statistical estimation) is named by no approved
+   * version, so no contribution assembled here may carry it. */
+  public static final Integer AUTHORITY_CONFIRMED_FACT = 1;
+  public static final Integer AUTHORITY_CONTRACT_INSTALLMENT = 2;
+  public static final Integer AUTHORITY_APPROVED_RECURRENCE = 4;
+  public static final Integer AUTHORITY_SCENARIO_ITEM = 5;
+  /** §3 category taxonomy, as the applied policy version names it. */
+  public static final String CATEGORY_TAXONOMY = POLICY_VERSION + '#3';
+  public static final String CATEGORY_CONTRACTUAL_INSTALLMENT = 'CONTRACTUAL_INSTALLMENT';
+  public static final String CATEGORY_FIXED_RECURRENCE = 'FIXED_RECURRENCE';
+  public static final String CATEGORY_EXPLICIT_SCENARIO_ITEM = 'EXPLICIT_SCENARIO_ITEM';
+  /** §3 row 5 — variable, seasonal, discretionary and exceptional classes: no method in v1.0.0. */
+  public static final String CATEGORY_UNPREDICTABLE_STATISTICAL = 'VARIABLE_SEASONAL_DISCRETIONARY_EXCEPTIONAL';
+  public static final String METHOD_AUTHORITATIVE_SCHEDULE = 'authoritative-schedule@1.0.0';
+  public static final String METHOD_APPROVED_RECURRENCE_SCHEDULE = 'approved-recurrence-schedule@1.0.0';
+  public static final String METHOD_INTEGRAL_SCENARIO_INCLUSION = 'integral-scenario-inclusion@1.0.0';
+  /** §3 fallback column, as actually applied. */
+  public static final String FALLBACK_INFORMATIVE_DISPLAY = 'INFORMATIVE_DISPLAY';
+  public static final String FALLBACK_BLOCKED_MATERIAL_OMISSION = 'BLOCKED_MATERIAL_OMISSION';
+  public static final String REASON_NO_APPROVED_METHOD = 'NO_APPROVED_METHOD';
+  /** §3 row 1 — methods whose amount the approved amortization formula produced. */
+  private static final Set<String> INSTALLMENT_METHODS = new Set<String>{
+    'INSTALLMENT',
+    'PRICE',
+    'SAC'
+  };
+  /** §3 row 3 — recurrence schedules; the declared amount is used as declared, never invented. */
+  private static final Set<String> RECURRENCE_METHODS = new Set<String>{
+    'RECURRING',
+    ALT_CLS_ScheduleProjection.METHOD_ESTIMATED
+  };
   /** Projections cost several queries each; beyond this the scope is refused, not truncated. */
   public static final Integer MAX_SCHEDULES = 12;
   public static final Integer MAX_PLANS = 2000;
@@ -106,6 +155,23 @@ public with sharing class ALT_CLS_ForecastComparisonService {
     public Boolean unbounded = false;
     @AuraEnabled
     public Long projectionRevision;
+    /** §2 — occurrences whose persisted row restates this schedule's evidence and is therefore
+     * not read again by the standalone scenario query: counted once, never twice. */
+    @AuraEnabled
+    public Integer resolvedOverlapCount = 0;
+  }
+
+  /** One §3 category class as applied to this result, with the §2 authority behind it (AXF-138). */
+  public class CategoryView {
+    @AuraEnabled
+    public String category;
+    @AuraEnabled
+    public Integer authority;
+    /** The method v1.0.0 permits for the class; null when it permits none. */
+    @AuraEnabled
+    public String method;
+    @AuraEnabled
+    public Integer contributionCount = 0;
   }
 
   /** One calendar month of one currency, split by tier and direction. */
@@ -178,6 +244,8 @@ public with sharing class ALT_CLS_ForecastComparisonService {
     @AuraEnabled
     public String policyVersion = POLICY_VERSION;
     @AuraEnabled
+    public String categoryTaxonomy = CATEGORY_TAXONOMY;
+    @AuraEnabled
     public String engineVersion = ENGINE_VERSION;
     @AuraEnabled
     public Date asOf;
@@ -199,6 +267,12 @@ public with sharing class ALT_CLS_ForecastComparisonService {
     public List<HolderScope> holders = new List<HolderScope>();
     @AuraEnabled
     public List<Exclusion> exclusions = new List<Exclusion>();
+    /** §3 category classes applied to this result, with their §2 evidence authority (AXF-138). */
+    @AuraEnabled
+    public List<CategoryView> categories = new List<CategoryView>();
+    /** §3 fallbacks actually applied; empty means none was needed. */
+    @AuraEnabled
+    public List<String> fallbacks = new List<String>();
     @AuraEnabled
     public List<SourceView> sources = new List<SourceView>();
     @AuraEnabled
@@ -345,6 +419,7 @@ public with sharing class ALT_CLS_ForecastComparisonService {
     List<Contribution> contributions = new List<Contribution>();
     List<PendingLine> pendingLines = new List<PendingLine>();
     Set<Id> definitionIds = new Set<Id>();
+    Map<String, CategoryView> categories = new Map<String, CategoryView>();
     Boolean materialFailure = false;
     Integer scheduleCap = scheduleLimit + 1;
     List<AXF_OBJ_FinancialSchedule__c> schedules = [
@@ -391,6 +466,11 @@ public with sharing class ALT_CLS_ForecastComparisonService {
         addReason(result, 'COMMITMENT_UNBOUNDED');
       }
       for (ALT_CLS_ScheduleProjection.OccurrenceLine line : projection.lines) {
+        if (line.persisted == true) {
+          // §2: this occurrence already has its persisted row; it is counted here and is not
+          // read again by the standalone scenario query, so no evidence is duplicated.
+          view.resolvedOverlapCount++;
+        }
         PendingLine pending = new PendingLine();
         pending.schedule = schedule;
         pending.line = line;
@@ -402,21 +482,49 @@ public with sharing class ALT_CLS_ForecastComparisonService {
     }
     // The projection flags every unconfirmed line as "estimated"; the tier needs the
     // definition method: an ESTIMATED method (reference value) is PROBABLE, a contractual
-    // amount (fixed/calculated) is a confirmed commitment. One query for every schedule.
-    Set<Id> estimatedDefinitions = new Set<Id>();
+    // amount (fixed/calculated) is a confirmed commitment. The same read gives §3 its class:
+    // the definition records which authority produced its amounts. One query for every schedule.
+    Map<Id, AXF_OBJ_ScheduleDefinition__c> definitions = new Map<Id, AXF_OBJ_ScheduleDefinition__c>();
     if (!definitionIds.isEmpty()) {
-      for (AXF_OBJ_ScheduleDefinition__c definition : [
-        SELECT Id
-        FROM AXF_OBJ_ScheduleDefinition__c
-        WHERE
-          Id IN :definitionIds
-          AND AXF_SDF_PKL_Method__c = :ALT_CLS_ScheduleProjection.METHOD_ESTIMATED
-        WITH USER_MODE
-      ]) {
+      definitions = new Map<Id, AXF_OBJ_ScheduleDefinition__c>(
+        [
+          SELECT Id, AXF_SDF_PKL_Method__c, AXF_SDF_TXT_FormulaVersion__c
+          FROM AXF_OBJ_ScheduleDefinition__c
+          WHERE Id IN :definitionIds
+          WITH USER_MODE
+        ]
+      );
+    }
+    Set<Id> estimatedDefinitions = new Set<Id>();
+    for (AXF_OBJ_ScheduleDefinition__c definition : definitions.values()) {
+      if (
+        definition.AXF_SDF_PKL_Method__c ==
+        ALT_CLS_ScheduleProjection.METHOD_ESTIMATED
+      ) {
         estimatedDefinitions.add(definition.Id);
       }
     }
     for (PendingLine pending : pendingLines) {
+      CategoryView classified = classifyOccurrence(
+        definitions.get(pending.line.definitionId)
+      );
+      countCategory(categories, classified);
+      if (classified.method == null) {
+        // §3 row 5: no method in v1.0.0, so no amount, tier or probability is asserted. An
+        // omission of an obligation could increase the capacity shown, so only an inflow
+        // omission is provably safe and stays display-only.
+        addReason(result, REASON_NO_APPROVED_METHOD);
+        Boolean omissionIsSafe =
+          pending.schedule.AXF_FSC_PKL_Direction__c == 'CREDIT';
+        addFallback(
+          result,
+          omissionIsSafe
+            ? FALLBACK_INFORMATIVE_DISPLAY
+            : FALLBACK_BLOCKED_MATERIAL_OMISSION
+        );
+        materialFailure = materialFailure || !omissionIsSafe;
+        continue;
+      }
       Contribution c = new Contribution();
       c.currencyIso = pending.schedule.AXF_FSC_TXT_CurrencyIsoCode__c;
       c.direction = pending.schedule.AXF_FSC_PKL_Direction__c;
@@ -483,6 +591,15 @@ public with sharing class ALT_CLS_ForecastComparisonService {
       c.dueDate = due;
       c.amount = plan.AXF_FTX_NUM_Magnitude__c;
       contributions.add(c);
+      // §3 row 4: an explicit amount, period, currency and state are integral scenario
+      // inclusion. §2 ranks a confirmed fact above the scenario item it restates.
+      CategoryView classified = new CategoryView();
+      classified.category = CATEGORY_EXPLICIT_SCENARIO_ITEM;
+      classified.authority = confirmed
+        ? AUTHORITY_CONFIRMED_FACT
+        : AUTHORITY_SCENARIO_ITEM;
+      classified.method = METHOD_INTEGRAL_SCENARIO_INCLUSION;
+      countCategory(categories, classified);
       planContributions++;
     }
     if (plans > 0) {
@@ -631,6 +748,12 @@ public with sharing class ALT_CLS_ForecastComparisonService {
     if (contributions.isEmpty()) {
       addReason(result, 'NO_CONTRIBUTIONS');
     }
+    // The applied §3 taxonomy travels with the result, deterministically ordered.
+    List<String> categoryKeys = new List<String>(categories.keySet());
+    categoryKeys.sort();
+    for (String key : categoryKeys) {
+      result.categories.add(categories.get(key));
+    }
 
     // ---- confidence: display-only at best; never authorizes a material action
     if (materialFailure) {
@@ -652,6 +775,79 @@ public with sharing class ALT_CLS_ForecastComparisonService {
   }
 
   // ------------------------------------------------------------------ helpers
+
+  /**
+   * §3: the class of a scheduled occurrence and the method v1.0.0 permits for it. The definition
+   * records the authority that produced its amounts; an occurrence whose amount no permitted
+   * authority produced, and an occurrence that is neither a contractual nor a recurrence
+   * schedule, fall in the class v1.0.0 gives no method to. Nothing is inferred for them.
+   */
+  private static CategoryView classifyOccurrence(
+    AXF_OBJ_ScheduleDefinition__c definition
+  ) {
+    CategoryView view = new CategoryView();
+    String definitionMethod = definition == null
+      ? null
+      : definition.AXF_SDF_PKL_Method__c;
+    Boolean computedByPermittedAuthority =
+      definition != null &&
+      definition.AXF_SDF_TXT_FormulaVersion__c ==
+      ALT_CLS_AmortizationSchedule.POLICY_VERSION;
+    Boolean installment = INSTALLMENT_METHODS.contains(definitionMethod);
+    if (installment || RECURRENCE_METHODS.contains(definitionMethod)) {
+      // §2 — the class of the evidence, whatever authority produced the amount.
+      view.authority = installment
+        ? AUTHORITY_CONTRACT_INSTALLMENT
+        : AUTHORITY_APPROVED_RECURRENCE;
+      if (computedByPermittedAuthority) {
+        // §3 — the method v1.0.0 permits for that class.
+        view.category = installment
+          ? CATEGORY_CONTRACTUAL_INSTALLMENT
+          : CATEGORY_FIXED_RECURRENCE;
+        view.method = installment
+          ? METHOD_AUTHORITATIVE_SCHEDULE
+          : METHOD_APPROVED_RECURRENCE_SCHEDULE;
+      } else {
+        view.category = CATEGORY_UNPREDICTABLE_STATISTICAL;
+        view.method = null;
+      }
+    } else {
+      // No class the policy names: nothing is inferred for it either.
+      view.category = CATEGORY_UNPREDICTABLE_STATISTICAL;
+      view.authority = AUTHORITY_APPROVED_RECURRENCE;
+      view.method = null;
+    }
+    view.contributionCount = 0;
+    return view;
+  }
+
+  /** One row per distinct class/authority/method actually applied, with its contribution count. */
+  private static void countCategory(
+    Map<String, CategoryView> categories,
+    CategoryView classified
+  ) {
+    String key =
+      classified.category +
+      '|' +
+      String.valueOf(classified.authority) +
+      '|' +
+      classified.method;
+    CategoryView view = categories.get(key);
+    if (view == null) {
+      view = new CategoryView();
+      view.category = classified.category;
+      view.authority = classified.authority;
+      view.method = classified.method;
+      categories.put(key, view);
+    }
+    view.contributionCount++;
+  }
+
+  private static void addFallback(Result result, String fallback) {
+    if (!result.fallbacks.contains(fallback)) {
+      result.fallbacks.add(fallback);
+    }
+  }
 
   private static void addTier(
     Object bucket,

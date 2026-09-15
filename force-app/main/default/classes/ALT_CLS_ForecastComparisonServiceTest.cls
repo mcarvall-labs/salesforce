@@ -773,6 +773,389 @@ private class ALT_CLS_ForecastComparisonServiceTest {
     }
   }
 
+  /**
+   * AXF-138, GF-76 — every contribution is placed in a §3 class with the §2 evidence authority
+   * and the method v1.0.0 permits for it; the overlap between a schedule and the persisted row
+   * that restates it is resolved once, and the taxonomy, cutoff, currencies and policy identity
+   * travel with the result.
+   */
+  @IsTest
+  static void policyClassificationRecordsAuthorityMethodAndResolvedOverlaps() {
+    System.runAs(byAlias('axf137g')) {
+      Account ana = holder('Ana PolÃ­tica');
+      Date today = Date.today();
+      Date nextMonth = today.addMonths(1).toStartOfMonth().addDays(6);
+      ALT_CLS_FinancialScheduleService.CreateResult created = schedule(
+        ana.Id,
+        'INSTALLMENT',
+        6,
+        1,
+        nextMonth,
+        'policy-authority'
+      );
+      insert new List<AXF_OBJ_FinancialTransaction__c>{
+        plan(ana.Id, 'fact', 400, 'CREDIT', 'CONFIRMED', nextMonth, false),
+        plan(ana.Id, 'scenario', 150, 'DEBIT', 'PLANNED', nextMonth, false)
+      };
+      ALT_CLS_ScheduleProjection.ProjectionInput read = new ALT_CLS_ScheduleProjection.ProjectionInput();
+      read.scheduleId = created.scheduleId;
+      read.asOfDate = today;
+      ALT_CLS_ScheduleProjection.ProjectionResult projection = ALT_CLS_FinancialScheduleService.readProjection(
+        read
+      );
+      Assert.areEqual('OK', projection.outcome, projection.message);
+      Integer persisted = 0;
+      for (ALT_CLS_ScheduleProjection.OccurrenceLine line : projection.lines) {
+        if (line.persisted == true) {
+          persisted++;
+        }
+      }
+      Assert.isTrue(
+        persisted > 0,
+        'a janela operacional ja tem linhas persistidas'
+      );
+      ALT_CLS_ForecastComparisonService service = new ALT_CLS_ForecastComparisonService();
+      Test.startTest();
+      ALT_CLS_ForecastComparisonService.Result result = service.compare(
+        input(
+          new List<Id>{ ana.Id },
+          6,
+          ALT_CLS_ForecastComparisonService.SCENARIO_OPTIMISTIC
+        )
+      );
+      Test.stopTest();
+      Assert.areEqual(
+        ALT_CLS_ForecastComparisonService.CATEGORY_TAXONOMY,
+        result.categoryTaxonomy
+      );
+      Assert.areEqual(
+        ALT_CLS_ForecastComparisonService.POLICY_VERSION,
+        result.policyVersion
+      );
+      Assert.areEqual(today, result.asOf, 'o corte e a data de posicao');
+      Assert.areEqual(
+        new List<String>{ 'BRL' },
+        result.currencies,
+        'FX preservado'
+      );
+      Assert.isTrue(
+        result.fallbacks.isEmpty(),
+        'nenhum fallback foi necessario'
+      );
+      Map<String, ALT_CLS_ForecastComparisonService.CategoryView> byClass = new Map<String, ALT_CLS_ForecastComparisonService.CategoryView>();
+      for (
+        ALT_CLS_ForecastComparisonService.CategoryView view : result.categories
+      ) {
+        byClass.put(view.category + '|' + String.valueOf(view.authority), view);
+      }
+      ALT_CLS_ForecastComparisonService.CategoryView contractual = byClass.get(
+        ALT_CLS_ForecastComparisonService.CATEGORY_CONTRACTUAL_INSTALLMENT +
+          '|' +
+          ALT_CLS_ForecastComparisonService.AUTHORITY_CONTRACT_INSTALLMENT
+      );
+      Assert.isNotNull(contractual, 'cronograma de parcelamento e contratual');
+      Assert.areEqual(
+        ALT_CLS_ForecastComparisonService.METHOD_AUTHORITATIVE_SCHEDULE,
+        contractual.method
+      );
+      Assert.areEqual(
+        projection.lines.size(),
+        contractual.contributionCount,
+        'cada ocorrencia do cronograma entra uma vez'
+      );
+      Assert.areEqual(
+        ALT_CLS_ForecastComparisonService.METHOD_INTEGRAL_SCENARIO_INCLUSION,
+        byClass.get(
+            ALT_CLS_ForecastComparisonService.CATEGORY_EXPLICIT_SCENARIO_ITEM +
+              '|' +
+              ALT_CLS_ForecastComparisonService.AUTHORITY_CONFIRMED_FACT
+          )
+          .method,
+        'fato confirmado e evidencia de autoridade 1'
+      );
+      Assert.areEqual(
+        1,
+        byClass.get(
+            ALT_CLS_ForecastComparisonService.CATEGORY_EXPLICIT_SCENARIO_ITEM +
+              '|' +
+              ALT_CLS_ForecastComparisonService.AUTHORITY_CONFIRMED_FACT
+          )
+          .contributionCount
+      );
+      Assert.areEqual(
+        1,
+        byClass.get(
+            ALT_CLS_ForecastComparisonService.CATEGORY_EXPLICIT_SCENARIO_ITEM +
+              '|' +
+              ALT_CLS_ForecastComparisonService.AUTHORITY_SCENARIO_ITEM
+          )
+          .contributionCount,
+        'o item explicito de cenario e autoridade 5'
+      );
+      // §2: the persisted occurrence is counted once, by the schedule that owns it.
+      ALT_CLS_ForecastComparisonService.SourceView scheduleView;
+      for (
+        ALT_CLS_ForecastComparisonService.SourceView source : result.sources
+      ) {
+        if (source.kind == 'SCHEDULE') {
+          scheduleView = source;
+        }
+      }
+      Assert.isNotNull(scheduleView);
+      Assert.areEqual(persisted, scheduleView.resolvedOverlapCount);
+      // No duplication: inside + beyond still equals the single remaining commitment.
+      ALT_CLS_ForecastComparisonService.HorizonTotal h24 = horizon(
+        result,
+        24,
+        'BRL'
+      );
+      Assert.areEqual(
+        projection.totalRemaining.setScale(2),
+        (h24.confirmedOut + h24.beyondOut).setScale(2)
+      );
+      Assert.areEqual(
+        150,
+        h24.probableOut,
+        'o item de cenario nao foi duplicado'
+      );
+    }
+  }
+
+  /**
+   * AXF-138, GF-77 — a class v1.0.0 gives no method to is never estimated. The occurrence of a
+   * definition that records no permitted authority asserts no amount, tier or probability, and
+   * because its omission could increase the capacity shown the result is BLOCKED; the same
+   * occurrence as an inflow cannot increase capacity and stays display-only.
+   */
+  @IsTest
+  static void classWithoutApprovedMethodIsNotEstimatedAndGatesByMaterialImpact() {
+    System.runAs(byAlias('axf137g')) {
+      Account debitHolder = holder('Ana Sem Metodo Debito');
+      Account creditHolder = holder('Ana Sem Metodo Credito');
+      Date today = Date.today();
+      Date nextMonth = today.addMonths(1).toStartOfMonth().addDays(6);
+      ALT_CLS_FinancialScheduleService.CreateResult permitted = schedule(
+        debitHolder.Id,
+        'INSTALLMENT',
+        6,
+        1,
+        nextMonth,
+        'policy-permitted'
+      );
+      ALT_CLS_FinancialScheduleService.CreateResult unauthorized = schedule(
+        debitHolder.Id,
+        'INSTALLMENT',
+        6,
+        1,
+        nextMonth,
+        'policy-unauthorized'
+      );
+      ALT_CLS_FinancialScheduleService.CreateInput credit = new ALT_CLS_FinancialScheduleService.CreateInput();
+      credit.accountId = creditHolder.Id;
+      credit.direction = 'CREDIT';
+      credit.currencyIsoCode = 'BRL';
+      credit.method = 'INSTALLMENT';
+      credit.totalInstallments = 6;
+      credit.firstSequence = 1;
+      credit.trackingStartSequence = 1;
+      credit.trackingDueDate = nextMonth;
+      credit.periodMonths = 1;
+      credit.principal = 360000;
+      credit.periodRate = 0.01;
+      credit.legacyGroupKey = 'policy-noauthority-cred';
+      ALT_CLS_FinancialScheduleService.CreateResult creditSchedule = ALT_CLS_FinancialScheduleService.createSchedule(
+        credit
+      );
+      Assert.areEqual(
+        'CREATED',
+        creditSchedule.outcome,
+        creditSchedule.message
+      );
+      // A definition that records no permitted authority supersedes the approved one: the
+      // amount was produced by no authority the forecasting policy names.
+      replaceAuthorityWithNone(unauthorized.scheduleId);
+      replaceAuthorityWithNone(creditSchedule.scheduleId);
+      ALT_CLS_ScheduleProjection.ProjectionInput read = new ALT_CLS_ScheduleProjection.ProjectionInput();
+      read.scheduleId = unauthorized.scheduleId;
+      read.asOfDate = today;
+      ALT_CLS_ScheduleProjection.ProjectionResult projection = ALT_CLS_FinancialScheduleService.readProjection(
+        read
+      );
+      Assert.areEqual(
+        'OK',
+        projection.outcome,
+        'o cronograma continua projetavel: ' + projection.message
+      );
+      Assert.isTrue(projection.totalRemaining > 0);
+      ALT_CLS_ForecastComparisonService service = new ALT_CLS_ForecastComparisonService();
+      Test.startTest();
+      ALT_CLS_ForecastComparisonService.Result debit = service.compare(
+        input(
+          new List<Id>{ debitHolder.Id },
+          6,
+          ALT_CLS_ForecastComparisonService.SCENARIO_OPTIMISTIC
+        )
+      );
+      ALT_CLS_ForecastComparisonService.Result creditResult = service.compare(
+        input(
+          new List<Id>{ creditHolder.Id },
+          6,
+          ALT_CLS_ForecastComparisonService.SCENARIO_OPTIMISTIC
+        )
+      );
+      Test.stopTest();
+      Assert.isTrue(debit.reasons.contains('NO_APPROVED_METHOD'));
+      Assert.areEqual(
+        ALT_CLS_ForecastComparisonService.CONFIDENCE_BLOCKED,
+        debit.confidence,
+        'omitir uma obrigacao poderia aumentar a capacidade mostrada'
+      );
+      Assert.isTrue(
+        debit.fallbacks.contains(
+          ALT_CLS_ForecastComparisonService.FALLBACK_BLOCKED_MATERIAL_OMISSION
+        ),
+        String.join(debit.fallbacks, ',')
+      );
+      // Nothing is asserted for the class without a method: only the permitted schedule counts.
+      ALT_CLS_ForecastComparisonService.HorizonTotal debitTotal = horizon(
+        debit,
+        6,
+        'BRL'
+      );
+      Assert.areEqual(
+        ALT_CLS_ForecastComparisonService.AUTHORITY_CONTRACT_INSTALLMENT,
+        authorityOf(
+          debit,
+          ALT_CLS_ForecastComparisonService.CATEGORY_UNPREDICTABLE_STATISTICAL
+        ),
+        'a classe sem metodo e registrada com a autoridade do cronograma de parcelamento'
+      );
+      Assert.isNull(
+        methodOf(
+          debit,
+          ALT_CLS_ForecastComparisonService.CATEGORY_UNPREDICTABLE_STATISTICAL
+        ),
+        'v1.0.0 nao aprova metodo para a classe'
+      );
+      ALT_CLS_ScheduleProjection.ProjectionInput permittedRead = new ALT_CLS_ScheduleProjection.ProjectionInput();
+      permittedRead.scheduleId = permitted.scheduleId;
+      permittedRead.asOfDate = today;
+      Decimal permittedTotal = 0;
+      for (
+        ALT_CLS_ScheduleProjection.OccurrenceLine line : ALT_CLS_FinancialScheduleService.readProjection(
+            permittedRead
+          )
+          .lines
+      ) {
+        if (line.effectiveDueDate <= debit.horizonEnd) {
+          permittedTotal += line.amount;
+        }
+      }
+      Assert.areEqual(
+        permittedTotal.setScale(2),
+        (debitTotal.confirmedOut + debitTotal.probableOut).setScale(2),
+        'nenhuma media, peso ou probabilidade foi inventada para a classe sem metodo'
+      );
+      Assert.areEqual(0, debitTotal.uncertainOut, 'nada incerto foi inventado');
+      // An inflow omission cannot increase the capacity shown: display-only, never a total.
+      Assert.areEqual(
+        ALT_CLS_ForecastComparisonService.CONFIDENCE_INFORMATIVE,
+        creditResult.confidence
+      );
+      Assert.isTrue(
+        creditResult.fallbacks.contains(
+          ALT_CLS_ForecastComparisonService.FALLBACK_INFORMATIVE_DISPLAY
+        ),
+        String.join(creditResult.fallbacks, ',')
+      );
+      Assert.isTrue(creditResult.reasons.contains('NO_APPROVED_METHOD'));
+      Assert.isTrue(
+        creditResult.horizons.isEmpty(),
+        'a classe sem metodo nao contribui com nenhum total'
+      );
+    }
+  }
+
+  /**
+   * Supersedes the schedule's approved definition with one that records no authority, which is
+   * what an amount produced by no permitted method looks like in the evidence.
+   */
+  private static void replaceAuthorityWithNone(Id scheduleId) {
+    AXF_OBJ_ScheduleDefinition__c approved = [
+      SELECT
+        Id,
+        AXF_SDF_LKP_Schedule__c,
+        AXF_SDF_EXI_DefinitionKey__c,
+        AXF_SDF_PKL_Method__c,
+        AXF_SDF_NUM_Revision__c,
+        AXF_SDF_NUM_FirstSequence__c,
+        AXF_SDF_DAT_FirstDueDate__c,
+        AXF_SDF_NUM_PeriodMonths__c,
+        AXF_SDF_NUM_AnchorDay__c,
+        AXF_SDF_NUM_TotalInstallments__c,
+        AXF_SDF_NUM_Principal__c,
+        AXF_SDF_NUM_PeriodRate__c,
+        AXF_SDF_NUM_FixedValue__c,
+        AXF_SDF_NUM_RecurringFee__c,
+        AXF_SDF_NUM_UpfrontFee__c,
+        AXF_SDF_NUM_InitialReferenceAmount__c,
+        AXF_SDF_TXT_TimeZone__c,
+        AXF_SDF_TAL_InputCanonicalJson__c
+      FROM AXF_OBJ_ScheduleDefinition__c
+      WHERE AXF_SDF_LKP_Schedule__c = :scheduleId
+      ORDER BY AXF_SDF_NUM_Revision__c DESC
+      LIMIT 1
+    ];
+    insert new AXF_OBJ_ScheduleDefinition__c(
+      AXF_SDF_LKP_Schedule__c = approved.AXF_SDF_LKP_Schedule__c,
+      AXF_SDF_EXI_DefinitionKey__c = 'axf138-no-authority-' + scheduleId,
+      AXF_SDF_PKL_Method__c = approved.AXF_SDF_PKL_Method__c,
+      AXF_SDF_NUM_Revision__c = approved.AXF_SDF_NUM_Revision__c + 1,
+      AXF_SDF_NUM_EffectiveSequence__c = 1,
+      AXF_SDF_NUM_FirstSequence__c = approved.AXF_SDF_NUM_FirstSequence__c,
+      AXF_SDF_DAT_FirstDueDate__c = approved.AXF_SDF_DAT_FirstDueDate__c,
+      AXF_SDF_NUM_PeriodMonths__c = approved.AXF_SDF_NUM_PeriodMonths__c,
+      AXF_SDF_NUM_AnchorDay__c = approved.AXF_SDF_NUM_AnchorDay__c,
+      AXF_SDF_NUM_TotalInstallments__c = approved.AXF_SDF_NUM_TotalInstallments__c,
+      AXF_SDF_NUM_Principal__c = approved.AXF_SDF_NUM_Principal__c,
+      AXF_SDF_NUM_PeriodRate__c = approved.AXF_SDF_NUM_PeriodRate__c,
+      AXF_SDF_NUM_FixedValue__c = approved.AXF_SDF_NUM_FixedValue__c,
+      AXF_SDF_NUM_RecurringFee__c = approved.AXF_SDF_NUM_RecurringFee__c,
+      AXF_SDF_NUM_UpfrontFee__c = approved.AXF_SDF_NUM_UpfrontFee__c,
+      AXF_SDF_NUM_InitialReferenceAmount__c = approved.AXF_SDF_NUM_InitialReferenceAmount__c,
+      AXF_SDF_TXT_TimeZone__c = approved.AXF_SDF_TXT_TimeZone__c,
+      AXF_SDF_TAL_InputCanonicalJson__c = approved.AXF_SDF_TAL_InputCanonicalJson__c
+    );
+  }
+
+  private static Integer authorityOf(
+    ALT_CLS_ForecastComparisonService.Result result,
+    String category
+  ) {
+    for (
+      ALT_CLS_ForecastComparisonService.CategoryView view : result.categories
+    ) {
+      if (view.category == category) {
+        return view.authority;
+      }
+    }
+    return null;
+  }
+
+  private static String methodOf(
+    ALT_CLS_ForecastComparisonService.Result result,
+    String category
+  ) {
+    for (
+      ALT_CLS_ForecastComparisonService.CategoryView view : result.categories
+    ) {
+      if (view.category == category) {
+        return view.method;
+      }
+    }
+    return null;
+  }
+
   @IsTest
   static void controllerSanitizesAndDelegates() {
     System.runAs(byAlias('axf137g')) {
