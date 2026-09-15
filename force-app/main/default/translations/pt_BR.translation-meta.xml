@@ -1481,4 +1481,6 @@
     >AXF_SourceLink_convUnavailableLine</name></customLabels><customLabels
   ><label
     >Sem taxa de câmbio material para este par de moedas; a confirmação fica bloqueada.</label><name
-    >AXF_SourceLink_codeMISSING_MATERIAL_FX</name></customLabels></Translations>
+    >AXF_SourceLink_codeMISSING_MATERIAL_FX</name></customLabels><customLabels
+  ><label>Parcial — remanescente</label><name
+    >AXF_SourceLink_evPartial</name></customLabels></Translations>

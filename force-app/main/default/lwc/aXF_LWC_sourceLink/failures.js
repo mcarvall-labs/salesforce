@@ -32,6 +32,14 @@ export function parseFailure(error) {
   return CODE_LABEL[raw] || labels.error;
 }
 
+/**
+ * AXF-140: a candidate reason is the same sanitized server code, so it resolves through the same
+ * map; a code this component does not know is shown as the code itself rather than dropped.
+ */
+export function reasonLabel(code) {
+  return CODE_LABEL[code] || code;
+}
+
 export function format(template, ...args) {
   return String(template).replace(/\{(\d+)\}/g, (match, index) => {
     return args[index] === undefined ? match : args[index];

@@ -9,6 +9,8 @@
 public inherited sharing class ALT_CLS_MatchEvidence {
   public static final String MATCHING_POLICY = 'AXF-MATCHING@1.0.0';
   public static final String STATE_CONSULTATIVE = 'CONSULTATIVE';
+  /** AXF-140, policy §3: a non-zero residual stays PARTIAL — no approved tolerance zeroes it. */
+  public static final String STATE_PARTIAL = 'PARTIAL';
   /** AXF-140, policy §3: material evidence is missing (no approved tolerance or default covers it). */
   public static final String STATE_BLOCKED = 'BLOCKED';
   public static final String REL_EXACT = 'EXACT';
@@ -63,7 +65,11 @@ public inherited sharing class ALT_CLS_MatchEvidence {
     public String category;
     public Boolean descriptionRedacted = false;
     public Boolean categoryRedacted = false;
-    /** Evidence the caller withholds from the client: it is not displayed and cannot order. */
+    /**
+     * Evidence the caller is not authorized for and therefore withholds: it is not displayed and
+     * cannot order. It is an authorization fact on the side that carries the evidence, never a
+     * consequence of the value being absent — absence is UNKNOWN.
+     */
     public Boolean externalIdentityRedacted = false;
   }
 

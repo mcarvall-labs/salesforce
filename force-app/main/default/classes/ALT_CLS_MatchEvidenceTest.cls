@@ -450,6 +450,30 @@ private class ALT_CLS_MatchEvidenceTest {
     Assert.areEqual('EXTERNAL_IDENTITY_REDACTED', identity.explanation);
     Assert.isNull(identity.sourceValue, 'withheld evidence carries no value');
     Assert.isNull(identity.candidateValue);
+    // Absence and withholding are different facts: no identity at all is UNKNOWN, never REDACTED.
+    ALT_CLS_MatchEvidence.Side absent = side(
+      null,
+      null,
+      null,
+      10,
+      10,
+      Date.today(),
+      null,
+      null
+    );
+    Assert.areEqual(
+      ALT_CLS_MatchEvidence.REL_UNKNOWN,
+      byFeature(ALT_CLS_MatchEvidence.evaluate(absent, candidate))
+        .get('EXTERNAL_IDENTITY')
+        .relation,
+      'absent evidence is UNKNOWN, not a withheld value'
+    );
+    Assert.areNotEqual(
+      ALT_CLS_MatchEvidence.REL_REDACTED,
+      byFeature(ALT_CLS_MatchEvidence.evaluate(absent, candidate))
+        .get('EXTERNAL_IDENTITY')
+        .relation
+    );
     Assert.areNotEqual(
       ALT_CLS_MatchEvidence.signature(disclosed),
       ALT_CLS_MatchEvidence.signature(withheld),

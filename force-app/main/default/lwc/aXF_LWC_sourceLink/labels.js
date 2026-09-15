@@ -127,6 +127,7 @@ import evxCATEGORY_CONTAINS_CANDIDATE from "@salesforce/label/c.AXF_SourceLink_e
 import evxCATEGORY_CONTAINED_IN_CANDIDATE from "@salesforce/label/c.AXF_SourceLink_evxCATEGORY_CONTAINED_IN_CANDIDATE";
 import codeMISSING_MATERIAL_FX from "@salesforce/label/c.AXF_SourceLink_codeMISSING_MATERIAL_FX";
 import evBlocked from "@salesforce/label/c.AXF_SourceLink_evBlocked";
+import evPartial from "@salesforce/label/c.AXF_SourceLink_evPartial";
 import factResidualAfter from "@salesforce/label/c.AXF_SourceLink_factResidualAfter";
 import convEstimatedLine from "@salesforce/label/c.AXF_SourceLink_convEstimatedLine";
 import convStaleLine from "@salesforce/label/c.AXF_SourceLink_convStaleLine";
@@ -262,6 +263,7 @@ export default {
   evxCATEGORY_CONTAINED_IN_CANDIDATE,
   codeMISSING_MATERIAL_FX,
   evBlocked,
+  evPartial,
   factResidualAfter,
   convEstimatedLine,
   convStaleLine,

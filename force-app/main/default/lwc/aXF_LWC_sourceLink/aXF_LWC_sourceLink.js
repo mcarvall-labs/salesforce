@@ -4,7 +4,7 @@ import listSources from "@salesforce/apex/AXF_CLS_CTRL_SourceLink.listSources";
 import listCandidates from "@salesforce/apex/AXF_CLS_CTRL_SourceLink.listCandidates";
 import confirm from "@salesforce/apex/AXF_CLS_CTRL_SourceLink.confirm";
 import labels from "./labels";
-import { parseFailure, format, newOperationKey } from "./failures";
+import { parseFailure, reasonLabel, format, newOperationKey } from "./failures";
 
 const STEP = {
   SOURCE: "SOURCE",
@@ -67,9 +67,13 @@ const ORIGIN_LABEL = {
   CSV: labels.originCSV,
   MANUAL: labels.originMANUAL
 };
-/** AXF-140: the state comes from the server; the component renders it and derives nothing. */
+/**
+ * AXF-140: the state comes from the server; the component renders it and derives nothing. Every
+ * state this service emits is mapped, so no raw server token can reach the user.
+ */
 const STATE_LABEL = {
   CONSULTATIVE: labels.evConsultative,
+  PARTIAL: labels.evPartial,
   BLOCKED: labels.evBlocked
 };
 /** AXF-140: the conversion evidence is rendered as sent — an omitted amount stays omitted. */
@@ -246,6 +250,9 @@ export default class AxfSourceLink extends LightningElement {
       statusLabel: STATUS_LABEL[c.status] || c.status,
       isVirtual: !c.persisted,
       stateLabel: STATE_LABEL[c.state] || c.state,
+      // AXF-140: the server states why a row is blocked or pending; the reason is what the user has
+      // to correct, so it is rendered beside the state badge instead of staying server-side.
+      reasonText: (c.reasons || []).map(reasonLabel).join(" · "),
       conversionLine: conversionLine(c),
       residualAfterLine: residualAfterLine(c),
       evidenceChips: (c.evidence || []).map(evidenceChip)

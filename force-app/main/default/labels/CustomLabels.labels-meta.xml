@@ -2531,4 +2531,8 @@
     >AXF_SourceLink_codeMISSING_MATERIAL_FX</fullName><language
     >en_US</language><protected>false</protected><shortDescription
     >Code missing material fx</shortDescription><value
-    >No material exchange rate for this currency pair; confirmation is blocked.</value></labels></CustomLabels>
+    >No material exchange rate for this currency pair; confirmation is blocked.</value></labels><labels
+  ><fullName>AXF_SourceLink_evPartial</fullName><language
+    >en_US</language><protected>false</protected><shortDescription
+    >Partial</shortDescription><value
+    >Partial — remainder left</value></labels></CustomLabels>

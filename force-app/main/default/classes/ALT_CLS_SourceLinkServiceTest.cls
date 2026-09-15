@@ -528,9 +528,18 @@ private class ALT_CLS_SourceLinkServiceTest {
       );
       Assert.areEqual('Housing', funded.get('CATEGORY').sourceValue);
       Assert.areEqual(
+        'UNKNOWN',
+        funded.get('EXTERNAL_IDENTITY').relation,
+        'AXF-140: the fact has a provider key and the forecast carries none, so the feature is unknown on one side'
+      );
+      Assert.areEqual(
+        'EXTERNAL_IDENTITY_UNKNOWN',
+        funded.get('EXTERNAL_IDENTITY').explanation
+      );
+      Assert.areNotEqual(
         'REDACTED',
         funded.get('EXTERNAL_IDENTITY').relation,
-        'AXF-140: the withheld provider key is redacted, so it never orders'
+        'AXF-140: nothing is withheld from a caller authorized for both sides, so absence is never reported as redaction'
       );
       Assert.isFalse(lookup.get(plans[3].Id).tied);
       Assert.isFalse(
@@ -564,13 +573,27 @@ private class ALT_CLS_SourceLinkServiceTest {
       );
       Assert.isNull(
         funded.get('EXTERNAL_IDENTITY').sourceValue,
-        'provider key never leaves the server'
+        'an unknown feature carries no value'
+      );
+      // AXF-140: a 200,00 forecast against a 150,00 source keeps 50,00 — explicit, never zeroed.
+      Assert.areEqual(50, lookup.get(plans[1].Id).residualAfter);
+      Assert.areEqual(
+        ALT_CLS_MatchEvidence.STATE_PARTIAL,
+        lookup.get(plans[1].Id).state,
+        'policy §3: a non-zero residual remains PARTIAL'
       );
       for (ALT_CLS_SourceLinkService.CandidateView c : all.items) {
-        // AXF-140: a same-currency candidate stays CONSULTATIVE (policy §3); a foreign-currency
-        // one is BLOCKED. Neither is ever confirmed automatically.
+        // AXF-140: a linkable candidate left with a remainder is PARTIAL (policy §3), one the source
+        // extinguishes exactly stays CONSULTATIVE, and a foreign-currency one is BLOCKED. None is
+        // ever confirmed automatically.
         Assert.areEqual(
-          c.currencyIso == 'BRL' ? 'CONSULTATIVE' : 'BLOCKED',
+          c.currencyIso == 'BRL'
+            ? (c.persisted &&
+                c.residualAfter != null &&
+                c.residualAfter > 0
+                ? 'PARTIAL'
+                : 'CONSULTATIVE')
+            : 'BLOCKED',
           c.state,
           'nothing is confirmed automatically'
         );
@@ -1367,14 +1390,15 @@ private class ALT_CLS_SourceLinkServiceTest {
     String quoteIso,
     Decimal rate,
     Datetime effectiveAt,
-    String key
+    String key,
+    String side
   ) {
     System.runAs(new User(Id = UserInfo.getUserId())) {
       insert new AXF_OBJ_ExchangeRate__c(
         AXF_EXR_TXT_BaseCurrency__c = baseIso,
         AXF_EXR_TXT_QuoteCurrency__c = quoteIso,
         AXF_EXR_NUM_Rate__c = rate,
-        AXF_EXR_PKL_Side__c = 'SELL',
+        AXF_EXR_PKL_Side__c = side,
         AXF_EXR_TXT_Provider__c = ALT_CLS_IndicativeEquivalenceService.PROVIDER_BCB_PTAX,
         AXF_EXR_DT_EffectiveDateTime__c = effectiveAt,
         AXF_EXR_EXI_RateKey__c = 'axf140-' + key
@@ -1409,7 +1433,7 @@ private class ALT_CLS_SourceLinkServiceTest {
       };
       insert plans;
       // Older than the approved indicative limit (AXF-92): fetched, reported as a fact, never used.
-      quote('EUR', 'BRL', 6.10, System.now().addDays(-8), 'stale-eur');
+      quote('EUR', 'BRL', 6.10, System.now().addDays(-8), 'stale-eur', 'SELL');
       ALT_CLS_SourceLinkService service = new ALT_CLS_SourceLinkService();
 
       Test.startTest();
@@ -1455,9 +1479,9 @@ private class ALT_CLS_SourceLinkServiceTest {
         'the remainder stays explicit: no approved tolerance turns it into zero'
       );
       Assert.areEqual(
-        'CONSULTATIVE',
+        ALT_CLS_MatchEvidence.STATE_PARTIAL,
         partial.state,
-        'a partial candidate stays inspectable and open for a draft allocation'
+        'policy §3: a non-zero residual remains PARTIAL, inspectable and open for a draft allocation'
       );
       Assert.isTrue(partial.linkable);
 
@@ -1533,7 +1557,7 @@ private class ALT_CLS_SourceLinkServiceTest {
         'a missing material rate blocks confirmation'
       );
 
-      quote('USD', 'BRL', 5.05, System.now(), 'fresh-usd');
+      quote('USD', 'BRL', 5.05, System.now(), 'fresh-usd', 'SELL');
       ALT_CLS_SourceLinkService.CandidatePage repriced = service.listCandidates(
         candidateQuery(source.Id, 1, 50)
       );
@@ -1574,11 +1598,14 @@ private class ALT_CLS_SourceLinkServiceTest {
   }
 
   /**
-   * AXF-140 AC-3: evidence the workbench withholds is redacted — no value appears — and the page
-   * keeps naming the policy and the cutoff so the human decision stays explicit and auditable.
+   * AXF-140 AC-3: absence is `UNKNOWN`, never `REDACTED` — the caller is authorized for the fact and
+   * for the holder of every candidate it is shown, so this workbench withholds nothing — and the page
+   * keeps naming the policy and the cutoff so the human decision stays explicit and auditable. The
+   * genuinely withheld case (assertion, not absence) is covered at the contract level in
+   * `ALT_CLS_MatchEvidenceTest.withheldIdentityIsRedactedAndCannotOrder`.
    */
   @IsTest
-  static void withheldProviderKeyIsRedactedAndTheDecisionStaysAuditable() {
+  static void absentIdentityStaysUnknownAndTheDecisionStaysAuditable() {
     System.runAs(byAlias('axf134g')) {
       Account owner = holder('Holder 140 withheld');
       AXF_OBJ_BankAccount__c available = bank(owner.Id, 'AVAILABLE', 'BRL');
@@ -1607,9 +1634,18 @@ private class ALT_CLS_SourceLinkServiceTest {
         features.put(v.feature, v);
       }
       Assert.areEqual(
+        ALT_CLS_MatchEvidence.REL_UNKNOWN,
+        features.get('EXTERNAL_IDENTITY').relation,
+        'the fact carries a provider key and the forecast carries none: absence is UNKNOWN'
+      );
+      Assert.areEqual(
+        'EXTERNAL_IDENTITY_UNKNOWN',
+        features.get('EXTERNAL_IDENTITY').explanation
+      );
+      Assert.areNotEqual(
         ALT_CLS_MatchEvidence.REL_REDACTED,
         features.get('EXTERNAL_IDENTITY').relation,
-        'the withheld provider key is never disclosed as a fact'
+        'nothing is withheld from an authorized caller, so absence is never reported as redaction'
       );
       Assert.isNull(features.get('EXTERNAL_IDENTITY').sourceValue);
       Assert.isNull(features.get('EXTERNAL_IDENTITY').candidateValue);
@@ -1632,6 +1668,217 @@ private class ALT_CLS_SourceLinkServiceTest {
         page.items[0].evidence.size(),
         'absence is reported feature by feature, never dropped'
       );
+    }
+  }
+
+  /**
+   * AXF-140 AC-1/AC-2 continued: a foreign-currency candidate is BLOCKED and never selectable, so it
+   * must not consume the scan window that decides which linkable forecasts are seen at all.
+   */
+  @IsTest
+  static void blockedCurrenciesDoNotCrowdOutTheLinkableScanWindow() {
+    System.runAs(byAlias('axf134g')) {
+      Account owner = holder('Holder 140 scan');
+      AXF_OBJ_BankAccount__c available = bank(owner.Id, 'AVAILABLE', 'BRL');
+      AXF_OBJ_BankAccountTransaction__c source = fact(
+        available.Id,
+        100,
+        'POSTED',
+        Date.today(),
+        'axf140-scan'
+      );
+      insert source;
+      // More foreign-currency forecasts than one window holds, all due before the linkable ones, so
+      // a single shared window would push the linkable forecasts past MAX_SCAN.
+      List<AXF_OBJ_FinancialTransaction__c> foreign = new List<AXF_OBJ_FinancialTransaction__c>();
+      for (Integer i = 0; i < ALT_CLS_SourceLinkService.MAX_SCAN; i++) {
+        foreign.add(
+          plan(
+            owner.Id,
+            'usd-' + i,
+            100,
+            'DEBIT',
+            'USD',
+            Date.today().addDays(-30)
+          )
+        );
+      }
+      insert foreign;
+      List<AXF_OBJ_FinancialTransaction__c> linkable = new List<AXF_OBJ_FinancialTransaction__c>{
+        plan(owner.Id, 'brl-1', 100, 'DEBIT', 'BRL', Date.today().addDays(1)),
+        plan(owner.Id, 'brl-2', 100, 'DEBIT', 'BRL', Date.today().addDays(2)),
+        plan(owner.Id, 'brl-3', 100, 'DEBIT', 'BRL', Date.today().addDays(3))
+      };
+      for (AXF_OBJ_FinancialTransaction__c row : linkable) {
+        // Funded by the source's own account: the exact source identity leads the presentation order.
+        row.AXF_FTX_LKP_BankAccount__c = available.Id;
+      }
+      insert linkable;
+
+      Test.startTest();
+      ALT_CLS_SourceLinkService.CandidatePage page = new ALT_CLS_SourceLinkService()
+        .listCandidates(candidateQuery(source.Id, 1, 50));
+      Test.stopTest();
+
+      Set<Id> linkableIds = new Set<Id>();
+      Integer linkableShown = 0;
+      Integer blockedShown = 0;
+      for (ALT_CLS_SourceLinkService.CandidateView c : page.items) {
+        if (c.currencyIso == 'BRL') {
+          linkableIds.add(c.targetId);
+          linkableShown++;
+          Assert.isTrue(c.linkable, 'a same-currency candidate stays linkable');
+          continue;
+        }
+        blockedShown++;
+        Assert.isFalse(
+          c.linkable,
+          'a foreign-currency candidate is never selectable'
+        );
+        Assert.areEqual(ALT_CLS_MatchEvidence.STATE_BLOCKED, c.state);
+      }
+      Assert.areEqual(
+        new Set<Id>{ linkable[0].Id, linkable[1].Id, linkable[2].Id },
+        linkableIds,
+        'every linkable forecast is still offered: blocked rows never consume its scan window'
+      );
+      Assert.areEqual(3, linkableShown);
+      Assert.isTrue(
+        blockedShown > 0,
+        'the blocked foreign-currency candidates are still listed'
+      );
+    }
+  }
+
+  /**
+   * AXF-140 AC-2: the selected quote is the newest of the approved side and is chosen
+   * deterministically; a newest non-positive rate leaves the pair unusable instead of silently
+   * falling back to an older, superseded quote.
+   */
+  @IsTest
+  static void quoteSelectionFollowsTheApprovedSideAndNeverFallsBackToAnOlderQuote() {
+    System.runAs(byAlias('axf134g')) {
+      Account owner = holder('Holder 140 quotes');
+      AXF_OBJ_BankAccount__c available = bank(owner.Id, 'AVAILABLE', 'BRL');
+      // DEBIT source: the approved FX layer converts an outflow at the SELL quote.
+      AXF_OBJ_BankAccountTransaction__c source = fact(
+        available.Id,
+        100,
+        'POSTED',
+        Date.today(),
+        'axf140-quotes'
+      );
+      insert source;
+      Date due = Date.today().addDays(2);
+      List<AXF_OBJ_FinancialTransaction__c> plans = new List<AXF_OBJ_FinancialTransaction__c>{
+        plan(owner.Id, 'usd-zero', 100, 'DEBIT', 'USD', due),
+        plan(owner.Id, 'eur-tie', 100, 'DEBIT', 'EUR', due),
+        plan(owner.Id, 'gbp-buy-only', 100, 'DEBIT', 'GBP', due)
+      };
+      insert plans;
+      // USD: the newest quote of the pair has no usable rate; the older positive one must not stand
+      // in for it.
+      quote('USD', 'BRL', 5.0, System.now().addDays(-2), 'usd-old', 'SELL');
+      quote('USD', 'BRL', 0, System.now().addMinutes(-30), 'usd-zero', 'SELL');
+      // EUR: two quotes of the same pair and side at the same instant — the choice is deterministic.
+      Datetime tiedAt = System.now().addHours(-3);
+      quote('EUR', 'BRL', 6.20, tiedAt, 'eur-a', 'SELL');
+      quote('EUR', 'BRL', 6.30, tiedAt, 'eur-b', 'SELL');
+      // GBP: only the opposite side is published, so the DEBIT source has no usable quote.
+      quote('GBP', 'BRL', 7.0, System.now().addMinutes(-30), 'gbp-buy', 'BUY');
+      List<AXF_OBJ_ExchangeRate__c> tied = [
+        SELECT Id, AXF_EXR_NUM_Rate__c
+        FROM AXF_OBJ_ExchangeRate__c
+        WHERE AXF_EXR_EXI_RateKey__c IN ('axf140-eur-a', 'axf140-eur-b')
+        ORDER BY Id ASC
+      ];
+      Assert.areEqual(2, tied.size(), 'both competing quotes exist');
+      Decimal deterministic = tied[0].AXF_EXR_NUM_Rate__c;
+      ALT_CLS_SourceLinkService service = new ALT_CLS_SourceLinkService();
+
+      Test.startTest();
+      CandidateViewByTarget byTarget = new CandidateViewByTarget(
+        service.listCandidates(candidateQuery(source.Id, 1, 50)).items
+      );
+      // A second read of the same data picks the same quote: selection is deterministic.
+      CandidateViewByTarget again = new CandidateViewByTarget(
+        service.listCandidates(candidateQuery(source.Id, 1, 50)).items
+      );
+      String usdBlocked = failure(
+        confirmInput(source, plans[0].Id, 0, 100, 'usd-zero')
+      );
+      String gbpBlocked = failure(
+        confirmInput(source, plans[2].Id, 0, 100, 'gbp-buy')
+      );
+      Test.stopTest();
+
+      ALT_CLS_SourceLinkService.CandidateView usd = byTarget.get(plans[0].Id);
+      Assert.areEqual(
+        ALT_CLS_IndicativeEquivalenceService.STATE_UNAVAILABLE,
+        usd.conversion.state,
+        'a non-positive newest rate leaves the pair unusable'
+      );
+      Assert.isNull(
+        usd.conversion.rate,
+        'the superseded older quote is never presented as the current one'
+      );
+      Assert.isNull(usd.conversion.convertedAmount);
+      Assert.isTrue(
+        usd.reasons.contains('MISSING_MATERIAL_FX'),
+        usd.reasons + ''
+      );
+      Assert.areEqual(
+        'MISSING_MATERIAL_FX',
+        usdBlocked,
+        'without a usable quote the confirmation is refused, never converted at an old rate'
+      );
+
+      ALT_CLS_SourceLinkService.CandidateView eur = byTarget.get(plans[1].Id);
+      Assert.areEqual(
+        ALT_CLS_IndicativeEquivalenceService.STATE_ESTIMATED,
+        eur.conversion.state
+      );
+      Assert.areEqual(
+        deterministic,
+        eur.conversion.rate,
+        'competing quotes at the same instant resolve by record identity, not by read order'
+      );
+      Assert.areEqual(
+        deterministic,
+        again.get(plans[1].Id).conversion.rate,
+        'the selection is stable across reads'
+      );
+
+      ALT_CLS_SourceLinkService.CandidateView gbp = byTarget.get(plans[2].Id);
+      Assert.areEqual(
+        ALT_CLS_IndicativeEquivalenceService.STATE_UNAVAILABLE,
+        gbp.conversion.state,
+        'the BUY quote is not the approved side for an outflow'
+      );
+      Assert.isTrue(
+        gbp.reasons.contains('MISSING_MATERIAL_FX'),
+        gbp.reasons + ''
+      );
+      Assert.areEqual('MISSING_MATERIAL_FX', gbpBlocked);
+
+      // The same pair with the approved side published is usable again.
+      quote(
+        'GBP',
+        'BRL',
+        7.10,
+        System.now().addMinutes(-20),
+        'gbp-sell',
+        'SELL'
+      );
+      ALT_CLS_SourceLinkService.CandidateView repriced = new CandidateViewByTarget(
+          service.listCandidates(candidateQuery(source.Id, 1, 50)).items
+        )
+        .get(plans[2].Id);
+      Assert.areEqual(
+        ALT_CLS_IndicativeEquivalenceService.STATE_ESTIMATED,
+        repriced.conversion.state
+      );
+      Assert.areEqual(7.10, repriced.conversion.rate);
     }
   }
 

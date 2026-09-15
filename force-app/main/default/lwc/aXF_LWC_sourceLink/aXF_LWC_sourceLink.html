@@ -332,6 +332,14 @@
                           class="slds-theme_warning slds-m-right_xx-small"
                         ></lightning-badge>
                       </template>
+                      <template lwc:if={row.reasonText}>
+                        <p
+                          class="slds-text-body_small slds-m-top_xx-small"
+                          data-id="candidateReasons"
+                        >
+                          {row.reasonText}
+                        </p>
+                      </template>
                       <ul class="slds-list_horizontal slds-wrap">
                         <template for:each={row.evidenceChips} for:item="chip">
                           <li

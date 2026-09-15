@@ -552,6 +552,7 @@ describe("c-a-x-f-_-l-w-c-_source-link", () => {
       ...candidates.items[0],
       residual: 100.01,
       residualAfter: 0.01,
+      state: "PARTIAL",
       linkable: true,
       conversion: undefined
     };
@@ -597,6 +598,13 @@ describe("c-a-x-f-_-l-w-c-_source-link", () => {
         provider: "BCB_PTAX"
       }
     };
+    const projected = {
+      ...candidates.items[1],
+      amount: 200,
+      residual: 200,
+      residualAfter: 50,
+      reasons: ["MATERIALIZATION_REQUIRED"]
+    };
     listSources.mockResolvedValue({
       pageNumber: 1,
       pageSize: 25,
@@ -608,7 +616,7 @@ describe("c-a-x-f-_-l-w-c-_source-link", () => {
     listCandidates.mockResolvedValue({
       ...candidates,
       tieCount: 0,
-      items: [partial, foreign, priced, stale]
+      items: [partial, foreign, priced, stale, projected]
     });
     byId(element, "holder").dispatchEvent(
       new CustomEvent("change", { detail: { value: "001A" } })
@@ -621,19 +629,24 @@ describe("c-a-x-f-_-l-w-c-_source-link", () => {
     const rows = element.shadowRoot.querySelectorAll(
       '[data-id="candidateTable"] tbody tr'
     );
-    expect(rows.length).toBe(4);
-    // The state comes from the server: a blocked candidate is never presented as consultative.
-    expect(rows[0].querySelector("lightning-badge").label).toBe(
-      "c.AXF_SourceLink_evConsultative"
-    );
-    expect(rows[1].querySelector("lightning-badge").label).toBe(
-      "c.AXF_SourceLink_evBlocked"
-    );
-    // A blocked candidate offers no draft allocation at all.
+    expect(rows.length).toBe(5);
+    // The state comes from the server: a non-zero remainder is PARTIAL, a blocked candidate is
+    // never presented as consultative, and no raw server token reaches the user.
+    expect(
+      rows[0].querySelector('[data-id="evidenceCell"] lightning-badge').label
+    ).toBe("c.AXF_SourceLink_evPartial");
+    expect(
+      rows[1].querySelector('[data-id="evidenceCell"] lightning-badge').label
+    ).toBe("c.AXF_SourceLink_evBlocked");
+    // A blocked candidate offers no draft allocation at all, and it states why it is blocked.
     expect(rows[0].querySelector("[data-index]")).not.toBeNull();
     for (const row of [rows[1], rows[2], rows[3]]) {
       expect(row.querySelector("[data-index]")).toBeNull();
     }
+    expect(
+      rows[1].querySelector('[data-id="candidateReasons"]').textContent
+    ).toContain("c.AXF_SourceLink_codeCURRENCY_MISMATCH");
+    expect(rows[0].querySelector('[data-id="candidateReasons"]')).toBeNull();
     // The remainder stays explicit: a non-zero residual is shown as it is, never zeroed.
     expect(
       rows[0].querySelector('[data-id="residualAfter"]').textContent
@@ -658,5 +671,16 @@ describe("c-a-x-f-_-l-w-c-_source-link", () => {
     ).toBe(
       "c.AXF_SourceLink_convStaleLine GBP/BRL · 1 GBP = 6.1 BRL (BCB_PTAX)"
     );
+    // A projected occurrence is never left blank: it carries the same remainder fact and names what
+    // it still needs before it can be linked.
+    expect(
+      rows[4].querySelector('[data-id="residualAfter"]').textContent.trim()
+    ).toBe("c.AXF_SourceLink_factResidualAfter 50 BRL");
+    expect(
+      rows[4].querySelector('[data-id="candidateReasons"]').textContent
+    ).toContain("c.AXF_SourceLink_codeMATERIALIZATION_REQUIRED");
+    expect(
+      rows[4].querySelector('[data-id="evidenceCell"] lightning-badge').label
+    ).toBe("c.AXF_SourceLink_evConsultative");
   });
 });
