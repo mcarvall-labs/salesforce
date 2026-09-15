@@ -1,0 +1,7 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<CustomPermission xmlns="http://soap.sforce.com/2006/04/metadata">
+    <isLicensed>false</isLicensed>
+    <label>AXF - Pode Consolidar</label>
+    <description
+  >Capacidade de calcular totais consolidados sobre pessoas/empresas autorizadas (AXF-122). Concedida por AXF_PS_GestorFinanceiro; exigida no servidor. Nao concede acesso a registros (ownership/sharing, CRUD e FLS continuam valendo).</description>
+</CustomPermission>
