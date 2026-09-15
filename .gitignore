@@ -52,3 +52,5 @@ force-app/main/default/profiles/Admin.profile-meta.xml
 
 # AXF-78 metadata backups taken before destructive deploys (org snapshots, never committed)
 _bmad-output/backups/
+
+.sf-package-builder/
