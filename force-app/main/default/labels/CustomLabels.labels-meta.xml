@@ -337,4 +337,12 @@
   ><fullName>AXF_ArchiveExplorer_updated</fullName><language
     >en_US</language><protected>false</protected><shortDescription
     >Updated</shortDescription><value
-    >Archive results updated.</value></labels></CustomLabels>
+    >Archive results updated.</value></labels><labels><fullName
+    >AXF_ArchiveExplorer_holderSearch</fullName><language
+    >en_US</language><protected>false</protected><shortDescription
+    >Holder search</shortDescription><value
+    >Search holder</value></labels><labels><fullName
+    >AXF_ArchiveExplorer_colReason</fullName><language
+    >en_US</language><protected>false</protected><shortDescription
+    >Reason column</shortDescription><value
+    >Reason</value></labels></CustomLabels>

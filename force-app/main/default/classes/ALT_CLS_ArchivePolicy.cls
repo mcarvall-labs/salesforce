@@ -22,11 +22,15 @@ public with sharing class ALT_CLS_ArchivePolicy {
   private static AXF_CMT_ArchivePolicy__mdt policyOverride;
   @TestVisible
   private static Date todayOverride;
+  @TestVisible
+  private static Boolean simulateMissing = false;
 
   public static Resolved resolve() {
-    AXF_CMT_ArchivePolicy__mdt row = policyOverride != null
-      ? policyOverride
-      : AXF_CMT_ArchivePolicy__mdt.getInstance('Default');
+    AXF_CMT_ArchivePolicy__mdt row = simulateMissing
+      ? null
+      : (policyOverride != null
+          ? policyOverride
+          : AXF_CMT_ArchivePolicy__mdt.getInstance('Default'));
     if (row == null) {
       throw failure('POLICY_MISSING');
     }
@@ -46,6 +50,7 @@ public with sharing class ALT_CLS_ArchivePolicy {
       String.isBlank(result.version) ||
       result.hotWindowMonths == null ||
       result.hotWindowMonths < 1 ||
+      result.hotWindowMonths > 1200 ||
       result.batchSize == null ||
       result.batchSize < 1 ||
       result.batchSize > 200

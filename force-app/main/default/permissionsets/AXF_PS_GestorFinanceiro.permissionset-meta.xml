@@ -185,6 +185,10 @@
     <enabled>true</enabled>
   </classAccesses>
   <classAccesses>
+    <apexClass>ALT_CLS_ArchiveRunIntegrity</apexClass>
+    <enabled>true</enabled>
+  </classAccesses>
+  <classAccesses>
     <apexClass>ALT_CLS_ArchiveStore</apexClass>
     <enabled>true</enabled>
   </classAccesses>
@@ -1176,86 +1180,91 @@
   </fieldPermissions>
   <fieldPermissions>
     <editable>true</editable>
+    <field>AXF_OBJ_ArchiveRun__c.AXF_ARR_TXT_JobId__c</field>
+    <readable>true</readable>
+  </fieldPermissions>
+  <fieldPermissions>
+    <editable>true</editable>
     <field>AXF_OBJ_ArchiveRun__c.AXF_ARR_TXT_Reason__c</field>
     <readable>true</readable>
   </fieldPermissions>
   <fieldPermissions>
-    <editable>false</editable>
+    <editable>true</editable>
     <field>AXF_OBJ_TransactionArchive__b.AXF_ARC_DT_ArchivedAt__c</field>
     <readable>true</readable>
   </fieldPermissions>
   <fieldPermissions>
-    <editable>false</editable>
+    <editable>true</editable>
     <field>AXF_OBJ_TransactionArchive__b.AXF_ARC_LTX_Snapshot__c</field>
     <readable>true</readable>
   </fieldPermissions>
   <fieldPermissions>
-    <editable>false</editable>
+    <editable>true</editable>
     <field>AXF_OBJ_TransactionArchive__b.AXF_ARC_NUM_Magnitude__c</field>
     <readable>true</readable>
   </fieldPermissions>
   <fieldPermissions>
-    <editable>false</editable>
+    <editable>true</editable>
     <field>AXF_OBJ_TransactionArchive__b.AXF_ARC_TXT_ContentHash__c</field>
     <readable>true</readable>
   </fieldPermissions>
   <fieldPermissions>
-    <editable>false</editable>
+    <editable>true</editable>
     <field>AXF_OBJ_TransactionArchive__b.AXF_ARC_TXT_CurrencyIsoCode__c</field>
     <readable>true</readable>
   </fieldPermissions>
   <fieldPermissions>
-    <editable>false</editable>
+    <editable>true</editable>
     <field>AXF_OBJ_TransactionArchive__b.AXF_ARC_TXT_Description__c</field>
     <readable>true</readable>
   </fieldPermissions>
   <fieldPermissions>
-    <editable>false</editable>
+    <editable>true</editable>
     <field>AXF_OBJ_TransactionArchive__b.AXF_ARC_TXT_Direction__c</field>
     <readable>true</readable>
   </fieldPermissions>
   <fieldPermissions>
-    <editable>false</editable>
+    <editable>true</editable>
     <field>AXF_OBJ_TransactionArchive__b.AXF_ARC_TXT_InstitutionKey__c</field>
     <readable>true</readable>
   </fieldPermissions>
   <fieldPermissions>
-    <editable>false</editable>
+    <editable>true</editable>
     <field>AXF_OBJ_TransactionArchive__b.AXF_ARC_TXT_InstitutionLabel__c</field>
     <readable>true</readable>
   </fieldPermissions>
   <fieldPermissions>
-    <editable>false</editable>
+    <editable>true</editable>
     <field>AXF_OBJ_TransactionArchive__b.AXF_ARC_TXT_PolicyVersion__c</field>
     <readable>true</readable>
   </fieldPermissions>
   <fieldPermissions>
-    <editable>false</editable>
+    <editable>true</editable>
     <field>AXF_OBJ_TransactionArchive__b.AXF_ARC_TXT_RunKey__c</field>
     <readable>true</readable>
   </fieldPermissions>
   <fieldPermissions>
-    <editable>false</editable>
+    <editable>true</editable>
     <field>AXF_OBJ_TransactionArchive__b.AXF_ARC_TXT_SourceFamily__c</field>
     <readable>true</readable>
   </fieldPermissions>
   <fieldPermissions>
-    <editable>false</editable>
+    <editable>true</editable>
     <field>AXF_OBJ_TransactionArchive__b.AXF_ARC_TXT_SourceId__c</field>
     <readable>true</readable>
   </fieldPermissions>
   <fieldPermissions>
-    <editable>false</editable>
+    <editable>true</editable>
     <field>AXF_OBJ_TransactionArchive__b.AXF_ARC_TXT_SourceKey__c</field>
     <readable>true</readable>
   </fieldPermissions>
   <fieldPermissions>
-    <editable>false</editable>
+    <editable>true</editable>
     <field>AXF_OBJ_TransactionArchive__b.AXF_ARC_TXT_SourceRecordId__c</field>
     <readable>true</readable>
   </fieldPermissions>
   <fieldPermissions>
-    <editable>false</editable>
+    <editable>true</editable>
     <field>AXF_OBJ_TransactionArchive__b.AXF_ARC_TXT_Status__c</field>
     <readable>true</readable>
   </fieldPermissions>

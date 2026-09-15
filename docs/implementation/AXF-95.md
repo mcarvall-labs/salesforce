@@ -40,9 +40,28 @@ Implements AD-39 / D-83 / D-84 after the AXF-102 PASS (`docs/implementation/AXF-
 ## Validation
 
 - AXON_DEV deploy `0Afaj00000kMbrHCAS` (160 components) with `ALT_CLS_ArchiveRunServiceTest`
-  6/6; coverage: run service 94 %, read service 97 %, store 97 %, batch 84 %, controller 77 %.
-- Jest `aXF_LWC_archiveExplorer` 4/4; ESLint clean.
+  7/7 (deploy `0Afaj00000kNNJBCA4` after review); coverage: run service 95 %, read service 99 %, store 90 %, batch 76 %, controller 81 %.
+- Jest `aXF_LWC_archiveExplorer` 5/5; ESLint clean.
 - Spike evidence in `docs/implementation/AXF-102.md`.
+
+## Code review hardening (BMAD, 2026-09-15)
+
+- `contentHash` scale/timezone independent (real verification would otherwise fail).
+- `start()` refuses a run whose batch is still executing (`AXF_ARR_TXT_JobId__c` +
+  `AsyncApexJob`) or a sibling active run of the same family/holder (`RUN_IN_PROGRESS`), and tells
+  a second archivist that the checkpoint belongs to someone else (`RUN_OWNED_BY_OTHER`).
+- A `PARITY_MISMATCH` resume re-scans the whole window; `verify()` recomputes the authoritative
+  counts and a chunking-independent run hash (sorted verified keys); sampled verification
+  (`VERIFY_LIMIT` 10 000) marks `HotRemoval = BLOCKED:VERIFY_SAMPLED`.
+- Batch failures keep the typed reason, abort the job and never throw while recording; a failure
+  in `start()` is recorded as `START_FAILED`; per-row `insertImmediate` failures stop the checkpoint.
+- Read cursor must lie inside the requested window; `fromDate` floored at 1700-01-01; policy
+  months capped at 1200; `read(runId)` returns `RUN_NOT_ACCESSIBLE` instead of a raw exception.
+- Snapshot keeps only the fact's own fields and marks truncation explicitly.
+- LWC: holder search, per-family start errors in the runs section (other families still start),
+  double-start guard, retry refreshes the context wire, forbidden/policy-blocked states, holder
+  change discards in-flight results, Escape/focus on the confirmation dialog, date pickers capped at
+  the day before the hot window, run reason column.
 
 ## Deliberately out of scope
 

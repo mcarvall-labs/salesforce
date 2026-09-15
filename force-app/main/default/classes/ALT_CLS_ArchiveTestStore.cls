@@ -33,6 +33,7 @@ public class ALT_CLS_ArchiveTestStore implements ALT_CLS_ArchiveStore.Store {
     Integer max
   ) {
     List<AXF_OBJ_TransactionArchive__b> result = new List<AXF_OBJ_TransactionArchive__b>();
+    max = cap(max);
     for (AXF_OBJ_TransactionArchive__b row : ordered(accountKey)) {
       if (
         row.AXF_ARC_DT_BookingDate__c == bookingDate &&
@@ -54,6 +55,7 @@ public class ALT_CLS_ArchiveTestStore implements ALT_CLS_ArchiveStore.Store {
     Integer max
   ) {
     List<AXF_OBJ_TransactionArchive__b> result = new List<AXF_OBJ_TransactionArchive__b>();
+    max = cap(max);
     for (AXF_OBJ_TransactionArchive__b row : ordered(accountKey)) {
       if (
         row.AXF_ARC_DT_BookingDate__c < beforeDate &&
@@ -75,6 +77,7 @@ public class ALT_CLS_ArchiveTestStore implements ALT_CLS_ArchiveStore.Store {
     Integer max
   ) {
     List<AXF_OBJ_TransactionArchive__b> result = new List<AXF_OBJ_TransactionArchive__b>();
+    max = cap(max);
     for (AXF_OBJ_TransactionArchive__b row : ordered(accountKey)) {
       if (
         row.AXF_ARC_DT_BookingDate__c <= toDate &&
@@ -87,6 +90,15 @@ public class ALT_CLS_ArchiveTestStore implements ALT_CLS_ArchiveStore.Store {
       }
     }
     return result;
+  }
+
+  /** Same page ceiling as the live store. */
+  private static Integer cap(Integer max) {
+    return max == null ||
+      max < 1 ||
+      max > ALT_CLS_ArchiveStore.MAX_PAGE
+      ? ALT_CLS_ArchiveStore.MAX_PAGE
+      : max;
   }
 
   /** Index order: BookingDate DESC, ArchiveKey ASC. */

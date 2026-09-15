@@ -1,4 +1,5 @@
 import { LightningElement, wire } from "lwc";
+import { refreshApex } from "@salesforce/apex";
 import getContext from "@salesforce/apex/AXF_CLS_CTRL_ArchiveExplorer.getContext";
 import read from "@salesforce/apex/AXF_CLS_CTRL_ArchiveExplorer.read";
 import startArchive from "@salesforce/apex/AXF_CLS_CTRL_ArchiveExplorer.startArchive";
@@ -37,21 +38,28 @@ export default class AxfArchiveExplorer extends LightningElement {
   labels = labels;
   state = STATE.INIT;
   context;
+  wiredContextResult;
+  holderSearch = "";
   holderOptions = [];
   accountId;
   fromDate;
   toDate;
   rows = [];
   runs = [];
+  runsError;
   cursor;
   hasMore = false;
   errorMessage;
   announcement = "";
   confirmOpen = false;
+  starting = false;
   requestToken = 0;
+  runsToken = 0;
 
-  @wire(getContext, { search: "" })
-  wiredContext({ data, error }) {
+  @wire(getContext, { search: "$holderSearch" })
+  wiredContext(result) {
+    this.wiredContextResult = result;
+    const { data, error } = result;
     if (error) {
       this.state = STATE.ERROR;
       this.errorMessage = parseFailure(error);
@@ -65,13 +73,20 @@ export default class AxfArchiveExplorer extends LightningElement {
       label: holder.name,
       value: holder.accountId
     }));
-    if (this.state === STATE.INIT) {
+    if (this.state === STATE.INIT || this.state === STATE.ERROR) {
       this.state = STATE.IDLE;
+      this.errorMessage = undefined;
     }
   }
 
   get canRender() {
     return !this.context || this.context.canRead || this.context.canArchive;
+  }
+  get isForbidden() {
+    return !!this.context && !this.context.canRead && !this.context.canArchive;
+  }
+  get policyBlocked() {
+    return !!this.context && !this.context.hotWindowStart;
   }
   get canRead() {
     return !!(this.context && this.context.canRead);
@@ -81,13 +96,32 @@ export default class AxfArchiveExplorer extends LightningElement {
   }
   get hotWindowText() {
     return this.context && this.context.hotWindowStart
-      ? format(labels.hotWindow, this.context.hotWindowStart)
+      ? format(labels.hotWindow, this.formatDay(this.context.hotWindowStart))
       : "";
   }
+  /** Last archivable day: the hot window itself is excluded. */
   get maxDate() {
-    return this.context && this.context.hotWindowStart
-      ? this.context.hotWindowStart
-      : undefined;
+    if (!this.context || !this.context.hotWindowStart) {
+      return undefined;
+    }
+    const day = new Date(this.context.hotWindowStart + "T00:00:00Z");
+    day.setUTCDate(day.getUTCDate() - 1);
+    return day.toISOString().slice(0, 10);
+  }
+  formatDay(iso) {
+    if (!iso) {
+      return "";
+    }
+    try {
+      return new Intl.DateTimeFormat(undefined, {
+        year: "numeric",
+        month: "2-digit",
+        day: "2-digit",
+        timeZone: "UTC"
+      }).format(new Date(iso + "T00:00:00Z"));
+    } catch {
+      return iso;
+    }
   }
   get isIdle() {
     return this.state === STATE.IDLE;
@@ -105,7 +139,15 @@ export default class AxfArchiveExplorer extends LightningElement {
     return this.state === STATE.ERROR;
   }
   get searchDisabled() {
-    return !this.accountId || this.state === STATE.LOADING || !this.canRead;
+    return (
+      !this.accountId ||
+      this.state === STATE.LOADING ||
+      !this.canRead ||
+      this.policyBlocked
+    );
+  }
+  get startDisabled() {
+    return this.starting || this.policyBlocked;
   }
   get tableRows() {
     return this.rows.map((row) => ({
@@ -122,6 +164,8 @@ export default class AxfArchiveExplorer extends LightningElement {
       familyLabel: FAMILY_LABEL[run.family] || run.family,
       phaseLabel: PHASE_LABEL[run.phase] || run.phase,
       counts: run.scanned + " / " + run.archived + " / " + run.verified,
+      watermarkLabel: this.formatDay(run.watermark),
+      reasonLabel: run.reason || "",
       hotRemovalLabel:
         run.hotRemoval && run.hotRemoval.startsWith("BLOCKED")
           ? labels.hotBlocked
@@ -132,12 +176,17 @@ export default class AxfArchiveExplorer extends LightningElement {
     return this.runs.length > 0;
   }
 
+  handleHolderSearch(event) {
+    this.holderSearch = event.detail.value || "";
+  }
   handleHolderChange(event) {
     this.accountId = event.detail.value;
+    this.requestToken++;
     this.rows = [];
     this.cursor = undefined;
     this.hasMore = false;
     this.state = STATE.IDLE;
+    this.runsError = undefined;
     this.loadRuns();
   }
   handleFromChange(event) {
@@ -156,30 +205,63 @@ export default class AxfArchiveExplorer extends LightningElement {
   }
   handleRetry() {
     this.errorMessage = undefined;
+    if (!this.context && this.wiredContextResult) {
+      // The context wire failed: refresh it instead of reading with no holder.
+      this.state = STATE.INIT;
+      refreshApex(this.wiredContextResult);
+      return;
+    }
     this.load();
+  }
+  handleDialogKeydown(event) {
+    if (event.key === "Escape") {
+      this.handleCancelStart();
+    }
   }
   handleRefreshRuns() {
     this.loadRuns();
   }
   handleStartArchive() {
     this.confirmOpen = true;
+    // Move focus into the dialog once it renders.
+    Promise.resolve().then(() => {
+      const dialog = this.template.querySelector('[data-id="confirm"]');
+      if (dialog) {
+        dialog.focus();
+      }
+    });
   }
   handleCancelStart() {
     this.confirmOpen = false;
+    const start = this.template.querySelector('[data-id="start"]');
+    if (start) {
+      start.focus();
+    }
   }
   async handleConfirmStart() {
     this.confirmOpen = false;
+    if (this.starting) {
+      return;
+    }
+    this.starting = true;
+    const failures = [];
     try {
       for (const family of FAMILIES) {
-        // eslint-disable-next-line no-await-in-loop
-        await startArchive({ accountId: this.accountId, family });
+        try {
+          // eslint-disable-next-line no-await-in-loop
+          await startArchive({ accountId: this.accountId, family });
+        } catch (error) {
+          // One family failing never hides the others; the runs table tells which started.
+          failures.push(
+            (FAMILY_LABEL[family] || family) + ": " + parseFailure(error)
+          );
+        }
       }
-      this.announcement = labels.started;
-    } catch (error) {
-      this.errorMessage = parseFailure(error);
-      this.announcement = this.errorMessage;
-      this.state = STATE.ERROR;
+    } finally {
+      this.starting = false;
     }
+    this.runsError = failures.length ? failures.join(" · ") : undefined;
+    this.announcement = this.runsError || labels.started;
     this.loadRuns();
   }
 
@@ -225,11 +307,17 @@ export default class AxfArchiveExplorer extends LightningElement {
       this.runs = [];
       return;
     }
+    const token = ++this.runsToken;
     try {
-      this.runs = await listRuns({ accountId: this.accountId });
-    } catch {
-      // Runs are informational; a read failure leaves the list empty.
-      this.runs = [];
+      const runs = await listRuns({ accountId: this.accountId });
+      if (token === this.runsToken) {
+        this.runs = runs || [];
+      }
+    } catch (error) {
+      if (token === this.runsToken) {
+        this.runs = [];
+        this.runsError = parseFailure(error);
+      }
     }
   }
 }

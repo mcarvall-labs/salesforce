@@ -20,7 +20,9 @@ private class ALT_CLS_ArchiveRunServiceTest {
     Id profileId = [SELECT Id FROM Profile WHERE Name = 'Standard User' LIMIT 1]
     .Id;
     List<User> users = new List<User>();
-    for (String alias : new List<String>{ 'axf95g', 'axf95p', 'axf95n' }) {
+    for (
+      String alias : new List<String>{ 'axf95g', 'axf95p', 'axf95n', 'axf95r' }
+    ) {
       users.add(
         new User(
           Alias = alias,
@@ -50,7 +52,59 @@ private class ALT_CLS_ArchiveRunServiceTest {
       permissionSets.put(permission.Name, permission.Id);
     }
     Assert.areEqual(3, permissionSets.size(), 'permission sets must exist');
+    // Read-only archivist: consult the archive and see runs, never start one.
+    PermissionSet readOnly = new PermissionSet(
+      Name = 'AXF95TestReadOnly',
+      Label = 'AXF-95 read only'
+    );
+    insert readOnly;
+    insert new SetupEntityAccess(
+      ParentId = readOnly.Id,
+      SetupEntityId = [
+        SELECT Id
+        FROM CustomPermission
+        WHERE DeveloperName = 'AXF_CanReadArchive'
+        LIMIT 1
+      ]
+      .Id
+    );
+    insert new ObjectPermissions(
+      ParentId = readOnly.Id,
+      SobjectType = 'AXF_OBJ_ArchiveRun__c',
+      PermissionsRead = true
+    );
+    List<FieldPermissions> reads = new List<FieldPermissions>();
+    for (
+      String field : new List<String>{
+        'AXF_ARR_DAT_Watermark__c',
+        'AXF_ARR_NUM_ScannedCount__c',
+        'AXF_ARR_NUM_ArchivedCount__c',
+        'AXF_ARR_NUM_VerifiedCount__c',
+        'AXF_ARR_LTX_AmountsByCurrency__c',
+        'AXF_ARR_TXT_HotRemoval__c',
+        'AXF_ARR_TXT_Reason__c',
+        'AXF_ARR_DTM_LastCheckpointAt__c',
+        'AXF_ARR_TXT_JobId__c',
+        'AXF_ARR_TXT_ContentHash__c',
+        'AXF_ARR_NUM_Version__c'
+      }
+    ) {
+      reads.add(
+        new FieldPermissions(
+          ParentId = readOnly.Id,
+          SobjectType = 'AXF_OBJ_ArchiveRun__c',
+          Field = 'AXF_OBJ_ArchiveRun__c.' + field,
+          PermissionsRead = true,
+          PermissionsEdit = false
+        )
+      );
+    }
+    insert reads;
     insert new List<PermissionSetAssignment>{
+      new PermissionSetAssignment(
+        AssigneeId = users[3].Id,
+        PermissionSetId = readOnly.Id
+      ),
       new PermissionSetAssignment(
         AssigneeId = users[0].Id,
         PermissionSetId = permissionSets.get('AXF_PS_GestorFinanceiro')
@@ -328,12 +382,32 @@ private class ALT_CLS_ArchiveRunServiceTest {
       Assert.areEqual(6, num(brl.get('count')));
       Assert.areEqual(1000, num(brl.get('credit')));
       Assert.areEqual(60, num(brl.get('debit')), '10+11+12+13+14');
+      ALT_CLS_ArchiveRunService.RunView cardRun = runOf(f.holder.Id, 'CCT');
+      Assert.areEqual(
+        'HOT_RETAINED',
+        cardRun.phase,
+        'motivo: ' + cardRun.reason
+      );
       Assert.areEqual(
         f.oldCard,
-        runOf(f.holder.Id, 'CCT').archived,
+        cardRun.archived,
         'cartao no ultimo dia antes da janela'
       );
-      Assert.areEqual(f.oldManual, runOf(f.holder.Id, 'FTX').archived);
+      Assert.areEqual(f.oldCard, cardRun.verified);
+      ALT_CLS_ArchiveRunService.RunView manualRun = runOf(f.holder.Id, 'FTX');
+      Assert.areEqual(
+        'HOT_RETAINED',
+        manualRun.phase,
+        'motivo: ' + manualRun.reason
+      );
+      Assert.areEqual(f.oldManual, manualRun.archived);
+      Assert.areEqual(f.oldManual, manualRun.verified);
+      Assert.areEqual(
+        f.oldBank,
+        done.scanned,
+        'contagem lida = quente no escopo'
+      );
+      Assert.isNotNull(done.lastCheckpointAt);
       Assert.areEqual(
         f.oldBank + f.oldCard + f.oldManual,
         store.rows.size(),
@@ -426,27 +500,111 @@ private class ALT_CLS_ArchiveRunServiceTest {
       Assert.areEqual(f.oldBank, store.rows.size());
       Assert.areEqual('HOT_RETAINED', runOf(f.holder.Id, 'BAT').phase);
 
-      // A hot change after archiving is caught by the parity check, not silently absorbed.
-      AXF_OBJ_BankAccountTransaction__c drifted = [
-        SELECT Id, AXF_BAT_NUM_Magnitude__c
-        FROM AXF_OBJ_BankAccountTransaction__c
-        WHERE AXF_BAT_EXI_SourceKey__c = 'bat-b-old-0'
-      ];
-      Map<String, ALT_CLS_ArchiveRunService.CurrencyTotal> hot = ALT_CLS_ArchiveRunService.hotTotals(
-        ALT_CLS_ArchiveRunService.read(done.runId)
+      String hashBefore = ALT_CLS_ArchiveRunService.read(done.runId)
+        .AXF_ARR_TXT_ContentHash__c;
+      Assert.isTrue(String.isNotBlank(hashBefore));
+      drive(service.start(f.holder.Id, 'BAT').runId);
+      Assert.areEqual(
+        hashBefore,
+        ALT_CLS_ArchiveRunService.read(done.runId).AXF_ARR_TXT_ContentHash__c,
+        'hash da execucao independe do fatiamento'
       );
-      Map<String, ALT_CLS_ArchiveRunService.CurrencyTotal> archive = new Map<String, ALT_CLS_ArchiveRunService.CurrencyTotal>(
-        hot
+
+      // A divergent archive row is caught by the parity check, never reported as verified.
+      AXF_OBJ_TransactionArchive__b tampered = store.rows.values()[0];
+      tampered.AXF_ARC_NUM_Magnitude__c = tampered.AXF_ARC_NUM_Magnitude__c + 1;
+      ALT_CLS_ArchiveRunService.verify(done.runId);
+      ALT_CLS_ArchiveRunService.RunView broken = runOf(f.holder.Id, 'BAT');
+      Assert.areEqual('FAILED', broken.phase);
+      Assert.isTrue(
+        broken.reason.startsWith('PARITY_MISMATCH:BRL'),
+        broken.reason
       );
-      ALT_CLS_ArchiveRunService.CurrencyTotal tampered = new ALT_CLS_ArchiveRunService.CurrencyTotal();
-      tampered.count = hot.get('BRL').count;
-      tampered.credit = hot.get('BRL').credit;
-      tampered.debit = hot.get('BRL').debit + 1;
-      archive.put('BRL', tampered);
-      Assert.isNotNull(ALT_CLS_ArchiveRunService.mismatch(hot, archive));
-      Assert.isNull(ALT_CLS_ArchiveRunService.mismatch(hot, hot));
-      Assert.isNotNull(drifted);
+      Assert.isNull(broken.hotRemoval);
+      tampered.AXF_ARC_NUM_Magnitude__c = tampered.AXF_ARC_NUM_Magnitude__c - 1;
+
+      // Beyond the verification ceiling the run is kept, flagged as sampled, parity skipped.
+      ALT_CLS_ArchiveRunService.verifyLimit = 4;
+      drive(service.start(f.holder.Id, 'BAT').runId);
+      ALT_CLS_ArchiveRunService.RunView sampled = runOf(f.holder.Id, 'BAT');
+      Assert.areEqual(
+        'HOT_RETAINED',
+        sampled.phase,
+        'motivo: ' + sampled.reason
+      );
+      Assert.isTrue(
+        sampled.reason.startsWith('VERIFY_SAMPLED:'),
+        sampled.reason
+      );
+      ALT_CLS_ArchiveRunService.verifyLimit = ALT_CLS_ArchiveRunService.VERIFY_LIMIT;
+
+      // A failure inside finish() lands as FAILED with a typed reason, never stuck VERIFYING.
+      AXF_CLS_ArchiveRunBatch batch = new AXF_CLS_ArchiveRunBatch(
+        service.start(f.holder.Id, 'BAT').runId
+      );
+      batch.start(null);
+      policy(24, 2, false);
+      batch.finish(null);
+      ALT_CLS_ArchiveRunService.RunView failedVerify = runOf(
+        f.holder.Id,
+        'BAT'
+      );
+      Assert.areEqual('FAILED', failedVerify.phase);
+      Assert.areEqual('POLICY_DISABLED', failedVerify.reason);
+      policy(24, 2, true);
     }
+  }
+
+  @IsTest
+  static void contentHashIsScaleAndTimezoneIndependent() {
+    AXF_OBJ_ArchiveRun__c pseudo = new AXF_OBJ_ArchiveRun__c(
+      AXF_ARR_EXI_RunKey__c = 'hash',
+      AXF_ARR_TXT_PolicyVersion__c = 'hash'
+    );
+    AXF_OBJ_TransactionArchive__b written = ALT_CLS_ArchiveRunService.toArchiveRow(
+      'BAT',
+      bat(null, 'h', 55.5, 'DEBIT', Date.newInstance(2024, 8, 31)),
+      pseudo
+    );
+    // Read back from the Big Object the magnitude carries scale 8 (spike: 999.00000000).
+    AXF_OBJ_TransactionArchive__b reread = written.clone(
+      false,
+      true,
+      false,
+      false
+    );
+    reread.AXF_ARC_NUM_Magnitude__c = written.AXF_ARC_NUM_Magnitude__c.setScale(
+      8
+    );
+    Assert.areEqual(
+      written.AXF_ARC_TXT_ContentHash__c,
+      ALT_CLS_ArchiveRunService.contentHash(reread),
+      'escala 2 na gravacao, escala 8 na releitura: mesmo hash'
+    );
+    Assert.areEqual(
+      Datetime.newInstanceGmt(2024, 8, 31, 0, 0, 0),
+      written.AXF_ARC_DT_BookingDate__c
+    );
+    reread.AXF_ARC_NUM_Magnitude__c = 55.51;
+    Assert.areNotEqual(
+      written.AXF_ARC_TXT_ContentHash__c,
+      ALT_CLS_ArchiveRunService.contentHash(reread)
+    );
+    Assert.isTrue(written.AXF_ARC_LTX_Snapshot__c.contains('bat-h'));
+    Assert.isFalse(
+      written.AXF_ARC_LTX_Snapshot__c.contains('__r'),
+      'snapshot so com campos proprios'
+    );
+    AXF_OBJ_BankAccountTransaction__c huge = bat(
+      null,
+      'big',
+      1,
+      'DEBIT',
+      Date.today()
+    );
+    huge.AXF_BAT_TXT_Description__c = 'x'.repeat(255);
+    String snapshot = ALT_CLS_ArchiveRunService.snapshot(huge);
+    Assert.isTrue(snapshot.length() <= 32000);
   }
 
   @IsTest
@@ -569,10 +727,36 @@ private class ALT_CLS_ArchiveRunServiceTest {
       } catch (ALT_CLS_ArchiveReadService.ArchiveReadException expected) {
         Assert.areEqual('NOT_ACCESSIBLE', expected.code);
       }
+      ALT_CLS_ArchiveReadService.ReadInput halfCursor = readInput(
+        holder.Id,
+        null,
+        null,
+        50
+      );
+      halfCursor.cursorDate = Date.newInstance(2023, 3, 15);
+      ALT_CLS_ArchiveReadService.ReadInput outsideCursor = readInput(
+        holder.Id,
+        Date.newInstance(2023, 1, 1),
+        Date.newInstance(2023, 12, 31),
+        50
+      );
+      outsideCursor.cursorDate = Date.newInstance(2020, 1, 1);
+      outsideCursor.cursorKey = 'k';
+      ALT_CLS_ArchiveReadService.ReadResult clamped = service.read(
+        readInput(holder.Id, null, null, 5000)
+      );
+      Assert.areEqual(
+        7,
+        clamped.rows.size(),
+        'pagina acima do teto cai no padrao'
+      );
+      Assert.isFalse(clamped.hasMore);
       for (
         ALT_CLS_ArchiveReadService.ReadInput bad : new List<ALT_CLS_ArchiveReadService.ReadInput>{
           null,
           readInput(null, null, null, 50),
+          halfCursor,
+          outsideCursor,
           readInput(
             holder.Id,
             Date.newInstance(2023, 2, 1),
@@ -596,6 +780,18 @@ private class ALT_CLS_ArchiveRunServiceTest {
           .read(readInput(holder.Id, null, null, 50));
         Assert.fail('sem capacidade');
       } catch (ALT_CLS_ArchiveReadService.ArchiveReadException expected) {
+        Assert.areEqual('FORBIDDEN', expected.code);
+      }
+    }
+    // A read-only archivist lists runs (none visible: OWD Private) but cannot start one.
+    System.runAs(byAlias('axf95r')) {
+      Assert.isTrue(
+        new ALT_CLS_ArchiveRunService().listRuns(holder.Id).isEmpty()
+      );
+      try {
+        new ALT_CLS_ArchiveRunService().start(holder.Id, 'BAT');
+        Assert.fail('somente leitura');
+      } catch (ALT_CLS_ArchiveRunService.ArchiveRunException expected) {
         Assert.areEqual('FORBIDDEN', expected.code);
       }
     }
@@ -662,6 +858,7 @@ private class ALT_CLS_ArchiveRunServiceTest {
           .isSuccess(),
         'checkpoint so nasce pelo servico'
       );
+      policy(24, 2, true);
       ALT_CLS_ArchiveRunService.RunView run = service.start(holder.Id, 'FTX');
       drive(run.runId);
       AXF_OBJ_ArchiveRun__c row = ALT_CLS_ArchiveRunService.read(run.runId);
@@ -671,7 +868,62 @@ private class ALT_CLS_ArchiveRunServiceTest {
         'fase so pelo servico'
       );
       Assert.isFalse(Database.delete(row, false).isSuccess(), 'sem delete');
+      // Even inside the service write window the run identity is frozen.
+      row = ALT_CLS_ArchiveRunService.read(run.runId);
+      row.AXF_ARR_PKL_SourceFamily__c = 'BAT';
+      ALT_CLS_ArchiveRunService.writing = true;
+      Database.SaveResult identity = Database.update(row, false);
+      ALT_CLS_ArchiveRunService.writing = false;
+      Assert.isFalse(identity.isSuccess());
+      Assert.isTrue(
+        identity.getErrors()[0].getMessage().contains('identity is immutable')
+      );
+      // A run whose batch is still executing cannot be restarted.
+      ALT_CLS_ArchiveRunIntegrity.jobActiveOverride = true;
+      try {
+        service.start(holder.Id, 'FTX');
+        Assert.fail('lote em execucao');
+      } catch (ALT_CLS_ArchiveRunService.ArchiveRunException expected) {
+        Assert.areEqual('RUN_IN_PROGRESS', expected.code);
+      }
+      ALT_CLS_ArchiveRunIntegrity.jobActiveOverride = null;
+      Assert.isFalse(ALT_CLS_ArchiveRunIntegrity.isJobActive(null));
+      Assert.isFalse(
+        ALT_CLS_ArchiveRunIntegrity.isJobActive('707000000000000AAA')
+      );
     }
+    // Another archivist with full access to the holder finds the checkpoint owned by someone else.
+    Account transfer = new Account(
+      Id = holder.Id,
+      OwnerId = byAlias('axf95p').Id
+    );
+    update transfer;
+    System.runAs(byAlias('axf95p')) {
+      policy(24, 2, true);
+      Assert.areEqual(
+        0,
+        [
+          SELECT COUNT()
+          FROM AXF_OBJ_ArchiveRun__c
+          WHERE AXF_ARR_LKP_Account__c = :holder.Id
+        ],
+        'checkpoint alheio invisivel (OWD Private)'
+      );
+      try {
+        new ALT_CLS_ArchiveRunService().start(holder.Id, 'FTX');
+        Assert.fail('checkpoint de outro usuario');
+      } catch (ALT_CLS_ArchiveRunService.ArchiveRunException expected) {
+        // RUN_OWNED_BY_OTHER when the system-mode probe sees the foreign checkpoint; on orgs
+        // that enforce sharing even in system mode under runAs, the unique key answers instead.
+        Assert.isTrue(
+          expected.code == 'RUN_OWNED_BY_OTHER' ||
+            expected.code == 'RUN_IN_PROGRESS',
+          expected.code
+        );
+      }
+    }
+    transfer.OwnerId = byAlias('axf95g').Id;
+    update transfer;
     // Shared (partial) access is not enough to archive a holder's history.
     insert new AccountShare(
       AccountId = holder.Id,
@@ -721,6 +973,19 @@ private class ALT_CLS_ArchiveRunServiceTest {
       Assert.isTrue(context.canArchive);
       Assert.areEqual(HOT_START, context.hotWindowStart);
       Assert.isFalse(context.holders.isEmpty());
+      ALT_CLS_ArchivePolicy.simulateMissing = true;
+      AXF_CLS_CTRL_ArchiveExplorer.Context blocked = AXF_CLS_CTRL_ArchiveExplorer.getContext(
+        ''
+      );
+      Assert.isNull(blocked.hotWindowStart);
+      Assert.areEqual('POLICY_MISSING', blocked.policyVersion);
+      ALT_CLS_ArchivePolicy.simulateMissing = false;
+      try {
+        AXF_CLS_CTRL_ArchiveExplorer.startArchive(byAlias('axf95g').Id, 'BAT');
+        Assert.fail('nao e titular');
+      } catch (AuraHandledException expected) {
+        Assert.areEqual('NOT_ACCESSIBLE', expected.getMessage());
+      }
       try {
         AXF_CLS_CTRL_ArchiveExplorer.read('{"nope":1}');
         Assert.fail('JSON invalido');

@@ -23,5 +23,5 @@
         </valueSetDefinition>
     </valueSet>
     <description
-  >SCANNING -> WRITING -> VERIFYING -> HOT_RETAINED (copia quente preservada; remocao BLOCKED) ou COMPLETED (remocao autorizada e executada) | FAILED (retomavel do watermark).</description>
+  >SCANNING -> WRITING -> VERIFYING -> HOT_RETAINED (copia quente preservada; remocao BLOCKED) ou COMPLETED (reservado: remocao da copia quente autorizada e executada — nenhum codigo a define hoje) | FAILED (retomavel do watermark).</description>
 </CustomField>
