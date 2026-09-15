@@ -70,9 +70,13 @@ private class ALT_CLS_MatchEvidenceTest {
       candidate
     );
     Test.stopTest();
+    List<String> order = new List<String>();
+    for (ALT_CLS_MatchEvidence.EvidenceView v : evidence) {
+      order.add(v.feature);
+    }
     Assert.areEqual(
       ALT_CLS_MatchEvidence.FEATURES,
-      new List<String>(byFeature(evidence).keySet()),
+      order,
       'features come in the fixed policy order'
     );
     Map<String, ALT_CLS_MatchEvidence.EvidenceView> f = byFeature(evidence);
@@ -90,7 +94,11 @@ private class ALT_CLS_MatchEvidenceTest {
       f.get('AMOUNT').delta,
       'signed difference, never a similarity'
     );
-    Assert.areEqual('150.00', f.get('AMOUNT').sourceValue);
+    Assert.areEqual('150', f.get('AMOUNT').sourceValue, 'shown as stored');
+    Assert.isNull(
+      f.get('EXTERNAL_IDENTITY').sourceValue,
+      'unknown carries no value'
+    );
     Assert.areEqual(
       'COVERS',
       f.get('RESIDUAL').relation,
@@ -170,6 +178,11 @@ private class ALT_CLS_MatchEvidenceTest {
       f.get('DESCRIPTION').relation,
       'diacritics folded, containment only'
     );
+    Assert.areEqual(
+      'DESCRIPTION_CONTAINS_CANDIDATE',
+      f.get('DESCRIPTION').explanation,
+      'direction of the containment is explicit'
+    );
     Assert.areEqual('REDACTED', f.get('CATEGORY').relation);
     Assert.isNull(
       f.get('CATEGORY').sourceValue,
@@ -183,6 +196,76 @@ private class ALT_CLS_MatchEvidenceTest {
       'mercado pao de acucar',
       ALT_CLS_MatchEvidence.normalize('  Mercado  PÃO de Açúcar ')
     );
+    Assert.areEqual(
+      'aluguel set',
+      ALT_CLS_MatchEvidence.normalize('ALUGUEL-SET'),
+      'punctuation folded to a separator'
+    );
+    Assert.areEqual(
+      'acucar ultimo ano',
+      ALT_CLS_MatchEvidence.normalize('Açúcar Último Ãno'),
+      'every entry of the fold table maps to its plain letter'
+    );
+    // A trivial token never counts as containment.
+    ALT_CLS_MatchEvidence.Side shortSide = side(
+      null,
+      null,
+      null,
+      1,
+      1,
+      Date.today(),
+      'x',
+      null
+    );
+    ALT_CLS_MatchEvidence.Side longSide = side(
+      null,
+      null,
+      null,
+      1,
+      1,
+      Date.today(),
+      'pix mercado',
+      null
+    );
+    Assert.areEqual(
+      'DIFFERENT',
+      byFeature(ALT_CLS_MatchEvidence.evaluate(shortSide, longSide))
+        .get('DESCRIPTION')
+        .relation
+    );
+    // Identity is case-sensitive: provider keys differing by case are not the same key.
+    ALT_CLS_MatchEvidence.Side upper = side(
+      'CSV:Abc',
+      null,
+      null,
+      1,
+      1,
+      Date.today(),
+      null,
+      null
+    );
+    ALT_CLS_MatchEvidence.Side lower = side(
+      'CSV:abc',
+      null,
+      null,
+      1,
+      1,
+      Date.today(),
+      null,
+      null
+    );
+    Assert.areEqual(
+      'DIFFERENT',
+      byFeature(ALT_CLS_MatchEvidence.evaluate(upper, lower))
+        .get('EXTERNAL_IDENTITY')
+        .relation
+    );
+    try {
+      ALT_CLS_MatchEvidence.evaluate(null, lower);
+      Assert.fail('both sides are required');
+    } catch (IllegalArgumentException expected) {
+      Assert.isNotNull(expected);
+    }
   }
 
   @IsTest
@@ -273,6 +356,36 @@ private class ALT_CLS_MatchEvidenceTest {
         ALT_CLS_MatchEvidence.evaluate(source, plain)
       ),
       'identical evidence yields the same signature (tie)'
+    );
+    // Same relations, different exact deltas: not a tie.
+    ALT_CLS_MatchEvidence.Side near = side(
+      null,
+      null,
+      null,
+      101,
+      101,
+      Date.today().addDays(1),
+      'q',
+      null
+    );
+    ALT_CLS_MatchEvidence.Side far = side(
+      null,
+      null,
+      null,
+      900,
+      900,
+      Date.today().addDays(300),
+      'q',
+      null
+    );
+    Assert.areNotEqual(
+      ALT_CLS_MatchEvidence.signature(
+        ALT_CLS_MatchEvidence.evaluate(source, near)
+      ),
+      ALT_CLS_MatchEvidence.signature(
+        ALT_CLS_MatchEvidence.evaluate(source, far)
+      ),
+      'deltas are part of the tie signature'
     );
     Assert.areNotEqual(
       ALT_CLS_MatchEvidence.signature(plainEvidence),

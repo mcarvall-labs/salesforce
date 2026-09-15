@@ -25,30 +25,30 @@ const SORT_OPTIONS = [
   { label: labels.evSortPOLICY, value: "POLICY" },
   { label: labels.evSortDUE_DATE, value: "DUE_DATE" }
 ];
-const RELATION_VARIANT = {
-  EXACT: "success",
-  CONTAINS: "inverse",
-  COVERS: "success",
-  PARTIAL: "warning",
-  DIFFERENT: "inverse",
-  UNKNOWN: "inverse",
-  REDACTED: "inverse"
-};
-
-/** Evidence stays a fact: feature + relation + explanation resolved from codes, values as sent. */
+function signed(delta) {
+  const n = Number(delta);
+  return n > 0 ? `+${n}` : `${n}`;
+}
+/** Evidence stays a fact: feature + relation + explanation resolved from codes, signed deltas, values as sent. */
 function evidenceChip(v) {
   const feature = labels["evf" + v.feature] || v.feature;
   const relation = labels["evr" + v.relation] || v.relation;
+  const hasDelta = v.delta !== null && v.delta !== undefined;
   let explanation;
   if (v.explanation === "DATE_AFTER" || v.explanation === "DATE_BEFORE") {
     explanation = format(
       labels["evx" + v.explanation],
       Math.abs(Number(v.delta))
     );
+  } else if (labels["evx" + v.explanation]) {
+    explanation = format(
+      labels["evx" + v.explanation],
+      hasDelta ? signed(v.delta) : ""
+    );
   } else {
     explanation = format(
       labels["evx" + v.relation] || labels.evxUNKNOWN,
-      v.delta === null || v.delta === undefined ? "" : Math.abs(Number(v.delta))
+      hasDelta ? signed(v.delta) : ""
     );
   }
   const values =
@@ -58,8 +58,7 @@ function evidenceChip(v) {
   return {
     key: v.feature,
     label: `${feature}: ${relation}`,
-    title: `${explanation}${values}`,
-    variant: RELATION_VARIANT[v.relation] || "inverse"
+    detail: `${explanation}${values}`
   };
 }
 
@@ -223,10 +222,10 @@ export default class AxfSourceLink extends LightningElement {
     }));
     if (this.sortMode === "DUE_DATE") {
       // Presentation only: a stable, deterministic re-sort of the same page — never a score.
+      // Undated rows go last, as the server order does.
+      const due = (row) => row.dueDate || "9999-12-31";
       rows.sort(
-        (a, b) =>
-          (a.dueDate || "").localeCompare(b.dueDate || "") ||
-          a.key.localeCompare(b.key)
+        (a, b) => due(a).localeCompare(due(b)) || a.key.localeCompare(b.key)
       );
     }
     return rows;
@@ -235,11 +234,10 @@ export default class AxfSourceLink extends LightningElement {
     if (!this.candidatePage) {
       return "";
     }
-    return format(
-      labels.evIntro,
-      this.candidatePage.matchingPolicy,
-      this.candidatePage.evidenceCutoff
-    );
+    return format(labels.evIntro, this.candidatePage.matchingPolicy);
+  }
+  get evidenceCutoff() {
+    return this.candidatePage ? this.candidatePage.evidenceCutoff : null;
   }
   get tieText() {
     if (

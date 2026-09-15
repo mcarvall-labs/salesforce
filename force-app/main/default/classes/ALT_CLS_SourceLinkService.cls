@@ -69,8 +69,8 @@ public with sharing class ALT_CLS_SourceLinkService {
     public String description;
     @AuraEnabled
     public String category;
-    @AuraEnabled
-    public String sourceKey;
+    /** Provider key: used server-side for the EXTERNAL_IDENTITY feature, never sent to the client. */
+    public transient String sourceKey;
     @AuraEnabled
     public Decimal version;
     @AuraEnabled
@@ -121,6 +121,7 @@ public with sharing class ALT_CLS_SourceLinkService {
     public Boolean lowEvidence = false;
     public Id fundingId;
     public Id holderId;
+    public transient String signature;
   }
 
   public class SourceQuery {
@@ -685,10 +686,12 @@ public with sharing class ALT_CLS_SourceLinkService {
     for (CandidateView c : all) {
       c.evidence = ALT_CLS_MatchEvidence.evaluate(side(result.source), side(c));
       c.lowEvidence = ALT_CLS_MatchEvidence.lowEvidence(c.evidence);
-      String signature = ALT_CLS_MatchEvidence.signature(c.evidence);
+      c.signature = ALT_CLS_MatchEvidence.signature(c.evidence);
       signatures.put(
-        signature,
-        (signatures.containsKey(signature) ? signatures.get(signature) : 0) + 1
+        c.signature,
+        (signatures.containsKey(c.signature)
+          ? signatures.get(c.signature)
+          : 0) + 1
       );
       keys.add(
         new ALT_CLS_MatchEvidence.OrderKey(
@@ -696,14 +699,18 @@ public with sharing class ALT_CLS_SourceLinkService {
           c.persisted ? 0 : 1,
           c.persisted
             ? String.valueOf(c.targetId)
-            : String.valueOf(c.scheduleId) + '#' + String.valueOf(c.sequence),
+            : String.valueOf(c.scheduleId) +
+              '#' +
+              String.valueOf(c.sequence == null ? 0 : c.sequence)
+                .leftPad(6, '0'),
           c
         )
       );
     }
     for (CandidateView c : all) {
-      // A tie is explicit: identical evidence on every feature never selects a winner.
-      c.tied = signatures.get(ALT_CLS_MatchEvidence.signature(c.evidence)) > 1;
+      // A tie is explicit: identical evidence (relations and exact deltas) on every
+      // feature never selects a winner.
+      c.tied = signatures.get(c.signature) > 1;
       if (c.tied) {
         result.tieCount++;
       }
@@ -774,7 +781,7 @@ public with sharing class ALT_CLS_SourceLinkService {
       'SELECT Id, AXF_FTX_NUM_Magnitude__c, AXF_FTX_TXT_CurrencyIsoCode__c, AXF_FTX_PKL_Direction__c,' +
       ' AXF_FTX_DAT_DueDate__c, AXF_FTX_DAT_PurchaseDate__c, AXF_FTX_TXT_Description__c, AXF_FTX_TXT_UserCategory__c,' +
       ' AXF_FTX_PKL_Status__c, AXF_FTX_NUM_Version__c, AXF_FTX_PKL_ScheduleState__c, AXF_FTX_LKP_Schedule__c,' +
-      ' AXF_FTX_NUM_Sequence__c, AXF_FTX_LKP_BankAccount__c, AXF_FTX_LKP_CreditCard__c' +
+      ' AXF_FTX_NUM_Sequence__c, AXF_FTX_LKP_BankAccount__c, AXF_FTX_LKP_CreditCard__c, AXF_FTX_LKP_Account__c' +
       ' FROM AXF_OBJ_FinancialTransaction__c' +
       ' WHERE AXF_FTX_LKP_Account__c = :accountId AND AXF_FTX_PKL_PlanKind__c = \'PLANNED\'' +
       ' AND AXF_FTX_TXT_CurrencyIsoCode__c = :iso AND AXF_FTX_PKL_Direction__c = :direction' +
@@ -850,7 +857,7 @@ public with sharing class ALT_CLS_SourceLinkService {
         : row.AXF_FTX_NUM_Version__c;
       c.linkable = true;
       c.fundingId = (Id) row.get(fundingField(source.sourceKind));
-      c.holderId = source.accountId;
+      c.holderId = row.AXF_FTX_LKP_Account__c; // observed, not copied from the source
       result.add(c);
     }
     return result;
@@ -916,7 +923,7 @@ public with sharing class ALT_CLS_SourceLinkService {
     }
     Integer scheduleCap = MAX_SCHEDULES + 1;
     List<AXF_OBJ_FinancialSchedule__c> schedules = [
-      SELECT Id, Name
+      SELECT Id, Name, AXF_FSC_LKP_Account__c
       FROM AXF_OBJ_FinancialSchedule__c
       WHERE
         AXF_FSC_LKP_Account__c = :source.accountId
@@ -963,7 +970,7 @@ public with sharing class ALT_CLS_SourceLinkService {
         c.description = schedule.Name;
         c.status = line.estimated == true ? 'ESTIMATED' : 'PLANNED';
         c.linkable = false;
-        c.holderId = source.accountId;
+        c.holderId = schedule.AXF_FSC_LKP_Account__c;
         c.reasons.add('MATERIALIZATION_REQUIRED');
         result.add(c);
         page.virtualCount++;

@@ -364,6 +364,7 @@ private class ALT_CLS_SourceLinkServiceTest {
         Date.today(),
         'source'
       );
+      source.AXF_BAT_TXT_ProviderCategory__c = 'Housing';
       insert source;
       Date d1 = Date.today().addDays(5);
       Date d2 = Date.today().addDays(10);
@@ -381,6 +382,7 @@ private class ALT_CLS_SourceLinkServiceTest {
         plan(other.Id, 'foreign', 150, 'DEBIT', 'BRL', d1)
       };
       plans[3].AXF_FTX_LKP_BankAccount__c = available.Id;
+      plans[3].AXF_FTX_TXT_UserCategory__c = 'housing';
       plans[4].AXF_FTX_LKP_BankAccount__c = otherBank.Id;
       plans[5].AXF_FTX_LKP_CreditCard__c = card.Id;
       plans[6].AXF_FTX_PKL_ScheduleState__c = 'CANCELLED';
@@ -499,15 +501,47 @@ private class ALT_CLS_SourceLinkServiceTest {
         'signed days, no tolerance'
       );
       Assert.areEqual('DIFFERENT', funded.get('DESCRIPTION').relation);
-      Assert.areEqual('UNKNOWN', funded.get('CATEGORY').relation);
+      Assert.areEqual(
+        'EXACT',
+        funded.get('CATEGORY').relation,
+        'provider vs user category folded'
+      );
+      Assert.areEqual('Housing', funded.get('CATEGORY').sourceValue);
       Assert.areEqual('UNKNOWN', funded.get('EXTERNAL_IDENTITY').relation);
       Assert.isFalse(lookup.get(plans[3].Id).tied);
-      Assert.isTrue(
+      Assert.isFalse(
         lookup.get(plans[0].Id).tied,
-        'identical evidence is an explicit tie'
+        'same relations but different date deltas: not a tie'
       );
-      Assert.isTrue(lookup.get(plans[2].Id).tied);
-      Assert.isTrue(all.tieCount >= 2, 'ties counted: ' + all.tieCount);
+      Assert.isTrue(
+        lookup.get(plans[1].Id).lowEvidence,
+        'nothing exact beyond holder/currency is explicit uncertainty'
+      );
+      Assert.isFalse(lookup.get(plans[3].Id).lowEvidence);
+      Assert.isTrue(
+        all.lowEvidenceCount >= 1,
+        'low evidence counted: ' + all.lowEvidenceCount
+      );
+      // Persisted forecasts always precede virtual lines in the policy order.
+      Integer lastPersisted = -1;
+      Integer firstVirtual = all.items.size();
+      for (Integer i = 0; i < all.items.size(); i++) {
+        if (all.items[i].persisted) {
+          lastPersisted = i;
+        } else if (i < firstVirtual) {
+          firstVirtual = i;
+        }
+      }
+      Assert.isTrue(lastPersisted < firstVirtual, 'persisted before virtual');
+      Assert.areEqual(
+        plans[0].Id,
+        page.items[1].targetId,
+        'second slot is a persisted forecast'
+      );
+      Assert.isNull(
+        funded.get('EXTERNAL_IDENTITY').sourceValue,
+        'provider key never leaves the server'
+      );
       for (ALT_CLS_SourceLinkService.CandidateView c : all.items) {
         Assert.areEqual(
           'CONSULTATIVE',

@@ -166,7 +166,14 @@ const candidates = {
       linkable: false,
       reasons: ["MATERIALIZATION_REQUIRED"],
       state: "CONSULTATIVE",
-      evidence: evidence.map((v) => ({ ...v, relation: "UNKNOWN" })),
+      evidence: evidence.map((v) => ({
+        ...v,
+        relation: "UNKNOWN",
+        explanation: `${v.feature}_UNKNOWN`,
+        delta: null,
+        sourceValue: null,
+        candidateValue: null
+      })),
       tied: false,
       lowEvidence: true
     }
@@ -309,6 +316,24 @@ describe("c-a-x-f-_-l-w-c-_source-link", () => {
 
   it("shows independent evidence per candidate with explicit ties and no automatic selection", async () => {
     const element = await mount();
+    const later = {
+      targetId: "a0C0",
+      persisted: true,
+      amount: 90,
+      residual: 90,
+      currencyIso: "BRL",
+      direction: "DEBIT",
+      dueDate: "2026-09-01",
+      description: "Condominio",
+      status: "PLANNED",
+      version: 0,
+      linkable: true,
+      reasons: [],
+      state: "CONSULTATIVE",
+      evidence: evidence.map((v) => ({ ...v })),
+      tied: false,
+      lowEvidence: false
+    };
     listSources.mockResolvedValue({
       pageNumber: 1,
       pageSize: 25,
@@ -317,7 +342,10 @@ describe("c-a-x-f-_-l-w-c-_source-link", () => {
       excludedCount: 0,
       items: [source]
     });
-    listCandidates.mockResolvedValue(candidates);
+    listCandidates.mockResolvedValue({
+      ...candidates,
+      items: [candidates.items[0], later, candidates.items[1]]
+    });
     byId(element, "holder").dispatchEvent(
       new CustomEvent("change", { detail: { value: "001A" } })
     );
@@ -335,12 +363,18 @@ describe("c-a-x-f-_-l-w-c-_source-link", () => {
     const cells = element.shadowRoot.querySelectorAll(
       '[data-id="evidenceCell"]'
     );
-    expect(cells.length).toBe(2);
+    expect(cells.length).toBe(3);
     const chips = cells[0].querySelectorAll("span.slds-badge");
     expect(chips.length).toBe(9);
     expect(chips[4].textContent).toContain("c.AXF_SourceLink_evfAMOUNT");
     expect(chips[4].textContent).toContain("c.AXF_SourceLink_evrDIFFERENT");
     expect(chips[4].getAttribute("title")).toContain("150.00 → 200.00");
+    expect(
+      chips[4].querySelector(".slds-assistive-text").textContent
+    ).toContain("150.00 → 200.00");
+    expect(byId(element, "evidenceCutoff").value).toBe(
+      "2026-09-15T12:00:00.000Z"
+    );
     expect(chips[6].getAttribute("title")).toContain(
       "c.AXF_SourceLink_evxDATE_AFTER"
     );
@@ -351,7 +385,7 @@ describe("c-a-x-f-_-l-w-c-_source-link", () => {
     const badges = cells[0].querySelectorAll("lightning-badge");
     expect(badges[0].label).toBe("c.AXF_SourceLink_evConsultative");
     expect(badges[1].label).toBe("c.AXF_SourceLink_evTied");
-    expect(cells[1].querySelectorAll("lightning-badge")[1].label).toBe(
+    expect(cells[2].querySelectorAll("lightning-badge")[1].label).toBe(
       "c.AXF_SourceLink_evLowEvidence"
     );
     // Nothing is pre-selected: the review step is reached only through an explicit click.
@@ -361,9 +395,28 @@ describe("c-a-x-f-_-l-w-c-_source-link", () => {
       new CustomEvent("change", { detail: { value: "DUE_DATE" } })
     );
     await flush();
-    expect(
-      element.shadowRoot.querySelectorAll('[data-id="evidenceCell"]').length
-    ).toBe(2);
+    const rows = element.shadowRoot.querySelectorAll(
+      '[data-id="candidateTable"] tbody tr'
+    );
+    expect(rows.length).toBe(3);
+    // Policy order: a0C1 (09-20), a0C0 (09-01, later record id), virtual (10-20). By due date: a0C0 first.
+    expect(rows[0].textContent).toContain("Condominio");
+    expect(rows[1].textContent).toContain("Aluguel set");
+    // Selecting after the re-sort still resolves the clicked candidate.
+    rows[0].querySelector("[data-index]").click();
+    await flush();
+    expect(byId(element, "targetSummary").textContent).toContain("Condominio");
+    confirm.mockResolvedValue({
+      allocationId: "a0E7",
+      targetId: "a0C0",
+      replayed: false,
+      createdActualOnly: false,
+      amount: 90,
+      currencyIso: "BRL"
+    });
+    byId(element, "confirm").click();
+    await flush();
+    expect(JSON.parse(confirm.mock.calls[0][0].request).targetId).toBe("a0C0");
   });
 
   it("treats a date change as a reviewed change, filters by kind and pages without duplicates", async () => {

@@ -121,6 +121,10 @@ import evxDATE_BEFORE from "@salesforce/label/c.AXF_SourceLink_evxDATE_BEFORE";
 import originPLUGGY from "@salesforce/label/c.AXF_SourceLink_originPLUGGY";
 import originCSV from "@salesforce/label/c.AXF_SourceLink_originCSV";
 import originMANUAL from "@salesforce/label/c.AXF_SourceLink_originMANUAL";
+import evxDESCRIPTION_CONTAINS_CANDIDATE from "@salesforce/label/c.AXF_SourceLink_evxDESCRIPTION_CONTAINS_CANDIDATE";
+import evxDESCRIPTION_CONTAINED_IN_CANDIDATE from "@salesforce/label/c.AXF_SourceLink_evxDESCRIPTION_CONTAINED_IN_CANDIDATE";
+import evxCATEGORY_CONTAINS_CANDIDATE from "@salesforce/label/c.AXF_SourceLink_evxCATEGORY_CONTAINS_CANDIDATE";
+import evxCATEGORY_CONTAINED_IN_CANDIDATE from "@salesforce/label/c.AXF_SourceLink_evxCATEGORY_CONTAINED_IN_CANDIDATE";
 
 export default {
   title,
@@ -245,5 +249,9 @@ export default {
   evxDATE_BEFORE,
   originPLUGGY,
   originCSV,
-  originMANUAL
+  originMANUAL,
+  evxDESCRIPTION_CONTAINS_CANDIDATE,
+  evxDESCRIPTION_CONTAINED_IN_CANDIDATE,
+  evxCATEGORY_CONTAINS_CANDIDATE,
+  evxCATEGORY_CONTAINED_IN_CANDIDATE
 };

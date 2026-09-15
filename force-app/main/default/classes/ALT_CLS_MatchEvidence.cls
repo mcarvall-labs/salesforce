@@ -16,6 +16,8 @@ public inherited sharing class ALT_CLS_MatchEvidence {
   public static final String REL_DIFFERENT = 'DIFFERENT';
   public static final String REL_UNKNOWN = 'UNKNOWN';
   public static final String REL_REDACTED = 'REDACTED';
+  /** Shortest normalized text that may count as CONTAINS; shorter tokens are DIFFERENT. */
+  public static final Integer MIN_CONTAINS_LENGTH = 3;
   /** Feature order is fixed so the UI and the tie detection read the same sequence. */
   public static final List<String> FEATURES = new List<String>{
     'EXTERNAL_IDENTITY',
@@ -41,7 +43,7 @@ public inherited sharing class ALT_CLS_MatchEvidence {
     /** Signed detail for the relation (days between dates, amount difference), null when not applicable. */
     @AuraEnabled
     public Decimal delta;
-    /** Explanation code resolved to a label by the UI; never free text from records. */
+    /** Explanation code (feature_RELATION, DATE_AFTER/BEFORE, *_CONTAINS_CANDIDATE, *_CONTAINED_IN_CANDIDATE); the UI maps it to a label. */
     @AuraEnabled
     public String explanation;
   }
@@ -63,6 +65,9 @@ public inherited sharing class ALT_CLS_MatchEvidence {
 
   /** @description Evaluates every feature independently; the result never ranks the candidate. */
   public static List<EvidenceView> evaluate(Side source, Side candidate) {
+    if (source == null || candidate == null) {
+      throw new IllegalArgumentException('both sides are required');
+    }
     List<EvidenceView> result = new List<EvidenceView>();
     result.add(
       identity(
@@ -122,9 +127,12 @@ public inherited sharing class ALT_CLS_MatchEvidence {
     v.sourceValue = left;
     v.candidateValue = right;
     if (String.isBlank(left) || String.isBlank(right)) {
+      // Unknown on either side: no value travels, nothing to compare or disclose.
+      v.sourceValue = null;
+      v.candidateValue = null;
       v.relation = REL_UNKNOWN;
       v.explanation = feature + '_UNKNOWN';
-    } else if (left == right) {
+    } else if (left.equals(right)) {
       v.relation = REL_EXACT;
       v.explanation = feature + '_EXACT';
     } else {
@@ -229,9 +237,14 @@ public inherited sharing class ALT_CLS_MatchEvidence {
     } else if (a == b) {
       v.relation = REL_EXACT;
       v.explanation = feature + '_EXACT';
-    } else if (a.contains(b) || b.contains(a)) {
+    } else if (
+      Math.min(a.length(), b.length()) >= MIN_CONTAINS_LENGTH &&
+      (a.contains(b) || b.contains(a))
+    ) {
       v.relation = REL_CONTAINS;
-      v.explanation = feature + '_CONTAINS';
+      v.explanation = a.contains(b)
+        ? feature + '_CONTAINS_CANDIDATE'
+        : feature + '_CONTAINED_IN_CANDIDATE';
     } else {
       v.relation = REL_DIFFERENT;
       v.explanation = feature + '_DIFFERENT';
@@ -239,33 +252,43 @@ public inherited sharing class ALT_CLS_MatchEvidence {
     return v;
   }
 
-  /** Case/whitespace/diacritic folding only; no fuzzy similarity exists in v1.0.0. */
+  /** Case/whitespace/diacritic/punctuation folding only; no fuzzy similarity exists in v1.0.0. */
   @TestVisible
   private static String normalize(String value) {
     if (String.isBlank(value)) {
       return '';
     }
-    String folded = value.toLowerCase().normalizeSpace();
-    String result = '';
-    for (Integer i = 0; i < folded.length(); i++) {
-      String ch = folded.substring(i, i + 1);
+    String folded = value.toLowerCase();
+    List<String> parts = new List<String>();
+    for (String ch : folded.split('')) {
+      if (ch == '') {
+        continue; // Apex may yield a leading empty token
+      }
       Integer at = DIACRITICS.indexOf(ch);
-      result += at < 0 ? ch : PLAIN.substring(at, at + 1);
+      parts.add(at < 0 ? ch : PLAIN.substring(at, at + 1));
     }
-    return result;
+    return String.join(parts, '')
+      .replaceAll('[^\\p{L}\\p{N} ]', ' ')
+      .normalizeSpace();
   }
-  private static final String DIACRITICS = 'áàâãäéèêëíìîïóòôõöúùûüçñ';
-  private static final String PLAIN = 'aaaaaeeeeiiiiooooouuuucn';
+  private static final String DIACRITICS = 'áàâãäåéèêëíìîïóòôõöøúùûüçñýÿ';
+  private static final String PLAIN = 'aaaaaaeeeeiiiioooooouuuucnyy';
 
+  /** Shown as stored: no rounding, so the values always justify the relation. */
   private static String plain(Decimal value) {
-    return value == null ? null : value.setScale(2).toPlainString();
+    return value == null ? null : value.toPlainString();
   }
 
-  /** @description Relation signature used to detect ties: identical evidence on every feature. */
+  /** @description Tie signature: identical relation AND exact delta on every feature (no tolerance). */
   public static String signature(List<EvidenceView> evidence) {
     List<String> parts = new List<String>();
     for (EvidenceView v : evidence) {
-      parts.add(v.feature + '=' + v.relation);
+      parts.add(
+        v.feature +
+          '=' +
+          v.relation +
+          (v.delta == null ? '' : '@' + v.delta.toPlainString())
+      );
     }
     return String.join(parts, ';');
   }

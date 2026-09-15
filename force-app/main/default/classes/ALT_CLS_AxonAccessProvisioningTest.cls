@@ -11,7 +11,10 @@ private class ALT_CLS_AxonAccessProvisioningTest {
 
   private static User buildStandardUser() {
     Profile p = [SELECT Id FROM Profile WHERE Name = 'Standard User' LIMIT 1];
-    String unique = 'axf7' + String.valueOf(Datetime.now().getTime()) + Crypto.getRandomInteger();
+    String unique =
+      'axf7' +
+      String.valueOf(Datetime.now().getTime()) +
+      Crypto.getRandomInteger();
     return new User(
       FirstName = 'Axon',
       LastName = 'Tester',
@@ -50,16 +53,31 @@ private class ALT_CLS_AxonAccessProvisioningTest {
       ALT_CLS_AxonAccessProvisioning.parseLevel('  participante '),
       'trimmed lower case should parse'
     );
-    System.assertEquals(null, ALT_CLS_AxonAccessProvisioning.parseLevel('admin'), 'unknown -> null');
-    System.assertEquals(null, ALT_CLS_AxonAccessProvisioning.parseLevel(null), 'null -> null');
-    System.assertEquals(null, ALT_CLS_AxonAccessProvisioning.parseLevel('  '), 'blank -> null');
+    System.assertEquals(
+      null,
+      ALT_CLS_AxonAccessProvisioning.parseLevel('admin'),
+      'unknown -> null'
+    );
+    System.assertEquals(
+      null,
+      ALT_CLS_AxonAccessProvisioning.parseLevel(null),
+      'null -> null'
+    );
+    System.assertEquals(
+      null,
+      ALT_CLS_AxonAccessProvisioning.parseLevel('  '),
+      'blank -> null'
+    );
   }
 
   @IsTest
   static void forbiddenWhenCallerCannotConfigure() {
     ALT_CLS_AxonAccessProvisioning.canConfigureOverride = false;
     ALT_CLS_AxonAccessProvisioning.Result r = new ALT_CLS_AxonAccessProvisioning()
-      .applyAccessLevel(UserInfo.getUserId(), ALT_CLS_AxonAccessProvisioning.Tier.GESTOR);
+      .applyAccessLevel(
+        UserInfo.getUserId(),
+        ALT_CLS_AxonAccessProvisioning.Tier.GESTOR
+      );
     System.assertEquals(
       ALT_CLS_AxonAccessProvisioning.Outcome.FORBIDDEN,
       r.outcome,
@@ -72,7 +90,11 @@ private class ALT_CLS_AxonAccessProvisioningTest {
     ALT_CLS_AxonAccessProvisioning.canConfigureOverride = true;
     ALT_CLS_AxonAccessProvisioning.Result r = new ALT_CLS_AxonAccessProvisioning()
       .applyAccessLevel(UserInfo.getUserId(), null);
-    System.assertEquals(ALT_CLS_AxonAccessProvisioning.Outcome.FAILED, r.outcome, 'null level -> FAILED');
+    System.assertEquals(
+      ALT_CLS_AxonAccessProvisioning.Outcome.FAILED,
+      r.outcome,
+      'null level -> FAILED'
+    );
   }
 
   @IsTest
@@ -81,7 +103,11 @@ private class ALT_CLS_AxonAccessProvisioningTest {
     Id fakeUserId = Id.valueOf('005000000000000AAA');
     ALT_CLS_AxonAccessProvisioning.Result r = new ALT_CLS_AxonAccessProvisioning()
       .applyAccessLevel(fakeUserId, ALT_CLS_AxonAccessProvisioning.Tier.GESTOR);
-    System.assertEquals(ALT_CLS_AxonAccessProvisioning.Outcome.FAILED, r.outcome, 'unknown user -> FAILED');
+    System.assertEquals(
+      ALT_CLS_AxonAccessProvisioning.Outcome.FAILED,
+      r.outcome,
+      'unknown user -> FAILED'
+    );
   }
 
   @IsTest
@@ -114,18 +140,26 @@ private class ALT_CLS_AxonAccessProvisioningTest {
       'second apply is a no-op'
     );
 
-    UserRole role = [SELECT Id FROM UserRole WHERE DeveloperName = :GESTOR_ROLE LIMIT 1];
+    UserRole role = [
+      SELECT Id
+      FROM UserRole
+      WHERE DeveloperName = :GESTOR_ROLE
+      LIMIT 1
+    ];
     User after = [SELECT UserRoleId FROM User WHERE Id = :u.Id];
     System.assertEquals(role.Id, after.UserRoleId, 'role assigned');
 
     List<PermissionSetAssignment> psas = [
       SELECT PermissionSetGroup.DeveloperName
       FROM PermissionSetAssignment
-      WHERE AssigneeId = :u.Id
-      AND PermissionSetGroupId != NULL
+      WHERE AssigneeId = :u.Id AND PermissionSetGroupId != NULL
     ];
     System.assertEquals(1, psas.size(), 'exactly one PSG');
-    System.assertEquals(GESTOR_PSG, psas[0].PermissionSetGroup.DeveloperName, 'Gestor PSG assigned');
+    System.assertEquals(
+      GESTOR_PSG,
+      psas[0].PermissionSetGroup.DeveloperName,
+      'Gestor PSG assigned'
+    );
   }
 
   @IsTest
@@ -152,8 +186,7 @@ private class ALT_CLS_AxonAccessProvisioningTest {
     List<PermissionSetAssignment> psas = [
       SELECT PermissionSetGroup.DeveloperName
       FROM PermissionSetAssignment
-      WHERE AssigneeId = :u.Id
-      AND PermissionSetGroupId != NULL
+      WHERE AssigneeId = :u.Id AND PermissionSetGroupId != NULL
     ];
     System.assertEquals(1, psas.size(), 'only one Axon PSG after switch');
     System.assertEquals(
@@ -191,11 +224,22 @@ private class ALT_CLS_AxonAccessProvisioningTest {
 
     Test.startTest();
     Map<Id, String> before = svc.currentLevels(new Set<Id>{ u.Id });
-    svc.applyAccessLevel(u.Id, ALT_CLS_AxonAccessProvisioning.Tier.PARTICIPANTE);
+    svc.applyAccessLevel(
+      u.Id,
+      ALT_CLS_AxonAccessProvisioning.Tier.PARTICIPANTE
+    );
     Map<Id, String> after = svc.currentLevels(new Set<Id>{ u.Id });
     Test.stopTest();
 
-    System.assertEquals(ALT_CLS_AxonAccessProvisioning.LEVEL_NONE, before.get(u.Id), 'no level before');
-    System.assertEquals(ALT_CLS_AxonAccessProvisioning.LEVEL_PARTICIPANTE, after.get(u.Id), 'Participante after');
+    System.assertEquals(
+      ALT_CLS_AxonAccessProvisioning.LEVEL_NONE,
+      before.get(u.Id),
+      'no level before'
+    );
+    System.assertEquals(
+      ALT_CLS_AxonAccessProvisioning.LEVEL_PARTICIPANTE,
+      after.get(u.Id),
+      'Participante after'
+    );
   }
 }
