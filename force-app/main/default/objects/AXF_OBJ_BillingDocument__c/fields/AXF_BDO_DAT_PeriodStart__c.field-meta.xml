@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<CustomField xmlns="http://soap.sforce.com/2006/04/metadata">
+    <fullName>AXF_BDO_DAT_PeriodStart__c</fullName>
+    <label>Inicio do Periodo</label>
+    <type>Date</type>
+    <required>true</required>
+    <description
+  >Inicio do periodo de competencia cobrado; linhas fora do periodo sao incompativeis.</description>
+</CustomField>

@@ -1,0 +1,13 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<CustomField xmlns="http://soap.sforce.com/2006/04/metadata">
+    <fullName>AXF_BDO_EXI_ClientRequestId__c</fullName>
+    <label>Chave de Idempotencia</label>
+    <type>Text</type>
+    <length>64</length>
+    <unique>true</unique>
+    <externalId>true</externalId>
+    <caseSensitive>true</caseSensitive>
+    <required>false</required>
+    <description
+  >Chave de idempotencia da composicao do rascunho: mesma chave devolve o mesmo documento; payload divergente = CONFLICT (G6).</description>
+</CustomField>

@@ -77,4 +77,183 @@
     >O valor excede o disponível na origem ou o saldo do plano.</label><name
     >AXF_Realization_unavailableAmount</name></customLabels><customLabels><label
     >Configure a moeda de relatório da organização antes de registrar a realização.</label><name
-    >AXF_Realization_reportingCurrencyRequired</name></customLabels></Translations>
+    >AXF_Realization_reportingCurrencyRequired</name></customLabels><customLabels
+  ><label>Compor rascunho de cobrança</label><name
+    >AXF_BillingComposer_title</name></customLabels><customLabels><label
+    >Selecione lançamentos previstos compatíveis de um contrato para revisar um rascunho de cobrança rastreável antes da emissão.</label><name
+    >AXF_BillingComposer_intro</name></customLabels><customLabels><label
+    >Titular</label><name
+    >AXF_BillingComposer_holder</name></customLabels><customLabels><label
+    >Contrato</label><name
+    >AXF_BillingComposer_contract</name></customLabels><customLabels><label
+    >Contraparte</label><name
+    >AXF_BillingComposer_counterparty</name></customLabels><customLabels><label
+    >Moeda</label><name
+    >AXF_BillingComposer_currency</name></customLabels><customLabels><label
+    >Tipo de documento</label><name
+    >AXF_BillingComposer_documentKind</name></customLabels><customLabels><label
+    >Cobrança genérica</label><name
+    >AXF_BillingComposer_genericInvoice</name></customLabels><customLabels
+  ><label>Recibo genérico</label><name
+    >AXF_BillingComposer_genericReceipt</name></customLabels><customLabels
+  ><label>Série</label><name
+    >AXF_BillingComposer_seriesKey</name></customLabels><customLabels><label
+    >Início do período</label><name
+    >AXF_BillingComposer_periodStart</name></customLabels><customLabels><label
+    >Fim do período</label><name
+    >AXF_BillingComposer_periodEnd</name></customLabels><customLabels><label
+    >Carregar candidatos</label><name
+    >AXF_BillingComposer_loadCandidates</name></customLabels><customLabels
+  ><label>Lançamentos candidatos</label><name
+    >AXF_BillingComposer_candidates</name></customLabels><customLabels><label
+    >Selecionar</label><name
+    >AXF_BillingComposer_select</name></customLabels><customLabels><label
+    >Lançamento</label><name
+    >AXF_BillingComposer_entry</name></customLabels><customLabels><label
+    >Snapshot contratual</label><name
+    >AXF_BillingComposer_snapshot</name></customLabels><customLabels><label
+    >Valor</label><name
+    >AXF_BillingComposer_amount</name></customLabels><customLabels><label
+    >Competência</label><name
+    >AXF_BillingComposer_serviceDate</name></customLabels><customLabels><label
+    >Tipo</label><name
+    >AXF_BillingComposer_lineType</name></customLabels><customLabels><label
+    >Incompatibilidades</label><name
+    >AXF_BillingComposer_incompatibilities</name></customLabels><customLabels
+  ><label>Elegível</label><name
+    >AXF_BillingComposer_eligible</name></customLabels><customLabels><label
+    >Nenhum lançamento previsto foi encontrado para este contrato e período.</label><name
+    >AXF_BillingComposer_noCandidates</name></customLabels><customLabels><label
+    >Alocações de trabalho aprovado</label><name
+    >AXF_BillingComposer_workAllocations</name></customLabels><customLabels
+  ><label>Registro de trabalho</label><name
+    >AXF_BillingComposer_workRecord</name></customLabels><customLabels><label
+    >Saldo</label><name
+    >AXF_BillingComposer_remaining</name></customLabels><customLabels><label
+    >Quantidade</label><name
+    >AXF_BillingComposer_quantity</name></customLabels><customLabels><label
+    >Adicionar alocação</label><name
+    >AXF_BillingComposer_addAllocation</name></customLabels><customLabels><label
+    >Remover alocação</label><name
+    >AXF_BillingComposer_removeAllocation</name></customLabels><customLabels
+  ><label>Nenhum registro de trabalho aprovado com saldo.</label><name
+    >AXF_BillingComposer_noWork</name></customLabels><customLabels><label
+    >Resumo</label><name
+    >AXF_BillingComposer_summary</name></customLabels><customLabels><label
+    >Linhas selecionadas</label><name
+    >AXF_BillingComposer_selectedLines</name></customLabels><customLabels><label
+    >Total</label><name
+    >AXF_BillingComposer_total</name></customLabels><customLabels><label
+    >Compor rascunho</label><name
+    >AXF_BillingComposer_compose</name></customLabels><customLabels><label
+    >Compondo rascunho…</label><name
+    >AXF_BillingComposer_composing</name></customLabels><customLabels><label
+    >Carregando…</label><name
+    >AXF_BillingComposer_loading</name></customLabels><customLabels><label
+    >Rascunho de cobrança</label><name
+    >AXF_BillingComposer_draft</name></customLabels><customLabels><label
+    >Documento</label><name
+    >AXF_BillingComposer_document</name></customLabels><customLabels><label
+    >Revisão</label><name
+    >AXF_BillingComposer_revision</name></customLabels><customLabels><label
+    >Estado</label><name
+    >AXF_BillingComposer_state</name></customLabels><customLabels><label
+    >Origem</label><name
+    >AXF_BillingComposer_origin</name></customLabels><customLabels><label
+    >Linhas</label><name
+    >AXF_BillingComposer_lines</name></customLabels><customLabels><label
+    >Soma das linhas</label><name
+    >AXF_BillingComposer_linesTotal</name></customLabels><customLabels><label
+    >Novo rascunho</label><name
+    >AXF_BillingComposer_newDraft</name></customLabels><customLabels><label
+    >Rascunho composto. Revise linhas, origem e totais antes da emissão.</label><name
+    >AXF_BillingComposer_success</name></customLabels><customLabels><label
+    >Não foi possível compor o rascunho.</label><name
+    >AXF_BillingComposer_error</name></customLabels><customLabels><label
+    >Selecione ao menos um lançamento elegível.</label><name
+    >AXF_BillingComposer_selectionRequired</name></customLabels><customLabels
+  ><label>Preencha titular, contrato, série e período primeiro.</label><name
+    >AXF_BillingComposer_stepRequired</name></customLabels><customLabels><label
+    >Sem acesso ou inexistente</label><name
+    >AXF_BillingComposer_reasonNotAccessible</name></customLabels><customLabels
+  ><label>Pertence a outro contrato</label><name
+    >AXF_BillingComposer_reasonContractMismatch</name></customLabels><customLabels
+  ><label>Contraparte diferente do documento</label><name
+    >AXF_BillingComposer_reasonCounterpartyMismatch</name></customLabels><customLabels
+  ><label>Titular diferente do documento</label><name
+    >AXF_BillingComposer_reasonAccountMismatch</name></customLabels><customLabels
+  ><label
+    >Moeda diferente; regra cambial indisponível (bloqueado, sem conversão)</label><name
+    >AXF_BillingComposer_reasonBlockedFx</name></customLabels><customLabels
+  ><label>Fora do período de cobrança</label><name
+    >AXF_BillingComposer_reasonPeriodMismatch</name></customLabels><customLabels
+  ><label>Tipo diferente das demais linhas</label><name
+    >AXF_BillingComposer_reasonTypeMismatch</name></customLabels><customLabels
+  ><label>Sem snapshot contratual</label><name
+    >AXF_BillingComposer_reasonSnapshotMissing</name></customLabels><customLabels
+  ><label>Snapshot contratual não está ativo</label><name
+    >AXF_BillingComposer_reasonSnapshotStale</name></customLabels><customLabels
+  ><label>Já consta em uma versão de cobrança efetiva</label><name
+    >AXF_BillingComposer_reasonAlreadyBilled</name></customLabels><customLabels
+  ><label>Não é lançamento previsto</label><name
+    >AXF_BillingComposer_reasonNotPlanned</name></customLabels><customLabels
+  ><label>Registro de trabalho não aprovado para este contrato</label><name
+    >AXF_BillingComposer_reasonWorkNotApproved</name></customLabels><customLabels
+  ><label>Alocação excede o saldo aprovado</label><name
+    >AXF_BillingComposer_reasonWorkOverAllocated</name></customLabels><customLabels
+  ><label>Quantidade da alocação deve ser positiva</label><name
+    >AXF_BillingComposer_reasonWorkInvalidQuantity</name></customLabels><customLabels
+  ><label>Lançamento selecionado mais de uma vez</label><name
+    >AXF_BillingComposer_reasonDuplicateLine</name></customLabels><customLabels
+  ><label
+    >Já existe um rascunho diferente para esta chave de requisição.</label><name
+    >AXF_BillingComposer_codeConflict</name></customLabels><customLabels><label
+    >Já existe um documento para este titular, contrato, tipo e série.</label><name
+    >AXF_BillingComposer_codeDocumentExists</name></customLabels><customLabels
+  ><label>Há linhas incompatíveis; nada foi gravado.</label><name
+    >AXF_BillingComposer_codeIncompatible</name></customLabels><customLabels
+  ><label>Requisição inválida.</label><name
+    >AXF_BillingComposer_codeInvalidInput</name></customLabels><customLabels
+  ><label>Você não tem acesso a todos os registros envolvidos.</label><name
+    >AXF_BillingComposer_codeNotAccessible</name></customLabels><customLabels
+  ><label
+    >O total do documento não confere com as linhas; nada foi gravado.</label><name
+    >AXF_BillingComposer_codeTotalNotConserved</name></customLabels><customLabels
+  ><label
+    >O rascunho foi rejeitado por uma regra de dados; nada foi gravado.</label><name
+    >AXF_BillingComposer_codeRejected</name></customLabels><customLabels><label
+    >Este contrato está cancelado ou substituído e não pode ser faturado.</label><name
+    >AXF_BillingComposer_codeContractNotBillable</name></customLabels><customLabels
+  ><label>Lançamento sem valor positivo</label><name
+    >AXF_BillingComposer_reasonInvalidAmount</name></customLabels><customLabels
+  ><label>Registro de trabalho pertence a outro contrato</label><name
+    >AXF_BillingComposer_reasonWorkContractMismatch</name></customLabels><customLabels
+  ><label>Nenhuma pessoa ou empresa autorizada para faturar.</label><name
+    >AXF_BillingComposer_noEntities</name></customLabels><customLabels><label
+    >O contrato selecionado não tem contraparte ou moeda; complete-o antes de faturar.</label><name
+    >AXF_BillingComposer_contractIncomplete</name></customLabels><customLabels
+  ><label>O fim do período não pode ser anterior ao início.</label><name
+    >AXF_BillingComposer_periodInvalid</name></customLabels><customLabels><label
+    >Toda alocação de trabalho precisa de quantidade positiva.</label><name
+    >AXF_BillingComposer_quantityRequired</name></customLabels><customLabels
+  ><label
+    >O mesmo registro de trabalho foi alocado duas vezes na mesma linha.</label><name
+    >AXF_BillingComposer_duplicateWork</name></customLabels><customLabels><label
+    >Selecione linhas de um único tipo de remuneração por rascunho.</label><name
+    >AXF_BillingComposer_typeMixed</name></customLabels><customLabels><label
+    >restante</label><name
+    >AXF_BillingComposer_remainingBalance</name></customLabels><customLabels
+  ><label>Rascunho</label><name
+    >AXF_BillingComposer_stateDraft</name></customLabels><customLabels><label
+    >Revisado</label><name
+    >AXF_BillingComposer_stateReviewed</name></customLabels><customLabels><label
+    >Em emissão</label><name
+    >AXF_BillingComposer_stateIssuing</name></customLabels><customLabels><label
+    >Emitido</label><name
+    >AXF_BillingComposer_stateIssued</name></customLabels><customLabels><label
+    >Cancelado</label><name
+    >AXF_BillingComposer_stateCancelled</name></customLabels><customLabels
+  ><label>Aberto</label><name
+    >AXF_BillingComposer_lifecycleOpen</name></customLabels><customLabels><label
+    >Fechado</label><name
+    >AXF_BillingComposer_lifecycleClosed</name></customLabels></Translations>

@@ -172,6 +172,22 @@
     <apexClass>AXF_CLS_PluggySyncScheduler</apexClass>
     <enabled>true</enabled>
   </classAccesses>
+  <classAccesses>
+    <apexClass>ALT_CLS_BillingDraftService</apexClass>
+    <enabled>true</enabled>
+  </classAccesses>
+  <classAccesses>
+    <apexClass>ALT_CLS_BillingGuard</apexClass>
+    <enabled>true</enabled>
+  </classAccesses>
+  <classAccesses>
+    <apexClass>ALT_CLS_BillingIntegrity</apexClass>
+    <enabled>true</enabled>
+  </classAccesses>
+  <classAccesses>
+    <apexClass>AXF_CLS_CTRL_BillingComposer</apexClass>
+    <enabled>true</enabled>
+  </classAccesses>
   <customPermissions>
     <enabled>true</enabled>
     <name>AXF_CanConfigure</name>
@@ -1093,6 +1109,122 @@
     <field>AXF_OBJ_PluggyConnection__c.AXF_CON_LKP_Account__c</field>
     <readable>true</readable>
   </fieldPermissions>
+  <fieldPermissions>
+    <editable>true</editable>
+    <field>AXF_OBJ_BillingDocument__c.AXF_BDO_EXI_ClientRequestId__c</field>
+    <readable>true</readable>
+  </fieldPermissions>
+  <fieldPermissions>
+    <editable>false</editable>
+    <field>AXF_OBJ_BillingDocument__c.AXF_BDO_FOR_PresentationState__c</field>
+    <readable>true</readable>
+  </fieldPermissions>
+  <fieldPermissions>
+    <editable>true</editable>
+    <field>AXF_OBJ_BillingDocument__c.AXF_BDO_NUM_Version__c</field>
+    <readable>true</readable>
+  </fieldPermissions>
+  <fieldPermissions>
+    <editable>false</editable>
+    <field>AXF_OBJ_BillingDocument__c.AXF_BDO_TXT_ActiveIssueToken__c</field>
+    <readable>true</readable>
+  </fieldPermissions>
+  <fieldPermissions>
+    <editable>false</editable>
+    <field>AXF_OBJ_BillingDocumentVersion__c.AXF_BDV_CUR_LinesTotal__c</field>
+    <readable>true</readable>
+  </fieldPermissions>
+  <fieldPermissions>
+    <editable>true</editable>
+    <field>AXF_OBJ_BillingDocumentVersion__c.AXF_BDV_CUR_TotalAmount__c</field>
+    <readable>true</readable>
+  </fieldPermissions>
+  <fieldPermissions>
+    <editable>true</editable>
+    <field
+    >AXF_OBJ_BillingDocumentVersion__c.AXF_BDV_LKP_PredecessorVersion__c</field>
+    <readable>true</readable>
+  </fieldPermissions>
+  <fieldPermissions>
+    <editable>false</editable>
+    <field>AXF_OBJ_BillingDocumentVersion__c.AXF_BDV_NUM_LineCount__c</field>
+    <readable>true</readable>
+  </fieldPermissions>
+  <fieldPermissions>
+    <editable>true</editable>
+    <field>AXF_OBJ_BillingDocumentVersion__c.AXF_BDV_NUM_Version__c</field>
+    <readable>true</readable>
+  </fieldPermissions>
+  <fieldPermissions>
+    <editable>true</editable>
+    <field>AXF_OBJ_BillingDocumentVersion__c.AXF_BDV_TAL_Summary__c</field>
+    <readable>true</readable>
+  </fieldPermissions>
+  <fieldPermissions>
+    <editable>true</editable>
+    <field>AXF_OBJ_BillingDocumentLine__c.AXF_BDL_CUR_UnitPrice__c</field>
+    <readable>true</readable>
+  </fieldPermissions>
+  <fieldPermissions>
+    <editable>true</editable>
+    <field>AXF_OBJ_BillingDocumentLine__c.AXF_BDL_DAT_ServiceDate__c</field>
+    <readable>true</readable>
+  </fieldPermissions>
+  <fieldPermissions>
+    <editable>true</editable>
+    <field>AXF_OBJ_BillingDocumentLine__c.AXF_BDL_NUM_Quantity__c</field>
+    <readable>true</readable>
+  </fieldPermissions>
+  <fieldPermissions>
+    <editable>true</editable>
+    <field>AXF_OBJ_BillingDocumentLine__c.AXF_BDL_TXT_Description__c</field>
+    <readable>true</readable>
+  </fieldPermissions>
+  <fieldPermissions>
+    <editable>true</editable>
+    <field
+    >AXF_OBJ_BillingDocumentWorkAllocation__c.AXF_BWA_CUR_AllocatedAmount__c</field>
+    <readable>true</readable>
+  </fieldPermissions>
+  <fieldPermissions>
+    <editable>false</editable>
+    <field>AXF_OBJ_FinancialTransaction__c.AXF_FTX_LKP_Contract__c</field>
+    <readable>true</readable>
+  </fieldPermissions>
+  <fieldPermissions>
+    <editable>false</editable>
+    <field
+    >AXF_OBJ_FinancialTransaction__c.AXF_FTX_LKP_ContractApplicationSnapshot__c</field>
+    <readable>true</readable>
+  </fieldPermissions>
+  <fieldPermissions>
+    <editable>false</editable>
+    <field
+    >AXF_OBJ_ContractApplicationSnapshot__c.AXF_CAS_PKL_RemunerationModel__c</field>
+    <readable>true</readable>
+  </fieldPermissions>
+  <fieldPermissions>
+    <editable>false</editable>
+    <field
+    >AXF_OBJ_ContractApplicationSnapshot__c.AXF_CAS_NUM_HoursQuantity__c</field>
+    <readable>true</readable>
+  </fieldPermissions>
+  <fieldPermissions>
+    <editable>false</editable>
+    <field
+    >AXF_OBJ_ContractApplicationSnapshot__c.AXF_CAS_CUR_AppliedAmount__c</field>
+    <readable>true</readable>
+  </fieldPermissions>
+  <fieldPermissions>
+    <editable>false</editable>
+    <field>AXF_OBJ_FinancialTransaction__c.AXF_FTX_DAT_DueDate__c</field>
+    <readable>true</readable>
+  </fieldPermissions>
+  <fieldPermissions>
+    <editable>false</editable>
+    <field>AXF_OBJ_FinancialTransaction__c.AXF_FTX_PKL_PlanKind__c</field>
+    <readable>true</readable>
+  </fieldPermissions>
   <objectPermissions>
     <allowCreate>true</allowCreate>
     <allowDelete>false</allowDelete>
@@ -1318,6 +1450,42 @@
     <object>AXF_OBJ_FxSettlementCharge__c</object>
     <viewAllRecords>false</viewAllRecords>
   </objectPermissions>
+  <objectPermissions>
+    <allowCreate>true</allowCreate>
+    <allowDelete>false</allowDelete>
+    <allowEdit>true</allowEdit>
+    <allowRead>true</allowRead>
+    <modifyAllRecords>false</modifyAllRecords>
+    <object>AXF_OBJ_BillingDocument__c</object>
+    <viewAllRecords>false</viewAllRecords>
+  </objectPermissions>
+  <objectPermissions>
+    <allowCreate>true</allowCreate>
+    <allowDelete>false</allowDelete>
+    <allowEdit>true</allowEdit>
+    <allowRead>true</allowRead>
+    <modifyAllRecords>false</modifyAllRecords>
+    <object>AXF_OBJ_BillingDocumentVersion__c</object>
+    <viewAllRecords>false</viewAllRecords>
+  </objectPermissions>
+  <objectPermissions>
+    <allowCreate>true</allowCreate>
+    <allowDelete>false</allowDelete>
+    <allowEdit>true</allowEdit>
+    <allowRead>true</allowRead>
+    <modifyAllRecords>false</modifyAllRecords>
+    <object>AXF_OBJ_BillingDocumentLine__c</object>
+    <viewAllRecords>false</viewAllRecords>
+  </objectPermissions>
+  <objectPermissions>
+    <allowCreate>true</allowCreate>
+    <allowDelete>false</allowDelete>
+    <allowEdit>true</allowEdit>
+    <allowRead>true</allowRead>
+    <modifyAllRecords>false</modifyAllRecords>
+    <object>AXF_OBJ_BillingDocumentWorkAllocation__c</object>
+    <viewAllRecords>false</viewAllRecords>
+  </objectPermissions>
   <recordTypeVisibilities>
     <recordType>Account.AXF_Business</recordType>
     <visible>true</visible>
@@ -1372,6 +1540,10 @@
   </tabSettings>
   <tabSettings>
     <tab>AXF_SourceHealth</tab>
+    <visibility>Visible</visibility>
+  </tabSettings>
+  <tabSettings>
+    <tab>AXF_CT_BillingComposer</tab>
     <visibility>Visible</visibility>
   </tabSettings>
 </PermissionSet>

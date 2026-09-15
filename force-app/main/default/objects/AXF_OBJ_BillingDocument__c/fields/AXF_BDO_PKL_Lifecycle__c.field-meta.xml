@@ -1,0 +1,21 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<CustomField xmlns="http://soap.sforce.com/2006/04/metadata">
+    <fullName>AXF_BDO_PKL_Lifecycle__c</fullName>
+    <label>Ciclo de Vida</label>
+    <type>Picklist</type>
+    <required>true</required>
+    <valueSet>
+        <restricted>true</restricted>
+        <valueSetDefinition>
+            <sorted>false</sorted>
+            <value><fullName>OPEN</fullName><default>true</default><label
+        >Aberto</label></value>
+            <value><fullName>CLOSED</fullName><default>false</default><label
+        >Encerrado</label></value>
+            <value><fullName>CANCELLED</fullName><default>false</default><label
+        >Cancelado</label></value>
+        </valueSetDefinition>
+    </valueSet>
+    <description
+  >OPEN -> CLOSED | CANCELLED (GBI-1). Transicoes somente via servico.</description>
+</CustomField>
