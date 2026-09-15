@@ -27,6 +27,11 @@ public with sharing class ALT_CLS_RealizationService {
     public Date recognitionDate;
     public Decimal targetVersion;
     public Decimal sourceVersion;
+    /**
+     * AXF-135: economic role declared by the caller. It is preserved, never inferred here, and a
+     * caller that declares none keeps the pre-AXF-135 payload fingerprint replayable.
+     */
+    public String economicRole;
     public String operationKey;
   }
   public class View {
@@ -226,22 +231,27 @@ public with sharing class ALT_CLS_RealizationService {
       'INVALID_SOURCE'
     );
     String operation = hash(new List<Object>{ 'AXF25', input.operationKey });
-    String payload = hash(
-      new List<Object>{
-        'APPLICATION',
-        input.targetId,
-        input.accountId,
-        input.sourceId,
-        input.sourceKind,
-        input.fundingId,
-        input.amount,
-        input.currencyIso,
-        input.direction,
-        input.recognitionDate,
-        input.targetVersion,
-        input.sourceVersion
-      }
-    );
+    List<Object> applicationPayload = new List<Object>{
+      'APPLICATION',
+      input.targetId,
+      input.accountId,
+      input.sourceId,
+      input.sourceKind,
+      input.fundingId,
+      input.amount,
+      input.currencyIso,
+      input.direction,
+      input.recognitionDate,
+      input.targetVersion,
+      input.sourceVersion
+    };
+    // AXF-135: a declared economic role is part of the canonical payload, so the same key with
+    // another role conflicts instead of replaying. A caller that declares no role keeps the
+    // pre-AXF-135 fingerprint unchanged and stays replayable.
+    if (input.economicRole != null) {
+      applicationPayload.add(input.economicRole);
+    }
+    String payload = hash(applicationPayload);
     Savepoint sp = Database.setSavepoint();
     try {
       writing = true;

@@ -3,6 +3,9 @@
  * holder, no OPEN review, residual capacity), deterministic persisted + virtual candidates matched
  * on holder/currency/direction/funding without amount or date tolerance, explicit confirmation
  * through AXF-25 (typed allocation, untouched fact, replay, CONFLICT, nothing persisted on failure).
+ * AXF-135: the whole available amount of the source is applied to the chosen obligation and the
+ * remainder stays as the multi-target need; the economic role is declared by the caller, never
+ * classified, and an invoice payment, a transfer or a refund is refused without writing.
  */
 @IsTest(isParallel=false)
 // API 62: AXON_DEV enforces FLS on plain test DML under runAs from API 67 onwards.
@@ -210,6 +213,8 @@ private class ALT_CLS_SourceLinkServiceTest {
     input.targetVersion = targetVersion;
     input.amount = amount;
     input.recognitionDate = source.AXF_BAT_DAT_Date__c;
+    // AXF-135: the role is always declared by the caller; these cases exercise the application role.
+    input.economicRole = ALT_CLS_SourceLinkService.ROLE_APPLICATION;
     input.operationKey = 'axf134-' + key;
     return input;
   }
@@ -1171,6 +1176,7 @@ private class ALT_CLS_SourceLinkServiceTest {
       input.targetVersion = 0;
       input.amount = 80;
       input.recognitionDate = source.AXF_CCT_DAT_Date__c;
+      input.economicRole = ALT_CLS_SourceLinkService.ROLE_APPLICATION;
       input.operationKey = 'axf134-card-link';
       ALT_CLS_SourceLinkService.ConfirmResult linked = service.confirm(input);
       Test.stopTest();
@@ -1231,6 +1237,7 @@ private class ALT_CLS_SourceLinkServiceTest {
       mismatch.targetVersion = 0;
       mismatch.amount = 20;
       mismatch.recognitionDate = Date.today();
+      mismatch.economicRole = ALT_CLS_SourceLinkService.ROLE_APPLICATION;
       mismatch.operationKey = 'axf134-card-mismatch';
       Assert.areEqual(
         'REVIEW_OPEN',
@@ -1889,6 +1896,413 @@ private class ALT_CLS_SourceLinkServiceTest {
         repriced.conversion.state
       );
       Assert.areEqual(7.10, repriced.conversion.rate);
+    }
+  }
+
+  /**
+   * AXF-135 AC-1: the whole available amount of the source is applied to the chosen obligation,
+   * existing allocations are preserved, the obligation is never increased to absorb a larger source
+   * and what it cannot absorb stays stated as the multi-target need (AXF-30). With nothing available
+   * the fact leaves the eligible list and no further allocation is accepted.
+   */
+  @IsTest
+  static void fullApplicationPreservesAllocationsAndStatesTheMultiTargetNeed() {
+    System.runAs(byAlias('axf134g')) {
+      Account owner = holder('Holder 135 full');
+      AXF_OBJ_BankAccount__c available = bank(owner.Id, 'AVAILABLE', 'BRL');
+      AXF_OBJ_BankAccountTransaction__c source = fact(
+        available.Id,
+        150,
+        'POSTED',
+        Date.today(),
+        'axf135-full'
+      );
+      insert source;
+      Date due = Date.today().addDays(2);
+      List<AXF_OBJ_FinancialTransaction__c> plans = new List<AXF_OBJ_FinancialTransaction__c>{
+        plan(owner.Id, 'axf135-first', 100, 'DEBIT', 'BRL', due),
+        plan(owner.Id, 'axf135-second', 120, 'DEBIT', 'BRL', due)
+      };
+      insert plans;
+      ALT_CLS_SourceLinkService service = new ALT_CLS_SourceLinkService();
+
+      Test.startTest();
+      CandidateViewByTarget offered = new CandidateViewByTarget(
+        service.listCandidates(candidateQuery(source.Id, 1, 50)).items
+      );
+      // Making the whole source fit would need a bigger obligation: the amount is capped, never grown.
+      ALT_CLS_SourceLinkService.ConfirmInput tooBig = confirmInput(
+        source,
+        plans[0].Id,
+        0,
+        150,
+        'full-over'
+      );
+      tooBig.changesReviewed = true;
+      String tooBigFailure = failure(tooBig);
+      ALT_CLS_SourceLinkService.ConfirmResult first = service.confirm(
+        confirmInput(source, plans[0].Id, 0, 100, 'full-first')
+      );
+      ALT_CLS_SourceLinkService.SourcePage afterFirst = service.listSources(
+        sourceQuery(owner.Id, 1, 10)
+      );
+      ALT_CLS_SourceLinkService.ConfirmInput secondInput = confirmInput(
+        source,
+        plans[1].Id,
+        0,
+        50,
+        'full-second'
+      );
+      secondInput.sourceVersion = 1;
+      ALT_CLS_SourceLinkService.ConfirmResult second = service.confirm(
+        secondInput
+      );
+      // Nothing is available any more: the fact leaves the list and no allocation is accepted.
+      ALT_CLS_SourceLinkService.SourcePage exhausted = service.listSources(
+        sourceQuery(owner.Id, 1, 10)
+      );
+      String noCapacity = failure(
+        confirmInput(source, plans[1].Id, 0, 10, 'full-exhausted')
+      );
+      Test.stopTest();
+
+      ALT_CLS_SourceLinkService.CandidateView candidate = offered.get(
+        plans[0].Id
+      );
+      Assert.areEqual(
+        0,
+        candidate.residualAfter,
+        'the obligation is settled in full: the state describes the settlement, not a split'
+      );
+      Assert.areEqual(
+        50,
+        candidate.sourceResidualAfter,
+        'what the obligation cannot absorb stays on the source as the multi-target need'
+      );
+      Assert.areEqual(
+        'UNAVAILABLE_AMOUNT',
+        tooBigFailure,
+        'the obligation is never increased to make an unsuitable source fit'
+      );
+      Assert.areEqual(
+        100,
+        [
+          SELECT AXF_FTX_NUM_Magnitude__c
+          FROM AXF_OBJ_FinancialTransaction__c
+          WHERE Id = :plans[0].Id
+        ]
+        .AXF_FTX_NUM_Magnitude__c,
+        'the plan magnitude is never rewritten to absorb the source'
+      );
+      Assert.areEqual(1, afterFirst.items.size());
+      Assert.areEqual(
+        50,
+        afterFirst.items[0].residual,
+        'the existing allocation is preserved: only the remainder is available'
+      );
+      Assert.isNotNull(first.allocationId);
+      Assert.isNotNull(second.allocationId);
+      List<AXF_OBJ_ReconciliationAllocation__c> persisted = [
+        SELECT AXF_RA_NUM_Magnitude__c
+        FROM AXF_OBJ_ReconciliationAllocation__c
+        WHERE
+          AXF_RA_LKP_BankTransaction__c = :source.Id
+          AND AXF_RA_PKL_Kind__c = 'APPLICATION'
+        ORDER BY AXF_RA_NUM_Magnitude__c
+      ];
+      Assert.areEqual(
+        2,
+        persisted.size(),
+        'the whole source was applied in two allocations, the first one preserved'
+      );
+      Assert.areEqual(50, persisted[0].AXF_RA_NUM_Magnitude__c);
+      Assert.areEqual(100, persisted[1].AXF_RA_NUM_Magnitude__c);
+      Assert.areEqual(0, exhausted.items.size(), 'zero availability');
+      Assert.areEqual('SOURCE_EXHAUSTED', noCapacity);
+    }
+  }
+
+  /**
+   * AXF-135 AC-2: the economic role is declared, never defaulted, and an invoice payment, a transfer
+   * or a refund has no supported link capability here — the confirmation is refused before any write,
+   * so an invoice payment can never become a second consumption expense.
+   */
+  @IsTest
+  static void declaredRoleIsRequiredAndAnUnroutableRoleWritesNothing() {
+    System.runAs(byAlias('axf134g')) {
+      Account owner = holder('Holder 135 role');
+      AXF_OBJ_BankAccount__c available = bank(owner.Id, 'AVAILABLE', 'BRL');
+      AXF_OBJ_BankAccountTransaction__c source = fact(
+        available.Id,
+        80,
+        'POSTED',
+        Date.today(),
+        'axf135-role'
+      );
+      insert source;
+      Date due = Date.today().addDays(2);
+      AXF_OBJ_FinancialTransaction__c target = plan(
+        owner.Id,
+        'axf135-role',
+        120,
+        'DEBIT',
+        'BRL',
+        due
+      );
+      insert target;
+      ALT_CLS_SourceLinkService service = new ALT_CLS_SourceLinkService();
+
+      Test.startTest();
+      ALT_CLS_SourceLinkService.ConfirmInput undeclared = confirmInput(
+        source,
+        target.Id,
+        0,
+        80,
+        'role-none'
+      );
+      undeclared.economicRole = null;
+      String missing = failure(undeclared);
+      ALT_CLS_SourceLinkService.ConfirmInput unknown = confirmInput(
+        source,
+        target.Id,
+        0,
+        80,
+        'role-unknown'
+      );
+      unknown.economicRole = 'CONSUMPTION';
+      String unlisted = failure(unknown);
+      Map<String, String> refused = new Map<String, String>();
+      for (
+        String role : new List<String>{
+          ALT_CLS_SourceLinkService.ROLE_INVOICE_PAYMENT,
+          ALT_CLS_SourceLinkService.ROLE_TRANSFER,
+          ALT_CLS_SourceLinkService.ROLE_REFUND
+        }
+      ) {
+        ALT_CLS_SourceLinkService.ConfirmInput onTarget = confirmInput(
+          source,
+          target.Id,
+          0,
+          80,
+          'role-target-' + role
+        );
+        onTarget.economicRole = role;
+        refused.put(role + ':target', failure(onTarget));
+        ALT_CLS_SourceLinkService.ConfirmInput withoutTarget = confirmInput(
+          source,
+          null,
+          null,
+          80,
+          'role-actual-' + role
+        );
+        withoutTarget.economicRole = role;
+        refused.put(role + ':actual', failure(withoutTarget));
+      }
+      ALT_CLS_SourceLinkService.ConfirmResult linked = service.confirm(
+        confirmInput(source, target.Id, 0, 80, 'role-application')
+      );
+      Test.stopTest();
+
+      Assert.areEqual(
+        'INVALID_ECONOMIC_ROLE',
+        missing,
+        'the service never declares the role for the caller'
+      );
+      Assert.areEqual('INVALID_ECONOMIC_ROLE', unlisted);
+      for (String key : refused.keySet()) {
+        Assert.areEqual(
+          'UNSUPPORTED_ECONOMIC_ROLE',
+          refused.get(key),
+          'no supported capability for ' + key
+        );
+      }
+      Assert.isNotNull(linked.allocationId);
+      Assert.areEqual(
+        0,
+        [
+          SELECT COUNT()
+          FROM AXF_OBJ_FinancialTransaction__c
+          WHERE AXF_FTX_PKL_PlanKind__c = 'ACTUAL_ONLY'
+        ],
+        'a refused invoice payment, transfer or refund never creates a second consumption expense'
+      );
+      Assert.areEqual(
+        1,
+        [SELECT COUNT() FROM AXF_OBJ_ReconciliationAllocation__c],
+        'only the declared application persisted'
+      );
+      Assert.areEqual(
+        1,
+        [
+          SELECT AXF_BAT_NUM_Version__c
+          FROM AXF_OBJ_BankAccountTransaction__c
+          WHERE Id = :source.Id
+        ]
+        .AXF_BAT_NUM_Version__c,
+        'a refused role leaves the fact untouched: only the declared application moved it'
+      );
+    }
+  }
+
+  /**
+   * AXF-135 AC-2: the statement association of a card line is not a role. A fact whose BillReference
+   * is set and whose description reads like an invoice payment stays an ordinary linkable source, and
+   * only the role the caller declares reaches the canonical payload of the realization.
+   */
+  @IsTest
+  static void statementAssociationNeverDeclaresTheRoleAndTheRoleIsInTheCanonicalPayload() {
+    System.runAs(byAlias('axf134g')) {
+      Account owner = holder('Holder 135 bill');
+      AXF_OBJ_CreditCard__c creditCard = card(owner.Id, 'AVAILABLE');
+      AXF_OBJ_CreditCardTransaction__c source = cardFact(
+        creditCard.Id,
+        80,
+        'bill'
+      );
+      source.AXF_CCT_TXT_BillReference__c = 'BILL-2026-09';
+      source.AXF_CCT_TXT_Description__c = 'PAGAMENTO FATURA CARTAO';
+      insert source;
+      Date due = Date.today().addDays(2);
+      AXF_OBJ_FinancialTransaction__c target = plan(
+        owner.Id,
+        'axf135-bill',
+        120,
+        'DEBIT',
+        'BRL',
+        due
+      );
+      insert target;
+      ALT_CLS_SourceLinkService service = new ALT_CLS_SourceLinkService();
+      ALT_CLS_SourceLinkService.CandidateQuery query = candidateQuery(
+        source.Id,
+        1,
+        50
+      );
+      query.sourceKind = 'CARD';
+
+      Test.startTest();
+      CandidateViewByTarget offered = new CandidateViewByTarget(
+        service.listCandidates(query).items
+      );
+      ALT_CLS_SourceLinkService.ConfirmInput input = new ALT_CLS_SourceLinkService.ConfirmInput();
+      input.sourceId = source.Id;
+      input.sourceKind = 'CARD';
+      input.sourceVersion = 0;
+      input.targetId = target.Id;
+      input.targetVersion = 0;
+      input.amount = 80;
+      input.recognitionDate = source.AXF_CCT_DAT_Date__c;
+      input.operationKey = 'axf135-bill-link';
+      String undeclared = failure(input);
+      input.economicRole = ALT_CLS_SourceLinkService.ROLE_APPLICATION;
+      ALT_CLS_SourceLinkService.ConfirmResult linked = service.confirm(input);
+      Test.stopTest();
+
+      Assert.isTrue(
+        offered.get(target.Id).linkable,
+        'a statement association never removes the fact from the ordinary flow'
+      );
+      Assert.areEqual(
+        'INVALID_ECONOMIC_ROLE',
+        undeclared,
+        'the description and the statement association never declare a role'
+      );
+      Assert.areEqual(
+        AXF_CLS_IdentityFraming.key(
+          new List<Object>{
+            'APPLICATION',
+            target.Id,
+            null,
+            source.Id,
+            'CARD',
+            null,
+            80,
+            null,
+            null,
+            source.AXF_CCT_DAT_Date__c,
+            0,
+            0,
+            ALT_CLS_SourceLinkService.ROLE_APPLICATION
+          }
+        ),
+        [
+          SELECT AXF_RA_TXT_PayloadHash__c
+          FROM AXF_OBJ_ReconciliationAllocation__c
+          WHERE Id = :linked.allocationId
+        ]
+        .AXF_RA_TXT_PayloadHash__c,
+        'the declared role is preserved as part of the canonical payload'
+      );
+    }
+  }
+
+  /**
+   * AXF-135 AC-2: the declared role never narrows the direction of the fact — an inflow stays an
+   * eligible revenue exactly as an outflow stays an expense, and the entry born from the fact keeps
+   * that direction.
+   */
+  @IsTest
+  static void eligibleRevenueIsLinkedAndKeepsItsDirection() {
+    System.runAs(byAlias('axf134g')) {
+      Account owner = holder('Holder 135 revenue');
+      AXF_OBJ_BankAccount__c available = bank(owner.Id, 'AVAILABLE', 'BRL');
+      Date today = Date.today();
+      AXF_OBJ_BankAccountTransaction__c source = fact(
+        available.Id,
+        90,
+        'POSTED',
+        today,
+        'axf135-inflow'
+      );
+      source.AXF_BAT_PKL_Direction__c = 'CREDIT';
+      AXF_OBJ_BankAccountTransaction__c inflow = fact(
+        available.Id,
+        40,
+        'POSTED',
+        today,
+        'axf135-inflow-only'
+      );
+      inflow.AXF_BAT_PKL_Direction__c = 'CREDIT';
+      insert new List<AXF_OBJ_BankAccountTransaction__c>{ source, inflow };
+      Date due = today.addDays(2);
+      AXF_OBJ_FinancialTransaction__c revenue = plan(
+        owner.Id,
+        'axf135-revenue',
+        90,
+        'CREDIT',
+        'BRL',
+        due
+      );
+      insert revenue;
+      ALT_CLS_SourceLinkService service = new ALT_CLS_SourceLinkService();
+
+      Test.startTest();
+      CandidateViewByTarget offered = new CandidateViewByTarget(
+        service.listCandidates(candidateQuery(source.Id, 1, 50)).items
+      );
+      ALT_CLS_SourceLinkService.ConfirmResult linked = service.confirm(
+        confirmInput(source, revenue.Id, 0, 90, 'revenue')
+      );
+      ALT_CLS_SourceLinkService.ConfirmResult actual = service.confirm(
+        confirmInput(inflow, null, null, 40, 'revenue-actual')
+      );
+      Test.stopTest();
+
+      Assert.isTrue(
+        offered.get(revenue.Id).linkable,
+        'an eligible revenue is offered like an expense'
+      );
+      Assert.isNotNull(linked.allocationId);
+      Assert.areEqual(
+        'CREDIT',
+        [
+          SELECT AXF_FTX_PKL_Direction__c
+          FROM AXF_OBJ_FinancialTransaction__c
+          WHERE Id = :actual.targetId
+        ]
+        .AXF_FTX_PKL_Direction__c,
+        'the entry born from the fact preserves the revenue direction'
+      );
     }
   }
 

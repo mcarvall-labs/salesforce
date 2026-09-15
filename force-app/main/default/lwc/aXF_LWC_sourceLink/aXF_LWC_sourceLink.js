@@ -25,6 +25,18 @@ const SORT_OPTIONS = [
   { label: labels.evSortPOLICY, value: "POLICY" },
   { label: labels.evSortDUE_DATE, value: "DUE_DATE" }
 ];
+/**
+ * AXF-135: the economic role of the link is declared here. There is no default and no classifier —
+ * the statement association of a card line (BillReference) and the descriptions are facts of the
+ * source, not a role. Only the application role is routable in this flow; the server owns that
+ * decision and refuses any other role without writing.
+ */
+const ROLE_OPTIONS = [
+  { label: labels.roleAPPLICATION, value: "APPLICATION" },
+  { label: labels.roleINVOICE_PAYMENT, value: "INVOICE_PAYMENT" },
+  { label: labels.roleTRANSFER, value: "TRANSFER" },
+  { label: labels.roleREFUND, value: "REFUND" }
+];
 function signed(delta) {
   const n = Number(delta);
   return n > 0 ? `+${n}` : `${n}`;
@@ -98,6 +110,20 @@ function residualAfterLine(c) {
   }
   return `${labels.factResidualAfter} ${c.residualAfter} ${c.currencyIso}`;
 }
+/**
+ * AXF-135: what the chosen obligation cannot absorb stays on the source — the multi-target need,
+ * which this flow never splits and never meets by increasing the obligation.
+ */
+function sourceRemainderLine(c) {
+  if (
+    c.sourceResidualAfter === null ||
+    c.sourceResidualAfter === undefined ||
+    Number(c.sourceResidualAfter) <= 0
+  ) {
+    return "";
+  }
+  return `${labels.sourceRemainder} ${c.sourceResidualAfter} ${c.currencyIso}`;
+}
 function dedupe(current, incoming, field) {
   const keyOf = (c) => {
     if (field !== "key") {
@@ -156,6 +182,8 @@ export default class AxfSourceLink extends LightningElement {
   noForecast = false;
   amount;
   recognitionDate;
+  economicRole;
+  roleOptions = ROLE_OPTIONS;
   reviewed = false;
   operationKey;
   result;
@@ -255,6 +283,7 @@ export default class AxfSourceLink extends LightningElement {
       reasonText: (c.reasons || []).map(reasonLabel).join(" · "),
       conversionLine: conversionLine(c),
       residualAfterLine: residualAfterLine(c),
+      sourceRemainderLine: sourceRemainderLine(c),
       evidenceChips: (c.evidence || []).map(evidenceChip)
     }));
     if (this.sortMode === "DUE_DATE") {
@@ -336,6 +365,7 @@ export default class AxfSourceLink extends LightningElement {
     return (
       this.busy ||
       (this.changed && !this.reviewed) ||
+      !this.economicRole ||
       !validAmount(this.amount) ||
       !this.recognitionDate
     );
@@ -523,12 +553,18 @@ export default class AxfSourceLink extends LightningElement {
   startReview() {
     this.amount = this.suggestedAmount;
     this.recognitionDate = this.suggestedDate;
+    // AXF-135: no role is defaulted for a new draft; the user declares it in the review.
+    this.economicRole = undefined;
     this.reviewed = false;
     this.error = undefined;
     // One key per draft (source + target choice): a retry of the same draft replays,
     // a different choice never collides with an earlier key.
     this.operationKey = newOperationKey();
     this.step = STEP.REVIEW;
+  }
+  handleRole(event) {
+    this.economicRole = event.detail.value;
+    this.reviewed = false;
   }
   handleAmount(event) {
     this.amount = event.target.value === "" ? null : Number(event.target.value);
@@ -564,6 +600,7 @@ export default class AxfSourceLink extends LightningElement {
           targetVersion: this.target ? this.target.version : null,
           amount: this.amount,
           recognitionDate: this.recognitionDate,
+          economicRole: this.economicRole,
           changesReviewed: this.changed ? this.reviewed : false,
           operationKey: this.operationKey
         })

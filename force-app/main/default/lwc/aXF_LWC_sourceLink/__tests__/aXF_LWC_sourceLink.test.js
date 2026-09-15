@@ -212,6 +212,14 @@ async function reachReview(element) {
   await flush();
   element.shadowRoot.querySelector('[data-index="0"]').click();
   await flush();
+  await declareRole(element);
+}
+/** AXF-135: the role is declared, never defaulted; the review does not confirm without it. */
+async function declareRole(element, value = "APPLICATION") {
+  byId(element, "economicRole").dispatchEvent(
+    new CustomEvent("change", { detail: { value } })
+  );
+  await flush();
 }
 
 describe("c-a-x-f-_-l-w-c-_source-link", () => {
@@ -406,6 +414,7 @@ describe("c-a-x-f-_-l-w-c-_source-link", () => {
     rows[0].querySelector("[data-index]").click();
     await flush();
     expect(byId(element, "targetSummary").textContent).toContain("Condominio");
+    await declareRole(element);
     confirm.mockResolvedValue({
       allocationId: "a0E7",
       targetId: "a0C0",
@@ -468,6 +477,7 @@ describe("c-a-x-f-_-l-w-c-_source-link", () => {
     await flush();
     element.shadowRoot.querySelector('[data-index="0"]').click();
     await flush();
+    await declareRole(element);
     const date = byId(element, "recognitionDate");
     date.value = "2026-09-15";
     date.dispatchEvent(new CustomEvent("change"));
@@ -515,6 +525,7 @@ describe("c-a-x-f-_-l-w-c-_source-link", () => {
     expect(byId(element, "targetSummary").textContent).toContain(
       "c.AXF_SourceLink_targetNone"
     );
+    await declareRole(element);
     confirm.mockResolvedValue({
       allocationId: "a0E2",
       targetId: "a0C9",
@@ -528,7 +539,8 @@ describe("c-a-x-f-_-l-w-c-_source-link", () => {
     expect(JSON.parse(confirm.mock.calls[0][0].request)).toMatchObject({
       targetId: null,
       targetVersion: null,
-      amount: 150
+      amount: 150,
+      economicRole: "APPLICATION"
     });
     expect(byId(element, "done").textContent).toContain(
       "c.AXF_SourceLink_doneActualOnly"
@@ -544,6 +556,97 @@ describe("c-a-x-f-_-l-w-c-_source-link", () => {
       denied.shadowRoot.querySelector('[role="status"]').textContent
     ).toContain("c.AXF_SourceLink_noCapability");
     expect(byId(denied, "holder")).toBeNull();
+  });
+
+  it("requires a declared economic role and keeps the draft when no capability routes it", async () => {
+    const element = await mount();
+    listSources.mockResolvedValue({
+      pageNumber: 1,
+      pageSize: 25,
+      hasMore: false,
+      scannedCount: 1,
+      excludedCount: 0,
+      items: [source]
+    });
+    listCandidates.mockResolvedValue(candidates);
+    byId(element, "holder").dispatchEvent(
+      new CustomEvent("change", { detail: { value: "001A" } })
+    );
+    await flush();
+    byId(element, "loadSources").click();
+    await flush();
+    element.shadowRoot.querySelector('[data-id="a0B1"]').click();
+    await flush();
+    element.shadowRoot.querySelector('[data-index="0"]').click();
+    await flush();
+    // No role is defaulted: nothing is classified for the user and the link cannot be confirmed.
+    expect(byId(element, "economicRole").value).toBeUndefined();
+    expect(byId(element, "confirm").disabled).toBe(true);
+    await declareRole(element, "INVOICE_PAYMENT");
+    expect(byId(element, "confirm").disabled).toBe(false);
+    confirm.mockRejectedValueOnce({
+      body: { message: "UNSUPPORTED_ECONOMIC_ROLE" }
+    });
+    byId(element, "confirm").click();
+    await flush();
+    const request = JSON.parse(confirm.mock.calls[0][0].request);
+    expect(request.economicRole).toBe("INVOICE_PAYMENT");
+    expect(
+      element.shadowRoot.querySelector('[role="alert"]').textContent
+    ).toContain("c.AXF_SourceLink_codeUNSUPPORTED_ECONOMIC_ROLE");
+    // The draft stays reviewable with the declared role; nothing was written.
+    expect(byId(element, "confirm")).not.toBeNull();
+    expect(byId(element, "economicRole").value).toBe("INVOICE_PAYMENT");
+  });
+
+  it("states the source amount the chosen obligation cannot absorb", async () => {
+    const element = await mount();
+    const capped = {
+      ...candidates.items[0],
+      residual: 100,
+      residualAfter: 0,
+      sourceResidualAfter: 50,
+      state: "CONSULTATIVE",
+      tied: false
+    };
+    const exact = {
+      ...capped,
+      targetId: "a0C9",
+      residual: 150,
+      sourceResidualAfter: 0
+    };
+    listSources.mockResolvedValue({
+      pageNumber: 1,
+      pageSize: 25,
+      hasMore: false,
+      scannedCount: 1,
+      excludedCount: 0,
+      items: [source]
+    });
+    listCandidates.mockResolvedValue({
+      ...candidates,
+      tieCount: 0,
+      items: [capped, exact]
+    });
+    byId(element, "holder").dispatchEvent(
+      new CustomEvent("change", { detail: { value: "001A" } })
+    );
+    await flush();
+    byId(element, "loadSources").click();
+    await flush();
+    element.shadowRoot.querySelector('[data-id="a0B1"]').click();
+    await flush();
+    const rows = element.shadowRoot.querySelectorAll(
+      '[data-id="candidateTable"] tbody tr'
+    );
+    expect(rows.length).toBe(2);
+    // The remainder of the source is a fact of the candidate: never split here, never absorbed by
+    // increasing the obligation — it is the multi-target need.
+    expect(
+      rows[0].querySelector('[data-id="sourceRemainder"]').textContent.trim()
+    ).toBe("c.AXF_SourceLink_sourceRemainder 50 BRL");
+    // An obligation that absorbs the whole source leaves nothing to route.
+    expect(rows[1].querySelector('[data-id="sourceRemainder"]')).toBeNull();
   });
 
   it("renders the server state, the separated conversion evidence and the explicit remainder", async () => {

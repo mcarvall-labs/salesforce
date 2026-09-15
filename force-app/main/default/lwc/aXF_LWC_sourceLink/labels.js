@@ -132,6 +132,14 @@ import factResidualAfter from "@salesforce/label/c.AXF_SourceLink_factResidualAf
 import convEstimatedLine from "@salesforce/label/c.AXF_SourceLink_convEstimatedLine";
 import convStaleLine from "@salesforce/label/c.AXF_SourceLink_convStaleLine";
 import convUnavailableLine from "@salesforce/label/c.AXF_SourceLink_convUnavailableLine";
+import economicRole from "@salesforce/label/c.AXF_SourceLink_economicRole";
+import roleHelp from "@salesforce/label/c.AXF_SourceLink_roleHelp";
+import roleAPPLICATION from "@salesforce/label/c.AXF_SourceLink_roleAPPLICATION";
+import roleINVOICE_PAYMENT from "@salesforce/label/c.AXF_SourceLink_roleINVOICE_PAYMENT";
+import roleTRANSFER from "@salesforce/label/c.AXF_SourceLink_roleTRANSFER";
+import roleREFUND from "@salesforce/label/c.AXF_SourceLink_roleREFUND";
+import sourceRemainder from "@salesforce/label/c.AXF_SourceLink_sourceRemainder";
+import codeUNSUPPORTED_ECONOMIC_ROLE from "@salesforce/label/c.AXF_SourceLink_codeUNSUPPORTED_ECONOMIC_ROLE";
 
 export default {
   title,
@@ -267,5 +275,13 @@ export default {
   factResidualAfter,
   convEstimatedLine,
   convStaleLine,
-  convUnavailableLine
+  convUnavailableLine,
+  economicRole,
+  roleHelp,
+  roleAPPLICATION,
+  roleINVOICE_PAYMENT,
+  roleTRANSFER,
+  roleREFUND,
+  sourceRemainder,
+  codeUNSUPPORTED_ECONOMIC_ROLE
 };

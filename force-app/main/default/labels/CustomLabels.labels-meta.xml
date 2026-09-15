@@ -2539,4 +2539,32 @@
   ><fullName>AXF_SourceLink_evPartial</fullName><language
     >en_US</language><protected>false</protected><shortDescription
     >Partial</shortDescription><value
-    >Partial — remainder left</value></labels></CustomLabels>
+    >Partial — remainder left</value></labels><labels><fullName
+    >AXF_SourceLink_economicRole</fullName><language>en_US</language><protected
+    >false</protected><shortDescription>Economic role</shortDescription><value
+    >Economic role of the link</value></labels><labels><fullName
+    >AXF_SourceLink_roleHelp</fullName><language>en_US</language><protected
+    >false</protected><shortDescription>Role help</shortDescription><value
+    >Declare the role of this link. It is never inferred from the description or from the statement association of the card line (BillReference).</value></labels><labels
+  ><fullName>AXF_SourceLink_roleAPPLICATION</fullName><language
+    >en_US</language><protected>false</protected><shortDescription
+    >Role application</shortDescription><value
+    >Application — the fact settles the obligation (expense or revenue by its direction)</value></labels><labels
+  ><fullName>AXF_SourceLink_roleINVOICE_PAYMENT</fullName><language
+    >en_US</language><protected>false</protected><shortDescription
+    >Role invoice payment</shortDescription><value
+    >Invoice payment</value></labels><labels><fullName
+    >AXF_SourceLink_roleTRANSFER</fullName><language>en_US</language><protected
+    >false</protected><shortDescription>Role transfer</shortDescription><value
+    >Transfer</value></labels><labels><fullName
+    >AXF_SourceLink_roleREFUND</fullName><language>en_US</language><protected
+    >false</protected><shortDescription>Role refund</shortDescription><value
+    >Refund</value></labels><labels><fullName
+    >AXF_SourceLink_sourceRemainder</fullName><language
+    >en_US</language><protected>false</protected><shortDescription
+    >Source remainder</shortDescription><value
+    >Source left for other targets after this obligation — multi-target need (AXF-30):</value></labels><labels
+  ><fullName>AXF_SourceLink_codeUNSUPPORTED_ECONOMIC_ROLE</fullName><language
+    >en_US</language><protected>false</protected><shortDescription
+    >Code unsupported economic role</shortDescription><value
+    >This economic role has no supported link capability here. Nothing was saved — use the invoice, transfer or refund capability.</value></labels></CustomLabels>
