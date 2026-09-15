@@ -458,6 +458,16 @@ private class ALT_CLS_SourceLinkServiceTest {
           Assert.isFalse(c.linkable);
           Assert.isTrue(c.reasons.contains('MATERIALIZATION_REQUIRED'));
           Assert.isNotNull(c.scheduleId);
+          // AXF-140: a projected line carries the same remainder fact as a persisted candidate, so
+          // the cell never renders nothing and a null keeps the single meaning "another currency".
+          Assert.isNotNull(
+            c.residualAfter,
+            'the remainder of a projected line is filled, never left blank'
+          );
+          Assert.areEqual(
+            c.residual - Math.min(all.source.residual, c.residual),
+            c.residualAfter
+          );
         }
       }
       Assert.areEqual(
