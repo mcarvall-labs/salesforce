@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="UTF-8" ?>
 <PermissionSet xmlns="http://soap.sforce.com/2006/04/metadata">
   <description
-  >Componente do PSG AXF_PSG_GestorFinanceiro. Titulares (Account/Contact): consultar/cadastrar/editar; sem Delete/ViewAll/ModifyAll. Concede AXF_CanConfigure. AXF-7 / AXF-80 / AXF-82 / AXF-88 / AXF-11.</description>
+  >Componente do PSG AXF_PSG_GestorFinanceiro. Titulares (Account/Contact): consultar/cadastrar/editar; sem Delete/ViewAll/ModifyAll. Concede AXF_CanConfigure e AXF_CanConsolidate. AXF-7 / AXF-80 / AXF-82 / AXF-88 / AXF-11 / AXF-122.</description>
   <hasActivationRequired>false</hasActivationRequired>
   <label>Axon - Gestor Financeiro (componente)</label>
   <applicationVisibilities>
@@ -26,6 +26,10 @@
   </classAccesses>
   <classAccesses>
     <apexClass>ALT_CLS_AxonUserProvisioning</apexClass>
+    <enabled>true</enabled>
+  </classAccesses>
+  <classAccesses>
+    <apexClass>ALT_CLS_ConsolidationService</apexClass>
     <enabled>true</enabled>
   </classAccesses>
   <classAccesses>
@@ -199,6 +203,10 @@
   <customPermissions>
     <enabled>true</enabled>
     <name>AXF_CanConfigure</name>
+  </customPermissions>
+  <customPermissions>
+    <enabled>true</enabled>
+    <name>AXF_CanConsolidate</name>
   </customPermissions>
   <fieldPermissions>
     <editable>true</editable>
