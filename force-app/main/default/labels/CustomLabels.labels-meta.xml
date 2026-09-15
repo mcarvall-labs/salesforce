@@ -1356,6 +1356,26 @@
     >en_US</language><protected>false</protected><shortDescription
     >Not accessible</shortDescription><value
     >Some of the data this panel depends on is not accessible to you.</value></labels><labels
+  ><fullName>AXF_ConfidencePanel_authority</fullName><language
+    >en_US</language><protected>false</protected><shortDescription
+    >Policy authority</shortDescription><value
+    >Forecasting and matching policies that authorize these states and actions.</value></labels><labels
+  ><fullName>AXF_ConfidencePanel_coverage</fullName><language
+    >en_US</language><protected>false</protected><shortDescription
+    >Coverage</shortDescription><value>Coverage</value></labels><labels
+  ><fullName>AXF_ConfidencePanel_fallbacks</fullName><language
+    >en_US</language><protected>false</protected><shortDescription
+    >Fallbacks</shortDescription><value
+    >Fallbacks applied</value></labels><labels><fullName
+    >AXF_ConfidencePanel_noFallbacks</fullName><language
+    >en_US</language><protected>false</protected><shortDescription
+    >No fallbacks</shortDescription><value
+    >No fallback was needed to derive this result.</value></labels><labels
+  ><fullName
+    >AXF_ConfidencePanel_fallbackFreshnessLimitDefault</fullName><language
+    >en_US</language><protected>false</protected><shortDescription
+    >Default freshness limit</shortDescription><value
+    >The source declares no freshness limit of its own; the policy default was used.</value></labels><labels
   ><fullName>AXF_ArchiveExplorer_title</fullName><language
     >en_US</language><protected>false</protected><shortDescription
     >Title</shortDescription><value>Transaction archive</value></labels><labels

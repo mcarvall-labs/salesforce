@@ -79,6 +79,14 @@ private class AXF_CLS_CTRL_ConfidencePanelTest {
         'fonte manual sem importacao = UNKNOWN'
       );
       Assert.areEqual(1, panel.sources.size());
+      Assert.areEqual(
+        new List<String>{
+          ALT_CLS_ForecastComparisonService.POLICY_VERSION,
+          ALT_CLS_MatchEvidence.MATCHING_POLICY
+        },
+        panel.policyAuthority,
+        'autoridade canonica chega intacta ao LWC'
+      );
       try {
         AXF_CLS_CTRL_ConfidencePanel.explain(new List<Id>());
         Assert.fail('INVALID_INPUT esperado');

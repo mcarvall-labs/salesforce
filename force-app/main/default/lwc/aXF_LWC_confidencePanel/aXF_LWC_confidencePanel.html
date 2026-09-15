@@ -76,7 +76,10 @@
           </h2>
           <p class="slds-m-top_x-small">
             <span class={levelClass} data-id="level">{levelLabel}</span>
-            <span class="slds-m-left_small slds-text-body_small">
+            <span
+              class="slds-m-left_small slds-text-body_small"
+              data-id="policy"
+            >
               {labels.asOf}:
               <lightning-formatted-date-time
                 value={panel.asOf}
@@ -86,16 +89,17 @@
                 hour="2-digit"
                 minute="2-digit"
               ></lightning-formatted-date-time>
-              · {labels.policy}: {panel.policyVersion}
+              · {labels.policy}: {panel.policyVersion} · {labels.authority}:
+              {policyAuthorityText}
             </span>
           </p>
           <p class="slds-m-top_x-small" data-id="impact">{impactText}</p>
-          <template lwc:if={isBlocked}>
+          <template lwc:if={hasReasons}>
             <ul
               class="slds-list_dotted slds-m-top_x-small"
-              data-id="blocked-reasons"
+              data-id="gate-reasons"
             >
-              <template for:each={blockedReasons} for:item="reason">
+              <template for:each={gateReasons} for:item="reason">
                 <li key={reason.key}>{reason.text}</li>
               </template>
             </ul>
@@ -237,6 +241,39 @@
         >
           <h2 id="axf-cp-fx" class="slds-text-heading_small">{labels.fx}</h2>
           <p data-id="fx">{fxText}</p>
+        </section>
+
+        <section
+          class="slds-m-top_medium"
+          aria-labelledby="axf-cp-coverage"
+          role="region"
+        >
+          <h2 id="axf-cp-coverage" class="slds-text-heading_small">
+            {labels.coverage}
+          </h2>
+          <p data-id="coverage">{coverageText}</p>
+        </section>
+
+        <section
+          class="slds-m-top_medium"
+          aria-labelledby="axf-cp-fallbacks"
+          role="region"
+        >
+          <h2 id="axf-cp-fallbacks" class="slds-text-heading_small">
+            {labels.fallbacks}
+          </h2>
+          <template lwc:if={hasFallbacks}>
+            <ul class="slds-list_dotted" data-id="fallbacks">
+              <template for:each={fallbacks} for:item="row">
+                <li key={row.key}>{row.text}</li>
+              </template>
+            </ul>
+          </template>
+          <template lwc:else
+            ><p class="slds-text-color_weak" data-id="no-fallbacks">
+              {labels.noFallbacks}
+            </p></template
+          >
         </section>
 
         <section

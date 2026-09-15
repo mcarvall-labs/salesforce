@@ -20,12 +20,16 @@
  * - Manual sources without an import timestamp fall back to the newest fact's creation time and
  *   carry `IMPORT_DATE_MISSING`, so a source with facts is never reported as "never succeeded".
  * - Exceptions of excluded sources stay on the row but never become panel reasons.
- * - Matching/Forecasting canonical states are the sibling story's concern; no score is invented.
+ *
+ * AXF-144 — canonical policy states: the gate vocabulary is consumed from the policies that
+ * declare it (`ALT_CLS_ForecastComparisonService.CONFIDENCE_*` and the matching policy), never
+ * redeclared here, and no parallel score exists on either side. The panel reports which policies
+ * authorize the states (`policyAuthority`), the fallbacks actually applied while deriving it
+ * (`FRESHNESS_LIMIT_DEFAULT` when the source declares no limit of its own, `IMPORT_DATE_MISSING`
+ * when a hand-keyed fact carries no import timestamp), and the gate reason at every
+ * non-informative level.
  */
 public with sharing class ALT_CLS_ConfidencePanelService {
-  public static final String LEVEL_INFORMATIVE = 'INFORMATIVE';
-  public static final String LEVEL_DEGRADED = 'DEGRADED';
-  public static final String LEVEL_BLOCKED = 'BLOCKED';
   private static final String CP_EXPLAIN = 'AXF_CanExplainConfidence';
   private static final Set<String> AXON_RECORD_TYPES = new Set<String>{
     ALT_CLS_AxonHolder.RT_PERSON,
@@ -97,6 +101,12 @@ public with sharing class ALT_CLS_ConfidencePanelService {
   public class Panel {
     @AuraEnabled
     public String policyVersion;
+    /** Canonical policies that declare the gate states and the allowed actions (AXF-144). */
+    @AuraEnabled
+    public List<String> policyAuthority = new List<String>{
+      ALT_CLS_ForecastComparisonService.POLICY_VERSION,
+      ALT_CLS_MatchEvidence.MATCHING_POLICY
+    };
     @AuraEnabled
     public Datetime asOf;
     @AuraEnabled
@@ -105,6 +115,9 @@ public with sharing class ALT_CLS_ConfidencePanelService {
     public List<String> reasons = new List<String>();
     @AuraEnabled
     public List<String> allowedActions = new List<String>();
+    /** Fallbacks actually applied while deriving this panel; empty means none was needed. */
+    @AuraEnabled
+    public List<String> fallbacks = new List<String>();
     @AuraEnabled
     public List<String> currencies = new List<String>();
     @AuraEnabled
@@ -224,6 +237,7 @@ public with sharing class ALT_CLS_ConfidencePanelService {
       ORDER BY AXF_BA_TXT_InstitutionName__c, AXF_BA_TXT_NumberMasked__c
     ]) {
       SourceView view = baseView(
+        panel,
         bank.Id,
         'BANK',
         label(
@@ -262,6 +276,7 @@ public with sharing class ALT_CLS_ConfidencePanelService {
       ORDER BY AXF_CC_TXT_InstitutionName__c, AXF_CC_TXT_LastFourMasked__c
     ]) {
       SourceView view = baseView(
+        panel,
         card.Id,
         'CARD',
         label(
@@ -281,7 +296,7 @@ public with sharing class ALT_CLS_ConfidencePanelService {
       );
       sources.put(view.sourceId, view);
     }
-    applyFacts(sources, panel.asOf);
+    applyFacts(sources, panel);
 
     Set<String> currencies = new Set<String>();
     Boolean anyDegraded = false;
@@ -315,7 +330,9 @@ public with sharing class ALT_CLS_ConfidencePanelService {
       }
       return blocked(panel, 'NO_READABLE_SOURCE');
     }
-    panel.level = anyDegraded ? LEVEL_DEGRADED : LEVEL_INFORMATIVE;
+    panel.level = anyDegraded
+      ? ALT_CLS_ForecastComparisonService.CONFIDENCE_DEGRADED
+      : ALT_CLS_ForecastComparisonService.CONFIDENCE_INFORMATIVE;
     if (anyDegraded) {
       for (SourceView view : panel.sources) {
         if (!view.included) {
@@ -347,6 +364,7 @@ public with sharing class ALT_CLS_ConfidencePanelService {
   // ---------------------------------------------------------------- helpers
 
   private static SourceView baseView(
+    Panel panel,
     Id sourceId,
     String kind,
     String sourceLabel,
@@ -364,8 +382,11 @@ public with sharing class ALT_CLS_ConfidencePanelService {
     view.holderName = holder.Name;
     view.currencyIso = currencyIso;
     view.origin = 'MANUAL';
-    view.freshnessLimitHours = ownLimit == null ||
-      ownLimit <= 0
+    Boolean usesDefaultLimit = ownLimit == null || ownLimit <= 0;
+    if (usesDefaultLimit) {
+      addFallback(panel, 'FRESHNESS_LIMIT_DEFAULT');
+    }
+    view.freshnessLimitHours = usesDefaultLimit
       ? defaultLimit
       : ownLimit.intValue();
     view.navigable = true;
@@ -401,7 +422,8 @@ public with sharing class ALT_CLS_ConfidencePanelService {
   }
 
   /** Fact counts (zero is a legitimate answer) and, for manual/CSV sources, the last import as success. */
-  private static void applyFacts(Map<Id, SourceView> sources, Datetime asOf) {
+  private static void applyFacts(Map<Id, SourceView> sources, Panel panel) {
+    Datetime asOf = panel.asOf;
     Set<Id> bankIds = new Set<Id>();
     Set<Id> cardIds = new Set<Id>();
     for (SourceView view : sources.values()) {
@@ -424,7 +446,7 @@ public with sharing class ALT_CLS_ConfidencePanelService {
         WITH USER_MODE
         GROUP BY AXF_BAT_MDR_BankAccount__c
       ]) {
-        applyFactRow(sources.get((Id) row.get('source')), row);
+        applyFactRow(panel, sources.get((Id) row.get('source')), row);
       }
     }
     if (!cardIds.isEmpty()) {
@@ -439,7 +461,7 @@ public with sharing class ALT_CLS_ConfidencePanelService {
         WITH USER_MODE
         GROUP BY AXF_CCT_MDR_CreditCard__c
       ]) {
-        applyFactRow(sources.get((Id) row.get('source')), row);
+        applyFactRow(panel, sources.get((Id) row.get('source')), row);
       }
     }
     for (SourceView view : sources.values()) {
@@ -464,7 +486,11 @@ public with sharing class ALT_CLS_ConfidencePanelService {
     }
   }
 
-  private static void applyFactRow(SourceView view, AggregateResult row) {
+  private static void applyFactRow(
+    Panel panel,
+    SourceView view,
+    AggregateResult row
+  ) {
     if (view == null) {
       return;
     }
@@ -475,6 +501,7 @@ public with sharing class ALT_CLS_ConfidencePanelService {
         // Hand-keyed facts carry no import timestamp; their creation is the recorded success.
         view.lastSuccessAt = (Datetime) row.get('created');
         view.exceptions.add('IMPORT_DATE_MISSING');
+        addFallback(panel, 'IMPORT_DATE_MISSING');
       }
     }
   }
@@ -531,7 +558,7 @@ public with sharing class ALT_CLS_ConfidencePanelService {
   }
 
   private static Panel blocked(Panel panel, String reason) {
-    panel.level = LEVEL_BLOCKED;
+    panel.level = ALT_CLS_ForecastComparisonService.CONFIDENCE_BLOCKED;
     if (reason != null) {
       addReason(panel, reason);
     }
@@ -542,6 +569,12 @@ public with sharing class ALT_CLS_ConfidencePanelService {
   private static void addReason(Panel panel, String reason) {
     if (!panel.reasons.contains(reason)) {
       panel.reasons.add(reason);
+    }
+  }
+
+  private static void addFallback(Panel panel, String fallback) {
+    if (!panel.fallbacks.contains(fallback)) {
+      panel.fallbacks.add(fallback);
     }
   }
 

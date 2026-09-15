@@ -318,6 +318,71 @@ private class ALT_CLS_ConfidencePanelServiceTest {
   }
 
   @IsTest
+  static void canonicalPolicyStatesAuthorityAndFallbacksComeFromThePolicies() {
+    System.runAs(byAlias('axf143g')) {
+      Datetime now = Datetime.newInstance(2026, 9, 14, 12, 0, 0);
+      ALT_CLS_ConfidencePanelService.nowOverride = now;
+      ALT_CLS_ConfidencePanelService service = new ALT_CLS_ConfidencePanelService();
+      Account withOwnLimit = holder('Ana Limite Proprio');
+      AXF_OBJ_PluggyConnection__c fresh = connection(
+        'canon',
+        now.addHours(-1),
+        'ACTIVE',
+        'ACTIVE'
+      );
+      bank(withOwnLimit.Id, 'o', fresh.Id, 'AVAILABLE', 24);
+      Account withDefaultLimit = holder('Ana Limite Padrao');
+      AXF_OBJ_BankAccount__c defaulted = bank(
+        withDefaultLimit.Id,
+        'd',
+        null,
+        'AVAILABLE',
+        null
+      );
+      Test.startTest();
+      ALT_CLS_ConfidencePanelService.Panel informative = service.explain(
+        new List<Id>{ withOwnLimit.Id }
+      );
+      ALT_CLS_ConfidencePanelService.Panel degraded = service.explain(
+        new List<Id>{ withDefaultLimit.Id }
+      );
+      Test.stopTest();
+
+      Assert.areEqual(
+        ALT_CLS_ForecastComparisonService.CONFIDENCE_INFORMATIVE,
+        informative.level,
+        'estado canonico da policy, nao um score paralelo'
+      );
+      Assert.areEqual(
+        ALT_CLS_ForecastComparisonService.CONFIDENCE_DEGRADED,
+        degraded.level
+      );
+      Assert.areEqual(
+        new List<String>{
+          ALT_CLS_ForecastComparisonService.POLICY_VERSION,
+          ALT_CLS_MatchEvidence.MATCHING_POLICY
+        },
+        informative.policyAuthority,
+        'autoridade canonica dos estados e das acoes permitidas'
+      );
+      Assert.isTrue(
+        informative.fallbacks.isEmpty(),
+        'limite proprio da conta: nenhum fallback aplicado'
+      );
+      Assert.areEqual(
+        new List<String>{ 'FRESHNESS_LIMIT_DEFAULT' },
+        degraded.fallbacks,
+        'sem limite proprio, o padrao da politica e declarado'
+      );
+      Assert.areEqual(
+        48,
+        source(degraded, defaulted.Id).freshnessLimitHours,
+        'padrao da politica'
+      );
+    }
+  }
+
+  @IsTest
   static void manualSourcesUseLastImportAndUnknownIsDistinctFromZero() {
     System.runAs(byAlias('axf143g')) {
       Datetime now = Datetime.newInstance(2026, 9, 14, 12, 0, 0);
@@ -680,6 +745,10 @@ private class ALT_CLS_ConfidencePanelServiceTest {
         'sem data de importacao usa a criacao'
       );
       Assert.isTrue(keyedView.exceptions.contains('IMPORT_DATE_MISSING'));
+      Assert.isTrue(
+        panel.fallbacks.contains('IMPORT_DATE_MISSING'),
+        'fallback aplicado e declarado no painel'
+      );
       Assert.isFalse(keyedView.exceptions.contains('NO_SUCCESS_RECORDED'));
       Assert.areEqual(
         'STALE',

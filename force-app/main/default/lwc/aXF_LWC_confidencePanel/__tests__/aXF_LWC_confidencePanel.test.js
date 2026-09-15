@@ -59,10 +59,12 @@ const holders = [
 
 const panel = {
   policyVersion: "confidence-panel@1.0.0",
+  policyAuthority: ["AXF-FORECASTING@1.0.0", "AXF-MATCHING@1.0.0"],
   asOf: "2026-09-14T12:00:00.000Z",
   level: "DEGRADED",
   reasons: ["STALE_SOURCE", "FRESHNESS_EXCEEDED"],
   allowedActions: ["OPEN_SOURCE", "REVIEW_SOURCE_HEALTH"],
+  fallbacks: ["FRESHNESS_LIMIT_DEFAULT"],
   currencies: ["BRL", "USD"],
   includedCount: 2,
   excludedCount: 1,
@@ -225,8 +227,7 @@ describe("c-aXF_LWC_confidencePanel", () => {
       element.shadowRoot.querySelector('[data-id="level"]').className
     ).toContain("slds-badge_error");
     expect(
-      element.shadowRoot.querySelectorAll('[data-id="blocked-reasons"] li')
-        .length
+      element.shadowRoot.querySelectorAll('[data-id="gate-reasons"] li').length
     ).toBe(2);
     expect(
       element.shadowRoot.querySelectorAll('[data-id="actions"] li').length
@@ -274,6 +275,57 @@ describe("c-aXF_LWC_confidencePanel", () => {
     other.shadowRoot.querySelector('[data-id="retry"]').click();
     await flush();
     expect(refreshApex).toHaveBeenCalled();
+  });
+
+  it("renders the canonical policy state, authority, coverage and fallbacks without recomputing the gate", async () => {
+    explain.mockResolvedValue({
+      ...panel,
+      level: "INFORMATIVE",
+      reasons: [],
+      fallbacks: []
+    });
+    const element = build("001A");
+    getHolders.emit(holders);
+    await flush();
+    const level = element.shadowRoot.querySelector('[data-id="level"]');
+    expect(level.textContent).toContain("levelInformative");
+    expect(level.className).toContain("slds-badge_success");
+    // A stale row must never turn the server state into one derived here.
+    expect(
+      element.shadowRoot.querySelector('[data-source="a07S"] [data-freshness]')
+        .dataset.freshness
+    ).toBe("STALE");
+    expect(
+      element.shadowRoot.querySelector('[data-id="policy"]').textContent
+    ).toContain("AXF-FORECASTING@1.0.0");
+    const coverage = element.shadowRoot.querySelector(
+      '[data-id="coverage"]'
+    ).textContent;
+    expect(coverage).toMatch(/2 \S*_included · 1 \S*_excluded/);
+    expect(
+      element.shadowRoot.querySelector('[data-id="gate-reasons"]')
+    ).toBeNull();
+    expect(
+      element.shadowRoot.querySelector('[data-id="fallbacks"]')
+    ).toBeNull();
+    expect(
+      element.shadowRoot.querySelector('[data-id="no-fallbacks"]').textContent
+    ).toContain("noFallbacks");
+  });
+
+  it("shows the gate reason of the server state and names the fallback applied", async () => {
+    explain.mockResolvedValue(panel);
+    const element = build("001A");
+    getHolders.emit(holders);
+    await flush();
+    expect(
+      element.shadowRoot.querySelectorAll('[data-id="gate-reasons"] li').length
+    ).toBe(2);
+    const fallbacks = element.shadowRoot.querySelectorAll(
+      '[data-id="fallbacks"] li'
+    );
+    expect(fallbacks.length).toBe(1);
+    expect(fallbacks[0].textContent).toContain("fallbackFreshnessLimitDefault");
   });
 
   it("shows unknown FX and hides the currency when the server has none", async () => {

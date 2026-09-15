@@ -74,6 +74,12 @@ const ACTION_LABEL = {
   REVIEW_SOURCE_HEALTH: labels.actionReviewHealth
 };
 
+/** Fallbacks the server reports as applied; the UI never applies one on its own. */
+const FALLBACK_LABEL = {
+  FRESHNESS_LIMIT_DEFAULT: labels.fallbackFreshnessLimitDefault,
+  IMPORT_DATE_MISSING: labels.exImportDateMissing
+};
+
 export default class AxfConfidencePanel extends NavigationMixin(
   LightningElement
 ) {
@@ -170,8 +176,37 @@ export default class AxfConfidencePanel extends NavigationMixin(
   get hasHolders() {
     return this.holderOptions.length > 0;
   }
-  get isBlocked() {
-    return this.panel && this.panel.level === "BLOCKED";
+  /** Canonical policies that authorize the states and actions; never derived here. */
+  get policyAuthorityText() {
+    return this.panel && this.panel.policyAuthority
+      ? this.panel.policyAuthority.join(" · ")
+      : "";
+  }
+  get coverageText() {
+    if (!this.panel) {
+      return "";
+    }
+    return (
+      this.panel.includedCount +
+      " " +
+      labels.included +
+      " · " +
+      this.panel.excludedCount +
+      " " +
+      labels.excluded
+    );
+  }
+  get hasFallbacks() {
+    return this.fallbacks.length > 0;
+  }
+  get fallbacks() {
+    if (!this.panel) {
+      return [];
+    }
+    return (this.panel.fallbacks || []).map((code) => ({
+      key: code,
+      text: FALLBACK_LABEL[code] || code
+    }));
   }
 
   get sources() {
@@ -252,7 +287,10 @@ export default class AxfConfidencePanel extends NavigationMixin(
       text: ACTION_LABEL[code] || code
     }));
   }
-  get blockedReasons() {
+  get hasReasons() {
+    return !!(this.panel && this.panel.reasons.length > 0);
+  }
+  get gateReasons() {
     if (!this.panel) {
       return [];
     }

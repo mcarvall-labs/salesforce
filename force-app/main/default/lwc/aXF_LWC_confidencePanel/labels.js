@@ -65,6 +65,11 @@ import exConnectionNotReadable from "@salesforce/label/c.AXF_ConfidencePanel_exC
 import exFutureSuccess from "@salesforce/label/c.AXF_ConfidencePanel_exFutureSuccess";
 import exImportDateMissing from "@salesforce/label/c.AXF_ConfidencePanel_exImportDateMissing";
 import codeNotAccessible from "@salesforce/label/c.AXF_ConfidencePanel_codeNotAccessible";
+import authority from "@salesforce/label/c.AXF_ConfidencePanel_authority";
+import coverage from "@salesforce/label/c.AXF_ConfidencePanel_coverage";
+import fallbacks from "@salesforce/label/c.AXF_ConfidencePanel_fallbacks";
+import noFallbacks from "@salesforce/label/c.AXF_ConfidencePanel_noFallbacks";
+import fallbackFreshnessLimitDefault from "@salesforce/label/c.AXF_ConfidencePanel_fallbackFreshnessLimitDefault";
 export default {
   title,
   intro,
@@ -132,5 +137,10 @@ export default {
   exConnectionNotReadable,
   exFutureSuccess,
   exImportDateMissing,
-  codeNotAccessible
+  codeNotAccessible,
+  authority,
+  coverage,
+  fallbacks,
+  noFallbacks,
+  fallbackFreshnessLimitDefault
 };
