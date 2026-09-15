@@ -1325,6 +1325,49 @@ public with sharing class ALT_CLS_SourceLinkService {
         KINDS.contains(input.sourceKind),
       'INVALID'
     );
+    ConfirmResult result = new ConfirmResult();
+    // Visibility and holder authorization first; a hidden fact never reaches the key lookup.
+    SourceView source = readSource(input.sourceId, input.sourceKind);
+    String operation = AXF_CLS_IdentityFraming.key(
+      new List<Object>{ 'AXF25', input.operationKey }
+    );
+    List<AXF_OBJ_ReconciliationAllocation__c> previous = [
+      SELECT Id, AXF_RA_LKP_BankTransaction__c, AXF_RA_LKP_CardTransaction__c
+      FROM AXF_OBJ_ReconciliationAllocation__c
+      WHERE AXF_RA_EXI_AllocationKey__c = :operation
+      WITH USER_MODE
+      LIMIT 1
+    ];
+    if (!previous.isEmpty()) {
+      // AXF-135: an operation that was already applied is resolved before the role is judged, so a
+      // retry that declares no role — a cached client — reproduces the recorded result instead of
+      // being refused on a field it never sent. Replay skips eligibility (the link may have
+      // exhausted the source); AXF-25 still compares the payload hash and answers CONFLICT on any
+      // divergence whenever the retry does declare a role.
+      result.replayed = true;
+      result.createdActualOnly = input.targetId == null;
+      if (String.isNotBlank(input.economicRole)) {
+        result.allocationId = realize(input, source);
+      } else {
+        result.allocationId = previous[0].Id;
+      }
+      finish(result);
+      if (String.isBlank(input.economicRole)) {
+        // The role of the recorded operation is not part of this retry, so it cannot take part in
+        // the comparison: the retry is checked against what the recorded allocation holds.
+        Id recordedSource = previous[0].AXF_RA_LKP_BankTransaction__c != null
+          ? previous[0].AXF_RA_LKP_BankTransaction__c
+          : previous[0].AXF_RA_LKP_CardTransaction__c;
+        check(
+          input.sourceId == recordedSource &&
+            input.amount == result.amount &&
+            (input.targetId == null ||
+            input.targetId == result.targetId),
+          'CONFLICT'
+        );
+      }
+      return result;
+    }
     // AXF-135: the role is declared, never defaulted. A role this slice cannot route is refused
     // here, before any read of a candidate and before any write, so no invoice payment, transfer or
     // refund can ever become an allocation or a second consumption expense.
@@ -1336,28 +1379,6 @@ public with sharing class ALT_CLS_SourceLinkService {
       ROUTABLE_ROLES.contains(input.economicRole),
       'UNSUPPORTED_ECONOMIC_ROLE'
     );
-    ConfirmResult result = new ConfirmResult();
-    // Visibility and holder authorization first; a hidden fact never reaches the key lookup.
-    SourceView source = readSource(input.sourceId, input.sourceKind);
-    String operation = AXF_CLS_IdentityFraming.key(
-      new List<Object>{ 'AXF25', input.operationKey }
-    );
-    List<AXF_OBJ_ReconciliationAllocation__c> previous = [
-      SELECT Id
-      FROM AXF_OBJ_ReconciliationAllocation__c
-      WHERE AXF_RA_EXI_AllocationKey__c = :operation
-      WITH USER_MODE
-      LIMIT 1
-    ];
-    if (!previous.isEmpty()) {
-      // Replay skips eligibility (the link may have exhausted the source); AXF-25 compares
-      // the payload hash and answers CONFLICT on any divergence.
-      result.replayed = true;
-      result.createdActualOnly = input.targetId == null;
-      result.allocationId = realize(input, source);
-      finish(result);
-      return result;
-    }
     if (!source.eligible) {
       throw new SourceLinkException(source.reasons[0]);
     }

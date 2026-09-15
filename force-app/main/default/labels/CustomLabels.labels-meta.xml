@@ -2567,4 +2567,8 @@
   ><fullName>AXF_SourceLink_codeUNSUPPORTED_ECONOMIC_ROLE</fullName><language
     >en_US</language><protected>false</protected><shortDescription
     >Code unsupported economic role</shortDescription><value
-    >This economic role has no supported link capability here. Nothing was saved — use the invoice, transfer or refund capability.</value></labels></CustomLabels>
+    >This economic role has no link capability in this version. Nothing was saved — declare the application role, the only one this flow can route.</value></labels><labels
+  ><fullName>AXF_SourceLink_codeINVALID_ECONOMIC_ROLE</fullName><language
+    >en_US</language><protected>false</protected><shortDescription
+    >Code invalid economic role</shortDescription><value
+    >Declare the economic role of the link — it is never inferred from the description or from the statement of the card line — and confirm again. Nothing was saved.</value></labels></CustomLabels>

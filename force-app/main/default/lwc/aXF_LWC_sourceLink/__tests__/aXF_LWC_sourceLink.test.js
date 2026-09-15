@@ -558,7 +558,7 @@ describe("c-a-x-f-_-l-w-c-_source-link", () => {
     expect(byId(denied, "holder")).toBeNull();
   });
 
-  it("requires a declared economic role and keeps the draft when no capability routes it", async () => {
+  it("offers only the routable role and keeps the draft when a role has no capability", async () => {
     const element = await mount();
     listSources.mockResolvedValue({
       pageNumber: 1,
@@ -582,8 +582,16 @@ describe("c-a-x-f-_-l-w-c-_source-link", () => {
     // No role is defaulted: nothing is classified for the user and the link cannot be confirmed.
     expect(byId(element, "economicRole").value).toBeUndefined();
     expect(byId(element, "confirm").disabled).toBe(true);
-    await declareRole(element, "INVOICE_PAYMENT");
+    // Only the role this branch can actually route is offered: a choice that always fails server-side
+    // is never presented as a choice.
+    expect(byId(element, "economicRole").options.map((o) => o.value)).toEqual([
+      "APPLICATION"
+    ]);
+    await declareRole(element, "APPLICATION");
     expect(byId(element, "confirm").disabled).toBe(false);
+    // An older surface can still declare a role this branch cannot route; the refusal is explained
+    // with what to do instead and nothing was written.
+    await declareRole(element, "INVOICE_PAYMENT");
     confirm.mockRejectedValueOnce({
       body: { message: "UNSUPPORTED_ECONOMIC_ROLE" }
     });
@@ -597,6 +605,38 @@ describe("c-a-x-f-_-l-w-c-_source-link", () => {
     // The draft stays reviewable with the declared role; nothing was written.
     expect(byId(element, "confirm")).not.toBeNull();
     expect(byId(element, "economicRole").value).toBe("INVOICE_PAYMENT");
+  });
+
+  it("explains a missing economic role instead of falling back to the generic error", async () => {
+    const element = await mount();
+    listSources.mockResolvedValue({
+      pageNumber: 1,
+      pageSize: 25,
+      hasMore: false,
+      scannedCount: 1,
+      excludedCount: 0,
+      items: [source]
+    });
+    listCandidates.mockResolvedValue(candidates);
+    byId(element, "holder").dispatchEvent(
+      new CustomEvent("change", { detail: { value: "001A" } })
+    );
+    await flush();
+    byId(element, "loadSources").click();
+    await flush();
+    element.shadowRoot.querySelector('[data-id="a0B1"]').click();
+    await flush();
+    element.shadowRoot.querySelector('[data-index="0"]').click();
+    await flush();
+    await declareRole(element);
+    confirm.mockRejectedValueOnce({
+      body: { message: "INVALID_ECONOMIC_ROLE" }
+    });
+    byId(element, "confirm").click();
+    await flush();
+    expect(
+      element.shadowRoot.querySelector('[role="alert"]').textContent
+    ).toContain("c.AXF_SourceLink_codeINVALID_ECONOMIC_ROLE");
   });
 
   it("states the source amount the chosen obligation cannot absorb", async () => {
