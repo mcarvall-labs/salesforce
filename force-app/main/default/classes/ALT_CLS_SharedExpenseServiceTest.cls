@@ -180,6 +180,16 @@ private class ALT_CLS_SharedExpenseServiceTest {
     return input;
   }
 
+  private static Integer countActive(Id expenseId) {
+    return [
+      SELECT COUNT()
+      FROM AXF_OBJ_SharedExpenseGrant__c
+      WHERE
+        AXF_SEG_LKP_FinancialTransaction__c = :expenseId
+        AND AXF_SEG_PKL_Status__c = 'ACTIVE'
+    ];
+  }
+
   private static String code(Exception failure) {
     return failure instanceof ALT_CLS_SharedExpenseService.SharedExpenseException
       ? ((ALT_CLS_SharedExpenseService.SharedExpenseException) failure).code
@@ -603,6 +613,30 @@ private class ALT_CLS_SharedExpenseServiceTest {
           WHERE Id = :own.Id
         ],
         'Direitos independentes do colaborador preservados.'
+      );
+    }
+    // Closure entry point (AXF-119) revokes every active grant of the scope in one call.
+    System.runAs(owner()) {
+      ALT_CLS_SharedExpenseService reopenService = new ALT_CLS_SharedExpenseService();
+      reopenService.share(
+        grantInput(expense.Id, collaboratorId, 'VIEW', 'req-c1b')
+      );
+      Callable closure = (Callable) Type.forName('ALT_CLS_SharedExpenseService')
+        .newInstance();
+      Assert.areEqual(
+        1,
+        closure.call(
+          'revokeForClosure',
+          new Map<String, Object>{
+            'financialTransactionIds' => new Set<Id>{ expense.Id }
+          }
+        )
+      );
+      Assert.areEqual(
+        0,
+        reopenService.listGrants(expense.Id).isEmpty()
+          ? 0
+          : countActive(expense.Id)
       );
     }
     // A new grant by the owner reopens the access (REVOKED -> ACTIVE).

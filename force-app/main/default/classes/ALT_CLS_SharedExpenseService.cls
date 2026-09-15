@@ -10,7 +10,7 @@
  * FLS dos campos e versao antes de qualquer efeito; revogacao fecha o acesso imediatamente e
  * preserva direitos independentes (AXF-8). Sem Delete; sem fallback cliente.
  */
-public without sharing class ALT_CLS_SharedExpenseService {
+public without sharing class ALT_CLS_SharedExpenseService implements Callable {
   public static final String PERMISSION_VIEW = 'VIEW';
   public static final String PERMISSION_EDIT = 'EDIT';
   public static final String STATUS_ACTIVE = 'ACTIVE';
@@ -116,6 +116,43 @@ public without sharing class ALT_CLS_SharedExpenseService {
     public Boolean canEdit;
     @AuraEnabled
     public Boolean canRealize;
+  }
+
+  /**
+   * Loosely coupled entry point for other domains that are deployed independently (AXF-119
+   * closure): `revokeForClosure` with `financialTransactionIds` (Set<Id>) revokes every ACTIVE
+   * grant of those expenses and returns the count. The caller is responsible for its own
+   * authorization on the scope; the grants are owned by the expense owner.
+   */
+  public Object call(String action, Map<String, Object> args) {
+    if (action != 'revokeForClosure') {
+      throw failure('INVALID_INPUT');
+    }
+    Set<Id> expenseIds = (Set<Id>) args.get('financialTransactionIds');
+    if (expenseIds == null || expenseIds.isEmpty()) {
+      return 0;
+    }
+    List<AXF_OBJ_SharedExpenseGrant__c> grants = [
+      SELECT Id, AXF_SEG_NUM_Version__c
+      FROM AXF_OBJ_SharedExpenseGrant__c
+      WHERE
+        AXF_SEG_LKP_FinancialTransaction__c IN :expenseIds
+        AND AXF_SEG_PKL_Status__c = :STATUS_ACTIVE
+      FOR UPDATE
+    ];
+    for (AXF_OBJ_SharedExpenseGrant__c grant : grants) {
+      grant.AXF_SEG_PKL_Status__c = STATUS_REVOKED;
+      grant.AXF_SEG_DT_RevokedAt__c = Datetime.now();
+      grant.AXF_SEG_LKP_RevokedBy__c = UserInfo.getUserId();
+      grant.AXF_SEG_NUM_Version__c = nz(grant.AXF_SEG_NUM_Version__c) + 1;
+    }
+    writing = true;
+    try {
+      Database.update(grants, AccessLevel.SYSTEM_MODE);
+    } finally {
+      writing = false;
+    }
+    return grants.size();
   }
 
   // ---------------------------------------------------------------- owner side
