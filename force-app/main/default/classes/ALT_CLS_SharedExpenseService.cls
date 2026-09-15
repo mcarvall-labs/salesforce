@@ -18,9 +18,21 @@ public without sharing class ALT_CLS_SharedExpenseService {
   public static final String CP_SHARE = 'AXF_CanShareExpense';
   public static final String CP_COLLABORATE = 'AXF_CanCollaborateExpense';
   public static final String NOTIFICATION_TYPE = 'AXF_SharedExpenseChange';
+  public static final String STATUS_PLANNED = 'PLANNED';
+  private static final Integer REQUEST_KEY_MAX = 64;
+  private static final Integer GRANT_PAGE = 200;
 
   @TestVisible
   private static Boolean notificationsSent = false;
+  /** Recipient of the last notification attempted (test observation). */
+  @TestVisible
+  private static Id lastNotifiedOwnerId;
+  private static Boolean writing = false;
+
+  /** Grant rows are only written by this service (trigger guard). */
+  public static Boolean isWriting() {
+    return writing;
+  }
 
   public class SharedExpenseException extends Exception {
     public String code;
@@ -127,8 +139,15 @@ public without sharing class ALT_CLS_SharedExpenseService {
     AXF_OBJ_FinancialTransaction__c expense = ownerExpense(
       input.financialTransactionId
     );
-    if (expense.OwnerId == input.collaboratorId) {
+    requireRequestKey(input.clientRequestId);
+    if (
+      expense.OwnerId == input.collaboratorId ||
+      input.collaboratorId == UserInfo.getUserId()
+    ) {
       throw failure('INVALID_INPUT');
+    }
+    if (expense.AXF_FTX_PKL_Status__c != STATUS_PLANNED) {
+      throw failure('INVALID_STATE');
     }
     List<User> collaborators = [
       SELECT Id, Name
@@ -140,7 +159,14 @@ public without sharing class ALT_CLS_SharedExpenseService {
     if (collaborators.isEmpty()) {
       throw failure('COLLABORATOR_NOT_FOUND');
     }
+    if (
+      !eligibleCollaboratorIds(new Set<Id>{ input.collaboratorId })
+        .contains(input.collaboratorId)
+    ) {
+      throw failure('COLLABORATOR_NOT_ELIGIBLE');
+    }
     String key = grantKey(expense.Id, input.collaboratorId);
+    // Privileged by design: the owner was authorized above; the grant follows the expense owner.
     List<AXF_OBJ_SharedExpenseGrant__c> existing = [
       SELECT
         Id,
@@ -151,31 +177,50 @@ public without sharing class ALT_CLS_SharedExpenseService {
       FROM AXF_OBJ_SharedExpenseGrant__c
       WHERE AXF_SEG_EXI_GrantKey__c = :key
       LIMIT 1
+      FOR UPDATE
     ];
     AXF_OBJ_SharedExpenseGrant__c grant;
-    if (existing.isEmpty()) {
-      grant = new AXF_OBJ_SharedExpenseGrant__c(
-        AXF_SEG_LKP_FinancialTransaction__c = expense.Id,
-        AXF_SEG_LKP_Collaborator__c = input.collaboratorId,
-        AXF_SEG_PKL_Permission__c = permission,
-        AXF_SEG_PKL_Status__c = STATUS_ACTIVE,
-        AXF_SEG_EXI_GrantKey__c = key,
-        AXF_SEG_TXT_LastRequestId__c = input.clientRequestId,
-        AXF_SEG_NUM_Version__c = 1,
-        OwnerId = expense.OwnerId
-      );
-      Database.insert(grant, AccessLevel.USER_MODE);
-    } else {
-      grant = existing[0];
-      if (grant.AXF_SEG_TXT_LastRequestId__c != input.clientRequestId) {
-        grant.AXF_SEG_PKL_Permission__c = permission;
-        grant.AXF_SEG_PKL_Status__c = STATUS_ACTIVE;
-        grant.AXF_SEG_DT_RevokedAt__c = null;
-        grant.AXF_SEG_LKP_RevokedBy__c = null;
-        grant.AXF_SEG_TXT_LastRequestId__c = input.clientRequestId;
-        grant.AXF_SEG_NUM_Version__c = nz(grant.AXF_SEG_NUM_Version__c) + 1;
-        Database.update(grant, AccessLevel.USER_MODE);
+    writing = true;
+    try {
+      if (existing.isEmpty()) {
+        grant = new AXF_OBJ_SharedExpenseGrant__c(
+          AXF_SEG_LKP_FinancialTransaction__c = expense.Id,
+          AXF_SEG_LKP_Collaborator__c = input.collaboratorId,
+          AXF_SEG_PKL_Permission__c = permission,
+          AXF_SEG_PKL_Status__c = STATUS_ACTIVE,
+          AXF_SEG_EXI_GrantKey__c = key,
+          AXF_SEG_TXT_LastRequestId__c = input.clientRequestId,
+          AXF_SEG_NUM_Version__c = 1,
+          OwnerId = expense.OwnerId
+        );
+        try {
+          Database.insert(grant, AccessLevel.SYSTEM_MODE);
+        } catch (DmlException race) {
+          if (race.getDmlType(0) != StatusCode.DUPLICATE_VALUE) {
+            throw race;
+          }
+          // A concurrent share won the unique key: answer with that grant.
+          grant = [
+            SELECT Id
+            FROM AXF_OBJ_SharedExpenseGrant__c
+            WHERE AXF_SEG_EXI_GrantKey__c = :key
+            LIMIT 1
+          ];
+        }
+      } else {
+        grant = existing[0];
+        if (grant.AXF_SEG_TXT_LastRequestId__c != input.clientRequestId) {
+          grant.AXF_SEG_PKL_Permission__c = permission;
+          grant.AXF_SEG_PKL_Status__c = STATUS_ACTIVE;
+          grant.AXF_SEG_DT_RevokedAt__c = null;
+          grant.AXF_SEG_LKP_RevokedBy__c = null;
+          grant.AXF_SEG_TXT_LastRequestId__c = input.clientRequestId;
+          grant.AXF_SEG_NUM_Version__c = nz(grant.AXF_SEG_NUM_Version__c) + 1;
+          Database.update(grant, AccessLevel.SYSTEM_MODE);
+        }
       }
+    } finally {
+      writing = false;
     }
     return toGrantView(
       [
@@ -208,13 +253,14 @@ public without sharing class ALT_CLS_SharedExpenseService {
         AXF_SEG_NUM_Version__c
       FROM AXF_OBJ_SharedExpenseGrant__c
       WHERE Id = :grantId
-      WITH USER_MODE
       LIMIT 1
+      FOR UPDATE
     ];
     if (grants.isEmpty()) {
       throw failure('NOT_ACCESSIBLE');
     }
     AXF_OBJ_SharedExpenseGrant__c grant = grants[0];
+    // Authorization comes from the expense (owner/editor with the capability), not the grant row.
     ownerExpense(grant.AXF_SEG_LKP_FinancialTransaction__c);
     if (grant.AXF_SEG_PKL_Status__c == STATUS_REVOKED) {
       return toGrantView(grant);
@@ -229,7 +275,12 @@ public without sharing class ALT_CLS_SharedExpenseService {
     grant.AXF_SEG_DT_RevokedAt__c = Datetime.now();
     grant.AXF_SEG_LKP_RevokedBy__c = UserInfo.getUserId();
     grant.AXF_SEG_NUM_Version__c = nz(grant.AXF_SEG_NUM_Version__c) + 1;
-    Database.update(grant, AccessLevel.USER_MODE);
+    writing = true;
+    try {
+      Database.update(grant, AccessLevel.SYSTEM_MODE);
+    } finally {
+      writing = false;
+    }
     return toGrantView(grant);
   }
 
@@ -247,7 +298,6 @@ public without sharing class ALT_CLS_SharedExpenseService {
         AXF_SEG_NUM_Version__c
       FROM AXF_OBJ_SharedExpenseGrant__c
       WHERE AXF_SEG_LKP_FinancialTransaction__c = :financialTransactionId
-      WITH USER_MODE
       ORDER BY AXF_SEG_PKL_Status__c, AXF_SEG_LKP_Collaborator__r.Name
     ]) {
       result.add(toGrantView(grant));
@@ -265,12 +315,19 @@ public without sharing class ALT_CLS_SharedExpenseService {
     if (grants.isEmpty()) {
       return result;
     }
+    Set<Id> frozen = frozenExpenseIds(grants.keySet());
     for (
       AXF_OBJ_FinancialTransaction__c expense : redactedExpenses(
         grants.keySet()
       )
     ) {
-      result.add(toSharedView(expense, grants.get(expense.Id)));
+      result.add(
+        toSharedView(
+          expense,
+          grants.get(expense.Id),
+          frozen.contains(expense.Id)
+        )
+      );
     }
     return result;
   }
@@ -285,7 +342,11 @@ public without sharing class ALT_CLS_SharedExpenseService {
     if (rows.isEmpty()) {
       throw failure('NOT_ACCESSIBLE');
     }
-    return toSharedView(rows[0], grant);
+    return toSharedView(
+      rows[0],
+      grant,
+      !frozenExpenseIds(new Set<Id>{ financialTransactionId }).isEmpty()
+    );
   }
 
   /** Collaborator with EDIT changes only description/category; atomic, versioned, idempotent. */
@@ -298,13 +359,17 @@ public without sharing class ALT_CLS_SharedExpenseService {
       throw failure('INVALID_INPUT');
     }
     requireCollaborator();
+    requireRequestKey(input.clientRequestId);
+    if (input.expectedVersion == null) {
+      throw failure('INVALID_INPUT');
+    }
     AXF_OBJ_SharedExpenseGrant__c grant = activeGrant(
       input.financialTransactionId
     );
     if (grant.AXF_SEG_PKL_Permission__c != PERMISSION_EDIT) {
       throw failure('FORBIDDEN');
     }
-    if (grant.AXF_SEG_TXT_LastRequestId__c == input.clientRequestId) {
+    if (grant.AXF_SEG_TXT_LastEditRequestId__c == input.clientRequestId) {
       return readShared(input.financialTransactionId);
     }
     Schema.DescribeFieldResult description = AXF_OBJ_FinancialTransaction__c.AXF_FTX_TXT_Description__c.getDescribe();
@@ -312,6 +377,13 @@ public without sharing class ALT_CLS_SharedExpenseService {
     if (!description.isUpdateable() || !category.isUpdateable()) {
       throw failure('FORBIDDEN');
     }
+    // Row lock so the version check and the write are one unit against concurrent editors.
+    List<AXF_OBJ_FinancialTransaction__c> locked = [
+      SELECT Id
+      FROM AXF_OBJ_FinancialTransaction__c
+      WHERE Id = :input.financialTransactionId
+      FOR UPDATE
+    ];
     List<AXF_OBJ_FinancialTransaction__c> rows = redactedExpenses(
       new Set<Id>{ input.financialTransactionId }
     );
@@ -320,28 +392,49 @@ public without sharing class ALT_CLS_SharedExpenseService {
     }
     AXF_OBJ_FinancialTransaction__c expense = rows[0];
     if (
-      input.expectedVersion != null &&
-      input.expectedVersion != nz(expense.AXF_FTX_NUM_Version__c)
+      expense.AXF_FTX_PKL_Status__c != STATUS_PLANNED ||
+      !frozenExpenseIds(new Set<Id>{ expense.Id }).isEmpty()
     ) {
+      // Realized (allocation-referenced) evidence is immutable (AXF-25); explain, never REJECTED.
+      throw failure('INVALID_STATE');
+    }
+    if (input.expectedVersion != nz(expense.AXF_FTX_NUM_Version__c)) {
       throw failure('CONFLICT');
     }
+    // Partial payload keeps the untouched field; identical content is a no-op.
+    String newDescription = input.description == null
+      ? expense.AXF_FTX_TXT_Description__c
+      : clip(input.description, 255);
+    String newCategory = input.userCategory == null
+      ? expense.AXF_FTX_TXT_UserCategory__c
+      : clip(input.userCategory, 80);
+    if (
+      newDescription == expense.AXF_FTX_TXT_Description__c &&
+      newCategory == expense.AXF_FTX_TXT_UserCategory__c
+    ) {
+      return toSharedView(expense, grant, false);
+    }
     Savepoint point = Database.setSavepoint();
+    writing = true;
     try {
       // Allowed fields only; the record is re-read privileged so no other field can travel.
       AXF_OBJ_FinancialTransaction__c change = new AXF_OBJ_FinancialTransaction__c(
         Id = expense.Id,
-        AXF_FTX_TXT_Description__c = clip(input.description, 255),
-        AXF_FTX_TXT_UserCategory__c = clip(input.userCategory, 80),
+        AXF_FTX_TXT_Description__c = newDescription,
+        AXF_FTX_TXT_UserCategory__c = newCategory,
         AXF_FTX_NUM_Version__c = nz(expense.AXF_FTX_NUM_Version__c) + 1
       );
       Database.update(change, AccessLevel.SYSTEM_MODE);
-      grant.AXF_SEG_TXT_LastRequestId__c = input.clientRequestId;
+      grant.AXF_SEG_TXT_LastEditRequestId__c = input.clientRequestId;
       Database.update(grant, AccessLevel.SYSTEM_MODE);
-      notifyOwner(expense, 'Campos permitidos alterados por colaborador.');
     } catch (Exception failure) {
       Database.rollback(point);
       throw failure;
+    } finally {
+      writing = false;
     }
+    // Best effort, after the write: a notification problem never undoes the edit.
+    notifyOwner(expense, 'Campos permitidos alterados por colaborador.');
     return readShared(input.financialTransactionId);
   }
 
@@ -359,6 +452,7 @@ public without sharing class ALT_CLS_SharedExpenseService {
       throw failure('INVALID_INPUT');
     }
     requireCollaborator();
+    requireRequestKey(input.clientRequestId);
     AXF_OBJ_SharedExpenseGrant__c grant = activeGrant(
       input.financialTransactionId
     );
@@ -374,15 +468,9 @@ public without sharing class ALT_CLS_SharedExpenseService {
       : input.recognitionDate;
     request.targetVersion = input.expectedVersion;
     request.operationKey = input.clientRequestId;
+    Id allocationId;
     try {
-      Id allocationId = new ALT_CLS_RealizationService().apply(request);
-      List<AXF_OBJ_FinancialTransaction__c> rows = redactedExpenses(
-        new Set<Id>{ input.financialTransactionId }
-      );
-      if (!rows.isEmpty()) {
-        notifyOwner(rows[0], 'Realizacao confirmada por colaborador.');
-      }
-      return allocationId;
+      allocationId = new ALT_CLS_RealizationService().apply(request);
     } catch (ALT_CLS_RealizationService.RealizationException denied) {
       // Without record access AXF-25 answers NOT_AUTHORIZED/UNAVAILABLE; both mean denied here.
       throw failure(
@@ -392,6 +480,14 @@ public without sharing class ALT_CLS_SharedExpenseService {
           : denied.getMessage()
       );
     }
+    // The allocation is committed; the notification is best effort.
+    List<AXF_OBJ_FinancialTransaction__c> rows = redactedExpenses(
+      new Set<Id>{ input.financialTransactionId }
+    );
+    if (!rows.isEmpty()) {
+      notifyOwner(rows[0], 'Realizacao confirmada por colaborador.');
+    }
+    return allocationId;
   }
 
   // ---------------------------------------------------------------- guards
@@ -406,7 +502,7 @@ public without sharing class ALT_CLS_SharedExpenseService {
       throw failure('FORBIDDEN');
     }
     List<AXF_OBJ_FinancialTransaction__c> rows = [
-      SELECT Id, OwnerId
+      SELECT Id, OwnerId, AXF_FTX_PKL_Status__c
       FROM AXF_OBJ_FinancialTransaction__c
       WHERE Id = :financialTransactionId
       WITH USER_MODE
@@ -435,6 +531,38 @@ public without sharing class ALT_CLS_SharedExpenseService {
     }
   }
 
+  private static void requireRequestKey(String clientRequestId) {
+    if (
+      String.isBlank(clientRequestId) ||
+      clientRequestId.length() > REQUEST_KEY_MAX
+    ) {
+      throw failure('INVALID_INPUT');
+    }
+  }
+
+  /**
+   * Users who can collaborate: assigned the Participante permission set directly or through
+   * its group. The same rule feeds the picker, so what is offered is what is accepted.
+   */
+  public static Set<Id> eligibleCollaboratorIds(Set<Id> candidateIds) {
+    Set<Id> result = new Set<Id>();
+    if (candidateIds == null || candidateIds.isEmpty()) {
+      return result;
+    }
+    for (PermissionSetAssignment assignment : [
+      SELECT AssigneeId
+      FROM PermissionSetAssignment
+      WHERE
+        AssigneeId IN :candidateIds
+        AND Assignee.IsActive = TRUE
+        AND (PermissionSet.Name = 'AXF_PS_Participante'
+        OR PermissionSetGroup.DeveloperName = 'AXF_PSG_Participante')
+    ]) {
+      result.add(assignment.AssigneeId);
+    }
+    return result;
+  }
+
   private Map<Id, AXF_OBJ_SharedExpenseGrant__c> activeGrantsForMe(
     Id financialTransactionId
   ) {
@@ -447,12 +575,14 @@ public without sharing class ALT_CLS_SharedExpenseService {
             AXF_SEG_LKP_FinancialTransaction__c,
             AXF_SEG_PKL_Permission__c,
             AXF_SEG_TXT_LastRequestId__c,
+            AXF_SEG_TXT_LastEditRequestId__c,
             AXF_SEG_NUM_Version__c
           FROM AXF_OBJ_SharedExpenseGrant__c
           WHERE
             AXF_SEG_LKP_Collaborator__c = :me
             AND AXF_SEG_PKL_Status__c = :STATUS_ACTIVE
-          LIMIT 200
+          ORDER BY CreatedDate DESC
+          LIMIT :GRANT_PAGE
         ]
       : [
           SELECT
@@ -460,6 +590,7 @@ public without sharing class ALT_CLS_SharedExpenseService {
             AXF_SEG_LKP_FinancialTransaction__c,
             AXF_SEG_PKL_Permission__c,
             AXF_SEG_TXT_LastRequestId__c,
+            AXF_SEG_TXT_LastEditRequestId__c,
             AXF_SEG_NUM_Version__c
           FROM AXF_OBJ_SharedExpenseGrant__c
           WHERE
@@ -527,9 +658,16 @@ public without sharing class ALT_CLS_SharedExpenseService {
     notification.setBody(body);
     notification.setNotificationTypeId(types[0].Id);
     notification.setTargetId(expense.Id);
-    notificationsSent = true;
-    if (!Test.isRunningTest()) {
+    try {
       notification.send(new Set<String>{ String.valueOf(expense.OwnerId) });
+      notificationsSent = true;
+      lastNotifiedOwnerId = expense.OwnerId;
+    } catch (Exception undelivered) {
+      // The financial effect already happened; a lost notification is logged, never fatal.
+      System.debug(
+        LoggingLevel.WARN,
+        'AXF-6 owner notification not delivered: ' + undelivered.getTypeName()
+      );
     }
   }
 
@@ -544,9 +682,23 @@ public without sharing class ALT_CLS_SharedExpenseService {
     return view;
   }
 
+  /** Expenses already referenced by a realization allocation: original evidence, immutable. */
+  private static Set<Id> frozenExpenseIds(Set<Id> expenseIds) {
+    Set<Id> result = new Set<Id>();
+    for (AXF_OBJ_ReconciliationAllocation__c allocation : [
+      SELECT AXF_RA_LKP_FinancialTransaction__c
+      FROM AXF_OBJ_ReconciliationAllocation__c
+      WHERE AXF_RA_LKP_FinancialTransaction__c IN :expenseIds
+    ]) {
+      result.add(allocation.AXF_RA_LKP_FinancialTransaction__c);
+    }
+    return result;
+  }
+
   private static SharedView toSharedView(
     AXF_OBJ_FinancialTransaction__c expense,
-    AXF_OBJ_SharedExpenseGrant__c grant
+    AXF_OBJ_SharedExpenseGrant__c grant,
+    Boolean frozen
   ) {
     SharedView view = new SharedView();
     view.financialTransactionId = expense.Id;
@@ -557,12 +709,30 @@ public without sharing class ALT_CLS_SharedExpenseService {
     view.currencyIso = expense.AXF_FTX_TXT_CurrencyIsoCode__c;
     view.dueDate = expense.AXF_FTX_DAT_DueDate__c;
     view.status = expense.AXF_FTX_PKL_Status__c;
-    view.version = expense.AXF_FTX_NUM_Version__c;
+    view.version = nz(expense.AXF_FTX_NUM_Version__c);
     view.permission = grant.AXF_SEG_PKL_Permission__c;
-    view.canEdit = grant.AXF_SEG_PKL_Permission__c == PERMISSION_EDIT;
+    view.canEdit =
+      grant.AXF_SEG_PKL_Permission__c == PERMISSION_EDIT &&
+      expense.AXF_FTX_PKL_Status__c == STATUS_PLANNED &&
+      frozen != true;
+    // AXF-25 keeps its own record-access rule; only offer what can actually succeed.
     view.canRealize =
-      view.canEdit && FeatureManagement.checkPermission('AXF_CanRealize');
+      view.canEdit &&
+      FeatureManagement.checkPermission('AXF_CanRealize') &&
+      hasRecordAccess(expense.Id);
     return view;
+  }
+
+  private static Boolean hasRecordAccess(Id recordId) {
+    for (UserRecordAccess access : [
+      SELECT RecordId, HasReadAccess
+      FROM UserRecordAccess
+      WHERE UserId = :UserInfo.getUserId() AND RecordId = :recordId
+      LIMIT 1
+    ]) {
+      return access.HasReadAccess == true;
+    }
+    return false;
   }
 
   private static String grantKey(Id expenseId, Id userId) {

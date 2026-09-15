@@ -31,10 +31,10 @@
       <template lwc:if={confirmation}>
         <section
           role="dialog"
-          aria-modal="true"
           aria-labelledby="confirm-title"
           class="slds-box slds-theme_warning slds-var-m-bottom_small"
           data-id="confirmation"
+          onkeydown={handleDialogKey}
         >
           <h2 id="confirm-title" class="slds-text-heading_small">
             {labels.confirmTitle}
@@ -55,6 +55,12 @@
         </section>
       </template>
 
+      <template lwc:if={noAccess}>
+        <p class="slds-text-color_weak" data-id="no-access">
+          {labels.noAccess}
+        </p>
+      </template>
+
       <template lwc:if={isOwnerMode}>
         <p class="slds-text-body_small slds-var-m-bottom_small">
           {labels.ownerIntro}
@@ -73,6 +79,15 @@
               required
               data-id="collaborator"
             ></lightning-combobox>
+            <template lwc:if={hasCollaborators}></template>
+            <template lwc:else>
+              <p
+                class="slds-text-color_weak slds-text-body_small"
+                data-id="no-collaborators"
+              >
+                {labels.noCollaborators}
+              </p>
+            </template>
           </div>
           <div class="slds-col slds-size_1-of-2 slds-medium-size_1-of-4">
             <lightning-combobox
@@ -124,7 +139,8 @@
                           label={labels.revoke}
                           data-id={grant.grantId}
                           data-version={grant.version}
-                          onclick={handleRevoke}
+                          data-name={grant.collaboratorName}
+                          onclick={askRevoke}
                           disabled={busy}
                         ></lightning-button>
                       </template>
@@ -180,7 +196,7 @@
                 ></lightning-formatted-date-time>
               </dd>
               <dt class="slds-dl_horizontal__label">{labels.status}</dt>
-              <dd class="slds-dl_horizontal__detail">{detail.status}</dd>
+              <dd class="slds-dl_horizontal__detail">{detailStatusLabel}</dd>
             </dl>
           </section>
           <div
@@ -286,7 +302,7 @@
                   </tr>
                 </thead>
                 <tbody>
-                  <template for:each={shared} for:item="row">
+                  <template for:each={sharedRows} for:item="row">
                     <tr
                       key={row.financialTransactionId}
                       class="slds-hint-parent"
@@ -305,7 +321,7 @@
                           value={row.dueDate}
                         ></lightning-formatted-date-time>
                       </td>
-                      <td>{row.permission}</td>
+                      <td>{row.permissionLabel}</td>
                       <td>
                         <lightning-button
                           label={labels.open}

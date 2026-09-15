@@ -1121,13 +1121,19 @@
     <readable>true</readable>
   </fieldPermissions>
   <fieldPermissions>
-    <editable>true</editable>
+    <editable>false</editable>
     <field>AXF_OBJ_SharedExpenseGrant__c.AXF_SEG_NUM_Version__c</field>
     <readable>true</readable>
   </fieldPermissions>
   <fieldPermissions>
-    <editable>true</editable>
+    <editable>false</editable>
     <field>AXF_OBJ_SharedExpenseGrant__c.AXF_SEG_TXT_LastRequestId__c</field>
+    <readable>true</readable>
+  </fieldPermissions>
+  <fieldPermissions>
+    <editable>false</editable>
+    <field
+    >AXF_OBJ_SharedExpenseGrant__c.AXF_SEG_TXT_LastEditRequestId__c</field>
     <readable>true</readable>
   </fieldPermissions>
   <objectPermissions>

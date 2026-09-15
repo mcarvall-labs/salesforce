@@ -29,16 +29,27 @@ public with sharing class AXF_CLS_CTRL_SharedExpense {
     return result;
   }
 
-  /** Eligible collaborators: active users assigned to the Participante permission set group. */
+  /**
+   * Eligible collaborators (same rule the service applies): active users holding the
+   * Participante permission set directly or through its group. Only a sharer may enumerate them.
+   */
   @AuraEnabled(cacheable=true)
   public static List<CollaboratorOption> getCollaborators() {
     try {
       Map<Id, CollaboratorOption> result = new Map<Id, CollaboratorOption>();
+      if (
+        !FeatureManagement.checkPermission(
+          ALT_CLS_SharedExpenseService.CP_SHARE
+        )
+      ) {
+        return result.values();
+      }
       for (PermissionSetAssignment assignment : [
         SELECT AssigneeId, Assignee.Name, Assignee.IsActive
         FROM PermissionSetAssignment
         WHERE
-          PermissionSetGroup.DeveloperName = 'AXF_PSG_Participante'
+          (PermissionSet.Name = 'AXF_PS_Participante'
+          OR PermissionSetGroup.DeveloperName = 'AXF_PSG_Participante')
           AND Assignee.IsActive = TRUE
           AND AssigneeId != :UserInfo.getUserId()
         WITH USER_MODE
@@ -156,7 +167,11 @@ public with sharing class AXF_CLS_CTRL_SharedExpense {
     ) {
       code = ((ALT_CLS_SharedExpenseService.SharedExpenseException) failure)
         .code;
-    } else if (failure instanceof JSONException) {
+    } else if (
+      failure instanceof JSONException ||
+      failure instanceof System.StringException ||
+      failure instanceof System.TypeException
+    ) {
       code = 'INVALID_INPUT';
     } else if (
       failure instanceof System.QueryException ||
@@ -166,6 +181,18 @@ public with sharing class AXF_CLS_CTRL_SharedExpense {
       code = 'NOT_ACCESSIBLE';
     } else if (failure instanceof DmlException) {
       code = 'REJECTED';
+    }
+    if (code == 'UNEXPECTED' || code == 'REJECTED') {
+      // Server-side trace for diagnosis; the client only ever sees the code.
+      System.debug(
+        LoggingLevel.ERROR,
+        'AXF-6 ' +
+          code +
+          ': ' +
+          failure.getTypeName() +
+          ' ' +
+          failure.getMessage()
+      );
     }
     AuraHandledException result = new AuraHandledException(code);
     result.setMessage(code);

@@ -175,4 +175,23 @@
     >A alteração foi rejeitada por uma regra de proteção financeira.</label><name
     >AXF_SharedExpense_codeRejected</name></customLabels><customLabels><label
     >Colaborador não encontrado ou inativo.</label><name
-    >AXF_SharedExpense_codeCollaboratorNotFound</name></customLabels></Translations>
+    >AXF_SharedExpense_codeCollaboratorNotFound</name></customLabels><customLabels
+  ><label
+    >Só despesas previstas podem ser compartilhadas ou editadas.</label><name
+    >AXF_SharedExpense_codeInvalidState</name></customLabels><customLabels
+  ><label
+    >Este usuário não pode colaborar (sem permissão de Participante).</label><name
+    >AXF_SharedExpense_codeCollaboratorNotEligible</name></customLabels><customLabels
+  ><label
+    >Nada a mostrar aqui: abra uma despesa prevista sua para compartilhá-la, ou solicite acesso de colaboração.</label><name
+    >AXF_SharedExpense_noAccess</name></customLabels><customLabels><label
+    >Nenhum colaborador elegível encontrado.</label><name
+    >AXF_SharedExpense_noCollaborators</name></customLabels><customLabels><label
+    >Revogar o acesso de {0}? Os direitos independentes dessa pessoa são mantidos.</label><name
+    >AXF_SharedExpense_confirmRevokeBody</name></customLabels><customLabels
+  ><label>Prevista</label><name
+    >AXF_SharedExpense_statusPlanned</name></customLabels><customLabels><label
+    >Confirmada</label><name
+    >AXF_SharedExpense_statusConfirmed</name></customLabels><customLabels><label
+    >A despesa mudou nesse meio-tempo; os valores mais recentes foram recarregados.</label><name
+    >AXF_SharedExpense_conflictReloaded</name></customLabels></Translations>

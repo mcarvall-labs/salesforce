@@ -46,6 +46,14 @@ import codeInvalidInput from "@salesforce/label/c.AXF_SharedExpense_codeInvalidI
 import codeRealizationDenied from "@salesforce/label/c.AXF_SharedExpense_codeRealizationDenied";
 import codeRejected from "@salesforce/label/c.AXF_SharedExpense_codeRejected";
 import codeCollaboratorNotFound from "@salesforce/label/c.AXF_SharedExpense_codeCollaboratorNotFound";
+import codeInvalidState from "@salesforce/label/c.AXF_SharedExpense_codeInvalidState";
+import codeCollaboratorNotEligible from "@salesforce/label/c.AXF_SharedExpense_codeCollaboratorNotEligible";
+import noAccess from "@salesforce/label/c.AXF_SharedExpense_noAccess";
+import noCollaborators from "@salesforce/label/c.AXF_SharedExpense_noCollaborators";
+import confirmRevokeBody from "@salesforce/label/c.AXF_SharedExpense_confirmRevokeBody";
+import statusPlanned from "@salesforce/label/c.AXF_SharedExpense_statusPlanned";
+import statusConfirmed from "@salesforce/label/c.AXF_SharedExpense_statusConfirmed";
+import conflictReloaded from "@salesforce/label/c.AXF_SharedExpense_conflictReloaded";
 export default {
   title,
   ownerIntro,
@@ -94,5 +102,13 @@ export default {
   codeInvalidInput,
   codeRealizationDenied,
   codeRejected,
-  codeCollaboratorNotFound
+  codeCollaboratorNotFound,
+  codeInvalidState,
+  codeCollaboratorNotEligible,
+  noAccess,
+  noCollaborators,
+  confirmRevokeBody,
+  statusPlanned,
+  statusConfirmed,
+  conflictReloaded
 };

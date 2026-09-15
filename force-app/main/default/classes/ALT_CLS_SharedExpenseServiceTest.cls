@@ -45,7 +45,15 @@ private class ALT_CLS_SharedExpenseServiceTest {
       'axf6out.' +
       System.now().getTime() +
       '@example.invalid';
-    insert new List<User>{ owner, collaborator, outsider };
+    User inactive = owner.clone(false, false, false, false);
+    inactive.Alias = 'axf6ina';
+    inactive.LastName = 'Inactive Participant';
+    inactive.IsActive = false;
+    inactive.Username =
+      'axf6ina.' +
+      System.now().getTime() +
+      '@example.invalid';
+    insert new List<User>{ owner, collaborator, outsider, inactive };
 
     Map<String, Id> permissionSets = new Map<String, Id>();
     for (PermissionSet permission : [
@@ -248,6 +256,197 @@ private class ALT_CLS_SharedExpenseServiceTest {
           .isSuccess(),
         'Identidade da concessao e imutavel.'
       );
+      Database.SaveResult direct = Database.update(
+        new AXF_OBJ_SharedExpenseGrant__c(
+          Id = first.grantId,
+          AXF_SEG_PKL_Permission__c = 'EDIT'
+        ),
+        false
+      );
+      Assert.isFalse(direct.isSuccess(), 'Concessao so muda pelo servico.');
+      Assert.isTrue(
+        direct.getErrors()[0].getMessage().contains('servico'),
+        direct.getErrors()[0].getMessage()
+      );
+      Assert.isFalse(
+        Database.insert(
+            new AXF_OBJ_SharedExpenseGrant__c(
+              AXF_SEG_LKP_FinancialTransaction__c = expense.Id,
+              AXF_SEG_LKP_Collaborator__c = collaboratorId,
+              AXF_SEG_EXI_GrantKey__c = 'forged'
+            ),
+            false
+          )
+          .isSuccess(),
+        'Concessao so nasce pelo servico.'
+      );
+      try {
+        service.share(grantInput(expense.Id, outsider().Id, 'VIEW', 'req-4'));
+        Assert.fail('Gestor sem Participante nao colabora.');
+      } catch (ALT_CLS_SharedExpenseService.SharedExpenseException expected) {
+        Assert.areEqual('COLLABORATOR_NOT_ELIGIBLE', expected.code);
+      }
+      User inactive = [SELECT Id FROM User WHERE Alias = 'axf6ina' LIMIT 1];
+      try {
+        service.share(grantInput(expense.Id, inactive.Id, 'VIEW', 'req-5'));
+        Assert.fail('Usuario inativo nao colabora.');
+      } catch (ALT_CLS_SharedExpenseService.SharedExpenseException expected) {
+        Assert.areEqual('COLLABORATOR_NOT_FOUND', expected.code);
+      }
+      try {
+        service.share(
+          grantInput(expense.Id, collaboratorId, 'VIEW', 'k'.repeat(65))
+        );
+        Assert.fail('Chave longa demais.');
+      } catch (ALT_CLS_SharedExpenseService.SharedExpenseException expected) {
+        Assert.areEqual('INVALID_INPUT', expected.code);
+      }
+    }
+  }
+
+  @IsTest
+  static void stateRulesNoOpSaveAndRealizationWithRecordAccess() {
+    Id collaboratorId = collaborator().Id;
+    AXF_OBJ_FinancialTransaction__c expense;
+    AXF_OBJ_FinancialTransaction__c confirmed;
+    System.runAs(owner()) {
+      expense = expense('d');
+      confirmed = expense('d-confirmed');
+      confirmed.AXF_FTX_PKL_Status__c = 'CONFIRMED';
+      update confirmed;
+      ALT_CLS_SharedExpenseService service = new ALT_CLS_SharedExpenseService();
+      try {
+        service.share(
+          grantInput(confirmed.Id, collaboratorId, 'EDIT', 'req-d0')
+        );
+        Assert.fail('So despesa prevista e compartilhada.');
+      } catch (ALT_CLS_SharedExpenseService.SharedExpenseException expected) {
+        Assert.areEqual('INVALID_STATE', expected.code);
+      }
+      service.share(grantInput(expense.Id, collaboratorId, 'EDIT', 'req-d1'));
+    }
+    System.runAs(collaborator()) {
+      ALT_CLS_SharedExpenseService service = new ALT_CLS_SharedExpenseService();
+      ALT_CLS_SharedExpenseService.SharedView view = service.readShared(
+        expense.Id
+      );
+      Assert.isTrue(view.canEdit);
+      Assert.isFalse(
+        view.canRealize,
+        'Sem acesso ao registro nao se oferece realizacao.'
+      );
+      // Same content: no version bump, no notification.
+      ALT_CLS_SharedExpenseService.notificationsSent = false;
+      ALT_CLS_SharedExpenseService.UpdateInput same = updateInput(
+        expense.Id,
+        'Internet do escritorio',
+        0,
+        'u-d1'
+      );
+      same.userCategory = null;
+      ALT_CLS_SharedExpenseService.SharedView unchanged = service.updateShared(
+        same
+      );
+      Assert.areEqual(0, unchanged.version, 'Sem mudanca, sem nova versao.');
+      Assert.isFalse(ALT_CLS_SharedExpenseService.notificationsSent);
+      // Partial payload keeps the untouched field.
+      ALT_CLS_SharedExpenseService.UpdateInput partial = updateInput(
+        expense.Id,
+        null,
+        0,
+        'u-d2'
+      );
+      partial.userCategory = 'Casa';
+      ALT_CLS_SharedExpenseService.SharedView partialView = service.updateShared(
+        partial
+      );
+      Assert.areEqual('Internet do escritorio', partialView.description);
+      Assert.areEqual('Casa', partialView.userCategory);
+      Assert.areEqual(1, partialView.version);
+      Assert.areEqual(
+        owner().Id,
+        ALT_CLS_SharedExpenseService.lastNotifiedOwnerId
+      );
+      try {
+        ALT_CLS_SharedExpenseService.UpdateInput noVersion = updateInput(
+          expense.Id,
+          'x',
+          null,
+          'u-d3'
+        );
+        service.updateShared(noVersion);
+        Assert.fail('Versao esperada e obrigatoria.');
+      } catch (ALT_CLS_SharedExpenseService.SharedExpenseException expected) {
+        Assert.areEqual('INVALID_INPUT', expected.code);
+      }
+    }
+    // Record access granted independently (e.g. AXF-83): realization through AXF-25 succeeds.
+    Id holderId = [
+      SELECT AXF_FTX_LKP_Account__c
+      FROM AXF_OBJ_FinancialTransaction__c
+      WHERE Id = :expense.Id
+    ]
+    .AXF_FTX_LKP_Account__c;
+    System.runAs(owner()) {
+      insert new AccountShare(
+        AccountId = holderId,
+        UserOrGroupId = collaboratorId,
+        AccountAccessLevel = 'Edit',
+        OpportunityAccessLevel = 'None',
+        CaseAccessLevel = 'None'
+      );
+      insert new AXF_OBJ_FinancialTransaction__Share(
+        ParentId = expense.Id,
+        UserOrGroupId = collaboratorId,
+        AccessLevel = 'Edit'
+      );
+    }
+    System.runAs(collaborator()) {
+      ALT_CLS_SharedExpenseService service = new ALT_CLS_SharedExpenseService();
+      ALT_CLS_SharedExpenseService.SharedView view = service.readShared(
+        expense.Id
+      );
+      Assert.isTrue(
+        view.canRealize,
+        'Com acesso ao registro a realizacao e oferecida.'
+      );
+      ALT_CLS_SharedExpenseService.RealizeInput realize = new ALT_CLS_SharedExpenseService.RealizeInput();
+      realize.financialTransactionId = expense.Id;
+      realize.amount = 120;
+      realize.expectedVersion = view.version;
+      realize.clientRequestId = 'r-d1';
+      ALT_CLS_SharedExpenseService.lastNotifiedOwnerId = null;
+      Test.startTest();
+      Id allocationId = service.confirmRealization(realize);
+      Test.stopTest();
+      Assert.isNotNull(allocationId);
+      Assert.areEqual(
+        1,
+        [
+          SELECT COUNT()
+          FROM AXF_OBJ_ReconciliationAllocation__c
+          WHERE Id = :allocationId
+        ]
+      );
+      Assert.areEqual(
+        owner().Id,
+        ALT_CLS_SharedExpenseService.lastNotifiedOwnerId
+      );
+      ALT_CLS_SharedExpenseService.SharedView after = service.readShared(
+        expense.Id
+      );
+      Assert.isFalse(
+        after.canEdit,
+        'Despesa realizada nao e mais editavel pelo colaborador.'
+      );
+      try {
+        service.updateShared(
+          updateInput(expense.Id, 'late', after.version, 'u-d4')
+        );
+        Assert.fail('Despesa fora de PLANNED nao aceita edicao.');
+      } catch (ALT_CLS_SharedExpenseService.SharedExpenseException expected) {
+        Assert.areEqual('INVALID_STATE', expected.code);
+      }
     }
   }
 
@@ -404,6 +603,34 @@ private class ALT_CLS_SharedExpenseServiceTest {
           WHERE Id = :own.Id
         ],
         'Direitos independentes do colaborador preservados.'
+      );
+    }
+    // A new grant by the owner reopens the access (REVOKED -> ACTIVE).
+    System.runAs(owner()) {
+      ALT_CLS_SharedExpenseService.GrantView again = new ALT_CLS_SharedExpenseService()
+        .share(grantInput(expense.Id, collaboratorId, 'VIEW', 'req-c2'));
+      Assert.areEqual(
+        grant.grantId,
+        again.grantId,
+        'Mesma concessao reativada.'
+      );
+      Assert.areEqual('ACTIVE', again.status);
+      Assert.isNull(
+        [
+          SELECT AXF_SEG_DT_RevokedAt__c
+          FROM AXF_OBJ_SharedExpenseGrant__c
+          WHERE Id = :grant.grantId
+        ]
+        .AXF_SEG_DT_RevokedAt__c
+      );
+    }
+    System.runAs(collaborator()) {
+      ALT_CLS_SharedExpenseService.SharedView reopened = new ALT_CLS_SharedExpenseService()
+        .readShared(expense.Id);
+      Assert.isFalse(reopened.canEdit, 'Nova concessao e somente leitura.');
+      Assert.areEqual(
+        1,
+        new ALT_CLS_SharedExpenseService().listShared().size()
       );
     }
     Assert.areEqual(

@@ -1,5 +1,8 @@
 import { createElement } from "lwc";
-import SharedExpense, { failureMessage } from "c/aXF_LWC_sharedExpense";
+import SharedExpense, {
+  localIsoDate,
+  failureMessage
+} from "c/aXF_LWC_sharedExpense";
 import getCapabilities from "@salesforce/apex/AXF_CLS_CTRL_SharedExpense.getCapabilities";
 import getCollaborators from "@salesforce/apex/AXF_CLS_CTRL_SharedExpense.getCollaborators";
 import getGrants from "@salesforce/apex/AXF_CLS_CTRL_SharedExpense.getGrants";
@@ -20,10 +23,7 @@ jest.mock(
 );
 jest.mock(
   "@salesforce/apex/AXF_CLS_CTRL_SharedExpense.getCollaborators",
-  () => {
-    const { createApexTestWireAdapter } = require("@salesforce/sfdx-lwc-jest");
-    return { default: createApexTestWireAdapter(jest.fn()) };
-  },
+  () => ({ default: jest.fn() }),
   { virtual: true }
 );
 jest.mock(
@@ -117,8 +117,8 @@ describe("c-aXF_LWC_sharedExpense", () => {
     share.mockResolvedValue({});
     revoke.mockResolvedValue({});
     const element = build("a0X1");
+    getCollaborators.mockResolvedValue([{ userId: "005A", name: "Ana" }]);
     getCapabilities.emit({ canShare: true, canCollaborate: false });
-    getCollaborators.emit([{ userId: "005A", name: "Ana" }]);
     await flush();
     expect(
       element.shadowRoot.querySelector('[data-id="no-grants"]')
@@ -131,6 +131,12 @@ describe("c-aXF_LWC_sharedExpense", () => {
     element.shadowRoot.querySelector('[data-id="share"]').click();
     await flush();
     const request = JSON.parse(share.mock.calls[0][0].request);
+    expect(Object.keys(request).sort()).toEqual([
+      "clientRequestId",
+      "collaboratorId",
+      "financialTransactionId",
+      "permission"
+    ]);
     expect(request).toMatchObject({
       financialTransactionId: "a0X1",
       collaboratorId: "005A",
@@ -145,10 +151,34 @@ describe("c-aXF_LWC_sharedExpense", () => {
     ].find((button) => button.dataset.id === "seg1");
     revokeButton.click();
     await flush();
+    // Revocation asks for confirmation first; Escape cancels, Confirm proceeds.
+    expect(revoke).not.toHaveBeenCalled();
+    const dialog = element.shadowRoot.querySelector('[data-id="confirmation"]');
+    expect(dialog.getAttribute("role")).toBe("dialog");
+    dialog.dispatchEvent(new KeyboardEvent("keydown", { key: "Escape" }));
+    await flush();
+    expect(
+      element.shadowRoot.querySelector('[data-id="confirmation"]')
+    ).toBeNull();
+    revokeButton.click();
+    await flush();
+    element.shadowRoot.querySelector('[data-id="confirm-yes"]').click();
+    await flush();
     expect(revoke).toHaveBeenCalledWith({
       grantId: "seg1",
       expectedVersion: 1
     });
+  });
+
+  it("shows a no-access message when neither mode applies", async () => {
+    const element = build();
+    getCapabilities.emit({ canShare: true, canCollaborate: false });
+    await flush();
+    expect(
+      element.shadowRoot.querySelector('[data-id="no-access"]')
+    ).not.toBeNull();
+    expect(listShared).not.toHaveBeenCalled();
+    expect(getCollaborators).not.toHaveBeenCalled();
   });
 
   it("collaborator opens a shared expense, confirms before saving and sends only permitted fields", async () => {
@@ -251,8 +281,45 @@ describe("c-aXF_LWC_sharedExpense", () => {
     element.shadowRoot.querySelector('[data-id="confirm-yes"]').click();
     await flush();
     const request = JSON.parse(confirmRealization.mock.calls[0][0].request);
+    expect(Object.keys(request).sort()).toEqual([
+      "amount",
+      "clientRequestId",
+      "expectedVersion",
+      "financialTransactionId",
+      "recognitionDate"
+    ]);
     expect(request.amount).toBe(120);
     expect(request.financialTransactionId).toBe("ftx1");
+    expect(request.recognitionDate).toBe(localIsoDate());
     expect(readShared).toHaveBeenCalledTimes(2);
+    expect(
+      element.shadowRoot.querySelector('[data-id="realize-amount"]').value
+    ).toBe("");
+  });
+
+  it("reloads the shared expense after a save conflict", async () => {
+    listShared.mockResolvedValue(shared);
+    readShared
+      .mockResolvedValueOnce(shared[0])
+      .mockResolvedValue({ ...shared[0], description: "Changed", version: 2 });
+    updateShared.mockRejectedValue({ body: { message: "CONFLICT" } });
+    const element = build();
+    getCapabilities.emit({ canShare: false, canCollaborate: true });
+    await flush();
+    [...element.shadowRoot.querySelectorAll("lightning-button")]
+      .find((button) => button.dataset.id === "ftx1")
+      .click();
+    await flush();
+    element.shadowRoot.querySelector('[data-id="save"]').click();
+    await flush();
+    element.shadowRoot.querySelector('[data-id="confirm-yes"]').click();
+    await flush();
+    expect(readShared).toHaveBeenCalledTimes(2);
+    expect(
+      element.shadowRoot.querySelector('[data-id="description"]').value
+    ).toBe("Changed");
+    expect(
+      element.shadowRoot.querySelector('[data-id="error"]').textContent
+    ).toContain("conflictReloaded");
   });
 });

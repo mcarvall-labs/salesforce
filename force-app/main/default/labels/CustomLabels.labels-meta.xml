@@ -309,4 +309,34 @@
   ><fullName>AXF_SharedExpense_codeCollaboratorNotFound</fullName><language
     >en_US</language><protected>false</protected><shortDescription
     >Collaborator not found</shortDescription><value
-    >Collaborator not found or inactive.</value></labels></CustomLabels>
+    >Collaborator not found or inactive.</value></labels><labels><fullName
+    >AXF_SharedExpense_codeInvalidState</fullName><language
+    >en_US</language><protected>false</protected><shortDescription
+    >Invalid state</shortDescription><value
+    >Only planned expenses can be shared or edited.</value></labels><labels
+  ><fullName>AXF_SharedExpense_codeCollaboratorNotEligible</fullName><language
+    >en_US</language><protected>false</protected><shortDescription
+    >Not eligible</shortDescription><value
+    >This user cannot collaborate (no Participante permission).</value></labels><labels
+  ><fullName>AXF_SharedExpense_noAccess</fullName><language
+    >en_US</language><protected>false</protected><shortDescription
+    >No access</shortDescription><value
+    >Nothing to show here: open a planned expense you own to share it, or ask for collaboration access.</value></labels><labels
+  ><fullName>AXF_SharedExpense_noCollaborators</fullName><language
+    >en_US</language><protected>false</protected><shortDescription
+    >No collaborators</shortDescription><value
+    >No eligible collaborator found.</value></labels><labels><fullName
+    >AXF_SharedExpense_confirmRevokeBody</fullName><language
+    >en_US</language><protected>false</protected><shortDescription
+    >Confirm revoke</shortDescription><value
+    >Revoke the access of {0}? Their independent rights are kept.</value></labels><labels
+  ><fullName>AXF_SharedExpense_statusPlanned</fullName><language
+    >en_US</language><protected>false</protected><shortDescription
+    >Status</shortDescription><value>Planned</value></labels><labels><fullName
+    >AXF_SharedExpense_statusConfirmed</fullName><language
+    >en_US</language><protected>false</protected><shortDescription
+    >Status</shortDescription><value>Confirmed</value></labels><labels><fullName
+    >AXF_SharedExpense_conflictReloaded</fullName><language
+    >en_US</language><protected>false</protected><shortDescription
+    >Conflict</shortDescription><value
+    >The expense changed meanwhile; the latest values were reloaded.</value></labels></CustomLabels>
