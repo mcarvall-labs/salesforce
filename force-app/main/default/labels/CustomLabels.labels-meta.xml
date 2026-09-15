@@ -1355,4 +1355,192 @@
   ><fullName>AXF_ConfidencePanel_codeNotAccessible</fullName><language
     >en_US</language><protected>false</protected><shortDescription
     >Not accessible</shortDescription><value
-    >Some of the data this panel depends on is not accessible to you.</value></labels></CustomLabels>
+    >Some of the data this panel depends on is not accessible to you.</value></labels><labels
+  ><fullName>AXF_ArchiveExplorer_title</fullName><language
+    >en_US</language><protected>false</protected><shortDescription
+    >Title</shortDescription><value>Transaction archive</value></labels><labels
+  ><fullName>AXF_ArchiveExplorer_intro</fullName><language
+    >en_US</language><protected>false</protected><shortDescription
+    >Intro</shortDescription><value
+    >Transactions before the hot window are archived and can be consulted here, read-only. Nothing is brought back into the live objects.</value></labels><labels
+  ><fullName>AXF_ArchiveExplorer_holder</fullName><language
+    >en_US</language><protected>false</protected><shortDescription
+    >Holder</shortDescription><value>Person or company</value></labels><labels
+  ><fullName>AXF_ArchiveExplorer_holderPlaceholder</fullName><language
+    >en_US</language><protected>false</protected><shortDescription
+    >Holder placeholder</shortDescription><value
+    >Select a holder</value></labels><labels><fullName
+    >AXF_ArchiveExplorer_from</fullName><language>en_US</language><protected
+    >false</protected><shortDescription>From</shortDescription><value
+    >From</value></labels><labels><fullName
+    >AXF_ArchiveExplorer_to</fullName><language>en_US</language><protected
+    >false</protected><shortDescription>To</shortDescription><value
+    >Until</value></labels><labels><fullName
+    >AXF_ArchiveExplorer_hotWindow</fullName><language
+    >en_US</language><protected>false</protected><shortDescription
+    >Hot window</shortDescription><value
+    >Hot window starts on {0}; only earlier dates are archived.</value></labels><labels
+  ><fullName>AXF_ArchiveExplorer_search</fullName><language
+    >en_US</language><protected>false</protected><shortDescription
+    >Search</shortDescription><value>Consult archive</value></labels><labels
+  ><fullName>AXF_ArchiveExplorer_loadMore</fullName><language
+    >en_US</language><protected>false</protected><shortDescription
+    >Load more</shortDescription><value>Load more</value></labels><labels
+  ><fullName>AXF_ArchiveExplorer_loading</fullName><language
+    >en_US</language><protected>false</protected><shortDescription
+    >Loading</shortDescription><value
+    >Reading the archive…</value></labels><labels><fullName
+    >AXF_ArchiveExplorer_empty</fullName><language>en_US</language><protected
+    >false</protected><shortDescription>Empty</shortDescription><value
+    >No archived transactions for this holder and period.</value></labels><labels
+  ><fullName>AXF_ArchiveExplorer_idle</fullName><language
+    >en_US</language><protected>false</protected><shortDescription
+    >Idle</shortDescription><value
+    >Choose a holder and a period before the hot window, then consult the archive.</value></labels><labels
+  ><fullName>AXF_ArchiveExplorer_archivedBadge</fullName><language
+    >en_US</language><protected>false</protected><shortDescription
+    >Archived badge</shortDescription><value>Archived</value></labels><labels
+  ><fullName>AXF_ArchiveExplorer_readOnly</fullName><language
+    >en_US</language><protected>false</protected><shortDescription
+    >Read only</shortDescription><value
+    >Archived rows are read-only.</value></labels><labels><fullName
+    >AXF_ArchiveExplorer_colDate</fullName><language>en_US</language><protected
+    >false</protected><shortDescription>Date column</shortDescription><value
+    >Date</value></labels><labels><fullName
+    >AXF_ArchiveExplorer_colDescription</fullName><language
+    >en_US</language><protected>false</protected><shortDescription
+    >Description column</shortDescription><value
+    >Description</value></labels><labels><fullName
+    >AXF_ArchiveExplorer_colAmount</fullName><language
+    >en_US</language><protected>false</protected><shortDescription
+    >Amount column</shortDescription><value>Amount</value></labels><labels
+  ><fullName>AXF_ArchiveExplorer_colDirection</fullName><language
+    >en_US</language><protected>false</protected><shortDescription
+    >Direction column</shortDescription><value>Direction</value></labels><labels
+  ><fullName>AXF_ArchiveExplorer_colStatus</fullName><language
+    >en_US</language><protected>false</protected><shortDescription
+    >Status column</shortDescription><value>Status</value></labels><labels
+  ><fullName>AXF_ArchiveExplorer_colInstitution</fullName><language
+    >en_US</language><protected>false</protected><shortDescription
+    >Institution column</shortDescription><value
+    >Institution</value></labels><labels><fullName
+    >AXF_ArchiveExplorer_colFamily</fullName><language
+    >en_US</language><protected>false</protected><shortDescription
+    >Family column</shortDescription><value>Source</value></labels><labels
+  ><fullName>AXF_ArchiveExplorer_familyBAT</fullName><language
+    >en_US</language><protected>false</protected><shortDescription
+    >Family BAT</shortDescription><value>Bank</value></labels><labels><fullName
+    >AXF_ArchiveExplorer_familyCCT</fullName><language
+    >en_US</language><protected>false</protected><shortDescription
+    >Family CCT</shortDescription><value>Card</value></labels><labels><fullName
+    >AXF_ArchiveExplorer_familyFTX</fullName><language
+    >en_US</language><protected>false</protected><shortDescription
+    >Family FTX</shortDescription><value>Manual</value></labels><labels
+  ><fullName>AXF_ArchiveExplorer_directionCREDIT</fullName><language
+    >en_US</language><protected>false</protected><shortDescription
+    >Credit</shortDescription><value>Credit</value></labels><labels><fullName
+    >AXF_ArchiveExplorer_directionDEBIT</fullName><language
+    >en_US</language><protected>false</protected><shortDescription
+    >Debit</shortDescription><value>Debit</value></labels><labels><fullName
+    >AXF_ArchiveExplorer_runs</fullName><language>en_US</language><protected
+    >false</protected><shortDescription>Runs</shortDescription><value
+    >Archive runs</value></labels><labels><fullName
+    >AXF_ArchiveExplorer_noRuns</fullName><language>en_US</language><protected
+    >false</protected><shortDescription>No runs</shortDescription><value
+    >No archive run for this holder yet.</value></labels><labels><fullName
+    >AXF_ArchiveExplorer_startArchive</fullName><language
+    >en_US</language><protected>false</protected><shortDescription
+    >Start archive</shortDescription><value>Archive now</value></labels><labels
+  ><fullName>AXF_ArchiveExplorer_startConfirm</fullName><language
+    >en_US</language><protected>false</protected><shortDescription
+    >Start confirm</shortDescription><value
+    >Archive every transaction of this holder dated before the hot window? The live copy is kept until its removal is separately authorized.</value></labels><labels
+  ><fullName>AXF_ArchiveExplorer_confirm</fullName><language
+    >en_US</language><protected>false</protected><shortDescription
+    >Confirm</shortDescription><value>Confirm</value></labels><labels><fullName
+    >AXF_ArchiveExplorer_cancel</fullName><language>en_US</language><protected
+    >false</protected><shortDescription>Cancel</shortDescription><value
+    >Cancel</value></labels><labels><fullName
+    >AXF_ArchiveExplorer_started</fullName><language>en_US</language><protected
+    >false</protected><shortDescription>Started</shortDescription><value
+    >Archive run started; refresh to follow its phase.</value></labels><labels
+  ><fullName>AXF_ArchiveExplorer_refresh</fullName><language
+    >en_US</language><protected>false</protected><shortDescription
+    >Refresh</shortDescription><value>Refresh</value></labels><labels><fullName
+    >AXF_ArchiveExplorer_colFamilyRun</fullName><language
+    >en_US</language><protected>false</protected><shortDescription
+    >Run family</shortDescription><value>Family</value></labels><labels
+  ><fullName>AXF_ArchiveExplorer_colPhase</fullName><language
+    >en_US</language><protected>false</protected><shortDescription
+    >Phase</shortDescription><value>Phase</value></labels><labels><fullName
+    >AXF_ArchiveExplorer_colCounts</fullName><language
+    >en_US</language><protected>false</protected><shortDescription
+    >Counts</shortDescription><value
+    >Read / archived / verified</value></labels><labels><fullName
+    >AXF_ArchiveExplorer_colWatermark</fullName><language
+    >en_US</language><protected>false</protected><shortDescription
+    >Watermark</shortDescription><value>Watermark</value></labels><labels
+  ><fullName>AXF_ArchiveExplorer_colHotRemoval</fullName><language
+    >en_US</language><protected>false</protected><shortDescription
+    >Hot removal</shortDescription><value>Live copy</value></labels><labels
+  ><fullName>AXF_ArchiveExplorer_colCheckpoint</fullName><language
+    >en_US</language><protected>false</protected><shortDescription
+    >Checkpoint</shortDescription><value>Last checkpoint</value></labels><labels
+  ><fullName>AXF_ArchiveExplorer_phaseSCANNING</fullName><language
+    >en_US</language><protected>false</protected><shortDescription
+    >Phase scanning</shortDescription><value>Scanning</value></labels><labels
+  ><fullName>AXF_ArchiveExplorer_phaseWRITING</fullName><language
+    >en_US</language><protected>false</protected><shortDescription
+    >Phase writing</shortDescription><value>Writing</value></labels><labels
+  ><fullName>AXF_ArchiveExplorer_phaseVERIFYING</fullName><language
+    >en_US</language><protected>false</protected><shortDescription
+    >Phase verifying</shortDescription><value>Verifying</value></labels><labels
+  ><fullName>AXF_ArchiveExplorer_phaseHOT_RETAINED</fullName><language
+    >en_US</language><protected>false</protected><shortDescription
+    >Phase retained</shortDescription><value
+    >Verified · live copy kept</value></labels><labels><fullName
+    >AXF_ArchiveExplorer_phaseCOMPLETED</fullName><language
+    >en_US</language><protected>false</protected><shortDescription
+    >Phase completed</shortDescription><value>Completed</value></labels><labels
+  ><fullName>AXF_ArchiveExplorer_phaseFAILED</fullName><language
+    >en_US</language><protected>false</protected><shortDescription
+    >Phase failed</shortDescription><value
+    >Failed · resumable</value></labels><labels><fullName
+    >AXF_ArchiveExplorer_hotBlocked</fullName><language
+    >en_US</language><protected>false</protected><shortDescription
+    >Hot blocked</shortDescription><value
+    >Kept (removal blocked)</value></labels><labels><fullName
+    >AXF_ArchiveExplorer_error</fullName><language>en_US</language><protected
+    >false</protected><shortDescription>Error</shortDescription><value
+    >The archive could not be read. Try again.</value></labels><labels><fullName
+    >AXF_ArchiveExplorer_retry</fullName><language>en_US</language><protected
+    >false</protected><shortDescription>Retry</shortDescription><value
+    >Try again</value></labels><labels><fullName
+    >AXF_ArchiveExplorer_codeForbidden</fullName><language
+    >en_US</language><protected>false</protected><shortDescription
+    >Forbidden</shortDescription><value
+    >You are not allowed to consult the archive.</value></labels><labels
+  ><fullName>AXF_ArchiveExplorer_codeNotAccessible</fullName><language
+    >en_US</language><protected>false</protected><shortDescription
+    >Not accessible</shortDescription><value
+    >This holder is not accessible to you.</value></labels><labels><fullName
+    >AXF_ArchiveExplorer_codeInvalidInput</fullName><language
+    >en_US</language><protected>false</protected><shortDescription
+    >Invalid input</shortDescription><value
+    >Invalid request.</value></labels><labels><fullName
+    >AXF_ArchiveExplorer_codePolicy</fullName><language
+    >en_US</language><protected>false</protected><shortDescription
+    >Policy</shortDescription><value
+    >The archive policy is missing, disabled or invalid.</value></labels><labels
+  ><fullName>AXF_ArchiveExplorer_codeRunInProgress</fullName><language
+    >en_US</language><protected>false</protected><shortDescription
+    >Run in progress</shortDescription><value
+    >An archive run for this holder is already in progress.</value></labels><labels
+  ><fullName>AXF_ArchiveExplorer_codeAsync</fullName><language
+    >en_US</language><protected>false</protected><shortDescription
+    >Async</shortDescription><value
+    >The platform could not schedule the run now. Try again later.</value></labels><labels
+  ><fullName>AXF_ArchiveExplorer_updated</fullName><language
+    >en_US</language><protected>false</protected><shortDescription
+    >Updated</shortDescription><value
+    >Archive results updated.</value></labels></CustomLabels>

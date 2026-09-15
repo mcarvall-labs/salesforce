@@ -800,4 +800,118 @@
     >AXF_ConfidencePanel_exImportDateMissing</name></customLabels><customLabels
   ><label
     >Parte dos dados de que este painel depende não está acessível para você.</label><name
-    >AXF_ConfidencePanel_codeNotAccessible</name></customLabels></Translations>
+    >AXF_ConfidencePanel_codeNotAccessible</name></customLabels><customLabels
+  ><label>Arquivo de transações</label><name
+    >AXF_ArchiveExplorer_title</name></customLabels><customLabels><label
+    >Transações anteriores à janela quente ficam arquivadas e podem ser consultadas aqui, somente leitura. Nada é reidratado para os objetos ativos.</label><name
+    >AXF_ArchiveExplorer_intro</name></customLabels><customLabels><label
+    >Pessoa ou empresa</label><name
+    >AXF_ArchiveExplorer_holder</name></customLabels><customLabels><label
+    >Selecione um titular</label><name
+    >AXF_ArchiveExplorer_holderPlaceholder</name></customLabels><customLabels
+  ><label>De</label><name
+    >AXF_ArchiveExplorer_from</name></customLabels><customLabels><label
+    >Até</label><name>AXF_ArchiveExplorer_to</name></customLabels><customLabels
+  ><label
+    >A janela quente começa em {0}; apenas datas anteriores estão no arquivo.</label><name
+    >AXF_ArchiveExplorer_hotWindow</name></customLabels><customLabels><label
+    >Consultar arquivo</label><name
+    >AXF_ArchiveExplorer_search</name></customLabels><customLabels><label
+    >Carregar mais</label><name
+    >AXF_ArchiveExplorer_loadMore</name></customLabels><customLabels><label
+    >Lendo o arquivo…</label><name
+    >AXF_ArchiveExplorer_loading</name></customLabels><customLabels><label
+    >Nenhuma transação arquivada para este titular e período.</label><name
+    >AXF_ArchiveExplorer_empty</name></customLabels><customLabels><label
+    >Escolha um titular e um período anterior à janela quente e consulte o arquivo.</label><name
+    >AXF_ArchiveExplorer_idle</name></customLabels><customLabels><label
+    >Arquivado</label><name
+    >AXF_ArchiveExplorer_archivedBadge</name></customLabels><customLabels><label
+    >Linhas arquivadas não são editáveis.</label><name
+    >AXF_ArchiveExplorer_readOnly</name></customLabels><customLabels><label
+    >Data</label><name
+    >AXF_ArchiveExplorer_colDate</name></customLabels><customLabels><label
+    >Descrição</label><name
+    >AXF_ArchiveExplorer_colDescription</name></customLabels><customLabels
+  ><label>Valor</label><name
+    >AXF_ArchiveExplorer_colAmount</name></customLabels><customLabels><label
+    >Direção</label><name
+    >AXF_ArchiveExplorer_colDirection</name></customLabels><customLabels><label
+    >Status</label><name
+    >AXF_ArchiveExplorer_colStatus</name></customLabels><customLabels><label
+    >Instituição</label><name
+    >AXF_ArchiveExplorer_colInstitution</name></customLabels><customLabels
+  ><label>Origem</label><name
+    >AXF_ArchiveExplorer_colFamily</name></customLabels><customLabels><label
+    >Banco</label><name
+    >AXF_ArchiveExplorer_familyBAT</name></customLabels><customLabels><label
+    >Cartão</label><name
+    >AXF_ArchiveExplorer_familyCCT</name></customLabels><customLabels><label
+    >Manual</label><name
+    >AXF_ArchiveExplorer_familyFTX</name></customLabels><customLabels><label
+    >Crédito</label><name
+    >AXF_ArchiveExplorer_directionCREDIT</name></customLabels><customLabels
+  ><label>Débito</label><name
+    >AXF_ArchiveExplorer_directionDEBIT</name></customLabels><customLabels
+  ><label>Execuções de arquivamento</label><name
+    >AXF_ArchiveExplorer_runs</name></customLabels><customLabels><label
+    >Ainda não há execução de arquivamento para este titular.</label><name
+    >AXF_ArchiveExplorer_noRuns</name></customLabels><customLabels><label
+    >Arquivar agora</label><name
+    >AXF_ArchiveExplorer_startArchive</name></customLabels><customLabels><label
+    >Arquivar todas as transações deste titular anteriores à janela quente? A cópia ativa é mantida até que a remoção seja autorizada separadamente.</label><name
+    >AXF_ArchiveExplorer_startConfirm</name></customLabels><customLabels><label
+    >Confirmar</label><name
+    >AXF_ArchiveExplorer_confirm</name></customLabels><customLabels><label
+    >Cancelar</label><name
+    >AXF_ArchiveExplorer_cancel</name></customLabels><customLabels><label
+    >Execução iniciada; atualize para acompanhar a fase.</label><name
+    >AXF_ArchiveExplorer_started</name></customLabels><customLabels><label
+    >Atualizar</label><name
+    >AXF_ArchiveExplorer_refresh</name></customLabels><customLabels><label
+    >Família</label><name
+    >AXF_ArchiveExplorer_colFamilyRun</name></customLabels><customLabels><label
+    >Fase</label><name
+    >AXF_ArchiveExplorer_colPhase</name></customLabels><customLabels><label
+    >Lidos / arquivados / verificados</label><name
+    >AXF_ArchiveExplorer_colCounts</name></customLabels><customLabels><label
+    >Watermark</label><name
+    >AXF_ArchiveExplorer_colWatermark</name></customLabels><customLabels><label
+    >Cópia ativa</label><name
+    >AXF_ArchiveExplorer_colHotRemoval</name></customLabels><customLabels><label
+    >Último checkpoint</label><name
+    >AXF_ArchiveExplorer_colCheckpoint</name></customLabels><customLabels><label
+    >Lendo</label><name
+    >AXF_ArchiveExplorer_phaseSCANNING</name></customLabels><customLabels><label
+    >Gravando</label><name
+    >AXF_ArchiveExplorer_phaseWRITING</name></customLabels><customLabels><label
+    >Verificando</label><name
+    >AXF_ArchiveExplorer_phaseVERIFYING</name></customLabels><customLabels
+  ><label>Verificado · cópia ativa mantida</label><name
+    >AXF_ArchiveExplorer_phaseHOT_RETAINED</name></customLabels><customLabels
+  ><label>Concluído</label><name
+    >AXF_ArchiveExplorer_phaseCOMPLETED</name></customLabels><customLabels
+  ><label>Falhou · retomável</label><name
+    >AXF_ArchiveExplorer_phaseFAILED</name></customLabels><customLabels><label
+    >Mantida (remoção bloqueada)</label><name
+    >AXF_ArchiveExplorer_hotBlocked</name></customLabels><customLabels><label
+    >Não foi possível ler o arquivo. Tente novamente.</label><name
+    >AXF_ArchiveExplorer_error</name></customLabels><customLabels><label
+    >Tentar novamente</label><name
+    >AXF_ArchiveExplorer_retry</name></customLabels><customLabels><label
+    >Você não tem permissão para consultar o arquivo.</label><name
+    >AXF_ArchiveExplorer_codeForbidden</name></customLabels><customLabels><label
+    >Este titular não está acessível para você.</label><name
+    >AXF_ArchiveExplorer_codeNotAccessible</name></customLabels><customLabels
+  ><label>Requisição inválida.</label><name
+    >AXF_ArchiveExplorer_codeInvalidInput</name></customLabels><customLabels
+  ><label
+    >A política de arquivo está ausente, desabilitada ou inválida.</label><name
+    >AXF_ArchiveExplorer_codePolicy</name></customLabels><customLabels><label
+    >Já existe uma execução de arquivamento em andamento para este titular.</label><name
+    >AXF_ArchiveExplorer_codeRunInProgress</name></customLabels><customLabels
+  ><label
+    >A plataforma não conseguiu agendar a execução agora. Tente mais tarde.</label><name
+    >AXF_ArchiveExplorer_codeAsync</name></customLabels><customLabels><label
+    >Resultados do arquivo atualizados.</label><name
+    >AXF_ArchiveExplorer_updated</name></customLabels></Translations>

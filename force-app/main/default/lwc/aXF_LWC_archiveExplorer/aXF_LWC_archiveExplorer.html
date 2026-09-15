@@ -1,0 +1,271 @@
+<template>
+  <lightning-card
+    lwc:if={canRender}
+    title={labels.title}
+    icon-name="utility:archive"
+  >
+    <div class="slds-p-horizontal_medium slds-p-bottom_medium">
+      <p class="slds-text-body_small slds-m-bottom_small">{labels.intro}</p>
+      <p class="slds-text-body_small slds-m-bottom_small" data-id="hot-window">
+        {hotWindowText}
+      </p>
+      <div class="slds-assistive-text" aria-live="polite" data-id="announcer">
+        {announcement}
+      </div>
+
+      <div class="slds-grid slds-gutters slds-wrap">
+        <div class="slds-col slds-size_1-of-1 slds-medium-size_2-of-5">
+          <lightning-combobox
+            data-id="holder"
+            label={labels.holder}
+            placeholder={labels.holderPlaceholder}
+            options={holderOptions}
+            value={accountId}
+            onchange={handleHolderChange}
+          ></lightning-combobox>
+        </div>
+        <div class="slds-col slds-size_1-of-2 slds-medium-size_1-of-5">
+          <lightning-input
+            data-id="from"
+            type="date"
+            label={labels.from}
+            value={fromDate}
+            max={maxDate}
+            onchange={handleFromChange}
+          ></lightning-input>
+        </div>
+        <div class="slds-col slds-size_1-of-2 slds-medium-size_1-of-5">
+          <lightning-input
+            data-id="to"
+            type="date"
+            label={labels.to}
+            value={toDate}
+            max={maxDate}
+            onchange={handleToChange}
+          ></lightning-input>
+        </div>
+        <div
+          class="slds-col slds-size_1-of-1 slds-medium-size_1-of-5 slds-p-top_large"
+        >
+          <lightning-button
+            data-id="search"
+            variant="brand"
+            label={labels.search}
+            disabled={searchDisabled}
+            onclick={handleSearch}
+          ></lightning-button>
+        </div>
+      </div>
+
+      <template lwc:if={isIdle}>
+        <p class="slds-m-top_medium slds-text-color_weak" data-id="idle">
+          {labels.idle}
+        </p>
+      </template>
+      <template lwc:if={isLoading}>
+        <div
+          class="slds-m-top_medium slds-is-relative"
+          style="min-height: 3rem"
+        >
+          <lightning-spinner
+            alternative-text={labels.loading}
+            size="small"
+          ></lightning-spinner>
+        </div>
+      </template>
+      <template lwc:if={isEmpty}>
+        <p class="slds-m-top_medium slds-text-color_weak" data-id="empty">
+          {labels.empty}
+        </p>
+      </template>
+      <template lwc:if={isError}>
+        <div
+          class="slds-notify slds-notify_alert slds-alert_error slds-m-top_medium"
+          role="alert"
+          data-id="error"
+        >
+          <span>{errorMessage}</span>
+          <lightning-button
+            class="slds-m-left_small"
+            variant="base"
+            label={labels.retry}
+            data-id="retry"
+            onclick={handleRetry}
+          ></lightning-button>
+        </div>
+      </template>
+
+      <template lwc:if={isReady}>
+        <p class="slds-m-top_medium slds-text-body_small" data-id="read-only">
+          {labels.readOnly}
+        </p>
+        <div class="slds-scrollable_x">
+          <table
+            class="slds-table slds-table_bordered slds-table_cell-buffer slds-m-top_x-small"
+            data-id="rows"
+          >
+            <thead>
+              <tr class="slds-line-height_reset">
+                <th scope="col">{labels.colDate}</th>
+                <th scope="col">{labels.colDescription}</th>
+                <th scope="col">{labels.colAmount}</th>
+                <th scope="col">{labels.colDirection}</th>
+                <th scope="col">{labels.colStatus}</th>
+                <th scope="col">{labels.colInstitution}</th>
+                <th scope="col">{labels.colFamily}</th>
+              </tr>
+            </thead>
+            <tbody>
+              <template for:each={tableRows} for:item="row">
+                <tr key={row.key} data-archive-key={row.archiveKey}>
+                  <th scope="row">
+                    <lightning-formatted-date-time
+                      value={row.bookingDate}
+                      year="numeric"
+                      month="2-digit"
+                      day="2-digit"
+                      time-zone="UTC"
+                    ></lightning-formatted-date-time>
+                    <span
+                      class="slds-badge slds-badge_inverse slds-m-left_x-small"
+                      data-id="archived-badge"
+                      >{labels.archivedBadge}</span
+                    >
+                  </th>
+                  <td>{row.description}</td>
+                  <td>
+                    <lightning-formatted-number
+                      value={row.magnitude}
+                      minimum-fraction-digits="2"
+                      maximum-fraction-digits="2"
+                    ></lightning-formatted-number>
+                    <span class="slds-text-color_weak"> {row.currencyIso}</span>
+                  </td>
+                  <td>{row.directionLabel}</td>
+                  <td>{row.status}</td>
+                  <td>{row.institutionLabel}</td>
+                  <td>{row.familyLabel}</td>
+                </tr>
+              </template>
+            </tbody>
+          </table>
+        </div>
+        <template lwc:if={hasMore}>
+          <lightning-button
+            data-id="load-more"
+            class="slds-m-top_small"
+            label={labels.loadMore}
+            onclick={handleLoadMore}
+          ></lightning-button>
+        </template>
+      </template>
+
+      <section
+        class="slds-m-top_large"
+        aria-labelledby="axf-ae-runs"
+        role="region"
+      >
+        <h2 id="axf-ae-runs" class="slds-text-heading_small">{labels.runs}</h2>
+        <div class="slds-m-top_x-small">
+          <template lwc:if={canArchive}>
+            <lightning-button
+              data-id="start"
+              variant="neutral"
+              label={labels.startArchive}
+              onclick={handleStartArchive}
+            ></lightning-button>
+          </template>
+          <lightning-button
+            data-id="refresh-runs"
+            class="slds-m-left_x-small"
+            variant="base"
+            label={labels.refresh}
+            onclick={handleRefreshRuns}
+          ></lightning-button>
+        </div>
+        <template lwc:if={hasRuns}>
+          <div class="slds-scrollable_x">
+            <table
+              class="slds-table slds-table_bordered slds-table_cell-buffer slds-m-top_x-small"
+              data-id="runs"
+            >
+              <thead>
+                <tr class="slds-line-height_reset">
+                  <th scope="col">{labels.colFamilyRun}</th>
+                  <th scope="col">{labels.colPhase}</th>
+                  <th scope="col">{labels.colCounts}</th>
+                  <th scope="col">{labels.colWatermark}</th>
+                  <th scope="col">{labels.colHotRemoval}</th>
+                  <th scope="col">{labels.colCheckpoint}</th>
+                </tr>
+              </thead>
+              <tbody>
+                <template for:each={runRows} for:item="run">
+                  <tr key={run.key} data-run={run.runId}>
+                    <th scope="row">{run.familyLabel}</th>
+                    <td data-phase={run.phase}>{run.phaseLabel}</td>
+                    <td>{run.counts}</td>
+                    <td>{run.watermark}</td>
+                    <td>{run.hotRemovalLabel}</td>
+                    <td>
+                      <lightning-formatted-date-time
+                        value={run.lastCheckpointAt}
+                        year="numeric"
+                        month="2-digit"
+                        day="2-digit"
+                        hour="2-digit"
+                        minute="2-digit"
+                      ></lightning-formatted-date-time>
+                    </td>
+                  </tr>
+                </template>
+              </tbody>
+            </table>
+          </div>
+        </template>
+        <template lwc:else>
+          <p class="slds-m-top_x-small slds-text-color_weak" data-id="no-runs">
+            {labels.noRuns}
+          </p>
+        </template>
+      </section>
+
+      <template lwc:if={confirmOpen}>
+        <section
+          role="dialog"
+          tabindex="-1"
+          aria-modal="true"
+          aria-labelledby="axf-ae-confirm"
+          class="slds-modal slds-fade-in-open"
+          data-id="confirm"
+        >
+          <div class="slds-modal__container">
+            <header class="slds-modal__header">
+              <h2 id="axf-ae-confirm" class="slds-modal__title">
+                {labels.startArchive}
+              </h2>
+            </header>
+            <div class="slds-modal__content slds-p-around_medium">
+              {labels.startConfirm}
+            </div>
+            <footer class="slds-modal__footer">
+              <lightning-button
+                data-id="confirm-cancel"
+                label={labels.cancel}
+                onclick={handleCancelStart}
+              ></lightning-button>
+              <lightning-button
+                data-id="confirm-start"
+                class="slds-m-left_x-small"
+                variant="brand"
+                label={labels.confirm}
+                onclick={handleConfirmStart}
+              ></lightning-button>
+            </footer>
+          </div>
+        </section>
+        <div class="slds-backdrop slds-backdrop_open"></div>
+      </template>
+    </div>
+  </lightning-card>
+</template>

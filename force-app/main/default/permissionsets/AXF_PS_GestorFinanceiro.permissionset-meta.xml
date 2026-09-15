@@ -243,6 +243,34 @@
     <apexClass>AXF_CLS_CTRL_ConfidencePanel</apexClass>
     <enabled>true</enabled>
   </classAccesses>
+  <classAccesses>
+    <apexClass>ALT_CLS_ArchivePolicy</apexClass>
+    <enabled>true</enabled>
+  </classAccesses>
+  <classAccesses>
+    <apexClass>ALT_CLS_ArchiveReadService</apexClass>
+    <enabled>true</enabled>
+  </classAccesses>
+  <classAccesses>
+    <apexClass>ALT_CLS_ArchiveRunService</apexClass>
+    <enabled>true</enabled>
+  </classAccesses>
+  <classAccesses>
+    <apexClass>ALT_CLS_ArchiveStore</apexClass>
+    <enabled>true</enabled>
+  </classAccesses>
+  <classAccesses>
+    <apexClass>AXF_CLS_ArchiveRunBatch</apexClass>
+    <enabled>true</enabled>
+  </classAccesses>
+  <classAccesses>
+    <apexClass>AXF_CLS_ArchiveRunTriggerHandler</apexClass>
+    <enabled>true</enabled>
+  </classAccesses>
+  <classAccesses>
+    <apexClass>AXF_CLS_CTRL_ArchiveExplorer</apexClass>
+    <enabled>true</enabled>
+  </classAccesses>
   <customPermissions>
     <enabled>true</enabled>
     <name>AXF_CanConfigure</name>
@@ -270,6 +298,14 @@
   <customPermissions>
     <enabled>true</enabled>
     <name>AXF_CanExplainConfidence</name>
+  </customPermissions>
+  <customPermissions>
+    <enabled>true</enabled>
+    <name>AXF_CanArchiveTransactions</name>
+  </customPermissions>
+  <customPermissions>
+    <enabled>true</enabled>
+    <name>AXF_CanReadArchive</name>
   </customPermissions>
   <fieldPermissions>
     <editable>true</editable>
@@ -1537,6 +1573,136 @@
     <field>AXF_OBJ_CreditCard__c.AXF_CC_NUM_FreshnessLimitHours__c</field>
     <readable>true</readable>
   </fieldPermissions>
+  <fieldPermissions>
+    <editable>true</editable>
+    <field>AXF_OBJ_ArchiveRun__c.AXF_ARR_DAT_Watermark__c</field>
+    <readable>true</readable>
+  </fieldPermissions>
+  <fieldPermissions>
+    <editable>true</editable>
+    <field>AXF_OBJ_ArchiveRun__c.AXF_ARR_DTM_LastCheckpointAt__c</field>
+    <readable>true</readable>
+  </fieldPermissions>
+  <fieldPermissions>
+    <editable>true</editable>
+    <field>AXF_OBJ_ArchiveRun__c.AXF_ARR_LTX_AmountsByCurrency__c</field>
+    <readable>true</readable>
+  </fieldPermissions>
+  <fieldPermissions>
+    <editable>true</editable>
+    <field>AXF_OBJ_ArchiveRun__c.AXF_ARR_NUM_ArchivedCount__c</field>
+    <readable>true</readable>
+  </fieldPermissions>
+  <fieldPermissions>
+    <editable>true</editable>
+    <field>AXF_OBJ_ArchiveRun__c.AXF_ARR_NUM_ScannedCount__c</field>
+    <readable>true</readable>
+  </fieldPermissions>
+  <fieldPermissions>
+    <editable>true</editable>
+    <field>AXF_OBJ_ArchiveRun__c.AXF_ARR_NUM_VerifiedCount__c</field>
+    <readable>true</readable>
+  </fieldPermissions>
+  <fieldPermissions>
+    <editable>true</editable>
+    <field>AXF_OBJ_ArchiveRun__c.AXF_ARR_NUM_Version__c</field>
+    <readable>true</readable>
+  </fieldPermissions>
+  <fieldPermissions>
+    <editable>true</editable>
+    <field>AXF_OBJ_ArchiveRun__c.AXF_ARR_TXT_ContentHash__c</field>
+    <readable>true</readable>
+  </fieldPermissions>
+  <fieldPermissions>
+    <editable>true</editable>
+    <field>AXF_OBJ_ArchiveRun__c.AXF_ARR_TXT_HotRemoval__c</field>
+    <readable>true</readable>
+  </fieldPermissions>
+  <fieldPermissions>
+    <editable>true</editable>
+    <field>AXF_OBJ_ArchiveRun__c.AXF_ARR_TXT_Reason__c</field>
+    <readable>true</readable>
+  </fieldPermissions>
+  <fieldPermissions>
+    <editable>false</editable>
+    <field>AXF_OBJ_TransactionArchive__b.AXF_ARC_DT_ArchivedAt__c</field>
+    <readable>true</readable>
+  </fieldPermissions>
+  <fieldPermissions>
+    <editable>false</editable>
+    <field>AXF_OBJ_TransactionArchive__b.AXF_ARC_LTX_Snapshot__c</field>
+    <readable>true</readable>
+  </fieldPermissions>
+  <fieldPermissions>
+    <editable>false</editable>
+    <field>AXF_OBJ_TransactionArchive__b.AXF_ARC_NUM_Magnitude__c</field>
+    <readable>true</readable>
+  </fieldPermissions>
+  <fieldPermissions>
+    <editable>false</editable>
+    <field>AXF_OBJ_TransactionArchive__b.AXF_ARC_TXT_ContentHash__c</field>
+    <readable>true</readable>
+  </fieldPermissions>
+  <fieldPermissions>
+    <editable>false</editable>
+    <field>AXF_OBJ_TransactionArchive__b.AXF_ARC_TXT_CurrencyIsoCode__c</field>
+    <readable>true</readable>
+  </fieldPermissions>
+  <fieldPermissions>
+    <editable>false</editable>
+    <field>AXF_OBJ_TransactionArchive__b.AXF_ARC_TXT_Description__c</field>
+    <readable>true</readable>
+  </fieldPermissions>
+  <fieldPermissions>
+    <editable>false</editable>
+    <field>AXF_OBJ_TransactionArchive__b.AXF_ARC_TXT_Direction__c</field>
+    <readable>true</readable>
+  </fieldPermissions>
+  <fieldPermissions>
+    <editable>false</editable>
+    <field>AXF_OBJ_TransactionArchive__b.AXF_ARC_TXT_InstitutionKey__c</field>
+    <readable>true</readable>
+  </fieldPermissions>
+  <fieldPermissions>
+    <editable>false</editable>
+    <field>AXF_OBJ_TransactionArchive__b.AXF_ARC_TXT_InstitutionLabel__c</field>
+    <readable>true</readable>
+  </fieldPermissions>
+  <fieldPermissions>
+    <editable>false</editable>
+    <field>AXF_OBJ_TransactionArchive__b.AXF_ARC_TXT_PolicyVersion__c</field>
+    <readable>true</readable>
+  </fieldPermissions>
+  <fieldPermissions>
+    <editable>false</editable>
+    <field>AXF_OBJ_TransactionArchive__b.AXF_ARC_TXT_RunKey__c</field>
+    <readable>true</readable>
+  </fieldPermissions>
+  <fieldPermissions>
+    <editable>false</editable>
+    <field>AXF_OBJ_TransactionArchive__b.AXF_ARC_TXT_SourceFamily__c</field>
+    <readable>true</readable>
+  </fieldPermissions>
+  <fieldPermissions>
+    <editable>false</editable>
+    <field>AXF_OBJ_TransactionArchive__b.AXF_ARC_TXT_SourceId__c</field>
+    <readable>true</readable>
+  </fieldPermissions>
+  <fieldPermissions>
+    <editable>false</editable>
+    <field>AXF_OBJ_TransactionArchive__b.AXF_ARC_TXT_SourceKey__c</field>
+    <readable>true</readable>
+  </fieldPermissions>
+  <fieldPermissions>
+    <editable>false</editable>
+    <field>AXF_OBJ_TransactionArchive__b.AXF_ARC_TXT_SourceRecordId__c</field>
+    <readable>true</readable>
+  </fieldPermissions>
+  <fieldPermissions>
+    <editable>false</editable>
+    <field>AXF_OBJ_TransactionArchive__b.AXF_ARC_TXT_Status__c</field>
+    <readable>true</readable>
+  </fieldPermissions>
   <objectPermissions>
     <allowCreate>true</allowCreate>
     <allowDelete>false</allowDelete>
@@ -1843,6 +2009,24 @@
     <object>AXF_OBJ_TransactionObservation__c</object>
     <viewAllRecords>false</viewAllRecords>
   </objectPermissions>
+  <objectPermissions>
+    <allowCreate>true</allowCreate>
+    <allowDelete>false</allowDelete>
+    <allowEdit>true</allowEdit>
+    <allowRead>true</allowRead>
+    <modifyAllRecords>false</modifyAllRecords>
+    <object>AXF_OBJ_ArchiveRun__c</object>
+    <viewAllRecords>false</viewAllRecords>
+  </objectPermissions>
+  <objectPermissions>
+    <allowCreate>true</allowCreate>
+    <allowDelete>false</allowDelete>
+    <allowEdit>false</allowEdit>
+    <allowRead>true</allowRead>
+    <modifyAllRecords>false</modifyAllRecords>
+    <object>AXF_OBJ_TransactionArchive__b</object>
+    <viewAllRecords>false</viewAllRecords>
+  </objectPermissions>
   <recordTypeVisibilities>
     <recordType>Account.AXF_Business</recordType>
     <visible>true</visible>
@@ -1915,4 +2099,8 @@
     <tab>AXF_CT_ConfidencePanel</tab>
     <visibility>Visible</visibility>
   </tabSettings>
-</PermissionSet>
+<tabSettings>
+    <tab>AXF_CT_ArchiveExplorer</tab>
+    <visibility>Visible</visibility>
+  </tabSettings>
+  </PermissionSet>
