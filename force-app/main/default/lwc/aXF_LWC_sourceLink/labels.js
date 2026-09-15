@@ -140,6 +140,7 @@ import roleTRANSFER from "@salesforce/label/c.AXF_SourceLink_roleTRANSFER";
 import roleREFUND from "@salesforce/label/c.AXF_SourceLink_roleREFUND";
 import sourceRemainder from "@salesforce/label/c.AXF_SourceLink_sourceRemainder";
 import codeUNSUPPORTED_ECONOMIC_ROLE from "@salesforce/label/c.AXF_SourceLink_codeUNSUPPORTED_ECONOMIC_ROLE";
+import codeINVALID_ECONOMIC_ROLE from "@salesforce/label/c.AXF_SourceLink_codeINVALID_ECONOMIC_ROLE";
 
 export default {
   title,
@@ -283,5 +284,6 @@ export default {
   roleTRANSFER,
   roleREFUND,
   sourceRemainder,
-  codeUNSUPPORTED_ECONOMIC_ROLE
+  codeUNSUPPORTED_ECONOMIC_ROLE,
+  codeINVALID_ECONOMIC_ROLE
 };

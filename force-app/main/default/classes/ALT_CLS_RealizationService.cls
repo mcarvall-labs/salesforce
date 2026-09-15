@@ -247,8 +247,9 @@ public with sharing class ALT_CLS_RealizationService {
     };
     // AXF-135: a declared economic role is part of the canonical payload, so the same key with
     // another role conflicts instead of replaying. A caller that declares no role keeps the
-    // pre-AXF-135 fingerprint unchanged and stays replayable.
-    if (input.economicRole != null) {
+    // pre-AXF-135 fingerprint unchanged and stays replayable; a blank declaration is no
+    // declaration, so it never becomes a third fingerprint that turns a replay into a CONFLICT.
+    if (String.isNotBlank(input.economicRole)) {
       applicationPayload.add(input.economicRole);
     }
     String payload = hash(applicationPayload);

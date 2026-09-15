@@ -420,12 +420,24 @@ private class ALT_CLS_SourceLinkServiceTest {
         scheduleInput
       );
       Assert.areEqual('CREATED', created.outcome, created.message);
+      // AXF-135: a second fact larger than one projected occurrence, so the source remainder of a
+      // virtual line is observable instead of trivially zero.
+      AXF_OBJ_BankAccountTransaction__c larger = fact(
+        available.Id,
+        400,
+        'POSTED',
+        Date.today(),
+        'source-135'
+      );
+      insert larger;
 
       Test.startTest();
       ALT_CLS_SourceLinkService.CandidatePage all = new ALT_CLS_SourceLinkService()
         .listCandidates(candidateQuery(source.Id, 1, 50));
       ALT_CLS_SourceLinkService.CandidatePage page = new ALT_CLS_SourceLinkService()
         .listCandidates(candidateQuery(source.Id, 1, 2));
+      ALT_CLS_SourceLinkService.CandidatePage wide = new ALT_CLS_SourceLinkService()
+        .listCandidates(candidateQuery(larger.Id, 1, 50));
       ALT_CLS_SourceLinkService.CandidateQuery search = candidateQuery(
         source.Id,
         1,
@@ -473,6 +485,17 @@ private class ALT_CLS_SourceLinkServiceTest {
             c.residual - Math.min(all.source.residual, c.residual),
             c.residualAfter
           );
+          // AXF-135: a projected line states the source amount it cannot absorb exactly as a
+          // persisted candidate does, so a zeroed or wrong value would be a visible lie, not a
+          // silently missing cell.
+          Assert.isNotNull(
+            c.sourceResidualAfter,
+            'the source remainder of a projected line is filled, never left blank'
+          );
+          Assert.areEqual(
+            all.source.residual - Math.min(all.source.residual, c.residual),
+            c.sourceResidualAfter
+          );
         }
       }
       Assert.areEqual(
@@ -499,6 +522,29 @@ private class ALT_CLS_SourceLinkServiceTest {
       );
       Assert.areEqual(2, page.items.size());
       Assert.isTrue(page.hasMore);
+      // AXF-135: the source remainder of a projected line is the same fact as for a persisted
+      // candidate, and it is observable: a zeroed or missing value renders as a silently absent
+      // cell, which is exactly what the fact must never be.
+      Integer projectedWide = 0;
+      for (ALT_CLS_SourceLinkService.CandidateView c : wide.items) {
+        if (c.persisted) {
+          continue;
+        }
+        projectedWide++;
+        Assert.areEqual(
+          400 - Math.min(400, c.residual),
+          c.sourceResidualAfter,
+          'a projected line states the source amount it cannot absorb'
+        );
+        Assert.isTrue(
+          c.sourceResidualAfter > 0,
+          'a source larger than the projected occurrence keeps an explicit remainder'
+        );
+      }
+      Assert.isTrue(
+        projectedWide > 0,
+        'projected lines are offered for a source larger than the obligation'
+      );
       Assert.areEqual(
         all.items[0].targetId,
         page.items[0].targetId,
@@ -2140,6 +2186,100 @@ private class ALT_CLS_SourceLinkServiceTest {
         ]
         .AXF_BAT_NUM_Version__c,
         'a refused role leaves the fact untouched: only the declared application moved it'
+      );
+    }
+  }
+
+  /**
+   * AXF-135: an operation that was already applied replays before the role is judged, so a retry
+   * that declares no role at all — a cached client — reproduces the recorded result instead of being
+   * refused on a field it never sent. A blank declaration is no declaration, and a retry that
+   * diverges from what was recorded is still refused.
+   */
+  @IsTest
+  static void anAppliedOperationReplaysWhenTheRetryOmitsTheRole() {
+    System.runAs(byAlias('axf134g')) {
+      Account owner = holder('Holder 135 retry');
+      AXF_OBJ_BankAccount__c available = bank(owner.Id, 'AVAILABLE', 'BRL');
+      AXF_OBJ_BankAccountTransaction__c source = fact(
+        available.Id,
+        120,
+        'POSTED',
+        Date.today().addDays(-1),
+        'retry'
+      );
+      insert source;
+      Date due = Date.today().addDays(2);
+      AXF_OBJ_FinancialTransaction__c target = plan(
+        owner.Id,
+        'axf135-retry',
+        200,
+        'DEBIT',
+        'BRL',
+        due
+      );
+      insert target;
+      ALT_CLS_SourceLinkService service = new ALT_CLS_SourceLinkService();
+
+      Test.startTest();
+      ALT_CLS_SourceLinkService.ConfirmResult linked = service.confirm(
+        confirmInput(source, target.Id, 0, 120, 'retry')
+      );
+      ALT_CLS_SourceLinkService.ConfirmInput omitted = confirmInput(
+        source,
+        target.Id,
+        0,
+        120,
+        'retry'
+      );
+      omitted.economicRole = null;
+      ALT_CLS_SourceLinkService.ConfirmResult replayed = service.confirm(
+        omitted
+      );
+      ALT_CLS_SourceLinkService.ConfirmInput blank = confirmInput(
+        source,
+        target.Id,
+        0,
+        120,
+        'retry'
+      );
+      blank.economicRole = '';
+      ALT_CLS_SourceLinkService.ConfirmResult replayedBlank = service.confirm(
+        blank
+      );
+      ALT_CLS_SourceLinkService.ConfirmInput divergent = confirmInput(
+        source,
+        target.Id,
+        0,
+        121,
+        'retry'
+      );
+      divergent.economicRole = null;
+      String conflict = failure(divergent);
+      Test.stopTest();
+
+      Assert.isNotNull(linked.allocationId);
+      Assert.isTrue(
+        replayed.replayed,
+        'an applied operation replays without the role field'
+      );
+      Assert.areEqual(linked.allocationId, replayed.allocationId);
+      Assert.areEqual(target.Id, replayed.targetId);
+      Assert.areEqual(120, replayed.amount);
+      Assert.isTrue(
+        replayedBlank.replayed,
+        'a blank role is no declaration: the operation still replays'
+      );
+      Assert.areEqual(linked.allocationId, replayedBlank.allocationId);
+      Assert.areEqual(
+        'CONFLICT',
+        conflict,
+        'a retry without a role is still checked against what was recorded'
+      );
+      Assert.areEqual(
+        1,
+        [SELECT COUNT() FROM AXF_OBJ_ReconciliationAllocation__c],
+        'the replay never writes a second allocation'
       );
     }
   }

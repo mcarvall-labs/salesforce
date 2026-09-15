@@ -1501,5 +1501,8 @@
     >AXF_SourceLink_roleREFUND</name></customLabels><customLabels><label
     >Sobra da fonte para outros alvos após esta obrigação — necessidade multi-alvo (AXF-30):</label><name
     >AXF_SourceLink_sourceRemainder</name></customLabels><customLabels><label
-    >Este papel econômico não tem capacidade de vínculo suportada aqui. Nada foi gravado — use a capacidade de fatura, transferência ou estorno.</label><name
-    >AXF_SourceLink_codeUNSUPPORTED_ECONOMIC_ROLE</name></customLabels></Translations>
+    >Este papel econômico ainda não tem capacidade de vínculo nesta versão. Nada foi gravado — declare o papel de aplicação, o único que este fluxo consegue encaminhar hoje.</label><name
+    >AXF_SourceLink_codeUNSUPPORTED_ECONOMIC_ROLE</name></customLabels><customLabels
+  ><label
+    >Declare o papel econômico do vínculo — ele nunca é inferido da descrição nem do extrato da linha do cartão — e confirme novamente. Nada foi gravado.</label><name
+    >AXF_SourceLink_codeINVALID_ECONOMIC_ROLE</name></customLabels></Translations>

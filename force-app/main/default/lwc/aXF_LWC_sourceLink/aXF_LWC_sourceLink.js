@@ -28,15 +28,11 @@ const SORT_OPTIONS = [
 /**
  * AXF-135: the economic role of the link is declared here. There is no default and no classifier —
  * the statement association of a card line (BillReference) and the descriptions are facts of the
- * source, not a role. Only the application role is routable in this flow; the server owns that
- * decision and refuses any other role without writing.
+ * source, not a role. Only the application role is routable in this branch, so only it is offered:
+ * a choice the server refuses without writing is not presented as a choice. The other role names
+ * remain the service's vocabulary (and keep their labels) for the slice that adds their capability.
  */
-const ROLE_OPTIONS = [
-  { label: labels.roleAPPLICATION, value: "APPLICATION" },
-  { label: labels.roleINVOICE_PAYMENT, value: "INVOICE_PAYMENT" },
-  { label: labels.roleTRANSFER, value: "TRANSFER" },
-  { label: labels.roleREFUND, value: "REFUND" }
-];
+const ROLE_OPTIONS = [{ label: labels.roleAPPLICATION, value: "APPLICATION" }];
 function signed(delta) {
   const n = Number(delta);
   return n > 0 ? `+${n}` : `${n}`;
