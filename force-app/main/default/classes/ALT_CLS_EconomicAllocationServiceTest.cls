@@ -3,6 +3,7 @@
  * ingestao), proposta com parcelas positivas/moeda original/pessoas autorizadas/identidade
  * canonica, confirmacao com 100% exato, rejeicao atomica (soma != 100, negativo, nao autorizado,
  * versao obsoleta), sem share implicito, idempotencia por operacao, guards e erros sanitizados.
+ * AXF-127: projecao derivada de atribuicao unica (ramo integral e ramo rateio).
  */
 @IsTest
 private class ALT_CLS_EconomicAllocationServiceTest {
@@ -1075,6 +1076,181 @@ private class ALT_CLS_EconomicAllocationServiceTest {
             )
           )
           .contains('service')
+      );
+      Test.stopTest();
+    }
+  }
+
+  // ------------------------------------------------------- AXF-127 singular projection
+
+  private static Id storedProjection(Id setId) {
+    return [
+      SELECT AXF_EAS_LKP_AttributedAccount__c
+      FROM AXF_OBJ_EconomicAllocationSet__c
+      WHERE Id = :setId
+    ]
+    .AXF_EAS_LKP_AttributedAccount__c;
+  }
+
+  /** AXF-127 branch 1: an integral allocation reflects its sole person/company (G1). */
+  @IsTest
+  static void integralAllocationDerivesTheSolePersonOrCompanyProjection() {
+    System.runAs(gestor()) {
+      Account person = holder('Titular Projecao', 'AXF_Person');
+      Account company = holder('Empresa Projecao', 'AXF_Business');
+      AXF_OBJ_BankAccountTransaction__c personFact = bankFact(person, 'p');
+      AXF_OBJ_BankAccountTransaction__c companyFact = bankFact(company, 'q');
+      ALT_CLS_EconomicAllocationService service = new ALT_CLS_EconomicAllocationService();
+      Test.startTest();
+      ALT_CLS_EconomicAllocationService.SetView personDraft = service.propose(
+        proposal(
+          'BANK',
+          personFact.Id,
+          'op-p1',
+          new Map<Id, Decimal>{ person.Id => 100 }
+        )
+      );
+      Assert.isNull(
+        storedProjection(personDraft.setId),
+        'A projecao nasce na confirmacao, nao na proposta.'
+      );
+      service.confirm(personDraft.setId, personDraft.version, 'op-p1c');
+      Assert.areEqual(
+        person.Id,
+        storedProjection(personDraft.setId),
+        'Atribuicao integral: a projecao reflete a unica pessoa titular.'
+      );
+      ALT_CLS_EconomicAllocationService.SetView companyDraft = service.propose(
+        proposal(
+          'BANK',
+          companyFact.Id,
+          'op-q1',
+          new Map<Id, Decimal>{ company.Id => 100 }
+        )
+      );
+      service.confirm(companyDraft.setId, companyDraft.version, 'op-q1c');
+      Assert.areEqual(
+        company.Id,
+        storedProjection(companyDraft.setId),
+        'G1: empresa titular tambem e sujeito singular valido.'
+      );
+      Assert.areEqual(
+        0,
+        [
+          SELECT COUNT()
+          FROM AXF_OBJ_EconomicAllocationSet__Share
+          WHERE RowCause != 'Owner'
+        ],
+        'A projecao nao concede acesso.'
+      );
+      Assert.areEqual(
+        0,
+        [
+          SELECT COUNT()
+          FROM AccountShare
+          WHERE AccountId = :company.Id AND RowCause != 'Owner'
+        ],
+        'A projecao nao compartilha a pessoa/empresa projetada.'
+      );
+      Test.stopTest();
+    }
+  }
+
+  /** AXF-127 branch 2: rateio leaves the singular projection empty and non-authoritative. */
+  @IsTest
+  static void apportionmentKeepsTheSingularProjectionEmptyAndNonAuthoritative() {
+    System.runAs(gestor()) {
+      Account person = holder('Titular Rateio', 'AXF_Person');
+      Account company = holder('Empresa Rateio', 'AXF_Business');
+      AXF_OBJ_BankAccountTransaction__c fact = bankFact(person, 'r');
+      ALT_CLS_EconomicAllocationService service = new ALT_CLS_EconomicAllocationService();
+      Test.startTest();
+      ALT_CLS_EconomicAllocationService.SetView draft = service.propose(
+        proposal(
+          'BANK',
+          fact.Id,
+          'op-r1',
+          new Map<Id, Decimal>{ person.Id => 60, company.Id => 40 }
+        )
+      );
+      service.confirm(draft.setId, draft.version, 'op-r1c');
+      Assert.isNull(
+        storedProjection(draft.setId),
+        'Rateio: projecao vazia, sem eleger titular principal nem primeiro participante.'
+      );
+      ALT_CLS_EconomicAllocationGuard.beginWrite();
+      try {
+        Assert.isTrue(
+          firstError(
+              Database.update(
+                new AXF_OBJ_EconomicAllocationSet__c(
+                  Id = draft.setId,
+                  AXF_EAS_LKP_AttributedAccount__c = person.Id
+                ),
+                false
+              )
+            )
+            .contains('Confirmed economic allocation content is immutable'),
+          'A projecao nao vira autoridade depois de confirmada.'
+        );
+      } finally {
+        ALT_CLS_EconomicAllocationGuard.endWrite();
+      }
+      Assert.isNull(
+        storedProjection(draft.setId),
+        'Rateio confirmado continua sem projecao singular.'
+      );
+      Test.stopTest();
+    }
+  }
+
+  /**
+   * AXF-127 totality: the confirmation assignment is unconditional, so an apportioned
+   * confirmation clears a pre-existing value instead of leaving it stale. The service never
+   * writes the projection before confirmation, so the precondition is seeded through the DRAFT
+   * content window the guard deliberately allows.
+   */
+  @IsTest
+  static void apportionedConfirmationClearsAPreexistingProjection() {
+    System.runAs(gestor()) {
+      Account person = holder('Titular Stale', 'AXF_Person');
+      Account company = holder('Empresa Stale', 'AXF_Business');
+      AXF_OBJ_BankAccountTransaction__c fact = bankFact(person, 's');
+      ALT_CLS_EconomicAllocationService service = new ALT_CLS_EconomicAllocationService();
+      Test.startTest();
+      ALT_CLS_EconomicAllocationService.SetView draft = service.propose(
+        proposal(
+          'BANK',
+          fact.Id,
+          'op-s1',
+          new Map<Id, Decimal>{ person.Id => 50, company.Id => 50 }
+        )
+      );
+      ALT_CLS_EconomicAllocationGuard.beginWrite();
+      try {
+        Assert.isTrue(
+          Database.update(
+              new AXF_OBJ_EconomicAllocationSet__c(
+                Id = draft.setId,
+                AXF_EAS_LKP_AttributedAccount__c = person.Id
+              ),
+              false
+            )
+            .isSuccess(),
+          'Pre-condicao: DRAFT aceita conteudo.'
+        );
+      } finally {
+        ALT_CLS_EconomicAllocationGuard.endWrite();
+      }
+      Assert.areEqual(
+        person.Id,
+        storedProjection(draft.setId),
+        'Pre-condicao: valor previo gravado.'
+      );
+      service.confirm(draft.setId, draft.version, 'op-s1c');
+      Assert.isNull(
+        storedProjection(draft.setId),
+        'Confirmacao em rateio limpa o valor previo da projecao.'
       );
       Test.stopTest();
     }

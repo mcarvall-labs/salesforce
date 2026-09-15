@@ -7,8 +7,10 @@
  * economicallocation.set.confirm.v1 (exige soma exata de 100% e confirma atomicamente).
  * Toda rejeicao e atomica: nada parcial persiste. A propriedade da conta permanece separada
  * da atribuicao economica: nenhuma parcela e inferida na ingestao. Rateio nao cria share.
- * Revisao (supersessao), neutralizacao/reversao e projecao de atribuicao unica sao historias
- * irmas (AXF-127/128/129).
+ * A projecao derivada de atribuicao unica (AXF-127) e gravada na propria confirmacao: reflete
+ * a unica pessoa/empresa somente quando o set CONFIRMED tem exatamente uma parcela de 100%
+ * (G1) e fica vazia em rateio. Revisao (supersessao) e neutralizacao/reversao sao historias
+ * irmas (AXF-128/129).
  */
 public with sharing class ALT_CLS_EconomicAllocationService {
   public static final String IDENTITY_VERSION = 'alloc-v2';
@@ -322,6 +324,11 @@ public with sharing class ALT_CLS_EconomicAllocationService {
       allocationSet.AXF_EAS_PKL_State__c = STATE_CONFIRMED;
       allocationSet.AXF_EAS_DT_EffectiveAt__c = Datetime.now();
       allocationSet.AXF_EAS_EXI_ActiveToken__c = activeToken(fact.identity);
+      // AXF-127/G1: derived singular projection. Unconditional on purpose — apportionment
+      // always writes null, so no primary or first holder is ever promoted.
+      allocationSet.AXF_EAS_LKP_AttributedAccount__c = attributedAccount(
+        allocations
+      );
       // The proposal key stays so a propose replay still finds this set.
       allocationSet.AXF_EAS_TXT_ConfirmOperationKey__c = operationKey;
       allocationSet.AXF_EAS_NUM_Version__c =
@@ -548,6 +555,24 @@ public with sharing class ALT_CLS_EconomicAllocationService {
       result.put(largest, result.get(largest) + (factMagnitude - assigned));
     }
     return result;
+  }
+
+  /**
+   * Derived singular projection (AXF-127, G1): the sole person/company holder only when the
+   * confirmed set carries exactly one 100% parcel. Apportionment derives null — never a
+   * primary or first participant. The value is a read-only projection: it is not consulted by
+   * authorization, sharing or calculation anywhere.
+   */
+  private static Id attributedAccount(
+    List<AXF_OBJ_EconomicAllocation__c> allocations
+  ) {
+    if (
+      allocations.size() != 1 ||
+      nz(allocations[0].AXF_EA_NUM_Percent__c).setScale(6) != 100
+    ) {
+      return null;
+    }
+    return allocations[0].AXF_EA_LKP_Account__c;
   }
 
   /** The set follows the holder's owner (G2); the proposer keeps access through a share row. */
