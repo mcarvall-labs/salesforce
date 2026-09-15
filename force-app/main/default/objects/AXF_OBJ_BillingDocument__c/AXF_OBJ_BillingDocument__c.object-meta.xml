@@ -2,7 +2,7 @@
 <CustomObject xmlns="http://soap.sforce.com/2006/04/metadata">
     <deploymentStatus>Deployed</deploymentStatus>
     <description
-  >Agregado raiz de documento de cobranca (AXF-65, GBI-1, fechamento billing 06/09/2026). Identidade Account+Contract+DocumentKind+SeriesKey; lifecycle OPEN|CLOSED|CANCELLED; estado de apresentacao derivado; owner-sync com Account; sem Delete.</description>
+  >Agregado raiz de documento de cobranca (AXF-65, GBI-1, fechamento billing 06/09/2026). Identidade Account+Contract+DocumentKind+SeriesKey; lifecycle OPEN|CLOSED|CANCELLED; estado de apresentacao derivado; Owner definido na composicao a partir do titular (Account.OwnerId), sem re-sincronizacao posterior; sem Delete.</description>
     <enableActivities>false</enableActivities>
     <enableBulkApi>true</enableBulkApi>
     <enableFeeds>false</enableFeeds>

@@ -181,6 +181,10 @@
     <enabled>true</enabled>
   </classAccesses>
   <classAccesses>
+    <apexClass>ALT_CLS_BillingIntegrity</apexClass>
+    <enabled>true</enabled>
+  </classAccesses>
+  <classAccesses>
     <apexClass>AXF_CLS_CTRL_BillingComposer</apexClass>
     <enabled>true</enabled>
   </classAccesses>
@@ -1121,7 +1125,7 @@
     <readable>true</readable>
   </fieldPermissions>
   <fieldPermissions>
-    <editable>true</editable>
+    <editable>false</editable>
     <field>AXF_OBJ_BillingDocument__c.AXF_BDO_TXT_ActiveIssueToken__c</field>
     <readable>true</readable>
   </fieldPermissions>
@@ -1209,6 +1213,16 @@
     <editable>false</editable>
     <field
     >AXF_OBJ_ContractApplicationSnapshot__c.AXF_CAS_CUR_AppliedAmount__c</field>
+    <readable>true</readable>
+  </fieldPermissions>
+  <fieldPermissions>
+    <editable>false</editable>
+    <field>AXF_OBJ_FinancialTransaction__c.AXF_FTX_DAT_DueDate__c</field>
+    <readable>true</readable>
+  </fieldPermissions>
+  <fieldPermissions>
+    <editable>false</editable>
+    <field>AXF_OBJ_FinancialTransaction__c.AXF_FTX_PKL_PlanKind__c</field>
     <readable>true</readable>
   </fieldPermissions>
   <objectPermissions>

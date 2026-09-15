@@ -392,4 +392,68 @@
   ><fullName>AXF_BillingComposer_codeTotalNotConserved</fullName><language
     >en_US</language><protected>false</protected><shortDescription
     >Code</shortDescription><value
-    >The document total does not match its lines; nothing was saved.</value></labels></CustomLabels>
+    >The document total does not match its lines; nothing was saved.</value></labels><labels
+  ><fullName>AXF_BillingComposer_codeRejected</fullName><language
+    >en_US</language><protected>false</protected><shortDescription
+    >Rejected</shortDescription><value
+    >The draft was rejected by a data rule; nothing was saved.</value></labels><labels
+  ><fullName>AXF_BillingComposer_codeContractNotBillable</fullName><language
+    >en_US</language><protected>false</protected><shortDescription
+    >Contract not billable</shortDescription><value
+    >This contract is cancelled or replaced and cannot be billed.</value></labels><labels
+  ><fullName>AXF_BillingComposer_reasonInvalidAmount</fullName><language
+    >en_US</language><protected>false</protected><shortDescription
+    >Invalid amount</shortDescription><value
+    >Entry without a positive amount</value></labels><labels><fullName
+    >AXF_BillingComposer_reasonWorkContractMismatch</fullName><language
+    >en_US</language><protected>false</protected><shortDescription
+    >Work contract mismatch</shortDescription><value
+    >Work record belongs to another contract</value></labels><labels><fullName
+    >AXF_BillingComposer_noEntities</fullName><language
+    >en_US</language><protected>false</protected><shortDescription
+    >No entities</shortDescription><value
+    >No authorized person or company to bill.</value></labels><labels><fullName
+    >AXF_BillingComposer_contractIncomplete</fullName><language
+    >en_US</language><protected>false</protected><shortDescription
+    >Contract incomplete</shortDescription><value
+    >The selected contract has no counterparty or currency; complete it before billing.</value></labels><labels
+  ><fullName>AXF_BillingComposer_periodInvalid</fullName><language
+    >en_US</language><protected>false</protected><shortDescription
+    >Period invalid</shortDescription><value
+    >Period end must not be before period start.</value></labels><labels
+  ><fullName>AXF_BillingComposer_quantityRequired</fullName><language
+    >en_US</language><protected>false</protected><shortDescription
+    >Quantity required</shortDescription><value
+    >Every work allocation needs a positive quantity.</value></labels><labels
+  ><fullName>AXF_BillingComposer_duplicateWork</fullName><language
+    >en_US</language><protected>false</protected><shortDescription
+    >Duplicate work</shortDescription><value
+    >The same work record was allocated twice on one line.</value></labels><labels
+  ><fullName>AXF_BillingComposer_typeMixed</fullName><language
+    >en_US</language><protected>false</protected><shortDescription
+    >Type mixed</shortDescription><value
+    >Select lines of a single remuneration type per draft.</value></labels><labels
+  ><fullName>AXF_BillingComposer_remainingBalance</fullName><language
+    >en_US</language><protected>false</protected><shortDescription
+    >Remaining</shortDescription><value>remaining</value></labels><labels
+  ><fullName>AXF_BillingComposer_stateDraft</fullName><language
+    >en_US</language><protected>false</protected><shortDescription
+    >State</shortDescription><value>Draft</value></labels><labels><fullName
+    >AXF_BillingComposer_stateReviewed</fullName><language
+    >en_US</language><protected>false</protected><shortDescription
+    >State</shortDescription><value>Reviewed</value></labels><labels><fullName
+    >AXF_BillingComposer_stateIssuing</fullName><language
+    >en_US</language><protected>false</protected><shortDescription
+    >State</shortDescription><value>Issuing</value></labels><labels><fullName
+    >AXF_BillingComposer_stateIssued</fullName><language
+    >en_US</language><protected>false</protected><shortDescription
+    >State</shortDescription><value>Issued</value></labels><labels><fullName
+    >AXF_BillingComposer_stateCancelled</fullName><language
+    >en_US</language><protected>false</protected><shortDescription
+    >State</shortDescription><value>Cancelled</value></labels><labels><fullName
+    >AXF_BillingComposer_lifecycleOpen</fullName><language
+    >en_US</language><protected>false</protected><shortDescription
+    >Lifecycle</shortDescription><value>Open</value></labels><labels><fullName
+    >AXF_BillingComposer_lifecycleClosed</fullName><language
+    >en_US</language><protected>false</protected><shortDescription
+    >Lifecycle</shortDescription><value>Closed</value></labels></CustomLabels>

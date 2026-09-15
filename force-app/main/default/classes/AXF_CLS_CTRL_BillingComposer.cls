@@ -42,7 +42,9 @@ public with sharing class AXF_CLS_CTRL_BillingComposer {
           AXF_CTR_LKP_Counterparty__c,
           AXF_CTR_LKP_Counterparty__r.AXF_CPTY_TXT_DisplayName__c
         FROM AXF_OBJ_Contract__c
-        WHERE AXF_CTR_LKP_Account__c = :accountId
+        WHERE
+          AXF_CTR_LKP_Account__c = :accountId
+          AND AXF_CTR_PKL_Lifecycle__c NOT IN :ALT_CLS_BillingDraftService.NON_BILLABLE_CONTRACTS
         WITH USER_MODE
         ORDER BY Name
         LIMIT 200
@@ -151,7 +153,11 @@ public with sharing class AXF_CLS_CTRL_BillingComposer {
       ALT_CLS_BillingDraftService.BillingDraftException typed = (ALT_CLS_BillingDraftService.BillingDraftException) failure;
       code = typed.code;
       issues = typed.issues;
-    } else if (failure instanceof JSONException) {
+    } else if (
+      failure instanceof JSONException ||
+      failure instanceof System.StringException ||
+      failure instanceof System.TypeException
+    ) {
       code = 'INVALID_INPUT';
     } else if (
       failure instanceof System.QueryException ||

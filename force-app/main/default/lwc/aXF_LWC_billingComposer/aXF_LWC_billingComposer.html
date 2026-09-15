@@ -6,7 +6,7 @@
       <div role="status" aria-live="polite" class="slds-var-m-bottom_small">
         <template lwc:if={busy}>
           <lightning-spinner
-            alternative-text={labels.loading}
+            alternative-text={busyLabel}
             size="small"
             variant="brand"
           ></lightning-spinner>
@@ -47,14 +47,19 @@
             <dd class="slds-dl_horizontal__detail">{draft.counterpartyName}</dd>
             <dt class="slds-dl_horizontal__label">{labels.state}</dt>
             <dd class="slds-dl_horizontal__detail">
-              {draft.state} · {draft.presentationState} · {labels.revision}
-              {draft.revision}
+              {draftStateText} · {labels.revision} {draft.revision}
             </dd>
             <dt class="slds-dl_horizontal__label">{labels.currency}</dt>
             <dd class="slds-dl_horizontal__detail">{draft.currencyIso}</dd>
             <dt class="slds-dl_horizontal__label">{labels.periodStart}</dt>
             <dd class="slds-dl_horizontal__detail">
-              {draft.periodStart} – {draft.periodEnd}
+              <lightning-formatted-date-time
+                value={draft.periodStart}
+              ></lightning-formatted-date-time>
+              –
+              <lightning-formatted-date-time
+                value={draft.periodEnd}
+              ></lightning-formatted-date-time>
             </dd>
             <dt class="slds-dl_horizontal__label">{labels.total}</dt>
             <dd class="slds-dl_horizontal__detail">
@@ -308,7 +313,7 @@
                         </td>
                       </tr>
                       <template lwc:if={row.showAllocations}>
-                        <tr key={row.snapshotId} class="axf-allocations">
+                        <tr key={row.allocationKey} class="axf-allocations">
                           <td colspan="7">
                             <div
                               class="slds-var-p-vertical_x-small"

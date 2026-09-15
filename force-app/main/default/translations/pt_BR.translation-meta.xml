@@ -218,4 +218,42 @@
     >AXF_BillingComposer_codeNotAccessible</name></customLabels><customLabels
   ><label
     >O total do documento não confere com as linhas; nada foi gravado.</label><name
-    >AXF_BillingComposer_codeTotalNotConserved</name></customLabels></Translations>
+    >AXF_BillingComposer_codeTotalNotConserved</name></customLabels><customLabels
+  ><label
+    >O rascunho foi rejeitado por uma regra de dados; nada foi gravado.</label><name
+    >AXF_BillingComposer_codeRejected</name></customLabels><customLabels><label
+    >Este contrato está cancelado ou substituído e não pode ser faturado.</label><name
+    >AXF_BillingComposer_codeContractNotBillable</name></customLabels><customLabels
+  ><label>Lançamento sem valor positivo</label><name
+    >AXF_BillingComposer_reasonInvalidAmount</name></customLabels><customLabels
+  ><label>Registro de trabalho pertence a outro contrato</label><name
+    >AXF_BillingComposer_reasonWorkContractMismatch</name></customLabels><customLabels
+  ><label>Nenhuma pessoa ou empresa autorizada para faturar.</label><name
+    >AXF_BillingComposer_noEntities</name></customLabels><customLabels><label
+    >O contrato selecionado não tem contraparte ou moeda; complete-o antes de faturar.</label><name
+    >AXF_BillingComposer_contractIncomplete</name></customLabels><customLabels
+  ><label>O fim do período não pode ser anterior ao início.</label><name
+    >AXF_BillingComposer_periodInvalid</name></customLabels><customLabels><label
+    >Toda alocação de trabalho precisa de quantidade positiva.</label><name
+    >AXF_BillingComposer_quantityRequired</name></customLabels><customLabels
+  ><label
+    >O mesmo registro de trabalho foi alocado duas vezes na mesma linha.</label><name
+    >AXF_BillingComposer_duplicateWork</name></customLabels><customLabels><label
+    >Selecione linhas de um único tipo de remuneração por rascunho.</label><name
+    >AXF_BillingComposer_typeMixed</name></customLabels><customLabels><label
+    >restante</label><name
+    >AXF_BillingComposer_remainingBalance</name></customLabels><customLabels
+  ><label>Rascunho</label><name
+    >AXF_BillingComposer_stateDraft</name></customLabels><customLabels><label
+    >Revisado</label><name
+    >AXF_BillingComposer_stateReviewed</name></customLabels><customLabels><label
+    >Em emissão</label><name
+    >AXF_BillingComposer_stateIssuing</name></customLabels><customLabels><label
+    >Emitido</label><name
+    >AXF_BillingComposer_stateIssued</name></customLabels><customLabels><label
+    >Cancelado</label><name
+    >AXF_BillingComposer_stateCancelled</name></customLabels><customLabels
+  ><label>Aberto</label><name
+    >AXF_BillingComposer_lifecycleOpen</name></customLabels><customLabels><label
+    >Fechado</label><name
+    >AXF_BillingComposer_lifecycleClosed</name></customLabels></Translations>

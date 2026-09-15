@@ -2,8 +2,11 @@
  * @description Integridade bulk do dominio billing (AXF-65). Visibilidade de sistema para
  * proteger referencias ocultas; regras chamadas apenas pelos handlers de trigger.
  * - Nenhum registro billing e excluido (sem Delete em PS/PSG e bloqueio no trigger).
- * - BillingDocument: lifecycle OPEN -> CLOSED | CANCELLED; identidade imutavel.
- * - BillingDocumentVersion: ISSUED imutavel; transicoes conforme GBI-2; identidade imutavel.
+ * - BillingDocument: nasce OPEN somente pelo servico; lifecycle OPEN -> CLOSED | CANCELLED
+ *   somente pelo servico; identidade e periodo imutaveis.
+ * - BillingDocumentVersion: nasce DRAFT somente pelo servico, sob documento OPEN e com o mesmo
+ *   Owner do documento; total/resumo so mudam pelo servico; ISSUED imutavel; transicoes de
+ *   estado conforme GBI-2 (revisao/cancelamento sao acoes de usuario); identidade imutavel.
  * - Linhas e alocacoes so nascem/mudam pelo servico e enquanto a versao esta em DRAFT.
  */
 public without sharing class ALT_CLS_BillingGuard {
@@ -24,8 +27,15 @@ public without sharing class ALT_CLS_BillingGuard {
     'AXF_BDO_PKL_DocumentKind__c',
     'AXF_BDO_TXT_SeriesKey__c',
     'AXF_BDO_TXT_CurrencyIsoCode__c',
+    'AXF_BDO_DAT_PeriodStart__c',
+    'AXF_BDO_DAT_PeriodEnd__c',
     'AXF_BDO_EXI_DocumentKey__c',
     'AXF_BDO_EXI_ClientRequestId__c'
+  };
+  /** Content the service computes; users only move state. */
+  private static final Set<String> VERSION_SERVICE_ONLY = new Set<String>{
+    'AXF_BDV_CUR_TotalAmount__c',
+    'AXF_BDV_TAL_Summary__c'
   };
   private static final Set<String> VERSION_FROZEN = new Set<String>{
     'AXF_BDV_LKP_BillingDocument__c',
@@ -55,6 +65,10 @@ public without sharing class ALT_CLS_BillingGuard {
         continue;
       }
       if (oldMap == null) {
+        if (!writing) {
+          row.addError('Use the billing draft service.');
+          continue;
+        }
         if (row.AXF_BDO_PKL_Lifecycle__c == null) {
           row.AXF_BDO_PKL_Lifecycle__c = 'OPEN';
         }
@@ -70,34 +84,69 @@ public without sharing class ALT_CLS_BillingGuard {
           break;
         }
       }
-      if (
-        row.AXF_BDO_PKL_Lifecycle__c != before.AXF_BDO_PKL_Lifecycle__c &&
-        (before.AXF_BDO_PKL_Lifecycle__c != 'OPEN' ||
-        !(row.AXF_BDO_PKL_Lifecycle__c == 'CLOSED' ||
-        row.AXF_BDO_PKL_Lifecycle__c == 'CANCELLED'))
-      ) {
-        row.addError('Invalid billing document lifecycle transition.');
+      if (row.AXF_BDO_PKL_Lifecycle__c != before.AXF_BDO_PKL_Lifecycle__c) {
+        if (!writing) {
+          row.addError(
+            'Billing document lifecycle changes through the billing service.'
+          );
+        } else if (
+          before.AXF_BDO_PKL_Lifecycle__c != 'OPEN' ||
+          !(row.AXF_BDO_PKL_Lifecycle__c == 'CLOSED' ||
+          row.AXF_BDO_PKL_Lifecycle__c == 'CANCELLED')
+        ) {
+          row.addError('Invalid billing document lifecycle transition.');
+        }
       }
     }
   }
 
+  // Trigger integrity must see the parent document regardless of the caller's CRUD permissions.
+  @SuppressWarnings('PMD.ApexCRUDViolation')
   public static void versions(
     List<AXF_OBJ_BillingDocumentVersion__c> rows,
     Map<Id, AXF_OBJ_BillingDocumentVersion__c> oldMap,
     Boolean deleting
   ) {
+    Map<Id, AXF_OBJ_BillingDocument__c> documents = new Map<Id, AXF_OBJ_BillingDocument__c>();
+    if (oldMap == null && !deleting) {
+      Set<Id> documentIds = new Set<Id>();
+      for (AXF_OBJ_BillingDocumentVersion__c row : rows) {
+        documentIds.add(row.AXF_BDV_LKP_BillingDocument__c);
+      }
+      documents = new Map<Id, AXF_OBJ_BillingDocument__c>(
+        [
+          SELECT Id, OwnerId, AXF_BDO_PKL_Lifecycle__c
+          FROM AXF_OBJ_BillingDocument__c
+          WHERE Id IN :documentIds
+        ]
+      );
+    }
     for (AXF_OBJ_BillingDocumentVersion__c row : rows) {
       if (deleting) {
         row.addError('Billing document versions cannot be deleted.');
         continue;
       }
       if (oldMap == null) {
+        if (!writing) {
+          row.addError('Use the billing draft service.');
+          continue;
+        }
         if (row.AXF_BDV_PKL_State__c == null) {
           row.AXF_BDV_PKL_State__c = 'DRAFT';
         }
         if (row.AXF_BDV_PKL_State__c != 'DRAFT') {
           row.addError('A billing document version starts as DRAFT.');
+          continue;
         }
+        AXF_OBJ_BillingDocument__c parent = documents.get(
+          row.AXF_BDV_LKP_BillingDocument__c
+        );
+        if (parent == null || parent.AXF_BDO_PKL_Lifecycle__c != 'OPEN') {
+          row.addError('Only OPEN billing documents accept new versions.');
+          continue;
+        }
+        // Owner-sync with the document (G2).
+        row.OwnerId = parent.OwnerId;
         continue;
       }
       AXF_OBJ_BillingDocumentVersion__c before = oldMap.get(row.Id);
@@ -105,6 +154,14 @@ public without sharing class ALT_CLS_BillingGuard {
         if (row.get(field) != before.get(field)) {
           row.addError('Billing document version identity is immutable.');
           break;
+        }
+      }
+      if (!writing) {
+        for (String field : VERSION_SERVICE_ONLY) {
+          if (row.get(field) != before.get(field)) {
+            row.addError('Billing content is computed by the billing service.');
+            break;
+          }
         }
       }
       if (before.AXF_BDV_PKL_State__c == 'ISSUED') {

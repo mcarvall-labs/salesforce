@@ -2,7 +2,7 @@
 <CustomObject xmlns="http://soap.sforce.com/2006/04/metadata">
     <deploymentStatus>Deployed</deploymentStatus>
     <description
-  >Conteudo/numeracao/emissao de um documento de cobranca (AXF-65, GBI-2). DRAFT -> REVIEWED -> ISSUING -> ISSUED + FAILED_BEFORE_ISSUE | CANCELLED | REPLACED; ISSUED imutavel; owner-sync com BillingDocument; sem Delete.</description>
+  >Conteudo/numeracao/emissao de um documento de cobranca (AXF-65, GBI-2). DRAFT -> REVIEWED -> ISSUING -> ISSUED + FAILED_BEFORE_ISSUE | CANCELLED | REPLACED; ISSUED imutavel; Owner copiado do BillingDocument na criacao pelo guard; sem Delete.</description>
     <enableActivities>false</enableActivities>
     <enableBulkApi>true</enableBulkApi>
     <enableFeeds>false</enableFeeds>

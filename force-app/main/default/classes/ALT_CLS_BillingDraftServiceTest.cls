@@ -447,7 +447,11 @@ private class ALT_CLS_BillingDraftServiceTest {
       Assert.isTrue(explained.contains('DUPLICATE_LINE'));
       Assert.areEqual(0, [SELECT COUNT() FROM AXF_OBJ_BillingDocument__c]);
       Assert.areEqual(0, [SELECT COUNT() FROM AXF_OBJ_BillingDocumentLine__c]);
-      Assert.areEqual(4, candidates.size(), 'So os lancamentos do contrato.');
+      Assert.areEqual(
+        3,
+        candidates.size(),
+        'So os lancamentos do contrato dentro do periodo.'
+      );
       Integer eligible = 0;
       for (ALT_CLS_BillingDraftService.Candidate candidate : candidates) {
         if (candidate.eligible) {
@@ -478,7 +482,8 @@ private class ALT_CLS_BillingDraftServiceTest {
       );
       hourly.AXF_CTV_NUM_Revision__c = 2;
       hourly.AXF_CTV_PKL_RemunerationModel__c = 'HOURLY';
-      hourly.AXF_CTV_PKL_Status__c = 'DRAFT';
+      hourly.AXF_CTV_PKL_Status__c = 'ACTIVE';
+      hourly.AXF_CTV_DAT_EffectiveFrom__c = Date.today();
       insert hourly;
       AXF_OBJ_FinancialTransaction__c hourlyFact = makeOccurrence(
         fixture,
@@ -491,12 +496,7 @@ private class ALT_CLS_BillingDraftServiceTest {
       ALT_CLS_ContractSnapshotService.SnapshotInputDTO snapshotInput = new ALT_CLS_ContractSnapshotService.SnapshotInputDTO();
       snapshotInput.financialTransactionId = hourlyFact.Id;
       snapshotInput.termVersionId = hourly.Id;
-      Boolean hourlySnapshot = true;
-      try {
-        new ALT_CLS_ContractSnapshotService().applyToOccurrence(snapshotInput);
-      } catch (Exception draftTerm) {
-        hourlySnapshot = false;
-      }
+      new ALT_CLS_ContractSnapshotService().applyToOccurrence(snapshotInput);
       Id workId = makeApprovedWork(fixture, 10);
       ALT_CLS_BillingDraftService.ComposeInput input = request(
         fixture,
@@ -523,21 +523,24 @@ private class ALT_CLS_BillingDraftServiceTest {
         0,
         [SELECT COUNT() FROM AXF_OBJ_BillingDocumentWorkAllocation__c]
       );
-      if (hourlySnapshot) {
-        hourlyFact = [
-          SELECT Id, AXF_FTX_LKP_ContractApplicationSnapshot__c
-          FROM AXF_OBJ_FinancialTransaction__c
-          WHERE Id = :hourlyFact.Id
-        ];
-        input = request(
-          fixture,
-          new List<AXF_OBJ_FinancialTransaction__c>{ fixed, hourlyFact },
-          '2026-11'
-        );
-        Assert.isTrue(
-          reasons(composeExpectingFailure(input)).contains('TYPE_MISMATCH')
-        );
-      }
+      hourlyFact = [
+        SELECT Id, AXF_FTX_LKP_ContractApplicationSnapshot__c
+        FROM AXF_OBJ_FinancialTransaction__c
+        WHERE Id = :hourlyFact.Id
+      ];
+      input = request(
+        fixture,
+        new List<AXF_OBJ_FinancialTransaction__c>{ fixed, hourlyFact },
+        '2026-11'
+      );
+      ALT_CLS_BillingDraftService.BillingDraftException mixed = composeExpectingFailure(
+        input
+      );
+      Assert.isTrue(
+        reasons(mixed).contains('TYPE_MISMATCH'),
+        'Tipos distintos na mesma versao.'
+      );
+      Assert.areEqual(0, [SELECT COUNT() FROM AXF_OBJ_BillingDocument__c]);
     }
   }
 
@@ -643,7 +646,7 @@ private class ALT_CLS_BillingDraftServiceTest {
           .isSuccess(),
         'Alteracao de versao otimista e permitida.'
       );
-      Assert.isTrue(
+      Assert.isFalse(
         Database.update(
             new AXF_OBJ_BillingDocument__c(
               Id = documentId,
@@ -652,19 +655,89 @@ private class ALT_CLS_BillingDraftServiceTest {
             false
           )
           .isSuccess(),
-        'OPEN -> CANCELLED e permitido.'
+        'Lifecycle so muda pelo servico.'
+      );
+      Assert.isFalse(
+        Database.update(
+            new AXF_OBJ_BillingDocumentVersion__c(
+              Id = view.versionId,
+              AXF_BDV_CUR_TotalAmount__c = 1
+            ),
+            false
+          )
+          .isSuccess(),
+        'Total e computado pelo servico.'
       );
       Assert.isFalse(
         Database.update(
             new AXF_OBJ_BillingDocument__c(
               Id = documentId,
-              AXF_BDO_PKL_Lifecycle__c = 'OPEN'
+              AXF_BDO_DAT_PeriodEnd__c = Date.today().addYears(1)
             ),
             false
           )
           .isSuccess(),
-        'CANCELLED e terminal.'
+        'Periodo do documento e imutavel.'
       );
+      Assert.isFalse(
+        Database.insert(
+            new AXF_OBJ_BillingDocument__c(
+              AXF_BDO_LKP_Account__c = fixture.holder.Id,
+              AXF_BDO_LKP_Contract__c = fixture.contractId,
+              AXF_BDO_LKP_Counterparty__c = fixture.counterpartyId,
+              AXF_BDO_PKL_DocumentKind__c = 'GENERIC_INVOICE',
+              AXF_BDO_TXT_SeriesKey__c = 'forged',
+              AXF_BDO_TXT_CurrencyIsoCode__c = 'BRL',
+              AXF_BDO_EXI_DocumentKey__c = 'forged-key',
+              AXF_BDO_EXI_ClientRequestId__c = 'forged-req',
+              AXF_BDO_NUM_Version__c = 1
+            ),
+            false
+          )
+          .isSuccess(),
+        'Documento so nasce pelo servico.'
+      );
+      ALT_CLS_BillingGuard.beginWrite();
+      try {
+        Assert.isTrue(
+          Database.update(
+              new AXF_OBJ_BillingDocument__c(
+                Id = documentId,
+                AXF_BDO_PKL_Lifecycle__c = 'CANCELLED'
+              ),
+              false
+            )
+            .isSuccess(),
+          'OPEN -> CANCELLED pelo servico e permitido.'
+        );
+        Assert.isFalse(
+          Database.update(
+              new AXF_OBJ_BillingDocument__c(
+                Id = documentId,
+                AXF_BDO_PKL_Lifecycle__c = 'OPEN'
+              ),
+              false
+            )
+            .isSuccess(),
+          'CANCELLED e terminal.'
+        );
+        Assert.isFalse(
+          Database.insert(
+              new AXF_OBJ_BillingDocumentVersion__c(
+                AXF_BDV_LKP_BillingDocument__c = documentId,
+                AXF_BDV_NUM_Revision__c = 2,
+                AXF_BDV_EXI_VersionKey__c = documentId + ':2',
+                AXF_BDV_TXT_CurrencyIsoCode__c = 'BRL',
+                AXF_BDV_NUM_Version__c = 1
+              ),
+              false
+            )
+            .isSuccess(),
+          'Documento cancelado nao aceita nova versao.'
+        );
+      } finally {
+        ALT_CLS_BillingGuard.endWrite();
+      }
       Test.stopTest();
     }
   }
@@ -790,8 +863,8 @@ private class ALT_CLS_BillingDraftServiceTest {
       Assert.areEqual(1, ((List<Object>) failure.get('issues')).size());
       Assert.isFalse(incompatible.contains('Titular G'), 'Sem PII no erro.');
       Assert.isFalse(
-        String.valueOf(AXF_CLS_CTRL_BillingComposer.getAuthorizedEntities()) ==
-        null
+        AXF_CLS_CTRL_BillingComposer.getAuthorizedEntities().isEmpty(),
+        'O titular autorizado e listado.'
       );
     }
   }
@@ -878,5 +951,281 @@ private class ALT_CLS_BillingDraftServiceTest {
         failure.getMessage()
       ))
       .get('code');
+  }
+
+  @IsTest
+  static void documentKeyStaleSnapshotDuplicateWorkAndInvalidQuantityAreExplained() {
+    System.runAs(actor()) {
+      Fixture fixture = makeFixture('Titular H', 'HOURLY');
+      AXF_OBJ_FinancialTransaction__c first = makeOccurrence(
+        fixture,
+        'h1',
+        100,
+        'BRL',
+        Date.today(),
+        true
+      );
+      AXF_OBJ_FinancialTransaction__c second = makeOccurrence(
+        fixture,
+        'h2',
+        200,
+        'BRL',
+        Date.today(),
+        true
+      );
+      Id workId = makeApprovedWork(fixture, 10);
+      ALT_CLS_BillingDraftService service = new ALT_CLS_BillingDraftService();
+      Id documentId = service.compose(
+        request(
+          fixture,
+          new List<AXF_OBJ_FinancialTransaction__c>{ first },
+          '2026-09'
+        )
+      );
+
+      Test.startTest();
+      // Same series, different request and lines: the document already exists.
+      ALT_CLS_BillingDraftService.ComposeInput sameSeries = request(
+        fixture,
+        new List<AXF_OBJ_FinancialTransaction__c>{ second },
+        '2026-09'
+      );
+      sameSeries.clientRequestId = 'req-other';
+      Assert.areEqual(
+        'DOCUMENT_EXISTS',
+        composeExpectingFailure(sameSeries).code
+      );
+      // Reordered payload under the same request is the same request.
+      ALT_CLS_BillingDraftService.ComposeInput reordered = request(
+        fixture,
+        new List<AXF_OBJ_FinancialTransaction__c>{ first },
+        '2026-09'
+      );
+      Assert.areEqual(documentId, service.compose(reordered));
+      // Stale or missing snapshot reference from the client.
+      ALT_CLS_BillingDraftService.ComposeInput stale = request(
+        fixture,
+        new List<AXF_OBJ_FinancialTransaction__c>{ second },
+        '2026-10'
+      );
+      stale.lines[0]
+        .snapshotId = first.AXF_FTX_LKP_ContractApplicationSnapshot__c;
+      Assert.isTrue(
+        reasons(composeExpectingFailure(stale)).contains('SNAPSHOT_STALE')
+      );
+      stale.lines[0].snapshotId = null;
+      Assert.isTrue(
+        reasons(composeExpectingFailure(stale)).contains('SNAPSHOT_STALE')
+      );
+      // Duplicate work record on one line and invalid quantity.
+      ALT_CLS_BillingDraftService.ComposeInput work = request(
+        fixture,
+        new List<AXF_OBJ_FinancialTransaction__c>{ second },
+        '2026-10'
+      );
+      ALT_CLS_BillingDraftService.WorkAllocationInput zero = new ALT_CLS_BillingDraftService.WorkAllocationInput();
+      zero.workRecordId = workId;
+      zero.quantity = 0;
+      ALT_CLS_BillingDraftService.WorkAllocationInput again = new ALT_CLS_BillingDraftService.WorkAllocationInput();
+      again.workRecordId = workId;
+      again.quantity = 1;
+      work.lines[0]
+        .workAllocations = new List<ALT_CLS_BillingDraftService.WorkAllocationInput>{
+        zero,
+        again
+      };
+      ALT_CLS_BillingDraftService.BillingDraftException failure = composeExpectingFailure(
+        work
+      );
+      Test.stopTest();
+      Set<String> codes = reasons(failure);
+      Assert.isTrue(
+        codes.contains('WORK_INVALID_QUANTITY'),
+        String.valueOf(codes)
+      );
+      Assert.isTrue(codes.contains('DUPLICATE_LINE'), String.valueOf(codes));
+      for (ALT_CLS_BillingDraftService.LineIssue issue : failure.issues) {
+        Assert.areEqual(
+          workId,
+          issue.workRecordId,
+          'Alocacao identificada na explicacao.'
+        );
+      }
+      Assert.areEqual(1, [SELECT COUNT() FROM AXF_OBJ_BillingDocument__c]);
+      Assert.areEqual(
+        0,
+        [SELECT COUNT() FROM AXF_OBJ_BillingDocumentWorkAllocation__c]
+      );
+    }
+  }
+
+  @IsTest
+  static void invalidAmountForeignWorkAndUnbillableContractAreRejected() {
+    System.runAs(actor()) {
+      Fixture fixture = makeFixture('Titular I', 'FIXED');
+      Fixture other = makeFixture('Titular J', 'FIXED');
+      AXF_OBJ_FinancialTransaction__c zero = makeOccurrence(
+        fixture,
+        'i0',
+        0,
+        'BRL',
+        Date.today(),
+        true
+      );
+      AXF_OBJ_FinancialTransaction__c good = makeOccurrence(
+        fixture,
+        'i1',
+        300,
+        'BRL',
+        Date.today(),
+        true
+      );
+      Id foreignWork = makeApprovedWork(other, 5);
+      ALT_CLS_BillingDraftService service = new ALT_CLS_BillingDraftService();
+
+      Test.startTest();
+      ALT_CLS_BillingDraftService.ComposeInput input = request(
+        fixture,
+        new List<AXF_OBJ_FinancialTransaction__c>{ zero, good },
+        '2026-09'
+      );
+      ALT_CLS_BillingDraftService.WorkAllocationInput allocation = new ALT_CLS_BillingDraftService.WorkAllocationInput();
+      allocation.workRecordId = foreignWork;
+      allocation.quantity = 1;
+      input.lines[1]
+        .workAllocations = new List<ALT_CLS_BillingDraftService.WorkAllocationInput>{
+        allocation
+      };
+      Set<String> codes = reasons(composeExpectingFailure(input));
+      Assert.isTrue(codes.contains('INVALID_AMOUNT'), String.valueOf(codes));
+      Assert.isTrue(
+        codes.contains('WORK_CONTRACT_MISMATCH'),
+        String.valueOf(codes)
+      );
+      Assert.isFalse(
+        codes.contains('WORK_NOT_APPROVED'),
+        'Contrato divergente e explicado como tal.'
+      );
+      // One-sided period and inverted period on listing.
+      try {
+        service.listCandidates(fixture.contractId, Date.today(), null, 'BRL');
+        Assert.fail('Periodo parcial deve ser rejeitado.');
+      } catch (ALT_CLS_BillingDraftService.BillingDraftException expected) {
+        Assert.areEqual('INVALID_INPUT', expected.code);
+      }
+      // Period filter keeps only entries inside the window.
+      Assert.areEqual(
+        0,
+        service.listCandidates(
+            fixture.contractId,
+            Date.today().addYears(-2),
+            Date.today().addYears(-2).addDays(1),
+            'brl'
+          )
+          .size(),
+        'Nenhum lancamento no periodo.'
+      );
+      // Cancelled contract is not billable.
+      update new AXF_OBJ_Contract__c(
+        Id = other.contractId,
+        AXF_CTR_PKL_Lifecycle__c = 'CANCELLED'
+      );
+      try {
+        service.listCandidates(other.contractId, null, null, 'BRL');
+        Assert.fail('Contrato cancelado nao fatura.');
+      } catch (ALT_CLS_BillingDraftService.BillingDraftException expected) {
+        Assert.areEqual('CONTRACT_NOT_BILLABLE', expected.code);
+      }
+      Assert.isTrue(
+        AXF_CLS_CTRL_BillingComposer.getContracts(other.holder.Id).isEmpty(),
+        'Contrato cancelado nao e oferecido.'
+      );
+      Test.stopTest();
+      Assert.areEqual(0, [SELECT COUNT() FROM AXF_OBJ_BillingDocument__c]);
+    }
+  }
+
+  @IsTest
+  static void issuedVersionContentIsImmutableAndCancelledDocumentReleasesEntries() {
+    System.runAs(actor()) {
+      Fixture fixture = makeFixture('Titular K', 'FIXED');
+      AXF_OBJ_FinancialTransaction__c fact = makeOccurrence(
+        fixture,
+        'k1',
+        100,
+        'BRL',
+        Date.today(),
+        true
+      );
+      ALT_CLS_BillingDraftService service = new ALT_CLS_BillingDraftService();
+      Id documentId = service.compose(
+        request(
+          fixture,
+          new List<AXF_OBJ_FinancialTransaction__c>{ fact },
+          '2026-09'
+        )
+      );
+      ALT_CLS_BillingDraftService.DraftView view = service.read(documentId);
+
+      Test.startTest();
+      for (String state : new List<String>{ 'REVIEWED', 'ISSUING', 'ISSUED' }) {
+        Assert.isTrue(
+          Database.update(
+              new AXF_OBJ_BillingDocumentVersion__c(
+                Id = view.versionId,
+                AXF_BDV_PKL_State__c = state
+              ),
+              false
+            )
+            .isSuccess(),
+          'Transicao para ' + state
+        );
+      }
+      Database.SaveResult content = Database.update(
+        new AXF_OBJ_BillingDocumentVersion__c(
+          Id = view.versionId,
+          AXF_BDV_NUM_Version__c = 9
+        ),
+        false
+      );
+      Assert.isFalse(content.isSuccess(), 'ISSUED e imutavel.');
+      Assert.isTrue(
+        content.getErrors()[0].getMessage().contains('immutable'),
+        content.getErrors()[0].getMessage()
+      );
+      Assert.isTrue(
+        Database.update(
+            new AXF_OBJ_BillingDocumentVersion__c(
+              Id = view.versionId,
+              AXF_BDV_PKL_State__c = 'CANCELLED'
+            ),
+            false
+          )
+          .isSuccess(),
+        'ISSUED -> CANCELLED e permitido.'
+      );
+      // Entries of a cancelled document are billable again.
+      ALT_CLS_BillingGuard.beginWrite();
+      try {
+        update new AXF_OBJ_BillingDocument__c(
+          Id = documentId,
+          AXF_BDO_PKL_Lifecycle__c = 'CANCELLED'
+        );
+      } finally {
+        ALT_CLS_BillingGuard.endWrite();
+      }
+      List<ALT_CLS_BillingDraftService.Candidate> candidates = service.listCandidates(
+        fixture.contractId,
+        null,
+        null,
+        'BRL'
+      );
+      Test.stopTest();
+      Assert.areEqual(1, candidates.size());
+      Assert.isTrue(
+        candidates[0].eligible,
+        String.valueOf(candidates[0].reasons)
+      );
+    }
   }
 }

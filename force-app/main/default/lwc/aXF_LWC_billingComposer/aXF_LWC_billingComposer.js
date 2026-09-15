@@ -19,7 +19,8 @@ const REASON_LABELS = {
   ALREADY_BILLED: "reasonAlreadyBilled",
   NOT_PLANNED: "reasonNotPlanned",
   WORK_NOT_APPROVED: "reasonWorkNotApproved",
-  WORK_CONTRACT_MISMATCH: "reasonWorkNotApproved",
+  WORK_CONTRACT_MISMATCH: "reasonWorkContractMismatch",
+  INVALID_AMOUNT: "reasonInvalidAmount",
   WORK_OVER_ALLOCATED: "reasonWorkOverAllocated",
   WORK_INVALID_QUANTITY: "reasonWorkInvalidQuantity",
   DUPLICATE_LINE: "reasonDuplicateLine"
@@ -30,8 +31,26 @@ const CODE_LABELS = {
   INCOMPATIBLE_LINES: "codeIncompatible",
   INVALID_INPUT: "codeInvalidInput",
   NOT_ACCESSIBLE: "codeNotAccessible",
-  TOTAL_NOT_CONSERVED: "codeTotalNotConserved"
+  TOTAL_NOT_CONSERVED: "codeTotalNotConserved",
+  REJECTED: "codeRejected",
+  UNEXPECTED: "error",
+  ACCOUNT_MISMATCH: "reasonAccountMismatch",
+  COUNTERPARTY_MISMATCH: "reasonCounterpartyMismatch",
+  CONTRACT_NOT_BILLABLE: "codeContractNotBillable"
 };
+const STATE_LABELS = {
+  DRAFT: "stateDraft",
+  REVIEWED: "stateReviewed",
+  ISSUING: "stateIssuing",
+  ISSUED: "stateIssued",
+  CANCELLED: "stateCancelled",
+  OPEN: "lifecycleOpen",
+  CLOSED: "lifecycleClosed"
+};
+
+export function stateLabel(state) {
+  return labels[STATE_LABELS[state]] || state;
+}
 
 export function reasonLabel(reason) {
   return labels[REASON_LABELS[reason]] || reason;
@@ -57,6 +76,19 @@ function requestKey() {
   });
 }
 
+/**
+ * Idempotency key = session key + content fingerprint: replaying the same payload reuses the
+ * key (same document), while an edited payload gets a new key instead of a CONFLICT.
+ */
+export function contentKey(sessionKey, payload) {
+  const text = JSON.stringify(payload);
+  let hash = 5381;
+  for (let i = 0; i < text.length; i++) {
+    hash = ((hash << 5) + hash + text.charCodeAt(i)) | 0;
+  }
+  return `${sessionKey}-${(hash >>> 0).toString(16)}`;
+}
+
 export default class BillingComposer extends LightningElement {
   labels = labels;
   entities = [];
@@ -68,10 +100,11 @@ export default class BillingComposer extends LightningElement {
   draft;
   loaded = false;
   busy = false;
+  composing = false;
   error;
   issues = [];
   success;
-  clientRequestId = requestKey();
+  sessionKey = requestKey();
   form = {
     accountId: "",
     contractId: "",
@@ -88,6 +121,9 @@ export default class BillingComposer extends LightningElement {
   wiredEntities({ data, error }) {
     if (data) {
       this.entities = data;
+      if (data.length === 0) {
+        this.error = labels.noEntities;
+      }
     } else if (error) {
       this.error = parseFailure(error).message;
     }
@@ -125,15 +161,21 @@ export default class BillingComposer extends LightningElement {
   get contractDisabled() {
     return !this.form.accountId || this.busy;
   }
+  get periodValid() {
+    const f = this.form;
+    return !f.periodStart || !f.periodEnd || f.periodEnd >= f.periodStart;
+  }
   get frameComplete() {
     const f = this.form;
     return Boolean(
       f.accountId &&
       f.contractId &&
+      f.counterpartyId &&
       f.seriesKey &&
       f.periodStart &&
       f.periodEnd &&
-      f.currencyIso
+      f.currencyIso &&
+      this.periodValid
     );
   }
   get loadDisabled() {
@@ -161,12 +203,19 @@ export default class BillingComposer extends LightningElement {
         )
         .map((issue) => ({
           key: `${issue.reason}-${issue.workRecordId || ""}`,
-          label: reasonLabel(issue.reason)
+          label: issue.detail
+            ? `${reasonLabel(issue.reason)} (${labels.remainingBalance}: ${issue.detail})`
+            : reasonLabel(issue.reason)
         }));
+      const typeLocked =
+        !selected &&
+        this.selectedRows.length > 0 &&
+        this.selectedRows[0].lineType !== candidate.lineType;
       return {
         ...candidate,
         selected,
-        disabled: !candidate.eligible || this.busy,
+        allocationKey: `${candidate.financialTransactionId}-alloc`,
+        disabled: !candidate.eligible || this.busy || typeLocked,
         reasons: reasons.concat(issueReasons),
         hasReasons: reasons.length + issueReasons.length > 0,
         allocations: (
@@ -198,6 +247,37 @@ export default class BillingComposer extends LightningElement {
   }
   get composeDisabled() {
     return this.busy || this.selectedCount === 0 || !this.frameComplete;
+  }
+  get busyLabel() {
+    return this.composing ? labels.composing : labels.loading;
+  }
+  get draftStateText() {
+    if (!this.draft) {
+      return "";
+    }
+    return `${stateLabel(this.draft.state)} · ${stateLabel(this.draft.presentationState)}`;
+  }
+  /** Client-side allocation validation; returns the first problem label or undefined. */
+  allocationProblem() {
+    for (const row of this.selectedRows) {
+      const list = this.allocations[row.financialTransactionId] || [];
+      const seen = new Set();
+      for (const allocation of list) {
+        if (!allocation.workRecordId) {
+          continue;
+        }
+        if (seen.has(allocation.workRecordId)) {
+          return labels.duplicateWork;
+        }
+        seen.add(allocation.workRecordId);
+        const quantity = Number(allocation.quantity);
+        if (!allocation.quantity || !(quantity > 0)) {
+          return labels.quantityRequired;
+        }
+      }
+    }
+    const types = new Set(this.selectedRows.map((row) => row.lineType));
+    return types.size > 1 ? labels.typeMixed : undefined;
   }
   get holderName() {
     const entity = this.entities.find(
@@ -254,11 +334,17 @@ export default class BillingComposer extends LightningElement {
       currencyIso: contract?.currencyIso || ""
     };
     this.resetCandidates();
+    if (contract && (!contract.counterpartyId || !contract.currencyIso)) {
+      this.error = labels.contractIncomplete;
+    }
   }
   handleField(event) {
     const { name, value } = event.target;
     this.form = { ...this.form, [name]: value };
     this.resetCandidates();
+    if (!this.periodValid) {
+      this.error = labels.periodInvalid;
+    }
   }
   resetCandidates() {
     this.candidates = [];
@@ -335,7 +421,7 @@ export default class BillingComposer extends LightningElement {
     };
     this.allocations = { ...this.allocations, [id]: list };
   }
-  buildRequest() {
+  buildPayload() {
     return {
       accountId: this.form.accountId,
       contractId: this.form.contractId,
@@ -345,7 +431,6 @@ export default class BillingComposer extends LightningElement {
       periodStart: this.form.periodStart,
       periodEnd: this.form.periodEnd,
       currencyIso: this.form.currencyIso,
-      clientRequestId: this.clientRequestId,
       lines: this.selectedRows.map((row) => ({
         financialTransactionId: row.financialTransactionId,
         snapshotId: row.snapshotId,
@@ -358,11 +443,24 @@ export default class BillingComposer extends LightningElement {
       }))
     };
   }
+  buildRequest() {
+    const payload = this.buildPayload();
+    return {
+      ...payload,
+      clientRequestId: contentKey(this.sessionKey, payload)
+    };
+  }
   async composeDraft() {
     if (this.selectedCount === 0) {
       this.error = labels.selectionRequired;
       return;
     }
+    const problem = this.allocationProblem();
+    if (problem) {
+      this.error = problem;
+      return;
+    }
+    this.composing = true;
     this.busy = true;
     this.error = undefined;
     this.success = undefined;
@@ -378,11 +476,12 @@ export default class BillingComposer extends LightningElement {
       this.issues = parsed.issues;
     } finally {
       this.busy = false;
+      this.composing = false;
     }
   }
   startNew() {
     this.draft = undefined;
-    this.clientRequestId = requestKey();
+    this.sessionKey = requestKey();
     this.resetCandidates();
   }
 }

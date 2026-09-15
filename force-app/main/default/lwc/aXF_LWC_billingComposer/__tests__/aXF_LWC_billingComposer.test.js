@@ -1,5 +1,6 @@
 import { createElement } from "lwc";
 import BillingComposer, {
+  contentKey,
   parseFailure,
   reasonLabel
 } from "c/aXF_LWC_billingComposer";
@@ -250,8 +251,10 @@ describe("c-aXF_LWC_billingComposer", () => {
     const quantity = element.shadowRoot.querySelector(
       'lightning-input[data-field="quantity"]'
     );
-    quantity.value = "10";
-    quantity.dispatchEvent(new CustomEvent("change"));
+    // Production path: base components emit the value in event.detail.
+    quantity.dispatchEvent(
+      new CustomEvent("change", { detail: { value: "10" } })
+    );
     await flush();
     element.shadowRoot.querySelector('[data-id="compose"]').click();
     await flush();
@@ -265,7 +268,7 @@ describe("c-aXF_LWC_billingComposer", () => {
         workAllocations: [{ workRecordId: "wr1", quantity: 10 }]
       }
     ]);
-    expect(request.clientRequestId).toMatch(/^[0-9a-f-]{36}$/);
+    expect(request.clientRequestId).toMatch(/^[0-9a-f-]{36}-[0-9a-f]{1,8}$/);
     const draftTitle = element.shadowRoot.querySelector(
       '[data-id="draft-title"]'
     );
@@ -314,6 +317,67 @@ describe("c-aXF_LWC_billingComposer", () => {
     );
     expect(parseFailure({ body: { message: "CONFLICT" } }).message).not.toBe(
       parseFailure({}).message
+    );
+  });
+  it("derives the idempotency key from the payload and validates allocations before composing", async () => {
+    compose.mockResolvedValue({ documentId: "bdo1", lines: [] });
+    const element = build();
+    await flush();
+    await fillFrame(element);
+    element.shadowRoot.querySelector('[data-id="load"]').click();
+    await flush();
+    const checkbox = element.shadowRoot.querySelector(
+      'lightning-input[data-id="ftx1"]'
+    );
+    checkbox.checked = true;
+    checkbox.dispatchEvent(new CustomEvent("change"));
+    await flush();
+    const addButton = [
+      ...element.shadowRoot.querySelectorAll("lightning-button")
+    ].find((button) => button.dataset.id === "ftx1" && !button.dataset.index);
+    addButton.click();
+    await flush();
+    // Untouched allocation row: rejected client-side, no round trip.
+    element.shadowRoot.querySelector('[data-id="compose"]').click();
+    await flush();
+    expect(compose).not.toHaveBeenCalled();
+    expect(element.shadowRoot.textContent).toContain(
+      "c.AXF_BillingComposer_quantityRequired"
+    );
+    const quantity = element.shadowRoot.querySelector(
+      'lightning-input[data-field="quantity"]'
+    );
+    quantity.dispatchEvent(
+      new CustomEvent("change", { detail: { value: "5" } })
+    );
+    await flush();
+    element.shadowRoot.querySelector('[data-id="compose"]').click();
+    await flush();
+    const first = JSON.parse(compose.mock.calls[0][0].request);
+    expect(first.lines[0].workAllocations[0].quantity).toBe(5);
+    expect(first.clientRequestId).toMatch(/^[0-9a-f-]{36}-[0-9a-f]{1,8}$/);
+    const payload = { a: 1, lines: [{ q: 5 }] };
+    expect(contentKey("s", payload)).toBe(contentKey("s", payload));
+    expect(contentKey("s", payload)).not.toBe(
+      contentKey("s", { a: 1, lines: [{ q: 6 }] })
+    );
+  });
+
+  it("rejects an inverted period client-side", async () => {
+    const element = build();
+    await flush();
+    await fillFrame(element);
+    const end = [
+      ...element.shadowRoot.querySelectorAll("lightning-input")
+    ].find((input) => input.name === "periodEnd");
+    end.value = "2026-08-01";
+    end.dispatchEvent(new CustomEvent("change"));
+    await flush();
+    expect(element.shadowRoot.querySelector('[data-id="load"]').disabled).toBe(
+      true
+    );
+    expect(element.shadowRoot.textContent).toContain(
+      "c.AXF_BillingComposer_periodInvalid"
     );
   });
 });

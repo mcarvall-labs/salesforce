@@ -30,6 +30,19 @@ public with sharing class ALT_CLS_BillingDraftService {
     'GENERIC_RECEIPT'
   };
   public static final String WORK_APPROVED = 'APPROVED';
+  public static final Set<String> LINE_TYPES = new Set<String>{
+    'MONTHLY',
+    'HOURLY',
+    'FIXED'
+  };
+  public static final Set<String> NON_BILLABLE_CONTRACTS = new Set<String>{
+    'CANCELLED',
+    'REPLACED'
+  };
+  /** Upper bound of lines per composition (keeps the fixed summary within its field size). */
+  public static final Integer MAX_LINES = 200;
+  /** Candidate listing window; the period filter keeps it far from being reached. */
+  public static final Integer MAX_CANDIDATES = 500;
 
   // Codigos de incompatibilidade (explicados na UI por rotulo traduzido).
   public static final String R_NOT_ACCESSIBLE = 'NOT_ACCESSIBLE';
@@ -48,6 +61,8 @@ public with sharing class ALT_CLS_BillingDraftService {
   public static final String R_WORK_OVER_ALLOCATED = 'WORK_OVER_ALLOCATED';
   public static final String R_WORK_INVALID_QUANTITY = 'WORK_INVALID_QUANTITY';
   public static final String R_DUPLICATE_LINE = 'DUPLICATE_LINE';
+  public static final String R_INVALID_AMOUNT = 'INVALID_AMOUNT';
+  public static final String R_CONTRACT_NOT_BILLABLE = 'CONTRACT_NOT_BILLABLE';
 
   public class BillingDraftException extends Exception {
     public String code;
@@ -262,7 +277,25 @@ public with sharing class ALT_CLS_BillingDraftService {
     Date periodEnd,
     String currencyIso
   ) {
+    if ((periodStart == null) != (periodEnd == null)) {
+      throw failure('INVALID_INPUT', new List<LineIssue>());
+    }
+    if (periodStart != null && periodEnd < periodStart) {
+      throw failure('INVALID_INPUT', new List<LineIssue>());
+    }
     ContractFrame frame = loadFrame(contractId);
+    String docCurrency = String.isBlank(currencyIso)
+      ? frame.contract.AXF_CTR_TXT_CurrencyIsoCode__c
+      : currencyIso;
+    if (String.isBlank(docCurrency)) {
+      throw failure('INVALID_INPUT', new List<LineIssue>());
+    }
+    docCurrency = docCurrency.trim().toUpperCase();
+    Date lower = periodStart == null
+      ? Date.newInstance(1900, 1, 1)
+      : periodStart;
+    Date upper = periodEnd == null ? Date.newInstance(2999, 12, 31) : periodEnd;
+    // Service date = DueDate, falling back to PurchaseDate; the period filter mirrors that.
     List<AXF_OBJ_FinancialTransaction__c> facts = [
       SELECT
         Id,
@@ -273,6 +306,7 @@ public with sharing class ALT_CLS_BillingDraftService {
         AXF_FTX_DAT_PurchaseDate__c,
         AXF_FTX_PKL_Direction__c,
         AXF_FTX_PKL_PlanKind__c,
+        AXF_FTX_PKL_Status__c,
         AXF_FTX_LKP_Account__c,
         AXF_FTX_LKP_Contract__c,
         AXF_FTX_LKP_ContractApplicationSnapshot__c,
@@ -281,15 +315,21 @@ public with sharing class ALT_CLS_BillingDraftService {
         AXF_FTX_LKP_ContractApplicationSnapshot__r.AXF_CAS_PKL_RemunerationModel__c,
         AXF_FTX_LKP_ContractApplicationSnapshot__r.AXF_CAS_NUM_HoursQuantity__c
       FROM AXF_OBJ_FinancialTransaction__c
-      WHERE AXF_FTX_LKP_Contract__c = :contractId
+      WHERE
+        AXF_FTX_LKP_Contract__c = :contractId
+        AND ((AXF_FTX_DAT_DueDate__c >= :lower
+        AND AXF_FTX_DAT_DueDate__c <= :upper)
+        OR (AXF_FTX_DAT_DueDate__c = NULL
+        AND AXF_FTX_DAT_PurchaseDate__c >= :lower
+        AND AXF_FTX_DAT_PurchaseDate__c <= :upper))
       WITH USER_MODE
       ORDER BY AXF_FTX_DAT_DueDate__c, AXF_FTX_DAT_PurchaseDate__c, Name
-      LIMIT 500
+      LIMIT :MAX_CANDIDATES
     ];
-    Set<Id> billed = alreadyBilled(new Map<Id, SObject>(facts).keySet());
-    String docCurrency = String.isBlank(currencyIso)
-      ? frame.contract.AXF_CTR_TXT_CurrencyIsoCode__c
-      : currencyIso;
+    Set<Id> billed = ALT_CLS_BillingIntegrity.billedFacts(
+      new Map<Id, SObject>(facts).keySet(),
+      EFFECTIVE_STATES
+    );
     List<Candidate> result = new List<Candidate>();
     for (AXF_OBJ_FinancialTransaction__c fact : facts) {
       Candidate candidate = new Candidate();
@@ -337,10 +377,11 @@ public with sharing class ALT_CLS_BillingDraftService {
         AND AXF_WR_PKL_Status__c = :WORK_APPROVED
       WITH USER_MODE
       ORDER BY AXF_WR_DAT_StartDate__c, Name
-      LIMIT 500
+      LIMIT :MAX_CANDIDATES
     ];
-    Map<Id, Decimal> allocated = allocatedByWorkRecord(
-      new Map<Id, SObject>(records).keySet()
+    Map<Id, Decimal> allocated = ALT_CLS_BillingIntegrity.allocatedByWorkRecord(
+      new Map<Id, SObject>(records).keySet(),
+      EFFECTIVE_STATES
     );
     List<WorkRecordView> result = new List<WorkRecordView>();
     for (AXF_OBJ_WorkRecord__c record : records) {
@@ -424,7 +465,10 @@ public with sharing class ALT_CLS_BillingDraftService {
 
       Decimal total = 0;
       for (LineFrame line : frames) {
-        total += line.fact.AXF_FTX_NUM_Magnitude__c;
+        total += line.fact.AXF_FTX_NUM_Magnitude__c.setScale(
+          2,
+          System.RoundingMode.HALF_UP
+        );
       }
       AXF_OBJ_BillingDocumentVersion__c version = new AXF_OBJ_BillingDocumentVersion__c(
         AXF_BDV_LKP_BillingDocument__c = document.Id,
@@ -458,9 +502,12 @@ public with sharing class ALT_CLS_BillingDraftService {
             AXF_BDL_EXI_LineKey__c = version.Id + ':' + sequence,
             AXF_BDL_PKL_LineType__c = line.snapshot.AXF_CAS_PKL_RemunerationModel__c,
             AXF_BDL_TXT_Description__c = lineDescription(line),
-            AXF_BDL_NUM_Quantity__c = line.snapshot.AXF_CAS_NUM_HoursQuantity__c,
+            AXF_BDL_NUM_Quantity__c = lineQuantity(line),
             AXF_BDL_CUR_UnitPrice__c = unitPrice(line),
-            AXF_BDL_CUR_Amount__c = line.fact.AXF_FTX_NUM_Magnitude__c,
+            AXF_BDL_CUR_Amount__c = line.fact.AXF_FTX_NUM_Magnitude__c.setScale(
+              2,
+              System.RoundingMode.HALF_UP
+            ),
             AXF_BDL_TXT_CurrencyIsoCode__c = line.fact.AXF_FTX_TXT_CurrencyIsoCode__c,
             AXF_BDL_DAT_ServiceDate__c = serviceDate(line.fact)
           )
@@ -496,7 +543,11 @@ public with sharing class ALT_CLS_BillingDraftService {
         Database.insert(allocations, AccessLevel.USER_MODE);
       }
       assertConservation(version.Id, total);
+      grantComposerAccess(document.Id, version.Id, frame.holder.OwnerId);
       return document.Id;
+    } catch (DmlException failure) {
+      Database.rollback(point);
+      throw translateDml(failure);
     } catch (Exception failure) {
       Database.rollback(point);
       throw failure;
@@ -666,7 +717,13 @@ public with sharing class ALT_CLS_BillingDraftService {
     if (!DOCUMENT_KINDS.contains(input.documentKind)) {
       throw failure('INVALID_INPUT', new List<LineIssue>());
     }
-    input.currencyIso = input.currencyIso.toUpperCase();
+    if (input.lines.size() > MAX_LINES) {
+      throw failure('INVALID_INPUT', new List<LineIssue>());
+    }
+    input.currencyIso = input.currencyIso.trim().toUpperCase();
+    if (!Pattern.matches('[A-Z]{3}', input.currencyIso)) {
+      throw failure('INVALID_INPUT', new List<LineIssue>());
+    }
     input.seriesKey = input.seriesKey.trim();
   }
 
@@ -681,7 +738,8 @@ public with sharing class ALT_CLS_BillingDraftService {
         AXF_CTR_TXT_Title__c,
         AXF_CTR_LKP_Account__c,
         AXF_CTR_LKP_Counterparty__c,
-        AXF_CTR_TXT_CurrencyIsoCode__c
+        AXF_CTR_TXT_CurrencyIsoCode__c,
+        AXF_CTR_PKL_Lifecycle__c
       FROM AXF_OBJ_Contract__c
       WHERE Id = :contractId
       WITH USER_MODE
@@ -689,6 +747,14 @@ public with sharing class ALT_CLS_BillingDraftService {
     ];
     if (contracts.isEmpty()) {
       throw failure(R_NOT_ACCESSIBLE, new List<LineIssue>());
+    }
+    if (
+      NON_BILLABLE_CONTRACTS.contains(contracts[0].AXF_CTR_PKL_Lifecycle__c)
+    ) {
+      throw failure(R_CONTRACT_NOT_BILLABLE, new List<LineIssue>());
+    }
+    if (contracts[0].AXF_CTR_LKP_Counterparty__c == null) {
+      throw failure(R_COUNTERPARTY_MISMATCH, new List<LineIssue>());
     }
     List<Account> holders = [
       SELECT Id, Name, OwnerId
@@ -737,6 +803,7 @@ public with sharing class ALT_CLS_BillingDraftService {
           AXF_FTX_DAT_PurchaseDate__c,
           AXF_FTX_PKL_Direction__c,
           AXF_FTX_PKL_PlanKind__c,
+          AXF_FTX_PKL_Status__c,
           AXF_FTX_LKP_Account__c,
           AXF_FTX_LKP_Contract__c,
           AXF_FTX_LKP_ContractApplicationSnapshot__c,
@@ -750,9 +817,16 @@ public with sharing class ALT_CLS_BillingDraftService {
         WITH USER_MODE
       ]
     );
-    Set<Id> billed = alreadyBilled(factIds);
+    lockSources(facts.keySet(), workIds);
+    Set<Id> billed = ALT_CLS_BillingIntegrity.billedFacts(
+      factIds,
+      EFFECTIVE_STATES
+    );
     Map<Id, AXF_OBJ_WorkRecord__c> work = approvedWork(input, frame);
-    Map<Id, Decimal> allocated = allocatedByWorkRecord(workIds);
+    Map<Id, Decimal> allocated = ALT_CLS_BillingIntegrity.allocatedByWorkRecord(
+      workIds,
+      EFFECTIVE_STATES
+    );
     Map<Id, Decimal> requested = new Map<Id, Decimal>();
     Set<Id> seen = new Set<Id>();
     String lineType;
@@ -788,15 +862,18 @@ public with sharing class ALT_CLS_BillingDraftService {
       ) {
         item.issues.add(issue(item.fact.Id, null, reason, null));
       }
+      // The client must name the snapshot it reviewed; a missing or different one is stale.
       if (
-        line.snapshotId != null &&
+        line.snapshotId == null ||
         line.snapshotId != item.fact.AXF_FTX_LKP_ContractApplicationSnapshot__c
       ) {
         item.issues.add(issue(item.fact.Id, null, R_SNAPSHOT_STALE, null));
       }
       item.snapshot = item.fact.AXF_FTX_LKP_ContractApplicationSnapshot__r;
       String model = item.snapshot?.AXF_CAS_PKL_RemunerationModel__c;
-      if (model != null) {
+      if (item.snapshot != null && !LINE_TYPES.contains(model)) {
+        item.issues.add(issue(item.fact.Id, null, R_TYPE_MISMATCH, model));
+      } else if (model != null) {
         if (lineType == null) {
           lineType = model;
         } else if (lineType != model) {
@@ -806,15 +883,43 @@ public with sharing class ALT_CLS_BillingDraftService {
       if (line.workAllocations == null) {
         continue;
       }
+      Set<Id> perLine = new Set<Id>();
       for (WorkAllocationInput allocation : line.workAllocations) {
+        if (!perLine.add(allocation.workRecordId)) {
+          item.issues.add(
+            issue(item.fact.Id, allocation.workRecordId, R_DUPLICATE_LINE, null)
+          );
+          continue;
+        }
         AXF_OBJ_WorkRecord__c record = work.get(allocation.workRecordId);
-        if (record == null) {
+        if (record == null || record.AXF_WR_PKL_Status__c != WORK_APPROVED) {
           item.issues.add(
             issue(
               item.fact.Id,
               allocation.workRecordId,
               R_WORK_NOT_APPROVED,
               null
+            )
+          );
+          continue;
+        }
+        if (record.AXF_WR_LKP_Contract__c != frame.contract.Id) {
+          item.issues.add(
+            issue(item.fact.Id, record.Id, R_WORK_CONTRACT_MISMATCH, null)
+          );
+          continue;
+        }
+        if (
+          record.AXF_WR_TXT_CurrencyIsoCode__c != null &&
+          record.AXF_WR_TXT_CurrencyIsoCode__c.toUpperCase() !=
+          input.currencyIso
+        ) {
+          item.issues.add(
+            issue(
+              item.fact.Id,
+              record.Id,
+              R_CURRENCY_BLOCKED_FX,
+              record.AXF_WR_TXT_CurrencyIsoCode__c
             )
           );
           continue;
@@ -890,8 +995,16 @@ public with sharing class ALT_CLS_BillingDraftService {
       reasons.add(R_PERIOD_MISMATCH);
     }
     if (
-      fact.AXF_FTX_PKL_PlanKind__c != null &&
-      fact.AXF_FTX_PKL_PlanKind__c != 'PLANNED'
+      fact.AXF_FTX_NUM_Magnitude__c == null ||
+      fact.AXF_FTX_NUM_Magnitude__c <= 0
+    ) {
+      reasons.add(R_INVALID_AMOUNT);
+    }
+    if (
+      (fact.AXF_FTX_PKL_PlanKind__c != null &&
+      fact.AXF_FTX_PKL_PlanKind__c != 'PLANNED') ||
+      (fact.AXF_FTX_PKL_Status__c != null &&
+      fact.AXF_FTX_PKL_Status__c != 'PLANNED')
     ) {
       reasons.add(R_NOT_PLANNED);
     }
@@ -909,44 +1022,24 @@ public with sharing class ALT_CLS_BillingDraftService {
     return reasons;
   }
 
-  private Set<Id> alreadyBilled(Set<Id> factIds) {
-    Set<Id> result = new Set<Id>();
-    if (factIds.isEmpty()) {
-      return result;
+  /** Row locks on the sources being billed so concurrent compositions serialize (lock order: facts, then work). */
+  private static void lockSources(Set<Id> factIds, Set<Id> workIds) {
+    if (!factIds.isEmpty()) {
+      List<AXF_OBJ_FinancialTransaction__c> locked = [
+        SELECT Id
+        FROM AXF_OBJ_FinancialTransaction__c
+        WHERE Id IN :factIds
+        FOR UPDATE
+      ];
     }
-    for (AXF_OBJ_BillingDocumentLine__c line : [
-      SELECT AXF_BDL_LKP_FinancialTransaction__c
-      FROM AXF_OBJ_BillingDocumentLine__c
-      WHERE
-        AXF_BDL_LKP_FinancialTransaction__c IN :factIds
-        AND AXF_BDL_MDR_DocumentVersion__r.AXF_BDV_PKL_State__c IN :EFFECTIVE_STATES
-      WITH USER_MODE
-    ]) {
-      result.add(line.AXF_BDL_LKP_FinancialTransaction__c);
+    if (!workIds.isEmpty()) {
+      List<AXF_OBJ_WorkRecord__c> locked = [
+        SELECT Id
+        FROM AXF_OBJ_WorkRecord__c
+        WHERE Id IN :workIds
+        FOR UPDATE
+      ];
     }
-    return result;
-  }
-
-  private Map<Id, Decimal> allocatedByWorkRecord(Set<Id> workIds) {
-    Map<Id, Decimal> result = new Map<Id, Decimal>();
-    if (workIds.isEmpty()) {
-      return result;
-    }
-    for (AXF_OBJ_BillingDocumentWorkAllocation__c allocation : [
-      SELECT AXF_BWA_LKP_WorkRecord__c, AXF_BWA_NUM_AllocatedQuantity__c
-      FROM AXF_OBJ_BillingDocumentWorkAllocation__c
-      WHERE
-        AXF_BWA_LKP_WorkRecord__c IN :workIds
-        AND AXF_BWA_MDR_Line__r.AXF_BDL_MDR_DocumentVersion__r.AXF_BDV_PKL_State__c IN :EFFECTIVE_STATES
-      WITH USER_MODE
-    ]) {
-      result.put(
-        allocation.AXF_BWA_LKP_WorkRecord__c,
-        nz(result.get(allocation.AXF_BWA_LKP_WorkRecord__c)) +
-        nz(allocation.AXF_BWA_NUM_AllocatedQuantity__c)
-      );
-    }
-    return result;
   }
 
   private Map<Id, AXF_OBJ_WorkRecord__c> approvedWork(
@@ -964,14 +1057,18 @@ public with sharing class ALT_CLS_BillingDraftService {
     if (ids.isEmpty()) {
       return new Map<Id, AXF_OBJ_WorkRecord__c>();
     }
+    // Status and contract are checked per allocation so each mismatch gets its own reason.
     return new Map<Id, AXF_OBJ_WorkRecord__c>(
       [
-        SELECT Id, AXF_WR_NUM_Quantity__c, AXF_WR_CUR_Rate__c
+        SELECT
+          Id,
+          AXF_WR_NUM_Quantity__c,
+          AXF_WR_CUR_Rate__c,
+          AXF_WR_PKL_Status__c,
+          AXF_WR_LKP_Contract__c,
+          AXF_WR_TXT_CurrencyIsoCode__c
         FROM AXF_OBJ_WorkRecord__c
-        WHERE
-          Id IN :ids
-          AND AXF_WR_PKL_Status__c = :WORK_APPROVED
-          AND AXF_WR_LKP_Contract__c = :frame.contract.Id
+        WHERE Id IN :ids
         WITH USER_MODE
       ]
     );
@@ -1014,10 +1111,17 @@ public with sharing class ALT_CLS_BillingDraftService {
       ORDER BY AXF_BDV_NUM_Revision__c ASC
       LIMIT 1
     ]) {
-      Map<String, Object> summary = (Map<String, Object>) JSON.deserializeUntyped(
-        version.AXF_BDV_TAL_Summary__c
-      );
-      return (String) summary.get('requestHash');
+      if (String.isBlank(version.AXF_BDV_TAL_Summary__c)) {
+        return null;
+      }
+      try {
+        Map<String, Object> summary = (Map<String, Object>) JSON.deserializeUntyped(
+          version.AXF_BDV_TAL_Summary__c
+        );
+        return (String) summary.get('requestHash');
+      } catch (Exception malformed) {
+        return null;
+      }
     }
     return null;
   }
@@ -1033,18 +1137,27 @@ public with sharing class ALT_CLS_BillingDraftService {
       String.valueOf(input.periodEnd),
       input.currencyIso
     };
+    List<String> lineParts = new List<String>();
     for (LineInput line : input.lines) {
       String part =
         String.valueOf(line.financialTransactionId) +
         '/' +
         String.valueOf(line.snapshotId);
       if (line.workAllocations != null) {
+        List<String> allocationParts = new List<String>();
         for (WorkAllocationInput allocation : line.workAllocations) {
-          part += '/' + allocation.workRecordId + '=' + allocation.quantity;
+          allocationParts.add(
+            allocation.workRecordId + '=' + allocation.quantity
+          );
         }
+        allocationParts.sort();
+        part += '/' + String.join(allocationParts, '/');
       }
-      parts.add(part);
+      lineParts.add(part);
     }
+    // Same content in a different order is the same request.
+    lineParts.sort();
+    parts.addAll(lineParts);
     return EncodingUtil.convertToHex(
       Crypto.generateDigest('SHA-256', Blob.valueOf(String.join(parts, '|')))
     );
@@ -1114,13 +1227,71 @@ public with sharing class ALT_CLS_BillingDraftService {
       .left(255);
   }
 
+  /** Hours drive the quantity only for HOURLY lines; other models bill one unit at the line amount. */
+  private static Decimal lineQuantity(LineFrame line) {
+    if (line.snapshot.AXF_CAS_PKL_RemunerationModel__c == 'HOURLY') {
+      return line.snapshot.AXF_CAS_NUM_HoursQuantity__c;
+    }
+    return 1;
+  }
+
   private static Decimal unitPrice(LineFrame line) {
-    Decimal quantity = line.snapshot.AXF_CAS_NUM_HoursQuantity__c;
+    Decimal quantity = lineQuantity(line);
     if (quantity == null || quantity == 0) {
       return null;
     }
     return (line.fact.AXF_FTX_NUM_Magnitude__c / quantity)
       .setScale(2, System.RoundingMode.HALF_UP);
+  }
+
+  /** Unique-key collisions raised by the database are explained with the domain code. */
+  private static Exception translateDml(DmlException failure) {
+    for (Integer i = 0; i < failure.getNumDml(); i++) {
+      if (failure.getDmlType(i) != StatusCode.DUPLICATE_VALUE) {
+        continue;
+      }
+      String message = failure.getDmlMessage(i);
+      if (
+        message != null && message.contains('AXF_BDO_EXI_ClientRequestId__c')
+      ) {
+        return failure('CONFLICT', new List<LineIssue>());
+      }
+      if (message != null && message.contains('AXF_BDO_EXI_DocumentKey__c')) {
+        return failure('DOCUMENT_EXISTS', new List<LineIssue>());
+      }
+    }
+    return failure;
+  }
+
+  /**
+   * The document follows the holder's owner (G2); the user who composed it keeps read/edit
+   * access through a share row when they are not that owner.
+   */
+  @SuppressWarnings('PMD.ApexCRUDViolation')
+  private static void grantComposerAccess(
+    Id documentId,
+    Id versionId,
+    Id ownerId
+  ) {
+    Id me = UserInfo.getUserId();
+    if (me == ownerId) {
+      return;
+    }
+    List<SObject> shares = new List<SObject>{
+      new AXF_OBJ_BillingDocument__Share(
+        ParentId = documentId,
+        UserOrGroupId = me,
+        AccessLevel = 'Edit',
+        RowCause = Schema.AXF_OBJ_BillingDocument__Share.RowCause.Manual
+      ),
+      new AXF_OBJ_BillingDocumentVersion__Share(
+        ParentId = versionId,
+        UserOrGroupId = me,
+        AccessLevel = 'Edit',
+        RowCause = Schema.AXF_OBJ_BillingDocumentVersion__Share.RowCause.Manual
+      )
+    };
+    Database.insert(shares, false);
   }
 
   private static Decimal nz(Decimal value) {

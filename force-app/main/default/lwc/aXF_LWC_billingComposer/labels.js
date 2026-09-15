@@ -67,6 +67,24 @@ import codeIncompatible from "@salesforce/label/c.AXF_BillingComposer_codeIncomp
 import codeInvalidInput from "@salesforce/label/c.AXF_BillingComposer_codeInvalidInput";
 import codeNotAccessible from "@salesforce/label/c.AXF_BillingComposer_codeNotAccessible";
 import codeTotalNotConserved from "@salesforce/label/c.AXF_BillingComposer_codeTotalNotConserved";
+import codeRejected from "@salesforce/label/c.AXF_BillingComposer_codeRejected";
+import codeContractNotBillable from "@salesforce/label/c.AXF_BillingComposer_codeContractNotBillable";
+import reasonInvalidAmount from "@salesforce/label/c.AXF_BillingComposer_reasonInvalidAmount";
+import reasonWorkContractMismatch from "@salesforce/label/c.AXF_BillingComposer_reasonWorkContractMismatch";
+import noEntities from "@salesforce/label/c.AXF_BillingComposer_noEntities";
+import contractIncomplete from "@salesforce/label/c.AXF_BillingComposer_contractIncomplete";
+import periodInvalid from "@salesforce/label/c.AXF_BillingComposer_periodInvalid";
+import quantityRequired from "@salesforce/label/c.AXF_BillingComposer_quantityRequired";
+import duplicateWork from "@salesforce/label/c.AXF_BillingComposer_duplicateWork";
+import typeMixed from "@salesforce/label/c.AXF_BillingComposer_typeMixed";
+import remainingBalance from "@salesforce/label/c.AXF_BillingComposer_remainingBalance";
+import stateDraft from "@salesforce/label/c.AXF_BillingComposer_stateDraft";
+import stateReviewed from "@salesforce/label/c.AXF_BillingComposer_stateReviewed";
+import stateIssuing from "@salesforce/label/c.AXF_BillingComposer_stateIssuing";
+import stateIssued from "@salesforce/label/c.AXF_BillingComposer_stateIssued";
+import stateCancelled from "@salesforce/label/c.AXF_BillingComposer_stateCancelled";
+import lifecycleOpen from "@salesforce/label/c.AXF_BillingComposer_lifecycleOpen";
+import lifecycleClosed from "@salesforce/label/c.AXF_BillingComposer_lifecycleClosed";
 export default {
   title,
   intro,
@@ -136,5 +154,23 @@ export default {
   codeIncompatible,
   codeInvalidInput,
   codeNotAccessible,
-  codeTotalNotConserved
+  codeTotalNotConserved,
+  codeRejected,
+  codeContractNotBillable,
+  reasonInvalidAmount,
+  reasonWorkContractMismatch,
+  noEntities,
+  contractIncomplete,
+  periodInvalid,
+  quantityRequired,
+  duplicateWork,
+  typeMixed,
+  remainingBalance,
+  stateDraft,
+  stateReviewed,
+  stateIssuing,
+  stateIssued,
+  stateCancelled,
+  lifecycleOpen,
+  lifecycleClosed
 };
