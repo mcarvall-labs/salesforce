@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<CustomField xmlns="http://soap.sforce.com/2006/04/metadata">
+    <fullName>AXF_CCT_TXT_MerchantName__c</fullName>
+    <label>Estabelecimento</label>
+    <type>Text</type>
+    <length>120</length>
+    <required>false</required>
+    <description
+  >merchant.name quando presente no payload autorizado; identidade de estabelecimento retida como evidencia, sem CNPJ/PII (AXF-109).</description>
+</CustomField>

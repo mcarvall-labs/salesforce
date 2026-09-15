@@ -96,7 +96,8 @@ private class AXF_CLS_CsvImportConfirmServiceTest {
       'extrato.csv',
       EncodingUtil.base64Encode(Blob.valueOf(csv)),
       expectedParserVersion,
-      ack
+      ack,
+      null
     );
   }
 
@@ -245,6 +246,17 @@ private class AXF_CLS_CsvImportConfirmServiceTest {
     System.assertEquals(r.evidenceDocumentId, bat.AXF_BAT_TXT_EvidenceRef__c);
     System.assertEquals('CSV', bat.AXF_BAT_PKL_Source__c);
     System.assertEquals('BRL', bat.AXF_BAT_TXT_CurrencyIsoCode__c);
+    // AXF-72 — parser and normalization versions travel with the evidence.
+    ContentVersion evidence = [
+      SELECT Description
+      FROM ContentVersion
+      WHERE ContentDocumentId = :r.evidenceDocumentId
+      LIMIT 1
+    ];
+    System.assertEquals(
+      PARSER_VERSION + ' | ' + ALT_CLS_CsvFormatParser.NORMALIZATION_VERSION,
+      evidence.Description
+    );
   }
 
   @IsTest
@@ -257,9 +269,91 @@ private class AXF_CLS_CsvImportConfirmServiceTest {
         null,
         null,
         null,
-        false
+        false,
+        null
       );
     }
     System.assertEquals('INVALID_FILE', r.outcome);
+  }
+
+  /** AXF-72: a metadata-only format reuses the whole confirmation pipeline. */
+  @IsTest
+  static void publishesWithMetadataOnlyFormatRecordingItsParserVersion() {
+    AXF_OBJ_BankAccount__c bank = availableBank();
+    User cfg = configurator();
+    AXF_CMT_CsvFormat__mdt other = new AXF_CMT_CsvFormat__mdt(
+      DeveloperName = 'Other_Bank',
+      MasterLabel = 'Other bank',
+      AXF_CSF_PKL_Family__c = ALT_CLS_CsvFormatParser.FAMILY_BANK_STATEMENT_V1,
+      AXF_CSF_TXT_ParserVersion__c = 'other-bank-csv@2.1.0',
+      AXF_CSF_BOL_Active__c = true,
+      AXF_CSF_TXT_DateColumn__c = 'date',
+      AXF_CSF_TXT_DescriptionColumn__c = 'memo',
+      AXF_CSF_TXT_AmountColumn__c = 'amount',
+      AXF_CSF_BOL_BalanceRequired__c = false,
+      AXF_CSF_PKL_DateFormat__c = 'YMD_DASH',
+      AXF_CSF_PKL_DecimalFormat__c = 'EN',
+      AXF_CSF_PKL_Delimiter__c = 'COMMA',
+      AXF_CSF_TXT_Encoding__c = 'UTF-8',
+      AXF_CSF_NUM_SkipLines__c = 0
+    );
+    ALT_CLS_CsvFormatRegistry.recordsOverride = new List<AXF_CMT_CsvFormat__mdt>{
+      other
+    };
+    String csv = 'Date,Memo,Amount\n2026-03-01,Payroll,"1,250.50"\n2026-03-02,Rent,-800.00';
+    AXF_CLS_CsvImportConfirmService.ConfirmResult first;
+    AXF_CLS_CsvImportConfirmService.ConfirmResult again;
+    System.runAs(cfg) {
+      first = AXF_CLS_CTRL_CsvImportPreview.confirmCsv(
+        bank.Id,
+        'other.csv',
+        EncodingUtil.base64Encode(Blob.valueOf(csv)),
+        'other-bank-csv@2.1.0',
+        false,
+        'Other_Bank'
+      );
+      again = AXF_CLS_CTRL_CsvImportPreview.confirmCsv(
+        bank.Id,
+        'other.csv',
+        EncodingUtil.base64Encode(Blob.valueOf(csv)),
+        'other-bank-csv@2.1.0',
+        false,
+        'Other_Bank'
+      );
+    }
+    System.assertEquals('PUBLISHED', first.outcome, first.message);
+    System.assertEquals(2, first.publishedCount);
+    System.assertEquals(0, again.publishedCount, 'Reenvio idempotente.');
+    Map<String, AXF_OBJ_BankAccountTransaction__c> byDirection = new Map<String, AXF_OBJ_BankAccountTransaction__c>();
+    for (AXF_OBJ_BankAccountTransaction__c row : [
+      SELECT
+        AXF_BAT_PKL_Direction__c,
+        AXF_BAT_NUM_Magnitude__c,
+        AXF_BAT_NUM_RunningBalance__c,
+        AXF_BAT_TXT_ParserVersion__c
+      FROM AXF_OBJ_BankAccountTransaction__c
+      WHERE AXF_BAT_MDR_BankAccount__c = :bank.Id
+    ]) {
+      byDirection.put(row.AXF_BAT_PKL_Direction__c, row);
+    }
+    System.assertEquals(2, byDirection.size());
+    System.assertEquals(
+      1250.50,
+      byDirection.get('CREDIT').AXF_BAT_NUM_Magnitude__c
+    );
+    System.assertEquals(
+      800.00,
+      byDirection.get('DEBIT').AXF_BAT_NUM_Magnitude__c
+    );
+    System.assertEquals(
+      'other-bank-csv@2.1.0',
+      byDirection.get('DEBIT').AXF_BAT_TXT_ParserVersion__c,
+      'Versao do formato, nao a da Contabilizei.'
+    );
+    System.assertEquals(
+      null,
+      byDirection.get('DEBIT').AXF_BAT_NUM_RunningBalance__c,
+      'Sem saldo quando o formato nao o exige.'
+    );
   }
 }

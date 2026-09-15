@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<CustomField xmlns="http://soap.sforce.com/2006/04/metadata">
+    <fullName>AXF_CFP_NUM_DefaultFreshnessHours__c</fullName>
+    <label>Atualidade padrao (h)</label>
+    <type>Number</type>
+    <precision>5</precision>
+    <scale>0</scale>
+    <required>true</required>
+    <description
+  >Horas apos o ultimo sucesso a partir das quais a fonte e considerada antiga quando ela nao define limite proprio. Proposta: 48.</description>
+</CustomField>

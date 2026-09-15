@@ -1,5 +1,5 @@
 /**
- * @description Handler de trigger para AXF_OBJ_FxApplicationSnapshot__c (AXF-24).
+ * @description Handler de trigger para AXF_OBJ_FxApplicationSnapshot__c (AXF-24 / AXF-105).
  * Imutabilidade: sem delete; conteudo congelado; transicao ACTIVE -> SUPERSEDED via servico.
  */
 public with sharing class AXF_CLS_FxSnapshotTriggerHandler {
@@ -7,6 +7,16 @@ public with sharing class AXF_CLS_FxSnapshotTriggerHandler {
     'AXF_FXS_PKL_State__c',
     'AXF_FXS_NUM_Version__c'
   };
+
+  /**
+   * @description Evidencia de reconhecimento (RECOGNITION sobre allocation) so pode nascer
+   * dentro do servico de realizacao (AXF-105); regra em ALT_CLS_RealizationGuard.snapshots.
+   */
+  public static void handleBeforeInsert(
+    List<AXF_OBJ_FxApplicationSnapshot__c> newList
+  ) {
+    ALT_CLS_RealizationGuard.snapshots(newList);
+  }
 
   public static void handleBeforeUpdate(
     List<AXF_OBJ_FxApplicationSnapshot__c> newList,

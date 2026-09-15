@@ -1,0 +1,26 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<CustomField xmlns="http://soap.sforce.com/2006/04/metadata">
+    <fullName>AXF_EAS_PKL_State__c</fullName>
+    <label>Estado</label>
+    <type>Picklist</type>
+    <required>true</required>
+    <trackHistory>true</trackHistory>
+    <valueSet>
+        <restricted>true</restricted>
+        <valueSetDefinition>
+            <sorted>false</sorted>
+            <value><fullName>DRAFT</fullName><default>true</default><label
+        >Rascunho</label></value>
+            <value><fullName>CONFIRMED</fullName><default>false</default><label
+        >Confirmado</label></value>
+            <value><fullName>SUPERSEDED</fullName><default>false</default><label
+        >Substituido</label></value>
+            <value><fullName>REVERSED</fullName><default>false</default><label
+        >Revertido</label></value>
+            <value><fullName>DISCARDED</fullName><default>false</default><label
+        >Descartado</label></value>
+        </valueSetDefinition>
+    </valueSet>
+    <description
+  >DRAFT -> CONFIRMED (confirmacao com 100% exato) -> SUPERSEDED | REVERSED (historias irmas). Transicoes so via servico.</description>
+</CustomField>

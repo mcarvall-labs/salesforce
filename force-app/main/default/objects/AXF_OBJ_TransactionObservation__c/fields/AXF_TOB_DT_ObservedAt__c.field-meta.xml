@@ -1,0 +1,8 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<CustomField xmlns="http://soap.sforce.com/2006/04/metadata">
+    <fullName>AXF_TOB_DT_ObservedAt__c</fullName>
+    <label>Observado em</label>
+    <type>DateTime</type>
+    <required>true</required>
+    <description>Instante da observacao (UTC).</description>
+</CustomField>

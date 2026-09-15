@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<CustomField xmlns="http://soap.sforce.com/2006/04/metadata">
+    <fullName>AXF_CSF_TXT_InstitutionBankNumber__c</fullName>
+    <label>Numero do banco (COMPE)</label>
+    <type>Text</type>
+    <length>10</length>
+    <required>false</required>
+    <description
+  >Regra verificada de identidade bancaria (AXF-106): quando preenchido, a conta alvo deve pertencer a instituicao com este numero no diretorio compartilhado; nao cria autoridade paralela de nomes nem infere titular.</description>
+    <fieldManageability>SubscriberControlled</fieldManageability>
+</CustomField>

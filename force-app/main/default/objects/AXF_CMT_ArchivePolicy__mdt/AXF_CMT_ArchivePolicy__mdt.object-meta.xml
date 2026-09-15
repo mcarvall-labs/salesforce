@@ -1,0 +1,8 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<CustomObject xmlns="http://soap.sforce.com/2006/04/metadata">
+    <label>AXF Politica de Arquivo</label>
+    <pluralLabel>AXF Politicas de Arquivo</pluralLabel>
+    <visibility>Public</visibility>
+    <description
+  >AXF-95: janela quente (meses), tamanho de lote, versao e autorizacao de remocao da copia quente. Alterar a janela nao exige deploy de codigo; ausencia/invalidez do registro Default bloqueia o arquivamento.</description>
+</CustomObject>

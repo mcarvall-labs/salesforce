@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<CustomField xmlns="http://soap.sforce.com/2006/04/metadata">
+    <fullName>AXF_CLR_TAL_EvidenceSummary__c</fullName>
+    <label>Evidencia Minima</label>
+    <type>LongTextArea</type>
+    <length>32768</length>
+    <visibleLines>6</visibleLines>
+    <required>false</required>
+    <description
+  >Resumo imutavel gravado em RETAIN_EVIDENCE: correlacao, etapas, contagens por dominio, receipts de policy, instantes. Prova do lifecycle sem conteudo privado.</description>
+</CustomField>

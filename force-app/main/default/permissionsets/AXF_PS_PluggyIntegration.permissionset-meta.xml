@@ -636,6 +636,58 @@
     <field>AXF_OBJ_CreditCard__c.AXF_CC_LKP_BankInstitution__c</field>
     <readable>true</readable>
   </fieldPermissions>
+  <fieldPermissions>
+    <editable>true</editable>
+    <field
+    >AXF_OBJ_BankAccountTransaction__c.AXF_BAT_TXT_RawSourceStatus__c</field>
+    <readable>true</readable>
+  </fieldPermissions>
+  <fieldPermissions>
+    <editable>true</editable>
+    <field
+    >AXF_OBJ_BankAccountTransaction__c.AXF_BAT_TXT_OperationType__c</field>
+    <readable>true</readable>
+  </fieldPermissions>
+  <fieldPermissions>
+    <editable>true</editable>
+    <field
+    >AXF_OBJ_BankAccountTransaction__c.AXF_BAT_TXT_ProviderCategory__c</field>
+    <readable>true</readable>
+  </fieldPermissions>
+  <fieldPermissions>
+    <editable>true</editable>
+    <field
+    >AXF_OBJ_CreditCardTransaction__c.AXF_CCT_TXT_RawSourceStatus__c</field>
+    <readable>true</readable>
+  </fieldPermissions>
+  <fieldPermissions>
+    <editable>true</editable>
+    <field>AXF_OBJ_CreditCardTransaction__c.AXF_CCT_TXT_OperationType__c</field>
+    <readable>true</readable>
+  </fieldPermissions>
+  <fieldPermissions>
+    <editable>true</editable>
+    <field
+    >AXF_OBJ_CreditCardTransaction__c.AXF_CCT_TXT_ProviderCategory__c</field>
+    <readable>true</readable>
+  </fieldPermissions>
+  <fieldPermissions>
+    <editable>true</editable>
+    <field
+    >AXF_OBJ_CreditCardTransaction__c.AXF_CCT_NUM_InstallmentNumber__c</field>
+    <readable>true</readable>
+  </fieldPermissions>
+  <fieldPermissions>
+    <editable>true</editable>
+    <field
+    >AXF_OBJ_CreditCardTransaction__c.AXF_CCT_NUM_TotalInstallments__c</field>
+    <readable>true</readable>
+  </fieldPermissions>
+  <fieldPermissions>
+    <editable>true</editable>
+    <field>AXF_OBJ_CreditCardTransaction__c.AXF_CCT_TXT_MerchantName__c</field>
+    <readable>true</readable>
+  </fieldPermissions>
   <hasActivationRequired>false</hasActivationRequired>
   <label>Axon - Integracao Pluggy (servico)</label>
   <objectPermissions>

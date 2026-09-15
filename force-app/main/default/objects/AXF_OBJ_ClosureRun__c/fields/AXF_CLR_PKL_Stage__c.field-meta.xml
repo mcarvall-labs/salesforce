@@ -1,0 +1,29 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<CustomField xmlns="http://soap.sforce.com/2006/04/metadata">
+    <fullName>AXF_CLR_PKL_Stage__c</fullName>
+    <label>Ultima Etapa Concluida</label>
+    <type>Picklist</type>
+    <required>true</required>
+    <trackHistory>true</trackHistory>
+    <valueSet>
+        <restricted>true</restricted>
+        <valueSetDefinition>
+            <sorted>false</sorted>
+            <value><fullName>NONE</fullName><default>true</default><label
+        >Nenhuma</label></value>
+            <value><fullName>EXPORT</fullName><default>false</default><label
+        >Exportacao</label></value>
+            <value><fullName>REVOKE_ACCESS</fullName><default
+        >false</default><label>Remocao de acessos locais</label></value>
+            <value><fullName>STOP_COLLECTION</fullName><default
+        >false</default><label
+        >Interrupcao de coleta/jobs/publicacao</label></value>
+            <value><fullName>PURGE</fullName><default>false</default><label
+        >Exclusao/pseudonimizacao por policy</label></value>
+            <value><fullName>RETAIN_EVIDENCE</fullName><default
+        >false</default><label>Retencao de evidencia minima</label></value>
+        </valueSetDefinition>
+    </valueSet>
+    <description
+  >Ultimo ponto concluido; a retomada continua da etapa seguinte.</description>
+</CustomField>

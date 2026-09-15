@@ -1,0 +1,13 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<CustomField xmlns="http://soap.sforce.com/2006/04/metadata">
+    <fullName>AXF_BDO_LKP_Counterparty__c</fullName>
+    <label>Contraparte</label>
+    <type>Lookup</type>
+    <referenceTo>AXF_OBJ_Counterparty__c</referenceTo>
+    <relationshipName>AXF_REL_BillingDocuments</relationshipName>
+    <relationshipLabel>Documentos de Cobranca</relationshipLabel>
+    <deleteConstraint>Restrict</deleteConstraint>
+    <required>true</required>
+    <description
+  >Contraparte contratual cobrada; nunca derivada de sugestao de titular de conexao (AXF-106). Deve coincidir com a contraparte do contrato.</description>
+</CustomField>

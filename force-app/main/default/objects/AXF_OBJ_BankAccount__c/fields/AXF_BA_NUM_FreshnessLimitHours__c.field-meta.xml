@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<CustomField xmlns="http://soap.sforce.com/2006/04/metadata">
+    <fullName>AXF_BA_NUM_FreshnessLimitHours__c</fullName>
+    <label>Limite de atualidade (h)</label>
+    <type>Number</type>
+    <precision>5</precision>
+    <scale>0</scale>
+    <required>false</required>
+    <description
+  >AXF-143: horas apos o ultimo sucesso da fonte a partir das quais o dado continua visivel, mas como antigo (confianca cai). Vazio = padrao de AXF_CMT_ConfidencePolicy__mdt.</description>
+</CustomField>

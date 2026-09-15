@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<CustomField xmlns="http://soap.sforce.com/2006/04/metadata">
+    <fullName>AXF_BDV_NUM_LineCount__c</fullName>
+    <label>Quantidade de Linhas</label>
+    <type>Summary</type>
+    <summaryForeignKey
+  >AXF_OBJ_BillingDocumentLine__c.AXF_BDL_MDR_DocumentVersion__c</summaryForeignKey>
+    <summaryOperation>count</summaryOperation>
+    <required>false</required>
+    <description>Roll-up nativo: numero de linhas da versao.</description>
+</CustomField>

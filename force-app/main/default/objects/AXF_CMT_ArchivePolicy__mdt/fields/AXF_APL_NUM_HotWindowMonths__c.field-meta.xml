@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<CustomField xmlns="http://soap.sforce.com/2006/04/metadata">
+    <fullName>AXF_APL_NUM_HotWindowMonths__c</fullName>
+    <label>Janela Quente (meses)</label>
+    <type>Number</type>
+    <precision>4</precision>
+    <scale>0</scale>
+    <required>true</required>
+    <description
+  >Meses mantidos no objeto quente contados do primeiro dia do mes corrente. Proposta: 24.</description>
+</CustomField>

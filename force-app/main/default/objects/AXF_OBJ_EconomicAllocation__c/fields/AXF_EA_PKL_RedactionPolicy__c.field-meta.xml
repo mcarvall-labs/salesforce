@@ -1,0 +1,20 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<CustomField xmlns="http://soap.sforce.com/2006/04/metadata">
+    <fullName>AXF_EA_PKL_RedactionPolicy__c</fullName>
+    <label>Politica de Redacao</label>
+    <type>Picklist</type>
+    <required>true</required>
+    <trackHistory>true</trackHistory>
+    <valueSet>
+        <restricted>true</restricted>
+        <valueSetDefinition>
+            <sorted>false</sorted>
+            <value><fullName>OWN_SHARE_ONLY</fullName><default
+        >true</default><label>Somente a propria parcela</label></value>
+            <value><fullName>SET_VISIBLE</fullName><default
+        >false</default><label>Rateio visivel</label></value>
+        </valueSetDefinition>
+    </valueSet>
+    <description
+  >Politica de redacao da parcela para leitura parcial (G2-4): por padrao o participante ve so a propria parcela.</description>
+</CustomField>

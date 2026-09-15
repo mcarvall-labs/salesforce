@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<CustomField xmlns="http://soap.sforce.com/2006/04/metadata">
+    <fullName>AXF_TOB_TXT_NormalizedMerchant__c</fullName>
+    <label>Estabelecimento Normalizado</label>
+    <type>Text</type>
+    <length>255</length>
+    <required>false</required>
+    <description
+  >Normalizacao conservadora da descricao (caixa, espacos, formatacao bancaria nao semantica) pela versao registrada; valor original permanece no fato.</description>
+</CustomField>

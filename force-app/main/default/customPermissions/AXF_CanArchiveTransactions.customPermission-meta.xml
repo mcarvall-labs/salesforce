@@ -1,0 +1,7 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<CustomPermission xmlns="http://soap.sforce.com/2006/04/metadata">
+    <isLicensed>false</isLicensed>
+    <label>AXF - Pode Arquivar Transacoes</label>
+    <description
+  >Capacidade de iniciar/retomar uma execucao de arquivamento (AXF-95). Nao autoriza remocao da copia quente. Concedida por AXF_PS_GestorFinanceiro.</description>
+</CustomPermission>

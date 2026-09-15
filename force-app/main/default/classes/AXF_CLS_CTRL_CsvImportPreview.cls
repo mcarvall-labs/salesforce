@@ -20,6 +20,8 @@ public with sharing class AXF_CLS_CTRL_CsvImportPreview {
     public String fileName;
     @AuraEnabled
     public String base64Content;
+    @AuraEnabled
+    public String formatKey;
   }
 
   public class PreviewResult {
@@ -30,7 +32,7 @@ public with sharing class AXF_CLS_CTRL_CsvImportPreview {
     @AuraEnabled
     public String targetAccountLabel;
     @AuraEnabled
-    public ALT_CLS_ContabilizeiCsvParser.ParseResult parseResult;
+    public ALT_CLS_CsvFormatParser.ParseResult parseResult;
   }
 
   private static final String REPLACEMENT_CHAR = String.fromCharArray(
@@ -146,18 +148,46 @@ public with sharing class AXF_CLS_CTRL_CsvImportPreview {
       return outcome('INVALID_FILE', 'Arquivo não está em UTF-8 válido.');
     }
 
-    ALT_CLS_ContabilizeiCsvParser.ParseResult parsed = ALT_CLS_ContabilizeiCsvParser.parse(
+    // AXF-72 — versioned format from metadata; unsupported families stay BLOCKED.
+    ALT_CLS_CsvFormatParser.Format format = ALT_CLS_CsvFormatRegistry.resolve(
+      input.formatKey
+    );
+    if (format == null) {
+      return outcome(
+        'FORMAT_MISSING',
+        'Formato CSV não configurado ou inativo. Peça ao Gestor Financeiro para configurar.'
+      );
+    }
+    if (!ALT_CLS_CsvFormatRegistry.isSupported(format)) {
+      return outcome(
+        'FORMAT_BLOCKED',
+        AXF_CLS_CsvImportConfirmService.blockedMessage(format)
+      );
+    }
+    String institutionMismatch = AXF_CLS_CsvImportConfirmService.institutionMismatch(
+      accounts[0].Id,
+      format
+    );
+    if (institutionMismatch != null) {
+      return outcome('INSTITUTION_MISMATCH', institutionMismatch);
+    }
+
+    ALT_CLS_CsvFormatParser.ParseResult parsed = ALT_CLS_CsvFormatParser.parse(
       rawCsv,
       policy.AXF_CIP_NUM_MaxRows__c == null
         ? null
-        : Integer.valueOf(policy.AXF_CIP_NUM_MaxRows__c)
+        : Integer.valueOf(policy.AXF_CIP_NUM_MaxRows__c),
+      format
     );
 
     PreviewResult out = new PreviewResult();
     out.parseResult = parsed;
     if (!parsed.structureValid) {
       out.outcome = 'INVALID_FILE';
-      out.message = 'Arquivo não segue a estrutura esperada do CSV Contabilizei.bank.';
+      out.message =
+        'Arquivo não segue a estrutura esperada do formato ' +
+        format.label +
+        '.';
       return out;
     }
     out.outcome = 'OK';
@@ -189,7 +219,8 @@ public with sharing class AXF_CLS_CTRL_CsvImportPreview {
     String fileName,
     String base64Content,
     String expectedParserVersion,
-    Boolean acknowledgeRejections
+    Boolean acknowledgeRejections,
+    String formatKey
   ) {
     AXF_CLS_CsvImportConfirmService.ConfirmInput input = new AXF_CLS_CsvImportConfirmService.ConfirmInput();
     input.accountId = accountId;
@@ -197,6 +228,18 @@ public with sharing class AXF_CLS_CTRL_CsvImportPreview {
     input.base64Content = base64Content;
     input.expectedParserVersion = expectedParserVersion;
     input.acknowledgeRejections = acknowledgeRejections;
+    input.formatKey = formatKey;
+    // The reviewed format is the one being committed (STALE_PREVIEW otherwise).
+    input.expectedFormatKey = formatKey;
     return new AXF_CLS_CsvImportConfirmService().confirm(input);
+  }
+
+  /**
+   * AXF-72 — active versioned formats. Blocked entries (unsupported family or incomplete
+   * definition) are listed with their reason; the LWC keeps the upload disabled for them.
+   */
+  @AuraEnabled(cacheable=true)
+  public static List<ALT_CLS_CsvFormatRegistry.FormatView> getFormats() {
+    return ALT_CLS_CsvFormatRegistry.listActive();
   }
 }

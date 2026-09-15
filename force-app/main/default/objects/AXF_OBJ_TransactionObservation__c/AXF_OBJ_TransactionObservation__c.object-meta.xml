@@ -1,0 +1,23 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<CustomObject xmlns="http://soap.sforce.com/2006/04/metadata">
+    <deploymentStatus>Deployed</deploymentStatus>
+    <description
+  >Observacao imutavel e versionada de um fato importado (BAT/CCT) para a deteccao de assinaturas (AXF-109, S1 de AXF-108, gate G1). Retem data/moeda/magnitude, identidade tipada da fonte, elegibilidade (ELIGIBLE|EXCLUDED|UNKNOWN), proveniencia do status da fonte e da classificacao, fingerprint de conteudo e revisao. Replay do mesmo conteudo nao cria revisao; conteudo relevante alterado cria nova revisao; ImportedAt sozinho nao. OWD Private (owner-sync do titular); sem Delete.</description>
+    <enableActivities>false</enableActivities>
+    <enableBulkApi>true</enableBulkApi>
+    <enableFeeds>false</enableFeeds>
+    <enableHistory>false</enableHistory>
+    <enableReports>true</enableReports>
+    <enableSearch>false</enableSearch>
+    <enableSharing>true</enableSharing>
+    <enableStreamingApi>true</enableStreamingApi>
+    <label>Observacao de Transacao</label>
+    <nameField>
+        <displayFormat>TOB-{000000}</displayFormat>
+        <label>Numero da Observacao</label>
+        <type>AutoNumber</type>
+    </nameField>
+    <pluralLabel>Observacoes de Transacao</pluralLabel>
+    <sharingModel>Private</sharingModel>
+    <visibility>Public</visibility>
+</CustomObject>

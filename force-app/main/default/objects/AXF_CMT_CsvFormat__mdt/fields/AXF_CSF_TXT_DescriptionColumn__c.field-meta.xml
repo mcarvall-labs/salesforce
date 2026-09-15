@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<CustomField xmlns="http://soap.sforce.com/2006/04/metadata">
+    <fullName>AXF_CSF_TXT_DescriptionColumn__c</fullName>
+    <label>Coluna de descricao</label>
+    <type>Text</type>
+    <length>60</length>
+    <required>false</required>
+    <description
+  >Nome normalizado do cabecalho da descricao (texto bruto preservado).</description>
+    <fieldManageability>SubscriberControlled</fieldManageability>
+</CustomField>

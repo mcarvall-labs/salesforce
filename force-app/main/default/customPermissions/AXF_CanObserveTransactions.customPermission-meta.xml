@@ -1,0 +1,4 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<CustomPermission xmlns="http://soap.sforce.com/2006/04/metadata"><description
+  >Allows qualifying imported transaction evidence into immutable observations for subscription detection (AXF-109). Record access to each fact is always revalidated.</description><label
+  >Qualify imported transaction evidence</label></CustomPermission>

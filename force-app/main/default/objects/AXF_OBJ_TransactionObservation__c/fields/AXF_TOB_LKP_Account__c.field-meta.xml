@@ -1,0 +1,13 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<CustomField xmlns="http://soap.sforce.com/2006/04/metadata">
+    <fullName>AXF_TOB_LKP_Account__c</fullName>
+    <label>Titular</label>
+    <type>Lookup</type>
+    <referenceTo>Account</referenceTo>
+    <relationshipLabel>Observacoes de Transacao</relationshipLabel>
+    <relationshipName>AXF_REL_TransactionObservations</relationshipName>
+    <deleteConstraint>Restrict</deleteConstraint>
+    <required>true</required>
+    <description
+  >Contexto autorizado (titular) do fato; owner-sync (G2). Fato de outro contexto e rejeitado.</description>
+</CustomField>
