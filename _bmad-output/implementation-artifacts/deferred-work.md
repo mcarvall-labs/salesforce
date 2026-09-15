@@ -71,3 +71,9 @@
 - **ACTUAL_ONLY after reversal** — the born FTX keeps magnitude/role with no derived marker; consumers must use AXF-25 `read` (documented). A derived "reversed" indicator on the plan would help list views/dashboards.
 - **`getContext`** — cacheable with an unused `search` argument (same as the other capability tabs).
 - **AXF-104 boundary** — obligation adjustment / recurring-reference recomputation after reversing a schedule occurrence is flagged (`AXF104_OBLIGATION_ADJUSTMENT_PENDING`), not performed; AXF-104/AXF-142.
+
+## AXF-78 — DEV cleanup execution (2026-09-15, validation `0Afaj00000kQtWDCA0`)
+
+- **`AXF_CLS_AccessConfigEffectiveTest.systemAdministratorIsNotAConfiguradorByDefault`** fails on AXON_DEV: the admin user that runs `RunLocalTests` holds `AXF_CanConfigure` through the `AXF_PSG_GestorFinanceiro` assignment made so the Axon apps are visible (AXF-77 step 4). The assertion assumes a bare System Administrator; either run the check under `System.runAs` of a freshly built admin or drop the org-state assumption.
+- **`AXF_CLS_HolderAccessTest.gestorCanRegisterAndEditButNotDelete`** fails on AXON_DEV (`saveHolder` → `FAILED` for the built Gestor). Reproduces standalone before and after the cleanup; root cause not investigated here (org data/config drift suspected — the same test was green when AXF-85 merged).
+- **Sites infrastructure left org-only** — 7 error/template pages, 3 components and the `SiteSamples` static resource remain in AXON_DEV and in no branch because the `Pluggy_Webhook` CustomSite (manual install step, AXF-11 §10) references them. Bringing the site + minimal AXF-owned pages into Git would close that drift; needs a decision on org-specific values (`siteAdmin`, guest owner).

@@ -1,13 +1,48 @@
 <?xml version="1.0" encoding="UTF-8" ?>
-<!-- AXF-78 draft manifest: orphan Apex classes present in AXON_DEV and in no Git branch.
-     NOT authorized for execution. See docs/implementation/AXF-78.md §4. -->
+<!-- AXF-78 cleanup manifest for AXON_DEV. Authorized by Michel on 2026-09-15 (chat):
+     "Autorizado, pode remover as 4 classes e os Sites samples".
+     Scope: (a) the four orphan AXF classes present in the org and in no Git branch;
+     (b) the Salesforce Sites sample login/registration flow (pages, controllers, tests and the
+     SiteLogin component) generated when the Pluggy_Webhook site was created.
+     Kept on purpose: the pages the CustomSite still references (BandwidthExceeded, Exception,
+     FileNotFound, InMaintenance, SiteTemplate, StdExceptionTemplate, UnderConstruction), the
+     SiteHeader/SiteFooter/SitePoweredBy components and the SiteSamples static resource.
+     Pre-condition: the site's authorizationRequiredPage (Unauthorized) is unset first, see
+     docs/implementation/AXF-78.md section 4. -->
 <Package xmlns="http://soap.sforce.com/2006/04/metadata">
     <types>
         <members>AXF_CLS_PluggyWebhookQueueable</members>
         <members>AXF_CLS_PluggyWebhookSignature</members>
         <members>AXF_CLS_PluggyWebhookSignatureTest</members>
         <members>AXF_CLS_ScheduleReplenishmentStateReader</members>
+        <members>ChangePasswordController</members>
+        <members>ChangePasswordControllerTest</members>
+        <members>ForgotPasswordController</members>
+        <members>ForgotPasswordControllerTest</members>
+        <members>MyProfilePageController</members>
+        <members>MyProfilePageControllerTest</members>
+        <members>SiteLoginController</members>
+        <members>SiteLoginControllerTest</members>
+        <members>SiteRegisterController</members>
+        <members>SiteRegisterControllerTest</members>
         <name>ApexClass</name>
+    </types>
+    <types>
+        <members>AnswersHome</members>
+        <members>ChangePassword</members>
+        <members>ForgotPassword</members>
+        <members>ForgotPasswordConfirm</members>
+        <members>IdeasHome</members>
+        <members>MyProfilePage</members>
+        <members>SiteLogin</members>
+        <members>SiteRegister</members>
+        <members>SiteRegisterConfirm</members>
+        <members>Unauthorized</members>
+        <name>ApexPage</name>
+    </types>
+    <types>
+        <members>SiteLogin</members>
+        <name>ApexComponent</name>
     </types>
     <version>62.0</version>
 </Package>
