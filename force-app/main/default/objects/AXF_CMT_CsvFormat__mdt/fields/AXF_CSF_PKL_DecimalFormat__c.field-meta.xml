@@ -1,0 +1,21 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<CustomField xmlns="http://soap.sforce.com/2006/04/metadata">
+    <fullName>AXF_CSF_PKL_DecimalFormat__c</fullName>
+    <label>Formato decimal</label>
+    <type>Picklist</type>
+    <valueSet>
+        <restricted>true</restricted>
+        <valueSetDefinition>
+            <sorted>false</sorted>
+            <value><fullName>BR</fullName><default>true</default><label
+        >1.234,56</label></value>
+            <value><fullName>EN</fullName><default>false</default><label
+        >1,234.56</label></value>
+            <value><fullName>PLAIN</fullName><default>false</default><label
+        >1234.56</label></value>
+        </valueSetDefinition>
+    </valueSet>
+    <required>true</required>
+    <description>Separadores de milhar/decimal dos valores.</description>
+    <fieldManageability>SubscriberControlled</fieldManageability>
+</CustomField>
