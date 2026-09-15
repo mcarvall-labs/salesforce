@@ -1,6 +1,14 @@
 <?xml version="1.0" encoding="UTF-8" ?>
-<CustomField xmlns="http://soap.sforce.com/2006/04/metadata"><fullName
-  >AXF_INR_TXT_SourceItemId__c</fullName><label
-  >Source item identifier</label><type>Text</type><length>255</length><required
-  >false</required><description
-  >Authorized source deletion hint for durable verification; contains identifiers only, never provider financial payload.</description></CustomField>
+<CustomField xmlns="http://soap.sforce.com/2006/04/metadata">
+    <fullName>AXF_INR_TXT_SourceItemId__c</fullName>
+    <description
+  >Authorized source deletion hint for durable verification; contains identifiers only, never provider financial payload.</description>
+    <externalId>false</externalId>
+    <label>Source item identifier</label>
+    <length>255</length>
+    <required>false</required>
+    <trackHistory>false</trackHistory>
+    <trackTrending>false</trackTrending>
+    <type>Text</type>
+    <unique>false</unique>
+</CustomField>
