@@ -918,4 +918,158 @@
     >Buscar titular</label><name
     >AXF_ArchiveExplorer_holderSearch</name></customLabels><customLabels><label
     >Motivo</label><name
-    >AXF_ArchiveExplorer_colReason</name></customLabels></Translations>
+    >AXF_ArchiveExplorer_colReason</name></customLabels><customLabels><label
+    >Horizontes e cenários</label><name
+    >AXF_ForecastComparison_title</name></customLabels><customLabels><label
+    >Compare o que está comprometido, provável e incerto em 3 a 24 meses. Valores entram integralmente — nada é ponderado por probabilidade.</label><name
+    >AXF_ForecastComparison_intro</name></customLabels><customLabels><label
+    >Pessoas e empresas no escopo</label><name
+    >AXF_ForecastComparison_scope</name></customLabels><customLabels><label
+    >Disponíveis</label><name
+    >AXF_ForecastComparison_scopeAvailable</name></customLabels><customLabels
+  ><label
+    >Só titulares que você pode ver são listados; titulares com acesso parcial ficam fora dos totais.</label><name
+    >AXF_ForecastComparison_scopeHelp</name></customLabels><customLabels><label
+    >Horizonte (meses)</label><name
+    >AXF_ForecastComparison_horizon</name></customLabels><customLabels><label
+    >Cenário</label><name
+    >AXF_ForecastComparison_scenario</name></customLabels><customLabels><label
+    >Conservador — só confirmados</label><name
+    >AXF_ForecastComparison_scenarioCONSERVATIVE</name></customLabels><customLabels
+  ><label>Intermediário — acrescenta prováveis</label><name
+    >AXF_ForecastComparison_scenarioINTERMEDIATE</name></customLabels><customLabels
+  ><label>Otimista — acrescenta incertos</label><name
+    >AXF_ForecastComparison_scenarioOPTIMISTIC</name></customLabels><customLabels
+  ><label>Comparar</label><name
+    >AXF_ForecastComparison_compare</name></customLabels><customLabels><label
+    >Calculando cenários…</label><name
+    >AXF_ForecastComparison_loading</name></customLabels><customLabels><label
+    >Escolha o escopo, um horizonte e um cenário e compare.</label><name
+    >AXF_ForecastComparison_idle</name></customLabels><customLabels><label
+    >Nenhum compromisso ou plano encontrado no escopo.</label><name
+    >AXF_ForecastComparison_empty</name></customLabels><customLabels><label
+    >Confiança</label><name
+    >AXF_ForecastComparison_confidence</name></customLabels><customLabels><label
+    >Informativo (somente exibição)</label><name
+    >AXF_ForecastComparison_confidenceINFORMATIVE</name></customLabels><customLabels
+  ><label>Degradado</label><name
+    >AXF_ForecastComparison_confidenceDEGRADED</name></customLabels><customLabels
+  ><label>Bloqueado</label><name
+    >AXF_ForecastComparison_confidenceBLOCKED</name></customLabels><customLabels
+  ><label>Posição em</label><name
+    >AXF_ForecastComparison_asOf</name></customLabels><customLabels><label
+    >Política</label><name
+    >AXF_ForecastComparison_policy</name></customLabels><customLabels><label
+    >Horizonte termina em</label><name
+    >AXF_ForecastComparison_horizonEnd</name></customLabels><customLabels><label
+    >Explicação</label><name
+    >AXF_ForecastComparison_explanation</name></customLabels><customLabels
+  ><label
+    >Um titular do escopo está compartilhado só parcialmente; seus compromissos ficaram de fora.</label><name
+    >AXF_ForecastComparison_reasonCOVERAGE_UNVERIFIED</name></customLabels><customLabels
+  ><label>Nenhum titular autorizado no escopo.</label><name
+    >AXF_ForecastComparison_reasonNO_AUTHORIZED_SCOPE</name></customLabels><customLabels
+  ><label
+    >O escopo tem mais cronogramas ou planos do que uma comparação consegue avaliar.</label><name
+    >AXF_ForecastComparison_reasonVOLUME_EXCEEDED</name></customLabels><customLabels
+  ><label
+    >Um cronograma continua além do avaliado (recorrência indefinida ou teto de avaliação); os totais não estão completos.</label><name
+    >AXF_ForecastComparison_reasonCOMMITMENT_UNBOUNDED</name></customLabels><customLabels
+  ><label
+    >Há obrigações depois do horizonte selecionado; elas aparecem abaixo e afetam a capacidade.</label><name
+    >AXF_ForecastComparison_reasonOBLIGATIONS_BEYOND_HORIZON</name></customLabels><customLabels
+  ><label
+    >Há ocorrências vencidas antes da data de posição; estão listadas separadamente.</label><name
+    >AXF_ForecastComparison_reasonOVERDUE_OBLIGATIONS</name></customLabels><customLabels
+  ><label
+    >Mais de uma moeda no escopo; valores permanecem na moeda original, sem conversão.</label><name
+    >AXF_ForecastComparison_reasonMULTI_CURRENCY</name></customLabels><customLabels
+  ><label>A data de posição não é hoje.</label><name
+    >AXF_ForecastComparison_reasonAS_OF_NOT_TODAY</name></customLabels><customLabels
+  ><label>Nenhuma ocorrência de cronograma ou plano contribuiu.</label><name
+    >AXF_ForecastComparison_reasonNO_CONTRIBUTIONS</name></customLabels><customLabels
+  ><label>Uma contribuição sem moeda ou data foi ignorada.</label><name
+    >AXF_ForecastComparison_reasonINCOMPLETE_CONTRIBUTION</name></customLabels><customLabels
+  ><label
+    >Um cronograma mudou durante a leitura; seu compromisso não foi somado.</label><name
+    >AXF_ForecastComparison_reasonSCHEDULE_STALE</name></customLabels><customLabels
+  ><label
+    >Um cronograma tem referências confirmadas conflitantes; seu compromisso está bloqueado.</label><name
+    >AXF_ForecastComparison_reasonSCHEDULE_AMBIGUOUS</name></customLabels><customLabels
+  ><label>Um cronograma não pôde ser projetado.</label><name
+    >AXF_ForecastComparison_reasonSCHEDULE_INVALID</name></customLabels><customLabels
+  ><label>Um cronograma usa uma modalidade não suportada.</label><name
+    >AXF_ForecastComparison_reasonSCHEDULE_UNSUPPORTED</name></customLabels><customLabels
+  ><label>Um cronograma do escopo não está acessível para você.</label><name
+    >AXF_ForecastComparison_reasonSCHEDULE_FORBIDDEN</name></customLabels><customLabels
+  ><label>Um cronograma do escopo não pôde ser lido.</label><name
+    >AXF_ForecastComparison_reasonSCHEDULE_NOT_FOUND</name></customLabels><customLabels
+  ><label>Mês</label><name
+    >AXF_ForecastComparison_colPeriod</name></customLabels><customLabels><label
+    >Entradas</label><name
+    >AXF_ForecastComparison_colIn</name></customLabels><customLabels><label
+    >Saídas</label><name
+    >AXF_ForecastComparison_colOut</name></customLabels><customLabels><label
+    >Líquido</label><name
+    >AXF_ForecastComparison_colNet</name></customLabels><customLabels><label
+    >Confirmado</label><name
+    >AXF_ForecastComparison_colConfirmed</name></customLabels><customLabels
+  ><label>Provável</label><name
+    >AXF_ForecastComparison_colProbable</name></customLabels><customLabels
+  ><label>Incerto</label><name
+    >AXF_ForecastComparison_colUncertain</name></customLabels><customLabels
+  ><label>Mês a mês ({0})</label><name
+    >AXF_ForecastComparison_periods</name></customLabels><customLabels><label
+    >Todos os horizontes</label><name
+    >AXF_ForecastComparison_horizons</name></customLabels><customLabels><label
+    >Horizonte</label><name
+    >AXF_ForecastComparison_colHorizon</name></customLabels><customLabels><label
+    >Conservador</label><name
+    >AXF_ForecastComparison_colConservative</name></customLabels><customLabels
+  ><label>Intermediário</label><name
+    >AXF_ForecastComparison_colIntermediate</name></customLabels><customLabels
+  ><label>Otimista</label><name
+    >AXF_ForecastComparison_colOptimistic</name></customLabels><customLabels
+  ><label>Além do horizonte (saídas / entradas)</label><name
+    >AXF_ForecastComparison_colBeyond</name></customLabels><customLabels><label
+    >Além do horizonte selecionado</label><name
+    >AXF_ForecastComparison_beyond</name></customLabels><customLabels><label
+    >{0} ocorrência(s) após {1}: {2} de saída, {3} de entrada. Um horizonte curto não as esconde.</label><name
+    >AXF_ForecastComparison_beyondText</name></customLabels><customLabels><label
+    >Vencidas antes da posição</label><name
+    >AXF_ForecastComparison_overdue</name></customLabels><customLabels><label
+    >Fontes</label><name
+    >AXF_ForecastComparison_sources</name></customLabels><customLabels><label
+    >Cronograma</label><name
+    >AXF_ForecastComparison_sourceSCHEDULE</name></customLabels><customLabels
+  ><label>Planos avulsos</label><name
+    >AXF_ForecastComparison_sourcePLAN</name></customLabels><customLabels><label
+    >ocorrências</label><name
+    >AXF_ForecastComparison_occurrences</name></customLabels><customLabels
+  ><label>cobertura incompleta</label><name
+    >AXF_ForecastComparison_incompleteCoverage</name></customLabels><customLabels
+  ><label>Exclusões</label><name
+    >AXF_ForecastComparison_exclusions</name></customLabels><customLabels><label
+    >Titular não autorizado (não exibido)</label><name
+    >AXF_ForecastComparison_exNOT_AUTHORIZED</name></customLabels><customLabels
+  ><label>Registro não é uma pessoa ou empresa do Axon</label><name
+    >AXF_ForecastComparison_exNOT_A_HOLDER</name></customLabels><customLabels
+  ><label>Titular com acesso parcial retido</label><name
+    >AXF_ForecastComparison_exCOVERAGE_UNVERIFIED</name></customLabels><customLabels
+  ><label>Revisar os cronogramas que alimentam estes totais</label><name
+    >AXF_ForecastComparison_actionREVIEW_SCHEDULES</name></customLabels><customLabels
+  ><label>Nenhuma ação pode ser tomada a partir desta comparação.</label><name
+    >AXF_ForecastComparison_actionNone</name></customLabels><customLabels><label
+    >Não foi possível calcular a comparação. Tente novamente.</label><name
+    >AXF_ForecastComparison_error</name></customLabels><customLabels><label
+    >Tentar novamente</label><name
+    >AXF_ForecastComparison_retry</name></customLabels><customLabels><label
+    >Você não tem permissão para comparar previsões.</label><name
+    >AXF_ForecastComparison_codeForbidden</name></customLabels><customLabels
+  ><label
+    >Parte dos dados desta comparação não está acessível para você.</label><name
+    >AXF_ForecastComparison_codeNotAccessible</name></customLabels><customLabels
+  ><label>Requisição inválida.</label><name
+    >AXF_ForecastComparison_codeInvalidInput</name></customLabels><customLabels
+  ><label>Comparação atualizada: {0}, {1} meses, confiança {2}.</label><name
+    >AXF_ForecastComparison_updated</name></customLabels></Translations>

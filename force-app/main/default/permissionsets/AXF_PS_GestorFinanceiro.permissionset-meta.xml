@@ -283,6 +283,14 @@
     <apexClass>AXF_CLS_CTRL_ArchiveExplorer</apexClass>
     <enabled>true</enabled>
   </classAccesses>
+  <classAccesses>
+    <apexClass>ALT_CLS_ForecastComparisonService</apexClass>
+    <enabled>true</enabled>
+  </classAccesses>
+  <classAccesses>
+    <apexClass>AXF_CLS_CTRL_ForecastComparison</apexClass>
+    <enabled>true</enabled>
+  </classAccesses>
   <customPermissions>
     <enabled>true</enabled>
     <name>AXF_CanConfigure</name>
@@ -318,6 +326,10 @@
   <customPermissions>
     <enabled>true</enabled>
     <name>AXF_CanReadArchive</name>
+  </customPermissions>
+  <customPermissions>
+    <enabled>true</enabled>
+    <name>AXF_CanCompareForecast</name>
   </customPermissions>
   <fieldPermissions>
     <editable>true</editable>
@@ -2322,6 +2334,10 @@
     <recordType>Account.AXF_Business</recordType>
     <visible>true</visible>
   </recordTypeVisibilities>
+  <tabSettings>
+    <tab>AXF_CT_ForecastComparison</tab>
+    <visibility>Visible</visibility>
+  </tabSettings>
   <tabSettings>
     <tab>AXF_AddPersonAccess</tab>
     <visibility>Visible</visibility>

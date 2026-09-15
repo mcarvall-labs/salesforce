@@ -1550,5 +1550,271 @@
     >Search holder</value></labels><labels><fullName
     >AXF_ArchiveExplorer_colReason</fullName><language
     >en_US</language><protected>false</protected><shortDescription
-    >Reason column</shortDescription><value
-    >Reason</value></labels></CustomLabels>
+    >Reason column</shortDescription><value>Reason</value></labels><labels
+  ><fullName>AXF_ForecastComparison_title</fullName><language
+    >en_US</language><protected>false</protected><shortDescription
+    >Title</shortDescription><value
+    >Horizons and scenarios</value></labels><labels><fullName
+    >AXF_ForecastComparison_intro</fullName><language>en_US</language><protected
+    >false</protected><shortDescription>Intro</shortDescription><value
+    >Compare what is committed, probable and uncertain over 3 to 24 months. Amounts are included in full — nothing is weighted by probability.</value></labels><labels
+  ><fullName>AXF_ForecastComparison_scope</fullName><language
+    >en_US</language><protected>false</protected><shortDescription
+    >Scope</shortDescription><value
+    >People and companies in scope</value></labels><labels><fullName
+    >AXF_ForecastComparison_scopeAvailable</fullName><language
+    >en_US</language><protected>false</protected><shortDescription
+    >Scope available</shortDescription><value>Available</value></labels><labels
+  ><fullName>AXF_ForecastComparison_scopeHelp</fullName><language
+    >en_US</language><protected>false</protected><shortDescription
+    >Scope help</shortDescription><value
+    >Only holders you are authorized to see are listed; partially shared holders are withheld from totals.</value></labels><labels
+  ><fullName>AXF_ForecastComparison_horizon</fullName><language
+    >en_US</language><protected>false</protected><shortDescription
+    >Horizon</shortDescription><value>Horizon (months)</value></labels><labels
+  ><fullName>AXF_ForecastComparison_scenario</fullName><language
+    >en_US</language><protected>false</protected><shortDescription
+    >Scenario</shortDescription><value>Scenario</value></labels><labels
+  ><fullName>AXF_ForecastComparison_scenarioCONSERVATIVE</fullName><language
+    >en_US</language><protected>false</protected><shortDescription
+    >Conservative</shortDescription><value
+    >Conservative — confirmed only</value></labels><labels><fullName
+    >AXF_ForecastComparison_scenarioINTERMEDIATE</fullName><language
+    >en_US</language><protected>false</protected><shortDescription
+    >Intermediate</shortDescription><value
+    >Intermediate — adds probable</value></labels><labels><fullName
+    >AXF_ForecastComparison_scenarioOPTIMISTIC</fullName><language
+    >en_US</language><protected>false</protected><shortDescription
+    >Optimistic</shortDescription><value
+    >Optimistic — adds uncertain</value></labels><labels><fullName
+    >AXF_ForecastComparison_compare</fullName><language
+    >en_US</language><protected>false</protected><shortDescription
+    >Compare</shortDescription><value>Compare</value></labels><labels><fullName
+    >AXF_ForecastComparison_loading</fullName><language
+    >en_US</language><protected>false</protected><shortDescription
+    >Loading</shortDescription><value
+    >Computing scenarios…</value></labels><labels><fullName
+    >AXF_ForecastComparison_idle</fullName><language>en_US</language><protected
+    >false</protected><shortDescription>Idle</shortDescription><value
+    >Choose the scope, a horizon and a scenario, then compare.</value></labels><labels
+  ><fullName>AXF_ForecastComparison_empty</fullName><language
+    >en_US</language><protected>false</protected><shortDescription
+    >Empty</shortDescription><value
+    >No commitments or plans found in scope.</value></labels><labels><fullName
+    >AXF_ForecastComparison_confidence</fullName><language
+    >en_US</language><protected>false</protected><shortDescription
+    >Confidence</shortDescription><value>Confidence</value></labels><labels
+  ><fullName>AXF_ForecastComparison_confidenceINFORMATIVE</fullName><language
+    >en_US</language><protected>false</protected><shortDescription
+    >Informative</shortDescription><value
+    >Informative (display only)</value></labels><labels><fullName
+    >AXF_ForecastComparison_confidenceDEGRADED</fullName><language
+    >en_US</language><protected>false</protected><shortDescription
+    >Degraded</shortDescription><value>Degraded</value></labels><labels
+  ><fullName>AXF_ForecastComparison_confidenceBLOCKED</fullName><language
+    >en_US</language><protected>false</protected><shortDescription
+    >Blocked</shortDescription><value>Blocked</value></labels><labels><fullName
+    >AXF_ForecastComparison_asOf</fullName><language>en_US</language><protected
+    >false</protected><shortDescription>As of</shortDescription><value
+    >As of</value></labels><labels><fullName
+    >AXF_ForecastComparison_policy</fullName><language
+    >en_US</language><protected>false</protected><shortDescription
+    >Policy</shortDescription><value>Policy</value></labels><labels><fullName
+    >AXF_ForecastComparison_horizonEnd</fullName><language
+    >en_US</language><protected>false</protected><shortDescription
+    >Horizon end</shortDescription><value
+    >Horizon ends on</value></labels><labels><fullName
+    >AXF_ForecastComparison_explanation</fullName><language
+    >en_US</language><protected>false</protected><shortDescription
+    >Explanation</shortDescription><value>Explanation</value></labels><labels
+  ><fullName
+    >AXF_ForecastComparison_reasonCOVERAGE_UNVERIFIED</fullName><language
+    >en_US</language><protected>false</protected><shortDescription
+    >Coverage unverified</shortDescription><value
+    >A holder in scope is only partially shared with you; its commitments were withheld.</value></labels><labels
+  ><fullName
+    >AXF_ForecastComparison_reasonNO_AUTHORIZED_SCOPE</fullName><language
+    >en_US</language><protected>false</protected><shortDescription
+    >No scope</shortDescription><value
+    >No authorized holder in scope.</value></labels><labels><fullName
+    >AXF_ForecastComparison_reasonVOLUME_EXCEEDED</fullName><language
+    >en_US</language><protected>false</protected><shortDescription
+    >Volume</shortDescription><value
+    >The scope holds more schedules or plans than one comparison can evaluate.</value></labels><labels
+  ><fullName
+    >AXF_ForecastComparison_reasonCOMMITMENT_UNBOUNDED</fullName><language
+    >en_US</language><protected>false</protected><shortDescription
+    >Unbounded</shortDescription><value
+    >A schedule continues beyond what was evaluated (indefinite recurrence or evaluation ceiling); totals are not complete.</value></labels><labels
+  ><fullName
+    >AXF_ForecastComparison_reasonOBLIGATIONS_BEYOND_HORIZON</fullName><language
+    >en_US</language><protected>false</protected><shortDescription
+    >Beyond horizon</shortDescription><value
+    >Obligations exist after the selected horizon; they are shown below and affect capacity.</value></labels><labels
+  ><fullName
+    >AXF_ForecastComparison_reasonOVERDUE_OBLIGATIONS</fullName><language
+    >en_US</language><protected>false</protected><shortDescription
+    >Overdue</shortDescription><value
+    >Overdue occurrences exist before the as-of date; they are listed separately.</value></labels><labels
+  ><fullName>AXF_ForecastComparison_reasonMULTI_CURRENCY</fullName><language
+    >en_US</language><protected>false</protected><shortDescription
+    >Multi currency</shortDescription><value
+    >More than one currency in scope; amounts stay in their original currency, no conversion applied.</value></labels><labels
+  ><fullName>AXF_ForecastComparison_reasonAS_OF_NOT_TODAY</fullName><language
+    >en_US</language><protected>false</protected><shortDescription
+    >As of</shortDescription><value
+    >The as-of date is not today.</value></labels><labels><fullName
+    >AXF_ForecastComparison_reasonNO_CONTRIBUTIONS</fullName><language
+    >en_US</language><protected>false</protected><shortDescription
+    >No contributions</shortDescription><value
+    >No schedule occurrence or plan contributed.</value></labels><labels
+  ><fullName
+    >AXF_ForecastComparison_reasonINCOMPLETE_CONTRIBUTION</fullName><language
+    >en_US</language><protected>false</protected><shortDescription
+    >Incomplete</shortDescription><value
+    >A contribution without currency or date was ignored.</value></labels><labels
+  ><fullName>AXF_ForecastComparison_reasonSCHEDULE_STALE</fullName><language
+    >en_US</language><protected>false</protected><shortDescription
+    >Stale</shortDescription><value
+    >A schedule changed while being read; its commitment is not summed.</value></labels><labels
+  ><fullName>AXF_ForecastComparison_reasonSCHEDULE_AMBIGUOUS</fullName><language
+    >en_US</language><protected>false</protected><shortDescription
+    >Ambiguous</shortDescription><value
+    >A schedule has conflicting confirmed references; its commitment is blocked.</value></labels><labels
+  ><fullName>AXF_ForecastComparison_reasonSCHEDULE_INVALID</fullName><language
+    >en_US</language><protected>false</protected><shortDescription
+    >Invalid</shortDescription><value
+    >A schedule could not be projected.</value></labels><labels><fullName
+    >AXF_ForecastComparison_reasonSCHEDULE_UNSUPPORTED</fullName><language
+    >en_US</language><protected>false</protected><shortDescription
+    >Unsupported</shortDescription><value
+    >A schedule uses an unsupported modality.</value></labels><labels><fullName
+    >AXF_ForecastComparison_reasonSCHEDULE_FORBIDDEN</fullName><language
+    >en_US</language><protected>false</protected><shortDescription
+    >Forbidden</shortDescription><value
+    >A schedule in scope is not accessible to you.</value></labels><labels
+  ><fullName>AXF_ForecastComparison_reasonSCHEDULE_NOT_FOUND</fullName><language
+    >en_US</language><protected>false</protected><shortDescription
+    >Not found</shortDescription><value
+    >A schedule in scope could not be read.</value></labels><labels><fullName
+    >AXF_ForecastComparison_colPeriod</fullName><language
+    >en_US</language><protected>false</protected><shortDescription
+    >Period</shortDescription><value>Month</value></labels><labels><fullName
+    >AXF_ForecastComparison_colIn</fullName><language>en_US</language><protected
+    >false</protected><shortDescription>Inflow</shortDescription><value
+    >Inflow</value></labels><labels><fullName
+    >AXF_ForecastComparison_colOut</fullName><language
+    >en_US</language><protected>false</protected><shortDescription
+    >Outflow</shortDescription><value>Outflow</value></labels><labels><fullName
+    >AXF_ForecastComparison_colNet</fullName><language
+    >en_US</language><protected>false</protected><shortDescription
+    >Net</shortDescription><value>Net</value></labels><labels><fullName
+    >AXF_ForecastComparison_colConfirmed</fullName><language
+    >en_US</language><protected>false</protected><shortDescription
+    >Confirmed</shortDescription><value>Confirmed</value></labels><labels
+  ><fullName>AXF_ForecastComparison_colProbable</fullName><language
+    >en_US</language><protected>false</protected><shortDescription
+    >Probable</shortDescription><value>Probable</value></labels><labels
+  ><fullName>AXF_ForecastComparison_colUncertain</fullName><language
+    >en_US</language><protected>false</protected><shortDescription
+    >Uncertain</shortDescription><value>Uncertain</value></labels><labels
+  ><fullName>AXF_ForecastComparison_periods</fullName><language
+    >en_US</language><protected>false</protected><shortDescription
+    >Periods</shortDescription><value
+    >Month by month ({0})</value></labels><labels><fullName
+    >AXF_ForecastComparison_horizons</fullName><language
+    >en_US</language><protected>false</protected><shortDescription
+    >Horizons</shortDescription><value>All horizons</value></labels><labels
+  ><fullName>AXF_ForecastComparison_colHorizon</fullName><language
+    >en_US</language><protected>false</protected><shortDescription
+    >Horizon column</shortDescription><value>Horizon</value></labels><labels
+  ><fullName>AXF_ForecastComparison_colConservative</fullName><language
+    >en_US</language><protected>false</protected><shortDescription
+    >Conservative column</shortDescription><value
+    >Conservative</value></labels><labels><fullName
+    >AXF_ForecastComparison_colIntermediate</fullName><language
+    >en_US</language><protected>false</protected><shortDescription
+    >Intermediate column</shortDescription><value
+    >Intermediate</value></labels><labels><fullName
+    >AXF_ForecastComparison_colOptimistic</fullName><language
+    >en_US</language><protected>false</protected><shortDescription
+    >Optimistic column</shortDescription><value
+    >Optimistic</value></labels><labels><fullName
+    >AXF_ForecastComparison_colBeyond</fullName><language
+    >en_US</language><protected>false</protected><shortDescription
+    >Beyond column</shortDescription><value
+    >Beyond horizon (out / in)</value></labels><labels><fullName
+    >AXF_ForecastComparison_beyond</fullName><language
+    >en_US</language><protected>false</protected><shortDescription
+    >Beyond</shortDescription><value
+    >Beyond the selected horizon</value></labels><labels><fullName
+    >AXF_ForecastComparison_beyondText</fullName><language
+    >en_US</language><protected>false</protected><shortDescription
+    >Beyond text</shortDescription><value
+    >{0} occurrence(s) after {1}: {2} out, {3} in. A short horizon does not hide them.</value></labels><labels
+  ><fullName>AXF_ForecastComparison_overdue</fullName><language
+    >en_US</language><protected>false</protected><shortDescription
+    >Overdue</shortDescription><value
+    >Overdue before the as-of date</value></labels><labels><fullName
+    >AXF_ForecastComparison_sources</fullName><language
+    >en_US</language><protected>false</protected><shortDescription
+    >Sources</shortDescription><value>Sources</value></labels><labels><fullName
+    >AXF_ForecastComparison_sourceSCHEDULE</fullName><language
+    >en_US</language><protected>false</protected><shortDescription
+    >Schedule</shortDescription><value>Schedule</value></labels><labels
+  ><fullName>AXF_ForecastComparison_sourcePLAN</fullName><language
+    >en_US</language><protected>false</protected><shortDescription
+    >Plan</shortDescription><value>Standalone plans</value></labels><labels
+  ><fullName>AXF_ForecastComparison_occurrences</fullName><language
+    >en_US</language><protected>false</protected><shortDescription
+    >Occurrences</shortDescription><value>occurrences</value></labels><labels
+  ><fullName>AXF_ForecastComparison_incompleteCoverage</fullName><language
+    >en_US</language><protected>false</protected><shortDescription
+    >Incomplete coverage</shortDescription><value
+    >coverage incomplete</value></labels><labels><fullName
+    >AXF_ForecastComparison_exclusions</fullName><language
+    >en_US</language><protected>false</protected><shortDescription
+    >Exclusions</shortDescription><value>Exclusions</value></labels><labels
+  ><fullName>AXF_ForecastComparison_exNOT_AUTHORIZED</fullName><language
+    >en_US</language><protected>false</protected><shortDescription
+    >Not authorized</shortDescription><value
+    >Holder not authorized (not shown)</value></labels><labels><fullName
+    >AXF_ForecastComparison_exNOT_A_HOLDER</fullName><language
+    >en_US</language><protected>false</protected><shortDescription
+    >Not a holder</shortDescription><value
+    >Record is not an Axon person or company</value></labels><labels><fullName
+    >AXF_ForecastComparison_exCOVERAGE_UNVERIFIED</fullName><language
+    >en_US</language><protected>false</protected><shortDescription
+    >Unverified</shortDescription><value
+    >Partially shared holder withheld</value></labels><labels><fullName
+    >AXF_ForecastComparison_actionREVIEW_SCHEDULES</fullName><language
+    >en_US</language><protected>false</protected><shortDescription
+    >Review</shortDescription><value
+    >Review the schedules that feed these totals</value></labels><labels
+  ><fullName>AXF_ForecastComparison_actionNone</fullName><language
+    >en_US</language><protected>false</protected><shortDescription
+    >No action</shortDescription><value
+    >No action can be taken from this comparison.</value></labels><labels
+  ><fullName>AXF_ForecastComparison_error</fullName><language
+    >en_US</language><protected>false</protected><shortDescription
+    >Error</shortDescription><value
+    >The comparison could not be computed. Try again.</value></labels><labels
+  ><fullName>AXF_ForecastComparison_retry</fullName><language
+    >en_US</language><protected>false</protected><shortDescription
+    >Retry</shortDescription><value>Try again</value></labels><labels><fullName
+    >AXF_ForecastComparison_codeForbidden</fullName><language
+    >en_US</language><protected>false</protected><shortDescription
+    >Forbidden</shortDescription><value
+    >You are not allowed to compare forecasts.</value></labels><labels><fullName
+    >AXF_ForecastComparison_codeNotAccessible</fullName><language
+    >en_US</language><protected>false</protected><shortDescription
+    >Not accessible</shortDescription><value
+    >Some of the data this comparison depends on is not accessible to you.</value></labels><labels
+  ><fullName>AXF_ForecastComparison_codeInvalidInput</fullName><language
+    >en_US</language><protected>false</protected><shortDescription
+    >Invalid input</shortDescription><value
+    >Invalid request.</value></labels><labels><fullName
+    >AXF_ForecastComparison_updated</fullName><language
+    >en_US</language><protected>false</protected><shortDescription
+    >Updated</shortDescription><value
+    >Comparison updated: {0}, {1} months, confidence {2}.</value></labels></CustomLabels>
