@@ -7,10 +7,12 @@
  * economicallocation.set.confirm.v1 (exige soma exata de 100% e confirma atomicamente).
  * Toda rejeicao e atomica: nada parcial persiste. A propriedade da conta permanece separada
  * da atribuicao economica: nenhuma parcela e inferida na ingestao. Rateio nao cria share.
- * A projecao derivada de atribuicao unica (AXF-127) e gravada na propria confirmacao: reflete
- * a unica pessoa/empresa somente quando o set CONFIRMED tem exatamente uma parcela de 100%
- * (G1) e fica vazia em rateio. Revisao (supersessao) e neutralizacao/reversao sao historias
- * irmas (AXF-128/129).
+ * A projecao derivada de atribuicao unica (AXF-127) e gravada na propria confirmacao: pelo
+ * contrato ratificado da AXF-5 (secao 5) ela reflete a unica pessoa/empresa somente quando o set
+ * CONFIRMED tem exatamente uma parcela de 100% e fica vazia em rateio; G1 apenas fixa a forma do
+ * sujeito (Account AXF_Person|AXF_Business). Enquanto um set tem autoridade, a projecao pode
+ * existir; ao terminar a autoridade ela e limpa (discard). Revisao (supersessao) e
+ * neutralizacao/reversao sao historias irmas (AXF-128/129).
  */
 public with sharing class ALT_CLS_EconomicAllocationService {
   public static final String IDENTITY_VERSION = 'alloc-v2';
@@ -324,8 +326,9 @@ public with sharing class ALT_CLS_EconomicAllocationService {
       allocationSet.AXF_EAS_PKL_State__c = STATE_CONFIRMED;
       allocationSet.AXF_EAS_DT_EffectiveAt__c = Datetime.now();
       allocationSet.AXF_EAS_EXI_ActiveToken__c = activeToken(fact.identity);
-      // AXF-127/G1: derived singular projection. Unconditional on purpose — apportionment
-      // always writes null, so no primary or first holder is ever promoted.
+      // AXF-127: derived singular projection, per the ratified AXF-5 contract (5) — assignment
+      // unconditional on purpose: apportionment always writes null, so no primary or first holder
+      // is ever promoted.
       allocationSet.AXF_EAS_LKP_AttributedAccount__c = attributedAccount(
         allocations
       );
@@ -371,6 +374,11 @@ public with sharing class ALT_CLS_EconomicAllocationService {
     try {
       ALT_CLS_EconomicAllocationGuard.beginWrite();
       allocationSet.AXF_EAS_PKL_State__c = STATE_DISCARDED;
+      // AXF-127/G1: a set that lost its authority keeps no singular projection. The field is
+      // readable and editable and feeds reports/list views, so a discarded set must not keep a
+      // value that no longer corresponds to any confirmed authority. Assigned in the same DML
+      // that ends the set, exactly as confirm() assigns it when the authority begins.
+      allocationSet.AXF_EAS_LKP_AttributedAccount__c = null;
       allocationSet.AXF_EAS_NUM_Version__c =
         nz(allocationSet.AXF_EAS_NUM_Version__c) + 1;
       Database.update(allocationSet, AccessLevel.USER_MODE);
@@ -558,10 +566,12 @@ public with sharing class ALT_CLS_EconomicAllocationService {
   }
 
   /**
-   * Derived singular projection (AXF-127, G1): the sole person/company holder only when the
-   * confirmed set carries exactly one 100% parcel. Apportionment derives null — never a
-   * primary or first participant. The value is a read-only projection: it is not consulted by
-   * authorization, sharing or calculation anywhere.
+   * Derived singular projection (AXF-127), as ratified by the AXF-5 lineage contract (section 5):
+   * the sole person/company only while the confirmed set carries exactly one 100% parcel.
+   * Apportionment derives null — never a primary or first participant. G1 is what makes the
+   * subject valid: the allocated account is an `Account` of record type `AXF_Person` or
+   * `AXF_Business`, because `authorizedHolders()` gated it. The value is a read-only projection:
+   * it is not consulted by authorization, sharing or calculation anywhere.
    */
   private static Id attributedAccount(
     List<AXF_OBJ_EconomicAllocation__c> allocations
