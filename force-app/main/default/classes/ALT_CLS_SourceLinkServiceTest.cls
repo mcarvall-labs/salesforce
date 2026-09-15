@@ -438,7 +438,16 @@ private class ALT_CLS_SourceLinkServiceTest {
       Integer virtualCount = 0;
       for (ALT_CLS_SourceLinkService.CandidateView c : all.items) {
         if (c.persisted) {
-          Assert.isTrue(c.linkable, 'persisted forecasts are linkable');
+          if (c.currencyIso == 'BRL') {
+            Assert.isTrue(c.linkable, 'persisted forecasts are linkable');
+          } else {
+            // AXF-140: another currency is shown but blocked (exact currency arithmetic).
+            Assert.isFalse(
+              c.linkable,
+              'a foreign-currency target is never selectable'
+            );
+            Assert.areEqual('BLOCKED', c.state);
+          }
           if (c.scheduleId != null) {
             scheduled++;
             continue;
@@ -452,7 +461,13 @@ private class ALT_CLS_SourceLinkServiceTest {
         }
       }
       Assert.areEqual(
-        new List<Id>{ plans[3].Id, plans[0].Id, plans[1].Id, plans[2].Id },
+        new List<Id>{
+          plans[3].Id,
+          plans[0].Id,
+          plans[1].Id,
+          plans[2].Id,
+          plans[8].Id
+        },
         persisted,
         'AXF-MATCHING presentation order: exact source identity first, then record identity; never the closest amount or date'
       );
@@ -490,6 +505,11 @@ private class ALT_CLS_SourceLinkServiceTest {
         funded.put(v.feature, v);
       }
       Assert.areEqual(9, funded.size(), 'every feature is reported');
+      Assert.areEqual(
+        'BLOCKED',
+        lookup.get(plans[8].Id).state,
+        'AXF-140: a foreign-currency target is blocked, visible and never confirmed'
+      );
       Assert.areEqual('EXACT', funded.get('SOURCE_IDENTITY').relation);
       Assert.areEqual('EXACT', funded.get('HOLDER').relation);
       Assert.areEqual('EXACT', funded.get('AMOUNT').relation);
@@ -507,7 +527,11 @@ private class ALT_CLS_SourceLinkServiceTest {
         'provider vs user category folded'
       );
       Assert.areEqual('Housing', funded.get('CATEGORY').sourceValue);
-      Assert.areEqual('UNKNOWN', funded.get('EXTERNAL_IDENTITY').relation);
+      Assert.areEqual(
+        'REDACTED',
+        funded.get('EXTERNAL_IDENTITY').relation,
+        'AXF-140: the withheld provider key is redacted, so it never orders'
+      );
       Assert.isFalse(lookup.get(plans[3].Id).tied);
       Assert.isFalse(
         lookup.get(plans[0].Id).tied,
@@ -543,8 +567,10 @@ private class ALT_CLS_SourceLinkServiceTest {
         'provider key never leaves the server'
       );
       for (ALT_CLS_SourceLinkService.CandidateView c : all.items) {
+        // AXF-140: a same-currency candidate stays CONSULTATIVE (policy §3); a foreign-currency
+        // one is BLOCKED. Neither is ever confirmed automatically.
         Assert.areEqual(
-          'CONSULTATIVE',
+          c.currencyIso == 'BRL' ? 'CONSULTATIVE' : 'BLOCKED',
           c.state,
           'nothing is confirmed automatically'
         );
@@ -819,7 +845,9 @@ private class ALT_CLS_SourceLinkServiceTest {
         failure(confirmInput(facts[3], credit.Id, 0, 100, 'credit'))
       );
       Assert.areEqual(
-        'CURRENCY_MISMATCH',
+        // AXF-140: with no usable quote for the pair, the refusal names the missing material rate
+        // (what the user must correct) instead of the bare currency mismatch.
+        'MISSING_MATERIAL_FX',
         failure(confirmInput(facts[3], usd.Id, 0, 100, 'usd'))
       );
       Assert.areEqual(
@@ -1330,6 +1358,279 @@ private class ALT_CLS_SourceLinkServiceTest {
           WHERE AXF_RA_LKP_BankTransaction__c = :source.Id
         ],
         'nothing persisted by the refused commands'
+      );
+    }
+  }
+
+  private static void quote(
+    String baseIso,
+    String quoteIso,
+    Decimal rate,
+    Datetime effectiveAt,
+    String key
+  ) {
+    System.runAs(new User(Id = UserInfo.getUserId())) {
+      insert new AXF_OBJ_ExchangeRate__c(
+        AXF_EXR_TXT_BaseCurrency__c = baseIso,
+        AXF_EXR_TXT_QuoteCurrency__c = quoteIso,
+        AXF_EXR_NUM_Rate__c = rate,
+        AXF_EXR_PKL_Side__c = 'SELL',
+        AXF_EXR_TXT_Provider__c = ALT_CLS_IndicativeEquivalenceService.PROVIDER_BCB_PTAX,
+        AXF_EXR_DT_EffectiveDateTime__c = effectiveAt,
+        AXF_EXR_EXI_RateKey__c = 'axf140-' + key
+      );
+    }
+  }
+
+  /**
+   * AXF-140 AC-1/AC-2: the evidence of a partial or foreign-currency candidate stays separated
+   * (original, available, currency, conversion, remainder), a non-zero remainder is never zeroed
+   * by an invented tolerance, and a pair without material FX evidence blocks confirmation.
+   */
+  @IsTest
+  static void partialAndMultiCurrencyCandidatesSeparateFactsAndBlockWithoutMaterialFx() {
+    System.runAs(byAlias('axf134g')) {
+      Account owner = holder('Holder 140 candidates');
+      AXF_OBJ_BankAccount__c available = bank(owner.Id, 'AVAILABLE', 'BRL');
+      AXF_OBJ_BankAccountTransaction__c source = fact(
+        available.Id,
+        100,
+        'POSTED',
+        Date.today(),
+        'axf140'
+      );
+      insert source;
+      Date due = Date.today().addDays(2);
+      List<AXF_OBJ_FinancialTransaction__c> plans = new List<AXF_OBJ_FinancialTransaction__c>{
+        plan(owner.Id, 'covered', 80, 'DEBIT', 'BRL', due),
+        plan(owner.Id, 'partial', 100.01, 'DEBIT', 'BRL', due),
+        plan(owner.Id, 'usd', 100, 'DEBIT', 'USD', due),
+        plan(owner.Id, 'eur', 100, 'DEBIT', 'EUR', due)
+      };
+      insert plans;
+      // Older than the approved indicative limit (AXF-92): fetched, reported as a fact, never used.
+      quote('EUR', 'BRL', 6.10, System.now().addDays(-8), 'stale-eur');
+      ALT_CLS_SourceLinkService service = new ALT_CLS_SourceLinkService();
+
+      Test.startTest();
+      ALT_CLS_SourceLinkService.CandidatePage page = service.listCandidates(
+        candidateQuery(source.Id, 1, 50)
+      );
+      String usdWithoutQuote = failure(
+        confirmInput(source, plans[2].Id, 0, 100, 'usd-none')
+      );
+      Test.stopTest();
+
+      CandidateViewByTarget byTarget = new CandidateViewByTarget(page.items);
+      ALT_CLS_SourceLinkService.CandidateView covered = byTarget.get(
+        plans[0].Id
+      );
+      Assert.areEqual(80, covered.amount, 'original amount');
+      Assert.areEqual(
+        80,
+        covered.residual,
+        'available amount, kept apart from the original'
+      );
+      Assert.areEqual('BRL', covered.currencyIso);
+      Assert.areEqual(
+        0,
+        covered.residualAfter,
+        'the source extinguishes it exactly'
+      );
+      Assert.areEqual('CONSULTATIVE', covered.state);
+      Assert.isTrue(covered.linkable);
+      Assert.isNull(
+        covered.conversion,
+        'no conversion is invented in one currency'
+      );
+
+      ALT_CLS_SourceLinkService.CandidateView partial = byTarget.get(
+        plans[1].Id
+      );
+      Assert.areEqual(100.01, partial.amount, 'original amount');
+      Assert.areEqual(100.01, partial.residual, 'available amount');
+      Assert.areEqual(
+        0.01,
+        partial.residualAfter,
+        'the remainder stays explicit: no approved tolerance turns it into zero'
+      );
+      Assert.areEqual(
+        'CONSULTATIVE',
+        partial.state,
+        'a partial candidate stays inspectable and open for a draft allocation'
+      );
+      Assert.isTrue(partial.linkable);
+
+      for (Id foreignId : new List<Id>{ plans[2].Id, plans[3].Id }) {
+        ALT_CLS_SourceLinkService.CandidateView foreign = byTarget.get(
+          foreignId
+        );
+        Assert.areEqual(
+          'BLOCKED',
+          foreign.state,
+          'another currency cannot reach completion under exact currency arithmetic'
+        );
+        Assert.isFalse(
+          foreign.linkable,
+          'a blocked candidate is never selectable'
+        );
+        Assert.isTrue(
+          foreign.reasons.contains('CURRENCY_MISMATCH'),
+          foreign.reasons + ''
+        );
+        Assert.areEqual(
+          foreign.amount,
+          foreign.conversion.originalAmount,
+          'the original amount is preserved, never converted in place'
+        );
+        Assert.areEqual(foreign.currencyIso, foreign.conversion.originalIso);
+        Assert.areEqual(
+          'BRL',
+          foreign.conversion.reportingIso,
+          'compared in the source currency'
+        );
+        Assert.isNull(
+          foreign.residualAfter,
+          'a cross-currency remainder is unknown, never zero'
+        );
+      }
+      ALT_CLS_SourceLinkService.CandidateView usd = byTarget.get(plans[2].Id);
+      Assert.areEqual(
+        ALT_CLS_IndicativeEquivalenceService.STATE_UNAVAILABLE,
+        usd.conversion.state
+      );
+      Assert.isTrue(
+        usd.reasons.contains('MISSING_MATERIAL_FX'),
+        usd.reasons + ''
+      );
+      Assert.isNull(usd.conversion.rate, 'no rate is invented');
+      Assert.isNull(
+        usd.conversion.convertedAmount,
+        'an absent rate never becomes a converted zero'
+      );
+      ALT_CLS_SourceLinkService.CandidateView eur = byTarget.get(plans[3].Id);
+      Assert.areEqual(
+        ALT_CLS_IndicativeEquivalenceService.STATE_STALE,
+        eur.conversion.state,
+        'older than the approved limit'
+      );
+      Assert.areEqual(
+        6.10,
+        eur.conversion.rate,
+        'the stale rate travels as a fact'
+      );
+      Assert.isNull(
+        eur.conversion.convertedAmount,
+        'but never as a converted amount'
+      );
+      Assert.isTrue(
+        eur.reasons.contains('MISSING_MATERIAL_FX'),
+        eur.reasons + ''
+      );
+      Assert.areEqual(
+        'MISSING_MATERIAL_FX',
+        usdWithoutQuote,
+        'a missing material rate blocks confirmation'
+      );
+
+      quote('USD', 'BRL', 5.05, System.now(), 'fresh-usd');
+      ALT_CLS_SourceLinkService.CandidatePage repriced = service.listCandidates(
+        candidateQuery(source.Id, 1, 50)
+      );
+      ALT_CLS_SourceLinkService.CandidateView priced = new CandidateViewByTarget(
+          repriced.items
+        )
+        .get(plans[2].Id);
+      Assert.areEqual(
+        ALT_CLS_IndicativeEquivalenceService.STATE_ESTIMATED,
+        priced.conversion.state
+      );
+      Assert.areEqual(5.05, priced.conversion.rate);
+      Assert.areEqual(
+        505.00,
+        priced.conversion.convertedAmount,
+        'original × rate at the display scale, original untouched'
+      );
+      Assert.areEqual(
+        ALT_CLS_IndicativeEquivalenceService.PROVIDER_BCB_PTAX,
+        priced.conversion.provider
+      );
+      Assert.isNotNull(priced.conversion.effectiveAt);
+      Assert.isFalse(
+        priced.reasons.contains('MISSING_MATERIAL_FX'),
+        'the rate is now material'
+      );
+      Assert.areEqual(
+        'BLOCKED',
+        priced.state,
+        'a rate never turns a currency mismatch into a linkable candidate'
+      );
+      Assert.areEqual(
+        'CURRENCY_MISMATCH',
+        failure(confirmInput(source, plans[2].Id, 0, 100, 'usd-priced')),
+        'exact currency arithmetic still refuses the confirmation'
+      );
+    }
+  }
+
+  /**
+   * AXF-140 AC-3: evidence the workbench withholds is redacted — no value appears — and the page
+   * keeps naming the policy and the cutoff so the human decision stays explicit and auditable.
+   */
+  @IsTest
+  static void withheldProviderKeyIsRedactedAndTheDecisionStaysAuditable() {
+    System.runAs(byAlias('axf134g')) {
+      Account owner = holder('Holder 140 withheld');
+      AXF_OBJ_BankAccount__c available = bank(owner.Id, 'AVAILABLE', 'BRL');
+      AXF_OBJ_BankAccountTransaction__c source = fact(
+        available.Id,
+        100,
+        'POSTED',
+        Date.today(),
+        'withheld'
+      );
+      insert source;
+      insert plan(
+        owner.Id,
+        'withheld-plan',
+        100,
+        'DEBIT',
+        'BRL',
+        Date.today().addDays(1)
+      );
+      Test.startTest();
+      ALT_CLS_SourceLinkService.CandidatePage page = new ALT_CLS_SourceLinkService()
+        .listCandidates(candidateQuery(source.Id, 1, 10));
+      Test.stopTest();
+      Map<String, ALT_CLS_MatchEvidence.EvidenceView> features = new Map<String, ALT_CLS_MatchEvidence.EvidenceView>();
+      for (ALT_CLS_MatchEvidence.EvidenceView v : page.items[0].evidence) {
+        features.put(v.feature, v);
+      }
+      Assert.areEqual(
+        ALT_CLS_MatchEvidence.REL_REDACTED,
+        features.get('EXTERNAL_IDENTITY').relation,
+        'the withheld provider key is never disclosed as a fact'
+      );
+      Assert.isNull(features.get('EXTERNAL_IDENTITY').sourceValue);
+      Assert.isNull(features.get('EXTERNAL_IDENTITY').candidateValue);
+      Assert.areEqual(1, page.items.size());
+      Assert.areEqual(
+        ALT_CLS_MatchEvidence.STATE_CONSULTATIVE,
+        page.items[0].state
+      );
+      Assert.areEqual(
+        ALT_CLS_MatchEvidence.MATCHING_POLICY,
+        page.matchingPolicy,
+        'the declaring policy travels with the decision'
+      );
+      Assert.isNotNull(
+        page.evidenceCutoff,
+        'the evidence cutoff travels with it'
+      );
+      Assert.areEqual(
+        ALT_CLS_MatchEvidence.FEATURES.size(),
+        page.items[0].evidence.size(),
+        'absence is reported feature by feature, never dropped'
       );
     }
   }

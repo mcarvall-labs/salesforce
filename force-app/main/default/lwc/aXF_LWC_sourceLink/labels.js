@@ -125,6 +125,12 @@ import evxDESCRIPTION_CONTAINS_CANDIDATE from "@salesforce/label/c.AXF_SourceLin
 import evxDESCRIPTION_CONTAINED_IN_CANDIDATE from "@salesforce/label/c.AXF_SourceLink_evxDESCRIPTION_CONTAINED_IN_CANDIDATE";
 import evxCATEGORY_CONTAINS_CANDIDATE from "@salesforce/label/c.AXF_SourceLink_evxCATEGORY_CONTAINS_CANDIDATE";
 import evxCATEGORY_CONTAINED_IN_CANDIDATE from "@salesforce/label/c.AXF_SourceLink_evxCATEGORY_CONTAINED_IN_CANDIDATE";
+import codeMISSING_MATERIAL_FX from "@salesforce/label/c.AXF_SourceLink_codeMISSING_MATERIAL_FX";
+import evBlocked from "@salesforce/label/c.AXF_SourceLink_evBlocked";
+import factResidualAfter from "@salesforce/label/c.AXF_SourceLink_factResidualAfter";
+import convEstimatedLine from "@salesforce/label/c.AXF_SourceLink_convEstimatedLine";
+import convStaleLine from "@salesforce/label/c.AXF_SourceLink_convStaleLine";
+import convUnavailableLine from "@salesforce/label/c.AXF_SourceLink_convUnavailableLine";
 
 export default {
   title,
@@ -253,5 +259,11 @@ export default {
   evxDESCRIPTION_CONTAINS_CANDIDATE,
   evxDESCRIPTION_CONTAINED_IN_CANDIDATE,
   evxCATEGORY_CONTAINS_CANDIDATE,
-  evxCATEGORY_CONTAINED_IN_CANDIDATE
+  evxCATEGORY_CONTAINED_IN_CANDIDATE,
+  codeMISSING_MATERIAL_FX,
+  evBlocked,
+  factResidualAfter,
+  convEstimatedLine,
+  convStaleLine,
+  convUnavailableLine
 };

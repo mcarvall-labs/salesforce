@@ -9,6 +9,8 @@
 public inherited sharing class ALT_CLS_MatchEvidence {
   public static final String MATCHING_POLICY = 'AXF-MATCHING@1.0.0';
   public static final String STATE_CONSULTATIVE = 'CONSULTATIVE';
+  /** AXF-140, policy §3: material evidence is missing (no approved tolerance or default covers it). */
+  public static final String STATE_BLOCKED = 'BLOCKED';
   public static final String REL_EXACT = 'EXACT';
   public static final String REL_CONTAINS = 'CONTAINS';
   public static final String REL_COVERS = 'COVERS';
@@ -61,6 +63,8 @@ public inherited sharing class ALT_CLS_MatchEvidence {
     public String category;
     public Boolean descriptionRedacted = false;
     public Boolean categoryRedacted = false;
+    /** Evidence the caller withholds from the client: it is not displayed and cannot order. */
+    public Boolean externalIdentityRedacted = false;
   }
 
   /** @description Evaluates every feature independently; the result never ranks the candidate. */
@@ -73,7 +77,8 @@ public inherited sharing class ALT_CLS_MatchEvidence {
       identity(
         'EXTERNAL_IDENTITY',
         source.externalIdentity,
-        candidate.externalIdentity
+        candidate.externalIdentity,
+        source.externalIdentityRedacted || candidate.externalIdentityRedacted
       )
     );
     result.add(
@@ -122,8 +127,26 @@ public inherited sharing class ALT_CLS_MatchEvidence {
     String left,
     String right
   ) {
+    return identity(feature, left, right, false);
+  }
+
+  /**
+   * Withheld evidence is redacted: no value travels and the relation is never EXACT, so it cannot
+   * contribute to the presentation order (policy §2 — redaction is not a partial signal).
+   */
+  private static EvidenceView identity(
+    String feature,
+    String left,
+    String right,
+    Boolean redacted
+  ) {
     EvidenceView v = new EvidenceView();
     v.feature = feature;
+    if (redacted) {
+      v.relation = REL_REDACTED;
+      v.explanation = feature + '_REDACTED';
+      return v;
+    }
     v.sourceValue = left;
     v.candidateValue = right;
     if (String.isBlank(left) || String.isBlank(right)) {

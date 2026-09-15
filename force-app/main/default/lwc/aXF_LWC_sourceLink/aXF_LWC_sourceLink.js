@@ -67,6 +67,33 @@ const ORIGIN_LABEL = {
   CSV: labels.originCSV,
   MANUAL: labels.originMANUAL
 };
+/** AXF-140: the state comes from the server; the component renders it and derives nothing. */
+const STATE_LABEL = {
+  CONSULTATIVE: labels.evConsultative,
+  BLOCKED: labels.evBlocked
+};
+/** AXF-140: the conversion evidence is rendered as sent — an omitted amount stays omitted. */
+function conversionLine(c) {
+  if (!c.conversion) {
+    return "";
+  }
+  const pair = `${c.conversion.originalIso}/${c.conversion.reportingIso}`;
+  if (c.conversion.state === "ESTIMATED") {
+    return `${labels.convEstimatedLine} ${c.conversion.convertedAmount} ${c.conversion.reportingIso} · 1 ${c.conversion.originalIso} = ${c.conversion.rate} ${c.conversion.reportingIso} (${c.conversion.provider})`;
+  }
+  if (c.conversion.state === "STALE") {
+    // The quote is a fact; a converted amount is not, so none is shown.
+    return `${labels.convStaleLine} ${pair} · 1 ${c.conversion.originalIso} = ${c.conversion.rate} ${c.conversion.reportingIso} (${c.conversion.provider})`;
+  }
+  return `${labels.convUnavailableLine} ${pair}`;
+}
+/** AXF-140: the remaining residual is shown whenever it exists, including a non-zero one. */
+function residualAfterLine(c) {
+  if (c.residualAfter === null || c.residualAfter === undefined) {
+    return "";
+  }
+  return `${labels.factResidualAfter} ${c.residualAfter} ${c.currencyIso}`;
+}
 function dedupe(current, incoming, field) {
   const keyOf = (c) => {
     if (field !== "key") {
@@ -218,6 +245,9 @@ export default class AxfSourceLink extends LightningElement {
       index: i,
       statusLabel: STATUS_LABEL[c.status] || c.status,
       isVirtual: !c.persisted,
+      stateLabel: STATE_LABEL[c.state] || c.state,
+      conversionLine: conversionLine(c),
+      residualAfterLine: residualAfterLine(c),
       evidenceChips: (c.evidence || []).map(evidenceChip)
     }));
     if (this.sortMode === "DUE_DATE") {

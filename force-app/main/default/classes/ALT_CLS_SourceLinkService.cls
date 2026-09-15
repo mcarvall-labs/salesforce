@@ -7,6 +7,12 @@
  * The source fact is never copied or altered; only its optimistic version is bumped by AXF-25.
  * AXF-139: every candidate carries independent observable evidence (ALT_CLS_MatchEvidence,
  * AXF-MATCHING@1.0.0), stays CONSULTATIVE, and is ordered by the policy's presentation order.
+ * AXF-140: a candidate in another currency is shown with its original amount, available amount,
+ * currency, indicative conversion and remaining residual as separate facts; it stays BLOCKED and
+ * unlinkable because confirmation requires exact currency arithmetic, and confirmation of a pair
+ * without material exchange-rate evidence is refused with MISSING_MATERIAL_FX. No tolerance,
+ * weight, default rate or conclusion policy is introduced: a non-zero residual is reported as it
+ * is.
  */
 public with sharing class ALT_CLS_SourceLinkService {
   public static final String POLICY_VERSION = 'AXF-SOURCE-LINK@1.0.0';
@@ -115,6 +121,17 @@ public with sharing class ALT_CLS_SourceLinkService {
     public String state = ALT_CLS_MatchEvidence.STATE_CONSULTATIVE;
     @AuraEnabled
     public List<ALT_CLS_MatchEvidence.EvidenceView> evidence = new List<ALT_CLS_MatchEvidence.EvidenceView>();
+    /**
+     * AXF-140: residual left on this candidate once the source's available amount is applied to it
+     * (same currency only; null when the currencies differ). `residual` above is the candidate's own
+     * available amount; this is what remains after the allocation. Reported as computed — no
+     * approved tolerance may turn a non-zero residual into zero.
+     */
+    @AuraEnabled
+    public Decimal residualAfter;
+    /** AXF-140: indicative conversion evidence, present only when the currencies differ. */
+    @AuraEnabled
+    public ConversionView conversion;
     @AuraEnabled
     public Boolean tied = false;
     @AuraEnabled
@@ -122,6 +139,33 @@ public with sharing class ALT_CLS_SourceLinkService {
     public Id fundingId;
     public Id holderId;
     public transient String signature;
+  }
+
+  /**
+   * AXF-140: the conversion evidence of a candidate whose currency differs from the source's.
+   * Display-only and derived from the approved indicative layer (AXF-92): no rate is ever invented,
+   * the original amount and currency are never altered, and a quote that is stale or absent leaves
+   * the converted amount empty instead of zero.
+   */
+  public class ConversionView {
+    /** AXF-92 vocabulary: ESTIMATED | STALE | UNAVAILABLE. */
+    @AuraEnabled
+    public String state;
+    @AuraEnabled
+    public Decimal originalAmount;
+    @AuraEnabled
+    public String originalIso;
+    /** Currency the candidate is compared against: the source fact's own currency. */
+    @AuraEnabled
+    public String reportingIso;
+    @AuraEnabled
+    public Decimal rate;
+    @AuraEnabled
+    public String provider;
+    @AuraEnabled
+    public Datetime effectiveAt;
+    @AuraEnabled
+    public Decimal convertedAmount;
   }
 
   public class SourceQuery {
@@ -724,9 +768,145 @@ public with sharing class ALT_CLS_SourceLinkService {
       result.items.add((CandidateView) keys[i].payload);
     }
     result.hasMore = keys.size() > skip + result.pageSize;
+    resolveConversions(result.source, result.items);
     result.suggestedAmount = result.source.eligible
       ? result.source.residual
       : null;
+    return result;
+  }
+
+  /**
+   * AXF-140: resolves the indicative conversion evidence of the candidates shown on the page. One
+   * read per request for every currency involved, never one per row; the original amount and its
+   * currency are never altered and no rate is invented.
+   */
+  private void resolveConversions(
+    SourceView source,
+    List<CandidateView> items
+  ) {
+    Set<String> isos = new Set<String>();
+    for (CandidateView c : items) {
+      if (c.currencyIso != null && c.currencyIso != source.currencyIso) {
+        isos.add(c.currencyIso);
+      }
+    }
+    if (isos.isEmpty()) {
+      return;
+    }
+    Map<String, AXF_OBJ_ExchangeRate__c> quotes = indicativeQuotes(
+      source.currencyIso,
+      isos
+    );
+    for (CandidateView c : items) {
+      if (c.currencyIso == null || c.currencyIso == source.currencyIso) {
+        continue;
+      }
+      c.conversion = convert(
+        quotes.get(c.currencyIso),
+        c.currencyIso,
+        source.currencyIso,
+        c.amount
+      );
+      if (
+        c.conversion.state !=
+        ALT_CLS_IndicativeEquivalenceService.STATE_ESTIMATED
+      ) {
+        // Without a usable quote the pair has no material FX evidence: confirmation is blocked.
+        c.reasons.add('MISSING_MATERIAL_FX');
+      }
+    }
+  }
+
+  /** Material FX evidence for one pair, or null when the pair has none: a fresh usable quote. */
+  private static ConversionView materialRate(
+    String originalIso,
+    String reportingIso
+  ) {
+    Map<String, AXF_OBJ_ExchangeRate__c> quotes = indicativeQuotes(
+      reportingIso,
+      new Set<String>{ originalIso }
+    );
+    ConversionView view = convert(
+      quotes.get(originalIso),
+      originalIso,
+      reportingIso,
+      null
+    );
+    return view.state == ALT_CLS_IndicativeEquivalenceService.STATE_ESTIMATED
+      ? view
+      : null;
+  }
+
+  /** Fresh quote → ESTIMATED; only an older one → STALE; nothing → UNAVAILABLE (never zero). */
+  private static ConversionView convert(
+    AXF_OBJ_ExchangeRate__c quote,
+    String originalIso,
+    String reportingIso,
+    Decimal amount
+  ) {
+    ConversionView view = new ConversionView();
+    view.originalIso = originalIso;
+    // The original amount is a fact of the candidate: it travels whatever the quote state is.
+    view.originalAmount = amount;
+    view.reportingIso = reportingIso;
+    if (quote == null) {
+      view.state = ALT_CLS_IndicativeEquivalenceService.STATE_UNAVAILABLE;
+      return view;
+    }
+    view.rate = quote.AXF_EXR_NUM_Rate__c;
+    view.provider = quote.AXF_EXR_TXT_Provider__c;
+    view.effectiveAt = quote.AXF_EXR_DT_EffectiveDateTime__c;
+    if (
+      quote.AXF_EXR_DT_EffectiveDateTime__c <
+      System.now()
+        .addDays(-ALT_CLS_IndicativeEquivalenceService.QUOTE_MAX_AGE_DAYS)
+    ) {
+      view.state = ALT_CLS_IndicativeEquivalenceService.STATE_STALE;
+      return view;
+    }
+    view.state = ALT_CLS_IndicativeEquivalenceService.STATE_ESTIMATED;
+    view.convertedAmount = amount == null
+      ? null
+      : (amount * view.rate)
+          .setScale(
+            ALT_CLS_IndicativeEquivalenceService.DISPLAY_SCALE,
+            System.RoundingMode.HALF_UP
+          );
+    return view;
+  }
+
+  /** Latest indicative quote per base currency for one reporting currency, in a single read. */
+  private static Map<String, AXF_OBJ_ExchangeRate__c> indicativeQuotes(
+    String reportingIso,
+    Set<String> originalIsos
+  ) {
+    // The reference quote is read exactly as the approved indicative layer does (AXF-92): under
+    // sharing, not under field-level security, because the quote is shared reference data and its
+    // fields are not granted to every capability holder.
+    String provider = ALT_CLS_IndicativeEquivalenceService.PROVIDER_BCB_PTAX;
+    Datetime oldest = System.now()
+      .addDays(-ALT_CLS_IndicativeEquivalenceService.QUOTE_MAX_AGE_DAYS * 2);
+    Map<String, AXF_OBJ_ExchangeRate__c> result = new Map<String, AXF_OBJ_ExchangeRate__c>();
+    for (AXF_OBJ_ExchangeRate__c row : [
+      SELECT
+        AXF_EXR_TXT_BaseCurrency__c,
+        AXF_EXR_NUM_Rate__c,
+        AXF_EXR_TXT_Provider__c,
+        AXF_EXR_DT_EffectiveDateTime__c
+      FROM AXF_OBJ_ExchangeRate__c
+      WHERE
+        AXF_EXR_TXT_BaseCurrency__c IN :originalIsos
+        AND AXF_EXR_TXT_QuoteCurrency__c = :reportingIso
+        AND AXF_EXR_TXT_Provider__c = :provider
+        AND AXF_EXR_NUM_Rate__c > 0
+        AND AXF_EXR_DT_EffectiveDateTime__c >= :oldest
+      ORDER BY AXF_EXR_DT_EffectiveDateTime__c DESC
+    ]) {
+      // Newest first: the first row of each base currency is its latest quote.
+      if (!result.containsKey(row.AXF_EXR_TXT_BaseCurrency__c)) {
+        result.put(row.AXF_EXR_TXT_BaseCurrency__c, row);
+      }
+    }
     return result;
   }
 
@@ -736,6 +916,9 @@ public with sharing class ALT_CLS_SourceLinkService {
     result.externalIdentity = source.sourceKey == null
       ? null
       : source.origin + ':' + source.sourceKey;
+    // The provider key never reaches the client (SourceView.sourceKey is transient), so it is
+    // withheld evidence: it is reported as REDACTED and cannot contribute to the ordering.
+    result.externalIdentityRedacted = source.sourceKey != null;
     result.sourceIdentity = source.fundingId;
     result.holderId = source.accountId;
     result.currencyIso = source.currencyIso;
@@ -784,7 +967,7 @@ public with sharing class ALT_CLS_SourceLinkService {
       ' AXF_FTX_NUM_Sequence__c, AXF_FTX_LKP_BankAccount__c, AXF_FTX_LKP_CreditCard__c, AXF_FTX_LKP_Account__c' +
       ' FROM AXF_OBJ_FinancialTransaction__c' +
       ' WHERE AXF_FTX_LKP_Account__c = :accountId AND AXF_FTX_PKL_PlanKind__c = \'PLANNED\'' +
-      ' AND AXF_FTX_TXT_CurrencyIsoCode__c = :iso AND AXF_FTX_PKL_Direction__c = :direction' +
+      ' AND AXF_FTX_PKL_Direction__c = :direction' +
       ' AND (AXF_FTX_PKL_ScheduleState__c = NULL OR AXF_FTX_PKL_ScheduleState__c != \'CANCELLED\')' +
       ' AND (' +
       fundingField(source.sourceKind) +
@@ -802,7 +985,6 @@ public with sharing class ALT_CLS_SourceLinkService {
       soql,
       new Map<String, Object>{
         'accountId' => source.accountId,
-        'iso' => source.currencyIso,
         'direction' => source.direction,
         'fundingId' => source.fundingId,
         'pattern' => String.isBlank(term) ? null : pattern(term),
@@ -855,7 +1037,18 @@ public with sharing class ALT_CLS_SourceLinkService {
       c.version = row.AXF_FTX_NUM_Version__c == null
         ? 0
         : row.AXF_FTX_NUM_Version__c;
-      c.linkable = true;
+      if (c.currencyIso != source.currencyIso) {
+        // AXF-140: a candidate in another currency is shown with its own original, available and
+        // currency, but completion requires exact currency arithmetic (policy §3) and material FX
+        // evidence (policy §2): it stays BLOCKED and is never selectable, so no draft is offered
+        // for an allocation that cannot be confirmed. The residual is left unknown, never zero.
+        c.state = ALT_CLS_MatchEvidence.STATE_BLOCKED;
+        c.reasons.add('CURRENCY_MISMATCH');
+      } else {
+        // Policy §3: a non-zero remainder stays explicit; no approved tolerance exists to zero it.
+        c.residualAfter = residual - Math.min(source.residual, residual);
+        c.linkable = true;
+      }
       c.fundingId = (Id) row.get(fundingField(source.sourceKind));
       c.holderId = row.AXF_FTX_LKP_Account__c; // observed, not copied from the source
       result.add(c);
@@ -1082,6 +1275,15 @@ public with sharing class ALT_CLS_SourceLinkService {
     check(row.AXF_FTX_LKP_Account__c == source.accountId, 'UNAVAILABLE');
     check(row.AXF_FTX_PKL_PlanKind__c == 'PLANNED', 'INVALID_TARGET');
     check(row.AXF_FTX_PKL_ScheduleState__c != 'CANCELLED', 'TARGET_CANCELLED');
+    if (row.AXF_FTX_TXT_CurrencyIsoCode__c != source.currencyIso) {
+      // AXF-140: material FX evidence is checked first, so a pair with no usable quote is refused
+      // with the missing rate the user has to correct instead of a bare currency mismatch.
+      check(
+        materialRate(row.AXF_FTX_TXT_CurrencyIsoCode__c, source.currencyIso) !=
+        null,
+        'MISSING_MATERIAL_FX'
+      );
+    }
     check(
       row.AXF_FTX_TXT_CurrencyIsoCode__c == source.currencyIso,
       'CURRENCY_MISMATCH'

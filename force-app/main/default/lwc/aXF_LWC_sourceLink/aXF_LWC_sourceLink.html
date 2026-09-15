@@ -317,7 +317,7 @@
                     </td>
                     <td data-id="evidenceCell">
                       <lightning-badge
-                        label={labels.evConsultative}
+                        label={row.stateLabel}
                         class="slds-m-right_xx-small"
                       ></lightning-badge>
                       <template lwc:if={row.tied}>
@@ -346,6 +346,22 @@
                           </li>
                         </template>
                       </ul>
+                      <template lwc:if={row.conversionLine}>
+                        <p
+                          class="slds-text-body_small slds-m-top_xx-small"
+                          data-id="conversion"
+                        >
+                          {row.conversionLine}
+                        </p>
+                      </template>
+                      <template lwc:if={row.residualAfterLine}>
+                        <p
+                          class="slds-text-body_small slds-m-top_xx-small"
+                          data-id="residualAfter"
+                        >
+                          {row.residualAfterLine}
+                        </p>
+                      </template>
                     </td>
                     <td>
                       <template lwc:if={row.linkable}>

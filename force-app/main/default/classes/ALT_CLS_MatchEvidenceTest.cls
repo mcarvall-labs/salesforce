@@ -401,4 +401,80 @@ private class ALT_CLS_MatchEvidenceTest {
       'nothing exact beyond holder/currency is explicit uncertainty'
     );
   }
+
+  /**
+   * AXF-140 AC-3: withheld evidence carries no value and never satisfies EXACT, so it cannot
+   * promote a candidate in the presentation order; a disclosed exact identity still can.
+   */
+  @IsTest
+  static void withheldIdentityIsRedactedAndCannotOrder() {
+    ALT_CLS_MatchEvidence.Side source = side(
+      'CSV:key-1',
+      null,
+      null,
+      10,
+      10,
+      Date.today(),
+      null,
+      null
+    );
+    ALT_CLS_MatchEvidence.Side candidate = side(
+      'CSV:key-1',
+      null,
+      null,
+      10,
+      10,
+      Date.today(),
+      null,
+      null
+    );
+    Test.startTest();
+    List<ALT_CLS_MatchEvidence.EvidenceView> disclosed = ALT_CLS_MatchEvidence.evaluate(
+      source,
+      candidate
+    );
+    source.externalIdentityRedacted = true;
+    List<ALT_CLS_MatchEvidence.EvidenceView> withheld = ALT_CLS_MatchEvidence.evaluate(
+      source,
+      candidate
+    );
+    Test.stopTest();
+    Assert.areEqual(
+      ALT_CLS_MatchEvidence.REL_EXACT,
+      byFeature(disclosed).get('EXTERNAL_IDENTITY').relation,
+      'a disclosed identity is comparable'
+    );
+    ALT_CLS_MatchEvidence.EvidenceView identity = byFeature(withheld)
+      .get('EXTERNAL_IDENTITY');
+    Assert.areEqual(ALT_CLS_MatchEvidence.REL_REDACTED, identity.relation);
+    Assert.areEqual('EXTERNAL_IDENTITY_REDACTED', identity.explanation);
+    Assert.isNull(identity.sourceValue, 'withheld evidence carries no value');
+    Assert.isNull(identity.candidateValue);
+    Assert.areNotEqual(
+      ALT_CLS_MatchEvidence.signature(disclosed),
+      ALT_CLS_MatchEvidence.signature(withheld),
+      'withholding is reported, never silent'
+    );
+    // Ordering: the redacted identity never marks the candidate, so the record decides.
+    Assert.isFalse(
+      new ALT_CLS_MatchEvidence.OrderKey(withheld, 0, 'z', 'withheld')
+        .externalExact,
+      'a redacted identity is never an exact external identity'
+    );
+    Assert.isTrue(
+      new ALT_CLS_MatchEvidence.OrderKey(disclosed, 0, 'z', 'disclosed')
+        .externalExact,
+      'the control still orders on a disclosed exact identity'
+    );
+    List<ALT_CLS_MatchEvidence.OrderKey> keys = new List<ALT_CLS_MatchEvidence.OrderKey>{
+      new ALT_CLS_MatchEvidence.OrderKey(withheld, 0, 'b', 'withheld-b'),
+      new ALT_CLS_MatchEvidence.OrderKey(withheld, 0, 'a', 'withheld-a')
+    };
+    keys.sort();
+    Assert.areEqual(
+      'withheld-a',
+      (String) keys[0].payload,
+      'record identity decides; the withheld identity orders nothing'
+    );
+  }
 }
