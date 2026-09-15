@@ -1092,6 +1092,26 @@ private class ALT_CLS_EconomicAllocationServiceTest {
     .AXF_EAS_LKP_AttributedAccount__c;
   }
 
+  /** Seeds a DRAFT-only value through the content window the guard deliberately allows. */
+  private static void seedProjection(Id setId, Id accountId) {
+    ALT_CLS_EconomicAllocationGuard.beginWrite();
+    try {
+      Assert.isTrue(
+        Database.update(
+            new AXF_OBJ_EconomicAllocationSet__c(
+              Id = setId,
+              AXF_EAS_LKP_AttributedAccount__c = accountId
+            ),
+            false
+          )
+          .isSuccess(),
+        'Pre-condicao: DRAFT aceita conteudo.'
+      );
+    } finally {
+      ALT_CLS_EconomicAllocationGuard.endWrite();
+    }
+  }
+
   /** AXF-127 branch 1: an integral allocation reflects its sole person/company (G1). */
   @IsTest
   static void integralAllocationDerivesTheSolePersonOrCompanyProjection() {
@@ -1148,9 +1168,9 @@ private class ALT_CLS_EconomicAllocationServiceTest {
         [
           SELECT COUNT()
           FROM AccountShare
-          WHERE AccountId = :company.Id AND RowCause != 'Owner'
+          WHERE AccountId IN (:person.Id, :company.Id) AND RowCause != 'Owner'
         ],
-        'A projecao nao compartilha a pessoa/empresa projetada.'
+        'A projecao nao compartilha a pessoa nem a empresa projetada.'
       );
       Test.stopTest();
     }
@@ -1251,6 +1271,137 @@ private class ALT_CLS_EconomicAllocationServiceTest {
       Assert.isNull(
         storedProjection(draft.setId),
         'Confirmacao em rateio limpa o valor previo da projecao.'
+      );
+      Test.stopTest();
+    }
+  }
+
+  /**
+   * AXF-127/G2: the projection is the *allocated* subject, not the fact's own account. The fact
+   * belongs to one person/company and the 100% parcel goes to a different one, so an
+   * implementation that projected the fact's account fails here.
+   *
+   * AXF-127/G3: the "grants no access" claims are scoped to this set. The set's own Owner row is
+   * asserted first as the positive control — sharing really is materialised for this set — so the
+   * zero counts that follow are not vacuous: any grant the projection could add (an extra set
+   * share row, or a share of the allocated person) fails them. Two stronger fixtures were
+   * measured and rejected: a non-owner proposer cannot read the set it created nor write its own
+   * access share (`insufficient access rights on cross-reference id`, which
+   * `grantProposerAccess()` needs and swallows), and allocating to an account owned by a third
+   * user pulls an org-configured sharing `Rule` row into the AccountShare count.
+   */
+  @IsTest
+  static void integralAllocationProjectsTheAllocatedSubjectAndGrantsNoAccess() {
+    System.runAs(gestor()) {
+      Account holderAccount = holder('Titular Nao Alocado', 'AXF_Business');
+      Account allocated = holder('Pessoa Alocada', 'AXF_Person');
+      AXF_OBJ_BankAccountTransaction__c fact = bankFact(holderAccount, 'u');
+      ALT_CLS_EconomicAllocationService service = new ALT_CLS_EconomicAllocationService();
+      Test.startTest();
+      ALT_CLS_EconomicAllocationService.SetView draft = service.propose(
+        proposal(
+          'BANK',
+          fact.Id,
+          'op-u1',
+          new Map<Id, Decimal>{ allocated.Id => 100 }
+        )
+      );
+      Assert.areEqual(
+        'CONFIRMED',
+        service.confirm(draft.setId, draft.version, 'op-u1c').state
+      );
+      Assert.areEqual(
+        allocated.Id,
+        storedProjection(draft.setId),
+        'G2: a projecao reflete a pessoa alocada.'
+      );
+      Assert.isTrue(
+        storedProjection(draft.setId) != holderAccount.Id,
+        'G2: a projecao nao e a conta do proprio fato.'
+      );
+      Assert.areEqual(
+        gestor().Id,
+        [
+          SELECT OwnerId
+          FROM AXF_OBJ_EconomicAllocationSet__c
+          WHERE Id = :draft.setId
+        ]
+        .OwnerId,
+        'G3: o conjunto segue o titular do fato, nao a projecao.'
+      );
+      Assert.areEqual(
+        1,
+        [
+          SELECT COUNT()
+          FROM AXF_OBJ_EconomicAllocationSet__Share
+          WHERE ParentId = :draft.setId AND RowCause = 'Owner'
+        ],
+        'G3 (controle positivo): o compartilhamento existe para este conjunto.'
+      );
+      Assert.areEqual(
+        0,
+        [
+          SELECT COUNT()
+          FROM AXF_OBJ_EconomicAllocationSet__Share
+          WHERE ParentId = :draft.setId AND RowCause != 'Owner'
+        ],
+        'G3: a projecao nao concede acesso ao conjunto.'
+      );
+      Assert.areEqual(
+        0,
+        [
+          SELECT COUNT()
+          FROM AccountShare
+          WHERE AccountId = :allocated.Id AND RowCause != 'Owner'
+        ],
+        'G3: a projecao nao compartilha a pessoa alocada.'
+      );
+      Test.stopTest();
+    }
+  }
+
+  /**
+   * AXF-127/G1: the projection does not outlive the set's authority. A discard ends the set and
+   * the value must go with it. The service only writes the projection at confirmation, so the
+   * precondition (a DRAFT already carrying a value) is seeded through the DRAFT content window the
+   * guard deliberately allows — the field is readable and editable by FLS, which is exactly why
+   * the clear cannot be left to the caller.
+   */
+  @IsTest
+  static void discardClearsTheSingularProjectionOfTheEndedSet() {
+    System.runAs(gestor()) {
+      Account person = holder('Titular Descarte Projecao', 'AXF_Person');
+      AXF_OBJ_BankAccountTransaction__c fact = bankFact(person, 't');
+      ALT_CLS_EconomicAllocationService service = new ALT_CLS_EconomicAllocationService();
+      Test.startTest();
+      ALT_CLS_EconomicAllocationService.SetView draft = service.propose(
+        proposal(
+          'BANK',
+          fact.Id,
+          'op-t1',
+          new Map<Id, Decimal>{ person.Id => 100 }
+        )
+      );
+      seedProjection(draft.setId, person.Id);
+      Assert.areEqual(
+        person.Id,
+        storedProjection(draft.setId),
+        'Pre-condicao: valor previo gravado no rascunho.'
+      );
+      ALT_CLS_EconomicAllocationService.SetView discarded = service.discard(
+        draft.setId,
+        draft.version
+      );
+      Assert.areEqual('DISCARDED', discarded.state);
+      Assert.isNull(
+        storedProjection(draft.setId),
+        'G1: o conjunto sem autoridade nao mantem projecao singular.'
+      );
+      // The idempotent discard is a plain read and must not resurrect the value either.
+      Assert.areEqual('DISCARDED', service.discard(draft.setId, 0).state);
+      Assert.isNull(
+        storedProjection(draft.setId),
+        'G1: descarte idempotente nao ressuscita a projecao.'
       );
       Test.stopTest();
     }
