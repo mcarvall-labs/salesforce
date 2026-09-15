@@ -40,6 +40,7 @@ public with sharing class ALT_CLS_AxonOnboardingProgress {
   // ---- step catalogue (canonical order) ----
   public enum StepKey {
     WELCOME_PREFS,
+    HOLDERS,
     PLUGGY_CREDENTIALS,
     PLUGGY_DISCOVERY,
     ACCOUNT_HOLDERS,
@@ -51,6 +52,7 @@ public with sharing class ALT_CLS_AxonOnboardingProgress {
   @TestVisible
   private static final List<StepKey> STEP_ORDER = new List<StepKey>{
     StepKey.WELCOME_PREFS,
+    StepKey.HOLDERS,
     StepKey.PLUGGY_CREDENTIALS,
     StepKey.PLUGGY_DISCOVERY,
     StepKey.ACCOUNT_HOLDERS,
@@ -61,6 +63,7 @@ public with sharing class ALT_CLS_AxonOnboardingProgress {
 
   @TestVisible
   private static final Set<StepKey> OPTIONAL_STEPS = new Set<StepKey>{
+    StepKey.HOLDERS,
     StepKey.PEOPLE_ACCESS,
     StepKey.MANUAL_SOURCES
   };

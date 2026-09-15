@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<CustomField xmlns="http://soap.sforce.com/2006/04/metadata">
+  <fullName>AXF_SCH_TAL_FieldPatchJson__c</fullName>
+  <label>Patch de Campos (JSON)</label>
+  <type>LongTextArea</type>
+  <length>32768</length>
+  <visibleLines>4</visibleLines>
+  <required>false</required>
+  <description
+  >Patch tipado por campo, mapeado pelo servidor para campos físicos da allowlist. Aplicam-se apenas os campos selecionados; nenhum nome de campo bruto é um token de autoridade (AXF-103).</description>
+</CustomField>

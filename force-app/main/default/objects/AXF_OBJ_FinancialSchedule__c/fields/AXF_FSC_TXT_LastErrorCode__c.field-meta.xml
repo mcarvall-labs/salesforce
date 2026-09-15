@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<CustomField xmlns="http://soap.sforce.com/2006/04/metadata">
+  <fullName>AXF_FSC_TXT_LastErrorCode__c</fullName>
+  <label>Último Código de Erro</label>
+  <type>Text</type>
+  <length>80</length>
+  <required>false</required>
+  <description
+  >Código de erro higienizado da última falha de geração, sem detalhe sensível. Campo de cursor que entra no esquema por integridade do contrato; AXF-103 não o movimenta (AXF-104).</description>
+</CustomField>

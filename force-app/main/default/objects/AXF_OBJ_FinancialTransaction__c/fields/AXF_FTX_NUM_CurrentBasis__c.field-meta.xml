@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<CustomField xmlns="http://soap.sforce.com/2006/04/metadata">
+  <fullName>AXF_FTX_NUM_CurrentBasis__c</fullName>
+  <label>Base Corrente</label>
+  <type>Number</type>
+  <precision>18</precision>
+  <scale>2</scale>
+  <required>false</required>
+  <description
+  >Cache derivado da base corrente resolvida para a ocorrência, congelada na primeira alocação. A magnitude original permanece a previsão original e nunca é sobrescrita para atualizar uma estimativa. Valores acima do limite efetivo de 16,2 são rejeitados antes da escrita (AXF-103).</description>
+</CustomField>

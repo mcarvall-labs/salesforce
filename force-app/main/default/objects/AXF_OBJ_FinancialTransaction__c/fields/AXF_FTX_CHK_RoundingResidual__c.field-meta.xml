@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<CustomField xmlns="http://soap.sforce.com/2006/04/metadata">
+    <fullName>AXF_FTX_CHK_RoundingResidual__c</fullName>
+    <label>Ajuste de Resduo</label>
+    <type>Checkbox</type>
+    <defaultValue>false</defaultValue>
+    <description
+  >Marca a ultima parcela quando ela absorveu o residuo de arredondamento (AXF-20).</description>
+</CustomField>

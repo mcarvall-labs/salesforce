@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<CustomField xmlns="http://soap.sforce.com/2006/04/metadata">
+  <fullName>AXF_SRF_NUM_EffectiveSequence__c</fullName>
+  <label>Sequência Efetiva</label>
+  <type>Number</type>
+  <precision>5</precision>
+  <scale>0</scale>
+  <required>true</required>
+  <description
+  >Primeira ocorrência em que esta referência passa a influenciar o valor estimado. A projeção usa a maior ordem econômica com sequência efetiva menor ou igual à sequência da ocorrência (AXF-103).</description>
+</CustomField>

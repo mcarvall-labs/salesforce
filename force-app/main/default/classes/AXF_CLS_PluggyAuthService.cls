@@ -58,7 +58,19 @@ public with sharing class AXF_CLS_PluggyAuthService {
     );
     req.setTimeout(120000);
 
-    HttpResponse res = new Http().send(req);
+    HttpResponse res = null;
+    try {
+      res = new Http().send(req);
+    } catch (System.CalloutException authFailure) {
+      // A failure in the AUTH phase is an authentication/config problem — most commonly
+      // an External Credential whose clientId/clientSecret parameters were never
+      // provisioned, so the merge fields above fail to resolve with
+      // "Field ... does not exist". It must never be surfaced as a GET /items failure by
+      // the caller: report it as an auth/config error instead.
+      throw new AXF_CLS_PluggyConfigException(
+        credentialConfigError(correlationId)
+      );
+    }
 
     if (res.getStatusCode() != 200) {
       throw new AXF_CLS_PluggyAuthException(
@@ -102,5 +114,17 @@ public with sharing class AXF_CLS_PluggyAuthService {
     return AXF_CLS_PluggySettings.NC_CANDIDATE.equals(namedCredential)
       ? 'AXF_EXC_Pluggy_Candidate'
       : 'AXF_EXC_Pluggy';
+  }
+
+  /**
+   * @description Sanitized PT-BR message for an auth-phase failure. Names only the
+   * authentication concern, never the credential values or the raw platform error, and
+   * is clearly distinct from a GET /items failure surfaced by the HTTP client.
+   */
+  private static String credentialConfigError(String correlationId) {
+    return 'Falha na autenticacao Pluggy (credencial externa nao configurada ou inacessivel). ' +
+      'Verifique o Client ID e o Client Secret na tela de configuracao. ref ' +
+      correlationId +
+      '. Nenhum dado sensivel e registrado.';
   }
 }

@@ -1,0 +1,355 @@
+<template>
+  <lightning-card title={labels.title} icon-name="standard:record_delete">
+    <div class="slds-var-p-horizontal_medium">
+      <p class="slds-text-body_small slds-var-m-bottom_small">{labels.intro}</p>
+      <div role="status" aria-live="polite" class="slds-var-m-bottom_small">
+        <template lwc:if={busy}>
+          <lightning-spinner
+            alternative-text={labels.loading}
+            size="small"
+            variant="brand"
+          ></lightning-spinner>
+        </template>
+        <template lwc:if={error}>
+          <div
+            class="slds-notify slds-notify_alert slds-alert_error"
+            role="alert"
+            data-id="error"
+          >
+            <span>{error}</span>
+          </div>
+        </template>
+      </div>
+
+      <template lwc:if={noAccess}>
+        <p class="slds-text-color_weak" data-id="no-access">
+          {labels.noAccess}
+        </p>
+      </template>
+      <template lwc:if={info}>
+        <div
+          class="slds-notify slds-notify_alert slds-alert_info"
+          role="status"
+          data-id="info"
+        >
+          <span>{info}</span>
+        </div>
+      </template>
+      <template lwc:if={confirmation}>
+        <section
+          role="dialog"
+          aria-labelledby="closure-confirm-title"
+          class="slds-box slds-theme_warning slds-var-m-bottom_small"
+          data-id="confirmation"
+          onkeydown={handleDialogKey}
+        >
+          <h2 id="closure-confirm-title" class="slds-text-heading_small">
+            {labels.confirmResumeTitle}
+          </h2>
+          <p class="slds-var-m-vertical_x-small">{confirmationBody}</p>
+          <lightning-button
+            variant="brand"
+            label={labels.confirm}
+            onclick={acceptConfirmation}
+            data-id="confirm-yes"
+          ></lightning-button>
+          <lightning-button
+            label={labels.cancel}
+            onclick={cancelConfirmation}
+            class="slds-var-m-left_x-small"
+            data-id="confirm-no"
+          ></lightning-button>
+        </section>
+      </template>
+
+      <template lwc:if={allowed}>
+        <template lwc:if={detail}>
+          <lightning-button
+            label={labels.back}
+            onclick={handleBack}
+            class="slds-var-m-bottom_small"
+            data-id="back"
+          ></lightning-button>
+          <template lwc:if={detail.closed}>
+            <div
+              class="slds-notify slds-notify_alert slds-alert_success"
+              data-id="closed"
+            >
+              <span>{labels.closedBanner}</span>
+            </div>
+          </template>
+          <template lwc:if={isUnknown}>
+            <div
+              class="slds-notify slds-notify_alert slds-alert_warning"
+              role="alert"
+              data-id="unknown"
+            >
+              <span>{labels.unknownBanner}</span>
+            </div>
+          </template>
+          <template lwc:if={isBlocked}>
+            <div
+              class="slds-notify slds-notify_alert slds-alert_warning"
+              role="alert"
+              data-id="blocked"
+            >
+              <span>{labels.blockedBanner}</span>
+            </div>
+          </template>
+          <section
+            class="slds-box slds-theme_shade"
+            aria-labelledby="run-title"
+          >
+            <h2
+              id="run-title"
+              data-id="run-title"
+              class="slds-text-heading_small"
+            >
+              {detail.name} · {detail.accountName}
+            </h2>
+            <dl class="slds-dl_horizontal slds-var-m-top_x-small">
+              <dt class="slds-dl_horizontal__label">{labels.status}</dt>
+              <dd class="slds-dl_horizontal__detail" data-id="status">
+                {detail.statusLabel}
+              </dd>
+              <dt class="slds-dl_horizontal__label">{labels.progress}</dt>
+              <dd class="slds-dl_horizontal__detail">
+                <div class="axf-progress">
+                  <lightning-progress-bar
+                    value={detail.progressPercent}
+                    size="large"
+                  ></lightning-progress-bar>
+                </div>
+                {detail.progressPercent}%
+              </dd>
+              <dt class="slds-dl_horizontal__label">{labels.lastStage}</dt>
+              <dd class="slds-dl_horizontal__detail">{detail.stageLabel}</dd>
+              <dt class="slds-dl_horizontal__label">{labels.correlation}</dt>
+              <dd class="slds-dl_horizontal__detail">{detail.correlationId}</dd>
+              <dt class="slds-dl_horizontal__label">{labels.attempt}</dt>
+              <dd class="slds-dl_horizontal__detail">{detail.attempt}</dd>
+              <dt class="slds-dl_horizontal__label">{labels.blockReason}</dt>
+              <dd class="slds-dl_horizontal__detail" data-id="reason">
+                {detail.reasonLabel}
+              </dd>
+              <dt class="slds-dl_horizontal__label">{labels.nextAction}</dt>
+              <dd class="slds-dl_horizontal__detail" data-id="next-action">
+                {detail.actionLabel}
+              </dd>
+              <dt class="slds-dl_horizontal__label">
+                {labels.externalRevocation}
+              </dt>
+              <dd class="slds-dl_horizontal__detail">{detail.externalLabel}</dd>
+              <dt class="slds-dl_horizontal__label">{labels.legalHold}</dt>
+              <dd class="slds-dl_horizontal__detail" data-id="legal-hold-state">
+                <template lwc:if={detail.legalHold}
+                  >{labels.legalHoldActive}</template
+                >
+                <template lwc:else>—</template>
+              </dd>
+              <dt class="slds-dl_horizontal__label">
+                {labels.evidenceRefLabel}
+              </dt>
+              <dd class="slds-dl_horizontal__detail" data-id="evidence-ref">
+                {detail.exportEvidenceRef}
+              </dd>
+              <dt class="slds-dl_horizontal__label">
+                {labels.lastCompletedAt}
+              </dt>
+              <dd class="slds-dl_horizontal__detail">
+                <lightning-formatted-date-time
+                  value={detail.lastCompletedAt}
+                  year="numeric"
+                  month="short"
+                  day="2-digit"
+                  hour="2-digit"
+                  minute="2-digit"
+                ></lightning-formatted-date-time>
+              </dd>
+            </dl>
+            <div class="slds-var-m-top_small">
+              <template lwc:if={detail.canAdvance}>
+                <lightning-button
+                  variant="brand"
+                  label={labels.resume}
+                  onclick={askAdvance}
+                  disabled={busy}
+                  data-id="advance"
+                ></lightning-button>
+              </template>
+              <template lwc:if={detail.canReleaseHold}>
+                <lightning-button
+                  label={labels.releaseLegalHold}
+                  onclick={handleReleaseHold}
+                  disabled={busy}
+                  class="slds-var-m-left_x-small"
+                  data-id="release-hold"
+                ></lightning-button>
+              </template>
+              <template lwc:if={detail.canReconcile}>
+                <lightning-button
+                  variant="destructive-text"
+                  label={labels.reconcile}
+                  onclick={handleReconcile}
+                  disabled={busy}
+                  data-id="reconcile"
+                ></lightning-button>
+              </template>
+            </div>
+            <template lwc:if={needsExportEvidence}>
+              <div
+                class="slds-grid slds-gutters_x-small slds-grid_vertical-align-end slds-var-m-top_small"
+              >
+                <div class="slds-col slds-size_2-of-3">
+                  <lightning-input
+                    type="text"
+                    name="evidenceRef"
+                    label={labels.evidenceRef}
+                    value={form.evidenceRef}
+                    onchange={handleField}
+                    max-length="64"
+                    data-id="evidence"
+                  ></lightning-input>
+                </div>
+                <div class="slds-col slds-size_1-of-3">
+                  <lightning-button
+                    label={labels.attachEvidence}
+                    onclick={handleAttach}
+                    disabled={attachDisabled}
+                    data-id="attach"
+                  ></lightning-button>
+                </div>
+              </div>
+            </template>
+          </section>
+          <h3 class="slds-text-heading_small slds-var-m-top_medium">
+            {labels.stages}
+          </h3>
+          <div class="axf-table-wrap">
+            <table
+              class="slds-table slds-table_cell-buffer slds-table_bordered"
+              aria-label={labels.stages}
+            >
+              <thead>
+                <tr class="slds-line-height_reset">
+                  <th scope="col">{labels.stage}</th>
+                  <th scope="col">{labels.status}</th>
+                  <th scope="col">{labels.attempt}</th>
+                  <th scope="col">{labels.effectKey}</th>
+                  <th scope="col">{labels.impact}</th>
+                  <th scope="col">{labels.blockReason}</th>
+                  <th scope="col">{labels.completedAt}</th>
+                </tr>
+              </thead>
+              <tbody>
+                <template for:each={detail.checkpoints} for:item="checkpoint">
+                  <tr key={checkpoint.key} class="slds-hint-parent">
+                    <td>{checkpoint.stageLabel}</td>
+                    <td>{checkpoint.statusLabel}</td>
+                    <td>{checkpoint.attempt}</td>
+                    <td>{checkpoint.effectKey}</td>
+                    <td>{checkpoint.impactText}</td>
+                    <td>{checkpoint.reasonLabel}</td>
+                    <td>
+                      <lightning-formatted-date-time
+                        value={checkpoint.completedAt}
+                        year="numeric"
+                        month="short"
+                        day="2-digit"
+                        hour="2-digit"
+                        minute="2-digit"
+                      ></lightning-formatted-date-time>
+                    </td>
+                  </tr>
+                </template>
+              </tbody>
+            </table>
+          </div>
+        </template>
+        <template lwc:else>
+          <div
+            class="slds-grid slds-wrap slds-gutters_x-small slds-grid_vertical-align-end"
+          >
+            <div class="slds-col slds-size_1-of-1 slds-medium-size_1-of-2">
+              <lightning-combobox
+                name="accountId"
+                label={labels.holder}
+                value={form.accountId}
+                options={holderOptions}
+                onchange={handleField}
+                disabled={busy}
+                required
+                data-id="holder"
+              ></lightning-combobox>
+            </div>
+            <div class="slds-col slds-size_1-of-2 slds-medium-size_1-of-4">
+              <lightning-input
+                type="checkbox"
+                name="legalHold"
+                label={labels.legalHold}
+                checked={form.legalHold}
+                onchange={handleField}
+                data-id="legal-hold"
+              ></lightning-input>
+            </div>
+            <div class="slds-col slds-size_1-of-2 slds-medium-size_1-of-4">
+              <lightning-button
+                variant="brand"
+                label={labels.start}
+                onclick={handleStart}
+                disabled={startDisabled}
+                data-id="start"
+              ></lightning-button>
+            </div>
+          </div>
+          <h3 class="slds-text-heading_small slds-var-m-top_medium">
+            {labels.runs}
+          </h3>
+          <template lwc:if={hasRuns}>
+            <div class="axf-table-wrap">
+              <table
+                class="slds-table slds-table_cell-buffer slds-table_bordered"
+                aria-label={labels.runs}
+              >
+                <thead>
+                  <tr class="slds-line-height_reset">
+                    <th scope="col">{labels.holder}</th>
+                    <th scope="col">{labels.status}</th>
+                    <th scope="col">{labels.lastStage}</th>
+                    <th scope="col">{labels.progress}</th>
+                    <th scope="col">
+                      <span class="slds-assistive-text">{labels.actions}</span>
+                    </th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <template for:each={runRows} for:item="row">
+                    <tr key={row.runId} class="slds-hint-parent">
+                      <td>{row.accountName}</td>
+                      <td>{row.statusLabel}</td>
+                      <td>{row.stageLabel}</td>
+                      <td>{row.progressPercent}%</td>
+                      <td>
+                        <lightning-button
+                          label={labels.open}
+                          data-id={row.runId}
+                          onclick={handleOpen}
+                          disabled={busy}
+                        ></lightning-button>
+                      </td>
+                    </tr>
+                  </template>
+                </tbody>
+              </table>
+            </div>
+          </template>
+          <template lwc:else>
+            <p class="slds-text-body_small" data-id="no-runs">
+              {labels.noRuns}
+            </p>
+          </template>
+        </template>
+      </template>
+    </div>
+  </lightning-card>
+</template>

@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<CustomField xmlns="http://soap.sforce.com/2006/04/metadata">
+    <fullName>AXF_ARR_DAT_HotWindowStart__c</fullName>
+    <label>Inicio da Janela Quente</label>
+    <type>Date</type>
+    <required>true</required>
+    <description
+  >Primeiro dia mantido no objeto quente; tudo anterior e candidato ao arquivo.</description>
+</CustomField>

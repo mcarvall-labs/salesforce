@@ -1,0 +1,13 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<CustomField xmlns="http://soap.sforce.com/2006/04/metadata">
+    <fullName>AXF_TOB_LKP_BankTransaction__c</fullName>
+    <label>Transacao Bancaria</label>
+    <type>Lookup</type>
+    <referenceTo>AXF_OBJ_BankAccountTransaction__c</referenceTo>
+    <relationshipLabel>Observacoes</relationshipLabel>
+    <relationshipName>AXF_REL_Observations</relationshipName>
+    <deleteConstraint>Restrict</deleteConstraint>
+    <required>false</required>
+    <description
+  >Fato bancario observado (XOR com CardTransaction).</description>
+</CustomField>

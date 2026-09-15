@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<CustomField xmlns="http://soap.sforce.com/2006/04/metadata">
+    <fullName>AXF_CAS_LKP_PredecessorSnapshot__c</fullName>
+    <label>Snapshot Predecessor</label>
+    <type>Lookup</type>
+    <referenceTo>AXF_OBJ_ContractApplicationSnapshot__c</referenceTo>
+    <relationshipName>AXF_REL_CASPredecessors</relationshipName>
+    <deleteConstraint>SetNull</deleteConstraint>
+    <required>false</required>
+    <description
+  >Snapshot que este registro sucede (supersessao). Correcao nunca edita conteudo: cria sucessor e marca o anterior SUPERSEDED (AXF-57, AD-13/G7-2).</description>
+</CustomField>

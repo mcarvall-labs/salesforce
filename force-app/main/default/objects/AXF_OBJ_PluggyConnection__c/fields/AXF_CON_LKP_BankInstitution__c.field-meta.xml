@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<CustomField xmlns="http://soap.sforce.com/2006/04/metadata">
+    <fullName>AXF_CON_LKP_BankInstitution__c</fullName>
+    <deleteConstraint>Restrict</deleteConstraint>
+    <description
+  >Referencia canonica a Instituicao Financeira selecionada para esta conexao. Nao e o conector Pluggy (preservado em AXF_CON_TXT_ConnectorId__c) nem prova mapeamento de fonte. AXF-106.</description>
+    <label>Instituicao Financeira</label>
+    <referenceTo>AXF_OBJ_BankInstitution__c</referenceTo>
+    <relationshipLabel>Conexoes</relationshipLabel>
+    <relationshipName>AXF_REL_InstitutionConnections</relationshipName>
+    <required>false</required>
+    <trackTrending>false</trackTrending>
+    <type>Lookup</type>
+</CustomField>

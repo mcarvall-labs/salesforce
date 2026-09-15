@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<CustomField xmlns="http://soap.sforce.com/2006/04/metadata">
+    <fullName>AXF_ARR_DAT_Watermark__c</fullName>
+    <label>Watermark</label>
+    <type>Date</type>
+    <required>false</required>
+    <description
+  >Ultima data contabil confirmada como gravada (inclusive); retomada continua depois dela.</description>
+</CustomField>

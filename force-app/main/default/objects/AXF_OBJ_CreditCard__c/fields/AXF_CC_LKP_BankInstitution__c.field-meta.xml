@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<CustomField xmlns="http://soap.sforce.com/2006/04/metadata">
+    <fullName>AXF_CC_LKP_BankInstitution__c</fullName>
+    <deleteConstraint>Restrict</deleteConstraint>
+    <description
+  >Referencia canonica a Instituicao Financeira deste cartao. O nome do provedor permanece preservado em AXF_CC_TXT_InstitutionName__c. AXF-106.</description>
+    <label>Instituicao Financeira</label>
+    <referenceTo>AXF_OBJ_BankInstitution__c</referenceTo>
+    <relationshipLabel>Cartoes de Credito</relationshipLabel>
+    <relationshipName>AXF_REL_InstitutionCreditCards</relationshipName>
+    <required>false</required>
+    <trackTrending>false</trackTrending>
+    <type>Lookup</type>
+</CustomField>

@@ -1,0 +1,23 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<CustomField xmlns="http://soap.sforce.com/2006/04/metadata">
+    <fullName>AXF_TOB_PKL_StatusProvenance__c</fullName>
+    <label>Proveniencia do Status</label>
+    <type>Picklist</type>
+    <required>true</required>
+    <valueSet>
+        <restricted>true</restricted>
+        <valueSetDefinition>
+            <sorted>false</sorted>
+            <value><fullName>STATUS_MISSING</fullName><default
+        >true</default><label>Status ausente</label></value>
+            <value><fullName>STATUS_UNRECOGNIZED</fullName><default
+        >false</default><label>Status nao reconhecido</label></value>
+            <value><fullName>SOURCE_PENDING</fullName><default
+        >false</default><label>Pendente na fonte</label></value>
+            <value><fullName>SOURCE_POSTED</fullName><default
+        >false</default><label>Liquidado na fonte</label></value>
+        </valueSetDefinition>
+    </valueSet>
+    <description
+  >Como a liquidacao foi estabelecida: a partir do status bruto retido, nunca do POSTED mapeado por padrao (AC18).</description>
+</CustomField>

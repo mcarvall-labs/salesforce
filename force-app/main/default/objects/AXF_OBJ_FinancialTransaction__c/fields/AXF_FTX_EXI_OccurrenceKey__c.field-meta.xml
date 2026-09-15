@@ -1,0 +1,13 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<CustomField xmlns="http://soap.sforce.com/2006/04/metadata">
+  <fullName>AXF_FTX_EXI_OccurrenceKey__c</fullName>
+  <label>Chave da Ocorrência</label>
+  <type>Text</type>
+  <length>64</length>
+  <unique>true</unique>
+  <externalId>true</externalId>
+  <caseSensitive>true</caseSensitive>
+  <required>false</required>
+  <description
+  >Identidade determinística da ocorrência: SHA-256 hex minúsculo de frame(tag de versão, chave do cronograma, sequência). Data e revisão nunca participam; mudar datas, parâmetros, referências ou janela não muda a identidade (AXF-103).</description>
+</CustomField>

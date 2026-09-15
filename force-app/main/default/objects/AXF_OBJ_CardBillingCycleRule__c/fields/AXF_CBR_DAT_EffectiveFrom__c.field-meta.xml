@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<CustomField xmlns="http://soap.sforce.com/2006/04/metadata">
+  <fullName>AXF_CBR_DAT_EffectiveFrom__c</fullName>
+  <label>Vigente Desde</label>
+  <type>Date</type>
+  <required>true</required>
+  <description
+  >Inicio da vigencia da regra (fechado, incluso). Obrigatorio (AXF-35).</description>
+</CustomField>

@@ -33,6 +33,8 @@ public with sharing class AXF_CLS_FinancialEntryService {
     public Id creditCardId;
     @AuraEnabled
     public String clientRequestId;
+    @AuraEnabled
+    public Boolean trackConfirmation;
   }
 
   public class EntryResult {
@@ -75,7 +77,11 @@ public with sharing class AXF_CLS_FinancialEntryService {
       return out;
     }
     for (AXF_OBJ_BankAccount__c ba : [
-      SELECT Id, AXF_BA_TXT_InstitutionName__c, AXF_BA_TXT_NumberMasked__c
+      SELECT
+        Id,
+        AXF_BA_TXT_InstitutionName__c,
+        AXF_BA_LKP_BankInstitution__r.Name,
+        AXF_BA_TXT_NumberMasked__c
       FROM AXF_OBJ_BankAccount__c
       WHERE
         AXF_BA_LKP_Account__c = :accountId
@@ -88,7 +94,9 @@ public with sharing class AXF_CLS_FinancialEntryService {
       o.kind = 'BANK_ACCOUNT';
       o.label = String.join(
         new List<String>{
-          ba.AXF_BA_TXT_InstitutionName__c,
+          ba.AXF_BA_LKP_BankInstitution__r == null
+            ? ba.AXF_BA_TXT_InstitutionName__c
+            : ba.AXF_BA_LKP_BankInstitution__r.Name,
           ba.AXF_BA_TXT_NumberMasked__c
         },
         ' '
@@ -96,7 +104,11 @@ public with sharing class AXF_CLS_FinancialEntryService {
       out.add(o);
     }
     for (AXF_OBJ_CreditCard__c cc : [
-      SELECT Id, AXF_CC_TXT_InstitutionName__c, AXF_CC_TXT_LastFourMasked__c
+      SELECT
+        Id,
+        AXF_CC_TXT_InstitutionName__c,
+        AXF_CC_LKP_BankInstitution__r.Name,
+        AXF_CC_TXT_LastFourMasked__c
       FROM AXF_OBJ_CreditCard__c
       WHERE
         AXF_CC_LKP_Account__c = :accountId
@@ -109,7 +121,9 @@ public with sharing class AXF_CLS_FinancialEntryService {
       o.kind = 'CREDIT_CARD';
       o.label = String.join(
         new List<String>{
-          cc.AXF_CC_TXT_InstitutionName__c,
+          cc.AXF_CC_LKP_BankInstitution__r == null
+            ? cc.AXF_CC_TXT_InstitutionName__c
+            : cc.AXF_CC_LKP_BankInstitution__r.Name,
           cc.AXF_CC_TXT_LastFourMasked__c
         },
         ' '
@@ -137,6 +151,8 @@ public with sharing class AXF_CLS_FinancialEntryService {
         AXF_FTX_NUM_Magnitude__c,
         AXF_FTX_TXT_CurrencyIsoCode__c,
         AXF_FTX_DAT_PurchaseDate__c,
+        AXF_FTX_DAT_DueDate__c,
+        AXF_FTX_BOL_TrackConfirmation__c,
         AXF_FTX_LKP_BankAccount__c,
         AXF_FTX_LKP_CreditCard__c
       FROM AXF_OBJ_FinancialTransaction__c
@@ -153,6 +169,9 @@ public with sharing class AXF_CLS_FinancialEntryService {
         prior.AXF_FTX_NUM_Magnitude__c == input.magnitude &&
         prior.AXF_FTX_TXT_CurrencyIsoCode__c == input.currencyIsoCode &&
         prior.AXF_FTX_DAT_PurchaseDate__c == input.purchaseDate &&
+        prior.AXF_FTX_DAT_DueDate__c == input.dueDate &&
+        prior.AXF_FTX_BOL_TrackConfirmation__c ==
+        (input.trackConfirmation == true) &&
         prior.AXF_FTX_LKP_BankAccount__c == input.bankAccountId &&
         prior.AXF_FTX_LKP_CreditCard__c == input.creditCardId;
       EntryResult r = new EntryResult();
@@ -179,12 +198,19 @@ public with sharing class AXF_CLS_FinancialEntryService {
       AXF_FTX_PKL_Status__c = 'CONFIRMED',
       AXF_FTX_CHK_IsEstimated__c = false,
       AXF_FTX_NUM_Version__c = 0,
-      AXF_FTX_EXI_ClientRequestId__c = input.clientRequestId
+      AXF_FTX_EXI_ClientRequestId__c = input.clientRequestId,
+      AXF_FTX_BOL_TrackConfirmation__c = input.trackConfirmation == true
     );
 
+    Savepoint checkpoint = Database.setSavepoint();
     try {
       insert as user ftx;
-    } catch (DmlException dmlError) {
+      if (input.trackConfirmation == true) {
+        new ALT_CLS_ManualReviewService()
+          .recordEntries(new List<AXF_OBJ_FinancialTransaction__c>{ ftx });
+      }
+    } catch (Exception persistenceError) {
+      Database.rollback(checkpoint);
       EntryResult r = new EntryResult();
       r.outcome = 'INVALID';
       r.message = MSG_INVALID;

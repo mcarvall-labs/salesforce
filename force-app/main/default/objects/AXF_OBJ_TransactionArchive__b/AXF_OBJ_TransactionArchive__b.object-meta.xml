@@ -1,0 +1,24 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<CustomObject xmlns="http://soap.sforce.com/2006/04/metadata">
+    <deploymentStatus>Deployed</deploymentStatus>
+    <description
+  >AXF-95 (AD-39, D-83/D-84): arquivo imutavel de transacoes fora da janela quente (familias BAT/CCT/FTX). Indice imutavel AccountKey, BookingDate (DESC), ArchiveKey; leitura somente por servico que revalida autorizacao do titular; nunca reidratado para o objeto quente. Data contabil guardada como DateTime 00:00:00 UTC.</description>
+    <indexes>
+        <fullName>AXF_IDX_TransactionArchive</fullName>
+        <label>Transaction Archive Index</label>
+        <fields>
+            <name>AXF_ARC_TXT_AccountKey__c</name>
+            <sortDirection>ASC</sortDirection>
+        </fields>
+        <fields>
+            <name>AXF_ARC_DT_BookingDate__c</name>
+            <sortDirection>DESC</sortDirection>
+        </fields>
+        <fields>
+            <name>AXF_ARC_TXT_ArchiveKey__c</name>
+            <sortDirection>ASC</sortDirection>
+        </fields>
+    </indexes>
+    <label>Arquivo de Transacoes</label>
+    <pluralLabel>Arquivo de Transacoes</pluralLabel>
+</CustomObject>

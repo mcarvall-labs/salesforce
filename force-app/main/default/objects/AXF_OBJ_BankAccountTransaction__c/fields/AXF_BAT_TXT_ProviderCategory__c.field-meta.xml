@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<CustomField xmlns="http://soap.sforce.com/2006/04/metadata">
+    <fullName>AXF_BAT_TXT_ProviderCategory__c</fullName>
+    <description
+  >Categoria/taxonomia do provedor quando presente no payload autorizado; proveniencia de classificacao, nunca prova de elegibilidade (AXF-109).</description>
+    <externalId>false</externalId>
+    <label>Categoria do provedor</label>
+    <length>120</length>
+    <required>false</required>
+    <trackHistory>false</trackHistory>
+    <trackTrending>false</trackTrending>
+    <type>Text</type>
+    <unique>false</unique>
+</CustomField>

@@ -91,10 +91,26 @@ public with sharing class AXF_CLS_CTRL_UserProvisioning {
     return out;
   }
 
+  // Primitive params (not the service's inner DTO) so the LWC call binds reliably:
+  // Aura does not populate the fields of an @AuraEnabled Apex class that is an inner
+  // class of another top-level class (same limitation fixed in
+  // AXF_CLS_CTRL_OnboardingProgress). AXF-82 / AXF-106.
   @AuraEnabled
   public static ALT_CLS_AxonUserProvisioning.Result start(
-    ALT_CLS_AxonUserProvisioning.StartInput input
+    Id personId,
+    String mode,
+    String scope,
+    String name,
+    String email,
+    Id existingUserId
   ) {
+    ALT_CLS_AxonUserProvisioning.StartInput input = new ALT_CLS_AxonUserProvisioning.StartInput();
+    input.personId = personId;
+    input.mode = mode;
+    input.scope = scope;
+    input.name = name;
+    input.email = email;
+    input.existingUserId = existingUserId;
     return new ALT_CLS_AxonUserProvisioning().start(input);
   }
 
@@ -103,7 +119,10 @@ public with sharing class AXF_CLS_CTRL_UserProvisioning {
     return new ALT_CLS_AxonUserProvisioning().resume(provisioningId);
   }
 
-  @AuraEnabled(cacheable=true)
+  // Not cacheable (AXF-107): the wizard polls this method to observe the persisted
+  // provisioning step. A client-cached answer would hide real progress and make the
+  // bounded observation window read a stale RUNNING state.
+  @AuraEnabled
   public static ALT_CLS_AxonUserProvisioning.Result getStatus(
     Id provisioningId
   ) {

@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<CustomField xmlns="http://soap.sforce.com/2006/04/metadata">
+  <fullName>AXF_RA_TXT_ReversalNote__c</fullName>
+  <label>Reversal note</label>
+  <description
+  >AXF-141: free-text justification recorded with the compensating allocation. Immutable.</description>
+  <length>255</length>
+  <type>Text</type>
+</CustomField>

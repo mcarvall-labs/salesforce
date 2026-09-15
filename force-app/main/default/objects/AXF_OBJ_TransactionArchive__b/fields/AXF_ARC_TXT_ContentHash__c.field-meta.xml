@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<CustomField xmlns="http://soap.sforce.com/2006/04/metadata">
+    <fullName>AXF_ARC_TXT_ContentHash__c</fullName>
+    <label>Hash do Conteudo</label>
+    <type>Text</type>
+    <length>64</length>
+    <required>false</required>
+    <description
+  >SHA-256 dos valores financeiros copiados; usado na verificacao de paridade.</description>
+</CustomField>

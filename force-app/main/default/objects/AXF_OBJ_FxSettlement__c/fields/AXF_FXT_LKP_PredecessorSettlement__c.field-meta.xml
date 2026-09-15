@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<CustomField xmlns="http://soap.sforce.com/2006/04/metadata">
+    <fullName>AXF_FXT_LKP_PredecessorSettlement__c</fullName>
+    <label>Liquidacao Predecessora</label>
+    <type>Lookup</type>
+    <referenceTo>AXF_OBJ_FxSettlement__c</referenceTo>
+    <relationshipName>AXF_REL_FxSettlementPredecessors</relationshipName>
+    <deleteConstraint>SetNull</deleteConstraint>
+    <required>false</required>
+    <description
+  >Liquidacao que este registro corrige/estorna (AXF-59/63).</description>
+</CustomField>

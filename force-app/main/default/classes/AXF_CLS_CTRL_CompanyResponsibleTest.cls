@@ -105,14 +105,12 @@ private class AXF_CLS_CTRL_CompanyResponsibleTest {
     );
     insert p;
 
-    ALT_CLS_AxonCompanyResponsible.ConfirmInput input = new ALT_CLS_AxonCompanyResponsible.ConfirmInput();
-    input.businessId = b.Id;
-    input.personId = p.Id;
-    input.role = 'PARTNER';
-
     Test.startTest();
     ALT_CLS_AxonCompanyResponsible.ResponsibilityView v = AXF_CLS_CTRL_CompanyResponsible.confirmResponsibility(
-      input
+      b.Id,
+      p.Id,
+      'PARTNER',
+      null
     );
     System.assertEquals('RELATIONSHIP_ONLY', v.outcome);
 
@@ -138,11 +136,15 @@ private class AXF_CLS_CTRL_CompanyResponsibleTest {
       0,
       AXF_CLS_CTRL_CompanyResponsible.findAccounts('x', 'BUSINESS').size()
     );
-    ALT_CLS_AxonCompanyResponsible.ConfirmInput input = new ALT_CLS_AxonCompanyResponsible.ConfirmInput();
-    input.businessId = null;
     System.assertEquals(
       'FORBIDDEN',
-      AXF_CLS_CTRL_CompanyResponsible.confirmResponsibility(input).outcome
+      AXF_CLS_CTRL_CompanyResponsible.confirmResponsibility(
+          null,
+          null,
+          null,
+          null
+        )
+        .outcome
     );
     Test.stopTest();
   }

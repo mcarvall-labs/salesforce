@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<CustomField xmlns="http://soap.sforce.com/2006/04/metadata">
+    <fullName>AXF_CAS_TAL_OverrideReason__c</fullName>
+    <label>Motivo do Override</label>
+    <length>32768</length>
+    <type>LongTextArea</type>
+    <visibleLines>4</visibleLines>
+    <description
+  >Motivo auditavel, obrigatorio quando ao menos um campo esta OVERRIDDEN (AXF-57).</description>
+</CustomField>

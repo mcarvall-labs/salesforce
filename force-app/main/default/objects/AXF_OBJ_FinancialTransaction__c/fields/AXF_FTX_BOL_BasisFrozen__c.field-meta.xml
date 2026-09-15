@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<CustomField xmlns="http://soap.sforce.com/2006/04/metadata">
+  <fullName>AXF_FTX_BOL_BasisFrozen__c</fullName>
+  <label>Base Congelada</label>
+  <type>Checkbox</type>
+  <defaultValue>false</defaultValue>
+  <required>false</required>
+  <description
+  >Verdadeiro quando a base corrente foi congelada pelo primeiro uso financeiro. Monotônica nesta fundação: uma reversão retém a base congelada em vez de reinstaurar silenciosamente a atualização automática (AXF-103).</description>
+</CustomField>

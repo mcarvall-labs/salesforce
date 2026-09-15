@@ -1,0 +1,4 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<CustomPermission xmlns="http://soap.sforce.com/2006/04/metadata"><description
+  >Allows a participant to read the redacted view and, when granted EDIT, change the permitted fields of an expense shared with them (AXF-6). The grant is revalidated on every request.</description><label
+  >Collaborate on a shared expense</label></CustomPermission>

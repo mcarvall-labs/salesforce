@@ -22,6 +22,12 @@ public with sharing class AXF_CLS_PluggyHttpClient {
     public Integer statusCode;
     public Map<String, Object> body;
     public String correlationId;
+    /**
+     * @description Seconds from the `Retry-After` response header when the provider sent it
+     * in the numeric form (HTTP-date form is ignored — the caller falls back to the policy
+     * backoff). Populated for any status, but only meaningful on 429/503. AXF-12 AC2.
+     */
+    public Integer retryAfterSeconds;
     public Boolean isSuccess {
       get {
         return statusCode != null && statusCode >= 200 && statusCode < 300;
@@ -65,6 +71,7 @@ public with sharing class AXF_CLS_PluggyHttpClient {
     PluggyResponse out = new PluggyResponse();
     out.statusCode = res.getStatusCode();
     out.correlationId = correlationId;
+    out.retryAfterSeconds = parseRetryAfter(res.getHeader('Retry-After'));
     if (out.isSuccess && String.isNotBlank(res.getBody())) {
       try {
         Object parsed = JSON.deserializeUntyped(res.getBody());
@@ -76,6 +83,22 @@ public with sharing class AXF_CLS_PluggyHttpClient {
       }
     }
     return out;
+  }
+
+  /**
+   * @description Numeric `Retry-After` (delta-seconds) only. Null for a blank header or the
+   * HTTP-date form, so the caller applies the configured backoff instead.
+   */
+  private static Integer parseRetryAfter(String header) {
+    if (String.isBlank(header) || !header.trim().isNumeric()) {
+      return null;
+    }
+    try {
+      Integer s = Integer.valueOf(header.trim());
+      return s >= 0 ? s : null;
+    } catch (Exception ignored) {
+      return null;
+    }
   }
 
   public static String newCorrelationId() {

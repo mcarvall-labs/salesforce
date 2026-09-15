@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<CustomField xmlns="http://soap.sforce.com/2006/04/metadata">
+    <fullName>AXF_CCT_TXT_EvidenceRef__c</fullName>
+    <label>Referencia da Evidencia</label>
+    <type>Text</type>
+    <length>255</length>
+    <required>false</required>
+    <description
+  >Ponteiro sanitizado para a evidencia-fonte imutavel e recuperavel (AC3 / G7).</description>
+</CustomField>

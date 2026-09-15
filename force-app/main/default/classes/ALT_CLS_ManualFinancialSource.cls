@@ -21,6 +21,8 @@ public with sharing class ALT_CLS_ManualFinancialSource {
     @AuraEnabled
     public String institutionName;
     @AuraEnabled
+    public Id bankInstitutionId;
+    @AuraEnabled
     public String maskedNumber;
     @AuraEnabled
     public String sourceType;
@@ -90,6 +92,22 @@ public with sharing class ALT_CLS_ManualFinancialSource {
       Account holder = holders[0];
       if (!activeCurrency(input.currencyIsoCode))
         return invalid('currencyIsoCode', 'Selecione uma moeda ativa.');
+      if (input.bankInstitutionId != null) {
+        List<AXF_OBJ_BankInstitution__c> insts = [
+          SELECT Id, Name
+          FROM AXF_OBJ_BankInstitution__c
+          WHERE Id = :input.bankInstitutionId
+          WITH SYSTEM_MODE
+          LIMIT 1
+        ];
+        if (insts.isEmpty())
+          return invalid(
+            'bankInstitutionId',
+            'Instituição financeira não encontrada.'
+          );
+        if (String.isBlank(input.institutionName))
+          input.institutionName = insts[0].Name;
+      }
       if (!hasSourceAccess(input))
         return result(
           Outcome.FORBIDDEN,
@@ -121,6 +139,7 @@ public with sharing class ALT_CLS_ManualFinancialSource {
           AXF_BA_EXI_ManualKey__c = i.manualKey.toLowerCase(),
           AXF_BA_TXT_CurrencyIsoCode__c = i.currencyIsoCode.toUpperCase(),
           AXF_BA_TXT_InstitutionName__c = i.institutionName.trim(),
+          AXF_BA_LKP_BankInstitution__c = i.bankInstitutionId,
           AXF_BA_TXT_NumberMasked__c = trim(i.maskedNumber),
           AXF_BA_TXT_Type__c = trim(i.sourceType),
           AXF_BA_PKL_AvailabilityState__c = 'AVAILABLE',
@@ -133,6 +152,7 @@ public with sharing class ALT_CLS_ManualFinancialSource {
           AXF_CC_EXI_ManualKey__c = i.manualKey.toLowerCase(),
           AXF_CC_TXT_CurrencyIsoCode__c = i.currencyIsoCode.toUpperCase(),
           AXF_CC_TXT_InstitutionName__c = i.institutionName.trim(),
+          AXF_CC_LKP_BankInstitution__c = i.bankInstitutionId,
           AXF_CC_TXT_LastFourMasked__c = trim(i.maskedNumber),
           AXF_CC_TXT_Brand__c = trim(i.brand),
           AXF_CC_PKL_AvailabilityState__c = 'AVAILABLE',
@@ -220,6 +240,7 @@ public with sharing class ALT_CLS_ManualFinancialSource {
           'A fonte foi alterada em outra sessão.'
         );
       row.AXF_BA_TXT_InstitutionName__c = i.institutionName.trim();
+      row.AXF_BA_LKP_BankInstitution__c = i.bankInstitutionId;
       row.AXF_BA_TXT_NumberMasked__c = trim(i.maskedNumber);
       row.AXF_BA_TXT_Type__c = trim(i.sourceType);
       row.AXF_BA_NUM_Version__c = i.expectedVersion + 1;
@@ -254,6 +275,7 @@ public with sharing class ALT_CLS_ManualFinancialSource {
     if (integer(row.AXF_CC_NUM_Version__c) != i.expectedVersion)
       return result(Outcome.CONFLICT, 'A fonte foi alterada em outra sessão.');
     row.AXF_CC_TXT_InstitutionName__c = i.institutionName.trim();
+    row.AXF_CC_LKP_BankInstitution__c = i.bankInstitutionId;
     row.AXF_CC_TXT_LastFourMasked__c = trim(i.maskedNumber);
     row.AXF_CC_TXT_Brand__c = trim(i.brand);
     row.AXF_CC_NUM_Version__c = i.expectedVersion + 1;
@@ -272,6 +294,7 @@ public with sharing class ALT_CLS_ManualFinancialSource {
           AXF_BA_LKP_Account__c,
           AXF_BA_TXT_CurrencyIsoCode__c,
           AXF_BA_TXT_InstitutionName__c,
+          AXF_BA_LKP_BankInstitution__c,
           AXF_BA_TXT_NumberMasked__c,
           AXF_BA_TXT_Type__c,
           AXF_BA_NUM_Version__c
@@ -295,6 +318,7 @@ public with sharing class ALT_CLS_ManualFinancialSource {
         r.AXF_BA_LKP_Account__c == i.holderId &&
           r.AXF_BA_TXT_CurrencyIsoCode__c == i.currencyIsoCode.toUpperCase() &&
           r.AXF_BA_TXT_InstitutionName__c == i.institutionName.trim() &&
+          r.AXF_BA_LKP_BankInstitution__c == i.bankInstitutionId &&
           r.AXF_BA_TXT_NumberMasked__c == trim(i.maskedNumber) &&
           r.AXF_BA_TXT_Type__c == trim(i.sourceType)
       );
@@ -305,6 +329,7 @@ public with sharing class ALT_CLS_ManualFinancialSource {
         AXF_CC_LKP_Account__c,
         AXF_CC_TXT_CurrencyIsoCode__c,
         AXF_CC_TXT_InstitutionName__c,
+        AXF_CC_LKP_BankInstitution__c,
         AXF_CC_TXT_LastFourMasked__c,
         AXF_CC_TXT_Brand__c,
         AXF_CC_NUM_Version__c
@@ -328,6 +353,7 @@ public with sharing class ALT_CLS_ManualFinancialSource {
       r.AXF_CC_LKP_Account__c == i.holderId &&
         r.AXF_CC_TXT_CurrencyIsoCode__c == i.currencyIsoCode.toUpperCase() &&
         r.AXF_CC_TXT_InstitutionName__c == i.institutionName.trim() &&
+        r.AXF_CC_LKP_BankInstitution__c == i.bankInstitutionId &&
         r.AXF_CC_TXT_LastFourMasked__c == trim(i.maskedNumber) &&
         r.AXF_CC_TXT_Brand__c == trim(i.brand)
     );
@@ -348,7 +374,7 @@ public with sharing class ALT_CLS_ManualFinancialSource {
       !Pattern.matches('^[A-Za-z]{3}$', i.currencyIsoCode)
     )
       return invalid('currencyIsoCode', 'Informe uma moeda ISO válida.');
-    if (String.isBlank(i.institutionName))
+    if (String.isBlank(i.institutionName) && i.bankInstitutionId == null)
       return invalid('institutionName', 'Informe a instituição.');
     if (
       !String.isBlank(i.maskedNumber) &&
@@ -359,7 +385,7 @@ public with sharing class ALT_CLS_ManualFinancialSource {
         'maskedNumber',
         'Informe somente um valor mascarado, com no máximo quatro dígitos visíveis.'
       );
-    if (i.institutionName.trim().length() > 255)
+    if (i.institutionName != null && i.institutionName.trim().length() > 255)
       return invalid('institutionName', 'A instituição excede 255 caracteres.');
     if (
       trim(i.maskedNumber) != null &&
@@ -430,6 +456,7 @@ public with sharing class ALT_CLS_ManualFinancialSource {
           AXF_OBJ_BankAccount__c.AXF_BA_EXI_ManualKey__c,
           AXF_OBJ_BankAccount__c.AXF_BA_TXT_CurrencyIsoCode__c,
           AXF_OBJ_BankAccount__c.AXF_BA_TXT_InstitutionName__c,
+          AXF_OBJ_BankAccount__c.AXF_BA_LKP_BankInstitution__c,
           AXF_OBJ_BankAccount__c.AXF_BA_TXT_NumberMasked__c,
           AXF_OBJ_BankAccount__c.AXF_BA_TXT_Type__c,
           AXF_OBJ_BankAccount__c.AXF_BA_NUM_Version__c
@@ -439,6 +466,7 @@ public with sharing class ALT_CLS_ManualFinancialSource {
           AXF_OBJ_CreditCard__c.AXF_CC_EXI_ManualKey__c,
           AXF_OBJ_CreditCard__c.AXF_CC_TXT_CurrencyIsoCode__c,
           AXF_OBJ_CreditCard__c.AXF_CC_TXT_InstitutionName__c,
+          AXF_OBJ_CreditCard__c.AXF_CC_LKP_BankInstitution__c,
           AXF_OBJ_CreditCard__c.AXF_CC_TXT_LastFourMasked__c,
           AXF_OBJ_CreditCard__c.AXF_CC_TXT_Brand__c,
           AXF_OBJ_CreditCard__c.AXF_CC_NUM_Version__c
@@ -447,6 +475,7 @@ public with sharing class ALT_CLS_ManualFinancialSource {
     if (bank) {
       writable = new List<Schema.SObjectField>{
         AXF_OBJ_BankAccount__c.AXF_BA_TXT_InstitutionName__c,
+        AXF_OBJ_BankAccount__c.AXF_BA_LKP_BankInstitution__c,
         AXF_OBJ_BankAccount__c.AXF_BA_TXT_NumberMasked__c,
         AXF_OBJ_BankAccount__c.AXF_BA_TXT_Type__c,
         AXF_OBJ_BankAccount__c.AXF_BA_NUM_Version__c
@@ -464,6 +493,7 @@ public with sharing class ALT_CLS_ManualFinancialSource {
     } else {
       writable = new List<Schema.SObjectField>{
         AXF_OBJ_CreditCard__c.AXF_CC_TXT_InstitutionName__c,
+        AXF_OBJ_CreditCard__c.AXF_CC_LKP_BankInstitution__c,
         AXF_OBJ_CreditCard__c.AXF_CC_TXT_LastFourMasked__c,
         AXF_OBJ_CreditCard__c.AXF_CC_TXT_Brand__c,
         AXF_OBJ_CreditCard__c.AXF_CC_NUM_Version__c

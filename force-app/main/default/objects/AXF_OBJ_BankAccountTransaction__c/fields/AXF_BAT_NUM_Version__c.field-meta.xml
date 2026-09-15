@@ -1,11 +1,15 @@
 <?xml version="1.0" encoding="UTF-8" ?>
 <CustomField xmlns="http://soap.sforce.com/2006/04/metadata">
     <fullName>AXF_BAT_NUM_Version__c</fullName>
-    <label>Versao</label>
-    <type>Number</type>
-    <precision>9</precision>
-    <scale>0</scale>
-    <required>true</required>
     <defaultValue>0</defaultValue>
     <description>Contador de concorrencia otimista.</description>
+    <externalId>false</externalId>
+    <label>Versao</label>
+    <precision>9</precision>
+    <required>true</required>
+    <scale>0</scale>
+    <trackHistory>false</trackHistory>
+    <trackTrending>false</trackTrending>
+    <type>Number</type>
+    <unique>false</unique>
 </CustomField>

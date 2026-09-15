@@ -1,0 +1,25 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<CustomField xmlns="http://soap.sforce.com/2006/04/metadata">
+    <fullName>AXF_FXS_PKL_Purpose__c</fullName>
+    <label>Finalidade</label>
+    <type>Picklist</type>
+    <required>true</required>
+    <valueSet>
+        <restricted>true</restricted>
+        <valueSetDefinition>
+            <sorted>false</sorted>
+            <value><fullName>RECOGNITION</fullName><default
+        >false</default><label>Reconhecimento</label></value>
+            <value><fullName>SETTLEMENT</fullName><default>false</default><label
+        >Liquidacao</label></value>
+            <value><fullName>ISSUANCE</fullName><default>false</default><label
+        >Emissao</label></value>
+            <value><fullName>CHARGE</fullName><default>false</default><label
+        >Encargo</label></value>
+            <value><fullName>CURRENT_REVALUATION</fullName><default
+        >false</default><label>Reavaliacao corrente</label></value>
+        </valueSetDefinition>
+    </valueSet>
+    <description
+  >Finalidade historica do snapshot (AXF-24; CURRENT_REVALUATION e serie separada).</description>
+</CustomField>

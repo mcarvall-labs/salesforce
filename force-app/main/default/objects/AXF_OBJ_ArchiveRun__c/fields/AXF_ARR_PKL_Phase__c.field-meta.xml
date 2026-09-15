@@ -1,0 +1,27 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<CustomField xmlns="http://soap.sforce.com/2006/04/metadata">
+    <fullName>AXF_ARR_PKL_Phase__c</fullName>
+    <label>Fase</label>
+    <type>Picklist</type>
+    <required>true</required>
+    <valueSet>
+        <restricted>true</restricted>
+        <valueSetDefinition>
+            <sorted>false</sorted>
+            <value><fullName>SCANNING</fullName><default>true</default><label
+        >SCANNING</label></value>
+            <value><fullName>WRITING</fullName><default>false</default><label
+        >WRITING</label></value>
+            <value><fullName>VERIFYING</fullName><default>false</default><label
+        >VERIFYING</label></value>
+            <value><fullName>HOT_RETAINED</fullName><default
+        >false</default><label>HOT_RETAINED</label></value>
+            <value><fullName>COMPLETED</fullName><default>false</default><label
+        >COMPLETED</label></value>
+            <value><fullName>FAILED</fullName><default>false</default><label
+        >FAILED</label></value>
+        </valueSetDefinition>
+    </valueSet>
+    <description
+  >SCANNING -> WRITING -> VERIFYING -> HOT_RETAINED (copia quente preservada; remocao BLOCKED) ou COMPLETED (reservado: remocao da copia quente autorizada e executada — nenhum codigo a define hoje) | FAILED (retomavel do watermark).</description>
+</CustomField>

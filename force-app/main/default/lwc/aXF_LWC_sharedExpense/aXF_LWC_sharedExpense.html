@@ -1,0 +1,348 @@
+<template>
+  <lightning-card title={labels.title} icon-name="standard:groups">
+    <div class="slds-var-p-horizontal_medium">
+      <div role="status" aria-live="polite" class="slds-var-m-bottom_small">
+        <template lwc:if={busy}>
+          <lightning-spinner
+            alternative-text={labels.loading}
+            size="small"
+            variant="brand"
+          ></lightning-spinner>
+        </template>
+        <template lwc:if={error}>
+          <div
+            class="slds-notify slds-notify_alert slds-alert_error"
+            role="alert"
+            data-id="error"
+          >
+            <span>{error}</span>
+          </div>
+        </template>
+        <template lwc:if={success}>
+          <div
+            class="slds-notify slds-notify_alert slds-alert_success"
+            data-id="success"
+          >
+            <span>{success}</span>
+          </div>
+        </template>
+      </div>
+
+      <template lwc:if={confirmation}>
+        <section
+          role="dialog"
+          aria-labelledby="confirm-title"
+          class="slds-box slds-theme_warning slds-var-m-bottom_small"
+          data-id="confirmation"
+          onkeydown={handleDialogKey}
+        >
+          <h2 id="confirm-title" class="slds-text-heading_small">
+            {labels.confirmTitle}
+          </h2>
+          <p class="slds-var-m-vertical_x-small">{confirmationBody}</p>
+          <lightning-button
+            variant="brand"
+            label={labels.confirm}
+            onclick={acceptConfirmation}
+            data-id="confirm-yes"
+          ></lightning-button>
+          <lightning-button
+            label={labels.cancel}
+            onclick={cancelConfirmation}
+            class="slds-var-m-left_x-small"
+            data-id="confirm-no"
+          ></lightning-button>
+        </section>
+      </template>
+
+      <template lwc:if={noAccess}>
+        <p class="slds-text-color_weak" data-id="no-access">
+          {labels.noAccess}
+        </p>
+      </template>
+
+      <template lwc:if={isOwnerMode}>
+        <p class="slds-text-body_small slds-var-m-bottom_small">
+          {labels.ownerIntro}
+        </p>
+        <div
+          class="slds-grid slds-wrap slds-gutters_x-small slds-grid_vertical-align-end"
+        >
+          <div class="slds-col slds-size_1-of-1 slds-medium-size_1-of-2">
+            <lightning-combobox
+              name="collaboratorId"
+              label={labels.collaborator}
+              value={shareForm.collaboratorId}
+              options={collaboratorOptions}
+              onchange={handleShareField}
+              disabled={busy}
+              required
+              data-id="collaborator"
+            ></lightning-combobox>
+            <template lwc:if={hasCollaborators}></template>
+            <template lwc:else>
+              <p
+                class="slds-text-color_weak slds-text-body_small"
+                data-id="no-collaborators"
+              >
+                {labels.noCollaborators}
+              </p>
+            </template>
+          </div>
+          <div class="slds-col slds-size_1-of-2 slds-medium-size_1-of-4">
+            <lightning-combobox
+              name="permission"
+              label={labels.permission}
+              value={shareForm.permission}
+              options={permissionOptions}
+              onchange={handleShareField}
+              disabled={busy}
+              data-id="permission"
+            ></lightning-combobox>
+          </div>
+          <div class="slds-col slds-size_1-of-2 slds-medium-size_1-of-4">
+            <lightning-button
+              variant="brand"
+              label={labels.share}
+              onclick={handleShare}
+              disabled={shareDisabled}
+              data-id="share"
+            ></lightning-button>
+          </div>
+        </div>
+        <h2 class="slds-text-heading_small slds-var-m-top_medium">
+          {labels.grants}
+        </h2>
+        <template lwc:if={hasGrants}>
+          <div class="axf-table-wrap">
+            <table
+              class="slds-table slds-table_cell-buffer slds-table_bordered"
+              aria-label={labels.grants}
+            >
+              <thead>
+                <tr class="slds-line-height_reset">
+                  <th scope="col">{labels.collaborator}</th>
+                  <th scope="col">{labels.permission}</th>
+                  <th scope="col">{labels.status}</th>
+                  <th scope="col"></th>
+                </tr>
+              </thead>
+              <tbody>
+                <template for:each={grantRows} for:item="grant">
+                  <tr key={grant.grantId} class="slds-hint-parent">
+                    <td>{grant.collaboratorName}</td>
+                    <td>{grant.permissionLabel}</td>
+                    <td>{grant.statusLabel}</td>
+                    <td>
+                      <template lwc:if={grant.isActive}>
+                        <lightning-button
+                          label={labels.revoke}
+                          data-id={grant.grantId}
+                          data-version={grant.version}
+                          data-name={grant.collaboratorName}
+                          onclick={askRevoke}
+                          disabled={busy}
+                        ></lightning-button>
+                      </template>
+                    </td>
+                  </tr>
+                </template>
+              </tbody>
+            </table>
+          </div>
+        </template>
+        <template lwc:else>
+          <p class="slds-text-body_small" data-id="no-grants">
+            {labels.noGrants}
+          </p>
+        </template>
+      </template>
+
+      <template lwc:if={isCollaboratorMode}>
+        <template lwc:if={detail}>
+          <lightning-button
+            label={labels.back}
+            onclick={handleBack}
+            class="slds-var-m-bottom_small"
+            data-id="back"
+          ></lightning-button>
+          <section
+            class="slds-box slds-theme_shade"
+            aria-labelledby="detail-title"
+          >
+            <h2
+              id="detail-title"
+              data-id="detail-title"
+              class="slds-text-heading_small"
+            >
+              {labels.expense}: {detail.name}
+            </h2>
+            <p class="slds-text-body_small slds-var-m-vertical_x-small">
+              {labels.yourAccess}: {accessText}
+            </p>
+            <dl class="slds-dl_horizontal">
+              <dt class="slds-dl_horizontal__label">{labels.amount}</dt>
+              <dd class="slds-dl_horizontal__detail">
+                <lightning-formatted-number
+                  value={detail.amount}
+                  minimum-fraction-digits="2"
+                ></lightning-formatted-number>
+                {detail.currencyIso}
+              </dd>
+              <dt class="slds-dl_horizontal__label">{labels.dueDate}</dt>
+              <dd class="slds-dl_horizontal__detail">
+                <lightning-formatted-date-time
+                  value={detail.dueDate}
+                ></lightning-formatted-date-time>
+              </dd>
+              <dt class="slds-dl_horizontal__label">{labels.status}</dt>
+              <dd class="slds-dl_horizontal__detail">{detailStatusLabel}</dd>
+            </dl>
+          </section>
+          <div
+            class="slds-grid slds-wrap slds-gutters_x-small slds-var-m-top_small"
+          >
+            <div class="slds-col slds-size_1-of-1 slds-medium-size_2-of-3">
+              <lightning-input
+                type="text"
+                name="description"
+                label={labels.description}
+                value={editForm.description}
+                onchange={handleEditField}
+                max-length="255"
+                disabled={saveDisabled}
+                data-id="description"
+              ></lightning-input>
+            </div>
+            <div class="slds-col slds-size_1-of-1 slds-medium-size_1-of-3">
+              <lightning-input
+                type="text"
+                name="userCategory"
+                label={labels.category}
+                value={editForm.userCategory}
+                onchange={handleEditField}
+                max-length="80"
+                disabled={saveDisabled}
+                data-id="category"
+              ></lightning-input>
+            </div>
+          </div>
+          <template lwc:if={detail.canEdit}>
+            <lightning-button
+              variant="brand"
+              label={labels.save}
+              onclick={askSave}
+              disabled={saveDisabled}
+              class="slds-var-m-top_small"
+              data-id="save"
+            ></lightning-button>
+          </template>
+          <template lwc:if={detail.canRealize}>
+            <fieldset class="slds-form slds-var-m-top_medium">
+              <legend
+                class="slds-form-element__legend slds-form-element__label"
+              >
+                {labels.markPaid}
+              </legend>
+              <div
+                class="slds-grid slds-wrap slds-gutters_x-small slds-grid_vertical-align-end"
+              >
+                <div class="slds-col slds-size_1-of-2 slds-medium-size_1-of-3">
+                  <lightning-input
+                    type="number"
+                    step="0.01"
+                    min="0"
+                    name="amount"
+                    label={labels.realizationAmount}
+                    value={realizeForm.amount}
+                    onchange={handleRealizeField}
+                    data-id="realize-amount"
+                  ></lightning-input>
+                </div>
+                <div class="slds-col slds-size_1-of-2 slds-medium-size_1-of-3">
+                  <lightning-input
+                    type="date"
+                    name="recognitionDate"
+                    label={labels.realizationDate}
+                    value={realizeForm.recognitionDate}
+                    onchange={handleRealizeField}
+                    data-id="realize-date"
+                  ></lightning-input>
+                </div>
+                <div class="slds-col slds-size_1-of-1 slds-medium-size_1-of-3">
+                  <lightning-button
+                    label={labels.markPaid}
+                    onclick={askRealize}
+                    disabled={realizeDisabled}
+                    data-id="realize"
+                  ></lightning-button>
+                </div>
+              </div>
+            </fieldset>
+          </template>
+        </template>
+        <template lwc:else>
+          <p class="slds-text-body_small slds-var-m-bottom_small">
+            {labels.collaboratorIntro}
+          </p>
+          <template lwc:if={hasShared}>
+            <div class="axf-table-wrap">
+              <table
+                class="slds-table slds-table_cell-buffer slds-table_bordered"
+                aria-label={labels.sharedList}
+              >
+                <thead>
+                  <tr class="slds-line-height_reset">
+                    <th scope="col">{labels.expense}</th>
+                    <th scope="col">{labels.description}</th>
+                    <th scope="col">{labels.amount}</th>
+                    <th scope="col">{labels.dueDate}</th>
+                    <th scope="col">{labels.permission}</th>
+                    <th scope="col"></th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <template for:each={sharedRows} for:item="row">
+                    <tr
+                      key={row.financialTransactionId}
+                      class="slds-hint-parent"
+                    >
+                      <td>{row.name}</td>
+                      <td>{row.description}</td>
+                      <td>
+                        <lightning-formatted-number
+                          value={row.amount}
+                          minimum-fraction-digits="2"
+                        ></lightning-formatted-number>
+                        {row.currencyIso}
+                      </td>
+                      <td>
+                        <lightning-formatted-date-time
+                          value={row.dueDate}
+                        ></lightning-formatted-date-time>
+                      </td>
+                      <td>{row.permissionLabel}</td>
+                      <td>
+                        <lightning-button
+                          label={labels.open}
+                          data-id={row.financialTransactionId}
+                          onclick={handleOpen}
+                          disabled={busy}
+                        ></lightning-button>
+                      </td>
+                    </tr>
+                  </template>
+                </tbody>
+              </table>
+            </div>
+          </template>
+          <template lwc:else>
+            <p class="slds-text-body_small" data-id="no-shared">
+              {labels.noShared}
+            </p>
+          </template>
+        </template>
+      </template>
+    </div>
+  </lightning-card>
+</template>

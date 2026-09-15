@@ -1,0 +1,13 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<CustomField xmlns="http://soap.sforce.com/2006/04/metadata">
+    <fullName>AXF_ARR_LKP_Account__c</fullName>
+    <label>Titular</label>
+    <type>Lookup</type>
+    <referenceTo>Account</referenceTo>
+    <relationshipLabel>Execucoes de Arquivamento</relationshipLabel>
+    <relationshipName>AXF_REL_ArchiveRuns</relationshipName>
+    <required>true</required>
+    <deleteConstraint>Restrict</deleteConstraint>
+    <description
+  >Titular (Account) cujo escopo esta sendo arquivado.</description>
+</CustomField>

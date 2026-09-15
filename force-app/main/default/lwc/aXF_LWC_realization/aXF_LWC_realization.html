@@ -1,0 +1,186 @@
+<template>
+  <lightning-card title={labels.title}>
+    <div class="slds-p-around_medium">
+      <template lwc:if={busy}
+        ><lightning-spinner
+          alternative-text={labels.loading}
+          size="small"
+        ></lightning-spinner
+      ></template>
+      <template lwc:if={error}
+        ><p role="alert" class="slds-text-color_error">{error}</p></template
+      >
+      <template lwc:if={success}><p role="status">{success}</p></template>
+      <template lwc:if={standalone}
+        ><lightning-input
+          type="checkbox"
+          label={labels.actual}
+          checked={actualOnly}
+          onchange={handleMode}
+          disabled={busy}
+        ></lightning-input
+      ></template>
+      <template lwc:if={showTarget}
+        ><lightning-record-picker
+          label={labels.target}
+          object-api-name="AXF_OBJ_FinancialTransaction__c"
+          value={selectedTarget}
+          onchange={handleTarget}
+          disabled={busy}
+          required
+        ></lightning-record-picker
+      ></template>
+      <template lwc:if={actualOnly}>
+        <lightning-record-picker
+          label={labels.holder}
+          object-api-name="Account"
+          data-field="accountId"
+          onchange={handleChange}
+          required
+          disabled={busy}
+        ></lightning-record-picker>
+        <lightning-combobox
+          label={labels.direction}
+          value={form.direction}
+          options={directions}
+          data-field="direction"
+          onchange={handleChange}
+          disabled={busy}
+          required
+        ></lightning-combobox>
+        <lightning-input
+          label={labels.currency}
+          value={form.currencyIso}
+          data-field="currencyIso"
+          onchange={handleChange}
+          pattern="[A-Z]{3}"
+          required
+          disabled={busy}
+        ></lightning-input>
+      </template>
+      <template lwc:if={state}>
+        <dl class="slds-list_horizontal slds-wrap slds-m-vertical_medium">
+          <dt class="slds-item_label">{labels.planned}</dt>
+          <dd class="slds-item_detail">{state.planned} {state.currencyIso}</dd>
+          <dt class="slds-item_label">{labels.realized}</dt>
+          <dd class="slds-item_detail">{state.realized} {state.currencyIso}</dd>
+          <dt class="slds-item_label">{labels.residual}</dt>
+          <dd class="slds-item_detail">{state.residual} {state.currencyIso}</dd>
+        </dl>
+        <template lwc:if={state.pendingFx}
+          ><p role="status">{labels.pending}</p></template
+        >
+        <template lwc:else
+          ><p>
+            {labels.reporting}: {state.reportingAmount} {state.reportingIso}
+          </p></template
+        >
+      </template>
+      <lightning-combobox
+        label={labels.source}
+        value={form.sourceKind}
+        options={sources}
+        data-field="sourceKind"
+        onchange={handleChange}
+        disabled={busy}
+      ></lightning-combobox>
+      <lightning-input
+        type="checkbox"
+        label={labels.existing}
+        checked={useExisting}
+        onchange={handleExisting}
+        disabled={busy}
+      ></lightning-input>
+      <template lwc:if={useExisting}>
+        <lightning-record-picker
+          label={labels.fact}
+          object-api-name={factObject}
+          data-field="sourceId"
+          onchange={handleChange}
+          required
+          disabled={busy}
+        ></lightning-record-picker>
+      </template>
+      <template lwc:if={showFunding}
+        ><lightning-record-picker
+          label={labels.funding}
+          object-api-name={fundingObject}
+          data-field="fundingId"
+          onchange={handleChange}
+          required
+          disabled={busy}
+        ></lightning-record-picker
+      ></template>
+      <lightning-input
+        type="number"
+        label={labels.amount}
+        value={form.amount}
+        data-field="amount"
+        onchange={handleChange}
+        min="0.01"
+        step="0.01"
+        required
+        disabled={busy}
+      ></lightning-input>
+      <lightning-input
+        type="date"
+        label={labels.date}
+        value={form.recognitionDate}
+        data-field="recognitionDate"
+        onchange={handleChange}
+        required
+        disabled={busy}
+      ></lightning-input>
+      <lightning-button
+        variant="brand"
+        label={labels.confirm}
+        onclick={confirm}
+        disabled={disabled}
+      ></lightning-button>
+      <template lwc:if={hasTarget}
+        ><lightning-button
+          label={labels.refresh}
+          onclick={refresh}
+          disabled={busy}
+        ></lightning-button
+      ></template>
+      <template lwc:if={empty}
+        ><p class="slds-m-top_medium">{labels.empty}</p></template
+      >
+      <ul class="slds-m-top_medium">
+        <template for:each={rows} for:item="row">
+          <li key={row.Id} class="slds-box slds-m-bottom_small">
+            <lightning-formatted-url
+              value={row.sourceUrl}
+              label={row.sourceLabel}
+            ></lightning-formatted-url>
+            <p>
+              {row.Name}: {row.effect} — {row.AXF_RA_NUM_Magnitude__c}
+              {row.AXF_RA_TXT_CurrencyIsoCode__c}
+            </p>
+            <lightning-formatted-date-time
+              value={row.AXF_RA_DAT_RecognitionDate__c}
+              time-zone="UTC"
+            ></lightning-formatted-date-time>
+            <template lwc:if={row.isApplication}
+              ><lightning-button
+                label={labels.reverse}
+                data-id={row.Id}
+                onclick={reverse}
+                disabled={busy}
+              ></lightning-button
+            ></template>
+            <template lwc:if={row.pending}
+              ><lightning-button
+                label={labels.retry}
+                data-id={row.Id}
+                onclick={retry}
+                disabled={busy}
+              ></lightning-button
+            ></template>
+          </li>
+        </template>
+      </ul>
+    </div>
+  </lightning-card>
+</template>

@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<CustomField xmlns="http://soap.sforce.com/2006/04/metadata">
+    <fullName>AXF_BWA_MDR_Line__c</fullName>
+    <label>Linha</label>
+    <type>MasterDetail</type>
+    <referenceTo>AXF_OBJ_BillingDocumentLine__c</referenceTo>
+    <relationshipLabel>Alocacoes de Trabalho</relationshipLabel>
+    <relationshipName>AXF_REL_WorkAllocations</relationshipName>
+    <relationshipOrder>0</relationshipOrder>
+    <reparentableMasterDetail>false</reparentableMasterDetail>
+    <writeRequiresMasterRead>false</writeRequiresMasterRead>
+    <description
+  >Master-Detail ControlledByParent: herda acesso da linha (G2).</description>
+</CustomField>

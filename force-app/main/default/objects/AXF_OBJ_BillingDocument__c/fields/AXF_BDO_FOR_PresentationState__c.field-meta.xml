@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<CustomField xmlns="http://soap.sforce.com/2006/04/metadata">
+    <fullName>AXF_BDO_FOR_PresentationState__c</fullName>
+    <label>Estado de Apresentacao</label>
+    <type>Text</type>
+    <formula
+  >CASE(TEXT(AXF_BDO_PKL_Lifecycle__c), 'OPEN', 'DRAFT', 'CLOSED', 'CLOSED', 'CANCELLED', 'CANCELLED', 'UNKNOWN')</formula>
+    <formulaTreatBlanksAs>BlankAsZero</formulaTreatBlanksAs>
+    <required>false</required>
+    <description
+  >Estado de apresentacao derivado (nunca ISSUED/SENT por DML - GBI-1). Emissao/entrega refinam a derivacao em AXF-66/68.</description>
+</CustomField>

@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<CustomField xmlns="http://soap.sforce.com/2006/04/metadata">
+    <fullName>AXF_APL_BOL_AllowHotRemoval__c</fullName>
+    <label>Permite Remocao Quente</label>
+    <type>Checkbox</type>
+    <defaultValue>false</defaultValue>
+    <description
+  >Somente com backup/recuperacao provados e autorizacao explicita (gate AXF-79). Falso mantem a copia quente e expoe BLOCKED.</description>
+</CustomField>

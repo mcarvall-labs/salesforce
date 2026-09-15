@@ -201,12 +201,10 @@ export default class AxfLwcCompanyResponsibleAccess extends LightningElement {
     this.feedback = L.working;
     try {
       const res = await confirmResponsibility({
-        input: {
-          businessId: this.businessId,
-          personId: row.personId,
-          role: row.role,
-          expectedVersion: row.version
-        }
+        businessId: this.businessId,
+        personId: row.personId,
+        role: row.role,
+        expectedVersion: row.version
       });
       await this.settle(res, L.retryDone);
     } catch (e) {

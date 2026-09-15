@@ -121,16 +121,24 @@ describe("c-aXF_LWC_entryWizard", () => {
 
     // step 4: review + confirm
     expect(el.shadowRoot.textContent).toMatch(/150\.75/);
+    const tracking = [
+      ...el.shadowRoot.querySelectorAll("lightning-input")
+    ].find((input) => input.type === "checkbox");
+    expect(tracking.checked).toBe(false);
+    tracking.checked = true;
+    tracking.dispatchEvent(new CustomEvent("change"));
+    await flush();
     btn(el, /Confirmar|Confirm/).click();
     await settle();
 
     expect(createEntry).toHaveBeenCalledTimes(1);
-    const call = createEntry.mock.calls[0][0].input;
+    const call = createEntry.mock.calls[0][0];
     expect(call.accountId).toBe(CONTEXTS[1].accountId);
     expect(call.direction).toBe("DEBIT");
     expect(call.magnitude).toBe(150.75);
     expect(call.bankAccountId).toBeNull();
     expect(call.creditCardId).toBeNull();
+    expect(call.trackConfirmation).toBe(true);
     expect(typeof call.clientRequestId).toBe("string");
     expect(call.clientRequestId.length).toBe(36);
 

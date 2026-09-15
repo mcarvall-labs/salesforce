@@ -1,0 +1,13 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<CustomField xmlns="http://soap.sforce.com/2006/04/metadata">
+    <fullName>AXF_BWA_LKP_WorkRecord__c</fullName>
+    <label>Registro de Trabalho</label>
+    <type>Lookup</type>
+    <referenceTo>AXF_OBJ_WorkRecord__c</referenceTo>
+    <relationshipName>AXF_REL_BillingAllocations</relationshipName>
+    <relationshipLabel>Alocacoes em Cobranca</relationshipLabel>
+    <deleteConstraint>Restrict</deleteConstraint>
+    <required>true</required>
+    <description
+  >WorkRecord APPROVED do mesmo contrato (ex-ContractWorkRecord, GBI-4).</description>
+</CustomField>

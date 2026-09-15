@@ -1,0 +1,13 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<CustomField xmlns="http://soap.sforce.com/2006/04/metadata">
+    <fullName>AXF_BDV_LKP_BillingDocument__c</fullName>
+    <label>Documento de Cobranca</label>
+    <type>Lookup</type>
+    <referenceTo>AXF_OBJ_BillingDocument__c</referenceTo>
+    <relationshipName>AXF_REL_Versions</relationshipName>
+    <relationshipLabel>Versoes</relationshipLabel>
+    <deleteConstraint>Restrict</deleteConstraint>
+    <required>true</required>
+    <description
+  >Documento agregador. Root proprio (ciclo de versao/replacement) com owner-sync (GBI-2).</description>
+</CustomField>

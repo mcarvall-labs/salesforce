@@ -1,0 +1,20 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<CustomField xmlns="http://soap.sforce.com/2006/04/metadata">
+    <fullName>AXF_SEG_PKL_Permission__c</fullName>
+    <label>Permissao</label>
+    <type>Picklist</type>
+    <required>true</required>
+    <trackHistory>true</trackHistory>
+    <valueSet>
+        <restricted>true</restricted>
+        <valueSetDefinition>
+            <sorted>false</sorted>
+            <value><fullName>VIEW</fullName><default>true</default><label
+        >Pode visualizar</label></value>
+            <value><fullName>EDIT</fullName><default>false</default><label
+        >Pode editar</label></value>
+        </valueSetDefinition>
+    </valueSet>
+    <description
+  >VIEW = leitura redigida; EDIT = leitura + alteracao de descricao/categoria e confirmacao de realizacao via AXF-25.</description>
+</CustomField>

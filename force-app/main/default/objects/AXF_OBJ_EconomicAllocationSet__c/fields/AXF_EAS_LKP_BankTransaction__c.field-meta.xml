@@ -1,0 +1,13 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<CustomField xmlns="http://soap.sforce.com/2006/04/metadata">
+    <fullName>AXF_EAS_LKP_BankTransaction__c</fullName>
+    <label>Transacao Bancaria</label>
+    <type>Lookup</type>
+    <referenceTo>AXF_OBJ_BankAccountTransaction__c</referenceTo>
+    <relationshipLabel>Rateios Economicos</relationshipLabel>
+    <relationshipName>AXF_REL_EconomicAllocationSets</relationshipName>
+    <deleteConstraint>Restrict</deleteConstraint>
+    <required>false</required>
+    <description
+  >Ancora do fato (XOR com CardTransaction/FinancialTransaction).</description>
+</CustomField>

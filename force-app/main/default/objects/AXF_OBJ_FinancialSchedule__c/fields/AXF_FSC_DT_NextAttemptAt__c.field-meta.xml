@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<CustomField xmlns="http://soap.sforce.com/2006/04/metadata">
+  <fullName>AXF_FSC_DT_NextAttemptAt__c</fullName>
+  <label>Próxima Tentativa</label>
+  <type>DateTime</type>
+  <required>false</required>
+  <description
+  >Instante UTC da próxima tentativa após falha, com recuo limitado (1, 5 e 30 minutos, depois atenção operacional). Campo de cursor que entra no esquema por integridade do contrato; AXF-103 não o movimenta (AXF-104).</description>
+</CustomField>

@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<CustomField xmlns="http://soap.sforce.com/2006/04/metadata">
+  <fullName>AXF_SRF_LKP_ConfirmedBy__c</fullName>
+  <label>Confirmado por</label>
+  <type>Lookup</type>
+  <referenceTo>User</referenceTo>
+  <relationshipName>AXF_REL_ConfirmedScheduleReferences</relationshipName>
+  <deleteConstraint>SetNull</deleteConstraint>
+  <required>false</required>
+  <description
+  >Usuário que confirmou a referência. Mutações de referência e evidência não podem ser invocadas livremente por UI ou API públicas. A plataforma não permite exclusão restrita em vínculo com User; a guarda de delete é do handler (AXF-103).</description>
+</CustomField>

@@ -1,0 +1,23 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<CustomObject xmlns="http://soap.sforce.com/2006/04/metadata">
+    <deploymentStatus>Deployed</deploymentStatus>
+    <description
+  >Liquidacao cambial real (INBOUND|OUTBOUND) em rascunho: registra currencies, esperado/entregue/convertido, taxa efetiva target per 1 source, PTAX normalizada, bruto-alvo, movimento bancario liquido e datas; PENDING_DETAILS nao presume taxa/encargo (AXF-59, fechamento G1/G2/G6 câmbio real 06/09, AD-37). ExchangeRate permanece referencia separada.</description>
+    <enableActivities>false</enableActivities>
+    <enableBulkApi>true</enableBulkApi>
+    <enableFeeds>false</enableFeeds>
+    <enableHistory>true</enableHistory>
+    <enableReports>true</enableReports>
+    <enableSearch>true</enableSearch>
+    <enableSharing>true</enableSharing>
+    <enableStreamingApi>true</enableStreamingApi>
+    <label>Liquidacao Cambial</label>
+    <nameField>
+        <displayFormat>FXT-{000000}</displayFormat>
+        <label>Numero da Liquidacao</label>
+        <type>AutoNumber</type>
+    </nameField>
+    <pluralLabel>Liquidacoes Cambiais</pluralLabel>
+    <sharingModel>Private</sharingModel>
+    <visibility>Public</visibility>
+</CustomObject>

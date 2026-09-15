@@ -1,0 +1,13 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<CustomField xmlns="http://soap.sforce.com/2006/04/metadata">
+    <fullName>AXF_EA_LKP_Account__c</fullName>
+    <label>Pessoa/Empresa</label>
+    <type>Lookup</type>
+    <referenceTo>Account</referenceTo>
+    <relationshipLabel>Parcelas de Rateio</relationshipLabel>
+    <relationshipName>AXF_REL_EconomicAllocations</relationshipName>
+    <deleteConstraint>Restrict</deleteConstraint>
+    <required>true</required>
+    <description
+  >Pessoa/empresa titular autorizada desta instalacao que assume a parcela (substitui FinancialEntity).</description>
+</CustomField>

@@ -20,7 +20,18 @@
 
     <div class="guide__body">
       <template for:each={bodyParagraphs} for:item="p">
-        <p key={p.key} class="guide__text">{p.text}</p>
+        <div key={p.key} class="guide__block">
+          <template if:true={p.isList}>
+            <ul class="guide__list">
+              <template for:each={p.items} for:item="li">
+                <li key={li.key} class="guide__text">{li.text}</li>
+              </template>
+            </ul>
+          </template>
+          <template if:false={p.isList}>
+            <p class="guide__text">{p.text}</p>
+          </template>
+        </div>
       </template>
 
       <template if:true={officialLink}>

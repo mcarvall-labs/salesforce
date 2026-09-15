@@ -78,7 +78,13 @@ public with sharing class AXF_CLS_PluggyCredentialWriter {
     }
     try {
       ConnectApi.NamedCredentials.updateCredential(input);
-    } catch (ConnectApi.NotFoundException notThere) {
+    } catch (ConnectApi.ConnectApiException updateFailed) {
+      // A freshly deployed External Credential has no principal yet, so
+      // updateCredential (PATCH) throws "There are no existing authentication
+      // credentials to update... Use the POST method to create them". That error is a
+      // ConnectApiException — NOT the narrower ConnectApi.NotFoundException — so the
+      // fallback below must catch the parent type, otherwise the secret is never
+      // provisioned and every auth callout fails resolving the merge fields.
       ConnectApi.NamedCredentials.createCredential(input);
     }
   }

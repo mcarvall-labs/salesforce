@@ -5,5 +5,5 @@
     <type>Checkbox</type>
     <defaultValue>false</defaultValue>
     <description
-  >Sempre false nesta US (só lançamento confirmado à vista); reservado para AXF-20/21 (parcelas/previsão) — G1-3.</description>
+  >Marca de projeção reservada por esta descrição: verdadeiro quando a ocorrência é uma ESTIMATIVA — método ESTIMATED com valor de referência, ou ocorrência planejada ainda não confirmada — e falso para ocorrência calculada pela fórmula aprovada e confirmada. Nunca afirma caixa realizado; leitores de compromisso restante usam esta marca para rotular o total como estimado (AXF-20/21, AXF-103).</description>
 </CustomField>

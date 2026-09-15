@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<CustomField xmlns="http://soap.sforce.com/2006/04/metadata">
+    <fullName>AXF_FTX_TXT_UserCategory__c</fullName>
+    <label>Categoria</label>
+    <type>Text</type>
+    <length>80</length>
+    <required>false</required>
+    <trackHistory>true</trackHistory>
+    <description
+  >Categoria informada pelo usuario (texto livre ate AXF-30 fixar catalogo). Editavel em escopo limitado pelo colaborador autorizado (AXF-6). Historico nativo de campo.</description>
+</CustomField>

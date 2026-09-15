@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<CustomField xmlns="http://soap.sforce.com/2006/04/metadata">
+    <fullName>AXF_BDO_TXT_ActiveIssueToken__c</fullName>
+    <label>Token de Emissao Ativa</label>
+    <type>Text</type>
+    <length>80</length>
+    <unique>true</unique>
+    <required>false</required>
+    <description
+  >Unique: no maximo uma versao efetiva ISSUING|ISSUED por documento (G6). Preenchido pela emissao (AXF-66), nunca pelo rascunho.</description>
+</CustomField>

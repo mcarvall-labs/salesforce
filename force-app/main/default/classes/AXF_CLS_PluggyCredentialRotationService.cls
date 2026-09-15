@@ -183,17 +183,32 @@ public with sharing class AXF_CLS_PluggyCredentialRotationService {
   ) {
     r.candidateHealthy = healthy;
     r.message = message;
-    r.state = healthy ? 'TESTED_OK' : 'ROLLED_BACK';
+    r.state = healthy ? 'TESTED_OK' : 'ROLLED_BACK'; // returned to UI for momentary feedback
 
     AXF_PluggyIntegrationConfig__c cfg = AXF_CLS_PluggySettings.currentOrgDefaultForUpdate();
-    cfg.AXF_PIC_TXT_RotationState__c = r.state;
-    cfg.AXF_PIC_DT_RotationStartedAt__c = Datetime.now();
+    // Persist TESTED_OK so the UI can offer the Promote action.
+    // On failure the rotation is over — save NONE so the status view shows only
+    // the active credential health, not a stale failed-attempt artifact.
+    cfg.AXF_PIC_TXT_RotationState__c = healthy ? 'TESTED_OK' : 'NONE';
+    cfg.AXF_PIC_DT_RotationStartedAt__c = healthy ? Datetime.now() : null;
     if (candidateSlot == 'PRIMARY') {
       cfg.AXF_PIC_TXT_PrimarySlotTestResult__c = truncate(message);
       cfg.AXF_PIC_DT_PrimarySlotTestedAt__c = Datetime.now();
+      if (!healthy) {
+        // Clear candidate fields — the failed attempt is volatile
+        cfg.AXF_PIC_TXT_CandidateSlotTestResult__c = null;
+        cfg.AXF_PIC_DT_CandidateSlotTestedAt__c = null;
+      }
     } else {
-      cfg.AXF_PIC_TXT_CandidateSlotTestResult__c = truncate(message);
-      cfg.AXF_PIC_DT_CandidateSlotTestedAt__c = Datetime.now();
+      cfg.AXF_PIC_TXT_CandidateSlotTestResult__c = healthy
+        ? truncate(message)
+        : null;
+      cfg.AXF_PIC_DT_CandidateSlotTestedAt__c = healthy ? Datetime.now() : null;
+      if (!healthy) {
+        // Clear primary candidate fields as well — nothing to show
+        cfg.AXF_PIC_TXT_PrimarySlotTestResult__c = null;
+        cfg.AXF_PIC_DT_PrimarySlotTestedAt__c = null;
+      }
     }
     AXF_CLS_PluggySettings.save(cfg);
     return r;
@@ -218,12 +233,18 @@ public with sharing class AXF_CLS_PluggyCredentialRotationService {
       : 'PRIMARY';
     AXF_PluggyIntegrationConfig__c cfg = AXF_CLS_PluggySettings.currentOrgDefaultForUpdate();
     cfg.AXF_PIC_TXT_ActiveSlot__c = newSlot;
-    cfg.AXF_PIC_TXT_RotationState__c = 'PROMOTED';
+    // Promotion is complete — rotation is over. Save NONE so the status view
+    // shows only the active credential health going forward.
+    cfg.AXF_PIC_TXT_RotationState__c = 'NONE';
+    cfg.AXF_PIC_DT_RotationStartedAt__c = null;
+    // Clear candidate test fields; the promoted credential is now active
+    cfg.AXF_PIC_TXT_CandidateSlotTestResult__c = null;
+    cfg.AXF_PIC_DT_CandidateSlotTestedAt__c = null;
     AXF_CLS_PluggySettings.save(cfg);
 
     AXF_CLS_PluggyAuthService.invalidateCache();
 
-    r.state = 'PROMOTED';
+    r.state = 'PROMOTED'; // UI shows momentary success feedback
     r.candidateHealthy = true;
     r.message =
       'Credencial promovida. Slot ativo: ' +
@@ -234,7 +255,15 @@ public with sharing class AXF_CLS_PluggyCredentialRotationService {
 
   public RotationResult rollback() {
     requireAuthority();
-    setRotationState('ROLLED_BACK', false);
+    // Rollback is terminal — rotation is over, same as NONE from the user's perspective.
+    // Save NONE so the active credential health is the only signal on the status screen.
+    // The DTO still returns ROLLED_BACK for the momentary UI feedback message.
+    AXF_PluggyIntegrationConfig__c cfg = AXF_CLS_PluggySettings.currentOrgDefaultForUpdate();
+    cfg.AXF_PIC_TXT_RotationState__c = 'NONE';
+    cfg.AXF_PIC_DT_RotationStartedAt__c = null;
+    cfg.AXF_PIC_TXT_CandidateSlotTestResult__c = null;
+    cfg.AXF_PIC_DT_CandidateSlotTestedAt__c = null;
+    AXF_CLS_PluggySettings.save(cfg);
     RotationResult r = new RotationResult();
     r.state = 'ROLLED_BACK';
     r.candidateHealthy = false;

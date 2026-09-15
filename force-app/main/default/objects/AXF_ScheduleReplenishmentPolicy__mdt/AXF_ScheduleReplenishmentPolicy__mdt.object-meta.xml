@@ -1,0 +1,8 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<CustomObject xmlns="http://soap.sforce.com/2006/04/metadata">
+    <label>AXF Schedule Replenishment Policy</label>
+    <pluralLabel>AXF Schedule Replenishment Policies</pluralLabel>
+    <visibility>Public</visibility>
+    <description
+  >Cadencia, orcamento de despacho e escada de recuo da reposicao rolante da janela do cronograma (AXF-103 fatia 2). A expressao do cronograma vive aqui — artefato versionado — e nao em comentario de codigo; registrar o job agendado permanece passo de operacao do dono. Ausencia de registro bloqueia o despacho em vez de usar default inventado.</description>
+</CustomObject>

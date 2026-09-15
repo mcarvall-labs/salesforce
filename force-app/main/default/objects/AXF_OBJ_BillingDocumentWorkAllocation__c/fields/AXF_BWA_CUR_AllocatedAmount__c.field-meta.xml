@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<CustomField xmlns="http://soap.sforce.com/2006/04/metadata">
+    <fullName>AXF_BWA_CUR_AllocatedAmount__c</fullName>
+    <label>Valor Alocado</label>
+    <type>Number</type>
+    <precision>16</precision>
+    <scale>2</scale>
+    <required>false</required>
+    <description
+  >Valor correspondente (quantidade x taxa aprovada) na moeda original.</description>
+</CustomField>

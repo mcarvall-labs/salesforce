@@ -27,10 +27,22 @@ public with sharing class AXF_CLS_CTRL_OnboardingProgress {
     return new ALT_CLS_AxonOnboardingProgress().getState();
   }
 
+  // Primitive params (not a wrapper) so the LWC call binds reliably — Aura does
+  // not populate the fields of an @AuraEnabled Apex class that is an inner class
+  // of another top-level class, which silently produced "Etapa desconhecida."
+  // (stepKey arrived null). Every other method here already takes primitives.
   @AuraEnabled
   public static ALT_CLS_AxonOnboardingProgress.OnboardingState confirmStep(
-    ALT_CLS_AxonOnboardingProgress.ConfirmInput input
+    String stepKey,
+    Integer expectedVersion,
+    String evidenceRef,
+    String note
   ) {
+    ALT_CLS_AxonOnboardingProgress.ConfirmInput input = new ALT_CLS_AxonOnboardingProgress.ConfirmInput();
+    input.stepKey = stepKey;
+    input.expectedVersion = expectedVersion;
+    input.evidenceRef = evidenceRef;
+    input.note = note;
     return new ALT_CLS_AxonOnboardingProgress().confirmStep(input);
   }
 

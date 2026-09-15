@@ -1,0 +1,8 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<CustomField xmlns="http://soap.sforce.com/2006/04/metadata"><fullName
+  >AXF_FXS_LKP_ReconciliationAllocation__c</fullName><label
+  >Realization allocation</label><deleteConstraint
+  >Restrict</deleteConstraint><referenceTo
+  >AXF_OBJ_ReconciliationAllocation__c</referenceTo><relationshipLabel
+  >Recognition snapshots</relationshipLabel><relationshipName
+  >RecognitionSnapshots</relationshipName><type>Lookup</type></CustomField>

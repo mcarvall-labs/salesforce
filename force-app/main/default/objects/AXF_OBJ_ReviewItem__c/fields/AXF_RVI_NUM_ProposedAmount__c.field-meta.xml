@@ -1,0 +1,6 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<CustomField xmlns="http://soap.sforce.com/2006/04/metadata"><fullName
+  >AXF_RVI_NUM_ProposedAmount__c</fullName><description
+  >Typed source evidence; retained until an authorized retention policy permits disposal.</description><label
+  >ProposedAmount</label><precision>18</precision><scale>8</scale><required
+  >false</required><type>Number</type></CustomField>

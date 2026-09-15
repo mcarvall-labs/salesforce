@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<CustomField xmlns="http://soap.sforce.com/2006/04/metadata">
+  <fullName>AXF_SCH_TXT_PayloadHash__c</fullName>
+  <label>Hash do Payload</label>
+  <type>Text</type>
+  <length>64</length>
+  <required>true</required>
+  <description
+  >Hash do payload canônico, distinto da identidade da operação. Reenvio equivalente devolve o ResultJson original autorizado; payload alterado na mesma identidade é CONFLICT (AXF-103).</description>
+</CustomField>

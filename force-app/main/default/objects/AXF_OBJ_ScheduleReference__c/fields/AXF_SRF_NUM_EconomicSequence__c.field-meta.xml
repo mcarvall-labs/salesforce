@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<CustomField xmlns="http://soap.sforce.com/2006/04/metadata">
+  <fullName>AXF_SRF_NUM_EconomicSequence__c</fullName>
+  <label>Ordem Econômica</label>
+  <type>Number</type>
+  <precision>5</precision>
+  <scale>0</scale>
+  <required>true</required>
+  <description
+  >Ordem econômica da referência. Referências de realização ordenam por esta sequência; confirmações válidas conflitantes na mesma ordem são AMBIGUOUS e bloqueiam a propagação até resolução explícita. Carimbo de tempo nunca decide essa precedência (AXF-103).</description>
+</CustomField>

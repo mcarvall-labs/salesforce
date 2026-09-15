@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<CustomField xmlns="http://soap.sforce.com/2006/04/metadata">
+    <fullName>AXF_SRP_TXT_BackoffMinutes__c</fullName>
+    <label>Escada de recuo (minutos)</label>
+    <type>Text</type>
+    <length>20</length>
+    <required>true</required>
+    <description
+  >Escada de recuo declarada, em minutos, separada por virgula. Aprovada: 1,5,30. Qualquer outro valor exige aprovacao humana e o leitor recusa a politica em vez de aceitar em silencio.</description>
+</CustomField>

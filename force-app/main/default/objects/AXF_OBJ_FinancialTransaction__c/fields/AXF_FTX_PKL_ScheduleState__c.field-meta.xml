@@ -1,0 +1,25 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<CustomField xmlns="http://soap.sforce.com/2006/04/metadata">
+  <fullName>AXF_FTX_PKL_ScheduleState__c</fullName>
+  <label>Estado no Cronograma</label>
+  <type>Picklist</type>
+  <required>false</required>
+  <valueSet>
+    <restricted>true</restricted>
+    <valueSetDefinition>
+      <sorted>false</sorted>
+      <value>
+        <fullName>OPEN</fullName>
+        <default>false</default>
+        <label>Aberta</label>
+      </value>
+      <value>
+        <fullName>CANCELLED</fullName>
+        <default>false</default>
+        <label>Cancelada pelo cronograma</label>
+      </value>
+    </valueSetDefinition>
+  </valueSet>
+  <description
+  >Cache derivado do predicado de encerramento do cronograma, sem reinterpretar PLANNED/CONFIRMED legados. Sem valor padrão de propósito: nulo significa "não pertence a um cronograma" e não pode declarar participação em cronograma aberto por omissão (caminho legado AXF-20, importações e entrada manual). Até a atualização alcançar, os leitores resolvem o predicado a partir da revisão (AXF-103).</description>
+</CustomField>

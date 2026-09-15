@@ -1,0 +1,6 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<CustomField xmlns="http://soap.sforce.com/2006/04/metadata"><fullName
+  >AXF_FTX_BOL_TrackConfirmation__c</fullName><defaultValue
+  >false</defaultValue><label>Track confirmation</label><type
+  >Checkbox</type><description
+  >Original manual confirmation intent; part of the client operation payload. Review resolution does not change this value.</description></CustomField>

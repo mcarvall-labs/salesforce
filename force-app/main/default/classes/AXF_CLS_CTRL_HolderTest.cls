@@ -20,13 +20,16 @@ private class AXF_CLS_CTRL_HolderTest {
   static void createListAndGetRoundTrip() {
     authorize();
 
-    ALT_CLS_AxonHolder.SaveInput si = new ALT_CLS_AxonHolder.SaveInput();
-    si.type = 'PERSON';
-    si.firstName = 'Fabio';
-    si.lastName = 'Gomes';
-
     Test.startTest();
-    ALT_CLS_AxonHolder.SaveResult saved = AXF_CLS_CTRL_Holder.saveHolder(si);
+    ALT_CLS_AxonHolder.SaveResult saved = AXF_CLS_CTRL_Holder.saveHolder(
+      null,
+      'PERSON',
+      'Fabio',
+      'Gomes',
+      null,
+      null,
+      false
+    );
     Test.stopTest();
 
     System.assertEquals('SUCCEEDED', saved.outcome, saved.message);
@@ -48,11 +51,15 @@ private class AXF_CLS_CTRL_HolderTest {
     AXF_CLS_CTRL_Holder.canConfigureOverride = false;
     ALT_CLS_AxonHolder.canConfigureOverride = false;
 
-    ALT_CLS_AxonHolder.SaveInput si = new ALT_CLS_AxonHolder.SaveInput();
-    si.type = 'BUSINESS';
-    si.name = 'Bloqueada SA';
-
-    ALT_CLS_AxonHolder.SaveResult r = AXF_CLS_CTRL_Holder.saveHolder(si);
+    ALT_CLS_AxonHolder.SaveResult r = AXF_CLS_CTRL_Holder.saveHolder(
+      null,
+      'BUSINESS',
+      null,
+      null,
+      'Bloqueada SA',
+      null,
+      false
+    );
     System.assertEquals('FORBIDDEN', r.outcome);
   }
 

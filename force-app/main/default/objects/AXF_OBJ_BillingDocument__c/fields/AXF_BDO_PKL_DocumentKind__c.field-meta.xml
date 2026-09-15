@@ -1,0 +1,19 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<CustomField xmlns="http://soap.sforce.com/2006/04/metadata">
+    <fullName>AXF_BDO_PKL_DocumentKind__c</fullName>
+    <label>Tipo de Documento</label>
+    <type>Picklist</type>
+    <required>true</required>
+    <valueSet>
+        <restricted>true</restricted>
+        <valueSetDefinition>
+            <sorted>false</sorted>
+            <value><fullName>GENERIC_INVOICE</fullName><default
+        >true</default><label>Cobranca generica</label></value>
+            <value><fullName>GENERIC_RECEIPT</fullName><default
+        >false</default><label>Recibo generico</label></value>
+        </valueSetDefinition>
+    </valueSet>
+    <description
+  >Tipo documental do pipeline generico (GBI-2). Adapter fiscal BLOCKED: o documento generico nao se apresenta como fiscal valido.</description>
+</CustomField>
