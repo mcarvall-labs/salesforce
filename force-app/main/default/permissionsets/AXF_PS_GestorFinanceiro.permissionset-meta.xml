@@ -298,6 +298,14 @@
     <apexClass>AXF_CLS_CTRL_ForecastComparison</apexClass>
     <enabled>true</enabled>
   </classAccesses>
+  <classAccesses>
+    <apexClass>ALT_CLS_ReconciliationReversalService</apexClass>
+    <enabled>true</enabled>
+  </classAccesses>
+  <classAccesses>
+    <apexClass>AXF_CLS_CTRL_ReconciliationReversal</apexClass>
+    <enabled>true</enabled>
+  </classAccesses>
   <customPermissions>
     <enabled>true</enabled>
     <name>AXF_CanConfigure</name>
@@ -341,6 +349,10 @@
   <customPermissions>
     <enabled>true</enabled>
     <name>AXF_CanCompareForecast</name>
+  </customPermissions>
+  <customPermissions>
+    <enabled>true</enabled>
+    <name>AXF_CanReverseReconciliation</name>
   </customPermissions>
   <fieldPermissions>
     <editable>true</editable>
@@ -2369,6 +2381,10 @@
   </tabSettings>
   <tabSettings>
     <tab>AXF_CT_ForecastComparison</tab>
+    <visibility>Visible</visibility>
+  </tabSettings>
+  <tabSettings>
+    <tab>AXF_CT_ReconciliationReversal</tab>
     <visibility>Visible</visibility>
   </tabSettings>
   </PermissionSet>

@@ -1,6 +1,5 @@
 <?xml version="1.0" encoding="UTF-8" ?>
-<CustomApplication xmlns="http://soap.sforce.com/2006/04/metadata"><description
-  >Axon — uso diário: posição, contexto autorizado, fontes, titulares e preferências.</description>
+<CustomApplication xmlns="http://soap.sforce.com/2006/04/metadata"><description>Axon — uso diário: posição, contexto autorizado, fontes, titulares e preferências.</description>
     <brand>
         <headerColor>#021B39</headerColor>
         <logo>AxonAppLogo</logo>
@@ -24,5 +23,6 @@
     <tabs>AXF_CT_BillingComposer</tabs>
     <tabs>AXF_CT_SharedExpenses</tabs>
     <tabs>AXF_CT_SourceLink</tabs>
+    <tabs>AXF_CT_ReconciliationReversal</tabs>
     <uiType>Lightning</uiType>
 </CustomApplication>
