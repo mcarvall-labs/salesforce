@@ -18,8 +18,10 @@
         >false</default><label>Tipo de operacao</label></value>
             <value><fullName>DESCRIPTION_RULE</fullName><default
         >false</default><label>Regra de descricao</label></value>
+            <value><fullName>SOURCE_FIELD</fullName><default
+        >false</default><label>Campo estruturado da fonte</label></value>
         </valueSetDefinition>
     </valueSet>
     <description
-  >Origem da evidencia que sustentou a classificacao; nome de estabelecimento sozinho nunca afirma servico.</description>
+  >Origem da evidencia que sustentou a classificacao (categoria do provedor, identidade nao generica do estabelecimento, tipo de operacao, regra de descricao ou campo estruturado como direcao/parcelas). Um indicio de servico nunca promove elegibilidade.</description>
 </CustomField>

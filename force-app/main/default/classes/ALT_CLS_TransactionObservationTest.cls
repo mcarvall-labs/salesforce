@@ -14,6 +14,9 @@ private class ALT_CLS_TransactionObservationTest {
   private static User peer() {
     return [SELECT Id FROM User WHERE Alias = 'axf109p' LIMIT 1];
   }
+  private static User participant() {
+    return [SELECT Id FROM User WHERE Alias = 'axf109n' LIMIT 1];
+  }
 
   @TestSetup
   static void setup() {
@@ -34,8 +37,27 @@ private class ALT_CLS_TransactionObservationTest {
     peer.Alias = 'axf109p';
     peer.LastName = 'Peer Gestor';
     peer.Username = 'axf109p.' + System.now().getTime() + '@example.invalid';
-    insert new List<User>{ gestor, peer };
+    User participant = gestor.clone(false, false, false, false);
+    participant.Alias = 'axf109n';
+    participant.LastName = 'Observation Participant';
+    participant.Username =
+      'axf109n.' +
+      System.now().getTime() +
+      '@example.invalid';
+    insert new List<User>{ gestor, peer, participant };
     List<PermissionSetAssignment> assignments = new List<PermissionSetAssignment>();
+    for (PermissionSet permission : [
+      SELECT Id
+      FROM PermissionSet
+      WHERE Name = 'AXF_PS_Participante'
+    ]) {
+      assignments.add(
+        new PermissionSetAssignment(
+          AssigneeId = participant.Id,
+          PermissionSetId = permission.Id
+        )
+      );
+    }
     for (PermissionSet permission : [
       SELECT Id
       FROM PermissionSet
@@ -169,7 +191,11 @@ private class ALT_CLS_TransactionObservationTest {
         AXF_TOB_NUM_Magnitude__c,
         AXF_TOB_TXT_CurrencyIsoCode__c,
         AXF_TOB_DAT_Date__c,
-        AXF_TOB_TXT_NormalizedMerchant__c
+        AXF_TOB_TXT_NormalizedMerchant__c,
+        AXF_TOB_TXT_MerchantEvidence__c,
+        AXF_TOB_TXT_RawSourceStatus__c,
+        AXF_TOB_TXT_ClassificationVersion__c,
+        OwnerId
       FROM AXF_OBJ_TransactionObservation__c
       WHERE
         AXF_TOB_LKP_BankTransaction__c = :factId
@@ -385,8 +411,48 @@ private class ALT_CLS_TransactionObservationTest {
           'Subscriptions',
           null
         ),
-        cardFact(scope, 'other', 'CHATGPT SUBSCRIPTION', 'OpenAI', null, null)
+        cardFact(scope, 'other', 'CHATGPT SUBSCRIPTION', 'OpenAI', null, null),
+        bankFact(
+          scope,
+          'loan',
+          'PARCELA CONSIGNADO',
+          'POSTED',
+          'OUTROS',
+          'Empréstimos e financiamentos',
+          'DEBIT'
+        ),
+        bankFact(scope, 'taxes', 'DARF', 'POSTED', 'OUTROS', 'Taxes', 'DEBIT'),
+        bankFact(
+          scope,
+          'taxi',
+          'CORRIDA 99',
+          'POSTED',
+          'OUTROS',
+          'Taxi and ride-hailing',
+          'DEBIT'
+        ),
+        bankFact(
+          scope,
+          'fuel',
+          'POSTO SHELL',
+          'POSTED',
+          'OUTROS',
+          'Gas stations',
+          'DEBIT'
+        ),
+        bankFact(
+          scope,
+          'accent',
+          'PIX RECEBIDO',
+          'POSTED',
+          'transferência',
+          null,
+          'DEBIT'
+        ),
+        cardFact(scope, 'firstof', 'LOJA 1/3', 'Loja', null, null)
       };
+      ((AXF_OBJ_CreditCardTransaction__c) facts[facts.size() - 1])
+        .AXF_CCT_NUM_InstallmentNumber__c = 2;
       insert facts;
       List<Id> ids = new List<Id>();
       for (SObject fact : facts) {
@@ -396,7 +462,8 @@ private class ALT_CLS_TransactionObservationTest {
       ALT_CLS_TransactionObservationService.ObserveResult result = new ALT_CLS_TransactionObservationService()
         .observe(input(scope.holder.Id, ids));
       Test.stopTest();
-      Assert.areEqual(14, result.created);
+      Assert.areEqual(20, result.created);
+      Assert.areEqual(20, result.observationByFact.size());
       Map<String, AXF_OBJ_TransactionObservation__c> byKey = new Map<String, AXF_OBJ_TransactionObservation__c>();
       for (Integer i = 0; i < facts.size(); i++) {
         byKey.put(
@@ -423,7 +490,30 @@ private class ALT_CLS_TransactionObservationTest {
         'installment' => new List<String>{ 'EXCLUDED', 'INSTALLMENT' },
         'amazon' => new List<String>{ 'ELIGIBLE', 'NONE' },
         'prime' => new List<String>{ 'ELIGIBLE', 'NONE' },
-        'other' => new List<String>{ 'ELIGIBLE', 'NONE' }
+        'other' => new List<String>{ 'ELIGIBLE', 'NONE' },
+        'loan' => new List<String>{ 'EXCLUDED', 'LOAN_OR_TAX' },
+        'taxes' => new List<String>{ 'EXCLUDED', 'LOAN_OR_TAX' },
+        'taxi' => new List<String>{ 'ELIGIBLE', 'NONE' },
+        'fuel' => new List<String>{ 'ELIGIBLE', 'NONE' },
+        'accent' => new List<String>{ 'EXCLUDED', 'TRANSFER' },
+        'firstof' => new List<String>{ 'EXCLUDED', 'INSTALLMENT' }
+      };
+      Id holderOwner = [SELECT OwnerId FROM Account WHERE Id = :scope.holder.Id]
+      .OwnerId;
+      Map<String, String> provenance = new Map<String, String>{
+        'transfer' => 'OPERATION_TYPE',
+        'accent' => 'OPERATION_TYPE',
+        'invoice' => 'DESCRIPTION_RULE',
+        'reversal' => 'DESCRIPTION_RULE',
+        'utility' => 'PROVIDER_CATEGORY',
+        'insurance' => 'PROVIDER_CATEGORY',
+        'loan' => 'PROVIDER_CATEGORY',
+        'taxes' => 'PROVIDER_CATEGORY',
+        'credit' => 'SOURCE_FIELD',
+        'installment' => 'SOURCE_FIELD',
+        'firstof' => 'SOURCE_FIELD',
+        'taxi' => 'NONE',
+        'fuel' => 'NONE'
       };
       for (String key : expected.keySet()) {
         AXF_OBJ_TransactionObservation__c observation;
@@ -446,6 +536,34 @@ private class ALT_CLS_TransactionObservationTest {
           observation.AXF_TOB_PKL_ExclusionReason__c,
           key
         );
+        if (provenance.containsKey(key)) {
+          Assert.areEqual(
+            provenance.get(key),
+            observation.AXF_TOB_PKL_ClassificationProvenance__c,
+            'proveniencia ' + key
+          );
+        }
+        Assert.areEqual(holderOwner, observation.OwnerId, 'owner sync ' + key);
+        Assert.areEqual(
+          ALT_CLS_TransactionObservationService.CLASSIFICATION_VERSION,
+          observation.AXF_TOB_TXT_ClassificationVersion__c
+        );
+        if (key == 'weird') {
+          Assert.areEqual(
+            'SETTLED?',
+            observation.AXF_TOB_TXT_RawSourceStatus__c
+          );
+        }
+        if (key == 'plain') {
+          Assert.areEqual('POSTED', observation.AXF_TOB_TXT_RawSourceStatus__c);
+          Assert.isNull(observation.AXF_TOB_TXT_MerchantEvidence__c);
+        }
+        if (key == 'prime') {
+          Assert.areEqual(
+            'Amazon | Subscriptions',
+            observation.AXF_TOB_TXT_MerchantEvidence__c
+          );
+        }
         if (key == 'missing') {
           Assert.areEqual(
             'STATUS_MISSING',
@@ -505,9 +623,130 @@ private class ALT_CLS_TransactionObservationTest {
           );
         }
       }
-      Assert.areEqual(7, result.byEligibility.get('EXCLUDED'));
+      Assert.areEqual(11, result.byEligibility.get('EXCLUDED'));
       Assert.areEqual(3, result.byEligibility.get('UNKNOWN'));
-      Assert.areEqual(4, result.byEligibility.get('ELIGIBLE'));
+      Assert.areEqual(6, result.byEligibility.get('ELIGIBLE'));
+    }
+  }
+
+  @IsTest
+  static void capabilityCompletenessDuplicatesAndPeerReplayAreTyped() {
+    Scope scope;
+    AXF_OBJ_BankAccountTransaction__c fact;
+    System.runAs(gestor()) {
+      scope = makeScope('f');
+      fact = bankFact(
+        scope,
+        'f1',
+        'NETFLIX',
+        'POSTED',
+        'OUTROS',
+        null,
+        'DEBIT'
+      );
+      insert fact;
+    }
+    // Participante reads the holder but has no AXF_CanObserveTransactions.
+    insert new AccountShare(
+      AccountId = scope.holder.Id,
+      UserOrGroupId = participant().Id,
+      AccountAccessLevel = 'Read',
+      OpportunityAccessLevel = 'None',
+      CaseAccessLevel = 'None'
+    );
+    System.runAs(participant()) {
+      try {
+        new ALT_CLS_TransactionObservationService()
+          .observe(input(scope.holder.Id, new List<Id>{ fact.Id }));
+        Assert.fail('Sem capacidade.');
+      } catch (ALT_CLS_TransactionObservationService.ObservationException expected) {
+        Assert.areEqual('FORBIDDEN', expected.code);
+      }
+    }
+    Assert.areEqual(0, [SELECT COUNT() FROM AXF_OBJ_TransactionObservation__c]);
+    System.runAs(gestor()) {
+      ALT_CLS_TransactionObservationService service = new ALT_CLS_TransactionObservationService();
+      Test.startTest();
+      // Duplicated ids observe the fact once.
+      ALT_CLS_TransactionObservationService.ObserveResult first = service.observe(
+        input(scope.holder.Id, new List<Id>{ fact.Id, fact.Id })
+      );
+      Assert.areEqual(1, first.observed);
+      Assert.areEqual(1, first.created);
+      Assert.areEqual(1, first.observationIds.size());
+      Assert.areEqual(
+        first.observationIds[0],
+        first.observationByFact.get(fact.Id)
+      );
+      // Provider re-sends the same content with different case/spacing: no revision.
+      fact.AXF_BAT_TXT_OperationType__c = ' outros ';
+      update fact;
+      Assert.areEqual(
+        1,
+        service.observe(input(scope.holder.Id, new List<Id>{ fact.Id }))
+          .unchanged
+      );
+      // A fact missing an original value cannot be observed.
+      AXF_OBJ_BankAccountTransaction__c incomplete = bankFact(
+        scope,
+        'f2',
+        'NETFLIX',
+        'POSTED',
+        'OUTROS',
+        null,
+        'DEBIT'
+      );
+      incomplete.AXF_BAT_TXT_CurrencyIsoCode__c = null;
+      Database.SaveResult inserted = Database.insert(incomplete, false);
+      if (inserted.isSuccess()) {
+        try {
+          service.observe(
+            input(scope.holder.Id, new List<Id>{ incomplete.Id })
+          );
+          Assert.fail('Fato incompleto.');
+        } catch (ALT_CLS_TransactionObservationService.ObservationException expected) {
+          Assert.areEqual('INCOMPLETE_FACT', expected.code);
+        }
+      }
+      Test.stopTest();
+    }
+    // Owner sync may re-home the observation; content stays frozen.
+    AXF_OBJ_TransactionObservation__c observation = [
+      SELECT Id, OwnerId
+      FROM AXF_OBJ_TransactionObservation__c
+      WHERE AXF_TOB_LKP_BankTransaction__c = :fact.Id
+      LIMIT 1
+    ];
+    observation.OwnerId = peer().Id;
+    Assert.isTrue(
+      Database.update(observation, false).isSuccess(),
+      'owner sync'
+    );
+    observation.AXF_TOB_PKL_Eligibility__c = 'EXCLUDED';
+    Assert.isFalse(Database.update(observation, false).isSuccess(), 'imutavel');
+    // A second authorized observer (not the owner) replays: typed outcome, never a raw
+    // duplicate-key failure.
+    insert new AccountShare(
+      AccountId = scope.holder.Id,
+      UserOrGroupId = peer().Id,
+      AccountAccessLevel = 'Edit',
+      OpportunityAccessLevel = 'None',
+      CaseAccessLevel = 'None'
+    );
+    insert new AXF_OBJ_BankAccount__Share(
+      ParentId = scope.bank.Id,
+      UserOrGroupId = peer().Id,
+      AccessLevel = 'Read',
+      RowCause = Schema.AXF_OBJ_BankAccount__Share.RowCause.Manual
+    );
+    System.runAs(peer()) {
+      try {
+        ALT_CLS_TransactionObservationService.ObserveResult replay = new ALT_CLS_TransactionObservationService()
+          .observe(input(scope.holder.Id, new List<Id>{ fact.Id }));
+        Assert.areEqual(1, replay.unchanged, 'replay reusa a revisao');
+      } catch (ALT_CLS_TransactionObservationService.ObservationException expected) {
+        Assert.areEqual('CONCURRENT_REVISION', expected.code);
+      }
     }
   }
 
@@ -570,6 +809,26 @@ private class ALT_CLS_TransactionObservationTest {
       try {
         service.observe(input(null, null));
         Assert.fail('Entrada ausente.');
+      } catch (ALT_CLS_TransactionObservationService.ObservationException expected) {
+        Assert.areEqual('INVALID_INPUT', expected.code);
+      }
+      try {
+        service.observe(input(mine.holder.Id, new List<Id>{ null }));
+        Assert.fail('Id nulo.');
+      } catch (ALT_CLS_TransactionObservationService.ObservationException expected) {
+        Assert.areEqual('INVALID_INPUT', expected.code);
+      }
+      List<Id> tooMany = new List<Id>();
+      String prefix = AXF_OBJ_BankAccountTransaction__c.SObjectType.getDescribe()
+        .getKeyPrefix();
+      for (
+        Integer i = 0; i <= ALT_CLS_TransactionObservationService.MAX_BATCH; i++
+      ) {
+        tooMany.add(prefix + String.valueOf(100000000000L + i).right(12));
+      }
+      try {
+        service.observe(input(mine.holder.Id, tooMany));
+        Assert.fail('Lote acima do limite.');
       } catch (ALT_CLS_TransactionObservationService.ObservationException expected) {
         Assert.areEqual('INVALID_INPUT', expected.code);
       }

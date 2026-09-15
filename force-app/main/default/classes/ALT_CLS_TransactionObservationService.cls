@@ -24,6 +24,24 @@ public with sharing class ALT_CLS_TransactionObservationService {
     return writing;
   }
 
+  /** Largest request accepted in one call (rows are inserted all-or-none). */
+  public static final Integer MAX_BATCH = 500;
+
+  /**
+   * Rules are evaluated on the normalized text (diacritics folded, upper-cased, tokens split on
+   * non-alphanumerics) in declaration order, so precedence is explicit and 'TAX' never matches
+   * 'TAXI'. Modes: TOKEN = whole token, PREFIX = token starts with, PHRASE = contiguous words.
+   */
+  private class Rule {
+    final String marker;
+    final String reason;
+    final String mode;
+    Rule(String marker, String reason, String mode) {
+      this.marker = marker;
+      this.reason = reason;
+      this.mode = mode;
+    }
+  }
   private static final Set<String> TRANSFER_OPERATIONS = new Set<String>{
     'PIX',
     'TED',
@@ -31,45 +49,57 @@ public with sharing class ALT_CLS_TransactionObservationService {
     'TRANSFER',
     'TRANSFERENCIA'
   };
-  private static final Map<String, String> CATEGORY_EXCLUSIONS = new Map<String, String>{
-    'UTILIT' => 'UTILITY',
-    'ENERGIA' => 'UTILITY',
-    'AGUA' => 'UTILITY',
-    'GAS' => 'UTILITY',
-    'TELEFON' => 'UTILITY',
-    'INSURANCE' => 'INSURANCE',
-    'SEGURO' => 'INSURANCE',
-    'LOAN' => 'LOAN_OR_TAX',
-    'EMPRESTIMO' => 'LOAN_OR_TAX',
-    'FINANCIAMENTO' => 'LOAN_OR_TAX',
-    'TAX' => 'LOAN_OR_TAX',
-    'IMPOSTO' => 'LOAN_OR_TAX',
-    'TRANSFER' => 'TRANSFER',
-    'CREDIT CARD PAYMENT' => 'INVOICE_PAYMENT',
-    'PAGAMENTO DE CARTAO' => 'INVOICE_PAYMENT'
+  private static final List<Rule> CATEGORY_EXCLUSIONS = new List<Rule>{
+    new Rule('CREDIT CARD PAYMENT', 'INVOICE_PAYMENT', 'PHRASE'),
+    new Rule('PAGAMENTO DE CARTAO', 'INVOICE_PAYMENT', 'PHRASE'),
+    new Rule('PAGAMENTO CARTAO', 'INVOICE_PAYMENT', 'PHRASE'),
+    new Rule('TRANSFER', 'TRANSFER', 'TOKEN'),
+    new Rule('TRANSFERENCIA', 'TRANSFER', 'TOKEN'),
+    new Rule('UTILIT', 'UTILITY', 'PREFIX'),
+    new Rule('ENERGIA', 'UTILITY', 'TOKEN'),
+    new Rule('ELECTRICITY', 'UTILITY', 'TOKEN'),
+    new Rule('AGUA', 'UTILITY', 'TOKEN'),
+    new Rule('WATER', 'UTILITY', 'TOKEN'),
+    // 'GAS' alone is ambiguous (gas bill vs. gas station); only the utility phrasing excludes.
+    new Rule('GAS BILL', 'UTILITY', 'PHRASE'),
+    new Rule('CONTA DE GAS', 'UTILITY', 'PHRASE'),
+    new Rule('GAS NATURAL', 'UTILITY', 'PHRASE'),
+    new Rule('TELEFON', 'UTILITY', 'PREFIX'),
+    new Rule('INSURANCE', 'INSURANCE', 'TOKEN'),
+    new Rule('SEGURO', 'INSURANCE', 'TOKEN'),
+    new Rule('SEGUROS', 'INSURANCE', 'TOKEN'),
+    new Rule('LOAN', 'LOAN_OR_TAX', 'TOKEN'),
+    new Rule('LOANS', 'LOAN_OR_TAX', 'TOKEN'),
+    new Rule('EMPRESTIMO', 'LOAN_OR_TAX', 'TOKEN'),
+    new Rule('EMPRESTIMOS', 'LOAN_OR_TAX', 'TOKEN'),
+    new Rule('FINANCIAMENTO', 'LOAN_OR_TAX', 'TOKEN'),
+    new Rule('TAX', 'LOAN_OR_TAX', 'TOKEN'),
+    new Rule('TAXES', 'LOAN_OR_TAX', 'TOKEN'),
+    new Rule('IMPOSTO', 'LOAN_OR_TAX', 'TOKEN'),
+    new Rule('IMPOSTOS', 'LOAN_OR_TAX', 'TOKEN')
   };
-  private static final List<String> SERVICE_CATEGORY_MARKERS = new List<String>{
-    'SUBSCRIPTION',
-    'ASSINATURA',
-    'STREAMING',
-    'SOFTWARE',
-    'DIGITAL SERVICE',
-    'SERVICO DIGITAL',
-    'ONLINE SERVICE'
+  private static final List<Rule> SERVICE_CATEGORY_MARKERS = new List<Rule>{
+    new Rule('SUBSCRIPTION', 'SERVICE', 'PREFIX'),
+    new Rule('ASSINATURA', 'SERVICE', 'PREFIX'),
+    new Rule('STREAMING', 'SERVICE', 'TOKEN'),
+    new Rule('SOFTWARE', 'SERVICE', 'TOKEN'),
+    new Rule('DIGITAL SERVICE', 'SERVICE', 'PHRASE'),
+    new Rule('SERVICO DIGITAL', 'SERVICE', 'PHRASE'),
+    new Rule('ONLINE SERVICE', 'SERVICE', 'PHRASE')
   };
-  private static final List<String> INVOICE_PAYMENT_MARKERS = new List<String>{
-    'PAGAMENTO FATURA',
-    'PAGTO FATURA',
-    'PAG FATURA',
-    'PAGAMENTO CARTAO',
-    'PAGAMENTO DE FATURA',
-    'CREDIT CARD PAYMENT'
+  private static final List<Rule> INVOICE_PAYMENT_MARKERS = new List<Rule>{
+    new Rule('PAGAMENTO FATURA', 'INVOICE_PAYMENT', 'PHRASE'),
+    new Rule('PAGTO FATURA', 'INVOICE_PAYMENT', 'PHRASE'),
+    new Rule('PAG FATURA', 'INVOICE_PAYMENT', 'PHRASE'),
+    new Rule('PAGAMENTO CARTAO', 'INVOICE_PAYMENT', 'PHRASE'),
+    new Rule('PAGAMENTO DE FATURA', 'INVOICE_PAYMENT', 'PHRASE'),
+    new Rule('CREDIT CARD PAYMENT', 'INVOICE_PAYMENT', 'PHRASE')
   };
-  private static final List<String> REVERSAL_MARKERS = new List<String>{
-    'ESTORNO',
-    'REVERS',
-    'CHARGEBACK',
-    'CANCELAMENTO'
+  private static final List<Rule> REVERSAL_MARKERS = new List<Rule>{
+    new Rule('ESTORNO', 'REVERSAL', 'TOKEN'),
+    new Rule('REVERS', 'REVERSAL', 'PREFIX'),
+    new Rule('CHARGEBACK', 'REVERSAL', 'TOKEN'),
+    new Rule('CANCELAMENTO', 'REVERSAL', 'TOKEN')
   };
   private static final List<String> GENERIC_MERCHANTS = new List<String>{
     'AMAZON',
@@ -94,6 +124,9 @@ public with sharing class ALT_CLS_TransactionObservationService {
       EXCLUDED => 0,
       UNKNOWN => 0
     };
+    /** Latest observation per fact (created or reused). */
+    public Map<Id, Id> observationByFact = new Map<Id, Id>();
+    /** Same ids, in the order of the deduplicated input. */
     public List<Id> observationIds = new List<Id>();
   }
 
@@ -111,6 +144,7 @@ public with sharing class ALT_CLS_TransactionObservationService {
     String operationType;
     String category;
     String merchant;
+    Decimal installmentNumber;
     Decimal totalInstallments;
   }
 
@@ -136,6 +170,19 @@ public with sharing class ALT_CLS_TransactionObservationService {
     ) {
       throw failure('INVALID_INPUT');
     }
+    List<Id> factIds = new List<Id>();
+    Set<Id> seen = new Set<Id>();
+    for (Id factId : input.factIds) {
+      if (factId == null) {
+        throw failure('INVALID_INPUT');
+      }
+      if (seen.add(factId)) {
+        factIds.add(factId);
+      }
+    }
+    if (factIds.size() > MAX_BATCH) {
+      throw failure('INVALID_INPUT');
+    }
     if (!FeatureManagement.checkPermission(CP_OBSERVE)) {
       throw failure('FORBIDDEN');
     }
@@ -149,8 +196,8 @@ public with sharing class ALT_CLS_TransactionObservationService {
     if (holders.isEmpty()) {
       throw failure('NOT_ACCESSIBLE');
     }
-    Map<Id, Fact> facts = loadFacts(input.factIds);
-    for (Id factId : input.factIds) {
+    Map<Id, Fact> facts = loadFacts(factIds);
+    for (Id factId : factIds) {
       Fact fact = facts.get(factId);
       if (fact == null) {
         // Same answer whether the fact does not exist, is not shared or is not a typed fact.
@@ -159,32 +206,39 @@ public with sharing class ALT_CLS_TransactionObservationService {
       if (fact.accountId != input.accountId) {
         throw failure('CONTEXT_MISMATCH');
       }
+      if (
+        fact.bookedOn == null ||
+        String.isBlank(fact.currencyIso) ||
+        fact.magnitude == null ||
+        String.isBlank(fact.direction)
+      ) {
+        // The observation copies the original values; a fact missing one cannot be observed.
+        throw failure('INCOMPLETE_FACT');
+      }
     }
-    Map<String, AXF_OBJ_TransactionObservation__c> latest = latestBySource(
-      facts.values()
+    Map<String, ALT_CLS_TransactionObservationIntegrity.Latest> latest = ALT_CLS_TransactionObservationIntegrity.latest(
+      identities(facts.values())
     );
     List<AXF_OBJ_TransactionObservation__c> rows = new List<AXF_OBJ_TransactionObservation__c>();
     ObserveResult result = new ObserveResult();
     Datetime now = Datetime.now();
-    for (Id factId : input.factIds) {
+    for (Id factId : factIds) {
       Fact fact = facts.get(factId);
       String identity = sourceIdentity(fact);
       String normalized = normalize(fact.description);
       String fingerprint = fingerprint(fact, normalized);
-      AXF_OBJ_TransactionObservation__c previous = latest.get(identity);
+      ALT_CLS_TransactionObservationIntegrity.Latest previous = latest.get(
+        identity
+      );
       result.observed++;
-      if (
-        previous != null &&
-        previous.AXF_TOB_TXT_ContentFingerprint__c == fingerprint
-      ) {
+      if (previous != null && previous.fingerprint == fingerprint) {
         result.unchanged++;
-        result.observationIds.add(previous.Id);
-        count(result, previous.AXF_TOB_PKL_Eligibility__c);
+        result.observationIds.add(previous.id);
+        result.observationByFact.put(factId, previous.id);
+        count(result, previous.eligibility);
         continue;
       }
-      Integer revision = previous == null
-        ? 1
-        : Integer.valueOf(previous.AXF_TOB_NUM_Revision__c) + 1;
+      Integer revision = previous == null ? 1 : previous.revision + 1;
       Classification classification = classify(fact, normalized);
       rows.add(
         new AXF_OBJ_TransactionObservation__c(
@@ -224,6 +278,13 @@ public with sharing class ALT_CLS_TransactionObservationService {
     try {
       writing = true;
       Database.insert(rows, AccessLevel.USER_MODE);
+    } catch (DmlException dml) {
+      Database.rollback(point);
+      if (dml.getDmlType(0) == StatusCode.DUPLICATE_VALUE) {
+        // Another observer wrote the same revision first: the caller replays and gets it.
+        throw failure('CONCURRENT_REVISION');
+      }
+      throw dml;
     } catch (Exception failure) {
       Database.rollback(point);
       throw failure;
@@ -233,13 +294,16 @@ public with sharing class ALT_CLS_TransactionObservationService {
     for (AXF_OBJ_TransactionObservation__c row : rows) {
       result.created++;
       result.observationIds.add(row.Id);
+      Id factId = row.AXF_TOB_LKP_BankTransaction__c != null
+        ? row.AXF_TOB_LKP_BankTransaction__c
+        : row.AXF_TOB_LKP_CardTransaction__c;
+      result.observationByFact.put(factId, row.Id);
     }
     return result;
   }
 
   // ---------------------------------------------------------------- classification (P3, versioned)
 
-  @TestVisible
   private static Classification classify(Fact fact, String normalized) {
     Classification result = new Classification();
     String status = fact.rawStatus == null
@@ -254,12 +318,10 @@ public with sharing class ALT_CLS_TransactionObservationService {
     } else {
       result.statusProvenance = 'STATUS_UNRECOGNIZED';
     }
-    String category = fact.category == null ? '' : fact.category.toUpperCase();
-    String merchant = fact.merchant == null ? '' : fact.merchant.toUpperCase();
+    String category = fold(fact.category);
+    String merchant = fold(fact.merchant);
     String upper = normalized == null ? '' : normalized.toUpperCase();
-    String operation = fact.operationType == null
-      ? ''
-      : fact.operationType.toUpperCase();
+    String operation = fold(fact.operationType);
     result.merchantEvidence = String.isBlank(fact.merchant)
       ? (String.isBlank(fact.category) ? null : fact.category.left(255))
       : (fact.merchant +
@@ -268,44 +330,32 @@ public with sharing class ALT_CLS_TransactionObservationService {
 
     // Exclusions are determined from retained evidence, in a fixed order.
     if (fact.direction == 'CREDIT') {
-      return exclude(result, 'CREDIT', 'DESCRIPTION_RULE');
+      return exclude(result, 'CREDIT', 'SOURCE_FIELD');
     }
-    if (fact.totalInstallments != null && fact.totalInstallments > 1) {
-      return exclude(result, 'INSTALLMENT', 'PROVIDER_CATEGORY');
+    if (
+      (fact.totalInstallments != null && fact.totalInstallments > 1) ||
+      (fact.installmentNumber != null &&
+      fact.installmentNumber > 1)
+    ) {
+      return exclude(result, 'INSTALLMENT', 'SOURCE_FIELD');
     }
-    for (String marker : REVERSAL_MARKERS) {
-      if (upper.contains(marker)) {
-        return exclude(result, 'REVERSAL', 'DESCRIPTION_RULE');
-      }
+    if (firstMatch(REVERSAL_MARKERS, upper) != null) {
+      return exclude(result, 'REVERSAL', 'DESCRIPTION_RULE');
     }
-    for (String marker : INVOICE_PAYMENT_MARKERS) {
-      if (upper.contains(marker) || category.contains(marker)) {
-        return exclude(
-          result,
-          'INVOICE_PAYMENT',
-          upper.contains(marker) ? 'DESCRIPTION_RULE' : 'PROVIDER_CATEGORY'
-        );
-      }
+    if (firstMatch(INVOICE_PAYMENT_MARKERS, upper) != null) {
+      return exclude(result, 'INVOICE_PAYMENT', 'DESCRIPTION_RULE');
     }
     if (TRANSFER_OPERATIONS.contains(operation)) {
       return exclude(result, 'TRANSFER', 'OPERATION_TYPE');
     }
-    for (String marker : CATEGORY_EXCLUSIONS.keySet()) {
-      if (category.contains(marker)) {
-        return exclude(
-          result,
-          CATEGORY_EXCLUSIONS.get(marker),
-          'PROVIDER_CATEGORY'
-        );
-      }
+    Rule categoryRule = firstMatch(CATEGORY_EXCLUSIONS, category);
+    if (categoryRule != null) {
+      return exclude(result, categoryRule.reason, 'PROVIDER_CATEGORY');
     }
-    // Service hint needs provider category or merchant identity; a generic merchant name alone is not evidence.
-    Boolean categorySaysService = false;
-    for (String marker : SERVICE_CATEGORY_MARKERS) {
-      if (category.contains(marker)) {
-        categorySaysService = true;
-      }
-    }
+    // Service hint needs provider category or a non-generic merchant identity; the hint is
+    // evidence for S2 and never promotes eligibility.
+    Boolean categorySaysService =
+      firstMatch(SERVICE_CATEGORY_MARKERS, category) != null;
     if (categorySaysService) {
       result.serviceHint = 'SERVICE_CANDIDATE';
       result.classificationProvenance = 'PROVIDER_CATEGORY';
@@ -339,6 +389,36 @@ public with sharing class ALT_CLS_TransactionObservationService {
       }
     }
     return false;
+  }
+
+  /** Diacritics folded, upper-cased, single spaces; blank => ''. */
+  private static String fold(String raw) {
+    return AXF_CLS_TextNormalization.normalize(raw).toUpperCase();
+  }
+
+  private static Rule firstMatch(List<Rule> rules, String folded) {
+    if (String.isBlank(folded)) {
+      return null;
+    }
+    List<String> tokens = folded.split(' ');
+    String padded = ' ' + folded + ' ';
+    for (Rule rule : rules) {
+      if (rule.mode == 'PHRASE') {
+        if (padded.contains(' ' + rule.marker + ' ')) {
+          return rule;
+        }
+        continue;
+      }
+      for (String token : tokens) {
+        if (
+          (rule.mode == 'TOKEN' && token == rule.marker) ||
+          (rule.mode == 'PREFIX' && token.startsWith(rule.marker))
+        ) {
+          return rule;
+        }
+      }
+    }
+    return null;
   }
 
   // ---------------------------------------------------------------- helpers
@@ -406,6 +486,7 @@ public with sharing class ALT_CLS_TransactionObservationService {
           AXF_CCT_TXT_OperationType__c,
           AXF_CCT_TXT_ProviderCategory__c,
           AXF_CCT_TXT_MerchantName__c,
+          AXF_CCT_NUM_InstallmentNumber__c,
           AXF_CCT_NUM_TotalInstallments__c,
           AXF_CCT_MDR_CreditCard__r.AXF_CC_LKP_Account__c
         FROM AXF_OBJ_CreditCardTransaction__c
@@ -426,6 +507,7 @@ public with sharing class ALT_CLS_TransactionObservationService {
         fact.operationType = row.AXF_CCT_TXT_OperationType__c;
         fact.category = row.AXF_CCT_TXT_ProviderCategory__c;
         fact.merchant = row.AXF_CCT_TXT_MerchantName__c;
+        fact.installmentNumber = row.AXF_CCT_NUM_InstallmentNumber__c;
         fact.totalInstallments = row.AXF_CCT_NUM_TotalInstallments__c;
         result.put(row.Id, fact);
       }
@@ -433,27 +515,10 @@ public with sharing class ALT_CLS_TransactionObservationService {
     return result;
   }
 
-  private Map<String, AXF_OBJ_TransactionObservation__c> latestBySource(
-    List<Fact> facts
-  ) {
-    Set<String> identities = new Set<String>();
+  private static Set<String> identities(List<Fact> facts) {
+    Set<String> result = new Set<String>();
     for (Fact fact : facts) {
-      identities.add(sourceIdentity(fact));
-    }
-    Map<String, AXF_OBJ_TransactionObservation__c> result = new Map<String, AXF_OBJ_TransactionObservation__c>();
-    for (AXF_OBJ_TransactionObservation__c row : [
-      SELECT
-        Id,
-        AXF_TOB_TXT_SourceIdentity__c,
-        AXF_TOB_NUM_Revision__c,
-        AXF_TOB_TXT_ContentFingerprint__c,
-        AXF_TOB_PKL_Eligibility__c
-      FROM AXF_OBJ_TransactionObservation__c
-      WHERE AXF_TOB_TXT_SourceIdentity__c IN :identities
-      WITH USER_MODE
-      ORDER BY AXF_TOB_NUM_Revision__c ASC
-    ]) {
-      result.put(row.AXF_TOB_TXT_SourceIdentity__c, row);
+      result.add(sourceIdentity(fact));
     }
     return result;
   }
@@ -470,20 +535,25 @@ public with sharing class ALT_CLS_TransactionObservationService {
     return normalized == null ? null : normalized.left(255);
   }
 
+  /**
+   * Content only (no rule version): the same fact replayed never creates a revision, and
+   * provider values that differ only in case, accents or spacing are the same content.
+   * Re-classifying existing observations under a new rule version is a separate, explicit step.
+   */
   private static String fingerprint(Fact fact, String normalized) {
     return AXF_CLS_IdentityFraming.key(
       new List<Object>{
-        CLASSIFICATION_VERSION,
         String.valueOf(fact.bookedOn),
         fact.currencyIso,
         String.valueOf(fact.magnitude),
         fact.direction,
         normalized,
-        fact.rawStatus,
-        fact.operationType,
+        fold(fact.rawStatus),
+        fold(fact.operationType),
+        String.valueOf(fact.installmentNumber),
         String.valueOf(fact.totalInstallments),
-        fact.category,
-        fact.merchant
+        fold(fact.category),
+        fold(fact.merchant)
       }
     );
   }

@@ -18,9 +18,20 @@ public with sharing class AXF_CLS_TOBTriggerHandler {
     Map<Id, AXF_OBJ_TransactionObservation__c> oldMap
   ) {
     for (AXF_OBJ_TransactionObservation__c row : newList) {
-      row.addError(
-        'Observations are immutable; a changed fact creates a new revision.'
-      );
+      // Owner sync (G2) may re-home the row; every other field is frozen.
+      AXF_OBJ_TransactionObservation__c before = oldMap.get(row.Id);
+      Boolean contentChanged = false;
+      for (String field : row.getPopulatedFieldsAsMap().keySet()) {
+        if (field.endsWith('__c') && row.get(field) != before.get(field)) {
+          contentChanged = true;
+          break;
+        }
+      }
+      if (contentChanged) {
+        row.addError(
+          'Observations are immutable; a changed fact creates a new revision.'
+        );
+      }
     }
   }
 

@@ -591,10 +591,10 @@ public with sharing class AXF_CLS_PluggySyncService {
           : forecastPeriod(ccMeta.get('billForecastDate'));
         Decimal installmentNumber = ccMeta == null
           ? null
-          : decimalOf(ccMeta.get('installmentNumber'));
+          : installmentOf(ccMeta.get('installmentNumber'));
         Decimal totalInstallments = ccMeta == null
           ? null
-          : decimalOf(ccMeta.get('totalInstallments'));
+          : installmentOf(ccMeta.get('totalInstallments'));
         Map<String, Object> merchant = (t.get(
             'merchant'
           ) instanceof Map<String, Object>)
@@ -854,6 +854,15 @@ public with sharing class AXF_CLS_PluggySyncService {
 
   private static String firstNonBlank(String a, String b) {
     return String.isNotBlank(a) ? a : b;
+  }
+
+  /** Number(3,0) fields: only whole values 1..999 are retained as installment evidence. */
+  private static Decimal installmentOf(Object raw) {
+    Decimal value = decimalOf(raw);
+    if (value == null || value.scale() > 0 || value < 1 || value > 999) {
+      return null;
+    }
+    return value;
   }
 
   private static Decimal decimalOf(Object o) {
