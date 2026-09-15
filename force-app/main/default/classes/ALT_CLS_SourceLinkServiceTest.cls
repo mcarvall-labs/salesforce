@@ -937,6 +937,369 @@ private class ALT_CLS_SourceLinkServiceTest {
     Test.stopTest();
   }
 
+  private static AXF_OBJ_CreditCard__c card(Id accountId, String state) {
+    AXF_OBJ_CreditCard__c result = new AXF_OBJ_CreditCard__c(
+      AXF_CC_LKP_Account__c = accountId,
+      AXF_CC_PKL_AvailabilityState__c = state,
+      AXF_CC_TXT_CurrencyIsoCode__c = 'BRL',
+      AXF_CC_TXT_InstitutionName__c = 'Cartao Teste',
+      AXF_CC_TXT_LastFourMasked__c = '9876'
+    );
+    insert result;
+    return result;
+  }
+
+  private static AXF_OBJ_CreditCardTransaction__c cardFact(
+    Id cardId,
+    Decimal amount,
+    String key
+  ) {
+    return new AXF_OBJ_CreditCardTransaction__c(
+      AXF_CCT_MDR_CreditCard__c = cardId,
+      AXF_CCT_NUM_Magnitude__c = amount,
+      AXF_CCT_TXT_CurrencyIsoCode__c = 'BRL',
+      AXF_CCT_PKL_Direction__c = 'DEBIT',
+      AXF_CCT_DAT_Date__c = Date.today(),
+      AXF_CCT_TXT_Description__c = 'Card ' + key,
+      AXF_CCT_EXI_SourceKey__c = 'axf134-card-' + key,
+      AXF_CCT_PKL_Source__c = 'PLUGGY',
+      AXF_CCT_PKL_Status__c = 'POSTED',
+      AXF_CCT_NUM_Version__c = 0
+    );
+  }
+
+  @IsTest
+  static void cardSourceLinksThroughTypedCardAllocationAndFiltersWork() {
+    System.runAs(byAlias('axf134g')) {
+      Account owner = holder('Holder 134 card');
+      AXF_OBJ_BankAccount__c bankAccount = bank(owner.Id, 'AVAILABLE', 'BRL');
+      AXF_OBJ_CreditCard__c creditCard = card(owner.Id, 'AVAILABLE');
+      AXF_OBJ_CreditCardTransaction__c source = cardFact(
+        creditCard.Id,
+        80,
+        'src'
+      );
+      AXF_OBJ_CreditCardTransaction__c reviewedFact = cardFact(
+        creditCard.Id,
+        20,
+        'rev'
+      );
+      insert new List<AXF_OBJ_CreditCardTransaction__c>{ source, reviewedFact };
+      AXF_OBJ_BankAccountTransaction__c bankFact = fact(
+        bankAccount.Id,
+        100,
+        'POSTED',
+        Date.today(),
+        'pct-100%'
+      );
+      bankFact.AXF_BAT_TXT_Description__c = 'Desconto 100% especial';
+      insert bankFact;
+      Date due = Date.today().addDays(3);
+      List<AXF_OBJ_FinancialTransaction__c> plans = new List<AXF_OBJ_FinancialTransaction__c>{
+        plan(owner.Id, 'card-funded', 80, 'DEBIT', 'BRL', due),
+        plan(owner.Id, 'bank-funded', 80, 'DEBIT', 'BRL', due),
+        plan(owner.Id, 'unfunded', 80, 'DEBIT', 'BRL', due)
+      };
+      plans[0].AXF_FTX_LKP_CreditCard__c = creditCard.Id;
+      plans[1].AXF_FTX_LKP_BankAccount__c = bankAccount.Id;
+      insert plans;
+      // An OPEN review on a card fact blocks it exactly like a bank fact.
+      System.runAs(new User(Id = UserInfo.getUserId())) {
+        AXF_CLS_ReviewQueueTriggerHandler.guardEnabled = true;
+        try {
+          insert new AXF_OBJ_ReviewItem__c(
+            AXF_RVI_PKL_Type__c = 'SOURCE_DELETE',
+            AXF_RVI_PKL_State__c = 'OPEN',
+            AXF_RVI_EXI_ReviewKey__c = 'axf134-card-review-' + reviewedFact.Id,
+            AXF_RVI_NUM_Version__c = 0,
+            AXF_RVI_LKP_CreditCardTransaction__c = reviewedFact.Id,
+            AXF_RVI_LKP_CreditCard__c = creditCard.Id,
+            AXF_RVI_DT_ObservedAt__c = System.now()
+          );
+        } finally {
+          AXF_CLS_ReviewQueueTriggerHandler.guardEnabled = false;
+        }
+      }
+      ALT_CLS_SourceLinkService service = new ALT_CLS_SourceLinkService();
+
+      Test.startTest();
+      ALT_CLS_SourceLinkService.SourceQuery cards = sourceQuery(
+        owner.Id,
+        1,
+        10
+      );
+      cards.sourceKind = 'CARD';
+      ALT_CLS_SourceLinkService.SourcePage cardPage = service.listSources(
+        cards
+      );
+      ALT_CLS_SourceLinkService.SourceQuery banks = sourceQuery(
+        owner.Id,
+        1,
+        10
+      );
+      banks.sourceKind = 'BANK';
+      banks.term = '100%';
+      ALT_CLS_SourceLinkService.SourcePage bankPage = service.listSources(
+        banks
+      );
+      ALT_CLS_SourceLinkService.SourceQuery noMatch = sourceQuery(
+        owner.Id,
+        1,
+        10
+      );
+      noMatch.term = '10%';
+      ALT_CLS_SourceLinkService.SourcePage noMatchPage = service.listSources(
+        noMatch
+      );
+      ALT_CLS_SourceLinkService.SourceQuery bad = sourceQuery(owner.Id, 1, 10);
+      bad.sourceKind = 'CASH';
+      String badKind;
+      try {
+        service.listSources(bad);
+      } catch (ALT_CLS_SourceLinkService.SourceLinkException expected) {
+        badKind = expected.getMessage();
+      }
+      ALT_CLS_SourceLinkService.CandidateQuery query = candidateQuery(
+        source.Id,
+        1,
+        10
+      );
+      query.sourceKind = 'CARD';
+      ALT_CLS_SourceLinkService.CandidatePage candidates = service.listCandidates(
+        query
+      );
+      ALT_CLS_SourceLinkService.ConfirmInput input = new ALT_CLS_SourceLinkService.ConfirmInput();
+      input.sourceId = source.Id;
+      input.sourceKind = 'CARD';
+      input.sourceVersion = 0;
+      input.targetId = plans[0].Id;
+      input.targetVersion = 0;
+      input.amount = 80;
+      input.recognitionDate = source.AXF_CCT_DAT_Date__c;
+      input.operationKey = 'axf134-card-link';
+      ALT_CLS_SourceLinkService.ConfirmResult linked = service.confirm(input);
+      Test.stopTest();
+
+      Assert.areEqual(1, cardPage.items.size(), 'only the clean card fact');
+      Assert.areEqual(source.Id, cardPage.items[0].sourceId);
+      Assert.areEqual('CARD', cardPage.items[0].sourceKind);
+      Assert.areEqual(1, cardPage.excludedCount, 'reviewed card fact excluded');
+      Assert.areEqual(
+        1,
+        bankPage.items.size(),
+        'literal % matches the description'
+      );
+      Assert.areEqual(bankFact.Id, bankPage.items[0].sourceId);
+      Assert.areEqual(
+        0,
+        noMatchPage.items.size(),
+        'wildcard is not interpreted'
+      );
+      Assert.areEqual('INVALID_SOURCE', badKind);
+      ALT_CLS_SourceLinkService.SourceView reviewedView = service.readSource(
+        reviewedFact.Id,
+        'CARD'
+      );
+      Assert.isTrue(
+        reviewedView.reasons.contains('REVIEW_OPEN'),
+        reviewedView.reasons + ''
+      );
+      Set<Id> offered = new Set<Id>();
+      for (ALT_CLS_SourceLinkService.CandidateView c : candidates.items) {
+        offered.add(c.targetId);
+      }
+      Assert.isTrue(
+        offered.contains(plans[0].Id),
+        'plan funded by the same card'
+      );
+      Assert.isTrue(offered.contains(plans[2].Id), 'unfunded plan');
+      Assert.isFalse(
+        offered.contains(plans[1].Id),
+        'plan funded by a bank account'
+      );
+      AXF_OBJ_ReconciliationAllocation__c allocation = [
+        SELECT AXF_RA_LKP_CardTransaction__c, AXF_RA_LKP_BankTransaction__c
+        FROM AXF_OBJ_ReconciliationAllocation__c
+        WHERE Id = :linked.allocationId
+      ];
+      Assert.areEqual(
+        source.Id,
+        allocation.AXF_RA_LKP_CardTransaction__c,
+        'typed card link'
+      );
+      Assert.isNull(allocation.AXF_RA_LKP_BankTransaction__c);
+      ALT_CLS_SourceLinkService.ConfirmInput mismatch = new ALT_CLS_SourceLinkService.ConfirmInput();
+      mismatch.sourceId = reviewedFact.Id;
+      mismatch.sourceKind = 'CARD';
+      mismatch.sourceVersion = 0;
+      mismatch.targetId = plans[1].Id;
+      mismatch.targetVersion = 0;
+      mismatch.amount = 20;
+      mismatch.recognitionDate = Date.today();
+      mismatch.operationKey = 'axf134-card-mismatch';
+      Assert.areEqual(
+        'REVIEW_OPEN',
+        failure(mismatch),
+        'card fact revalidated'
+      );
+    }
+  }
+
+  @IsTest
+  static void verificationTruncationAndTargetRulesFailClosed() {
+    Account owner;
+    AXF_OBJ_BankAccountTransaction__c shared;
+    AXF_OBJ_FinancialTransaction__c sharedPlan;
+    System.runAs(byAlias('axf134p')) {
+      owner = holder('Holder 134 peer');
+      AXF_OBJ_BankAccount__c peerBank = bank(owner.Id, 'AVAILABLE', 'BRL');
+      shared = fact(peerBank.Id, 100, 'POSTED', Date.today(), 'peer');
+      insert shared;
+      sharedPlan = plan(
+        owner.Id,
+        'peer-plan',
+        100,
+        'DEBIT',
+        'BRL',
+        Date.today()
+      );
+      insert sharedPlan;
+      ALT_CLS_RealizationService.Input link = new ALT_CLS_RealizationService.Input();
+      link.targetId = sharedPlan.Id;
+      link.targetVersion = 0;
+      link.sourceId = shared.Id;
+      link.sourceKind = 'BANK';
+      link.sourceVersion = 0;
+      link.amount = 30;
+      link.recognitionDate = Date.today();
+      link.operationKey = 'axf134-peer-link';
+      new ALT_CLS_RealizationService().apply(link);
+      // Holder, bank account and plan shared with the gestor; the allocation stays private.
+      insert new AccountShare(
+        AccountId = owner.Id,
+        UserOrGroupId = byAlias('axf134g').Id,
+        AccountAccessLevel = 'Read',
+        OpportunityAccessLevel = 'None',
+        CaseAccessLevel = 'None'
+      );
+      insert new AXF_OBJ_BankAccount__Share(
+        ParentId = peerBank.Id,
+        UserOrGroupId = byAlias('axf134g').Id,
+        AccessLevel = 'Read'
+      );
+      insert new AXF_OBJ_FinancialTransaction__Share(
+        ParentId = sharedPlan.Id,
+        UserOrGroupId = byAlias('axf134g').Id,
+        AccessLevel = 'Read'
+      );
+    }
+    System.runAs(byAlias('axf134g')) {
+      ALT_CLS_SourceLinkService service = new ALT_CLS_SourceLinkService();
+      ALT_CLS_SourceLinkService.SourceView hidden = service.readSource(
+        shared.Id,
+        'BANK'
+      );
+      Assert.isTrue(
+        hidden.reasons.contains('ALLOCATIONS_UNVERIFIED'),
+        'a private allocation withholds the fact: ' + hidden.reasons
+      );
+      Assert.isNull(
+        hidden.residual,
+        'no residual is derived from hidden effects'
+      );
+      Assert.isFalse(hidden.eligible);
+
+      // Own data: realized target, date-only deviation, scan truncation.
+      Account mine = holder('Holder 134 mine');
+      AXF_OBJ_BankAccount__c myBank = bank(mine.Id, 'AVAILABLE', 'BRL');
+      AXF_OBJ_BankAccountTransaction__c source = fact(
+        myBank.Id,
+        100,
+        'POSTED',
+        Date.today(),
+        'mine'
+      );
+      insert source;
+      AXF_OBJ_FinancialTransaction__c realized = plan(
+        mine.Id,
+        'realized',
+        50,
+        'DEBIT',
+        'BRL',
+        Date.today()
+      );
+      insert realized;
+      ALT_CLS_RealizationService.Input drain = new ALT_CLS_RealizationService.Input();
+      drain.targetId = realized.Id;
+      drain.targetVersion = 0;
+      drain.sourceKind = 'CASH';
+      drain.amount = 50;
+      drain.recognitionDate = Date.today();
+      drain.operationKey = 'axf134-mine-drain';
+      new ALT_CLS_RealizationService().apply(drain);
+      List<AXF_OBJ_FinancialTransaction__c> many = new List<AXF_OBJ_FinancialTransaction__c>();
+      for (Integer i = 0; i < ALT_CLS_SourceLinkService.MAX_SCAN + 1; i++) {
+        many.add(
+          plan(
+            mine.Id,
+            'many-' + i,
+            100,
+            'DEBIT',
+            'BRL',
+            Date.today().addDays(i)
+          )
+        );
+      }
+      insert many;
+      Test.startTest();
+      Assert.areEqual(
+        'TARGET_REALIZED',
+        failure(confirmInput(source, realized.Id, 1, 50, 'realized'))
+      );
+      ALT_CLS_SourceLinkService.ConfirmInput dateOnly = confirmInput(
+        source,
+        many[0].Id,
+        0,
+        100,
+        'date-only'
+      );
+      dateOnly.recognitionDate = Date.today().addDays(1);
+      Assert.areEqual(
+        'REVIEW_REQUIRED',
+        failure(dateOnly),
+        'a changed date alone needs explicit review'
+      );
+      ALT_CLS_SourceLinkService.ConfirmInput over = confirmInput(
+        source,
+        realized.Id,
+        1,
+        10,
+        'over'
+      );
+      over.changesReviewed = true;
+      Assert.areEqual('TARGET_REALIZED', failure(over));
+      // A service instance caches the authorized scope per request: new holder, new instance.
+      ALT_CLS_SourceLinkService.CandidatePage page = new ALT_CLS_SourceLinkService()
+        .listCandidates(candidateQuery(source.Id, 1, 50));
+      Test.stopTest();
+      Assert.isTrue(
+        page.scanTruncated,
+        'more than MAX_SCAN forecasts were scanned'
+      );
+      Assert.areEqual(ALT_CLS_SourceLinkService.MAX_SCAN, page.maxScan);
+      Assert.isTrue(page.items.size() <= ALT_CLS_SourceLinkService.MAX_PAGE);
+      Assert.areEqual(
+        0,
+        [
+          SELECT COUNT()
+          FROM AXF_OBJ_ReconciliationAllocation__c
+          WHERE AXF_RA_LKP_BankTransaction__c = :source.Id
+        ],
+        'nothing persisted by the refused commands'
+      );
+    }
+  }
+
   private class CandidateViewByTarget {
     private Map<Id, ALT_CLS_SourceLinkService.CandidateView> rows = new Map<Id, ALT_CLS_SourceLinkService.CandidateView>();
     public CandidateViewByTarget(

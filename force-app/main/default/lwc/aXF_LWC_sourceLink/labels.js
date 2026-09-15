@@ -118,6 +118,9 @@ import evxUNKNOWN from "@salesforce/label/c.AXF_SourceLink_evxUNKNOWN";
 import evxREDACTED from "@salesforce/label/c.AXF_SourceLink_evxREDACTED";
 import evxDATE_AFTER from "@salesforce/label/c.AXF_SourceLink_evxDATE_AFTER";
 import evxDATE_BEFORE from "@salesforce/label/c.AXF_SourceLink_evxDATE_BEFORE";
+import originPLUGGY from "@salesforce/label/c.AXF_SourceLink_originPLUGGY";
+import originCSV from "@salesforce/label/c.AXF_SourceLink_originCSV";
+import originMANUAL from "@salesforce/label/c.AXF_SourceLink_originMANUAL";
 
 export default {
   title,
@@ -239,5 +242,8 @@ export default {
   evxUNKNOWN,
   evxREDACTED,
   evxDATE_AFTER,
-  evxDATE_BEFORE
+  evxDATE_BEFORE,
+  originPLUGGY,
+  originCSV,
+  originMANUAL
 };

@@ -278,6 +278,17 @@ describe("c-a-x-f-_-l-w-c-_source-link", () => {
     ).toContain("c.AXF_SourceLink_codeCONFLICT");
     expect(byId(element, "confirm")).not.toBeNull();
     const firstKey = JSON.parse(confirm.mock.calls[0][0].request).operationKey;
+    // CONFLICT refreshed the draft (candidates reloaded, suggestion restored, same key).
+    expect(listCandidates).toHaveBeenCalledTimes(2);
+    expect(byId(element, "changed")).toBeNull();
+    const again = byId(element, "amount");
+    again.value = "100";
+    again.dispatchEvent(new CustomEvent("change"));
+    await flush();
+    const reviewedAgain = byId(element, "reviewed");
+    reviewedAgain.checked = true;
+    reviewedAgain.dispatchEvent(new CustomEvent("change"));
+    await flush();
     confirm.mockResolvedValueOnce({
       allocationId: "a0E1",
       targetId: "a0C1",
@@ -353,6 +364,72 @@ describe("c-a-x-f-_-l-w-c-_source-link", () => {
     expect(
       element.shadowRoot.querySelectorAll('[data-id="evidenceCell"]').length
     ).toBe(2);
+  });
+
+  it("treats a date change as a reviewed change, filters by kind and pages without duplicates", async () => {
+    const element = await mount();
+    listSources
+      .mockResolvedValueOnce({
+        pageNumber: 1,
+        pageSize: 25,
+        hasMore: true,
+        scannedCount: 2,
+        excludedCount: 0,
+        scanTruncated: true,
+        maxScan: 200,
+        items: [source]
+      })
+      .mockResolvedValueOnce({
+        pageNumber: 2,
+        pageSize: 25,
+        hasMore: false,
+        scannedCount: 2,
+        excludedCount: 0,
+        items: [source, { ...source, sourceId: "a0B2", description: "Luz" }]
+      });
+    listCandidates.mockResolvedValue(candidates);
+    byId(element, "holder").dispatchEvent(
+      new CustomEvent("change", { detail: { value: "001A" } })
+    );
+    byId(element, "kind").dispatchEvent(
+      new CustomEvent("change", { detail: { value: "CARD" } })
+    );
+    await flush();
+    byId(element, "loadSources").click();
+    await flush();
+    expect(JSON.parse(listSources.mock.calls[0][0].request)).toMatchObject({
+      sourceKind: "CARD",
+      pageNumber: 1
+    });
+    expect(byId(element, "excludedSources").textContent).toContain(
+      "c.AXF_SourceLink_scanTruncated"
+    );
+    byId(element, "moreSources").click();
+    await flush();
+    expect(JSON.parse(listSources.mock.calls[1][0].request).pageNumber).toBe(2);
+    expect(
+      element.shadowRoot.querySelectorAll('[data-id="sourceTable"] tbody tr')
+        .length
+    ).toBe(2);
+    element.shadowRoot.querySelector('[data-id="a0B1"]').click();
+    await flush();
+    element.shadowRoot.querySelector('[data-index="0"]').click();
+    await flush();
+    const date = byId(element, "recognitionDate");
+    date.value = "2026-09-15";
+    date.dispatchEvent(new CustomEvent("change"));
+    await flush();
+    expect(byId(element, "changed")).not.toBeNull();
+    expect(byId(element, "confirm").disabled).toBe(true);
+    const amount = byId(element, "amount");
+    amount.value = "10.005";
+    amount.dispatchEvent(new CustomEvent("change"));
+    await flush();
+    const reviewed = byId(element, "reviewed");
+    reviewed.checked = true;
+    reviewed.dispatchEvent(new CustomEvent("change"));
+    await flush();
+    expect(byId(element, "confirm").disabled).toBe(true);
   });
 
   it("offers the no-forecast path and hides everything without the capability", async () => {
