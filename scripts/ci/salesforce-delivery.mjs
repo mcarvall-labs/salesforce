@@ -19,6 +19,44 @@ export function sourcePaths(entries) {
   return [...paths].sort();
 }
 
+export function extractDeclaredTests(body) {
+  const heading = /^#{1,6}\s*salesforce test classes\s*$/im.exec(body || "");
+  if (!heading) return [];
+  const rest = body.slice(heading.index + heading[0].length);
+  const section = rest.split(/^#{1,6}\s/m)[0];
+  const names = [
+    ...section.matchAll(/^[-*]\s*`?([A-Za-z][A-Za-z0-9_]*)`?/gm)
+  ].map((m) => m[1]);
+  return [...new Set(names)];
+}
+
+export function testPlan(paths, readFile, declaredTests) {
+  const testsInDelta = [];
+  let hasProductionApex = false;
+  for (const p of paths) {
+    if (p.endsWith(".trigger")) {
+      hasProductionApex = true;
+      continue;
+    }
+    if (!p.endsWith(".cls")) continue;
+    if (/@istest/i.test(readFile(p)))
+      testsInDelta.push(path.basename(p, ".cls"));
+    else hasProductionApex = true;
+  }
+  const tests = [...new Set([...testsInDelta, ...declaredTests])];
+  if (hasProductionApex && tests.length === 0)
+    throw new Error(
+      "Changed Apex classes/triggers have no test coverage in this delta. Add the " +
+        '"## Salesforce test classes" section to the PR description listing the Apex ' +
+        "test class name(s) that cover this change (one per bullet), or include the " +
+        "corresponding test class(es) in this PR."
+    );
+  return {
+    testLevel: tests.length ? "RunSpecifiedTests" : "RunLocalTests",
+    tests
+  };
+}
+
 export function completed(payload, exitCode) {
   return (
     exitCode === 0 &&
@@ -27,21 +65,6 @@ export function completed(payload, exitCode) {
     payload.result?.success === true &&
     payload.result?.status === "Succeeded"
   );
-}
-
-export function selectBaseline(runs, currentRunId, initialBase) {
-  const previous = runs
-    .filter(
-      (r) => String(r.id) !== String(currentRunId) && r.conclusion === "success"
-    )
-    .sort((a, b) => b.run_number - a.run_number)[0];
-  const base = previous?.head_sha || initialBase;
-  if (!/^[0-9a-f]{40}$/.test(base || "")) {
-    throw new Error(
-      "Set SALESFORCE_BASE_SHA to the verified initial org baseline before the first metadata operation"
-    );
-  }
-  return base;
 }
 
 export function safeResult(payload) {
@@ -137,6 +160,9 @@ export async function run() {
         e.GITHUB_REF !== `refs/heads/${branch}`)
     )
       throw new Error("Deploy requires a protected branch push");
+    // The delta is always computed from the PR base branch commit (from) to the
+    // target/head commit being validated or deployed (to) — never from deploy history.
+    let baseSha, prBody;
     if (e.OPERATION === "deploy") {
       const prs = JSON.parse(
         command("gh", [
@@ -144,43 +170,29 @@ export async function run() {
           `repos/${e.GITHUB_REPOSITORY}/commits/${e.GITHUB_SHA}/pulls`
         ])
       );
-      if (
-        !prs.some(
-          (pr) =>
-            pr.merged_at &&
-            pr.base.ref === branch &&
-            pr.merge_commit_sha === e.GITHUB_SHA
-        )
-      )
+      const mergedPr = prs.find(
+        (pr) =>
+          pr.merged_at &&
+          pr.base.ref === branch &&
+          pr.merge_commit_sha === e.GITHUB_SHA
+      );
+      if (!mergedPr)
         throw new Error(
           "Deploy requires a merged pull request for this exact commit"
         );
+      baseSha = mergedPr.base.sha;
+      prBody = mergedPr.body || "";
+    } else {
+      baseSha = e.PR_BASE_SHA;
+      prBody = e.PR_BODY || "";
     }
-
-    // A configuration-only PR needs neither org credentials nor a baseline.
-    if (
-      e.OPERATION === "validate" &&
-      changes(e.PR_BASE_SHA, e.GITHUB_SHA).length === 0
-    ) {
-      report.outcome = "No metadata changes";
-      return;
-    }
-    let runs = [];
-    const response = spawnSync(
-      "gh",
-      [
-        "api",
-        `repos/${e.GITHUB_REPOSITORY}/actions/workflows/deploy-salesforce.yml/runs?branch=${branch}&event=push&status=success&per_page=100`
-      ],
-      { encoding: "utf8" }
-    );
-    if (response.status === 0) runs = JSON.parse(response.stdout).workflow_runs;
-    else if (!response.stderr?.includes("404"))
-      throw new Error("Cannot read deployment history");
-    const base = selectBaseline(runs, e.GITHUB_RUN_ID, e.INITIAL_BASE_SHA);
-    command("git", ["merge-base", "--is-ancestor", base, e.GITHUB_SHA]);
-    report.base = base;
-    report.paths = sourcePaths(changes(base, e.GITHUB_SHA));
+    if (!/^[0-9a-f]{40}$/.test(baseSha || ""))
+      throw new Error(
+        "Could not resolve the PR base branch commit (from) to diff against the target commit (to)"
+      );
+    command("git", ["merge-base", "--is-ancestor", baseSha, e.GITHUB_SHA]);
+    report.base = baseSha;
+    report.paths = sourcePaths(changes(baseSha, e.GITHUB_SHA));
     fs.writeFileSync(
       path.join(directory, "source-paths.txt"),
       report.paths.join("\n") + "\n"
@@ -189,6 +201,27 @@ export async function run() {
       report.outcome = "No metadata changes";
       return;
     }
+    // Package the exact validated/deployed delta as mdapi-format metadata so the
+    // evidence artifact carries the same content submitted to Salesforce.
+    const packageDir = path.join(
+      e.RUNNER_TEMP,
+      `delta-package-${e.GITHUB_RUN_ID}-${e.GITHUB_RUN_ATTEMPT || 1}`
+    );
+    command("sf", [
+      "project",
+      "convert",
+      "source",
+      "--output-dir",
+      packageDir,
+      ...report.paths.flatMap((p) => ["--source-dir", p])
+    ]);
+    const zip = spawnSync(
+      "zip",
+      ["-r", path.join(directory, "delta-package.zip"), "."],
+      { cwd: packageDir, encoding: "utf8" }
+    );
+    if (zip.error || zip.status !== 0)
+      throw new Error("Failed to package the delta metadata zip");
     if (
       !e.SALESFORCE_AUTH_URL ||
       !/^00D[a-zA-Z0-9]{12}(?:[a-zA-Z0-9]{3})?$/.test(e.EXPECTED_ORG_ID || "")
@@ -219,7 +252,19 @@ export async function run() {
         "Authenticated Org ID does not match the configured target"
       );
     report.orgId = org.result.id;
-    const testLevel = e.TARGET_ENV === "DEV" ? "NoTestRun" : "RunLocalTests";
+    // Every environment scopes tests to what the delta actually touches instead of
+    // running every local test class: any test class included in the delta itself,
+    // plus anything declared via the PR's "## Salesforce test classes" section.
+    // Falls back to RunLocalTests only when the delta has no Apex/trigger at all.
+    const plan = testPlan(
+      report.paths,
+      (p) => fs.readFileSync(p, "utf8"),
+      extractDeclaredTests(prBody)
+    );
+    const testLevel = plan.testLevel;
+    const tests = plan.tests;
+    report.testLevel = testLevel;
+    report.tests = tests;
     const args = [
       "project",
       "deploy",
@@ -232,6 +277,7 @@ export async function run() {
       "60",
       "--json"
     ];
+    for (const t of tests) args.push("--tests", t);
     // DEV PRs do a real deploy (no --dry-run) so devs can visually validate the
     // org before approving the merge. UAT and PROD PRs keep --dry-run to avoid
     // unintended side-effects before the merge is confirmed.
@@ -309,6 +355,7 @@ export async function run() {
       `**Commit:** \`${report.sha}\``,
       `**Base:** \`${report.base || "Not required / not configured"}\``,
       `**Metadata paths:** ${report.paths.length}`,
+      `**Test level:** ${report.testLevel || "N/A"}${report.tests?.length ? ` (${report.tests.join(", ")})` : ""}`,
       `**Deployment ID:** ${report.salesforce?.id || "None"}`,
       `**Tests completed / failed:** ${report.salesforce?.numberTestsCompleted ?? 0} / ${report.salesforce?.numberTestErrors ?? 0}`,
       report.error || "",
@@ -320,11 +367,106 @@ export async function run() {
     fs.writeFileSync(path.join(directory, "summary.md"), text + "\n");
     if (e.GITHUB_STEP_SUMMARY)
       fs.appendFileSync(e.GITHUB_STEP_SUMMARY, text + "\n");
+
+    const escapeHtml = (value) =>
+      String(value ?? "").replace(
+        /[&<>"']/g,
+        (c) =>
+          ({
+            "&": "&amp;",
+            "<": "&lt;",
+            ">": "&gt;",
+            '"': "&quot;",
+            "'": "&#39;"
+          })[c]
+      );
+    const table = (title, items, cols) =>
+      items.length
+        ? `<h3>${escapeHtml(title)}</h3><table><thead><tr>${cols
+            .map((c) => `<th>${escapeHtml(c)}</th>`)
+            .join("")}</tr></thead><tbody>${items
+            .map(
+              (row) =>
+                `<tr>${row.map((cell) => `<td>${escapeHtml(cell)}</td>`).join("")}</tr>`
+            )
+            .join("")}</tbody></table>`
+        : "";
+    const html = `<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Salesforce ${escapeHtml(report.operation)}: ${escapeHtml(report.environment)}</title>
+<style>
+body{font-family:system-ui,sans-serif;margin:2rem;color:#1a1a1a;max-width:960px}
+table{border-collapse:collapse;width:100%;margin:1rem 0}
+th,td{border:1px solid #ddd;padding:6px 10px;text-align:left;font-size:0.9rem;vertical-align:top}
+th{background:#f4f4f4}
+.badge{display:inline-block;padding:2px 10px;border-radius:12px;font-weight:600}
+.ok{background:#d4f7dc;color:#116329}
+.fail{background:#ffd7d5;color:#82071e}
+code{background:#f4f4f4;padding:1px 4px;border-radius:3px}
+</style>
+</head>
+<body>
+<h1>Salesforce ${escapeHtml(report.operation)}: ${escapeHtml(report.environment)}</h1>
+<p><span class="badge ${report.outcome === "Succeeded" ? "ok" : "fail"}">${escapeHtml(report.outcome)}</span></p>
+<ul>
+<li><strong>Commit (to):</strong> <code>${escapeHtml(report.sha)}</code></li>
+<li><strong>Base (from):</strong> <code>${escapeHtml(report.base || "Not required / not configured")}</code></li>
+<li><strong>Metadata paths:</strong> ${report.paths.length}</li>
+<li><strong>Test level:</strong> ${escapeHtml(report.testLevel || "N/A")}${report.tests?.length ? ` (${escapeHtml(report.tests.join(", "))})` : ""}</li>
+<li><strong>Deployment ID:</strong> ${escapeHtml(report.salesforce?.id || "None")}</li>
+<li><strong>Tests completed / failed:</strong> ${report.salesforce?.numberTestsCompleted ?? 0} / ${report.salesforce?.numberTestErrors ?? 0}</li>
+${report.error ? `<li><strong>Error:</strong> ${escapeHtml(report.error)}</li>` : ""}
+</ul>
+${table(
+  "Component failures",
+  (report.salesforce?.componentFailures || []).map((f) => [
+    f.component,
+    f.file,
+    f.line ?? "-",
+    f.problem
+  ]),
+  ["Component", "File", "Line", "Problem"]
+)}
+${table(
+  "Test failures",
+  (report.salesforce?.testFailures || []).map((f) => [f.test, f.message]),
+  ["Test", "Message"]
+)}
+${
+  report.paths.length
+    ? `<h3>Metadata paths (${report.paths.length})</h3><ul>${report.paths
+        .map((p) => `<li><code>${escapeHtml(p)}</code></li>`)
+        .join("")}</ul>`
+    : ""
+}
+</body>
+</html>
+`;
+    fs.writeFileSync(path.join(directory, "result.html"), html);
+
+    // Kept short: the full component/test failure detail lives in result.json
+    // and result.html inside the evidence artifact, not inline in the PR comment.
+    const shortSummary = [
+      `## Salesforce ${report.operation}: ${report.environment}`,
+      "",
+      `**Result:** ${report.outcome}`,
+      `**Commit (to):** \`${report.sha}\``,
+      `**Base (from):** \`${report.base || "Not required / not configured"}\``,
+      `**Metadata paths:** ${report.paths.length}`,
+      `**Test level:** ${report.testLevel || "N/A"}${report.tests?.length ? ` (${report.tests.join(", ")})` : ""}`,
+      `**Deployment ID:** ${report.salesforce?.id || "None"}`,
+      `**Tests completed / failed:** ${report.salesforce?.numberTestsCompleted ?? 0} / ${report.salesforce?.numberTestErrors ?? 0}`,
+      report.error || "",
+      "",
+      "Full component/test failure detail, the JSON result and the validated delta package zip are attached as workflow run artifacts: `result.json`, `result.html`, `delta-package.zip`."
+    ].join("\n");
     if (e.GITHUB_OUTPUT) {
       const delimiter = randomUUID();
       fs.appendFileSync(
         e.GITHUB_OUTPUT,
-        `summary<<${delimiter}\n${text.slice(0, 12000)}\n${delimiter}\n`
+        `summary<<${delimiter}\n${shortSummary}\n${delimiter}\n`
       );
     }
   }

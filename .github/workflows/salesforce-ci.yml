@@ -76,7 +76,6 @@ jobs:
     environment: ${{ needs.scope.outputs.has_metadata != 'true' && 'CI' || (github.base_ref == 'main' && 'PROD-VALIDATION' || (github.base_ref == 'uat' && 'UAT-VALIDATION' || 'DEV-VALIDATION')) }}
     permissions:
       contents: read
-      actions: read
     steps:
       - name: Reject untrusted PR sources
         env:
@@ -95,14 +94,13 @@ jobs:
       - name: Validate delta without persisting changes
         id: operation
         env:
-          GH_TOKEN: ${{ github.token }}
           OPERATION: validate
           TARGET_ENV: ${{ github.base_ref == 'main' && 'PROD' || (github.base_ref == 'uat' && 'UAT' || 'DEV') }}
           TARGET_BRANCH: ${{ github.base_ref }}
           PR_BASE_SHA: ${{ github.event.pull_request.base.sha }}
+          PR_BODY: ${{ github.event.pull_request.body }}
           SALESFORCE_AUTH_URL: ${{ needs.scope.outputs.has_metadata == 'true' && (secrets.SALESFORCE_AUTH_URL || secrets.SALESFORCE_DEV_AUTH_URL || secrets.SALESFORCE_PROD_AUTH_URL) || '' }}
           EXPECTED_ORG_ID: ${{ vars.SALESFORCE_ORG_ID }}
-          INITIAL_BASE_SHA: ${{ vars.SALESFORCE_BASE_SHA }}
           EVIDENCE_DIR: ${{ runner.temp }}/salesforce-evidence
         run: node scripts/ci/salesforce-delivery.mjs
       - name: Upload validation evidence
@@ -136,7 +134,7 @@ jobs:
             const ref = context.payload.pull_request.base.ref;
             const target = ref === 'main' ? 'AXON_PROD' : (ref === 'uat' ? 'AXON_UAT' : 'AXON_DEV');
             const artifactLinks = data.artifacts.length
-              ? data.artifacts.map(a => `- [${a.name}](${runUrl})`).join('\n')
+              ? data.artifacts.map(a => `- [${a.name}](${runUrl}) — contains \`result.json\`, \`result.html\`, \`delta-package.zip\`, \`source-paths.txt\`, \`summary.md\``).join('\n')
               : '_No evidence artifact uploaded._';
             await github.rest.issues.createComment({...context.repo, issue_number: context.issue.number,
-              body: `## Salesforce PR validation: ${target}\n\n**Validation job:** ${process.env.VALIDATION_RESULT}\n**Quality checks:** ${process.env.QUALITY_RESULT}\n**Validated merge SHA:** \`${process.env.VALIDATED_SHA}\`\n\n${process.env.SF_SUMMARY || 'Validation did not produce a report.'}\n\n[Validation summary and logs](${runUrl})\n\n### Evidence\n${artifactLinks}\n\nValidation uses dry-run: no metadata is persisted.`});
+              body: `## Salesforce PR validation: ${target}\n\n**Validation job:** ${process.env.VALIDATION_RESULT}\n**Quality checks:** ${process.env.QUALITY_RESULT}\n**Validated merge SHA:** \`${process.env.VALIDATED_SHA}\`\n\n${process.env.SF_SUMMARY || 'Validation did not produce a report.'}\n\n[Validation summary and logs](${runUrl})\n\n### Evidence\n${artifactLinks}\n\nDownload the artifact and open \`result.html\` for the full validation report, or \`delta-package.zip\` for the exact metadata package validated. Validation uses dry-run: no metadata is persisted.`});
