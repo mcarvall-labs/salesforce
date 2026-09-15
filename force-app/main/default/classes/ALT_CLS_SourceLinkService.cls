@@ -14,12 +14,30 @@
  * whose residual stays non-zero after the source's available amount is applied is PARTIAL (policy
  * §3). No tolerance, weight, default rate or conclusion policy is introduced: the residual is
  * reported as it is.
+ * AXF-135: the caller declares the economic role of the link and the service never classifies it —
+ * `AXF_CCT_TXT_BillReference__c` is only the statement a card line belongs to and never makes a link
+ * an invoice payment. The declared role travels in the canonical payload (AXF-25), and a role this
+ * slice cannot route (invoice payment, transfer, refund) is refused before any write, so an invoice
+ * payment can never create a second consumption expense. The whole available amount of the source is
+ * applied to the chosen obligation — an outflow to an expense, an inflow to a revenue, as the source
+ * already carries — and what that obligation cannot absorb stays on the source as an explicit
+ * multi-target need (AXF-30); the obligation is never increased to absorb it.
  */
 public with sharing class ALT_CLS_SourceLinkService {
   public static final String POLICY_VERSION = 'AXF-SOURCE-LINK@1.0.0';
   public static final String CP_LINK = 'AXF_CanLinkSource';
   public static final String KIND_BANK = 'BANK';
   public static final String KIND_CARD = 'CARD';
+  /**
+   * AXF-135: economic roles of a link. The role is always declared by the caller and never derived
+   * from a description, a provider category or the statement association of a card line. Only
+   * `APPLICATION` — the fact settles the obligation of the target, or becomes the realized entry
+   * itself — has a supported capability in this slice.
+   */
+  public static final String ROLE_APPLICATION = 'APPLICATION';
+  public static final String ROLE_INVOICE_PAYMENT = 'INVOICE_PAYMENT';
+  public static final String ROLE_TRANSFER = 'TRANSFER';
+  public static final String ROLE_REFUND = 'REFUND';
   public static final Integer DEFAULT_PAGE = 25;
   public static final Integer MAX_PAGE = 50;
   /** Rows scanned per candidate scan window before in-memory exclusion of realized/cancelled targets. */
@@ -37,6 +55,16 @@ public with sharing class ALT_CLS_SourceLinkService {
   private static final Set<String> DIRECTIONS = new Set<String>{
     'DEBIT',
     'CREDIT'
+  };
+  private static final Set<String> ECONOMIC_ROLES = new Set<String>{
+    ROLE_APPLICATION,
+    ROLE_INVOICE_PAYMENT,
+    ROLE_TRANSFER,
+    ROLE_REFUND
+  };
+  /** Roles with a supported capability here; every other declared role is refused without a write. */
+  private static final Set<String> ROUTABLE_ROLES = new Set<String>{
+    ROLE_APPLICATION
   };
   private static final Set<String> SOURCES = new Set<String>{
     'PLUGGY',
@@ -131,6 +159,14 @@ public with sharing class ALT_CLS_SourceLinkService {
      */
     @AuraEnabled
     public Decimal residualAfter;
+    /**
+     * AXF-135: available amount left on the source once this candidate's obligation is settled.
+     * Distinct from `residualAfter`, which is what the obligation still needs: when the source is
+     * larger than the obligation this stays non-zero and is the amount this flow does not split —
+     * the multi-target need (AXF-30). The obligation is never grown to absorb it.
+     */
+    @AuraEnabled
+    public Decimal sourceResidualAfter;
     /** AXF-140: indicative conversion evidence, present only when the currencies differ. */
     @AuraEnabled
     public ConversionView conversion;
@@ -260,6 +296,11 @@ public with sharing class ALT_CLS_SourceLinkService {
     public Date recognitionDate;
     /** Explicit review acknowledgement, required whenever amount/date differ from the suggestion. */
     public Boolean changesReviewed;
+    /**
+     * AXF-135: economic role declared by the caller — required, and never defaulted, inferred or
+     * classified by the service. It is preserved in the canonical payload of the realization.
+     */
+    public String economicRole;
     public String operationKey;
   }
 
@@ -1126,6 +1167,10 @@ public with sharing class ALT_CLS_SourceLinkService {
         // and it leaves the candidate PARTIAL, where the user may still add or edit draft
         // allocations. A candidate the source extinguishes exactly stays CONSULTATIVE.
         c.residualAfter = residual - Math.min(source.residual, residual);
+        // AXF-135: the same amount seen from the source: what this obligation cannot absorb is a
+        // multi-target need and is never met by increasing the obligation.
+        c.sourceResidualAfter =
+          source.residual - Math.min(source.residual, residual);
         c.linkable = true;
         if (c.residualAfter > 0) {
           c.state = ALT_CLS_MatchEvidence.STATE_PARTIAL;
@@ -1243,6 +1288,11 @@ public with sharing class ALT_CLS_SourceLinkService {
         c.residualAfter = line.amount == null
           ? null
           : line.amount - Math.min(source.residual, line.amount);
+        // AXF-135: the source side of the same remainder, so a projected occurrence states what is
+        // left for another target too (unknown, never zero, when the currencies differ).
+        c.sourceResidualAfter = line.amount == null
+          ? null
+          : source.residual - Math.min(source.residual, line.amount);
         c.currencyIso = source.currencyIso;
         c.direction = source.direction;
         c.dueDate = line.effectiveDueDate == null
@@ -1274,6 +1324,17 @@ public with sharing class ALT_CLS_SourceLinkService {
         input.sourceId != null &&
         KINDS.contains(input.sourceKind),
       'INVALID'
+    );
+    // AXF-135: the role is declared, never defaulted. A role this slice cannot route is refused
+    // here, before any read of a candidate and before any write, so no invoice payment, transfer or
+    // refund can ever become an allocation or a second consumption expense.
+    check(
+      input.economicRole != null && ECONOMIC_ROLES.contains(input.economicRole),
+      'INVALID_ECONOMIC_ROLE'
+    );
+    check(
+      ROUTABLE_ROLES.contains(input.economicRole),
+      'UNSUPPORTED_ECONOMIC_ROLE'
     );
     ConfirmResult result = new ConfirmResult();
     // Visibility and holder authorization first; a hidden fact never reaches the key lookup.
@@ -1415,6 +1476,8 @@ public with sharing class ALT_CLS_SourceLinkService {
     request.targetVersion = input.targetVersion;
     request.sourceVersion = input.sourceVersion;
     request.operationKey = input.operationKey;
+    // AXF-135: the declared role travels into the canonical payload of the realization.
+    request.economicRole = input.economicRole;
     if (input.targetId == null) {
       // ACTUAL_ONLY: the plan is born from the fact itself (holder, currency, direction).
       request.accountId = source.accountId;

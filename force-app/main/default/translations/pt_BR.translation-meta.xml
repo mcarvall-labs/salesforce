@@ -1486,4 +1486,20 @@
     >Sem taxa de câmbio material para este par de moedas; a confirmação fica bloqueada.</label><name
     >AXF_SourceLink_codeMISSING_MATERIAL_FX</name></customLabels><customLabels
   ><label>Parcial — remanescente</label><name
-    >AXF_SourceLink_evPartial</name></customLabels></Translations>
+    >AXF_SourceLink_evPartial</name></customLabels><customLabels><label
+    >Papel econômico do vínculo</label><name
+    >AXF_SourceLink_economicRole</name></customLabels><customLabels><label
+    >Declare o papel deste vínculo. Ele nunca é inferido da descrição nem da associação de extrato da linha do cartão (BillReference).</label><name
+    >AXF_SourceLink_roleHelp</name></customLabels><customLabels><label
+    >Aplicação — o fato quita a obrigação (despesa ou receita conforme a direção)</label><name
+    >AXF_SourceLink_roleAPPLICATION</name></customLabels><customLabels><label
+    >Pagamento de fatura</label><name
+    >AXF_SourceLink_roleINVOICE_PAYMENT</name></customLabels><customLabels
+  ><label>Transferência</label><name
+    >AXF_SourceLink_roleTRANSFER</name></customLabels><customLabels><label
+    >Estorno</label><name
+    >AXF_SourceLink_roleREFUND</name></customLabels><customLabels><label
+    >Sobra da fonte para outros alvos após esta obrigação — necessidade multi-alvo (AXF-30):</label><name
+    >AXF_SourceLink_sourceRemainder</name></customLabels><customLabels><label
+    >Este papel econômico não tem capacidade de vínculo suportada aqui. Nada foi gravado — use a capacidade de fatura, transferência ou estorno.</label><name
+    >AXF_SourceLink_codeUNSUPPORTED_ECONOMIC_ROLE</name></customLabels></Translations>
