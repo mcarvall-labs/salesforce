@@ -381,6 +381,37 @@ private class ALT_CLS_RealizationServiceTest {
       Id original = service.apply(request(targetId, 40, 0, 'original'));
       Id reversal = AXF_CLS_CTRL_Realization.reverse(original, 1, 'reverse');
       Assert.areEqual(reversal, service.reverse(original, 1, 'reverse'));
+      // Pre-AXF-141 fingerprint (no reason) is unchanged, so rows written before the
+      // reason fields existed keep replaying.
+      Assert.areEqual(
+        AXF_CLS_IdentityFraming.key(
+          new List<Object>{ 'REVERSAL', original, 1 }
+        ),
+        [
+          SELECT AXF_RA_TXT_PayloadHash__c
+          FROM AXF_OBJ_ReconciliationAllocation__c
+          WHERE Id = :reversal
+        ]
+        .AXF_RA_TXT_PayloadHash__c
+      );
+      try {
+        service.reverse(original, 1, 'reverse', 'OTHER', null);
+        Assert.fail('A reason changes the payload');
+      } catch (ALT_CLS_RealizationService.RealizationException expected) {
+        Assert.areEqual('CONFLICT', expected.getMessage());
+      }
+      try {
+        service.reverse(original, 1, 'bad-reason', 'BECAUSE', null);
+        Assert.fail('Reason outside the contract');
+      } catch (ALT_CLS_RealizationService.RealizationException expected) {
+        Assert.areEqual('INVALID_REASON', expected.getMessage());
+      }
+      try {
+        service.reverse(original, 1, 'note-only', null, 'note without reason');
+        Assert.fail('A note never travels without a reason');
+      } catch (ALT_CLS_RealizationService.RealizationException expected) {
+        Assert.areEqual('INVALID', expected.getMessage());
+      }
       try {
         service.reverse(original, 2, 'twice');
         Assert.fail('No second compensation');

@@ -918,4 +918,542 @@
     >Buscar titular</label><name
     >AXF_ArchiveExplorer_holderSearch</name></customLabels><customLabels><label
     >Motivo</label><name
-    >AXF_ArchiveExplorer_colReason</name></customLabels></Translations>
+    >AXF_ArchiveExplorer_colReason</name></customLabels><customLabels><label
+    >Vincular fonte bancária a previsão</label><name
+    >AXF_SourceLink_title</name></customLabels><customLabels><label
+    >Escolha uma transação importada elegível, revise as previsões sugeridas e confirme o vínculo explicitamente. O fato importado nunca é copiado nem alterado.</label><name
+    >AXF_SourceLink_intro</name></customLabels><customLabels><label
+    >Você não tem a capacidade de vincular fontes.</label><name
+    >AXF_SourceLink_noCapability</name></customLabels><customLabels><label
+    >1. Fonte</label><name
+    >AXF_SourceLink_stepSource</name></customLabels><customLabels><label
+    >2. Previsão</label><name
+    >AXF_SourceLink_stepCandidate</name></customLabels><customLabels><label
+    >3. Revisar e confirmar</label><name
+    >AXF_SourceLink_stepReview</name></customLabels><customLabels><label
+    >Titular</label><name
+    >AXF_SourceLink_holder</name></customLabels><customLabels><label
+    >Selecione um titular</label><name
+    >AXF_SourceLink_holderPlaceholder</name></customLabels><customLabels><label
+    >Tipo de fonte</label><name
+    >AXF_SourceLink_kind</name></customLabels><customLabels><label
+    >Banco e cartão</label><name
+    >AXF_SourceLink_kindALL</name></customLabels><customLabels><label
+    >Conta bancária</label><name
+    >AXF_SourceLink_kindBANK</name></customLabels><customLabels><label
+    >Cartão de crédito</label><name
+    >AXF_SourceLink_kindCARD</name></customLabels><customLabels><label
+    >Buscar por descrição</label><name
+    >AXF_SourceLink_search</name></customLabels><customLabels><label
+    >Carregar fontes elegíveis</label><name
+    >AXF_SourceLink_loadSources</name></customLabels><customLabels><label
+    >Carregar mais</label><name
+    >AXF_SourceLink_loadMore</name></customLabels><customLabels><label
+    >Carregando…</label><name
+    >AXF_SourceLink_loading</name></customLabels><customLabels><label
+    >Nenhuma fonte elegível para este titular. Só entram transações bancárias/de cartão POSTED de conta disponível, sem revisão aberta e com valor remanescente.</label><name
+    >AXF_SourceLink_noSources</name></customLabels><customLabels><label
+    >{0} transação(ões) verificadas, {1} não elegíveis.</label><name
+    >AXF_SourceLink_excludedSources</name></customLabels><customLabels><label
+    >Data</label><name>AXF_SourceLink_colDate</name></customLabels><customLabels
+  ><label>Descrição</label><name
+    >AXF_SourceLink_colDescription</name></customLabels><customLabels><label
+    >Conta / cartão</label><name
+    >AXF_SourceLink_colFunding</name></customLabels><customLabels><label
+    >Origem</label><name
+    >AXF_SourceLink_colOrigin</name></customLabels><customLabels><label
+    >Valor</label><name
+    >AXF_SourceLink_colAmount</name></customLabels><customLabels><label
+    >Remanescente</label><name
+    >AXF_SourceLink_colResidual</name></customLabels><customLabels><label
+    >Direção</label><name
+    >AXF_SourceLink_colDirection</name></customLabels><customLabels><label
+    >Vencimento</label><name
+    >AXF_SourceLink_colDue</name></customLabels><customLabels><label
+    >Categoria</label><name
+    >AXF_SourceLink_colCategory</name></customLabels><customLabels><label
+    >Situação</label><name
+    >AXF_SourceLink_colStatus</name></customLabels><customLabels><label
+    >Ação</label><name
+    >AXF_SourceLink_colAction</name></customLabels><customLabels><label
+    >Selecionar</label><name
+    >AXF_SourceLink_select</name></customLabels><customLabels><label
+    >Selecionado</label><name
+    >AXF_SourceLink_selected</name></customLabels><customLabels><label
+    >Saída</label><name
+    >AXF_SourceLink_directionDEBIT</name></customLabels><customLabels><label
+    >Entrada</label><name
+    >AXF_SourceLink_directionCREDIT</name></customLabels><customLabels><label
+    >Fonte selecionada</label><name
+    >AXF_SourceLink_sourceSummary</name></customLabels><customLabels><label
+    >Trocar fonte</label><name
+    >AXF_SourceLink_changeSource</name></customLabels><customLabels><label
+    >Previsões do mesmo titular, moeda e direção, compatíveis com a conta de origem. Ordenadas por vencimento, valor e identidade — nunca por pontuação. Nenhuma previsão é vinculada automaticamente.</label><name
+    >AXF_SourceLink_candidatesIntro</name></customLabels><customLabels><label
+    >Nenhuma previsão elegível. Você ainda pode registrar a fonte como lançamento realizado sem previsão.</label><name
+    >AXF_SourceLink_noCandidates</name></customLabels><customLabels><label
+    >Projetada — materialização pendente (AXF-136)</label><name
+    >AXF_SourceLink_virtualBadge</name></customLabels><customLabels><label
+    >{0} ocorrência(s) projetada(s) exibidas para contexto; ainda não podem ser vinculadas.</label><name
+    >AXF_SourceLink_virtualCount</name></customLabels><customLabels><label
+    >Apenas as primeiras {0} previsões foram verificadas. Refine a busca para ver as demais.</label><name
+    >AXF_SourceLink_scanTruncated</name></customLabels><customLabels><label
+    >{0} previsão(ões) excluída(s) (já realizadas ou canceladas).</label><name
+    >AXF_SourceLink_excludedCandidates</name></customLabels><customLabels><label
+    >Registrar sem previsão (lançamento apenas realizado)</label><name
+    >AXF_SourceLink_noForecastOption</name></customLabels><customLabels><label
+    >Prevista</label><name
+    >AXF_SourceLink_statusPLANNED</name></customLabels><customLabels><label
+    >Confirmada</label><name
+    >AXF_SourceLink_statusCONFIRMED</name></customLabels><customLabels><label
+    >Estimada</label><name
+    >AXF_SourceLink_statusESTIMATED</name></customLabels><customLabels><label
+    >Valor, moeda e fonte permanecem visíveis. Qualquer alteração no valor ou na data sugeridos exige revisão explícita antes de confirmar.</label><name
+    >AXF_SourceLink_reviewIntro</name></customLabels><customLabels><label
+    >Previsão</label><name
+    >AXF_SourceLink_target</name></customLabels><customLabels><label
+    >Sem previsão — um lançamento realizado será criado a partir da fonte.</label><name
+    >AXF_SourceLink_targetNone</name></customLabels><customLabels><label
+    >Valor a vincular</label><name
+    >AXF_SourceLink_amount</name></customLabels><customLabels><label
+    >Sugerido: o remanescente da fonte, limitado ao residual da previsão.</label><name
+    >AXF_SourceLink_amountHelp</name></customLabels><customLabels><label
+    >Data de reconhecimento</label><name
+    >AXF_SourceLink_recognitionDate</name></customLabels><customLabels><label
+    >Você alterou o valor ou a data sugeridos.</label><name
+    >AXF_SourceLink_changed</name></customLabels><customLabels><label
+    >Revisei as alterações e as confirmo</label><name
+    >AXF_SourceLink_reviewed</name></customLabels><customLabels><label
+    >Confirmar vínculo</label><name
+    >AXF_SourceLink_confirm</name></customLabels><customLabels><label
+    >Confirmando…</label><name
+    >AXF_SourceLink_confirming</name></customLabels><customLabels><label
+    >Voltar</label><name>AXF_SourceLink_back</name></customLabels><customLabels
+  ><label>Vínculo confirmado</label><name
+    >AXF_SourceLink_done</name></customLabels><customLabels><label
+    >Esta confirmação já havia sido processada; o resultado anterior foi devolvido.</label><name
+    >AXF_SourceLink_doneReplayed</name></customLabels><customLabels><label
+    >Um lançamento realizado foi criado a partir da fonte.</label><name
+    >AXF_SourceLink_doneActualOnly</name></customLabels><customLabels><label
+    >Alocação</label><name
+    >AXF_SourceLink_doneAllocation</name></customLabels><customLabels><label
+    >Lançamento financeiro</label><name
+    >AXF_SourceLink_doneTarget</name></customLabels><customLabels><label
+    >Novo vínculo</label><name
+    >AXF_SourceLink_newLink</name></customLabels><customLabels><label
+    >Política</label><name
+    >AXF_SourceLink_policy</name></customLabels><customLabels><label
+    >Não foi possível concluir a operação. Nada foi salvo.</label><name
+    >AXF_SourceLink_error</name></customLabels><customLabels><label
+    >Fonte, titular ou previsão indisponível para você.</label><name
+    >AXF_SourceLink_codeUNAVAILABLE</name></customLabels><customLabels><label
+    >Alguns registros não estão acessíveis para você.</label><name
+    >AXF_SourceLink_codeNOT_ACCESSIBLE</name></customLabels><customLabels><label
+    >A solicitação está malformada.</label><name
+    >AXF_SourceLink_codeINVALID_INPUT</name></customLabels><customLabels><label
+    >Verifique valor, data e chave da operação.</label><name
+    >AXF_SourceLink_codeINVALID</name></customLabels><customLabels><label
+    >Só transações bancárias ou de cartão existentes podem ser vinculadas.</label><name
+    >AXF_SourceLink_codeINVALID_SOURCE</name></customLabels><customLabels><label
+    >A fonte não tem data, valor, moeda ou direção válidos.</label><name
+    >AXF_SourceLink_codeINVALID_SOURCE_DATA</name></customLabels><customLabels
+  ><label>A fonte não está POSTED.</label><name
+    >AXF_SourceLink_codeNOT_POSTED</name></customLabels><customLabels><label
+    >A conta bancária ou cartão não está disponível.</label><name
+    >AXF_SourceLink_codeFUNDING_NOT_AVAILABLE</name></customLabels><customLabels
+  ><label>A fonte tem revisão aberta; resolva-a primeiro.</label><name
+    >AXF_SourceLink_codeREVIEW_OPEN</name></customLabels><customLabels><label
+    >A fonte não tem valor remanescente.</label><name
+    >AXF_SourceLink_codeSOURCE_EXHAUSTED</name></customLabels><customLabels
+  ><label
+    >As alocações existentes não puderam ser verificadas com o seu acesso.</label><name
+    >AXF_SourceLink_codeALLOCATIONS_UNVERIFIED</name></customLabels><customLabels
+  ><label>A previsão não é um alvo válido para esta fonte.</label><name
+    >AXF_SourceLink_codeINVALID_TARGET</name></customLabels><customLabels><label
+    >A previsão foi cancelada.</label><name
+    >AXF_SourceLink_codeTARGET_CANCELLED</name></customLabels><customLabels
+  ><label>A previsão já está totalmente realizada.</label><name
+    >AXF_SourceLink_codeTARGET_REALIZED</name></customLabels><customLabels
+  ><label>A previsão espera outra conta ou cartão de origem.</label><name
+    >AXF_SourceLink_codeFUNDING_MISMATCH</name></customLabels><customLabels
+  ><label>As moedas da fonte e da previsão são diferentes.</label><name
+    >AXF_SourceLink_codeCURRENCY_MISMATCH</name></customLabels><customLabels
+  ><label>Esta fonte já está vinculada a esta previsão.</label><name
+    >AXF_SourceLink_codeALREADY_LINKED</name></customLabels><customLabels><label
+    >Confirme que revisou o valor ou a data alterados.</label><name
+    >AXF_SourceLink_codeREVIEW_REQUIRED</name></customLabels><customLabels
+  ><label
+    >A fonte ou a previsão mudou desde que você as carregou, ou esta chave foi usada com dados diferentes. Recarregue e revise.</label><name
+    >AXF_SourceLink_codeCONFLICT</name></customLabels><customLabels><label
+    >O valor excede a capacidade remanescente da fonte ou da previsão.</label><name
+    >AXF_SourceLink_codeUNAVAILABLE_AMOUNT</name></customLabels><customLabels
+  ><label>Defina a moeda de relatório antes de vincular.</label><name
+    >AXF_SourceLink_codeREPORTING_CURRENCY_REQUIRED</name></customLabels><customLabels
+  ><label
+    >Ocorrências projetadas precisam ser materializadas antes do vínculo (AXF-136).</label><name
+    >AXF_SourceLink_codeMATERIALIZATION_REQUIRED</name></customLabels><customLabels
+  ><label
+    >As evidências são fatos independentes sob {0} (corte abaixo). Não há pontuação, peso ou tolerância; empates e incertezas ficam explícitos e nada é confirmado automaticamente.</label><name
+    >AXF_SourceLink_evIntro</name></customLabels><customLabels><label
+    >Evidências</label><name
+    >AXF_SourceLink_evColumn</name></customLabels><customLabels><label
+    >Consultivo</label><name
+    >AXF_SourceLink_evConsultative</name></customLabels><customLabels><label
+    >Empate — evidências idênticas</label><name
+    >AXF_SourceLink_evTied</name></customLabels><customLabels><label
+    >Pouca evidência — incerto</label><name
+    >AXF_SourceLink_evLowEvidence</name></customLabels><customLabels><label
+    >{0} candidato(s) em empate; {1} com pouca evidência. Nenhum vencedor é escolhido.</label><name
+    >AXF_SourceLink_evTieCount</name></customLabels><customLabels><label
+    >Ordem de apresentação</label><name
+    >AXF_SourceLink_evSort</name></customLabels><customLabels><label
+    >Ordem da política (identidade, tipo, registro)</label><name
+    >AXF_SourceLink_evSortPOLICY</name></customLabels><customLabels><label
+    >Vencimento (só esta página)</label><name
+    >AXF_SourceLink_evSortDUE_DATE</name></customLabels><customLabels><label
+    >Identidade externa</label><name
+    >AXF_SourceLink_evfEXTERNAL_IDENTITY</name></customLabels><customLabels
+  ><label>Conta/cartão de origem</label><name
+    >AXF_SourceLink_evfSOURCE_IDENTITY</name></customLabels><customLabels><label
+    >Titular</label><name
+    >AXF_SourceLink_evfHOLDER</name></customLabels><customLabels><label
+    >Moeda</label><name
+    >AXF_SourceLink_evfCURRENCY</name></customLabels><customLabels><label
+    >Valor</label><name
+    >AXF_SourceLink_evfAMOUNT</name></customLabels><customLabels><label
+    >Remanescente</label><name
+    >AXF_SourceLink_evfRESIDUAL</name></customLabels><customLabels><label
+    >Data</label><name>AXF_SourceLink_evfDATE</name></customLabels><customLabels
+  ><label>Descrição</label><name
+    >AXF_SourceLink_evfDESCRIPTION</name></customLabels><customLabels><label
+    >Categoria</label><name
+    >AXF_SourceLink_evfCATEGORY</name></customLabels><customLabels><label
+    >idêntico</label><name
+    >AXF_SourceLink_evrEXACT</name></customLabels><customLabels><label
+    >um contém o outro</label><name
+    >AXF_SourceLink_evrCONTAINS</name></customLabels><customLabels><label
+    >fonte cobre o candidato</label><name
+    >AXF_SourceLink_evrCOVERS</name></customLabels><customLabels><label
+    >fonte cobre parte</label><name
+    >AXF_SourceLink_evrPARTIAL</name></customLabels><customLabels><label
+    >diferente</label><name
+    >AXF_SourceLink_evrDIFFERENT</name></customLabels><customLabels><label
+    >desconhecido</label><name
+    >AXF_SourceLink_evrUNKNOWN</name></customLabels><customLabels><label
+    >redigido</label><name
+    >AXF_SourceLink_evrREDACTED</name></customLabels><customLabels><label
+    >Idêntico dos dois lados.</label><name
+    >AXF_SourceLink_evxEXACT</name></customLabels><customLabels><label
+    >Após normalizar maiúsculas, espaços e acentos, um texto contém o outro. Nenhuma similaridade fuzzy é aplicada.</label><name
+    >AXF_SourceLink_evxCONTAINS</name></customLabels><customLabels><label
+    >O remanescente da fonte extingue o remanescente do candidato (diferença {0}).</label><name
+    >AXF_SourceLink_evxCOVERS</name></customLabels><customLabels><label
+    >O remanescente da fonte cobre só parte do candidato (faltam {0}).</label><name
+    >AXF_SourceLink_evxPARTIAL</name></customLabels><customLabels><label
+    >Diferente dos dois lados ({0}). Exibido como fato — nenhuma tolerância decide por você.</label><name
+    >AXF_SourceLink_evxDIFFERENT</name></customLabels><customLabels><label
+    >Indisponível de um dos lados. Desconhecido nunca é sinal negativo.</label><name
+    >AXF_SourceLink_evxUNKNOWN</name></customLabels><customLabels><label
+    >Não autorizado para você; redigido e fora da ordenação.</label><name
+    >AXF_SourceLink_evxREDACTED</name></customLabels><customLabels><label
+    >O candidato vence {0} dia(s) depois da data da fonte.</label><name
+    >AXF_SourceLink_evxDATE_AFTER</name></customLabels><customLabels><label
+    >O candidato vence {0} dia(s) antes da data da fonte.</label><name
+    >AXF_SourceLink_evxDATE_BEFORE</name></customLabels><customLabels><label
+    >Open Finance (Pluggy)</label><name
+    >AXF_SourceLink_originPLUGGY</name></customLabels><customLabels><label
+    >Importação CSV</label><name
+    >AXF_SourceLink_originCSV</name></customLabels><customLabels><label
+    >Manual</label><name
+    >AXF_SourceLink_originMANUAL</name></customLabels><customLabels><label
+    >A descrição da fonte contém a descrição da previsão (maiúsculas, espaços e acentos normalizados; sem similaridade fuzzy).</label><name
+    >AXF_SourceLink_evxDESCRIPTION_CONTAINS_CANDIDATE</name></customLabels><customLabels
+  ><label
+    >A descrição da previsão contém a descrição da fonte (maiúsculas, espaços e acentos normalizados; sem similaridade fuzzy).</label><name
+    >AXF_SourceLink_evxDESCRIPTION_CONTAINED_IN_CANDIDATE</name></customLabels><customLabels
+  ><label>A categoria da fonte contém a categoria da previsão.</label><name
+    >AXF_SourceLink_evxCATEGORY_CONTAINS_CANDIDATE</name></customLabels><customLabels
+  ><label>A categoria da previsão contém a categoria da fonte.</label><name
+    >AXF_SourceLink_evxCATEGORY_CONTAINED_IN_CANDIDATE</name></customLabels><customLabels
+  ><label>Horizontes e cenários</label><name
+    >AXF_ForecastComparison_title</name></customLabels><customLabels><label
+    >Compare o que está comprometido, provável e incerto em 3 a 24 meses. Valores entram integralmente — nada é ponderado por probabilidade.</label><name
+    >AXF_ForecastComparison_intro</name></customLabels><customLabels><label
+    >Pessoas e empresas no escopo</label><name
+    >AXF_ForecastComparison_scope</name></customLabels><customLabels><label
+    >Disponíveis</label><name
+    >AXF_ForecastComparison_scopeAvailable</name></customLabels><customLabels
+  ><label
+    >Só titulares que você pode ver são listados; titulares com acesso parcial ficam fora dos totais.</label><name
+    >AXF_ForecastComparison_scopeHelp</name></customLabels><customLabels><label
+    >Horizonte (meses)</label><name
+    >AXF_ForecastComparison_horizon</name></customLabels><customLabels><label
+    >Cenário</label><name
+    >AXF_ForecastComparison_scenario</name></customLabels><customLabels><label
+    >Conservador — só confirmados</label><name
+    >AXF_ForecastComparison_scenarioCONSERVATIVE</name></customLabels><customLabels
+  ><label>Intermediário — acrescenta prováveis</label><name
+    >AXF_ForecastComparison_scenarioINTERMEDIATE</name></customLabels><customLabels
+  ><label>Otimista — acrescenta incertos</label><name
+    >AXF_ForecastComparison_scenarioOPTIMISTIC</name></customLabels><customLabels
+  ><label>Comparar</label><name
+    >AXF_ForecastComparison_compare</name></customLabels><customLabels><label
+    >Calculando cenários…</label><name
+    >AXF_ForecastComparison_loading</name></customLabels><customLabels><label
+    >Escolha o escopo, um horizonte e um cenário e compare.</label><name
+    >AXF_ForecastComparison_idle</name></customLabels><customLabels><label
+    >Nenhum compromisso ou plano encontrado no escopo.</label><name
+    >AXF_ForecastComparison_empty</name></customLabels><customLabels><label
+    >Confiança</label><name
+    >AXF_ForecastComparison_confidence</name></customLabels><customLabels><label
+    >Informativo (somente exibição)</label><name
+    >AXF_ForecastComparison_confidenceINFORMATIVE</name></customLabels><customLabels
+  ><label>Degradado</label><name
+    >AXF_ForecastComparison_confidenceDEGRADED</name></customLabels><customLabels
+  ><label>Bloqueado</label><name
+    >AXF_ForecastComparison_confidenceBLOCKED</name></customLabels><customLabels
+  ><label>Posição em</label><name
+    >AXF_ForecastComparison_asOf</name></customLabels><customLabels><label
+    >Política</label><name
+    >AXF_ForecastComparison_policy</name></customLabels><customLabels><label
+    >Horizonte termina em</label><name
+    >AXF_ForecastComparison_horizonEnd</name></customLabels><customLabels><label
+    >Explicação</label><name
+    >AXF_ForecastComparison_explanation</name></customLabels><customLabels
+  ><label
+    >Um titular do escopo está compartilhado só parcialmente; seus compromissos ficaram de fora.</label><name
+    >AXF_ForecastComparison_reasonCOVERAGE_UNVERIFIED</name></customLabels><customLabels
+  ><label>Nenhum titular autorizado no escopo.</label><name
+    >AXF_ForecastComparison_reasonNO_AUTHORIZED_SCOPE</name></customLabels><customLabels
+  ><label
+    >O escopo tem mais cronogramas ou planos do que uma comparação consegue avaliar.</label><name
+    >AXF_ForecastComparison_reasonVOLUME_EXCEEDED</name></customLabels><customLabels
+  ><label
+    >Um cronograma continua além do avaliado (recorrência indefinida ou teto de avaliação); os totais não estão completos.</label><name
+    >AXF_ForecastComparison_reasonCOMMITMENT_UNBOUNDED</name></customLabels><customLabels
+  ><label
+    >Há obrigações depois do horizonte selecionado; elas aparecem abaixo e afetam a capacidade.</label><name
+    >AXF_ForecastComparison_reasonOBLIGATIONS_BEYOND_HORIZON</name></customLabels><customLabels
+  ><label
+    >Há ocorrências vencidas antes da data de posição; estão listadas separadamente.</label><name
+    >AXF_ForecastComparison_reasonOVERDUE_OBLIGATIONS</name></customLabels><customLabels
+  ><label
+    >Mais de uma moeda no escopo; valores permanecem na moeda original, sem conversão.</label><name
+    >AXF_ForecastComparison_reasonMULTI_CURRENCY</name></customLabels><customLabels
+  ><label>A data de posição não é hoje.</label><name
+    >AXF_ForecastComparison_reasonAS_OF_NOT_TODAY</name></customLabels><customLabels
+  ><label>Nenhuma ocorrência de cronograma ou plano contribuiu.</label><name
+    >AXF_ForecastComparison_reasonNO_CONTRIBUTIONS</name></customLabels><customLabels
+  ><label>Uma contribuição sem moeda ou data foi ignorada.</label><name
+    >AXF_ForecastComparison_reasonINCOMPLETE_CONTRIBUTION</name></customLabels><customLabels
+  ><label
+    >Um cronograma mudou durante a leitura; seu compromisso não foi somado.</label><name
+    >AXF_ForecastComparison_reasonSCHEDULE_STALE</name></customLabels><customLabels
+  ><label
+    >Um cronograma tem referências confirmadas conflitantes; seu compromisso está bloqueado.</label><name
+    >AXF_ForecastComparison_reasonSCHEDULE_AMBIGUOUS</name></customLabels><customLabels
+  ><label>Um cronograma não pôde ser projetado.</label><name
+    >AXF_ForecastComparison_reasonSCHEDULE_INVALID</name></customLabels><customLabels
+  ><label>Um cronograma usa uma modalidade não suportada.</label><name
+    >AXF_ForecastComparison_reasonSCHEDULE_UNSUPPORTED</name></customLabels><customLabels
+  ><label>Um cronograma do escopo não está acessível para você.</label><name
+    >AXF_ForecastComparison_reasonSCHEDULE_FORBIDDEN</name></customLabels><customLabels
+  ><label>Um cronograma do escopo não pôde ser lido.</label><name
+    >AXF_ForecastComparison_reasonSCHEDULE_NOT_FOUND</name></customLabels><customLabels
+  ><label>Mês</label><name
+    >AXF_ForecastComparison_colPeriod</name></customLabels><customLabels><label
+    >Entradas</label><name
+    >AXF_ForecastComparison_colIn</name></customLabels><customLabels><label
+    >Saídas</label><name
+    >AXF_ForecastComparison_colOut</name></customLabels><customLabels><label
+    >Líquido</label><name
+    >AXF_ForecastComparison_colNet</name></customLabels><customLabels><label
+    >Confirmado</label><name
+    >AXF_ForecastComparison_colConfirmed</name></customLabels><customLabels
+  ><label>Provável</label><name
+    >AXF_ForecastComparison_colProbable</name></customLabels><customLabels
+  ><label>Incerto</label><name
+    >AXF_ForecastComparison_colUncertain</name></customLabels><customLabels
+  ><label>Mês a mês ({0})</label><name
+    >AXF_ForecastComparison_periods</name></customLabels><customLabels><label
+    >Todos os horizontes</label><name
+    >AXF_ForecastComparison_horizons</name></customLabels><customLabels><label
+    >Horizonte</label><name
+    >AXF_ForecastComparison_colHorizon</name></customLabels><customLabels><label
+    >Conservador</label><name
+    >AXF_ForecastComparison_colConservative</name></customLabels><customLabels
+  ><label>Intermediário</label><name
+    >AXF_ForecastComparison_colIntermediate</name></customLabels><customLabels
+  ><label>Otimista</label><name
+    >AXF_ForecastComparison_colOptimistic</name></customLabels><customLabels
+  ><label>Além do horizonte (saídas / entradas)</label><name
+    >AXF_ForecastComparison_colBeyond</name></customLabels><customLabels><label
+    >Além do horizonte selecionado</label><name
+    >AXF_ForecastComparison_beyond</name></customLabels><customLabels><label
+    >{0} ocorrência(s) após {1}: {2} de saída, {3} de entrada. Um horizonte curto não as esconde.</label><name
+    >AXF_ForecastComparison_beyondText</name></customLabels><customLabels><label
+    >Vencidas antes da posição</label><name
+    >AXF_ForecastComparison_overdue</name></customLabels><customLabels><label
+    >Fontes</label><name
+    >AXF_ForecastComparison_sources</name></customLabels><customLabels><label
+    >Cronograma</label><name
+    >AXF_ForecastComparison_sourceSCHEDULE</name></customLabels><customLabels
+  ><label>Planos avulsos</label><name
+    >AXF_ForecastComparison_sourcePLAN</name></customLabels><customLabels><label
+    >ocorrências</label><name
+    >AXF_ForecastComparison_occurrences</name></customLabels><customLabels
+  ><label>cobertura incompleta</label><name
+    >AXF_ForecastComparison_incompleteCoverage</name></customLabels><customLabels
+  ><label>Exclusões</label><name
+    >AXF_ForecastComparison_exclusions</name></customLabels><customLabels><label
+    >Titular não autorizado (não exibido)</label><name
+    >AXF_ForecastComparison_exNOT_AUTHORIZED</name></customLabels><customLabels
+  ><label>Registro não é uma pessoa ou empresa do Axon</label><name
+    >AXF_ForecastComparison_exNOT_A_HOLDER</name></customLabels><customLabels
+  ><label>Titular com acesso parcial retido</label><name
+    >AXF_ForecastComparison_exCOVERAGE_UNVERIFIED</name></customLabels><customLabels
+  ><label>Revisar os cronogramas que alimentam estes totais</label><name
+    >AXF_ForecastComparison_actionREVIEW_SCHEDULES</name></customLabels><customLabels
+  ><label>Nenhuma ação pode ser tomada a partir desta comparação.</label><name
+    >AXF_ForecastComparison_actionNone</name></customLabels><customLabels><label
+    >Não foi possível calcular a comparação. Tente novamente.</label><name
+    >AXF_ForecastComparison_error</name></customLabels><customLabels><label
+    >Tentar novamente</label><name
+    >AXF_ForecastComparison_retry</name></customLabels><customLabels><label
+    >Você não tem permissão para comparar previsões.</label><name
+    >AXF_ForecastComparison_codeForbidden</name></customLabels><customLabels
+  ><label
+    >Parte dos dados desta comparação não está acessível para você.</label><name
+    >AXF_ForecastComparison_codeNotAccessible</name></customLabels><customLabels
+  ><label>Requisição inválida.</label><name
+    >AXF_ForecastComparison_codeInvalidInput</name></customLabels><customLabels
+  ><label>Comparação atualizada: {0}, {1} meses, confiança {2}.</label><name
+    >AXF_ForecastComparison_updated</name></customLabels><customLabels><label
+    >O escopo está temporariamente indisponível. Tente novamente.</label><name
+    >AXF_ForecastComparison_codeUnavailable</name></customLabels><customLabels
+  ><label>Ocorreu um erro inesperado. Nada foi alterado.</label><name
+    >AXF_ForecastComparison_codeUnexpected</name></customLabels><customLabels
+  ><label>Reverter conciliação</label><name
+    >AXF_ReconciliationReversal_title</name></customLabels><customLabels><label
+    >Escolha uma aplicação confirmada e reverta-a com um motivo. A alocação original nunca é editada nem apagada: uma alocação compensatória imutável é acrescentada e o plano e a fonte recuperam sua contribuição líquida.</label><name
+    >AXF_ReconciliationReversal_intro</name></customLabels><customLabels><label
+    >Você não tem a capacidade de reverter conciliações.</label><name
+    >AXF_ReconciliationReversal_noCapability</name></customLabels><customLabels
+  ><label>Titular</label><name
+    >AXF_ReconciliationReversal_holder</name></customLabels><customLabels><label
+    >Selecione um titular</label><name
+    >AXF_ReconciliationReversal_holderPlaceholder</name></customLabels><customLabels
+  ><label>Carregar aplicações</label><name
+    >AXF_ReconciliationReversal_load</name></customLabels><customLabels><label
+    >Carregar mais</label><name
+    >AXF_ReconciliationReversal_loadMore</name></customLabels><customLabels
+  ><label>Carregando…</label><name
+    >AXF_ReconciliationReversal_loading</name></customLabels><customLabels
+  ><label>Nenhuma aplicação confirmada para este titular.</label><name
+    >AXF_ReconciliationReversal_empty</name></customLabels><customLabels><label
+    >Reconhecida em</label><name
+    >AXF_ReconciliationReversal_colDate</name></customLabels><customLabels
+  ><label>Lançamento</label><name
+    >AXF_ReconciliationReversal_colTarget</name></customLabels><customLabels
+  ><label>Papel</label><name
+    >AXF_ReconciliationReversal_colRole</name></customLabels><customLabels
+  ><label>Fonte</label><name
+    >AXF_ReconciliationReversal_colSource</name></customLabels><customLabels
+  ><label>Valor</label><name
+    >AXF_ReconciliationReversal_colAmount</name></customLabels><customLabels
+  ><label>Situação</label><name
+    >AXF_ReconciliationReversal_colStatus</name></customLabels><customLabels
+  ><label>Ação</label><name
+    >AXF_ReconciliationReversal_colAction</name></customLabels><customLabels
+  ><label>Confirmada</label><name
+    >AXF_ReconciliationReversal_statusOpen</name></customLabels><customLabels
+  ><label>Revertida ({0})</label><name
+    >AXF_ReconciliationReversal_statusReversed</name></customLabels><customLabels
+  ><label
+    >Ocorrência de cronograma — ajuste de obrigação pendente (AXF-104)</label><name
+    >AXF_ReconciliationReversal_scheduleLinked</name></customLabels><customLabels
+  ><label>Reverter…</label><name
+    >AXF_ReconciliationReversal_select</name></customLabels><customLabels><label
+    >Confirme a reversão. O motivo fica registrado na alocação compensatória e passa a compor sua impressão digital: repetir este comando devolve o mesmo resultado; um motivo diferente conflita.</label><name
+    >AXF_ReconciliationReversal_reviewIntro</name></customLabels><customLabels
+  ><label>Aplicação selecionada</label><name
+    >AXF_ReconciliationReversal_selected</name></customLabels><customLabels
+  ><label>Motivo</label><name
+    >AXF_ReconciliationReversal_reason</name></customLabels><customLabels><label
+    >Selecione um motivo</label><name
+    >AXF_ReconciliationReversal_reasonPlaceholder</name></customLabels><customLabels
+  ><label>Erro do usuário</label><name
+    >AXF_ReconciliationReversal_reasonUSER_ERROR</name></customLabels><customLabels
+  ><label>Vínculo duplicado</label><name
+    >AXF_ReconciliationReversal_reasonDUPLICATE_LINK</name></customLabels><customLabels
+  ><label>Previsão errada</label><name
+    >AXF_ReconciliationReversal_reasonWRONG_TARGET</name></customLabels><customLabels
+  ><label>Fonte alterada</label><name
+    >AXF_ReconciliationReversal_reasonSOURCE_CHANGED</name></customLabels><customLabels
+  ><label>Outro</label><name
+    >AXF_ReconciliationReversal_reasonOTHER</name></customLabels><customLabels
+  ><label>Observação (opcional, até 255 caracteres)</label><name
+    >AXF_ReconciliationReversal_note</name></customLabels><customLabels><label
+    >Confirmar reversão</label><name
+    >AXF_ReconciliationReversal_confirm</name></customLabels><customLabels
+  ><label>Revertendo…</label><name
+    >AXF_ReconciliationReversal_confirming</name></customLabels><customLabels
+  ><label>Voltar</label><name
+    >AXF_ReconciliationReversal_back</name></customLabels><customLabels><label
+    >Reversão registrada</label><name
+    >AXF_ReconciliationReversal_done</name></customLabels><customLabels><label
+    >Este comando já havia sido processado; a compensação anterior foi devolvida.</label><name
+    >AXF_ReconciliationReversal_doneReplayed</name></customLabels><customLabels
+  ><label
+    >Lançamento apenas realizado: nenhuma dívida de previsão foi criada por esta reversão.</label><name
+    >AXF_ReconciliationReversal_doneActualOnly</name></customLabels><customLabels
+  ><label>Alocação compensatória</label><name
+    >AXF_ReconciliationReversal_doneCompensation</name></customLabels><customLabels
+  ><label>Alocação original</label><name
+    >AXF_ReconciliationReversal_doneOriginal</name></customLabels><customLabels
+  ><label
+    >Plano após: realizado {0}, remanescente {1} ({2}). Remanescente da fonte: {3}.</label><name
+    >AXF_ReconciliationReversal_doneNet</name></customLabels><customLabels
+  ><label
+    >Ajuste de obrigação e recomputação de referência recorrente não fazem parte deste comando (AXF-104).</label><name
+    >AXF_ReconciliationReversal_boundaryAXF104_OBLIGATION_ADJUSTMENT_PENDING</name></customLabels><customLabels
+  ><label>Nova reversão</label><name
+    >AXF_ReconciliationReversal_newReversal</name></customLabels><customLabels
+  ><label>Política</label><name
+    >AXF_ReconciliationReversal_policy</name></customLabels><customLabels><label
+    >Não foi possível concluir a operação. Nada foi salvo.</label><name
+    >AXF_ReconciliationReversal_error</name></customLabels><customLabels><label
+    >Alocação, titular ou fonte indisponível para você.</label><name
+    >AXF_ReconciliationReversal_codeUNAVAILABLE</name></customLabels><customLabels
+  ><label>Alguns registros não estão acessíveis para você.</label><name
+    >AXF_ReconciliationReversal_codeNOT_ACCESSIBLE</name></customLabels><customLabels
+  ><label>A solicitação está malformada.</label><name
+    >AXF_ReconciliationReversal_codeINVALID_INPUT</name></customLabels><customLabels
+  ><label>Verifique o tamanho da observação e a chave da operação.</label><name
+    >AXF_ReconciliationReversal_codeINVALID</name></customLabels><customLabels
+  ><label>Selecione um motivo válido.</label><name
+    >AXF_ReconciliationReversal_codeINVALID_REASON</name></customLabels><customLabels
+  ><label>Só aplicações confirmadas podem ser revertidas.</label><name
+    >AXF_ReconciliationReversal_codeINVALID_TARGET</name></customLabels><customLabels
+  ><label
+    >Esta alocação já foi revertida por outro comando; a compensação anterior permanece.</label><name
+    >AXF_ReconciliationReversal_codeALREADY_REVERSED</name></customLabels><customLabels
+  ><label
+    >O plano mudou desde que você o carregou, ou esta chave foi usada com dados diferentes. Recarregue e revise.</label><name
+    >AXF_ReconciliationReversal_codeCONFLICT</name></customLabels><customLabels
+  ><label>Defina a moeda de relatório primeiro.</label><name
+    >AXF_ReconciliationReversal_codeREPORTING_CURRENCY_REQUIRED</name></customLabels><customLabels
+  ><label>Conta bancária</label><name
+    >AXF_ReconciliationReversal_kindBANK</name></customLabels><customLabels
+  ><label>Cartão de crédito</label><name
+    >AXF_ReconciliationReversal_kindCARD</name></customLabels><customLabels
+  ><label>Caixa</label><name
+    >AXF_ReconciliationReversal_kindCASH</name></customLabels><customLabels
+  ><label>Plano realizado após:</label><name
+    >AXF_ReconciliationReversal_doneRealized</name></customLabels><customLabels
+  ><label>remanescente</label><name
+    >AXF_ReconciliationReversal_doneRemaining</name></customLabels><customLabels
+  ><label>remanescente da fonte (efeitos visíveis)</label><name
+    >AXF_ReconciliationReversal_doneSourceRemaining</name></customLabels><customLabels
+  ><label>remanescente da fonte não verificável com o seu acesso</label><name
+    >AXF_ReconciliationReversal_doneSourceUnknown</name></customLabels></Translations>

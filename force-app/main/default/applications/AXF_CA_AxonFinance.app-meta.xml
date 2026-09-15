@@ -18,9 +18,12 @@
     <tabs>AXF_SourceHealth</tabs>
     <tabs>AXF_CT_ConfidencePanel</tabs>
     <tabs>AXF_Holders</tabs>
+    <tabs>AXF_CT_ForecastComparison</tabs>
     <tabs>AXF_CT_ArchiveExplorer</tabs>
     <tabs>AXF_ReportCurrency</tabs>
     <tabs>AXF_CT_BillingComposer</tabs>
     <tabs>AXF_CT_SharedExpenses</tabs>
+    <tabs>AXF_CT_SourceLink</tabs>
+    <tabs>AXF_CT_ReconciliationReversal</tabs>
     <uiType>Lightning</uiType>
 </CustomApplication>
