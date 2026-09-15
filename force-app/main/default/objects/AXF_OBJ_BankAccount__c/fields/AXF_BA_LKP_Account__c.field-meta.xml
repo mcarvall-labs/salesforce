@@ -4,7 +4,7 @@
     <label>Titular</label>
     <type>Lookup</type>
     <referenceTo>Account</referenceTo>
-    <relationshipName>AXF_REL_BankAccounts</relationshipName>
+    <relationshipName>AXF_REL_BankAccounts2</relationshipName>
     <deleteConstraint>SetNull</deleteConstraint>
     <required>false</required>
 </CustomField>
