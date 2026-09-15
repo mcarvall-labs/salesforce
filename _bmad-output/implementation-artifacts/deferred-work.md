@@ -13,7 +13,7 @@
 ## AXF-122 — Consolidated totals (code review 2026-09-15, PR #111)
 
 - **Joint holders** — `ALT_CLS_ConsolidationService` attributes each source to `AXF_BA/CC_LKP_Account__c` only; `AXF_OBJ_AccountHolder__c` (AXF-85 PRIMARY/SECOND/THIRD) is ignored. Needs a domain decision (split rule vs. allocation-only) before the sum can claim joint accounts.
-- **Unverified holder facts** — facts of `UNKNOWN` holders are never loaded, so confirmed shares attributed *into* the authorized scope from those facts are lost without a reason. Would require loading facts by allocation set rather than by source.
+- **Unverified holder facts** — facts of `UNKNOWN` holders are never loaded, so confirmed shares attributed _into_ the authorized scope from those facts are lost without a reason. Would require loading facts by allocation set rather than by source.
 - **Private confirmed sets** — an EAS the caller cannot see (OWD Private) yields holder attribution silently; only object/field access degrades. Consider `ALT_CLS_EconomicAllocationIntegrity` (without sharing, ids only) to detect "set exists but unreadable".
 - **Capability packaging** — `AXF_CanConsolidate` lives in the Gestor PS instead of a per-capability PS like `AXF_PS_Realization`.
 - **Effective window echo** — `Result.fromDate/toDate` echo the input; the effective bounds (platform Date range when null) are not returned.
