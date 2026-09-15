@@ -1,6 +1,5 @@
 <?xml version="1.0" encoding="UTF-8" ?>
-<PermissionSet xmlns="http://soap.sforce.com/2006/04/metadata">
-  <description
+<PermissionSet xmlns="http://soap.sforce.com/2006/04/metadata"><description
   >Componente do PSG AXF_PSG_GestorFinanceiro. Titulares (Account/Contact): consultar/cadastrar/editar; sem Delete/ViewAll/ModifyAll. Concede AXF_CanConfigure e AXF_CanConsolidate. AXF-7 / AXF-80 / AXF-82 / AXF-88 / AXF-11 / AXF-122.</description>
   <hasActivationRequired>false</hasActivationRequired>
   <label>Axon - Gestor Financeiro (componente)</label>
@@ -200,6 +199,14 @@
     <apexClass>AXF_CLS_CTRL_BillingComposer</apexClass>
     <enabled>true</enabled>
   </classAccesses>
+  <classAccesses>
+    <apexClass>ALT_CLS_SharedExpenseService</apexClass>
+    <enabled>true</enabled>
+  </classAccesses>
+  <classAccesses>
+    <apexClass>AXF_CLS_CTRL_SharedExpense</apexClass>
+    <enabled>true</enabled>
+  </classAccesses>
   <customPermissions>
     <enabled>true</enabled>
     <name>AXF_CanConfigure</name>
@@ -207,6 +214,10 @@
   <customPermissions>
     <enabled>true</enabled>
     <name>AXF_CanConsolidate</name>
+  </customPermissions>
+  <customPermissions>
+    <enabled>true</enabled>
+    <name>AXF_CanShareExpense</name>
   </customPermissions>
   <fieldPermissions>
     <editable>true</editable>
@@ -1241,6 +1252,37 @@
     <field>AXF_OBJ_FinancialTransaction__c.AXF_FTX_PKL_PlanKind__c</field>
     <readable>true</readable>
   </fieldPermissions>
+  <fieldPermissions>
+    <editable>true</editable>
+    <field>AXF_OBJ_SharedExpenseGrant__c.AXF_SEG_LKP_Collaborator__c</field>
+    <readable>true</readable>
+  </fieldPermissions>
+  <fieldPermissions>
+    <editable>true</editable>
+    <field>AXF_OBJ_SharedExpenseGrant__c.AXF_SEG_DT_RevokedAt__c</field>
+    <readable>true</readable>
+  </fieldPermissions>
+  <fieldPermissions>
+    <editable>true</editable>
+    <field>AXF_OBJ_SharedExpenseGrant__c.AXF_SEG_LKP_RevokedBy__c</field>
+    <readable>true</readable>
+  </fieldPermissions>
+  <fieldPermissions>
+    <editable>false</editable>
+    <field>AXF_OBJ_SharedExpenseGrant__c.AXF_SEG_NUM_Version__c</field>
+    <readable>true</readable>
+  </fieldPermissions>
+  <fieldPermissions>
+    <editable>false</editable>
+    <field>AXF_OBJ_SharedExpenseGrant__c.AXF_SEG_TXT_LastRequestId__c</field>
+    <readable>true</readable>
+  </fieldPermissions>
+  <fieldPermissions>
+    <editable>false</editable>
+    <field
+    >AXF_OBJ_SharedExpenseGrant__c.AXF_SEG_TXT_LastEditRequestId__c</field>
+    <readable>true</readable>
+  </fieldPermissions>
   <objectPermissions>
     <allowCreate>true</allowCreate>
     <allowDelete>false</allowDelete>
@@ -1502,6 +1544,15 @@
     <object>AXF_OBJ_BillingDocumentWorkAllocation__c</object>
     <viewAllRecords>false</viewAllRecords>
   </objectPermissions>
+  <objectPermissions>
+    <allowCreate>true</allowCreate>
+    <allowDelete>false</allowDelete>
+    <allowEdit>true</allowEdit>
+    <allowRead>true</allowRead>
+    <modifyAllRecords>false</modifyAllRecords>
+    <object>AXF_OBJ_SharedExpenseGrant__c</object>
+    <viewAllRecords>false</viewAllRecords>
+  </objectPermissions>
   <recordTypeVisibilities>
     <recordType>Account.AXF_Business</recordType>
     <visible>true</visible>
@@ -1560,6 +1611,10 @@
   </tabSettings>
   <tabSettings>
     <tab>AXF_CT_BillingComposer</tab>
+    <visibility>Visible</visibility>
+  </tabSettings>
+<tabSettings>
+    <tab>AXF_CT_SharedExpenses</tab>
     <visibility>Visible</visibility>
   </tabSettings>
 </PermissionSet>

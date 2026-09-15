@@ -456,4 +456,193 @@
     >Lifecycle</shortDescription><value>Open</value></labels><labels><fullName
     >AXF_BillingComposer_lifecycleClosed</fullName><language
     >en_US</language><protected>false</protected><shortDescription
-    >Lifecycle</shortDescription><value>Closed</value></labels></CustomLabels>
+    >Lifecycle</shortDescription><value>Closed</value></labels><labels><fullName
+    >AXF_SharedExpense_title</fullName><language>en_US</language><protected
+    >false</protected><shortDescription>Title</shortDescription><value
+    >Shared expense</value></labels><labels><fullName
+    >AXF_SharedExpense_ownerIntro</fullName><language>en_US</language><protected
+    >false</protected><shortDescription>Owner intro</shortDescription><value
+    >Grant a participant limited access to this expense: they see only the description, category, amount and due date, never the source account or other data.</value></labels><labels
+  ><fullName>AXF_SharedExpense_collaboratorIntro</fullName><language
+    >en_US</language><protected>false</protected><shortDescription
+    >Collaborator intro</shortDescription><value
+    >Expenses shared with you. You can view, and edit only the permitted fields when allowed.</value></labels><labels
+  ><fullName>AXF_SharedExpense_collaborator</fullName><language
+    >en_US</language><protected>false</protected><shortDescription
+    >Collaborator</shortDescription><value>Collaborator</value></labels><labels
+  ><fullName>AXF_SharedExpense_permission</fullName><language
+    >en_US</language><protected>false</protected><shortDescription
+    >Permission</shortDescription><value>Permission</value></labels><labels
+  ><fullName>AXF_SharedExpense_canView</fullName><language
+    >en_US</language><protected>false</protected><shortDescription
+    >Can view</shortDescription><value>Can view</value></labels><labels
+  ><fullName>AXF_SharedExpense_canEdit</fullName><language
+    >en_US</language><protected>false</protected><shortDescription
+    >Can edit</shortDescription><value>Can edit</value></labels><labels
+  ><fullName>AXF_SharedExpense_share</fullName><language
+    >en_US</language><protected>false</protected><shortDescription
+    >Share</shortDescription><value>Share</value></labels><labels><fullName
+    >AXF_SharedExpense_revoke</fullName><language>en_US</language><protected
+    >false</protected><shortDescription>Revoke</shortDescription><value
+    >Remove access</value></labels><labels><fullName
+    >AXF_SharedExpense_grants</fullName><language>en_US</language><protected
+    >false</protected><shortDescription>Grants</shortDescription><value
+    >Who has access</value></labels><labels><fullName
+    >AXF_SharedExpense_noGrants</fullName><language>en_US</language><protected
+    >false</protected><shortDescription>No grants</shortDescription><value
+    >Nobody else has access to this expense.</value></labels><labels><fullName
+    >AXF_SharedExpense_status</fullName><language>en_US</language><protected
+    >false</protected><shortDescription>Status</shortDescription><value
+    >Status</value></labels><labels><fullName
+    >AXF_SharedExpense_active</fullName><language>en_US</language><protected
+    >false</protected><shortDescription>Active</shortDescription><value
+    >Active</value></labels><labels><fullName
+    >AXF_SharedExpense_revoked</fullName><language>en_US</language><protected
+    >false</protected><shortDescription>Revoked</shortDescription><value
+    >Revoked</value></labels><labels><fullName
+    >AXF_SharedExpense_sharedList</fullName><language>en_US</language><protected
+    >false</protected><shortDescription>Shared list</shortDescription><value
+    >Shared with me</value></labels><labels><fullName
+    >AXF_SharedExpense_noShared</fullName><language>en_US</language><protected
+    >false</protected><shortDescription>No shared</shortDescription><value
+    >No expense has been shared with you.</value></labels><labels><fullName
+    >AXF_SharedExpense_expense</fullName><language>en_US</language><protected
+    >false</protected><shortDescription>Expense</shortDescription><value
+    >Expense</value></labels><labels><fullName
+    >AXF_SharedExpense_description</fullName><language
+    >en_US</language><protected>false</protected><shortDescription
+    >Description</shortDescription><value>Description</value></labels><labels
+  ><fullName>AXF_SharedExpense_category</fullName><language
+    >en_US</language><protected>false</protected><shortDescription
+    >Category</shortDescription><value>Category</value></labels><labels
+  ><fullName>AXF_SharedExpense_amount</fullName><language
+    >en_US</language><protected>false</protected><shortDescription
+    >Amount</shortDescription><value>Amount</value></labels><labels><fullName
+    >AXF_SharedExpense_dueDate</fullName><language>en_US</language><protected
+    >false</protected><shortDescription>Due date</shortDescription><value
+    >Due date</value></labels><labels><fullName
+    >AXF_SharedExpense_yourAccess</fullName><language>en_US</language><protected
+    >false</protected><shortDescription>Your access</shortDescription><value
+    >Your access</value></labels><labels><fullName
+    >AXF_SharedExpense_viewOnly</fullName><language>en_US</language><protected
+    >false</protected><shortDescription>View only</shortDescription><value
+    >You can view this expense. Editing is not allowed.</value></labels><labels
+  ><fullName>AXF_SharedExpense_editAllowed</fullName><language
+    >en_US</language><protected>false</protected><shortDescription
+    >Edit allowed</shortDescription><value
+    >You can view and edit description and category.</value></labels><labels
+  ><fullName>AXF_SharedExpense_open</fullName><language
+    >en_US</language><protected>false</protected><shortDescription
+    >Open</shortDescription><value>Open</value></labels><labels><fullName
+    >AXF_SharedExpense_back</fullName><language>en_US</language><protected
+    >false</protected><shortDescription>Back</shortDescription><value
+    >Back</value></labels><labels><fullName
+    >AXF_SharedExpense_save</fullName><language>en_US</language><protected
+    >false</protected><shortDescription>Save</shortDescription><value
+    >Save changes</value></labels><labels><fullName
+    >AXF_SharedExpense_confirmTitle</fullName><language
+    >en_US</language><protected>false</protected><shortDescription
+    >Confirm title</shortDescription><value
+    >Confirm change</value></labels><labels><fullName
+    >AXF_SharedExpense_confirmBody</fullName><language
+    >en_US</language><protected>false</protected><shortDescription
+    >Confirm body</shortDescription><value
+    >You are about to change the permitted fields of expense {0} shared with you. The owner will be notified.</value></labels><labels
+  ><fullName>AXF_SharedExpense_confirmRealizeBody</fullName><language
+    >en_US</language><protected>false</protected><shortDescription
+    >Confirm realize body</shortDescription><value
+    >You are about to confirm the realization of expense {0} for the amount {1}. This creates an immutable financial effect and notifies the owner.</value></labels><labels
+  ><fullName>AXF_SharedExpense_confirm</fullName><language
+    >en_US</language><protected>false</protected><shortDescription
+    >Confirm</shortDescription><value>Confirm</value></labels><labels><fullName
+    >AXF_SharedExpense_cancel</fullName><language>en_US</language><protected
+    >false</protected><shortDescription>Cancel</shortDescription><value
+    >Cancel</value></labels><labels><fullName
+    >AXF_SharedExpense_markPaid</fullName><language>en_US</language><protected
+    >false</protected><shortDescription>Mark paid</shortDescription><value
+    >Mark as paid</value></labels><labels><fullName
+    >AXF_SharedExpense_realizationAmount</fullName><language
+    >en_US</language><protected>false</protected><shortDescription
+    >Realization amount</shortDescription><value
+    >Amount paid</value></labels><labels><fullName
+    >AXF_SharedExpense_realizationDate</fullName><language
+    >en_US</language><protected>false</protected><shortDescription
+    >Realization date</shortDescription><value
+    >Payment date</value></labels><labels><fullName
+    >AXF_SharedExpense_saved</fullName><language>en_US</language><protected
+    >false</protected><shortDescription>Saved</shortDescription><value
+    >Changes saved.</value></labels><labels><fullName
+    >AXF_SharedExpense_realized</fullName><language>en_US</language><protected
+    >false</protected><shortDescription>Realized</shortDescription><value
+    >Realization confirmed.</value></labels><labels><fullName
+    >AXF_SharedExpense_shared</fullName><language>en_US</language><protected
+    >false</protected><shortDescription>Shared</shortDescription><value
+    >Access granted.</value></labels><labels><fullName
+    >AXF_SharedExpense_revokedDone</fullName><language
+    >en_US</language><protected>false</protected><shortDescription
+    >Revoked done</shortDescription><value
+    >Access removed. Independent rights of the collaborator are preserved.</value></labels><labels
+  ><fullName>AXF_SharedExpense_loading</fullName><language
+    >en_US</language><protected>false</protected><shortDescription
+    >Loading</shortDescription><value>Loading…</value></labels><labels><fullName
+    >AXF_SharedExpense_error</fullName><language>en_US</language><protected
+    >false</protected><shortDescription>Error</shortDescription><value
+    >The operation could not be completed.</value></labels><labels><fullName
+    >AXF_SharedExpense_codeForbidden</fullName><language
+    >en_US</language><protected>false</protected><shortDescription
+    >Forbidden</shortDescription><value
+    >You are not allowed to perform this action.</value></labels><labels
+  ><fullName>AXF_SharedExpense_codeNotAccessible</fullName><language
+    >en_US</language><protected>false</protected><shortDescription
+    >Not accessible</shortDescription><value
+    >This expense is not available to you.</value></labels><labels><fullName
+    >AXF_SharedExpense_codeConflict</fullName><language
+    >en_US</language><protected>false</protected><shortDescription
+    >Conflict</shortDescription><value
+    >The expense changed since you opened it. Reload and try again.</value></labels><labels
+  ><fullName>AXF_SharedExpense_codeInvalidInput</fullName><language
+    >en_US</language><protected>false</protected><shortDescription
+    >Invalid input</shortDescription><value
+    >Invalid request.</value></labels><labels><fullName
+    >AXF_SharedExpense_codeRealizationDenied</fullName><language
+    >en_US</language><protected>false</protected><shortDescription
+    >Realization denied</shortDescription><value
+    >You cannot confirm the realization of this expense.</value></labels><labels
+  ><fullName>AXF_SharedExpense_codeRejected</fullName><language
+    >en_US</language><protected>false</protected><shortDescription
+    >Rejected</shortDescription><value
+    >The change was rejected by a financial protection rule.</value></labels><labels
+  ><fullName>AXF_SharedExpense_codeCollaboratorNotFound</fullName><language
+    >en_US</language><protected>false</protected><shortDescription
+    >Collaborator not found</shortDescription><value
+    >Collaborator not found or inactive.</value></labels><labels><fullName
+    >AXF_SharedExpense_codeInvalidState</fullName><language
+    >en_US</language><protected>false</protected><shortDescription
+    >Invalid state</shortDescription><value
+    >Only planned expenses can be shared or edited.</value></labels><labels
+  ><fullName>AXF_SharedExpense_codeCollaboratorNotEligible</fullName><language
+    >en_US</language><protected>false</protected><shortDescription
+    >Not eligible</shortDescription><value
+    >This user cannot collaborate (no Participante permission).</value></labels><labels
+  ><fullName>AXF_SharedExpense_noAccess</fullName><language
+    >en_US</language><protected>false</protected><shortDescription
+    >No access</shortDescription><value
+    >Nothing to show here: open a planned expense you own to share it, or ask for collaboration access.</value></labels><labels
+  ><fullName>AXF_SharedExpense_noCollaborators</fullName><language
+    >en_US</language><protected>false</protected><shortDescription
+    >No collaborators</shortDescription><value
+    >No eligible collaborator found.</value></labels><labels><fullName
+    >AXF_SharedExpense_confirmRevokeBody</fullName><language
+    >en_US</language><protected>false</protected><shortDescription
+    >Confirm revoke</shortDescription><value
+    >Revoke the access of {0}? Their independent rights are kept.</value></labels><labels
+  ><fullName>AXF_SharedExpense_statusPlanned</fullName><language
+    >en_US</language><protected>false</protected><shortDescription
+    >Status</shortDescription><value>Planned</value></labels><labels><fullName
+    >AXF_SharedExpense_statusConfirmed</fullName><language
+    >en_US</language><protected>false</protected><shortDescription
+    >Status</shortDescription><value>Confirmed</value></labels><labels><fullName
+    >AXF_SharedExpense_conflictReloaded</fullName><language
+    >en_US</language><protected>false</protected><shortDescription
+    >Conflict</shortDescription><value
+    >The expense changed meanwhile; the latest values were reloaded.</value></labels></CustomLabels>
