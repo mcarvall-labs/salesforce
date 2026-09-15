@@ -14,6 +14,12 @@
  * - Level: `BLOCKED` when nothing readable/authorized (or policy/field access missing),
  *   `DEGRADED` when any included source is stale/unknown or anything was excluded, otherwise
  *   `INFORMATIVE`. The UI only renders these; it never recalculates.
+ * - A readable Account outside the Axon record types is `NOT_A_HOLDER`; at most `MAX_SCOPE`
+ *   holders per request; freshness is compared in milliseconds against `asOf` (a source at or
+ *   past its limit is STALE; a success recorded in the future is UNKNOWN + `FUTURE_SUCCESS`).
+ * - Manual sources without an import timestamp fall back to the newest fact's creation time and
+ *   carry `IMPORT_DATE_MISSING`, so a source with facts is never reported as "never succeeded".
+ * - Exceptions of excluded sources stay on the row but never become panel reasons.
  * - Matching/Forecasting canonical states are the sibling story's concern; no score is invented.
  */
 public with sharing class ALT_CLS_ConfidencePanelService {
@@ -22,9 +28,16 @@ public with sharing class ALT_CLS_ConfidencePanelService {
   public static final String LEVEL_BLOCKED = 'BLOCKED';
   private static final String CP_EXPLAIN = 'AXF_CanExplainConfidence';
   private static final Set<String> AXON_RECORD_TYPES = new Set<String>{
-    'AXF_Person',
-    'AXF_Business'
+    ALT_CLS_AxonHolder.RT_PERSON,
+    ALT_CLS_AxonHolder.RT_BUSINESS
   };
+  /** Largest scope accepted in one request. */
+  public static final Integer MAX_SCOPE = 200;
+  private static final Long HOUR_MS = 3600000L;
+
+  /** Test seam: policy record (the CMT instance cannot be mocked). */
+  @TestVisible
+  private static AXF_CMT_ConfidencePolicy__mdt policyOverride;
 
   /** Test seam: evaluation instant. */
   @TestVisible
@@ -78,9 +91,7 @@ public with sharing class ALT_CLS_ConfidencePanelService {
     @AuraEnabled
     public Id accountId; // only ids the caller supplied
     @AuraEnabled
-    public String reason;
-    @AuraEnabled
-    public Integer count = 1;
+    public String reason; // NOT_AUTHORIZED | NOT_A_HOLDER
   }
 
   public class Panel {
@@ -127,16 +138,24 @@ public with sharing class ALT_CLS_ConfidencePanelService {
   }
 
   public Panel explain(List<Id> accountIds) {
-    if (accountIds == null || accountIds.isEmpty()) {
+    requireCapability();
+    Set<Id> requested = new Set<Id>();
+    if (accountIds != null) {
+      for (Id accountId : accountIds) {
+        if (accountId != null) {
+          requested.add(accountId);
+        }
+      }
+    }
+    if (requested.isEmpty() || requested.size() > MAX_SCOPE) {
       throw failure('INVALID_INPUT');
     }
-    requireCapability();
     Panel panel = new Panel();
     panel.asOf = nowOverride == null ? Datetime.now() : nowOverride;
 
-    AXF_CMT_ConfidencePolicy__mdt policy = AXF_CMT_ConfidencePolicy__mdt.getInstance(
-      'Default'
-    );
+    AXF_CMT_ConfidencePolicy__mdt policy = policyOverride != null
+      ? policyOverride
+      : AXF_CMT_ConfidencePolicy__mdt.getInstance('Default');
     if (policy == null) {
       return blocked(panel, 'POLICY_MISSING');
     }
@@ -145,7 +164,7 @@ public with sharing class ALT_CLS_ConfidencePanelService {
       ? null
       : policy.AXF_CFP_NUM_DefaultFreshnessHours__c.intValue();
     if (defaultLimit == null || defaultLimit <= 0) {
-      return blocked(panel, 'POLICY_MISSING');
+      return blocked(panel, 'POLICY_INVALID');
     }
     List<String> gaps = missingAccess();
     if (!gaps.isEmpty()) {
@@ -153,29 +172,30 @@ public with sharing class ALT_CLS_ConfidencePanelService {
       return blocked(panel, null);
     }
 
-    Set<Id> requested = new Set<Id>();
-    for (Id accountId : accountIds) {
-      if (accountId != null) {
-        requested.add(accountId);
-      }
-    }
     Map<Id, Account> visible = new Map<Id, Account>();
-    Set<Id> requestedIds = requested;
+    Set<Id> notHolders = new Set<Id>();
     for (Account holder : [
-      SELECT Id, Name, RecordType.DeveloperName
+      SELECT Id, Name, RecordTypeId, RecordType.DeveloperName
       FROM Account
-      WHERE Id IN :requestedIds
+      WHERE Id IN :requested
       WITH USER_MODE
     ]) {
-      if (AXON_RECORD_TYPES.contains(holder.RecordType.DeveloperName)) {
+      if (
+        holder.RecordTypeId != null &&
+        AXON_RECORD_TYPES.contains(holder.RecordType.DeveloperName)
+      ) {
         visible.put(holder.Id, holder);
+      } else {
+        notHolders.add(holder.Id);
       }
     }
     for (Id accountId : requested) {
       if (!visible.containsKey(accountId)) {
         Exclusion exclusion = new Exclusion();
         exclusion.accountId = accountId;
-        exclusion.reason = 'NOT_AUTHORIZED';
+        exclusion.reason = notHolders.contains(accountId)
+          ? 'NOT_A_HOLDER'
+          : 'NOT_AUTHORIZED';
         panel.exclusions.add(exclusion);
       }
     }
@@ -261,7 +281,7 @@ public with sharing class ALT_CLS_ConfidencePanelService {
       );
       sources.put(view.sourceId, view);
     }
-    applyFacts(sources);
+    applyFacts(sources, panel.asOf);
 
     Set<String> currencies = new Set<String>();
     Boolean anyDegraded = false;
@@ -286,19 +306,28 @@ public with sharing class ALT_CLS_ConfidencePanelService {
       anyDegraded = true;
     }
     if (panel.includedCount == 0) {
+      // Say why nothing is readable before blocking.
+      if (panel.excludedCount > 0) {
+        addReason(panel, 'SOURCE_EXCLUDED');
+      }
+      if (!panel.exclusions.isEmpty()) {
+        addReason(panel, 'HOLDER_NOT_AUTHORIZED');
+      }
       return blocked(panel, 'NO_READABLE_SOURCE');
     }
     panel.level = anyDegraded ? LEVEL_DEGRADED : LEVEL_INFORMATIVE;
     if (anyDegraded) {
       for (SourceView view : panel.sources) {
-        if (view.included && view.freshness == 'STALE') {
+        if (!view.included) {
+          // Row-level exceptions of an excluded source are informative only.
+          addReason(panel, 'SOURCE_EXCLUDED');
+          continue;
+        }
+        if (view.freshness == 'STALE') {
           addReason(panel, 'STALE_SOURCE');
         }
-        if (view.included && view.freshness == 'UNKNOWN') {
+        if (view.freshness == 'UNKNOWN') {
           addReason(panel, 'UNKNOWN_FRESHNESS');
-        }
-        if (!view.included) {
-          addReason(panel, 'SOURCE_EXCLUDED');
         }
         for (String exceptionCode : view.exceptions) {
           addReason(panel, exceptionCode);
@@ -372,7 +401,7 @@ public with sharing class ALT_CLS_ConfidencePanelService {
   }
 
   /** Fact counts (zero is a legitimate answer) and, for manual/CSV sources, the last import as success. */
-  private static void applyFacts(Map<Id, SourceView> sources) {
+  private static void applyFacts(Map<Id, SourceView> sources, Datetime asOf) {
     Set<Id> bankIds = new Set<Id>();
     Set<Id> cardIds = new Set<Id>();
     for (SourceView view : sources.values()) {
@@ -388,7 +417,8 @@ public with sharing class ALT_CLS_ConfidencePanelService {
         SELECT
           AXF_BAT_MDR_BankAccount__c source,
           COUNT(Id) total,
-          MAX(AXF_BAT_DTM_ImportedAt__c) imported
+          MAX(AXF_BAT_DTM_ImportedAt__c) imported,
+          MAX(CreatedDate) created
         FROM AXF_OBJ_BankAccountTransaction__c
         WHERE AXF_BAT_MDR_BankAccount__c IN :bankIds
         WITH USER_MODE
@@ -402,7 +432,8 @@ public with sharing class ALT_CLS_ConfidencePanelService {
         SELECT
           AXF_CCT_MDR_CreditCard__c source,
           COUNT(Id) total,
-          MAX(AXF_CCT_DTM_ImportedAt__c) imported
+          MAX(AXF_CCT_DTM_ImportedAt__c) imported,
+          MAX(CreatedDate) created
         FROM AXF_OBJ_CreditCardTransaction__c
         WHERE AXF_CCT_MDR_CreditCard__c IN :cardIds
         WITH USER_MODE
@@ -411,20 +442,23 @@ public with sharing class ALT_CLS_ConfidencePanelService {
         applyFactRow(sources.get((Id) row.get('source')), row);
       }
     }
-    Datetime now = nowOverride == null ? Datetime.now() : nowOverride;
     for (SourceView view : sources.values()) {
       if (view.lastSuccessAt == null) {
         view.freshness = 'UNKNOWN';
-        if (view.included) {
-          view.exceptions.add('NO_SUCCESS_RECORDED');
-        }
+        view.exceptions.add('NO_SUCCESS_RECORDED');
         continue;
       }
-      Long ageHours = (now.getTime() - view.lastSuccessAt.getTime()) / 3600000;
-      view.freshness = ageHours > view.freshnessLimitHours
+      Long ageMs = asOf.getTime() - view.lastSuccessAt.getTime();
+      if (ageMs < 0) {
+        // A success recorded after the evaluation instant cannot be trusted as current.
+        view.freshness = 'UNKNOWN';
+        view.exceptions.add('FUTURE_SUCCESS');
+        continue;
+      }
+      view.freshness = ageMs >= view.freshnessLimitHours * HOUR_MS
         ? 'STALE'
         : 'CURRENT';
-      if (view.freshness == 'STALE' && view.included) {
+      if (view.freshness == 'STALE') {
         view.exceptions.add('FRESHNESS_EXCEEDED');
       }
     }
@@ -437,19 +471,43 @@ public with sharing class ALT_CLS_ConfidencePanelService {
     view.factCount = (Integer) row.get('total');
     if (view.origin == 'MANUAL') {
       view.lastSuccessAt = (Datetime) row.get('imported');
+      if (view.lastSuccessAt == null && view.factCount > 0) {
+        // Hand-keyed facts carry no import timestamp; their creation is the recorded success.
+        view.lastSuccessAt = (Datetime) row.get('created');
+        view.exceptions.add('IMPORT_DATE_MISSING');
+      }
     }
   }
 
   private static List<String> missingAccess() {
     List<String> gaps = new List<String>();
     Map<Schema.SObjectType, List<Schema.SObjectField>> required = new Map<Schema.SObjectType, List<Schema.SObjectField>>{
+      Account.SObjectType => new List<Schema.SObjectField>{
+        Account.Name,
+        Account.RecordTypeId
+      },
       AXF_OBJ_BankAccount__c.SObjectType => new List<Schema.SObjectField>{
+        AXF_OBJ_BankAccount__c.AXF_BA_LKP_Account__c,
+        AXF_OBJ_BankAccount__c.AXF_BA_TXT_InstitutionName__c,
+        AXF_OBJ_BankAccount__c.AXF_BA_TXT_NumberMasked__c,
         AXF_OBJ_BankAccount__c.AXF_BA_PKL_AvailabilityState__c,
-        AXF_OBJ_BankAccount__c.AXF_BA_TXT_CurrencyIsoCode__c
+        AXF_OBJ_BankAccount__c.AXF_BA_TXT_CurrencyIsoCode__c,
+        AXF_OBJ_BankAccount__c.AXF_BA_NUM_FreshnessLimitHours__c,
+        AXF_OBJ_BankAccount__c.AXF_BA_LKP_Connection__c
       },
       AXF_OBJ_CreditCard__c.SObjectType => new List<Schema.SObjectField>{
+        AXF_OBJ_CreditCard__c.AXF_CC_LKP_Account__c,
+        AXF_OBJ_CreditCard__c.AXF_CC_TXT_InstitutionName__c,
+        AXF_OBJ_CreditCard__c.AXF_CC_TXT_LastFourMasked__c,
         AXF_OBJ_CreditCard__c.AXF_CC_PKL_AvailabilityState__c,
-        AXF_OBJ_CreditCard__c.AXF_CC_TXT_CurrencyIsoCode__c
+        AXF_OBJ_CreditCard__c.AXF_CC_TXT_CurrencyIsoCode__c,
+        AXF_OBJ_CreditCard__c.AXF_CC_NUM_FreshnessLimitHours__c,
+        AXF_OBJ_CreditCard__c.AXF_CC_LKP_Connection__c
+      },
+      AXF_OBJ_PluggyConnection__c.SObjectType => new List<Schema.SObjectField>{
+        AXF_OBJ_PluggyConnection__c.AXF_CON_DT_LastSuccessAt__c,
+        AXF_OBJ_PluggyConnection__c.AXF_CON_PKL_ConsentState__c,
+        AXF_OBJ_PluggyConnection__c.AXF_CON_PKL_CollectionState__c
       },
       AXF_OBJ_BankAccountTransaction__c.SObjectType => new List<Schema.SObjectField>{
         AXF_OBJ_BankAccountTransaction__c.AXF_BAT_DTM_ImportedAt__c
@@ -488,6 +546,9 @@ public with sharing class ALT_CLS_ConfidencePanelService {
   }
 
   private static String label(String institution, String masked) {
+    if (String.isBlank(institution)) {
+      return String.isBlank(masked) ? '' : masked;
+    }
     return String.isBlank(masked) ? institution : institution + ' ' + masked;
   }
 

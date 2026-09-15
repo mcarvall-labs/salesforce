@@ -1,8 +1,11 @@
 import { LightningElement, api, wire } from "lwc";
 import { NavigationMixin } from "lightning/navigation";
+import { refreshApex } from "@salesforce/apex";
+import canExplain from "@salesforce/customPermission/AXF_CanExplainConfidence";
 import getHolders from "@salesforce/apex/AXF_CLS_CTRL_ConfidencePanel.getHolders";
 import explain from "@salesforce/apex/AXF_CLS_CTRL_ConfidencePanel.explain";
 import labels from "./labels";
+import { parseFailure, format } from "./failures";
 
 const STATE = {
   LOADING: "LOADING",
@@ -46,15 +49,24 @@ const EXCEPTION_LABEL = {
   CONSENT_STALE: labels.exConsentStale,
   COLLECTION_PAUSED: labels.exCollectionPaused,
   FRESHNESS_EXCEEDED: labels.exStale,
-  NO_SUCCESS_RECORDED: labels.exUnknown
+  NO_SUCCESS_RECORDED: labels.exUnknown,
+  CONNECTION_NOT_READABLE: labels.exConnectionNotReadable,
+  FUTURE_SUCCESS: labels.exFutureSuccess,
+  IMPORT_DATE_MISSING: labels.exImportDateMissing
 };
 
 const REASON_LABEL = {
   NOT_AUTHORIZED: labels.reasonNotAuthorized,
+  NOT_A_HOLDER: labels.reasonNotAHolder,
+  HOLDER_NOT_AUTHORIZED: labels.reasonNotAuthorized,
   CUSTODY: labels.reasonCustody,
+  SOURCE_EXCLUDED: labels.reasonCustody,
+  STALE_SOURCE: labels.exStale,
+  UNKNOWN_FRESHNESS: labels.exUnknown,
   NO_AUTHORIZED_SCOPE: labels.reasonNoScope,
   NO_READABLE_SOURCE: labels.reasonNoScope,
-  POLICY_MISSING: labels.reasonPolicyMissing
+  POLICY_MISSING: labels.reasonPolicyMissing,
+  POLICY_INVALID: labels.reasonPolicyMissing
 };
 
 const ACTION_LABEL = {
@@ -62,37 +74,44 @@ const ACTION_LABEL = {
   REVIEW_SOURCE_HEALTH: labels.actionReviewHealth
 };
 
-const CODE_LABEL = {
-  FORBIDDEN: labels.codeForbidden,
-  INVALID_INPUT: labels.codeInvalidInput
-};
-
-export function parseFailure(error) {
-  const raw = error && error.body && error.body.message;
-  return CODE_LABEL[raw] || labels.error;
-}
-
-function format(template, ...args) {
-  return String(template).replace(/\{(\d+)\}/g, (match, index) => {
-    return args[index] === undefined ? match : args[index];
-  });
-}
-
 export default class AxfConfidencePanel extends NavigationMixin(
   LightningElement
 ) {
-  /** Account record page: fixes the scope to that person/company. */
-  @api recordId;
+  _recordId;
   labels = labels;
   state = STATE.LOADING;
   holderOptions = [];
+  holdersLoaded = false;
   selected = [];
   panel;
   errorMessage;
   announcement = "";
+  wiredResult;
+  requestToken = 0;
+
+  /** Account record page: fixes the scope to that person/company (re-applied on change). */
+  @api
+  get recordId() {
+    return this._recordId;
+  }
+  set recordId(value) {
+    const changed = this._recordId !== value;
+    this._recordId = value;
+    if (changed && this.holdersLoaded) {
+      this.selected = value ? [value] : [];
+      this.load();
+    }
+  }
+
+  /** Users without the capability see nothing instead of a FORBIDDEN alert. */
+  get canRender() {
+    return canExplain !== false;
+  }
 
   @wire(getHolders)
-  wiredHolders({ data, error }) {
+  wiredHolders(result) {
+    this.wiredResult = result;
+    const { data, error } = result;
     if (error) {
       this.state = STATE.ERROR;
       this.errorMessage = parseFailure(error);
@@ -101,6 +120,7 @@ export default class AxfConfidencePanel extends NavigationMixin(
     if (!data) {
       return;
     }
+    this.holdersLoaded = true;
     this.holderOptions = data.map((holder) => ({
       label: holder.name,
       value: holder.accountId
@@ -147,6 +167,9 @@ export default class AxfConfidencePanel extends NavigationMixin(
     const meta = LEVEL_META[this.panel && this.panel.level];
     return meta ? meta.impact : "";
   }
+  get hasHolders() {
+    return this.holderOptions.length > 0;
+  }
   get isBlocked() {
     return this.panel && this.panel.level === "BLOCKED";
   }
@@ -175,9 +198,7 @@ export default class AxfConfidencePanel extends NavigationMixin(
           ? labels.factsUnknown
           : String(source.factCount),
       hasLastSuccess: !!source.lastSuccessAt,
-      exceptionLabels: (source.exceptions || []).map(
-        (code) => EXCEPTION_LABEL[code] || code
-      ),
+      hasCurrency: !!source.currencyIso,
       ariaLabel: labels.openSource + ": " + source.label
     }));
   }
@@ -205,9 +226,7 @@ export default class AxfConfidencePanel extends NavigationMixin(
     }
     return this.panel.exclusions.map((exclusion, index) => ({
       key: index,
-      text:
-        (REASON_LABEL[exclusion.reason] || exclusion.reason) +
-        (exclusion.count > 1 ? " ×" + exclusion.count : "")
+      text: REASON_LABEL[exclusion.reason] || exclusion.reason
     }));
   }
   get hasExclusions() {
@@ -216,6 +235,9 @@ export default class AxfConfidencePanel extends NavigationMixin(
   get fxText() {
     if (!this.panel) {
       return "";
+    }
+    if (this.panel.currencies.length === 0) {
+      return labels.fxUnknown;
     }
     return this.panel.currencies.length > 1
       ? format(labels.fxMulti, this.panel.currencies.join(", "))
@@ -252,6 +274,12 @@ export default class AxfConfidencePanel extends NavigationMixin(
 
   handleRetry() {
     this.errorMessage = undefined;
+    if (!this.holdersLoaded && this.wiredResult) {
+      // The holder list itself failed: refresh the wire instead of explaining nothing.
+      this.state = STATE.LOADING;
+      refreshApex(this.wiredResult);
+      return;
+    }
     this.load();
   }
 
@@ -274,11 +302,19 @@ export default class AxfConfidencePanel extends NavigationMixin(
       return;
     }
     this.state = STATE.LOADING;
+    const token = ++this.requestToken;
     try {
-      this.panel = await explain({ accountIds: this.selected });
+      const result = await explain({ accountIds: this.selected });
+      if (token !== this.requestToken) {
+        return; // a newer request superseded this one
+      }
+      this.panel = result;
       this.state = STATE.READY;
       this.announcement = labels.updated + " " + this.levelLabel;
     } catch (error) {
+      if (token !== this.requestToken) {
+        return;
+      }
       this.panel = undefined;
       this.state = STATE.ERROR;
       this.errorMessage = parseFailure(error);

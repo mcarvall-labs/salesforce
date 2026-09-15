@@ -201,4 +201,23 @@
     >Requisição inválida.</label><name
     >AXF_ConfidencePanel_codeInvalidInput</name></customLabels><customLabels
   ><label>Painel de confiança atualizado.</label><name
-    >AXF_ConfidencePanel_updated</name></customLabels></Translations>
+    >AXF_ConfidencePanel_updated</name></customLabels><customLabels><label
+    >Pessoas e empresas disponíveis</label><name
+    >AXF_ConfidencePanel_scopeAvailable</name></customLabels><customLabels
+  ><label
+    >Nenhuma moeda pôde ser determinada para as fontes incluídas.</label><name
+    >AXF_ConfidencePanel_fxUnknown</name></customLabels><customLabels><label
+    >Este registro não é uma pessoa ou empresa do Axon.</label><name
+    >AXF_ConfidencePanel_reasonNotAHolder</name></customLabels><customLabels
+  ><label
+    >A conexão do provedor existe, mas você não pode lê-la; seu estado não é afirmado.</label><name
+    >AXF_ConfidencePanel_exConnectionNotReadable</name></customLabels><customLabels
+  ><label
+    >O último sucesso registrado é posterior ao instante de avaliação; atualidade desconhecida.</label><name
+    >AXF_ConfidencePanel_exFutureSuccess</name></customLabels><customLabels
+  ><label
+    >Há fatos sem data de importação; a data de criação foi usada.</label><name
+    >AXF_ConfidencePanel_exImportDateMissing</name></customLabels><customLabels
+  ><label
+    >Parte dos dados de que este painel depende não está acessível para você.</label><name
+    >AXF_ConfidencePanel_codeNotAccessible</name></customLabels></Translations>

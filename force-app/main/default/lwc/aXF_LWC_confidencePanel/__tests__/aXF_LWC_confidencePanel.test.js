@@ -1,5 +1,6 @@
 import { createElement } from "lwc";
-import ConfidencePanel, { parseFailure } from "c/aXF_LWC_confidencePanel";
+import ConfidencePanel from "c/aXF_LWC_confidencePanel";
+import { parseFailure } from "../failures";
 import getHolders from "@salesforce/apex/AXF_CLS_CTRL_ConfidencePanel.getHolders";
 import explain from "@salesforce/apex/AXF_CLS_CTRL_ConfidencePanel.explain";
 import { __navigate } from "lightning/navigation";
@@ -31,6 +32,16 @@ jest.mock(
 jest.mock(
   "@salesforce/apex/AXF_CLS_CTRL_ConfidencePanel.explain",
   () => ({ default: jest.fn() }),
+  { virtual: true }
+);
+jest.mock(
+  "@salesforce/apex",
+  () => ({ refreshApex: jest.fn(() => Promise.resolve()) }),
+  { virtual: true }
+);
+jest.mock(
+  "@salesforce/customPermission/AXF_CanExplainConfidence",
+  () => ({ default: true }),
   { virtual: true }
 );
 
@@ -220,12 +231,65 @@ describe("c-aXF_LWC_confidencePanel", () => {
     expect(
       element.shadowRoot.querySelectorAll('[data-id="actions"] li').length
     ).toBe(1);
-    explain.mockRejectedValueOnce({ body: { message: "FORBIDDEN" } });
-    element.shadowRoot.querySelector('[data-id="explain"]');
-    await element.handleRetry?.();
     expect(parseFailure({ body: { message: "FORBIDDEN" } })).not.toBe(
       parseFailure({})
     );
     expect(parseFailure({ body: { message: "boom" } })).toBe(parseFailure({}));
+  });
+
+  it("renders a sanitized error with retry when explain fails and when holders fail", async () => {
+    explain.mockRejectedValueOnce({ body: { message: "NOT_ACCESSIBLE" } });
+    explain.mockResolvedValueOnce(panel);
+    const element = build("001A");
+    getHolders.emit(holders);
+    await flush();
+    const error = element.shadowRoot.querySelector('[data-id="error"]');
+    expect(error).not.toBeNull();
+    expect(error.textContent).toContain("codeNotAccessible");
+    expect(
+      element.shadowRoot.querySelector('[data-id="announcer"]').textContent
+    ).toContain("codeNotAccessible");
+    element.shadowRoot.querySelector('[data-id="retry"]').click();
+    await flush();
+    expect(explain).toHaveBeenCalledTimes(2);
+    expect(element.shadowRoot.querySelector('[data-id="error"]')).toBeNull();
+    expect(
+      element.shadowRoot.querySelector('[data-id="level"]')
+    ).not.toBeNull();
+
+    // Changing the record re-explains the new scope.
+    explain.mockResolvedValueOnce({ ...panel, level: "INFORMATIVE" });
+    element.recordId = "001B";
+    await flush();
+    expect(explain).toHaveBeenLastCalledWith({ accountIds: ["001B"] });
+
+    // A failing holder wire shows the same error region and retries the wire.
+    const { refreshApex } = require("@salesforce/apex");
+    const other = build();
+    getHolders.error({ message: "FORBIDDEN" });
+    await flush();
+    expect(
+      other.shadowRoot.querySelector('[data-id="error"]').textContent
+    ).toContain("codeForbidden");
+    other.shadowRoot.querySelector('[data-id="retry"]').click();
+    await flush();
+    expect(refreshApex).toHaveBeenCalled();
+  });
+
+  it("shows unknown FX and hides the currency when the server has none", async () => {
+    explain.mockResolvedValueOnce({
+      ...panel,
+      currencies: [],
+      sources: [{ ...panel.sources[0], currencyIso: null }]
+    });
+    const element = build("001A");
+    getHolders.emit(holders);
+    await flush();
+    expect(
+      element.shadowRoot.querySelector('[data-id="fx"]').textContent
+    ).toContain("fxUnknown");
+    expect(
+      element.shadowRoot.querySelector('[data-source="a07C"] th').textContent
+    ).not.toContain("(");
   });
 });

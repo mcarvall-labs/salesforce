@@ -354,4 +354,32 @@
     >Invalid request.</value></labels><labels><fullName
     >AXF_ConfidencePanel_updated</fullName><language>en_US</language><protected
     >false</protected><shortDescription>Updated</shortDescription><value
-    >Confidence panel updated.</value></labels></CustomLabels>
+    >Confidence panel updated.</value></labels><labels><fullName
+    >AXF_ConfidencePanel_scopeAvailable</fullName><language
+    >en_US</language><protected>false</protected><shortDescription
+    >Available holders</shortDescription><value
+    >Available people and companies</value></labels><labels><fullName
+    >AXF_ConfidencePanel_fxUnknown</fullName><language
+    >en_US</language><protected>false</protected><shortDescription
+    >FX unknown</shortDescription><value
+    >No currency could be determined for the included sources.</value></labels><labels
+  ><fullName>AXF_ConfidencePanel_reasonNotAHolder</fullName><language
+    >en_US</language><protected>false</protected><shortDescription
+    >Not a holder</shortDescription><value
+    >This record is not an Axon person or company.</value></labels><labels
+  ><fullName>AXF_ConfidencePanel_exConnectionNotReadable</fullName><language
+    >en_US</language><protected>false</protected><shortDescription
+    >Connection not readable</shortDescription><value
+    >The provider connection exists but you cannot read it; its status is not asserted.</value></labels><labels
+  ><fullName>AXF_ConfidencePanel_exFutureSuccess</fullName><language
+    >en_US</language><protected>false</protected><shortDescription
+    >Future success</shortDescription><value
+    >The last recorded success is after the evaluation instant; freshness is unknown.</value></labels><labels
+  ><fullName>AXF_ConfidencePanel_exImportDateMissing</fullName><language
+    >en_US</language><protected>false</protected><shortDescription
+    >Import date missing</shortDescription><value
+    >Facts exist without an import timestamp; their creation time was used.</value></labels><labels
+  ><fullName>AXF_ConfidencePanel_codeNotAccessible</fullName><language
+    >en_US</language><protected>false</protected><shortDescription
+    >Not accessible</shortDescription><value
+    >Some of the data this panel depends on is not accessible to you.</value></labels></CustomLabels>

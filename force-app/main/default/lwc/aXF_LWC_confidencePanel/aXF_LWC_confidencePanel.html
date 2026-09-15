@@ -1,5 +1,9 @@
 <template>
-  <lightning-card title={labels.title} icon-name="utility:metrics">
+  <lightning-card
+    lwc:if={canRender}
+    title={labels.title}
+    icon-name="utility:metrics"
+  >
     <div class="slds-p-horizontal_medium slds-p-bottom_medium">
       <p class="slds-text-body_small slds-m-bottom_small">{labels.intro}</p>
       <div class="slds-assistive-text" aria-live="polite" data-id="announcer">
@@ -12,7 +16,7 @@
           name="scope"
           label={labels.scope}
           field-level-help={labels.scopeHelp}
-          source-label={labels.scopeHelp}
+          source-label={labels.scopeAvailable}
           selected-label={labels.scope}
           options={holderOptions}
           value={selected}
@@ -131,9 +135,11 @@
                   <tr key={source.key} data-source={source.sourceId}>
                     <th scope="row">
                       {source.label}
-                      <span class="slds-text-color_weak"
-                        >({source.currencyIso})</span
-                      >
+                      <template lwc:if={source.hasCurrency}>
+                        <span class="slds-text-color_weak"
+                          >({source.currencyIso})</span
+                        >
+                      </template>
                     </th>
                     <td>{source.holderName}</td>
                     <td>{source.originLabel}</td>

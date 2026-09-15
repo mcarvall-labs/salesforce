@@ -15,7 +15,14 @@ private class ALT_CLS_ConfidencePanelServiceTest {
     Id profileId = [SELECT Id FROM Profile WHERE Name = 'Standard User' LIMIT 1]
     .Id;
     List<User> users = new List<User>();
-    for (String alias : new List<String>{ 'axf143g', 'axf143p', 'axf143n' }) {
+    for (
+      String alias : new List<String>{
+        'axf143g',
+        'axf143p',
+        'axf143n',
+        'axf143f'
+      }
+    ) {
       users.add(
         new User(
           Alias = alias,
@@ -44,12 +51,48 @@ private class ALT_CLS_ConfidencePanelServiceTest {
     ]) {
       permissionSets.put(permission.Name, permission.Id);
     }
+    // Capability + object read, no FLS: exercises the BLOCKED field-access path.
+    PermissionSet noFls = new PermissionSet(
+      Name = 'AXF143TestObjectsNoFls',
+      Label = 'AXF-143 objects without FLS'
+    );
+    insert noFls;
+    insert new SetupEntityAccess(
+      ParentId = noFls.Id,
+      SetupEntityId = [
+        SELECT Id
+        FROM CustomPermission
+        WHERE DeveloperName = 'AXF_CanExplainConfidence'
+        LIMIT 1
+      ]
+      .Id
+    );
+    List<ObjectPermissions> reads = new List<ObjectPermissions>();
+    for (
+      String objectName : new List<String>{
+        'AXF_OBJ_BankAccount__c',
+        'AXF_OBJ_CreditCard__c',
+        'AXF_OBJ_PluggyConnection__c',
+        'AXF_OBJ_BankAccountTransaction__c',
+        'AXF_OBJ_CreditCardTransaction__c'
+      }
+    ) {
+      reads.add(
+        new ObjectPermissions(
+          ParentId = noFls.Id,
+          SobjectType = objectName,
+          PermissionsRead = true
+        )
+      );
+    }
+    insert reads;
     insert new List<PermissionSetAssignment>{
       assignment(users[0].Id, permissionSets.get('AXF_PS_GestorFinanceiro')),
       assignment(users[0].Id, permissionSets.get('AXF_PS_PluggyIntegration')),
       assignment(users[1].Id, permissionSets.get('AXF_PS_GestorFinanceiro')),
       assignment(users[1].Id, permissionSets.get('AXF_PS_PluggyIntegration')),
-      assignment(users[2].Id, permissionSets.get('AXF_PS_Participante'))
+      assignment(users[2].Id, permissionSets.get('AXF_PS_Participante')),
+      assignment(users[3].Id, noFls.Id)
     };
   }
 
@@ -140,6 +183,26 @@ private class ALT_CLS_ConfidencePanelServiceTest {
       AXF_BAT_TXT_Description__c = key,
       AXF_BAT_DTM_ImportedAt__c = importedAt,
       AXF_BAT_NUM_Version__c = 0
+    );
+  }
+
+  private static AXF_OBJ_CreditCardTransaction__c cct(
+    Id cardId,
+    String key,
+    Datetime importedAt
+  ) {
+    return new AXF_OBJ_CreditCardTransaction__c(
+      AXF_CCT_MDR_CreditCard__c = cardId,
+      AXF_CCT_EXI_SourceKey__c = 'cct-' + key + '-' + System.now().getTime(),
+      AXF_CCT_PKL_Source__c = 'MANUAL',
+      AXF_CCT_DAT_Date__c = Date.today(),
+      AXF_CCT_NUM_Magnitude__c = 10,
+      AXF_CCT_PKL_Direction__c = 'DEBIT',
+      AXF_CCT_PKL_Status__c = 'POSTED',
+      AXF_CCT_TXT_CurrencyIsoCode__c = 'BRL',
+      AXF_CCT_TXT_Description__c = key,
+      AXF_CCT_DTM_ImportedAt__c = importedAt,
+      AXF_CCT_NUM_Version__c = 0
     );
   }
 
@@ -436,6 +499,259 @@ private class ALT_CLS_ConfidencePanelServiceTest {
       } catch (ALT_CLS_ConfidencePanelService.ConfidenceException expected) {
         Assert.areEqual('FORBIDDEN', expected.code);
       }
+    }
+  }
+
+  @IsTest
+  static void nonAxonAccountsAreNotHoldersAndScopeIsBounded() {
+    List<RecordType> foreign = [
+      SELECT Id
+      FROM RecordType
+      WHERE
+        SobjectType = 'Account'
+        AND IsActive = TRUE
+        AND DeveloperName NOT IN ('AXF_Person', 'AXF_Business')
+      LIMIT 1
+    ];
+    Account plain = new Account(Name = 'Conta Comum');
+    if (!foreign.isEmpty()) {
+      plain.RecordTypeId = foreign[0].Id;
+    }
+    insert plain;
+    insert new AccountShare(
+      AccountId = plain.Id,
+      UserOrGroupId = byAlias('axf143g').Id,
+      AccountAccessLevel = 'Read',
+      OpportunityAccessLevel = 'None',
+      CaseAccessLevel = 'None'
+    );
+    String plainType = [
+        SELECT RecordType.DeveloperName
+        FROM Account
+        WHERE Id = :plain.Id
+      ]
+      .RecordType
+      ?.DeveloperName;
+    System.runAs(byAlias('axf143g')) {
+      Account mine = holder('Empresa Escopo');
+      bank(mine.Id, 'b', null, 'AVAILABLE', null);
+      ALT_CLS_ConfidencePanelService service = new ALT_CLS_ConfidencePanelService();
+      Test.startTest();
+      ALT_CLS_ConfidencePanelService.Panel panel = service.explain(
+        new List<Id>{ mine.Id, plain.Id, null }
+      );
+      List<ALT_CLS_ConfidencePanelService.HolderOption> holders = service.listHolders();
+      Test.stopTest();
+      Assert.areEqual(1, panel.sources.size());
+      if (plainType != 'AXF_Person' && plainType != 'AXF_Business') {
+        Assert.areEqual(1, holders.size(), 'conta comum nao e titular');
+        Assert.areEqual(1, panel.exclusions.size());
+        Assert.areEqual('NOT_A_HOLDER', panel.exclusions[0].reason);
+        Assert.areEqual(plain.Id, panel.exclusions[0].accountId);
+      }
+      try {
+        service.explain(new List<Id>{ null });
+        Assert.fail('Somente nulos e entrada invalida');
+      } catch (ALT_CLS_ConfidencePanelService.ConfidenceException expected) {
+        Assert.areEqual('INVALID_INPUT', expected.code);
+      }
+      List<Id> tooMany = new List<Id>();
+      String prefix = Account.SObjectType.getDescribe().getKeyPrefix();
+      for (Integer i = 0; i <= ALT_CLS_ConfidencePanelService.MAX_SCOPE; i++) {
+        tooMany.add(prefix + String.valueOf(100000000000L + i).right(12));
+      }
+      try {
+        service.explain(tooMany);
+        Assert.fail('Escopo acima do limite');
+      } catch (ALT_CLS_ConfidencePanelService.ConfidenceException expected) {
+        Assert.areEqual('INVALID_INPUT', expected.code);
+      }
+    }
+    System.runAs(byAlias('axf143n')) {
+      try {
+        new ALT_CLS_ConfidencePanelService().explain(new List<Id>());
+        Assert.fail('Capacidade antes da validacao');
+      } catch (ALT_CLS_ConfidencePanelService.ConfidenceException expected) {
+        Assert.areEqual('FORBIDDEN', expected.code);
+      }
+    }
+  }
+
+  @IsTest
+  static void manualCardsFreshnessBoundariesAndUnreadableConnectionsAreExplained() {
+    Datetime now = Datetime.newInstance(2026, 9, 14, 12, 0, 0);
+    Account ana;
+    AXF_OBJ_PluggyConnection__c hidden;
+    System.runAs(byAlias('axf143p')) {
+      // A connection the gestor cannot read (OWD Private, owned by another user).
+      hidden = connection('hidden', now.addHours(-1), 'ACTIVE', 'ACTIVE');
+    }
+    System.runAs(byAlias('axf143g')) {
+      ana = holder('Ana Cartao');
+    }
+    // Sources owned by the gestor whose connection stays unreadable to them.
+    AXF_OBJ_BankAccount__c hiddenBank = new AXF_OBJ_BankAccount__c(
+      AXF_BA_LKP_Account__c = ana.Id,
+      AXF_BA_PKL_AvailabilityState__c = 'AVAILABLE',
+      AXF_BA_TXT_CurrencyIsoCode__c = 'BRL',
+      AXF_BA_TXT_InstitutionName__c = 'Banco n',
+      AXF_BA_TXT_NumberMasked__c = '****n',
+      AXF_BA_LKP_Connection__c = hidden.Id,
+      AXF_BA_EXI_PluggyAccountId__c = 'pl-n-' + System.now().getTime(),
+      AXF_BA_NUM_Version__c = 0,
+      OwnerId = byAlias('axf143g').Id
+    );
+    AXF_OBJ_BankAccount__c custody = hiddenBank.clone(
+      false,
+      false,
+      false,
+      false
+    );
+    custody.AXF_BA_PKL_AvailabilityState__c = 'CUSTODY';
+    custody.AXF_BA_TXT_InstitutionName__c = 'Banco k';
+    custody.AXF_BA_TXT_NumberMasked__c = '****k';
+    custody.AXF_BA_EXI_PluggyAccountId__c = 'pl-k-' + System.now().getTime();
+    insert new List<AXF_OBJ_BankAccount__c>{ hiddenBank, custody };
+    System.runAs(byAlias('axf143g')) {
+      ALT_CLS_ConfidencePanelService.nowOverride = now;
+      AXF_OBJ_CreditCard__c manualCard = new AXF_OBJ_CreditCard__c(
+        AXF_CC_LKP_Account__c = ana.Id,
+        AXF_CC_PKL_AvailabilityState__c = 'AVAILABLE',
+        AXF_CC_TXT_CurrencyIsoCode__c = 'BRL',
+        AXF_CC_TXT_InstitutionName__c = 'Cartao manual',
+        AXF_CC_TXT_LastFourMasked__c = '0002',
+        AXF_CC_EXI_ManualKey__c = 'card-' + System.now().getTime(),
+        AXF_CC_NUM_Version__c = 0
+      );
+      insert manualCard;
+      insert new List<AXF_OBJ_CreditCardTransaction__c>{
+        cct(manualCard.Id, 'c1', now.addHours(-5)),
+        cct(manualCard.Id, 'c2', null)
+      };
+      AXF_OBJ_BankAccount__c keyed = bank(ana.Id, 'h', null, 'AVAILABLE', null);
+      insert bat(keyed.Id, 'h1', null);
+      // Exactly at the limit (24h) is no longer current; a future success is unknown.
+      AXF_OBJ_PluggyConnection__c edge = connection(
+        'edge',
+        now.addHours(-24),
+        'ACTIVE',
+        'ACTIVE'
+      );
+      AXF_OBJ_BankAccount__c edgeBank = bank(
+        ana.Id,
+        'e',
+        edge.Id,
+        'AVAILABLE',
+        24
+      );
+      AXF_OBJ_PluggyConnection__c future = connection(
+        'future',
+        now.addMinutes(5),
+        'ACTIVE',
+        'ACTIVE'
+      );
+      AXF_OBJ_BankAccount__c futureBank = bank(
+        ana.Id,
+        'f',
+        future.Id,
+        'AVAILABLE',
+        null
+      );
+      Test.startTest();
+      ALT_CLS_ConfidencePanelService.Panel panel = new ALT_CLS_ConfidencePanelService()
+        .explain(new List<Id>{ ana.Id });
+      Test.stopTest();
+      ALT_CLS_ConfidencePanelService.SourceView cardView = source(
+        panel,
+        manualCard.Id
+      );
+      Assert.areEqual('CARD', cardView.kind);
+      Assert.areEqual('MANUAL', cardView.origin);
+      Assert.areEqual(2, cardView.factCount);
+      Assert.areEqual(now.addHours(-5), cardView.lastSuccessAt);
+      Assert.areEqual('CURRENT', cardView.freshness);
+      ALT_CLS_ConfidencePanelService.SourceView keyedView = source(
+        panel,
+        keyed.Id
+      );
+      Assert.areEqual(1, keyedView.factCount);
+      Assert.isNotNull(
+        keyedView.lastSuccessAt,
+        'sem data de importacao usa a criacao'
+      );
+      Assert.isTrue(keyedView.exceptions.contains('IMPORT_DATE_MISSING'));
+      Assert.isFalse(keyedView.exceptions.contains('NO_SUCCESS_RECORDED'));
+      Assert.areEqual(
+        'STALE',
+        source(panel, edgeBank.Id).freshness,
+        'no limite ja nao e atual'
+      );
+      ALT_CLS_ConfidencePanelService.SourceView futureView = source(
+        panel,
+        futureBank.Id
+      );
+      Assert.areEqual('UNKNOWN', futureView.freshness);
+      Assert.isTrue(futureView.exceptions.contains('FUTURE_SUCCESS'));
+      ALT_CLS_ConfidencePanelService.SourceView hiddenView = source(
+        panel,
+        hiddenBank.Id
+      );
+      Assert.areEqual('PLUGGY', hiddenView.origin);
+      Assert.isTrue(hiddenView.exceptions.contains('CONNECTION_NOT_READABLE'));
+      Assert.isNull(hiddenView.lastSuccessAt);
+      Assert.isTrue(panel.reasons.contains('CONNECTION_NOT_READABLE'));
+      Assert.isTrue(panel.reasons.contains('FUTURE_SUCCESS'));
+      // Row exceptions of the excluded custody source never become panel reasons by themselves.
+      Assert.isFalse(source(panel, custody.Id).included);
+      Assert.isTrue(panel.reasons.contains('SOURCE_EXCLUDED'));
+      Assert.areEqual('DEGRADED', panel.level);
+      Assert.isFalse(
+        JSON.serialize(panel).contains('Banco hidden'),
+        'nada da conexao oculta e afirmado'
+      );
+    }
+  }
+
+  @IsTest
+  static void policyGapsAndFieldAccessGapsBlockWithExplicitReasons() {
+    Account mine;
+    System.runAs(byAlias('axf143g')) {
+      mine = holder('Empresa Politica');
+      bank(mine.Id, 'q', null, 'AVAILABLE', null);
+      ALT_CLS_ConfidencePanelService service = new ALT_CLS_ConfidencePanelService();
+      ALT_CLS_ConfidencePanelService.policyOverride = new AXF_CMT_ConfidencePolicy__mdt(
+        DeveloperName = 'Default',
+        AXF_CFP_TXT_PolicyVersion__c = 'test',
+        AXF_CFP_NUM_DefaultFreshnessHours__c = 0
+      );
+      ALT_CLS_ConfidencePanelService.Panel invalid = service.explain(
+        new List<Id>{ mine.Id }
+      );
+      Assert.areEqual('BLOCKED', invalid.level);
+      Assert.isTrue(invalid.reasons.contains('POLICY_INVALID'));
+      Assert.isTrue(invalid.allowedActions.isEmpty());
+      Assert.isTrue(invalid.sources.isEmpty(), 'nada carregado sem politica');
+      ALT_CLS_ConfidencePanelService.policyOverride = null;
+      // Nothing readable: excluded sources are named before blocking.
+      Account custodyOnly = holder('Empresa Custodia');
+      bank(custodyOnly.Id, 'z', null, 'CUSTODY', null);
+      ALT_CLS_ConfidencePanelService.Panel blocked = service.explain(
+        new List<Id>{ custodyOnly.Id }
+      );
+      Assert.areEqual('BLOCKED', blocked.level);
+      Assert.isTrue(blocked.reasons.contains('SOURCE_EXCLUDED'));
+      Assert.isTrue(blocked.reasons.contains('NO_READABLE_SOURCE'));
+    }
+    System.runAs(byAlias('axf143f')) {
+      ALT_CLS_ConfidencePanelService.Panel gaps = new ALT_CLS_ConfidencePanelService()
+        .explain(new List<Id>{ mine.Id });
+      Assert.areEqual('BLOCKED', gaps.level);
+      Assert.isTrue(
+        gaps.reasons.contains('FIELD_ACCESS:AXF_BA_TXT_InstitutionName__c'),
+        String.join(gaps.reasons, ',')
+      );
+      Assert.isTrue(gaps.allowedActions.isEmpty());
+      Assert.isTrue(gaps.sources.isEmpty());
     }
   }
 }

@@ -34,7 +34,6 @@ import noExclusions from "@salesforce/label/c.AXF_ConfidencePanel_noExclusions";
 import fx from "@salesforce/label/c.AXF_ConfidencePanel_fx";
 import fxSingle from "@salesforce/label/c.AXF_ConfidencePanel_fxSingle";
 import fxMulti from "@salesforce/label/c.AXF_ConfidencePanel_fxMulti";
-import impact from "@salesforce/label/c.AXF_ConfidencePanel_impact";
 import impactInformative from "@salesforce/label/c.AXF_ConfidencePanel_impactInformative";
 import impactDegraded from "@salesforce/label/c.AXF_ConfidencePanel_impactDegraded";
 import impactBlocked from "@salesforce/label/c.AXF_ConfidencePanel_impactBlocked";
@@ -59,6 +58,13 @@ import retry from "@salesforce/label/c.AXF_ConfidencePanel_retry";
 import codeForbidden from "@salesforce/label/c.AXF_ConfidencePanel_codeForbidden";
 import codeInvalidInput from "@salesforce/label/c.AXF_ConfidencePanel_codeInvalidInput";
 import updated from "@salesforce/label/c.AXF_ConfidencePanel_updated";
+import scopeAvailable from "@salesforce/label/c.AXF_ConfidencePanel_scopeAvailable";
+import fxUnknown from "@salesforce/label/c.AXF_ConfidencePanel_fxUnknown";
+import reasonNotAHolder from "@salesforce/label/c.AXF_ConfidencePanel_reasonNotAHolder";
+import exConnectionNotReadable from "@salesforce/label/c.AXF_ConfidencePanel_exConnectionNotReadable";
+import exFutureSuccess from "@salesforce/label/c.AXF_ConfidencePanel_exFutureSuccess";
+import exImportDateMissing from "@salesforce/label/c.AXF_ConfidencePanel_exImportDateMissing";
+import codeNotAccessible from "@salesforce/label/c.AXF_ConfidencePanel_codeNotAccessible";
 export default {
   title,
   intro,
@@ -96,7 +102,6 @@ export default {
   fx,
   fxSingle,
   fxMulti,
-  impact,
   impactInformative,
   impactDegraded,
   impactBlocked,
@@ -120,5 +125,12 @@ export default {
   retry,
   codeForbidden,
   codeInvalidInput,
-  updated
+  updated,
+  scopeAvailable,
+  fxUnknown,
+  reasonNotAHolder,
+  exConnectionNotReadable,
+  exFutureSuccess,
+  exImportDateMissing,
+  codeNotAccessible
 };
