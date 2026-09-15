@@ -1,11 +1,19 @@
+/**
+ * @description Trigger para AXF_OBJ_BankAccountTransaction__c (AXF-25 / AXF-105).
+ * Nenhuma regra vive aqui: tudo delega ao handler.
+ */
 trigger AXF_TRG_RealizationBankTransaction on AXF_OBJ_BankAccountTransaction__c(
   before insert,
   before update,
   before delete
 ) {
-  ALT_CLS_RealizationGuard.originals(
-    Trigger.isDelete ? Trigger.old : Trigger.new,
-    Trigger.oldMap,
-    Trigger.isDelete
-  );
+  if (Trigger.isBefore && Trigger.isInsert) {
+    AXF_CLS_BATTriggerHandler.handleBeforeInsert(Trigger.new);
+  }
+  if (Trigger.isBefore && Trigger.isUpdate) {
+    AXF_CLS_BATTriggerHandler.handleBeforeUpdate(Trigger.new, Trigger.oldMap);
+  }
+  if (Trigger.isBefore && Trigger.isDelete) {
+    AXF_CLS_BATTriggerHandler.handleBeforeDelete(Trigger.old, Trigger.oldMap);
+  }
 }
