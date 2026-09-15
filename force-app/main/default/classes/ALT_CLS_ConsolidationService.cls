@@ -17,9 +17,19 @@
  *   and the result becomes `DEGRADED`. A total is never presented with silently omitted data and
  *   private amounts cannot be inferred by difference.
  * - Missing field access on the fact fields the sum depends on makes the whole result `BLOCKED`.
+ * - A visible Account that is not an Axon person/company is `NOT_A_HOLDER`.
  * - When AXF-5 economic allocations are installed and a confirmed set exists for a fact, the
- *   fact contributes through its shares (attribution `ALLOCATION`); shares attributed outside
- *   the effective scope are counted as `ALLOCATED_OUTSIDE_SCOPE` without naming anyone.
+ *   fact contributes through its shares (attribution `ALLOCATION`, stored share magnitude when
+ *   present); shares attributed outside the effective scope are counted as
+ *   `ALLOCATED_OUTSIDE_SCOPE` (strangers) or `ALLOCATED_TO_UNVERIFIED_HOLDER` (requested holders
+ *   whose coverage is unverified) without naming anyone. Invalid, incomplete or ambiguous
+ *   allocations degrade the result instead of being summed.
+ * - Unbounded scopes are refused: at most `MAX_SCOPE` holders and `MAX_FACTS` facts per kind;
+ *   beyond that the result is `BLOCKED` with `VOLUME_EXCEEDED` rather than partially summed.
+ * - Any unexpected platform failure surfaces as `UNAVAILABLE`, never as a raw exception.
+ *
+ * Known limitation (deferred): joint holders (`AXF_OBJ_AccountHolder__c`) are not split here;
+ * a source contributes to its primary holder unless a confirmed allocation says otherwise.
  */
 public with sharing class ALT_CLS_ConsolidationService {
   public static final String POLICY_VERSION = 'consolidation-scope@1.0.0';
@@ -33,6 +43,14 @@ public with sharing class ALT_CLS_ConsolidationService {
   };
   private static final String EAS_OBJECT = 'AXF_OBJ_EconomicAllocationSet__c';
   private static final String EA_OBJECT = 'AXF_OBJ_EconomicAllocation__c';
+  /** UserRecordAccess accepts at most 200 record ids per query. */
+  public static final Integer MAX_SCOPE = 200;
+  /** Facts per kind beyond which a scope is refused instead of partially summed. */
+  public static final Integer MAX_FACTS = 10000;
+  @TestVisible
+  private static Integer factCap = MAX_FACTS;
+  private static final Date EARLIEST = Date.newInstance(1700, 1, 1);
+  private static final Date LATEST = Date.newInstance(4000, 12, 31);
 
   /** Test seam: replaces the AXF-5 allocation lookup (fact id -> shares). */
   @TestVisible
@@ -51,9 +69,15 @@ public with sharing class ALT_CLS_ConsolidationService {
   public class AllocationShare {
     public Id accountId;
     public Decimal percent;
+    /** Stored share magnitude (AXF-126 conserves the fact); null falls back to percent. */
+    public Decimal magnitude;
     public AllocationShare(Id accountId, Decimal percent) {
       this.accountId = accountId;
       this.percent = percent;
+    }
+    public AllocationShare(Id accountId, Decimal percent, Decimal magnitude) {
+      this(accountId, percent);
+      this.magnitude = magnitude;
     }
   }
 
@@ -66,14 +90,14 @@ public with sharing class ALT_CLS_ConsolidationService {
 
   public class Exclusion {
     public Id accountId; // only echoed for ids the caller supplied
-    public String reason;
+    public String reason; // NOT_AUTHORIZED | NOT_A_HOLDER | ALLOCATED_OUTSIDE_SCOPE | ALLOCATED_TO_UNVERIFIED_HOLDER
     public Integer count = 1;
   }
 
   public class Contribution {
     public Id accountId;
     public String accountName;
-    public String attribution; // HOLDER | ALLOCATION
+    public String attribution; // HOLDER | ALLOCATION | MIXED
     public String sourceKind; // BANK | CARD
     public Id sourceId;
     public String sourceLabel;
@@ -129,11 +153,15 @@ public with sharing class ALT_CLS_ConsolidationService {
   }
 
   public Result consolidate(ScopeInput input) {
-    if (
-      input == null ||
-      input.accountIds == null ||
-      input.accountIds.isEmpty()
-    ) {
+    Set<Id> requested = new Set<Id>();
+    if (input != null && input.accountIds != null) {
+      for (Id accountId : input.accountIds) {
+        if (accountId != null) {
+          requested.add(accountId);
+        }
+      }
+    }
+    if (requested.isEmpty() || requested.size() > MAX_SCOPE) {
       throw failure('INVALID_INPUT');
     }
     if (
@@ -146,6 +174,18 @@ public with sharing class ALT_CLS_ConsolidationService {
     if (!FeatureManagement.checkPermission(CP_CONSOLIDATE)) {
       throw failure('FORBIDDEN');
     }
+    try {
+      return consolidateScope(input, requested);
+    } catch (ConsolidationException typed) {
+      throw typed;
+    } catch (Exception unexpected) {
+      // Platform failures (query/security/null) never leak details to the caller.
+      System.debug(LoggingLevel.ERROR, 'Consolidation failed: ' + unexpected);
+      throw failure('UNAVAILABLE');
+    }
+  }
+
+  private Result consolidateScope(ScopeInput input, Set<Id> requested) {
     Result result = new Result();
     result.asOf = Datetime.now();
     result.fromDate = input.fromDate;
@@ -158,29 +198,31 @@ public with sharing class ALT_CLS_ConsolidationService {
       return result;
     }
 
-    Set<Id> requested = new Set<Id>();
-    for (Id accountId : input.accountIds) {
-      if (accountId != null) {
-        requested.add(accountId);
-      }
-    }
     Map<Id, Account> visible = new Map<Id, Account>();
-    Set<Id> requestedIds = requested;
+    Set<Id> notHolders = new Set<Id>();
     for (Account holder : [
-      SELECT Id, Name, RecordType.DeveloperName
+      SELECT Id, Name, RecordTypeId, RecordType.DeveloperName
       FROM Account
-      WHERE Id IN :requestedIds
+      WHERE Id IN :requested
       WITH USER_MODE
     ]) {
-      if (AXON_RECORD_TYPES.contains(holder.RecordType.DeveloperName)) {
+      // A record without an Axon record type is readable but is not a person/company here.
+      if (
+        holder.RecordTypeId != null &&
+        AXON_RECORD_TYPES.contains(holder.RecordType.DeveloperName)
+      ) {
         visible.put(holder.Id, holder);
+      } else {
+        notHolders.add(holder.Id);
       }
     }
     for (Id accountId : requested) {
       if (!visible.containsKey(accountId)) {
         Exclusion exclusion = new Exclusion();
         exclusion.accountId = accountId;
-        exclusion.reason = 'NOT_AUTHORIZED';
+        exclusion.reason = notHolders.contains(accountId)
+          ? 'NOT_A_HOLDER'
+          : 'NOT_AUTHORIZED';
         result.exclusions.add(exclusion);
       }
     }
@@ -191,13 +233,15 @@ public with sharing class ALT_CLS_ConsolidationService {
     Set<Id> fullScope = new Set<Id>();
     Set<Id> visibleIds = visible.keySet();
     Id me = UserInfo.getUserId();
-    for (UserRecordAccess access : [
-      SELECT RecordId, HasAllAccess
-      FROM UserRecordAccess
-      WHERE UserId = :me AND RecordId IN :visibleIds
-    ]) {
-      if (access.HasAllAccess == true) {
-        fullScope.add(access.RecordId);
+    if (!visibleIds.isEmpty()) {
+      for (UserRecordAccess access : [
+        SELECT RecordId, HasAllAccess
+        FROM UserRecordAccess
+        WHERE UserId = :me AND RecordId IN :visibleIds
+      ]) {
+        if (access.HasAllAccess == true) {
+          fullScope.add(access.RecordId);
+        }
       }
     }
     for (Id holderId : visible.keySet()) {
@@ -220,13 +264,29 @@ public with sharing class ALT_CLS_ConsolidationService {
       input.fromDate,
       input.toDate
     );
+    if (facts.size() > factCap) {
+      // A partial sum would be presented as a total; refuse instead.
+      result.holders.clear();
+      result.confidence = CONFIDENCE_BLOCKED;
+      result.reasons.clear();
+      addReason(result, 'VOLUME_EXCEEDED');
+      return result;
+    }
     Map<Id, List<AllocationShare>> allocations = loadAllocations(facts, result);
     Map<String, Contribution> byKey = new Map<String, Contribution>();
     Integer outsideScope = 0;
+    Integer unverifiedScope = 0;
     for (Fact fact : facts) {
       Source source = sources.get(fact.sourceId);
       List<AllocationShare> shares = allocations.get(fact.id);
-      if (shares == null || shares.isEmpty()) {
+      if (
+        shares == null ||
+        shares.isEmpty() ||
+        fact.status != 'POSTED' ||
+        !sharesAreUsable(shares, fact, result)
+      ) {
+        // Pending facts are counted once, on the holder, never split; unusable shares fall
+        // back to the holder with the reason already recorded.
         accumulate(
           byKey,
           visible,
@@ -234,19 +294,26 @@ public with sharing class ALT_CLS_ConsolidationService {
           fact,
           fact.holderId,
           'HOLDER',
-          fact.magnitude
+          fact.magnitude,
+          result
         );
         continue;
       }
       for (AllocationShare share : shares) {
         if (!fullScope.contains(share.accountId)) {
-          outsideScope++;
+          if (visible.containsKey(share.accountId)) {
+            unverifiedScope++;
+          } else {
+            outsideScope++;
+          }
           continue;
         }
-        Decimal magnitude = (fact.magnitude *
-          share.percent /
-          100)
-          .setScale(2, RoundingMode.HALF_EVEN);
+        Decimal magnitude = share.magnitude != null
+          ? share.magnitude
+          : (fact.magnitude *
+              share.percent /
+              100)
+              .setScale(2, RoundingMode.HALF_EVEN);
         accumulate(
           byKey,
           visible,
@@ -254,7 +321,8 @@ public with sharing class ALT_CLS_ConsolidationService {
           fact,
           share.accountId,
           'ALLOCATION',
-          magnitude
+          magnitude,
+          result
         );
       }
     }
@@ -264,6 +332,13 @@ public with sharing class ALT_CLS_ConsolidationService {
       exclusion.count = outsideScope;
       result.exclusions.add(exclusion);
       addReason(result, 'ALLOCATED_OUTSIDE_SCOPE');
+    }
+    if (unverifiedScope > 0) {
+      Exclusion exclusion = new Exclusion();
+      exclusion.reason = 'ALLOCATED_TO_UNVERIFIED_HOLDER';
+      exclusion.count = unverifiedScope;
+      result.exclusions.add(exclusion);
+      addReason(result, 'ALLOCATED_TO_UNVERIFIED_HOLDER');
     }
     List<String> keys = new List<String>(byKey.keySet());
     keys.sort();
@@ -373,8 +448,10 @@ public with sharing class ALT_CLS_ConsolidationService {
         cardIds.add(source.id);
       }
     }
-    Date lower = fromDate == null ? Date.newInstance(1900, 1, 1) : fromDate;
-    Date upper = toDate == null ? Date.newInstance(2999, 12, 31) : toDate;
+    // The platform Date range itself; nothing dated inside it is silently excluded.
+    Date lower = fromDate == null ? EARLIEST : fromDate;
+    Date upper = toDate == null ? LATEST : toDate;
+    Integer cap = factCap + 1;
     if (!bankIds.isEmpty()) {
       for (AXF_OBJ_BankAccountTransaction__c row : [
         SELECT
@@ -392,6 +469,7 @@ public with sharing class ALT_CLS_ConsolidationService {
           AND AXF_BAT_DAT_Date__c <= :upper
         WITH USER_MODE
         ORDER BY AXF_BAT_DAT_Date__c
+        LIMIT :cap
       ]) {
         Fact fact = new Fact();
         fact.id = row.Id;
@@ -423,6 +501,7 @@ public with sharing class ALT_CLS_ConsolidationService {
           AND AXF_CCT_DAT_Date__c <= :upper
         WITH USER_MODE
         ORDER BY AXF_CCT_DAT_Date__c
+        LIMIT :cap
       ]) {
         Fact fact = new Fact();
         fact.id = row.Id;
@@ -456,17 +535,16 @@ public with sharing class ALT_CLS_ConsolidationService {
     if (facts.isEmpty()) {
       return result;
     }
-    Map<String, Schema.SObjectType> types = Schema.getGlobalDescribe();
-    if (
-      !types.containsKey(EAS_OBJECT.toLowerCase()) ||
-      !types.containsKey(EA_OBJECT.toLowerCase())
-    ) {
+    List<Schema.DescribeSObjectResult> describes;
+    try {
+      describes = Schema.describeSObjects(
+        new List<String>{ EAS_OBJECT, EA_OBJECT }
+      );
+    } catch (Exception notInstalled) {
+      // AXF-126 not deployed on this org: every fact is attributed to its holder.
       return result;
     }
-    if (
-      !types.get(EAS_OBJECT.toLowerCase()).getDescribe().isAccessible() ||
-      !types.get(EA_OBJECT.toLowerCase()).getDescribe().isAccessible()
-    ) {
+    if (!describes[0].isAccessible() || !describes[1].isAccessible()) {
       // The attribution authority exists but this user cannot read it: holder sums may be
       // misattributed, so the result is degraded rather than silently summed by holder.
       addReason(summary, 'ALLOCATION_UNREADABLE');
@@ -482,52 +560,114 @@ public with sharing class ALT_CLS_ConsolidationService {
       }
     }
     Map<Id, Id> factBySet = new Map<Id, Id>();
-    for (
-      SObject setRow : Database.queryWithBinds(
-        'SELECT Id, AXF_EAS_LKP_BankTransaction__c, AXF_EAS_LKP_CardTransaction__c ' +
-          'FROM ' +
-          EAS_OBJECT +
-          ' WHERE AXF_EAS_PKL_State__c = \'CONFIRMED\' AND (AXF_EAS_LKP_BankTransaction__c IN :bankFacts' +
-          ' OR AXF_EAS_LKP_CardTransaction__c IN :cardFacts)',
-        new Map<String, Object>{
-          'bankFacts' => bankFacts,
-          'cardFacts' => cardFacts
-        },
-        AccessLevel.USER_MODE
-      )
-    ) {
-      Id factId = (Id) setRow.get('AXF_EAS_LKP_BankTransaction__c');
-      if (factId == null) {
-        factId = (Id) setRow.get('AXF_EAS_LKP_CardTransaction__c');
+    Set<Id> ambiguous = new Set<Id>();
+    try {
+      Set<Id> seenFacts = new Set<Id>();
+      for (
+        SObject setRow : Database.queryWithBinds(
+          'SELECT Id, AXF_EAS_LKP_BankTransaction__c, AXF_EAS_LKP_CardTransaction__c ' +
+            'FROM ' +
+            EAS_OBJECT +
+            ' WHERE AXF_EAS_PKL_State__c = \'CONFIRMED\' AND (AXF_EAS_LKP_BankTransaction__c IN :bankFacts' +
+            ' OR AXF_EAS_LKP_CardTransaction__c IN :cardFacts)',
+          new Map<String, Object>{
+            'bankFacts' => bankFacts,
+            'cardFacts' => cardFacts
+          },
+          AccessLevel.USER_MODE
+        )
+      ) {
+        Id factId = (Id) setRow.get('AXF_EAS_LKP_BankTransaction__c');
+        if (factId == null) {
+          factId = (Id) setRow.get('AXF_EAS_LKP_CardTransaction__c');
+        }
+        if (factId == null) {
+          continue;
+        }
+        if (!seenFacts.add(factId)) {
+          // Two confirmed sets for one fact: no single attribution authority.
+          ambiguous.add(factId);
+        }
+        factBySet.put(setRow.Id, factId);
       }
-      factBySet.put(setRow.Id, factId);
-    }
-    if (factBySet.isEmpty()) {
-      return result;
-    }
-    Set<Id> setIds = factBySet.keySet();
-    for (
-      SObject share : Database.queryWithBinds(
-        'SELECT AXF_EA_MDR_AllocationSet__c, AXF_EA_LKP_Account__c, AXF_EA_NUM_Percent__c FROM ' +
-          EA_OBJECT +
-          ' WHERE AXF_EA_MDR_AllocationSet__c IN :setIds',
-        new Map<String, Object>{ 'setIds' => setIds },
-        AccessLevel.USER_MODE
-      )
-    ) {
-      Id factId = factBySet.get((Id) share.get('AXF_EA_MDR_AllocationSet__c'));
-      if (!result.containsKey(factId)) {
-        result.put(factId, new List<AllocationShare>());
+      if (factBySet.isEmpty()) {
+        return result;
       }
-      result.get(factId)
-        .add(
-          new AllocationShare(
-            (Id) share.get('AXF_EA_LKP_Account__c'),
-            (Decimal) share.get('AXF_EA_NUM_Percent__c')
-          )
+      Set<Id> setIds = factBySet.keySet();
+      for (
+        SObject share : Database.queryWithBinds(
+          'SELECT AXF_EA_MDR_AllocationSet__c, AXF_EA_LKP_Account__c, AXF_EA_NUM_Percent__c, ' +
+            'AXF_EA_NUM_Magnitude__c FROM ' +
+            EA_OBJECT +
+            ' WHERE AXF_EA_MDR_AllocationSet__c IN :setIds',
+          new Map<String, Object>{ 'setIds' => setIds },
+          AccessLevel.USER_MODE
+        )
+      ) {
+        Id factId = factBySet.get(
+          (Id) share.get('AXF_EA_MDR_AllocationSet__c')
         );
+        if (!result.containsKey(factId)) {
+          result.put(factId, new List<AllocationShare>());
+        }
+        result.get(factId)
+          .add(
+            new AllocationShare(
+              (Id) share.get('AXF_EA_LKP_Account__c'),
+              (Decimal) share.get('AXF_EA_NUM_Percent__c'),
+              (Decimal) share.get('AXF_EA_NUM_Magnitude__c')
+            )
+          );
+      }
+    } catch (System.QueryException fieldAccess) {
+      // Object readable but a queried field is not (or naming drift): degrade, do not throw.
+      addReason(summary, 'ALLOCATION_UNREADABLE');
+      return new Map<Id, List<AllocationShare>>();
+    }
+    if (!ambiguous.isEmpty()) {
+      addReason(summary, 'ALLOCATION_AMBIGUOUS');
+      for (Id factId : ambiguous) {
+        result.remove(factId);
+      }
     }
     return result;
+  }
+
+  /** Shares must be well-formed and complete before a fact is split; otherwise the holder keeps it. */
+  private static Boolean sharesAreUsable(
+    List<AllocationShare> shares,
+    Fact fact,
+    Result summary
+  ) {
+    Decimal totalPercent = 0;
+    Decimal totalMagnitude = 0;
+    Boolean storedMagnitudes = true;
+    for (AllocationShare share : shares) {
+      if (
+        share.accountId == null ||
+        share.percent == null ||
+        share.percent < 0 ||
+        share.percent > 100
+      ) {
+        addReason(summary, 'ALLOCATION_INVALID');
+        return false;
+      }
+      totalPercent += share.percent;
+      if (share.magnitude == null) {
+        storedMagnitudes = false;
+      } else {
+        totalMagnitude += share.magnitude;
+      }
+    }
+    if (totalPercent.setScale(6) != 100) {
+      addReason(summary, 'ALLOCATION_INCOMPLETE');
+      return false;
+    }
+    if (storedMagnitudes && totalMagnitude != fact.magnitude) {
+      addReason(summary, 'ALLOCATION_INCOMPLETE');
+      return false;
+    }
+    return true;
   }
 
   // ---------------------------------------------------------------- helpers
@@ -539,7 +679,8 @@ public with sharing class ALT_CLS_ConsolidationService {
     Fact fact,
     Id accountId,
     String attribution,
-    Decimal magnitude
+    Decimal magnitude,
+    Result summary
   ) {
     String key = String.join(
       new List<String>{
@@ -563,14 +704,22 @@ public with sharing class ALT_CLS_ConsolidationService {
     } else if (contribution.attribution != attribution) {
       contribution.attribution = 'MIXED';
     }
-    if (fact.status != 'POSTED') {
+    if (fact.status == 'PENDING') {
       contribution.pendingCount++;
+      return;
+    }
+    if (fact.status != 'POSTED') {
+      // Unknown or missing status is neither settled nor pending: report, never sum.
+      addReason(summary, 'UNKNOWN_STATUS');
       return;
     }
     if (fact.direction == 'CREDIT') {
       contribution.inflow += magnitude;
-    } else {
+    } else if (fact.direction == 'DEBIT') {
       contribution.outflow += magnitude;
+    } else {
+      addReason(summary, 'UNKNOWN_DIRECTION');
+      return;
     }
     contribution.net = contribution.inflow - contribution.outflow;
     contribution.factCount++;
@@ -604,6 +753,20 @@ public with sharing class ALT_CLS_ConsolidationService {
         AXF_OBJ_CreditCardTransaction__c.AXF_CCT_PKL_Status__c,
         AXF_OBJ_CreditCardTransaction__c.AXF_CCT_TXT_CurrencyIsoCode__c,
         AXF_OBJ_CreditCardTransaction__c.AXF_CCT_DAT_Date__c
+      },
+      AXF_OBJ_BankAccount__c.SObjectType => new List<Schema.SObjectField>{
+        AXF_OBJ_BankAccount__c.AXF_BA_LKP_Account__c,
+        AXF_OBJ_BankAccount__c.AXF_BA_TXT_InstitutionName__c,
+        AXF_OBJ_BankAccount__c.AXF_BA_TXT_NumberMasked__c
+      },
+      AXF_OBJ_CreditCard__c.SObjectType => new List<Schema.SObjectField>{
+        AXF_OBJ_CreditCard__c.AXF_CC_LKP_Account__c,
+        AXF_OBJ_CreditCard__c.AXF_CC_TXT_InstitutionName__c,
+        AXF_OBJ_CreditCard__c.AXF_CC_TXT_LastFourMasked__c
+      },
+      Account.SObjectType => new List<Schema.SObjectField>{
+        Account.Name,
+        Account.RecordTypeId
       }
     };
     for (Schema.SObjectType type : required.keySet()) {
@@ -621,6 +784,9 @@ public with sharing class ALT_CLS_ConsolidationService {
   }
 
   private static String label(String institution, String masked) {
+    if (String.isBlank(institution)) {
+      return String.isBlank(masked) ? '' : masked;
+    }
     return String.isBlank(masked) ? institution : institution + ' ' + masked;
   }
 

@@ -5,6 +5,7 @@
  * rateio confirmado (AXF-5) segue a atribuição; sem capacidade -> FORBIDDEN.
  */
 @IsTest
+// API 62: AXON_DEV enforces FLS on plain test DML under runAs from API 67 onwards.
 private class ALT_CLS_ConsolidationServiceTest {
   private static User byAlias(String alias) {
     return [SELECT Id FROM User WHERE Alias = :alias LIMIT 1];
@@ -20,7 +21,8 @@ private class ALT_CLS_ConsolidationServiceTest {
         'axf122g',
         'axf122p',
         'axf122n',
-        'axf122b'
+        'axf122b',
+        'axf122f'
       }
     ) {
       users.add(
@@ -46,22 +48,51 @@ private class ALT_CLS_ConsolidationServiceTest {
     ]) {
       permissionSets.put(permission.Name, permission.Id);
     }
+    Assert.areEqual(
+      2,
+      permissionSets.size(),
+      'AXF_PS_GestorFinanceiro and AXF_PS_Participante must exist'
+    );
     // Capability only, no object access: exercises the BLOCKED field-access path.
     PermissionSet bare = new PermissionSet(
       Name = 'AXF122TestCapabilityOnly',
       Label = 'AXF-122 capability only'
     );
-    insert bare;
-    insert new SetupEntityAccess(
-      ParentId = bare.Id,
-      SetupEntityId = [
-        SELECT Id
-        FROM CustomPermission
-        WHERE DeveloperName = 'AXF_CanConsolidate'
-        LIMIT 1
-      ]
-      .Id
+    // Capability + object read, no FLS: exercises the per-field BLOCKED path.
+    PermissionSet noFls = new PermissionSet(
+      Name = 'AXF122TestObjectsNoFls',
+      Label = 'AXF-122 objects without FLS'
     );
+    insert new List<PermissionSet>{ bare, noFls };
+    Id capability = [
+      SELECT Id
+      FROM CustomPermission
+      WHERE DeveloperName = 'AXF_CanConsolidate'
+      LIMIT 1
+    ]
+    .Id;
+    insert new List<SetupEntityAccess>{
+      new SetupEntityAccess(ParentId = bare.Id, SetupEntityId = capability),
+      new SetupEntityAccess(ParentId = noFls.Id, SetupEntityId = capability)
+    };
+    List<ObjectPermissions> reads = new List<ObjectPermissions>();
+    for (
+      String objectName : new List<String>{
+        'AXF_OBJ_BankAccountTransaction__c',
+        'AXF_OBJ_CreditCardTransaction__c',
+        'AXF_OBJ_BankAccount__c',
+        'AXF_OBJ_CreditCard__c'
+      }
+    ) {
+      reads.add(
+        new ObjectPermissions(
+          ParentId = noFls.Id,
+          SobjectType = objectName,
+          PermissionsRead = true
+        )
+      );
+    }
+    insert reads;
     List<PermissionSetAssignment> assignments = new List<PermissionSetAssignment>();
     assignments.add(
       assignment(users[0].Id, permissionSets.get('AXF_PS_GestorFinanceiro'))
@@ -73,6 +104,7 @@ private class ALT_CLS_ConsolidationServiceTest {
       assignment(users[2].Id, permissionSets.get('AXF_PS_Participante'))
     );
     assignments.add(assignment(users[3].Id, bare.Id));
+    assignments.add(assignment(users[4].Id, noFls.Id));
     insert assignments;
   }
 
@@ -226,6 +258,26 @@ private class ALT_CLS_ConsolidationServiceTest {
       AXF_CCT_NUM_Version__c = 0
     );
     return f;
+  }
+
+  private static ALT_CLS_ConsolidationService.AllocationShare share(
+    Id accountId,
+    Decimal percent
+  ) {
+    return new ALT_CLS_ConsolidationService.AllocationShare(accountId, percent);
+  }
+
+  private static Boolean hasExclusion(
+    ALT_CLS_ConsolidationService.Result result,
+    Id accountId,
+    String reason
+  ) {
+    for (ALT_CLS_ConsolidationService.Exclusion e : result.exclusions) {
+      if (e.accountId == accountId && e.reason == reason) {
+        return true;
+      }
+    }
+    return false;
   }
 
   /** Isolates the sum from whatever AXF-5 allocation state the org carries. */
@@ -610,6 +662,316 @@ private class ALT_CLS_ConsolidationServiceTest {
           Assert.areEqual('INVALID_INPUT', expected.code);
         }
       }
+    }
+  }
+
+  @IsTest
+  static void personHoldersAreAuthorizedAndNonAxonAccountsAreNotHolders() {
+    // A readable Account outside the Axon record types (created by the running user and
+    // shared explicitly) is not a person/company for consolidation.
+    List<RecordType> foreign = [
+      SELECT Id
+      FROM RecordType
+      WHERE
+        SobjectType = 'Account'
+        AND IsActive = TRUE
+        AND DeveloperName NOT IN ('AXF_Person', 'AXF_Business')
+      LIMIT 1
+    ];
+    Account plain = new Account(Name = 'Conta Comum');
+    if (!foreign.isEmpty()) {
+      plain.RecordTypeId = foreign[0].Id;
+    }
+    insert plain;
+    insert new AccountShare(
+      AccountId = plain.Id,
+      UserOrGroupId = byAlias('axf122g').Id,
+      AccountAccessLevel = 'Read',
+      OpportunityAccessLevel = 'None',
+      CaseAccessLevel = 'None'
+    );
+    // Gestor PS has no AXF_Person record-type visibility; the person is created by the test
+    // runner and owned by the gestor (full access, as after AXF-80 onboarding).
+    Account person = new Account(
+      RecordTypeId = Account.SObjectType.getDescribe()
+        .getRecordTypeInfosByDeveloperName()
+        .get('AXF_Person')
+        .getRecordTypeId(),
+      LastName = 'Consolidada',
+      FirstName = 'Ana',
+      OwnerId = byAlias('axf122g').Id
+    );
+    insert person;
+    System.runAs(byAlias('axf122g')) {
+      noAllocations();
+      Id personId = person.Id;
+      insert bat(
+        bank(personId, 'pp').Id,
+        'pp',
+        120,
+        'DEBIT',
+        'POSTED',
+        Date.today()
+      );
+      Test.startTest();
+      ALT_CLS_ConsolidationService.Result result = new ALT_CLS_ConsolidationService()
+        .consolidate(
+          scope(new List<Id>{ personId, plain.Id, null }, null, null)
+        );
+      Test.stopTest();
+      Assert.areEqual(1, result.holders.size(), 'so a pessoa Axon entra');
+      Assert.areEqual('AUTHORIZED', result.holders[0].state);
+      Assert.areEqual(120, total(result, 'BRL').outflow);
+      String plainType = [
+          SELECT RecordType.DeveloperName
+          FROM Account
+          WHERE Id = :plain.Id
+        ]
+        .RecordType
+        ?.DeveloperName;
+      if (plainType != 'AXF_Person' && plainType != 'AXF_Business') {
+        Assert.isTrue(
+          hasExclusion(result, plain.Id, 'NOT_A_HOLDER'),
+          JSON.serialize(result.exclusions)
+        );
+        Assert.isFalse(hasExclusion(result, plain.Id, 'NOT_AUTHORIZED'));
+      }
+      try {
+        new ALT_CLS_ConsolidationService()
+          .consolidate(scope(new List<Id>{ null, null }, null, null));
+        Assert.fail('Somente nulos e entrada invalida');
+      } catch (ALT_CLS_ConsolidationService.ConsolidationException expected) {
+        Assert.areEqual('INVALID_INPUT', expected.code);
+      }
+      List<Id> tooMany = new List<Id>();
+      for (Integer i = 0; i <= ALT_CLS_ConsolidationService.MAX_SCOPE; i++) {
+        tooMany.add(personId);
+      }
+      // Duplicates collapse; 201 distinct ids are refused.
+      Assert.areEqual(
+        1,
+        new ALT_CLS_ConsolidationService()
+          .consolidate(scope(tooMany, null, null))
+          .holders.size()
+      );
+      tooMany = new List<Id>();
+      String prefix = Account.SObjectType.getDescribe().getKeyPrefix();
+      for (Integer i = 0; i <= ALT_CLS_ConsolidationService.MAX_SCOPE; i++) {
+        tooMany.add(prefix + String.valueOf(100000000000L + i).right(12));
+      }
+      try {
+        new ALT_CLS_ConsolidationService()
+          .consolidate(scope(tooMany, null, null));
+        Assert.fail('Escopo acima do limite e entrada invalida');
+      } catch (ALT_CLS_ConsolidationService.ConsolidationException expected) {
+        Assert.areEqual('INVALID_INPUT', expected.code);
+      }
+    }
+  }
+
+  @IsTest
+  static void editSharingIsStillUnverifiedAndRealAllocationLookupRuns() {
+    Account shared;
+    System.runAs(byAlias('axf122p')) {
+      shared = holder('Empresa Editavel', false);
+      insert bat(
+        bank(shared.Id, 'e').Id,
+        'e',
+        700,
+        'DEBIT',
+        'POSTED',
+        Date.today()
+      );
+      insert new AccountTeamMember(
+        AccountId = shared.Id,
+        UserId = byAlias('axf122g').Id,
+        TeamMemberRole = ALT_CLS_AxonCompanyResponsible.validTeamRole(),
+        AccountAccessLevel = 'Edit',
+        OpportunityAccessLevel = 'None',
+        CaseAccessLevel = 'None'
+      );
+    }
+    System.runAs(byAlias('axf122g')) {
+      Fixture f = fixture();
+      Test.startTest();
+      // No override: the AXF-5 lookup runs for real (objects installed or not).
+      ALT_CLS_ConsolidationService.Result result = new ALT_CLS_ConsolidationService()
+        .consolidate(
+          scope(new List<Id>{ f.personA.Id, shared.Id }, null, null)
+        );
+      Test.stopTest();
+      for (ALT_CLS_ConsolidationService.HolderScope holder : result.holders) {
+        Assert.areEqual(
+          holder.accountId == shared.Id ? 'UNKNOWN' : 'AUTHORIZED',
+          holder.state,
+          'Edit sem acesso total continua nao verificado'
+        );
+      }
+      Assert.isFalse(JSON.serialize(result).contains('700'));
+      Assert.areEqual(
+        ALT_CLS_ConsolidationService.CONFIDENCE_DEGRADED,
+        result.confidence
+      );
+      for (ALT_CLS_ConsolidationService.Contribution c : result.contributions) {
+        Assert.areEqual('HOLDER', c.attribution, 'sem set confirmado');
+      }
+      for (String reason : result.reasons) {
+        Assert.isTrue(
+          reason == 'COVERAGE_UNVERIFIED' || reason == 'ALLOCATION_UNREADABLE',
+          'motivo inesperado: ' + reason
+        );
+      }
+      Assert.areEqual(
+        1299,
+        total(result, 'BRL').outflow,
+        '300 + 999; pendente fora'
+      );
+      Assert.areEqual(1000, total(result, 'BRL').inflow);
+    }
+  }
+
+  @IsTest
+  static void allocationSharesAreValidatedRoundedAndUnverifiedHoldersDistinguished() {
+    Account unverified;
+    System.runAs(byAlias('axf122p')) {
+      unverified = holder('Empresa Cota', false);
+      insert new AccountTeamMember(
+        AccountId = unverified.Id,
+        UserId = byAlias('axf122g').Id,
+        TeamMemberRole = ALT_CLS_AxonCompanyResponsible.validTeamRole(),
+        AccountAccessLevel = 'Read',
+        OpportunityAccessLevel = 'None',
+        CaseAccessLevel = 'None'
+      );
+    }
+    System.runAs(byAlias('axf122g')) {
+      Fixture f = fixture();
+      AXF_OBJ_BankAccountTransaction__c third = bat(
+        f.bankA.Id,
+        'a-third',
+        100,
+        'DEBIT',
+        'POSTED',
+        Date.newInstance(2026, 8, 11)
+      );
+      AXF_OBJ_BankAccountTransaction__c stored = bat(
+        f.bankA.Id,
+        'a-stored',
+        0.07,
+        'DEBIT',
+        'POSTED',
+        Date.newInstance(2026, 8, 11)
+      );
+      insert new List<AXF_OBJ_BankAccountTransaction__c>{ third, stored };
+      ALT_CLS_ConsolidationService.allocationOverride = new Map<Id, List<ALT_CLS_ConsolidationService.AllocationShare>>{
+        // percent path, rounding at 2 places
+        third.Id => new List<ALT_CLS_ConsolidationService.AllocationShare>{
+          share(f.personA.Id, 33.33),
+          share(f.businessB.Id, 33.33),
+          share(unverified.Id, 33.34)
+        },
+        // stored magnitudes (AXF-126) win over percent arithmetic
+        stored.Id => new List<ALT_CLS_ConsolidationService.AllocationShare>{
+          new ALT_CLS_ConsolidationService.AllocationShare(
+            f.personA.Id,
+            33.333334,
+            0.02333334
+          ),
+          new ALT_CLS_ConsolidationService.AllocationShare(
+            f.businessB.Id,
+            66.666666,
+            0.04666666
+          )
+        },
+        // incomplete: falls back to the holder
+        f.debitA.Id => new List<ALT_CLS_ConsolidationService.AllocationShare>{
+          share(f.businessB.Id, 60)
+        },
+        // invalid percent: falls back to the holder
+        f.debitB.Id => new List<ALT_CLS_ConsolidationService.AllocationShare>{
+          share(f.personA.Id, 150),
+          share(f.businessB.Id, -50)
+        }
+      };
+      Test.startTest();
+      ALT_CLS_ConsolidationService.Result result = new ALT_CLS_ConsolidationService()
+        .consolidate(
+          scope(
+            new List<Id>{ f.personA.Id, f.businessB.Id, unverified.Id },
+            Date.newInstance(2026, 8, 1),
+            Date.newInstance(2026, 8, 31)
+          )
+        );
+      Test.stopTest();
+      ALT_CLS_ConsolidationService.Contribution aFromBankA = contribution(
+        result,
+        f.personA.Id,
+        f.bankA.Id
+      );
+      // holder: debitA 300 (incomplete shares) + 33.33 + 0.02333334
+      Assert.areEqual(333.35333334, aFromBankA.outflow);
+      Assert.areEqual('MIXED', aFromBankA.attribution);
+      ALT_CLS_ConsolidationService.Contribution bFromBankA = contribution(
+        result,
+        f.businessB.Id,
+        f.bankA.Id
+      );
+      Assert.areEqual(33.37666666, bFromBankA.outflow, '33.33 + 0.04666666');
+      Assert.areEqual(
+        200,
+        contribution(result, f.businessB.Id, f.bankB.Id).outflow,
+        'cotas invalidas: titular fica com o fato'
+      );
+      Assert.isNull(contribution(result, unverified.Id, f.bankA.Id));
+      Assert.isTrue(result.reasons.contains('ALLOCATION_INCOMPLETE'));
+      Assert.isTrue(result.reasons.contains('ALLOCATION_INVALID'));
+      Assert.isTrue(result.reasons.contains('ALLOCATED_TO_UNVERIFIED_HOLDER'));
+      Assert.isFalse(result.reasons.contains('ALLOCATED_OUTSIDE_SCOPE'));
+      Assert.isTrue(
+        hasExclusion(result, null, 'ALLOCATED_TO_UNVERIFIED_HOLDER')
+      );
+      Assert.areEqual(
+        1,
+        aFromBankA.pendingCount,
+        'pendente conta uma vez no titular'
+      );
+    }
+  }
+
+  @IsTest
+  static void fieldLevelGapsBlockAndVolumeCapRefusesPartialSums() {
+    Account mine;
+    System.runAs(byAlias('axf122g')) {
+      mine = holder('Empresa Campo', false);
+    }
+    System.runAs(byAlias('axf122f')) {
+      ALT_CLS_ConsolidationService.Result result = new ALT_CLS_ConsolidationService()
+        .consolidate(scope(new List<Id>{ mine.Id }, null, null));
+      Assert.areEqual(
+        ALT_CLS_ConsolidationService.CONFIDENCE_BLOCKED,
+        result.confidence
+      );
+      Assert.isTrue(
+        result.reasons.contains('FIELD_ACCESS:AXF_BAT_PKL_Status__c'),
+        String.join(result.reasons, ',')
+      );
+      Assert.isTrue(result.holders.isEmpty());
+    }
+    System.runAs(byAlias('axf122g')) {
+      noAllocations();
+      Fixture f = fixture();
+      ALT_CLS_ConsolidationService.factCap = 2;
+      Test.startTest();
+      ALT_CLS_ConsolidationService.Result result = new ALT_CLS_ConsolidationService()
+        .consolidate(scope(new List<Id>{ f.personA.Id }, null, null));
+      Test.stopTest();
+      Assert.areEqual(
+        ALT_CLS_ConsolidationService.CONFIDENCE_BLOCKED,
+        result.confidence
+      );
+      Assert.areEqual(new List<String>{ 'VOLUME_EXCEEDED' }, result.reasons);
+      Assert.isTrue(result.totals.isEmpty(), 'nenhuma soma parcial');
+      Assert.isTrue(result.contributions.isEmpty());
     }
   }
 }
