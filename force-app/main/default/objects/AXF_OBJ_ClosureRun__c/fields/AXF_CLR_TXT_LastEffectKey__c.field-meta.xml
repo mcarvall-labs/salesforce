@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<CustomField xmlns="http://soap.sforce.com/2006/04/metadata">
+    <fullName>AXF_CLR_TXT_LastEffectKey__c</fullName>
+    <label>Ultimo Efeito</label>
+    <type>Text</type>
+    <length>120</length>
+    <required>false</required>
+    <description
+  >Identidade do ultimo efeito material aplicado (etapa + tentativa); replay com a mesma chave nao repete efeito.</description>
+</CustomField>

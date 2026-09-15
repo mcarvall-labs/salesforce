@@ -1,0 +1,8 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<CustomObject xmlns="http://soap.sforce.com/2006/04/metadata">
+    <label>AXF CSV Format</label>
+    <pluralLabel>AXF CSV Formats</pluralLabel>
+    <visibility>Public</visibility>
+    <description
+  >Formato CSV versionado de fonte manual (AXF-72). Um novo formato da mesma familia de parsing (BANK_STATEMENT_V1) e adicionado por registro, sem deploy de codigo: colunas, formato de data/decimal, delimitador, codificacao, conservacao de saldo e versao do parser. Formato de familia nao suportada permanece BLOCKED. Reutiliza upload inerte, previa, staging, validacao, atomicidade, identidade, auditoria e retencao de AXF-14/15.</description>
+</CustomObject>

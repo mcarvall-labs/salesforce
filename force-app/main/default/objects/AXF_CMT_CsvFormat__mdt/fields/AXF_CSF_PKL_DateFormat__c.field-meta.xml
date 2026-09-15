@@ -1,0 +1,23 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<CustomField xmlns="http://soap.sforce.com/2006/04/metadata">
+    <fullName>AXF_CSF_PKL_DateFormat__c</fullName>
+    <label>Formato de data</label>
+    <type>Picklist</type>
+    <valueSet>
+        <restricted>true</restricted>
+        <valueSetDefinition>
+            <sorted>false</sorted>
+            <value><fullName>DMY_SLASH</fullName><default>true</default><label
+        >dd/mm/aaaa</label></value>
+            <value><fullName>YMD_DASH</fullName><default>false</default><label
+        >aaaa-mm-dd</label></value>
+            <value><fullName>MDY_SLASH</fullName><default>false</default><label
+        >mm/dd/aaaa</label></value>
+            <value><fullName>DMY_DASH</fullName><default>false</default><label
+        >dd-mm-aaaa</label></value>
+        </valueSetDefinition>
+    </valueSet>
+    <required>true</required>
+    <description>Formato de data das linhas.</description>
+    <fieldManageability>SubscriberControlled</fieldManageability>
+</CustomField>

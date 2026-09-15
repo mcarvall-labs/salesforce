@@ -8,6 +8,12 @@
         >c:aXF_LWC_realization</componentName><identifier
         >realization</identifier></componentInstance></itemInstances><itemInstances
     ><componentInstance><componentName
+        >c:aXF_LWC_sharedExpense</componentName><identifier
+        >sharedExpense</identifier></componentInstance></itemInstances><itemInstances
+    ><componentInstance><componentName
+        >c:aXF_LWC_economicAllocation</componentName><identifier
+        >economicAllocation</identifier></componentInstance></itemInstances><itemInstances
+    ><componentInstance><componentName
         >force:detailPanel</componentName><identifier
         >details</identifier></componentInstance></itemInstances><name
     >main</name><type>Region</type></flexiPageRegions><masterLabel

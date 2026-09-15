@@ -1,0 +1,26 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<CustomField xmlns="http://soap.sforce.com/2006/04/metadata">
+    <fullName>AXF_CLR_PKL_Status__c</fullName>
+    <label>Estado</label>
+    <type>Picklist</type>
+    <required>true</required>
+    <trackHistory>true</trackHistory>
+    <valueSet>
+        <restricted>true</restricted>
+        <valueSetDefinition>
+            <sorted>false</sorted>
+            <value><fullName>REQUESTED</fullName><default>true</default><label
+        >Solicitado</label></value>
+            <value><fullName>RUNNING</fullName><default>false</default><label
+        >Em execucao</label></value>
+            <value><fullName>BLOCKED</fullName><default>false</default><label
+        >Bloqueado</label></value>
+            <value><fullName>RESULT_UNKNOWN</fullName><default
+        >false</default><label>Resultado desconhecido</label></value>
+            <value><fullName>CLOSED</fullName><default>false</default><label
+        >Encerrado</label></value>
+        </valueSetDefinition>
+    </valueSet>
+    <description
+  >REQUESTED -> RUNNING -> (BLOCKED | RESULT_UNKNOWN)* -> CLOSED (terminal). BLOCKED e RESULT_UNKNOWN exigem acao segura/reconciliacao antes de repetir etapa material.</description>
+</CustomField>

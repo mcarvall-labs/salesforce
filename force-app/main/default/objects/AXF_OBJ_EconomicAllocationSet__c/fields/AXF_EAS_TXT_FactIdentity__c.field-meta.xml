@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<CustomField xmlns="http://soap.sforce.com/2006/04/metadata">
+    <fullName>AXF_EAS_TXT_FactIdentity__c</fullName>
+    <label>Identidade do Fato</label>
+    <type>Text</type>
+    <length>128</length>
+    <externalId>true</externalId>
+    <required>true</required>
+    <description
+  >Identidade canonica do fato de origem (SourceKey BAT/CCT ou PlanIdentityHash/ClientRequestId FTX) usada em SetKey/ActiveToken/alloc-v2; imutavel.</description>
+</CustomField>

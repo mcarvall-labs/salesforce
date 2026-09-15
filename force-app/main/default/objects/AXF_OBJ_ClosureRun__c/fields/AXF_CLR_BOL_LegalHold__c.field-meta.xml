@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<CustomField xmlns="http://soap.sforce.com/2006/04/metadata">
+    <fullName>AXF_CLR_BOL_LegalHold__c</fullName>
+    <label>Legal Hold</label>
+    <type>Checkbox</type>
+    <defaultValue>false</defaultValue>
+    <trackHistory>true</trackHistory>
+    <description
+  >Retencao legal declarada pelo administrador para o escopo: bloqueia exclusao/pseudonimizacao e preserva conteudo sem reativar acesso.</description>
+</CustomField>

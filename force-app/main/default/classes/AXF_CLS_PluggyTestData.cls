@@ -132,12 +132,43 @@ public class AXF_CLS_PluggyTestData {
         ? (String) r.get('status')
         : 'POSTED';
       String extra = '';
-      if (r.get('billId') != null) {
-        extra =
-          ',"creditCardMetadata":{"billId":"' +
-          (String) r.get('billId') +
-          '","billForecastDate":"2026-09-15T00:00:00.000Z"}';
+      if (r.get('billId') != null || r.get('totalInstallments') != null) {
+        List<String> meta = new List<String>();
+        if (r.get('billId') != null) {
+          meta.add('"billId":"' + (String) r.get('billId') + '"');
+          meta.add('"billForecastDate":"2026-09-15T00:00:00.000Z"');
+        }
+        if (r.get('installmentNumber') != null) {
+          meta.add(
+            '"installmentNumber":' + String.valueOf(r.get('installmentNumber'))
+          );
+        }
+        if (r.get('totalInstallments') != null) {
+          meta.add(
+            '"totalInstallments":' + String.valueOf(r.get('totalInstallments'))
+          );
+        }
+        extra += ',"creditCardMetadata":{' + String.join(meta, ',') + '}';
       }
+      if (r.get('category') != null) {
+        extra += ',"category":"' + (String) r.get('category') + '"';
+      }
+      if (r.get('merchantName') != null) {
+        extra +=
+          ',"merchant":{"name":"' +
+          (String) r.get('merchantName') +
+          '","businessName":"' +
+          (String) r.get('merchantName') +
+          ' LTDA"}';
+      } else if (r.get('merchantBusinessName') != null) {
+        extra +=
+          ',"merchant":{"businessName":"' +
+          (String) r.get('merchantBusinessName') +
+          '"}';
+      }
+      String operation = r.containsKey('operationType')
+        ? (String) r.get('operationType')
+        : 'PIX';
       objs.add(
         '{"id":"' +
           id +
@@ -150,7 +181,9 @@ public class AXF_CLS_PluggyTestData {
           status +
           '","type":"' +
           type +
-          '","operationType":"PIX","order":1' +
+          '","operationType":"' +
+          operation +
+          '","order":1' +
           extra +
           '}'
       );

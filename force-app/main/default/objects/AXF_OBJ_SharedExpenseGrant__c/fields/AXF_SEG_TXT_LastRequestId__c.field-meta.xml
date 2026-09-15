@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<CustomField xmlns="http://soap.sforce.com/2006/04/metadata">
+    <fullName>AXF_SEG_TXT_LastRequestId__c</fullName>
+    <label>Ultima Requisicao Aplicada</label>
+    <type>Text</type>
+    <length>64</length>
+    <required>false</required>
+    <description
+  >Chave de idempotencia da ultima mutacao do colaborador; replay com a mesma chave nao repete efeito (G6).</description>
+</CustomField>

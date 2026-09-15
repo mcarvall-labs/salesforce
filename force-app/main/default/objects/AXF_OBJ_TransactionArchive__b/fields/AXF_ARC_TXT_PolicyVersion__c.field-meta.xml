@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<CustomField xmlns="http://soap.sforce.com/2006/04/metadata">
+    <fullName>AXF_ARC_TXT_PolicyVersion__c</fullName>
+    <label>Versao da Politica</label>
+    <type>Text</type>
+    <length>40</length>
+    <required>false</required>
+    <description>Versao de AXF_CMT_ArchivePolicy aplicada.</description>
+</CustomField>

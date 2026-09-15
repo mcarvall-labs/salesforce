@@ -1,0 +1,9 @@
+.axf-table-wrap {
+  overflow-x: auto;
+}
+.axf-total_ok {
+  color: rgb(45, 130, 60);
+}
+.axf-total_off {
+  color: rgb(194, 57, 52);
+}

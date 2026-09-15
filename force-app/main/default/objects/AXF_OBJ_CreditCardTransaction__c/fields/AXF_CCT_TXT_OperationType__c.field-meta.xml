@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<CustomField xmlns="http://soap.sforce.com/2006/04/metadata">
+    <fullName>AXF_CCT_TXT_OperationType__c</fullName>
+    <label>Tipo de operacao</label>
+    <type>Text</type>
+    <length>40</length>
+    <required>false</required>
+    <description
+  >Trilho/tipo de operacao informado pelo provedor (ex.: PIX, TED, BOLETO); enriquecimento minimo para exclusoes deterministicas (AXF-109).</description>
+</CustomField>

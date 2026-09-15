@@ -1,0 +1,21 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<CustomField xmlns="http://soap.sforce.com/2006/04/metadata">
+    <fullName>AXF_TOB_PKL_Eligibility__c</fullName>
+    <label>Elegibilidade</label>
+    <type>Picklist</type>
+    <required>true</required>
+    <valueSet>
+        <restricted>true</restricted>
+        <valueSetDefinition>
+            <sorted>false</sorted>
+            <value><fullName>UNKNOWN</fullName><default>true</default><label
+        >Desconhecida</label></value>
+            <value><fullName>ELIGIBLE</fullName><default>false</default><label
+        >Elegivel</label></value>
+            <value><fullName>EXCLUDED</fullName><default>false</default><label
+        >Excluida</label></value>
+        </valueSetDefinition>
+    </valueSet>
+    <description
+  >ELIGIBLE = debito liquidado (POSTED) sem exclusao conhecida; EXCLUDED = parcelamento/utilidade/seguro/transferencia/pagamento de fatura/estorno/credito; UNKNOWN = status ausente/nao reconhecido/pendente (quarentena), nunca promovida so por classificacao de estabelecimento (AC18).</description>
+</CustomField>

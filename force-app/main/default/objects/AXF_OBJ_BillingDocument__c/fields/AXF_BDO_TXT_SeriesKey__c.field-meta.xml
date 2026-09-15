@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<CustomField xmlns="http://soap.sforce.com/2006/04/metadata">
+    <fullName>AXF_BDO_TXT_SeriesKey__c</fullName>
+    <label>Serie</label>
+    <type>Text</type>
+    <length>40</length>
+    <required>true</required>
+    <description
+  >Chave de serie/periodo do documento dentro do contrato (ex.: 2026-09). Compoe a identidade DocumentKey.</description>
+</CustomField>

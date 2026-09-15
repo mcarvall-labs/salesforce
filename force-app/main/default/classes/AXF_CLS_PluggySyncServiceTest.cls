@@ -175,7 +175,9 @@ private class AXF_CLS_PluggySyncServiceTest {
         AXF_BAT_PKL_Status__c,
         AXF_BAT_TXT_CurrencyIsoCode__c,
         AXF_BAT_TXT_Description__c,
-        AXF_BAT_TXT_NormalizedDescription__c
+        AXF_BAT_TXT_NormalizedDescription__c,
+        AXF_BAT_TXT_RawSourceStatus__c,
+        AXF_BAT_TXT_OperationType__c
       FROM AXF_OBJ_BankAccountTransaction__c
     ]) {
       byKey.put(t.AXF_BAT_EXI_SourceKey__c, t);
@@ -191,6 +193,9 @@ private class AXF_CLS_PluggySyncServiceTest {
       String.isNotBlank(debit.AXF_BAT_TXT_NormalizedDescription__c),
       'AC3 normalized description'
     );
+    // AXF-109: raw provider status and rail retained as evidence.
+    System.assertEquals('POSTED', debit.AXF_BAT_TXT_RawSourceStatus__c);
+    System.assertEquals('PIX', debit.AXF_BAT_TXT_OperationType__c);
 
     AXF_OBJ_IntegrationRun__c run = runFor(bank.runKey);
     System.assertNotEquals(null, run.AXF_INR_DT_CompleteThrough__c, 'AC6');
@@ -228,6 +233,86 @@ private class AXF_CLS_PluggySyncServiceTest {
     System.assertEquals('BILL-2026-09', t.AXF_CCT_TXT_BillReference__c);
     System.assertEquals('2026-09', t.AXF_CCT_TXT_BillForecastPeriod__c);
     System.assertEquals(120.00, t.AXF_CCT_NUM_Magnitude__c);
+  }
+
+  @IsTest
+  static void cardScopeRetainsProviderEvidenceForObservation() {
+    AXF_CLS_PluggyHttpCalloutMock mock = new AXF_CLS_PluggyHttpCalloutMock();
+    Map<String, Object> full = row('c-0101', '-90.00', 'DEBIT');
+    full.put('status', 'PENDING');
+    full.put('operationType', 'PURCHASE');
+    full.put('category', 'Streaming subscription');
+    full.put('merchantName', 'Netflix');
+    full.put('installmentNumber', 2);
+    full.put('totalInstallments', 10);
+    Map<String, Object> fallback = row('c-0102', '-15.00', 'DEBIT');
+    fallback.put('merchantBusinessName', 'Padaria Exemplo LTDA');
+    fallback.put('installmentNumber', 1000);
+    fallback.put('totalInstallments', 2.5);
+    mock.txPages = new List<String>{
+      AXF_CLS_PluggyTestData.txPage(
+        new List<Map<String, Object>>{ full, fallback },
+        null
+      )
+    };
+    Test.setMock(HttpCalloutMock.class, mock);
+    List<AXF_CLS_PluggySyncService.ClaimedScope> scopes = svc()
+      .claimScopes(connId());
+    AXF_CLS_PluggySyncService.ClaimedScope card = scopeOf(scopes, 'CARD');
+
+    Test.startTest();
+    AXF_CLS_PluggySyncService.ScopeOutcome out = svc().runScope(card);
+    Test.stopTest();
+
+    System.assertEquals('SUCCEEDED', out.state, out.message);
+    Map<String, AXF_OBJ_CreditCardTransaction__c> byKey = new Map<String, AXF_OBJ_CreditCardTransaction__c>();
+    for (AXF_OBJ_CreditCardTransaction__c t : [
+      SELECT
+        AXF_CCT_EXI_SourceKey__c,
+        AXF_CCT_PKL_Status__c,
+        AXF_CCT_TXT_RawSourceStatus__c,
+        AXF_CCT_TXT_OperationType__c,
+        AXF_CCT_TXT_ProviderCategory__c,
+        AXF_CCT_TXT_MerchantName__c,
+        AXF_CCT_NUM_InstallmentNumber__c,
+        AXF_CCT_NUM_TotalInstallments__c
+      FROM AXF_OBJ_CreditCardTransaction__c
+    ]) {
+      byKey.put(t.AXF_CCT_EXI_SourceKey__c, t);
+    }
+    System.assertEquals(2, byKey.size());
+    AXF_OBJ_CreditCardTransaction__c rich = byKey.get('c-0101');
+    System.assertEquals('PENDING', rich.AXF_CCT_PKL_Status__c);
+    System.assertEquals('PENDING', rich.AXF_CCT_TXT_RawSourceStatus__c);
+    System.assertEquals('PURCHASE', rich.AXF_CCT_TXT_OperationType__c);
+    System.assertEquals(
+      'Streaming subscription',
+      rich.AXF_CCT_TXT_ProviderCategory__c
+    );
+    System.assertEquals(
+      'Netflix',
+      rich.AXF_CCT_TXT_MerchantName__c,
+      'name wins'
+    );
+    System.assertEquals(2, rich.AXF_CCT_NUM_InstallmentNumber__c);
+    System.assertEquals(10, rich.AXF_CCT_NUM_TotalInstallments__c);
+    AXF_OBJ_CreditCardTransaction__c sparse = byKey.get('c-0102');
+    System.assertEquals(
+      'Padaria Exemplo LTDA',
+      sparse.AXF_CCT_TXT_MerchantName__c,
+      'businessName fallback'
+    );
+    System.assertEquals(
+      null,
+      sparse.AXF_CCT_NUM_InstallmentNumber__c,
+      'out of range dropped'
+    );
+    System.assertEquals(
+      null,
+      sparse.AXF_CCT_NUM_TotalInstallments__c,
+      'fractional dropped'
+    );
+    System.assertEquals(null, sparse.AXF_CCT_TXT_ProviderCategory__c);
   }
 
   @IsTest

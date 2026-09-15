@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<CustomField xmlns="http://soap.sforce.com/2006/04/metadata">
+    <fullName>AXF_TOB_TXT_SourceIdentity__c</fullName>
+    <label>Identidade Tipada da Fonte</label>
+    <type>Text</type>
+    <length>128</length>
+    <required>true</required>
+    <description
+  >BANK:SourceKey ou CARD:SourceKey; identidade estavel da fonte, nunca texto de estabelecimento ou sufixo de cartao.</description>
+</CustomField>

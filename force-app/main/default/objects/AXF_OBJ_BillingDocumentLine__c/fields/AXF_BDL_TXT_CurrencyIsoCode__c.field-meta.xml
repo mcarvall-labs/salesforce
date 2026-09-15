@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<CustomField xmlns="http://soap.sforce.com/2006/04/metadata">
+    <fullName>AXF_BDL_TXT_CurrencyIsoCode__c</fullName>
+    <label>Moeda</label>
+    <type>Text</type>
+    <length>3</length>
+    <required>true</required>
+    <description>ISO 4217 original da linha (igual ao documento).</description>
+</CustomField>
