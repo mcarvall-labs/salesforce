@@ -1,3 +1,32 @@
+<!-- AXF-106-DECISION-20260912 -->
+## AXF-106 — current bank and holder decision (2026-09-12)
+
+Developer sequence: inspect production metadata read-only; map consumers and DEV/UAT delta; implement AXF-106 in an isolated worktree; validate security, migration dry run and resume. Coordinate changed installation/cleanup/release slices with AXF-77/78/79; no deploy inferred.
+
+Decision approved by Michel on 2026-09-12; authoritative scope: AXF-106. This active supplement supersedes conflicting bank-reference and onboarding-order assumptions in this document only. It is a requirement change, not evidence of implementation, migration or deployment.
+
+Reuse the Financial Institution object reported in production as the canonical bank directory. Its exact API name/schema and availability in DEV/UAT still require read-only verification. Do not create a duplicate object or infer schema from a label.
+
+Connections select Bank through a Lookup to that directory and a suggested Holder through a Lookup to Account (AXF_Person / AXF_Business). Register/reuse holders before connections; provide inline New holder without losing Item ID or bank selection. Holder registration creates no User and grants no access.
+
+Bank accounts, credit cards, manual-source forms and relevant selectors, filters, reports and integrations consume canonical institution references. Preserve provider connector/institution text and IDs separately. MeuPluggy, name similarity or bank equality never proves bank mapping, source identity or ownership.
+
+Connection holder remains a suggestion. Confirm the holder per account/card through AXF-85 before financial use. Editing connection references must not rewrite confirmed holders, grants, financial facts, allocations or immutable document/archive snapshots.
+
+Display bank and holder names plus masked Item ID; support multiple connections sharing bank/holder, explicit edits, idempotent registration and rediscovery. Existing missing references remain visible pending decisions. An alias-only solution does not satisfy this decision.
+
+Inventory consumers before migration; map only unambiguous associations, report unresolved/conflicting mappings, preserve original values and require repeatable backfill and rollback. Do not delete legacy fields until consumers and parity checks pass. Production mutation and destructive cutover require separate authorization.
+
+Open implementation decisions: verified institution identifiers; mandatory fields/progression gates; inactive/deleted-reference policy; and connections with sources from different banks. Do not impose a blanket required-field retrofit or invent a new automatic mapping rule.
+
+Preserve Dev Done and later work-item history. AXF-106 owns the evolution of delivered AXF-80/84/85/86/88/89/90/91/98. Related open work receives only its applicable compatibility obligations; unrelated reviewed contracts/readiness are not reopened.
+
+Canonical page: https://axon-personal-finances.atlassian.net/wiki/pages/viewpage.action?pageId=3866625
+
+Requirements: https://axon-personal-finances.atlassian.net/browse/AXF-106
+
+<!-- /AXF-106-DECISION-20260912 -->
+
 # Salesforce development and delivery
 
 ## Promotion flow
