@@ -1,6 +1,5 @@
 <?xml version="1.0" encoding="UTF-8" ?>
-<PermissionSet xmlns="http://soap.sforce.com/2006/04/metadata">
-  <description
+<PermissionSet xmlns="http://soap.sforce.com/2006/04/metadata"><description
   >Componente do PSG AXF_PSG_Participante. Consultar e editar titulares (Account/Contact) no proprio escopo; sem cadastro; sem Delete; sem ViewAll/ModifyAll; sem configuracao. Perms do dominio vem por US. AXF-7 / AXF-80.</description>
   <hasActivationRequired>false</hasActivationRequired>
   <label>Axon - Participante (componente)</label>
@@ -643,6 +642,24 @@
   <fieldPermissions>
     <editable>true</editable>
     <field>AXF_OBJ_FinancialTransaction__c.AXF_FTX_TXT_UserCategory__c</field>
+    <readable>true</readable>
+  </fieldPermissions>
+  <fieldPermissions>
+    <editable>false</editable>
+    <field
+    >AXF_OBJ_BankAccountTransaction__c.AXF_BAT_TXT_RawSourceStatus__c</field>
+    <readable>true</readable>
+  </fieldPermissions>
+  <fieldPermissions>
+    <editable>false</editable>
+    <field
+    >AXF_OBJ_BankAccountTransaction__c.AXF_BAT_TXT_OperationType__c</field>
+    <readable>true</readable>
+  </fieldPermissions>
+  <fieldPermissions>
+    <editable>false</editable>
+    <field
+    >AXF_OBJ_BankAccountTransaction__c.AXF_BAT_TXT_ProviderCategory__c</field>
     <readable>true</readable>
   </fieldPermissions>
   <objectPermissions>

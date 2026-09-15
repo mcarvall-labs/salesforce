@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<ValidationRule xmlns="http://soap.sforce.com/2006/04/metadata">
+    <fullName>TOB_VR_SourceExclusive</fullName>
+    <active>true</active>
+    <description
+  >Exatamente um fato tipado (BAT ou CCT) por observacao (AXF-109).</description>
+    <errorConditionFormula
+  >(IF(ISBLANK(AXF_TOB_LKP_BankTransaction__c), 0, 1) + IF(ISBLANK(AXF_TOB_LKP_CardTransaction__c), 0, 1)) &lt;&gt; 1</errorConditionFormula>
+    <errorMessage
+  >A observacao deve apontar para exatamente um fato (transacao bancaria ou de cartao).</errorMessage>
+</ValidationRule>
