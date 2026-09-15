@@ -1,0 +1,30 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<CustomField xmlns="http://soap.sforce.com/2006/04/metadata">
+  <fullName>AXF_SCH_PKL_Scope__c</fullName>
+  <label>Escopo</label>
+  <type>Picklist</type>
+  <required>true</required>
+  <valueSet>
+    <restricted>true</restricted>
+    <valueSetDefinition>
+      <sorted>false</sorted>
+      <value>
+        <fullName>ONE</fullName>
+        <default>false</default>
+        <label>Esta ocorrência</label>
+      </value>
+      <value>
+        <fullName>FROM_SEQUENCE</fullName>
+        <default>true</default>
+        <label>Desta sequência em diante</label>
+      </value>
+      <value>
+        <fullName>ALL_TRACKED</fullName>
+        <default>false</default>
+        <label>Todas as rastreadas</label>
+      </value>
+    </valueSetDefinition>
+  </valueSet>
+  <description
+  >Alcance da alteração. Edições em massa excluem ocorrências parcialmente pagas e incluem ocorrências futuras virtuais no efeito (AXF-103).</description>
+</CustomField>

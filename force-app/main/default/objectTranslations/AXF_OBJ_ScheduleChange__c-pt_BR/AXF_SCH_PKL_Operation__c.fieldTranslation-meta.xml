@@ -1,0 +1,20 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<CustomFieldTranslation xmlns="http://soap.sforce.com/2006/04/metadata">
+  <name>AXF_SCH_PKL_Operation__c</name>
+  <picklistValues>
+    <masterLabel>Criação</masterLabel>
+    <translation>Criação</translation>
+  </picklistValues>
+  <picklistValues>
+    <masterLabel>Edição</masterLabel>
+    <translation>Edição</translation>
+  </picklistValues>
+  <picklistValues>
+    <masterLabel>Encerramento</masterLabel>
+    <translation>Encerramento</translation>
+  </picklistValues>
+  <picklistValues>
+    <masterLabel>Adoção</masterLabel>
+    <translation>Adoção</translation>
+  </picklistValues>
+</CustomFieldTranslation>

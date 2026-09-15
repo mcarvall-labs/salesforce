@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<CustomField xmlns="http://soap.sforce.com/2006/04/metadata">
+  <fullName>AXF_SDF_LKP_Schedule__c</fullName>
+  <label>Cronograma</label>
+  <type>Lookup</type>
+  <referenceTo>AXF_OBJ_FinancialSchedule__c</referenceTo>
+  <relationshipName>AXF_REL_ScheduleDefinitions</relationshipName>
+  <deleteConstraint>Restrict</deleteConstraint>
+  <required>true</required>
+  <description
+  >Cronograma proprietário desta revisão de definição. O vínculo é imutável; um cronograma encerrado não é reaberto por edição comum (AXF-103).</description>
+</CustomField>

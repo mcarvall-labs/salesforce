@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<CustomField xmlns="http://soap.sforce.com/2006/04/metadata">
+  <fullName>AXF_SDF_NUM_Principal__c</fullName>
+  <label>Principal</label>
+  <type>Number</type>
+  <precision>18</precision>
+  <scale>2</scale>
+  <required>false</required>
+  <description
+  >Principal da fórmula original aprovada, quando o método exigir. Uma emenda nunca reinicia o principal original na parcela selecionada; rebasing exige política de modalidade e retorna UNSUPPORTED_AMENDMENT até existir (AXF-103).</description>
+</CustomField>

@@ -1,0 +1,23 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<CustomObject xmlns="http://soap.sforce.com/2006/04/metadata">
+  <deploymentStatus>Deployed</deploymentStatus>
+  <description
+  >Revisão imutável da definição do cronograma (AXF-103): método de cálculo, sequência e vencimento iniciais, âncora de calendário, periodicidade e os insumos da fórmula já aprovada. Substituir cria uma revisão maior; a história efetiva nunca é mutada. Sem Delete e sem exposição nativa de lista/relatório até a paridade de compartilhamento. AXF-103.</description>
+  <enableActivities>false</enableActivities>
+  <enableBulkApi>true</enableBulkApi>
+  <enableFeeds>false</enableFeeds>
+  <enableHistory>false</enableHistory>
+  <enableReports>false</enableReports>
+  <enableSearch>false</enableSearch>
+  <enableSharing>true</enableSharing>
+  <enableStreamingApi>true</enableStreamingApi>
+  <label>Definição de Cronograma</label>
+  <nameField>
+    <displayFormat>SDF-{000000}</displayFormat>
+    <label>Número da Definição</label>
+    <type>AutoNumber</type>
+  </nameField>
+  <pluralLabel>Definições de Cronograma</pluralLabel>
+  <sharingModel>Private</sharingModel>
+  <visibility>Public</visibility>
+</CustomObject>

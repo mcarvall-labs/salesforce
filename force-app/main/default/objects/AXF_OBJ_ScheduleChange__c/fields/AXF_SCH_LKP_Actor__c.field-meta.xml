@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<CustomField xmlns="http://soap.sforce.com/2006/04/metadata">
+  <fullName>AXF_SCH_LKP_Actor__c</fullName>
+  <label>Autor</label>
+  <type>Lookup</type>
+  <referenceTo>User</referenceTo>
+  <relationshipName>AXF_REL_ScheduleChanges</relationshipName>
+  <deleteConstraint>SetNull</deleteConstraint>
+  <required>false</required>
+  <description
+  >Usuário que executou a operação, sempre presente no recibo: o handler preenche o autor corrente quando o comando não o informa. A plataforma não permite vínculo obrigatório nem exclusão restrita em relação com User; a obrigatoriedade e a guarda de delete são do handler (AXF-103).</description>
+</CustomField>

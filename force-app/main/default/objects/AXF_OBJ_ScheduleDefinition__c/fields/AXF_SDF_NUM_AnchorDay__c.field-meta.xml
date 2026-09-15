@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<CustomField xmlns="http://soap.sforce.com/2006/04/metadata">
+  <fullName>AXF_SDF_NUM_AnchorDay__c</fullName>
+  <label>Dia Âncora</label>
+  <type>Number</type>
+  <precision>2</precision>
+  <scale>0</scale>
+  <required>true</required>
+  <description
+  >Dia de vencimento pretendido, de 1 a 31, preservado entre meses. Um dia indisponível é ajustado ao último dia do mês, mas a âncora permanece para os meses seguintes; não há ajuste por feriado (AXF-103).</description>
+</CustomField>

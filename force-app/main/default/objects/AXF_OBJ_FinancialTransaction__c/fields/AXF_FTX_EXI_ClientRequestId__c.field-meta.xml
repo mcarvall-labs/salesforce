@@ -9,5 +9,5 @@
     <caseSensitive>true</caseSensitive>
     <required>true</required>
     <description
-  >UUID v4 gerado uma vez pelo wizard por intenção de confirmação; reenvio (retry de rede/duplo clique) faz upsert e reaproveita o mesmo registro em vez de duplicar (G6-7 — idempotency key, sem CommandExecution universal).</description>
+  >Token de idempotência do cliente, único org-wide. TRÊS formatos coexistem neste campo único e não colidem por construção: (1) legado AXF-20 (AXF_CLS_ScheduleService), groupKey mais hífen mais a sequência em 4 dígitos, que SEMPRE contém hífen e tem no máximo 29 caracteres (groupKey limitado a 24); (2) AXF-55 (ALT_CLS_ContractAgendaService), hex minúsculo derivado da identidade de ocorrência; (3) AXF-103 (ALT_CLS_ScheduleProjection.clientRequestId), preâmbulo versionado AXF1 mais 32 hex — e X não é dígito hexadecimal, então o token novo não pode ser confundido com um hex do AXF-55. A identidade COMPLETA (OccurrenceKey/PlanIdentityHash) continua sendo a autoridade: colisão de token truncado com identidade completa diferente é CONFLICT, nunca replay bem-sucedido (G6-7; AXF-103).</description>
 </CustomField>

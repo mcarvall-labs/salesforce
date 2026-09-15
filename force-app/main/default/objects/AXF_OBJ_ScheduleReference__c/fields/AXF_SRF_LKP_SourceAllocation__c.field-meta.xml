@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<CustomField xmlns="http://soap.sforce.com/2006/04/metadata">
+  <fullName>AXF_SRF_LKP_SourceAllocation__c</fullName>
+  <label>Alocação de Origem</label>
+  <type>Lookup</type>
+  <referenceTo>AXF_OBJ_ReconciliationAllocation__c</referenceTo>
+  <relationshipName>AXF_REL_ScheduleReferences</relationshipName>
+  <deleteConstraint>Restrict</deleteConstraint>
+  <required>false</required>
+  <description
+  >Alocação de realização que originou esta referência, quando houver. Referências derivadas de realização e ajustes assinados de obrigação pertencem à AXF-104 (AXF-103).</description>
+</CustomField>

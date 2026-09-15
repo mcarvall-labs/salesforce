@@ -1,0 +1,30 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<CustomField xmlns="http://soap.sforce.com/2006/04/metadata">
+  <fullName>AXF_FSC_PKL_State__c</fullName>
+  <label>Estado</label>
+  <type>Picklist</type>
+  <required>true</required>
+  <valueSet>
+    <restricted>true</restricted>
+    <valueSetDefinition>
+      <sorted>false</sorted>
+      <value>
+        <fullName>DRAFT</fullName>
+        <default>true</default>
+        <label>Rascunho</label>
+      </value>
+      <value>
+        <fullName>ACTIVE</fullName>
+        <default>false</default>
+        <label>Ativo</label>
+      </value>
+      <value>
+        <fullName>ENDED</fullName>
+        <default>false</default>
+        <label>Encerrado</label>
+      </value>
+    </valueSetDefinition>
+  </valueSet>
+  <description
+  >DRAFT = raiz criada, ponteiros ainda não confirmados; ACTIVE = definição vigente válida (e referência vigente quando o método é estimado); ENDED = encerramento efetivo. Um cronograma encerrado não é reativado por edição comum (AXF-103).</description>
+</CustomField>

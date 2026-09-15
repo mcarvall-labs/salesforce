@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<CustomField xmlns="http://soap.sforce.com/2006/04/metadata">
+  <fullName>AXF_SCH_LKP_Schedule__c</fullName>
+  <label>Cronograma</label>
+  <type>Lookup</type>
+  <referenceTo>AXF_OBJ_FinancialSchedule__c</referenceTo>
+  <relationshipName>AXF_REL_ScheduleChanges</relationshipName>
+  <deleteConstraint>Restrict</deleteConstraint>
+  <required>true</required>
+  <description
+  >Cronograma alterado por este recibo. Exclusão restrita preserva a história de alterações (AXF-103).</description>
+</CustomField>

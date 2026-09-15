@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<CustomField xmlns="http://soap.sforce.com/2006/04/metadata">
+  <fullName>AXF_FTX_DAT_NominalDueDate__c</fullName>
+  <label>Vencimento Nominal</label>
+  <type>Date</type>
+  <required>false</required>
+  <description
+  >Data nominal calculada pelo calendário do cronograma, preservando a âncora do mês. O vencimento efetivo continua em AXF_FTX_DAT_DueDate__c: alterar o dia de vencimento não pode deslocar os meses seguintes (AXF-103).</description>
+</CustomField>

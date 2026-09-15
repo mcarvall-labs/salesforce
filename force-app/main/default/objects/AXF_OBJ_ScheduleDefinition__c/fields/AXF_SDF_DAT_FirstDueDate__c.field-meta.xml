@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<CustomField xmlns="http://soap.sforce.com/2006/04/metadata">
+  <fullName>AXF_SDF_DAT_FirstDueDate__c</fullName>
+  <label>Primeiro Vencimento</label>
+  <type>Date</type>
+  <required>true</required>
+  <description
+  >Vencimento nominal da sequência inicial. A data das demais ocorrências é derivada pelo calendário puro (periodicidade e âncora), com ajuste ao último dia do mês quando o dia âncora não existe (AXF-103).</description>
+</CustomField>

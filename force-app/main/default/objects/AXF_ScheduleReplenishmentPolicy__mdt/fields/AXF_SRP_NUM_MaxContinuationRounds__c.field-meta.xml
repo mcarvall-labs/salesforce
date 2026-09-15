@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<CustomField xmlns="http://soap.sforce.com/2006/04/metadata">
+    <fullName>AXF_SRP_NUM_MaxContinuationRounds__c</fullName>
+    <label>Rodadas de continuacao</label>
+    <type>Number</type>
+    <precision>3</precision>
+    <scale>0</scale>
+    <required>true</required>
+    <description
+  >Teto de seguranca de rodadas que a cadeia encadeia antes de devolver o trabalho restante ao conjunto devido da passagem seguinte. Aprovado: 20.</description>
+</CustomField>

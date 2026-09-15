@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="UTF-8" ?>
 <PermissionSet xmlns="http://soap.sforce.com/2006/04/metadata"><description
-  >Componente do PSG AXF_PSG_GestorFinanceiro. Titulares: consultar/cadastrar/editar; sem Delete/ViewAll/ModifyAll. Concede AXF_CanConfigure e as capacidades da Sprint 3 (consolidar, ratear, observar, confianca, encerrar, despesa compartilhada, arquivo).</description>
+  >Componente do PSG AXF_PSG_GestorFinanceiro. Titulares (Account/Contact): consultar/cadastrar/editar; sem Delete/ViewAll/ModifyAll. Concede AXF_CanConfigure. AXF-7 / AXF-80 / AXF-82 / AXF-88 / AXF-11.</description>
   <hasActivationRequired>false</hasActivationRequired>
   <label>Axon - Gestor Financeiro (componente)</label>
   <applicationVisibilities>
@@ -28,19 +28,7 @@
     <enabled>true</enabled>
   </classAccesses>
   <classAccesses>
-    <apexClass>ALT_CLS_ConsolidationService</apexClass>
-    <enabled>true</enabled>
-  </classAccesses>
-  <classAccesses>
     <apexClass>ALT_CLS_ContabilizeiCsvParser</apexClass>
-    <enabled>true</enabled>
-  </classAccesses>
-  <classAccesses>
-    <apexClass>ALT_CLS_CsvFormatParser</apexClass>
-    <enabled>true</enabled>
-  </classAccesses>
-  <classAccesses>
-    <apexClass>ALT_CLS_CsvFormatRegistry</apexClass>
     <enabled>true</enabled>
   </classAccesses>
   <classAccesses>
@@ -53,6 +41,14 @@
   </classAccesses>
   <classAccesses>
     <apexClass>ALT_CLS_CounterpartyService</apexClass>
+    <enabled>true</enabled>
+  </classAccesses>
+  <classAccesses>
+    <apexClass>ALT_CLS_FinancialScheduleService</apexClass>
+    <enabled>true</enabled>
+  </classAccesses>
+  <classAccesses>
+    <apexClass>AXF_CLS_CTRL_FinancialSchedule</apexClass>
     <enabled>true</enabled>
   </classAccesses>
   <classAccesses>
@@ -181,6 +177,18 @@
   </classAccesses>
   <classAccesses>
     <apexClass>AXF_CLS_PluggySyncScheduler</apexClass>
+    <enabled>true</enabled>
+  </classAccesses>
+  <classAccesses>
+    <apexClass>ALT_CLS_ConsolidationService</apexClass>
+    <enabled>true</enabled>
+  </classAccesses>
+  <classAccesses>
+    <apexClass>ALT_CLS_CsvFormatParser</apexClass>
+    <enabled>true</enabled>
+  </classAccesses>
+  <classAccesses>
+    <apexClass>ALT_CLS_CsvFormatRegistry</apexClass>
     <enabled>true</enabled>
   </classAccesses>
   <classAccesses>
@@ -1229,6 +1237,244 @@
     <readable>true</readable>
   </fieldPermissions>
   <fieldPermissions>
+    <editable>false</editable>
+    <field>AXF_OBJ_FinancialSchedule__c.AXF_FSC_BOL_GenerationEnabled__c</field>
+    <readable>true</readable>
+  </fieldPermissions>
+  <fieldPermissions>
+    <editable>false</editable>
+    <field>AXF_OBJ_FinancialSchedule__c.AXF_FSC_DAT_TerminationDate__c</field>
+    <readable>true</readable>
+  </fieldPermissions>
+  <fieldPermissions>
+    <editable>false</editable>
+    <field>AXF_OBJ_FinancialSchedule__c.AXF_FSC_DT_NextAttemptAt__c</field>
+    <readable>true</readable>
+  </fieldPermissions>
+  <fieldPermissions>
+    <editable>false</editable>
+    <field>AXF_OBJ_FinancialSchedule__c.AXF_FSC_LKP_ActiveDefinition__c</field>
+    <readable>true</readable>
+  </fieldPermissions>
+  <fieldPermissions>
+    <editable>false</editable>
+    <field>AXF_OBJ_FinancialSchedule__c.AXF_FSC_LKP_ActiveReference__c</field>
+    <readable>true</readable>
+  </fieldPermissions>
+  <fieldPermissions>
+    <editable>true</editable>
+    <field>AXF_OBJ_FinancialSchedule__c.AXF_FSC_LKP_Contract__c</field>
+    <readable>true</readable>
+  </fieldPermissions>
+  <fieldPermissions>
+    <editable>false</editable>
+    <field>AXF_OBJ_FinancialSchedule__c.AXF_FSC_TXT_LastErrorCode__c</field>
+    <readable>true</readable>
+  </fieldPermissions>
+  <fieldPermissions>
+    <editable>false</editable>
+    <field>AXF_OBJ_FinancialSchedule__c.AXF_FSC_TXT_LegacyGroupKey__c</field>
+    <readable>true</readable>
+  </fieldPermissions>
+  <fieldPermissions>
+    <editable>false</editable>
+    <field>AXF_OBJ_ScheduleDefinition__c.AXF_SDF_LKP_Predecessor__c</field>
+    <readable>true</readable>
+  </fieldPermissions>
+  <fieldPermissions>
+    <editable>false</editable>
+    <field>AXF_OBJ_ScheduleDefinition__c.AXF_SDF_LKP_TermVersion__c</field>
+    <readable>true</readable>
+  </fieldPermissions>
+  <fieldPermissions>
+    <editable>false</editable>
+    <field>AXF_OBJ_ScheduleDefinition__c.AXF_SDF_NUM_FixedValue__c</field>
+    <readable>true</readable>
+  </fieldPermissions>
+  <fieldPermissions>
+    <editable>false</editable>
+    <field
+    >AXF_OBJ_ScheduleDefinition__c.AXF_SDF_NUM_InitialReferenceAmount__c</field>
+    <readable>true</readable>
+  </fieldPermissions>
+  <fieldPermissions>
+    <editable>false</editable>
+    <field>AXF_OBJ_ScheduleDefinition__c.AXF_SDF_NUM_PeriodRate__c</field>
+    <readable>true</readable>
+  </fieldPermissions>
+  <fieldPermissions>
+    <editable>false</editable>
+    <field>AXF_OBJ_ScheduleDefinition__c.AXF_SDF_NUM_Principal__c</field>
+    <readable>true</readable>
+  </fieldPermissions>
+  <fieldPermissions>
+    <editable>false</editable>
+    <field>AXF_OBJ_ScheduleDefinition__c.AXF_SDF_NUM_RecurringFee__c</field>
+    <readable>true</readable>
+  </fieldPermissions>
+  <fieldPermissions>
+    <editable>false</editable>
+    <field
+    >AXF_OBJ_ScheduleDefinition__c.AXF_SDF_NUM_TotalInstallments__c</field>
+    <readable>true</readable>
+  </fieldPermissions>
+  <fieldPermissions>
+    <editable>false</editable>
+    <field>AXF_OBJ_ScheduleDefinition__c.AXF_SDF_NUM_UpfrontFee__c</field>
+    <readable>true</readable>
+  </fieldPermissions>
+  <fieldPermissions>
+    <editable>false</editable>
+    <field
+    >AXF_OBJ_ScheduleDefinition__c.AXF_SDF_TAL_InputCanonicalJson__c</field>
+    <readable>true</readable>
+  </fieldPermissions>
+  <fieldPermissions>
+    <editable>false</editable>
+    <field>AXF_OBJ_ScheduleDefinition__c.AXF_SDF_TXT_FormulaVersion__c</field>
+    <readable>true</readable>
+  </fieldPermissions>
+  <fieldPermissions>
+    <editable>false</editable>
+    <field>AXF_OBJ_ScheduleDefinition__c.AXF_SDF_TXT_TimeZone__c</field>
+    <readable>true</readable>
+  </fieldPermissions>
+  <fieldPermissions>
+    <editable>false</editable>
+    <field>AXF_OBJ_ScheduleReference__c.AXF_SRF_DT_ConfirmedAt__c</field>
+    <readable>true</readable>
+  </fieldPermissions>
+  <fieldPermissions>
+    <editable>false</editable>
+    <field>AXF_OBJ_ScheduleReference__c.AXF_SRF_LKP_Compensates__c</field>
+    <readable>true</readable>
+  </fieldPermissions>
+  <fieldPermissions>
+    <editable>false</editable>
+    <field>AXF_OBJ_ScheduleReference__c.AXF_SRF_LKP_ConfirmedBy__c</field>
+    <readable>true</readable>
+  </fieldPermissions>
+  <fieldPermissions>
+    <editable>false</editable>
+    <field>AXF_OBJ_ScheduleReference__c.AXF_SRF_LKP_Predecessor__c</field>
+    <readable>true</readable>
+  </fieldPermissions>
+  <fieldPermissions>
+    <editable>false</editable>
+    <field>AXF_OBJ_ScheduleReference__c.AXF_SRF_LKP_SourceAllocation__c</field>
+    <readable>true</readable>
+  </fieldPermissions>
+  <fieldPermissions>
+    <editable>false</editable>
+    <field>AXF_OBJ_ScheduleReference__c.AXF_SRF_TAL_Reason__c</field>
+    <readable>true</readable>
+  </fieldPermissions>
+  <fieldPermissions>
+    <editable>false</editable>
+    <field
+    >AXF_OBJ_ScheduleChange__c.AXF_SCH_BOL_IncludeManualOverrides__c</field>
+    <readable>true</readable>
+  </fieldPermissions>
+  <fieldPermissions>
+    <editable>false</editable>
+    <field>AXF_OBJ_ScheduleChange__c.AXF_SCH_LKP_Actor__c</field>
+    <readable>true</readable>
+  </fieldPermissions>
+  <fieldPermissions>
+    <editable>false</editable>
+    <field>AXF_OBJ_ScheduleChange__c.AXF_SCH_LKP_TermVersion__c</field>
+    <readable>true</readable>
+  </fieldPermissions>
+  <fieldPermissions>
+    <editable>false</editable>
+    <field>AXF_OBJ_ScheduleChange__c.AXF_SCH_NUM_FromSequence__c</field>
+    <readable>true</readable>
+  </fieldPermissions>
+  <fieldPermissions>
+    <editable>false</editable>
+    <field>AXF_OBJ_ScheduleChange__c.AXF_SCH_NUM_ThroughSequence__c</field>
+    <readable>true</readable>
+  </fieldPermissions>
+  <fieldPermissions>
+    <editable>false</editable>
+    <field>AXF_OBJ_ScheduleChange__c.AXF_SCH_TAL_FieldPatchJson__c</field>
+    <readable>true</readable>
+  </fieldPermissions>
+  <fieldPermissions>
+    <editable>false</editable>
+    <field>AXF_OBJ_ScheduleChange__c.AXF_SCH_TAL_PriorValuesJson__c</field>
+    <readable>true</readable>
+  </fieldPermissions>
+  <fieldPermissions>
+    <editable>false</editable>
+    <field>AXF_OBJ_ScheduleChange__c.AXF_SCH_TAL_ProtectedRangesJson__c</field>
+    <readable>true</readable>
+  </fieldPermissions>
+  <fieldPermissions>
+    <editable>false</editable>
+    <field>AXF_OBJ_ScheduleChange__c.AXF_SCH_TAL_Reason__c</field>
+    <readable>true</readable>
+  </fieldPermissions>
+  <fieldPermissions>
+    <editable>false</editable>
+    <field>AXF_OBJ_ScheduleChange__c.AXF_SCH_TAL_ResultJson__c</field>
+    <readable>true</readable>
+  </fieldPermissions>
+  <fieldPermissions>
+    <editable>false</editable>
+    <field>AXF_OBJ_FinancialTransaction__c.AXF_FTX_LKP_Schedule__c</field>
+    <readable>true</readable>
+  </fieldPermissions>
+  <fieldPermissions>
+    <editable>false</editable>
+    <field>AXF_OBJ_FinancialTransaction__c.AXF_FTX_EXI_OccurrenceKey__c</field>
+    <readable>true</readable>
+  </fieldPermissions>
+  <fieldPermissions>
+    <editable>false</editable>
+    <field
+    >AXF_OBJ_FinancialTransaction__c.AXF_FTX_LKP_ScheduleDefinition__c</field>
+    <readable>true</readable>
+  </fieldPermissions>
+  <fieldPermissions>
+    <editable>false</editable>
+    <field
+    >AXF_OBJ_FinancialTransaction__c.AXF_FTX_LKP_ScheduleReference__c</field>
+    <readable>true</readable>
+  </fieldPermissions>
+  <fieldPermissions>
+    <editable>false</editable>
+    <field>AXF_OBJ_FinancialTransaction__c.AXF_FTX_NUM_CurrentBasis__c</field>
+    <readable>true</readable>
+  </fieldPermissions>
+  <fieldPermissions>
+    <editable>false</editable>
+    <field
+    >AXF_OBJ_FinancialTransaction__c.AXF_FTX_NUM_ProjectionRevision__c</field>
+    <readable>true</readable>
+  </fieldPermissions>
+  <fieldPermissions>
+    <editable>false</editable>
+    <field>AXF_OBJ_FinancialTransaction__c.AXF_FTX_BOL_BasisFrozen__c</field>
+    <readable>true</readable>
+  </fieldPermissions>
+  <fieldPermissions>
+    <editable>false</editable>
+    <field
+    >AXF_OBJ_FinancialTransaction__c.AXF_FTX_TAL_OverrideFieldsJson__c</field>
+    <readable>true</readable>
+  </fieldPermissions>
+  <fieldPermissions>
+    <editable>false</editable>
+    <field>AXF_OBJ_FinancialTransaction__c.AXF_FTX_DAT_NominalDueDate__c</field>
+    <readable>true</readable>
+  </fieldPermissions>
+  <fieldPermissions>
+    <editable>false</editable>
+    <field>AXF_OBJ_FinancialTransaction__c.AXF_FTX_PKL_ScheduleState__c</field>
+    <readable>true</readable>
+  </fieldPermissions>
+  <fieldPermissions>
     <editable>true</editable>
     <field>AXF_OBJ_BillingDocument__c.AXF_BDO_EXI_ClientRequestId__c</field>
     <readable>true</readable>
@@ -1935,6 +2181,42 @@
     <allowRead>true</allowRead>
     <modifyAllRecords>false</modifyAllRecords>
     <object>AXF_OBJ_FxSettlementCharge__c</object>
+    <viewAllRecords>false</viewAllRecords>
+  </objectPermissions>
+  <objectPermissions>
+    <allowCreate>true</allowCreate>
+    <allowDelete>false</allowDelete>
+    <allowEdit>true</allowEdit>
+    <allowRead>true</allowRead>
+    <modifyAllRecords>false</modifyAllRecords>
+    <object>AXF_OBJ_FinancialSchedule__c</object>
+    <viewAllRecords>false</viewAllRecords>
+  </objectPermissions>
+  <objectPermissions>
+    <allowCreate>false</allowCreate>
+    <allowDelete>false</allowDelete>
+    <allowEdit>false</allowEdit>
+    <allowRead>true</allowRead>
+    <modifyAllRecords>false</modifyAllRecords>
+    <object>AXF_OBJ_ScheduleChange__c</object>
+    <viewAllRecords>false</viewAllRecords>
+  </objectPermissions>
+  <objectPermissions>
+    <allowCreate>false</allowCreate>
+    <allowDelete>false</allowDelete>
+    <allowEdit>false</allowEdit>
+    <allowRead>true</allowRead>
+    <modifyAllRecords>false</modifyAllRecords>
+    <object>AXF_OBJ_ScheduleDefinition__c</object>
+    <viewAllRecords>false</viewAllRecords>
+  </objectPermissions>
+  <objectPermissions>
+    <allowCreate>false</allowCreate>
+    <allowDelete>false</allowDelete>
+    <allowEdit>false</allowEdit>
+    <allowRead>true</allowRead>
+    <modifyAllRecords>false</modifyAllRecords>
+    <object>AXF_OBJ_ScheduleReference__c</object>
     <viewAllRecords>false</viewAllRecords>
   </objectPermissions>
   <objectPermissions>

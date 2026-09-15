@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<CustomField xmlns="http://soap.sforce.com/2006/04/metadata">
+  <fullName>AXF_SDF_NUM_PeriodRate__c</fullName>
+  <label>Taxa do Período</label>
+  <type>Number</type>
+  <precision>18</precision>
+  <scale>10</scale>
+  <required>false</required>
+  <description
+  >Taxa por período consumida pela fórmula aprovada (PRICE/SAC). Dez casas decimais preservam a precisão de entrada sem introduzir arredondamento intermediário próprio (AXF-103).</description>
+</CustomField>
