@@ -1,10 +1,15 @@
-<?xml version="1.0" encoding="UTF-8"?>
+<?xml version="1.0" encoding="UTF-8" ?>
 <CustomField xmlns="http://soap.sforce.com/2006/04/metadata">
     <fullName>AXF_INR_TXT_ActiveToken__c</fullName>
-    <label>Token de execucao ativo</label>
-    <type>Text</type>
-    <length>64</length>
-    <unique>true</unique>
     <caseSensitive>true</caseSensitive>
-    <description>Token unico enquanto a execucao esta ativa (RUNNING). Impede dois runs concorrentes por (conexao, produto) - G5-4.</description>
+    <description
+  >Token unico enquanto a execucao esta ativa (RUNNING). Impede dois runs concorrentes por (conexao, produto) - G5-4.</description>
+    <externalId>false</externalId>
+    <label>Token de execucao ativo</label>
+    <length>64</length>
+    <required>false</required>
+    <trackHistory>false</trackHistory>
+    <trackTrending>false</trackTrending>
+    <type>Text</type>
+    <unique>true</unique>
 </CustomField>
