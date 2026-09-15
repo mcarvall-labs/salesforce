@@ -20,7 +20,7 @@ export function parseFailure(error) {
 
 export function format(template, ...args) {
   return String(template).replace(/\{(\d+)\}/g, (match, index) => {
-    return args[index] === undefined ? match : args[index];
+    return args[index] === undefined || args[index] === null ? "" : args[index];
   });
 }
 

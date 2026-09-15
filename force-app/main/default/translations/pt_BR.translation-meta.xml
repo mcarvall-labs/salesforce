@@ -1028,4 +1028,18 @@
     >O plano mudou desde que você o carregou, ou esta chave foi usada com dados diferentes. Recarregue e revise.</label><name
     >AXF_ReconciliationReversal_codeCONFLICT</name></customLabels><customLabels
   ><label>Defina a moeda de relatório primeiro.</label><name
-    >AXF_ReconciliationReversal_codeREPORTING_CURRENCY_REQUIRED</name></customLabels></Translations>
+    >AXF_ReconciliationReversal_codeREPORTING_CURRENCY_REQUIRED</name></customLabels><customLabels
+  ><label>Conta bancária</label><name
+    >AXF_ReconciliationReversal_kindBANK</name></customLabels><customLabels
+  ><label>Cartão de crédito</label><name
+    >AXF_ReconciliationReversal_kindCARD</name></customLabels><customLabels
+  ><label>Caixa</label><name
+    >AXF_ReconciliationReversal_kindCASH</name></customLabels><customLabels
+  ><label>Plano realizado após:</label><name
+    >AXF_ReconciliationReversal_doneRealized</name></customLabels><customLabels
+  ><label>remanescente</label><name
+    >AXF_ReconciliationReversal_doneRemaining</name></customLabels><customLabels
+  ><label>remanescente da fonte (efeitos visíveis)</label><name
+    >AXF_ReconciliationReversal_doneSourceRemaining</name></customLabels><customLabels
+  ><label>remanescente da fonte não verificável com o seu acesso</label><name
+    >AXF_ReconciliationReversal_doneSourceUnknown</name></customLabels></Translations>

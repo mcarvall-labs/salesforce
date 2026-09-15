@@ -50,6 +50,13 @@ import codeINVALID_TARGET from "@salesforce/label/c.AXF_ReconciliationReversal_c
 import codeALREADY_REVERSED from "@salesforce/label/c.AXF_ReconciliationReversal_codeALREADY_REVERSED";
 import codeCONFLICT from "@salesforce/label/c.AXF_ReconciliationReversal_codeCONFLICT";
 import codeREPORTING_CURRENCY_REQUIRED from "@salesforce/label/c.AXF_ReconciliationReversal_codeREPORTING_CURRENCY_REQUIRED";
+import kindBANK from "@salesforce/label/c.AXF_ReconciliationReversal_kindBANK";
+import kindCARD from "@salesforce/label/c.AXF_ReconciliationReversal_kindCARD";
+import kindCASH from "@salesforce/label/c.AXF_ReconciliationReversal_kindCASH";
+import doneRealized from "@salesforce/label/c.AXF_ReconciliationReversal_doneRealized";
+import doneRemaining from "@salesforce/label/c.AXF_ReconciliationReversal_doneRemaining";
+import doneSourceRemaining from "@salesforce/label/c.AXF_ReconciliationReversal_doneSourceRemaining";
+import doneSourceUnknown from "@salesforce/label/c.AXF_ReconciliationReversal_doneSourceUnknown";
 
 export default {
   title,
@@ -103,5 +110,12 @@ export default {
   codeINVALID_TARGET,
   codeALREADY_REVERSED,
   codeCONFLICT,
-  codeREPORTING_CURRENCY_REQUIRED
+  codeREPORTING_CURRENCY_REQUIRED,
+  kindBANK,
+  kindCARD,
+  kindCASH,
+  doneRealized,
+  doneRemaining,
+  doneSourceRemaining,
+  doneSourceUnknown
 };

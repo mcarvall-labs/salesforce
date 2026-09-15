@@ -18,6 +18,10 @@ public with sharing class ALT_CLS_ReconciliationReversalService {
     'SOURCE_CHANGED',
     'OTHER'
   };
+  /** SOQL OFFSET ceiling: pages past it are refused instead of failing inside the query. */
+  public static final Integer MAX_OFFSET = 2000;
+  /** Allocation rows read for the source residual; reaching it leaves the residual unknown. */
+  public static final Integer MAX_ALLOCATION_ROWS = 2000;
   public static final Integer DEFAULT_PAGE = 25;
   public static final Integer MAX_PAGE = 50;
   public static final String BOUNDARY_AXF104 = 'AXF104_OBLIGATION_ADJUSTMENT_PENDING';
@@ -65,7 +69,15 @@ public with sharing class ALT_CLS_ReconciliationReversalService {
     @AuraEnabled
     public String reversalReason;
     @AuraEnabled
+    public String reversalNote;
+    @AuraEnabled
+    public Datetime reversedAt;
+    @AuraEnabled
     public Datetime createdAt;
+    @AuraEnabled
+    public String sourceDescription;
+    @AuraEnabled
+    public Date sourceDate;
   }
 
   public class ListQuery {
@@ -98,6 +110,10 @@ public with sharing class ALT_CLS_ReconciliationReversalService {
     public Boolean replayed = false;
     @AuraEnabled
     public String reasonCode;
+    @AuraEnabled
+    public String reasonNote;
+    @AuraEnabled
+    public Datetime reversedAt;
     @AuraEnabled
     public Id targetId;
     @AuraEnabled
@@ -192,6 +208,20 @@ public with sharing class ALT_CLS_ReconciliationReversalService {
     v.sourceId = sourceId(row);
     v.fxState = row.AXF_RA_PKL_FxState__c;
     v.createdAt = row.CreatedDate;
+    if (row.AXF_RA_LKP_BankTransaction__c != null) {
+      v.sourceDescription = row.AXF_RA_LKP_BankTransaction__r
+        ?.AXF_BAT_TXT_Description__c;
+      v.sourceDate = row.AXF_RA_LKP_BankTransaction__r?.AXF_BAT_DAT_Date__c;
+    } else if (row.AXF_RA_LKP_CardTransaction__c != null) {
+      v.sourceDescription = row.AXF_RA_LKP_CardTransaction__r
+        ?.AXF_CCT_TXT_Description__c;
+      v.sourceDate = row.AXF_RA_LKP_CardTransaction__r?.AXF_CCT_DAT_Date__c;
+    } else {
+      v.sourceDescription = row.AXF_RA_LKP_ManualTransaction__r
+        ?.AXF_FTX_TXT_Description__c;
+      v.sourceDate = row.AXF_RA_LKP_ManualTransaction__r
+        ?.AXF_FTX_DAT_PurchaseDate__c;
+    }
     return v;
   }
 
@@ -204,6 +234,9 @@ public with sharing class ALT_CLS_ReconciliationReversalService {
     ' AXF_RA_LKP_FinancialTransaction__r.AXF_FTX_LKP_Account__c,' +
     ' AXF_RA_NUM_Magnitude__c, AXF_RA_TXT_CurrencyIsoCode__c, AXF_RA_DAT_RecognitionDate__c,' +
     ' AXF_RA_LKP_BankTransaction__c, AXF_RA_LKP_CardTransaction__c, AXF_RA_LKP_ManualTransaction__c,' +
+    ' AXF_RA_LKP_BankTransaction__r.AXF_BAT_TXT_Description__c, AXF_RA_LKP_BankTransaction__r.AXF_BAT_DAT_Date__c,' +
+    ' AXF_RA_LKP_CardTransaction__r.AXF_CCT_TXT_Description__c, AXF_RA_LKP_CardTransaction__r.AXF_CCT_DAT_Date__c,' +
+    ' AXF_RA_LKP_ManualTransaction__r.AXF_FTX_TXT_Description__c, AXF_RA_LKP_ManualTransaction__r.AXF_FTX_DAT_PurchaseDate__c,' +
     ' AXF_RA_PKL_FxState__c, AXF_RA_LKP_OriginalAllocation__c, AXF_RA_EXI_AllocationKey__c,' +
     ' AXF_RA_PKL_ReversalReason__c, AXF_RA_TXT_ReversalNote__c';
 
@@ -223,6 +256,7 @@ public with sharing class ALT_CLS_ReconciliationReversalService {
     check(authorizedAccounts().contains(query.accountId), 'UNAVAILABLE');
     Integer skip = (result.pageNumber - 1) * result.pageSize;
     Integer take = result.pageSize + 1;
+    check(skip + take <= MAX_OFFSET, 'INVALID');
     List<AXF_OBJ_ReconciliationAllocation__c> rows = (List<AXF_OBJ_ReconciliationAllocation__c>) Database.queryWithBinds(
       'SELECT ' +
         VIEW_FIELDS +
@@ -251,8 +285,10 @@ public with sharing class ALT_CLS_ReconciliationReversalService {
       for (AXF_OBJ_ReconciliationAllocation__c reversal : [
         SELECT
           Id,
+          CreatedDate,
           AXF_RA_LKP_OriginalAllocation__c,
-          AXF_RA_PKL_ReversalReason__c
+          AXF_RA_PKL_ReversalReason__c,
+          AXF_RA_TXT_ReversalNote__c
         FROM AXF_OBJ_ReconciliationAllocation__c
         WHERE
           AXF_RA_PKL_Kind__c = 'REVERSAL'
@@ -262,6 +298,8 @@ public with sharing class ALT_CLS_ReconciliationReversalService {
         AllocationView v = byId.get(reversal.AXF_RA_LKP_OriginalAllocation__c);
         v.reversalId = reversal.Id;
         v.reversalReason = reversal.AXF_RA_PKL_ReversalReason__c;
+        v.reversalNote = reversal.AXF_RA_TXT_ReversalNote__c;
+        v.reversedAt = reversal.CreatedDate;
       }
     }
     return result;
@@ -296,17 +334,16 @@ public with sharing class ALT_CLS_ReconciliationReversalService {
         input.operationKey.length() <= 80,
       'INVALID'
     );
+    check(input.expectedVersion != null, 'INVALID');
     check(
       input.reasonCode != null && REASONS.contains(input.reasonCode),
       'INVALID_REASON'
     );
-    check(
-      input.reasonNote == null || input.reasonNote.length() <= 255,
-      'INVALID'
-    );
+    // Trim first, then bound: a note that fits once trimmed is accepted.
     String note = String.isBlank(input.reasonNote)
       ? null
       : input.reasonNote.trim();
+    check(note == null || note.length() <= 255, 'INVALID');
     AXF_OBJ_ReconciliationAllocation__c original = allocation(
       input.allocationId
     );
@@ -332,10 +369,13 @@ public with sharing class ALT_CLS_ReconciliationReversalService {
       !replay || prior[0].AXF_RA_EXI_AllocationKey__c == key,
       'ALREADY_REVERSED'
     );
-    Id reversalId;
+    // One savepoint around compensation + derived-state read: a caller that catches the
+    // exception never keeps a compensation whose result it did not receive.
+    Savepoint sp = Database.setSavepoint();
     try {
       // AXF-25 compares the payload fingerprint (allocation, version, reason) on replay.
-      reversalId = new ALT_CLS_RealizationService()
+      // A concurrent reversal that wins the AXF-25 lock first answers CONFLICT here.
+      result.reversalId = new ALT_CLS_RealizationService()
         .reverse(
           original.Id,
           input.expectedVersion,
@@ -343,14 +383,21 @@ public with sharing class ALT_CLS_ReconciliationReversalService {
           input.reasonCode,
           note
         );
+      result.replayed = replay;
+      result.reasonCode = input.reasonCode;
+      result.reasonNote = note;
+      describe(result, original);
+      return result;
     } catch (ALT_CLS_RealizationService.RealizationException failure) {
+      Database.rollback(sp);
       throw new ReversalException(failure.getMessage());
+    } catch (ReversalException failure) {
+      Database.rollback(sp);
+      throw failure;
+    } catch (Exception failure) {
+      Database.rollback(sp);
+      throw new ReversalException('UNAVAILABLE');
     }
-    result.replayed = replay;
-    result.reversalId = reversalId;
-    result.reasonCode = input.reasonCode;
-    describe(result, original);
-    return result;
   }
 
   /** @description Prior compensation for an allocation already reversed under another command, or null. */
@@ -358,7 +405,11 @@ public with sharing class ALT_CLS_ReconciliationReversalService {
     requireAccess();
     AXF_OBJ_ReconciliationAllocation__c original = allocation(allocationId);
     List<AXF_OBJ_ReconciliationAllocation__c> rows = [
-      SELECT Id, AXF_RA_PKL_ReversalReason__c
+      SELECT
+        Id,
+        CreatedDate,
+        AXF_RA_PKL_ReversalReason__c,
+        AXF_RA_TXT_ReversalNote__c
       FROM AXF_OBJ_ReconciliationAllocation__c
       WHERE
         AXF_RA_PKL_Kind__c = 'REVERSAL'
@@ -373,6 +424,8 @@ public with sharing class ALT_CLS_ReconciliationReversalService {
     result.originalId = original.Id;
     result.reversalId = rows[0].Id;
     result.reasonCode = rows[0].AXF_RA_PKL_ReversalReason__c;
+    result.reasonNote = rows[0].AXF_RA_TXT_ReversalNote__c;
+    result.reversedAt = rows[0].CreatedDate;
     result.replayed = true;
     describe(result, original);
     return result;
@@ -432,9 +485,11 @@ public with sharing class ALT_CLS_ReconciliationReversalService {
     check(rows.size() == 1, 'UNAVAILABLE');
     result.sourceAmount = (Decimal) rows[0]
       .get('AXF_' + prefix + '_NUM_Magnitude__c');
+    // Visible effects only (the user's own sharing); a truncated read leaves it unknown
+    // rather than over-reporting the capacity restored.
     Decimal net = 0;
     Id sourceId = result.sourceId;
-    for (AXF_OBJ_ReconciliationAllocation__c row : [
+    List<AXF_OBJ_ReconciliationAllocation__c> effects = [
       SELECT AXF_RA_PKL_Kind__c, AXF_RA_NUM_Magnitude__c
       FROM AXF_OBJ_ReconciliationAllocation__c
       WHERE
@@ -442,8 +497,13 @@ public with sharing class ALT_CLS_ReconciliationReversalService {
         OR AXF_RA_LKP_CardTransaction__c = :sourceId
         OR AXF_RA_LKP_ManualTransaction__c = :sourceId
       WITH USER_MODE
-      LIMIT 2000
-    ]) {
+      LIMIT :MAX_ALLOCATION_ROWS
+    ];
+    if (effects.size() >= MAX_ALLOCATION_ROWS) {
+      result.sourceResidualAfter = null;
+      return;
+    }
+    for (AXF_OBJ_ReconciliationAllocation__c row : effects) {
       net +=
         (row.AXF_RA_PKL_Kind__c == 'REVERSAL' ? -1 : 1) *
         row.AXF_RA_NUM_Magnitude__c;

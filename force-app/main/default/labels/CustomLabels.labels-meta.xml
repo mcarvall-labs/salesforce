@@ -1740,4 +1740,28 @@
     >AXF_ReconciliationReversal_codeREPORTING_CURRENCY_REQUIRED</fullName><language
     >en_US</language><protected>false</protected><shortDescription
     >Code reporting currency</shortDescription><value
-    >Set the reporting currency first.</value></labels></CustomLabels>
+    >Set the reporting currency first.</value></labels><labels><fullName
+    >AXF_ReconciliationReversal_kindBANK</fullName><language
+    >en_US</language><protected>false</protected><shortDescription
+    >Kind bank</shortDescription><value>Bank account</value></labels><labels
+  ><fullName>AXF_ReconciliationReversal_kindCARD</fullName><language
+    >en_US</language><protected>false</protected><shortDescription
+    >Kind card</shortDescription><value>Credit card</value></labels><labels
+  ><fullName>AXF_ReconciliationReversal_kindCASH</fullName><language
+    >en_US</language><protected>false</protected><shortDescription
+    >Kind cash</shortDescription><value>Cash</value></labels><labels><fullName
+    >AXF_ReconciliationReversal_doneRealized</fullName><language
+    >en_US</language><protected>false</protected><shortDescription
+    >Done realized</shortDescription><value
+    >Plan realized after:</value></labels><labels><fullName
+    >AXF_ReconciliationReversal_doneRemaining</fullName><language
+    >en_US</language><protected>false</protected><shortDescription
+    >Done remaining</shortDescription><value>remaining</value></labels><labels
+  ><fullName>AXF_ReconciliationReversal_doneSourceRemaining</fullName><language
+    >en_US</language><protected>false</protected><shortDescription
+    >Done source remaining</shortDescription><value
+    >source remaining (visible effects)</value></labels><labels><fullName
+    >AXF_ReconciliationReversal_doneSourceUnknown</fullName><language
+    >en_US</language><protected>false</protected><shortDescription
+    >Done source unknown</shortDescription><value
+    >source remaining not verifiable with your access</value></labels></CustomLabels>

@@ -7,6 +7,14 @@ public with sharing class ALT_CLS_RealizationService {
   }
   public class RealizationException extends Exception {
   }
+  /** AXF-141: reasons a compensation may carry; the restricted picklist mirrors this list. */
+  public static final Set<String> REVERSAL_REASONS = new Set<String>{
+    'USER_ERROR',
+    'DUPLICATE_LINK',
+    'WRONG_TARGET',
+    'SOURCE_CHANGED',
+    'OTHER'
+  };
   public class Input {
     public Id targetId;
     public Id accountId;
@@ -494,6 +502,12 @@ public with sharing class ALT_CLS_RealizationService {
       !String.isBlank(operationKey) && operationKey.length() <= 80,
       'INVALID'
     );
+    check(
+      reasonCode == null || REVERSAL_REASONS.contains(reasonCode),
+      'INVALID_REASON'
+    );
+    // A note never travels without a reason; the legacy (3-arg) shape is both null.
+    check(reasonNote == null || reasonCode != null, 'INVALID');
     check(reasonNote == null || reasonNote.length() <= 255, 'INVALID');
     Savepoint sp = Database.setSavepoint();
     try {

@@ -10,15 +10,15 @@
     <valueSetDefinition>
       <sorted>false</sorted>
       <value><fullName>USER_ERROR</fullName><default>false</default><label
-        >USER_ERROR</label></value>
+        >User error</label></value>
       <value><fullName>DUPLICATE_LINK</fullName><default>false</default><label
-        >DUPLICATE_LINK</label></value>
+        >Duplicate link</label></value>
       <value><fullName>WRONG_TARGET</fullName><default>false</default><label
-        >WRONG_TARGET</label></value>
+        >Wrong forecast</label></value>
       <value><fullName>SOURCE_CHANGED</fullName><default>false</default><label
-        >SOURCE_CHANGED</label></value>
+        >Source changed</label></value>
       <value><fullName>OTHER</fullName><default>false</default><label
-        >OTHER</label></value>
+        >Other</label></value>
     </valueSetDefinition>
   </valueSet>
 </CustomField>

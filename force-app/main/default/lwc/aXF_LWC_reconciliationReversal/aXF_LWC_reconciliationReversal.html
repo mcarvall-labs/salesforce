@@ -86,7 +86,15 @@
                       </template>
                     </td>
                     <td>{row.planKind}</td>
-                    <td>{row.sourceLabel}</td>
+                    <td>
+                      {row.sourceKindLabel}
+                      <template lwc:if={row.hasSourceDescription}>
+                        · {row.sourceDescription} ·
+                        <lightning-formatted-date-time
+                          value={row.sourceDate}
+                        ></lightning-formatted-date-time>
+                      </template>
+                    </td>
                     <td>
                       <lightning-formatted-number
                         value={row.amount}
@@ -129,7 +137,20 @@
           <dl class="slds-dl_horizontal slds-m-bottom_small">
             <dt class="slds-dl_horizontal__label">{labels.selected}</dt>
             <dd class="slds-dl_horizontal__detail" data-id="selectedSummary">
-              {selectedSummary}
+              {selectedTarget} · {selected.planKind} ·
+              <lightning-formatted-number
+                value={selected.amount}
+                format-style="currency"
+                currency-code={selected.currencyIso}
+              ></lightning-formatted-number>
+              ·
+              <lightning-formatted-date-time
+                value={selected.recognitionDate}
+              ></lightning-formatted-date-time>
+              · {selectedSourceKind}
+              <template lwc:if={selected.sourceDescription}>
+                · {selected.sourceDescription}
+              </template>
             </dd>
           </dl>
           <div class="slds-grid slds-gutters slds-wrap">
@@ -183,7 +204,33 @@
             >
             <p>{labels.doneCompensation}: {result.reversalId}</p>
             <p>{labels.doneOriginal}: {result.originalId}</p>
-            <p data-id="net">{resultNet}</p>
+            <p data-id="net">
+              {labels.doneRealized}
+              <lightning-formatted-number
+                value={result.realizedAfter}
+                format-style="currency"
+                currency-code={result.currencyIso}
+              ></lightning-formatted-number>
+              · {labels.doneRemaining}
+              <lightning-formatted-number
+                value={result.residualAfter}
+                format-style="currency"
+                currency-code={result.currencyIso}
+              ></lightning-formatted-number>
+              ({resultStateLabel})
+              <template lwc:if={hasSourceResidual}>
+                · {labels.doneSourceRemaining}
+                <lightning-formatted-number
+                  value={result.sourceResidualAfter}
+                  format-style="currency"
+                  currency-code={result.currencyIso}
+                ></lightning-formatted-number>
+              </template>
+              <template lwc:else> · {labels.doneSourceUnknown} </template>
+            </p>
+            <template lwc:if={result.reasonNote}>
+              <p data-id="note">{labels.note}: {result.reasonNote}</p>
+            </template>
             <template for:each={resultBoundaries} for:item="b">
               <p key={b.key} class="slds-text-color_weak" data-id="boundary">
                 {b.label}

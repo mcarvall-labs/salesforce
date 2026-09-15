@@ -3,6 +3,7 @@ import Reversal from "c/aXF_LWC_reconciliationReversal";
 import getContext from "@salesforce/apex/AXF_CLS_CTRL_ReconciliationReversal.getContext";
 import listAllocations from "@salesforce/apex/AXF_CLS_CTRL_ReconciliationReversal.listAllocations";
 import reverse from "@salesforce/apex/AXF_CLS_CTRL_ReconciliationReversal.reverse";
+import priorReversal from "@salesforce/apex/AXF_CLS_CTRL_ReconciliationReversal.priorReversal";
 
 jest.mock(
   "@salesforce/apex/AXF_CLS_CTRL_ReconciliationReversal.getContext",
@@ -19,6 +20,11 @@ jest.mock(
 );
 jest.mock(
   "@salesforce/apex/AXF_CLS_CTRL_ReconciliationReversal.reverse",
+  () => ({ default: jest.fn() }),
+  { virtual: true }
+);
+jest.mock(
+  "@salesforce/apex/AXF_CLS_CTRL_ReconciliationReversal.priorReversal",
   () => ({ default: jest.fn() }),
   { virtual: true }
 );
@@ -114,12 +120,12 @@ describe("c-a-x-f-_-l-w-c-_reconciliation-reversal", () => {
     note.dispatchEvent(new CustomEvent("change"));
     await flush();
     expect(byId(element, "confirm").disabled).toBe(false);
-    reverse.mockRejectedValueOnce({ body: { message: "CONFLICT" } });
+    reverse.mockRejectedValueOnce({ body: { message: "UNEXPECTED" } });
     byId(element, "confirm").click();
     await flush();
     expect(
       element.shadowRoot.querySelector('[role="alert"]').textContent
-    ).toContain("c.AXF_ReconciliationReversal_codeCONFLICT");
+    ).toContain("c.AXF_ReconciliationReversal_error");
     const first = JSON.parse(reverse.mock.calls[0][0].request);
     expect(first).toMatchObject({
       allocationId: "a0E1",
@@ -148,10 +154,71 @@ describe("c-a-x-f-_-l-w-c-_reconciliation-reversal", () => {
       "c.AXF_ReconciliationReversal_doneReplayed"
     );
     expect(byId(element, "net").textContent).toContain(
-      "c.AXF_ReconciliationReversal_doneNet"
+      "c.AXF_ReconciliationReversal_doneRealized"
+    );
+    expect(byId(element, "net").textContent).toContain(
+      "c.AXF_ReconciliationReversal_doneSourceRemaining"
     );
     expect(byId(element, "boundary").textContent).toContain(
       "c.AXF_ReconciliationReversal_boundaryAXF104_OBLIGATION_ADJUSTMENT_PENDING"
+    );
+  });
+
+  it("shows the prior compensation on ALREADY_REVERSED and reloads the list on CONFLICT", async () => {
+    const element = await mount();
+    listAllocations.mockResolvedValue({
+      pageNumber: 1,
+      pageSize: 25,
+      hasMore: false,
+      items: [open]
+    });
+    byId(element, "holder").dispatchEvent(
+      new CustomEvent("change", { detail: { value: "001A" } })
+    );
+    await flush();
+    byId(element, "load").click();
+    await flush();
+    element.shadowRoot.querySelector('[data-index="0"]').click();
+    await flush();
+    byId(element, "reason").dispatchEvent(
+      new CustomEvent("change", { detail: { value: "OTHER" } })
+    );
+    await flush();
+    reverse.mockRejectedValueOnce({ body: { message: "CONFLICT" } });
+    byId(element, "confirm").click();
+    await flush();
+    expect(listAllocations).toHaveBeenCalledTimes(2);
+    expect(byId(element, "confirm")).toBeNull();
+    expect(
+      element.shadowRoot.querySelector('[role="alert"]').textContent
+    ).toContain("c.AXF_ReconciliationReversal_codeCONFLICT");
+    element.shadowRoot.querySelector('[data-index="0"]').click();
+    await flush();
+    byId(element, "reason").dispatchEvent(
+      new CustomEvent("change", { detail: { value: "OTHER" } })
+    );
+    await flush();
+    reverse.mockRejectedValueOnce({ body: { message: "ALREADY_REVERSED" } });
+    priorReversal.mockResolvedValueOnce({
+      reversalId: "a0E3",
+      originalId: "a0E1",
+      replayed: true,
+      reasonCode: "USER_ERROR",
+      reasonNote: "typo",
+      actualOnly: false,
+      realizedAfter: 0,
+      residualAfter: 100,
+      stateAfter: "NONE",
+      sourceResidualAfter: null,
+      currencyIso: "BRL",
+      boundaries: []
+    });
+    byId(element, "confirm").click();
+    await flush();
+    expect(byId(element, "done").textContent).toContain("a0E3");
+    expect(byId(element, "note").textContent).toContain("typo");
+    expect(byId(element, "net").textContent).toContain(
+      "c.AXF_ReconciliationReversal_doneSourceUnknown"
     );
   });
 

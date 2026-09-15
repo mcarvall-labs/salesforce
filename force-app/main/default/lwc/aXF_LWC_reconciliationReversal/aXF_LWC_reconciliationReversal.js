@@ -2,10 +2,15 @@ import { LightningElement, wire } from "lwc";
 import getContext from "@salesforce/apex/AXF_CLS_CTRL_ReconciliationReversal.getContext";
 import listAllocations from "@salesforce/apex/AXF_CLS_CTRL_ReconciliationReversal.listAllocations";
 import reverse from "@salesforce/apex/AXF_CLS_CTRL_ReconciliationReversal.reverse";
+import priorReversal from "@salesforce/apex/AXF_CLS_CTRL_ReconciliationReversal.priorReversal";
 import labels from "./labels";
 import { parseFailure, format, newOperationKey } from "./failures";
 
 const STEP = { LIST: "LIST", REVIEW: "REVIEW", DONE: "DONE" };
+const KIND_LABEL = { BANK: "kindBANK", CARD: "kindCARD", CASH: "kindCASH" };
+function code(error) {
+  return error && error.body && error.body.message;
+}
 
 export default class AxfReconciliationReversal extends LightningElement {
   labels = labels;
@@ -76,7 +81,8 @@ export default class AxfReconciliationReversal extends LightningElement {
             labels["reason" + a.reversalReason] || a.reversalReason
           )
         : labels.statusOpen,
-      sourceLabel: `${a.sourceKind} ${a.sourceId}`
+      sourceKindLabel: labels[KIND_LABEL[a.sourceKind]] || a.sourceKind,
+      hasSourceDescription: !!a.sourceDescription
     }));
   }
   get hasRows() {
@@ -96,24 +102,24 @@ export default class AxfReconciliationReversal extends LightningElement {
   get confirmLabel() {
     return this.busy ? labels.confirming : labels.confirm;
   }
-  get selectedSummary() {
-    if (!this.selected) {
-      return "";
-    }
-    const s = this.selected;
-    return `${s.targetDescription || s.targetId} · ${s.planKind} · ${s.amount} ${s.currencyIso} · ${s.recognitionDate} · ${s.sourceKind}`;
+  get selectedTarget() {
+    return this.selected
+      ? this.selected.targetDescription || this.selected.targetId
+      : "";
   }
-  get resultNet() {
-    if (!this.result) {
-      return "";
-    }
-    const r = this.result;
-    return format(
-      labels.doneNet,
-      r.realizedAfter,
-      r.residualAfter,
-      r.stateAfter,
-      r.sourceResidualAfter
+  get selectedSourceKind() {
+    return this.selected
+      ? labels[KIND_LABEL[this.selected.sourceKind]] || this.selected.sourceKind
+      : "";
+  }
+  get resultStateLabel() {
+    return this.result ? this.result.stateAfter : "";
+  }
+  get hasSourceResidual() {
+    return (
+      !!this.result &&
+      this.result.sourceResidualAfter !== null &&
+      this.result.sourceResidualAfter !== undefined
     );
   }
   get resultBoundaries() {
@@ -151,7 +157,15 @@ export default class AxfReconciliationReversal extends LightningElement {
         })
       });
       this.page = page;
-      this.items = more ? [...this.items, ...page.items] : [...page.items];
+      if (more) {
+        const seen = new Set(this.items.map((i) => i.allocationId));
+        this.items = [
+          ...this.items,
+          ...page.items.filter((i) => !seen.has(i.allocationId))
+        ];
+      } else {
+        this.items = [...page.items];
+      }
     } catch (e) {
       this.error = parseFailure(e);
     } finally {
@@ -185,6 +199,9 @@ export default class AxfReconciliationReversal extends LightningElement {
   handleBack() {
     this.step = STEP.LIST;
     this.error = undefined;
+    this.selected = undefined;
+    // Versions may have moved while reviewing: never offer a stale row again.
+    this.load(false);
   }
   async handleConfirm() {
     if (this.confirmDisabled) {
@@ -206,6 +223,28 @@ export default class AxfReconciliationReversal extends LightningElement {
     } catch (e) {
       // The draft stays reviewable; the same operation key replays on retry.
       this.error = parseFailure(e);
+      const failure = code(e);
+      if (failure === "ALREADY_REVERSED") {
+        // The prior compensation is the answer: show it instead of a dead end.
+        try {
+          const prior = await priorReversal({
+            allocationId: this.selected.allocationId
+          });
+          if (prior) {
+            this.result = prior;
+            this.error = undefined;
+            this.step = STEP.DONE;
+          }
+        } catch {
+          // keep the sanitized error already shown
+        }
+      } else if (failure === "CONFLICT") {
+        // Stale plan version: go back to a fresh list; the draft cannot succeed as is.
+        this.step = STEP.LIST;
+        this.selected = undefined;
+        await this.load(false);
+        this.error = parseFailure(e);
+      }
     } finally {
       this.busy = false;
     }

@@ -192,7 +192,13 @@ private class ALT_CLS_ReconciliationReversalTest {
       );
       Test.startTest();
       ALT_CLS_ReconciliationReversalService.Result reversed = service.reverse(
-        input(f.allocationId, 1, 'WRONG_TARGET', '  wrong invoice  ', 'r1')
+        input(
+          f.allocationId,
+          before.items[0].targetVersion,
+          'WRONG_TARGET',
+          '  wrong invoice  ',
+          'r1'
+        )
       );
       ALT_CLS_ReconciliationReversalService.Result replayed = service.reverse(
         input(f.allocationId, 1, 'WRONG_TARGET', '  wrong invoice  ', 'r1')
@@ -209,6 +215,14 @@ private class ALT_CLS_ReconciliationReversalTest {
       Test.stopTest();
 
       Assert.areEqual(1, before.items.size());
+      Assert.areEqual(
+        1,
+        before.items[0].targetVersion,
+        'the listing carries the version the UI sends as expectedVersion'
+      );
+      Assert.areEqual('Fact basic', before.items[0].sourceDescription);
+      Assert.areEqual(Date.today(), before.items[0].sourceDate);
+      Assert.isFalse(before.items[0].scheduleLinked);
       Assert.isNull(before.items[0].reversalId, 'not reversed yet');
       Assert.areEqual(60, before.items[0].amount);
       Assert.areEqual('BANK', before.items[0].sourceKind);
@@ -309,6 +323,10 @@ private class ALT_CLS_ReconciliationReversalTest {
       );
       Assert.areEqual(reversed.reversalId, after.items[0].reversalId);
       Assert.areEqual('WRONG_TARGET', after.items[0].reversalReason);
+      Assert.areEqual('wrong invoice', after.items[0].reversalNote);
+      Assert.isNotNull(after.items[0].reversedAt);
+      Assert.areEqual('wrong invoice', reversed.reasonNote);
+      Assert.areEqual('wrong invoice', prior.reasonNote);
       Assert.areEqual(
         100,
         [
@@ -390,9 +408,11 @@ private class ALT_CLS_ReconciliationReversalTest {
         failure(input(f.allocationId, 1, 'OTHER', null, 'n')),
         'capability missing'
       );
-      Assert.isFalse(
-        AXF_CLS_CTRL_ReconciliationReversal.getContext(null).canReverse
+      AXF_CLS_CTRL_ReconciliationReversal.Context denied = AXF_CLS_CTRL_ReconciliationReversal.getContext(
+        null
       );
+      Assert.isFalse(denied.canReverse);
+      Assert.isTrue(denied.holders.isEmpty());
     }
     System.runAs(byAlias('axf141p')) {
       Assert.areEqual(
@@ -431,6 +451,16 @@ private class ALT_CLS_ReconciliationReversalTest {
       noKey.operationKey = null;
       Assert.areEqual('INVALID', failure(noKey));
       Assert.areEqual(
+        'INVALID',
+        failure(input(f.allocationId, null, 'OTHER', null, 'g5')),
+        'expected version is required, not a silent CONFLICT'
+      );
+      Assert.areEqual(
+        'INVALID',
+        failure(input(f.allocationId, 1, 'OTHER', 'y'.repeat(256), 'g6')),
+        'a note over 255 characters after trimming is refused'
+      );
+      Assert.areEqual(
         'CONFLICT',
         failure(input(f.allocationId, 7, 'OTHER', null, 'stale'))
       );
@@ -438,6 +468,13 @@ private class ALT_CLS_ReconciliationReversalTest {
         null
       );
       Assert.isTrue(context.canReverse);
+      Boolean listed = false;
+      for (ALT_CLS_AxonHolder.HolderView h : context.holders) {
+        if (h.accountId == f.holder.Id) {
+          listed = true;
+        }
+      }
+      Assert.isTrue(listed, 'the authorized holder feeds the picker');
       Assert.areEqual(
         ALT_CLS_ReconciliationReversalService.REASONS,
         context.reasons
@@ -478,5 +515,190 @@ private class ALT_CLS_ReconciliationReversalTest {
       [SELECT COUNT() FROM AXF_OBJ_ReconciliationAllocation__c],
       'only the application and its single compensation exist'
     );
+  }
+
+  @IsTest
+  static void cardAndCashSourcesScheduleBoundaryAndPagingAreCovered() {
+    System.runAs(byAlias('axf141g')) {
+      Account owner = new Account(
+        Name = 'Holder 141 kinds',
+        RecordTypeId = Account.SObjectType.getDescribe()
+          .getRecordTypeInfosByDeveloperName()
+          .get('AXF_Business')
+          .getRecordTypeId()
+      );
+      insert owner;
+      AXF_OBJ_CreditCard__c card = new AXF_OBJ_CreditCard__c(
+        AXF_CC_LKP_Account__c = owner.Id,
+        AXF_CC_PKL_AvailabilityState__c = 'AVAILABLE',
+        AXF_CC_TXT_CurrencyIsoCode__c = 'BRL'
+      );
+      insert card;
+      AXF_OBJ_CreditCardTransaction__c cardFact = new AXF_OBJ_CreditCardTransaction__c(
+        AXF_CCT_MDR_CreditCard__c = card.Id,
+        AXF_CCT_NUM_Magnitude__c = 100,
+        AXF_CCT_TXT_CurrencyIsoCode__c = 'BRL',
+        AXF_CCT_PKL_Direction__c = 'DEBIT',
+        AXF_CCT_DAT_Date__c = Date.today(),
+        AXF_CCT_TXT_Description__c = 'Card fact',
+        AXF_CCT_EXI_SourceKey__c = 'axf141-card',
+        AXF_CCT_PKL_Source__c = 'PLUGGY',
+        AXF_CCT_PKL_Status__c = 'POSTED',
+        AXF_CCT_NUM_Version__c = 0
+      );
+      insert cardFact;
+      // A schedule occurrence as target: reversed like any other, AXF-104 boundary flagged.
+      ALT_CLS_FinancialScheduleService.CreateInput scheduleInput = new ALT_CLS_FinancialScheduleService.CreateInput();
+      scheduleInput.accountId = owner.Id;
+      scheduleInput.direction = 'DEBIT';
+      scheduleInput.currencyIsoCode = 'BRL';
+      scheduleInput.method = 'ESTIMATED';
+      scheduleInput.totalInstallments = 3;
+      scheduleInput.firstSequence = 1;
+      scheduleInput.trackingStartSequence = 1;
+      scheduleInput.trackingDueDate = Date.today();
+      scheduleInput.periodMonths = 1;
+      scheduleInput.referenceAmount = 100;
+      scheduleInput.legacyGroupKey = 'axf141-schedule';
+      ALT_CLS_FinancialScheduleService.CreateResult created = ALT_CLS_FinancialScheduleService.createSchedule(
+        scheduleInput
+      );
+      Assert.areEqual('CREATED', created.outcome, created.message);
+      AXF_OBJ_FinancialTransaction__c occurrence = [
+        SELECT Id, AXF_FTX_NUM_Version__c
+        FROM AXF_OBJ_FinancialTransaction__c
+        WHERE AXF_FTX_LKP_Schedule__c = :created.scheduleId
+        ORDER BY AXF_FTX_NUM_Sequence__c
+        LIMIT 1
+      ];
+      ALT_CLS_RealizationService realization = new ALT_CLS_RealizationService();
+      // CARD: two applications on the same fact (60 + 30), then reverse the first.
+      ALT_CLS_RealizationService.Input first = new ALT_CLS_RealizationService.Input();
+      first.targetId = occurrence.Id;
+      first.targetVersion = occurrence.AXF_FTX_NUM_Version__c == null
+        ? 0
+        : occurrence.AXF_FTX_NUM_Version__c;
+      first.sourceId = cardFact.Id;
+      first.sourceKind = 'CARD';
+      first.sourceVersion = 0;
+      first.amount = 60;
+      first.recognitionDate = Date.today();
+      first.operationKey = 'axf141-card-first';
+      Id firstId = realization.apply(first);
+      ALT_CLS_RealizationService.Input second = new ALT_CLS_RealizationService.Input();
+      second.targetId = occurrence.Id;
+      second.targetVersion = first.targetVersion + 1;
+      second.sourceId = cardFact.Id;
+      second.sourceKind = 'CARD';
+      second.sourceVersion = 1;
+      second.amount = 30;
+      second.recognitionDate = Date.today();
+      second.operationKey = 'axf141-card-second';
+      realization.apply(second);
+      // CASH: a plan realized from a cash fact.
+      AXF_OBJ_FinancialTransaction__c cashPlan = new AXF_OBJ_FinancialTransaction__c(
+        AXF_FTX_LKP_Account__c = owner.Id,
+        AXF_FTX_NUM_Magnitude__c = 50,
+        AXF_FTX_PKL_Direction__c = 'DEBIT',
+        AXF_FTX_TXT_CurrencyIsoCode__c = 'BRL',
+        AXF_FTX_DAT_PurchaseDate__c = Date.today(),
+        AXF_FTX_TXT_Description__c = 'Cash plan',
+        AXF_FTX_PKL_Status__c = 'PLANNED',
+        AXF_FTX_NUM_Version__c = 0,
+        AXF_FTX_EXI_ClientRequestId__c = 'ftx-141-cash'
+      );
+      insert cashPlan;
+      ALT_CLS_RealizationService.Input cash = new ALT_CLS_RealizationService.Input();
+      cash.targetId = cashPlan.Id;
+      cash.targetVersion = 0;
+      cash.sourceKind = 'CASH';
+      cash.amount = 50;
+      cash.recognitionDate = Date.today();
+      cash.operationKey = 'axf141-cash';
+      Id cashId = realization.apply(cash);
+      ALT_CLS_ReconciliationReversalService service = new ALT_CLS_ReconciliationReversalService();
+
+      Test.startTest();
+      ALT_CLS_ReconciliationReversalService.ListQuery pageOne = query(owner.Id);
+      pageOne.pageSize = 2;
+      ALT_CLS_ReconciliationReversalService.AllocationPage p1 = service.listAllocations(
+        pageOne
+      );
+      ALT_CLS_ReconciliationReversalService.ListQuery pageTwo = query(owner.Id);
+      pageTwo.pageSize = 2;
+      pageTwo.pageNumber = 2;
+      ALT_CLS_ReconciliationReversalService.AllocationPage p2 = service.listAllocations(
+        pageTwo
+      );
+      ALT_CLS_ReconciliationReversalService.ListQuery tooFar = query(owner.Id);
+      tooFar.pageSize = 50;
+      tooFar.pageNumber = 41;
+      String farCode;
+      try {
+        service.listAllocations(tooFar);
+      } catch (ALT_CLS_ReconciliationReversalService.ReversalException expected) {
+        farCode = expected.getMessage();
+      }
+      Decimal occurrenceVersion = [
+        SELECT AXF_FTX_NUM_Version__c
+        FROM AXF_OBJ_FinancialTransaction__c
+        WHERE Id = :occurrence.Id
+      ]
+      .AXF_FTX_NUM_Version__c;
+      ALT_CLS_ReconciliationReversalService.Result cardReversed = service.reverse(
+        input(
+          firstId,
+          occurrenceVersion,
+          'DUPLICATE_LINK',
+          null,
+          'card-reversal'
+        )
+      );
+      Decimal cashVersion = [
+        SELECT AXF_FTX_NUM_Version__c
+        FROM AXF_OBJ_FinancialTransaction__c
+        WHERE Id = :cashPlan.Id
+      ]
+      .AXF_FTX_NUM_Version__c;
+      ALT_CLS_ReconciliationReversalService.Result cashReversed = service.reverse(
+        input(cashId, cashVersion, 'USER_ERROR', null, 'cash-reversal')
+      );
+      Test.stopTest();
+
+      Assert.areEqual(2, p1.items.size());
+      Assert.isTrue(p1.hasMore, 'three applications, page size two');
+      Assert.areEqual(1, p2.items.size());
+      Assert.isFalse(p2.hasMore);
+      Assert.areEqual('INVALID', farCode, 'OFFSET ceiling refused, not thrown');
+      Assert.areEqual('CARD', cardReversed.sourceKind);
+      Assert.areEqual(cardFact.Id, cardReversed.sourceId);
+      Assert.areEqual(100, cardReversed.sourceAmount);
+      Assert.areEqual(
+        70,
+        cardReversed.sourceResidualAfter,
+        'only the reversed application is restored: 100 - 30'
+      );
+      Assert.areEqual(
+        30,
+        cardReversed.realizedAfter,
+        'the other application stays'
+      );
+      Assert.isTrue(
+        cardReversed.boundaries.contains(
+          ALT_CLS_ReconciliationReversalService.BOUNDARY_AXF104
+        ),
+        'schedule occurrence flags the AXF-104 boundary'
+      );
+      Assert.areEqual('CASH', cashReversed.sourceKind);
+      Assert.areEqual(50, cashReversed.sourceAmount);
+      Assert.areEqual(50, cashReversed.sourceResidualAfter);
+      Assert.areEqual(0, cashReversed.realizedAfter);
+      Assert.isTrue(cashReversed.boundaries.isEmpty());
+      for (ALT_CLS_ReconciliationReversalService.AllocationView v : p1.items) {
+        if (v.targetId == occurrence.Id) {
+          Assert.isTrue(v.scheduleLinked, 'listing marks schedule occurrences');
+        }
+      }
+    }
   }
 }
