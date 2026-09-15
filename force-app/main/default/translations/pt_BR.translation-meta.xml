@@ -1091,4 +1091,10 @@
     >AXF_SourceLink_codeREPORTING_CURRENCY_REQUIRED</name></customLabels><customLabels
   ><label
     >Ocorrências projetadas precisam ser materializadas antes do vínculo (AXF-136).</label><name
-    >AXF_SourceLink_codeMATERIALIZATION_REQUIRED</name></customLabels></Translations>
+    >AXF_SourceLink_codeMATERIALIZATION_REQUIRED</name></customLabels><customLabels
+  ><label>Open Finance (Pluggy)</label><name
+    >AXF_SourceLink_originPLUGGY</name></customLabels><customLabels><label
+    >Importação CSV</label><name
+    >AXF_SourceLink_originCSV</name></customLabels><customLabels><label
+    >Manual</label><name
+    >AXF_SourceLink_originMANUAL</name></customLabels></Translations>

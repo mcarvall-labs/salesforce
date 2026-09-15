@@ -12,6 +12,8 @@ public with sharing class AXF_CLS_CTRL_SourceLink {
     @AuraEnabled
     public Integer pageSize;
     @AuraEnabled
+    public Integer maxScan;
+    @AuraEnabled
     public List<ALT_CLS_AxonHolder.HolderView> holders;
   }
 
@@ -24,6 +26,7 @@ public with sharing class AXF_CLS_CTRL_SourceLink {
         FeatureManagement.checkPermission('AXF_CanRealize');
       result.policyVersion = ALT_CLS_SourceLinkService.POLICY_VERSION;
       result.pageSize = ALT_CLS_SourceLinkService.DEFAULT_PAGE;
+      result.maxScan = ALT_CLS_SourceLinkService.MAX_SCAN;
       result.holders = result.canLink
         ? new ALT_CLS_AxonHolder().listHolders(search)
         : new List<ALT_CLS_AxonHolder.HolderView>();

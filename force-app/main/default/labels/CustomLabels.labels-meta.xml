@@ -1847,4 +1847,14 @@
   ><fullName>AXF_SourceLink_codeMATERIALIZATION_REQUIRED</fullName><language
     >en_US</language><protected>false</protected><shortDescription
     >Code materialization</shortDescription><value
-    >Projected occurrences must be materialized before linking (AXF-136).</value></labels></CustomLabels>
+    >Projected occurrences must be materialized before linking (AXF-136).</value></labels><labels
+  ><fullName>AXF_SourceLink_originPLUGGY</fullName><language
+    >en_US</language><protected>false</protected><shortDescription
+    >Origin Pluggy</shortDescription><value
+    >Open Finance (Pluggy)</value></labels><labels><fullName
+    >AXF_SourceLink_originCSV</fullName><language>en_US</language><protected
+    >false</protected><shortDescription>Origin CSV</shortDescription><value
+    >CSV import</value></labels><labels><fullName
+    >AXF_SourceLink_originMANUAL</fullName><language>en_US</language><protected
+    >false</protected><shortDescription>Origin manual</shortDescription><value
+    >Manual</value></labels></CustomLabels>

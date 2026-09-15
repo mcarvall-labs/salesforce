@@ -21,6 +21,32 @@ const DIRECTION_LABEL = {
   DEBIT: labels.directionDEBIT,
   CREDIT: labels.directionCREDIT
 };
+const ORIGIN_LABEL = {
+  PLUGGY: labels.originPLUGGY,
+  CSV: labels.originCSV,
+  MANUAL: labels.originMANUAL
+};
+function dedupe(current, incoming, field) {
+  const keyOf = (c) => {
+    if (field !== "key") {
+      return c[field];
+    }
+    return c.persisted ? c.targetId : `${c.scheduleId}#${c.sequence}`;
+  };
+  const seen = new Set(current.map(keyOf));
+  return [...current, ...incoming.filter((c) => !seen.has(keyOf(c)))];
+}
+function conflictCode(error) {
+  return error && error.body && error.body.message;
+}
+function validAmount(value) {
+  return (
+    typeof value === "number" &&
+    Number.isFinite(value) &&
+    value > 0 &&
+    Math.round(value * 100) === value * 100
+  );
+}
 const STATUS_LABEL = {
   PLANNED: labels.statusPLANNED,
   CONFIRMED: labels.statusCONFIRMED,
@@ -109,6 +135,7 @@ export default class AxfSourceLink extends LightningElement {
       ...s,
       key: s.sourceId,
       directionLabel: DIRECTION_LABEL[s.direction] || s.direction,
+      originLabel: ORIGIN_LABEL[s.origin] || s.origin,
       kindLabel: s.sourceKind === "CARD" ? labels.kindCARD : labels.kindBANK
     }));
   }
@@ -131,6 +158,11 @@ export default class AxfSourceLink extends LightningElement {
       this.sourcePage.excludedCount
     );
   }
+  get sourceScanTruncatedText() {
+    return this.sourcePage && this.sourcePage.scanTruncated
+      ? format(labels.scanTruncated, this.sourcePage.maxScan)
+      : "";
+  }
   get sourceDirectionLabel() {
     return this.source
       ? DIRECTION_LABEL[this.source.direction] || this.source.direction
@@ -142,8 +174,7 @@ export default class AxfSourceLink extends LightningElement {
       key: c.persisted ? c.targetId : `${c.scheduleId}#${c.sequence}`,
       index: i,
       statusLabel: STATUS_LABEL[c.status] || c.status,
-      isSelected:
-        this.target && c.persisted && this.target.targetId === c.targetId
+      isVirtual: !c.persisted
     }));
   }
   get hasCandidates() {
@@ -167,7 +198,7 @@ export default class AxfSourceLink extends LightningElement {
   }
   get scanTruncatedText() {
     return this.candidatePage && this.candidatePage.scanTruncated
-      ? format(labels.scanTruncated, 200)
+      ? format(labels.scanTruncated, this.candidatePage.maxScan)
       : "";
   }
   get suggestedAmount() {
@@ -190,9 +221,24 @@ export default class AxfSourceLink extends LightningElement {
     return (
       this.busy ||
       (this.changed && !this.reviewed) ||
-      !this.amount ||
+      !validAmount(this.amount) ||
       !this.recognitionDate
     );
+  }
+  get amountInvalid() {
+    return (
+      this.amount !== null &&
+      this.amount !== undefined &&
+      !validAmount(this.amount)
+    );
+  }
+  get sourceOriginLabel() {
+    return this.source
+      ? ORIGIN_LABEL[this.source.origin] || this.source.origin
+      : "";
+  }
+  get hasTarget() {
+    return !!this.target;
   }
   get confirmLabel() {
     return this.busy ? labels.confirming : labels.confirm;
@@ -201,7 +247,7 @@ export default class AxfSourceLink extends LightningElement {
     if (!this.target) {
       return labels.targetNone;
     }
-    return `${this.target.description || this.target.targetId} · ${this.target.dueDate} · ${this.target.residual} ${this.target.currencyIso}`;
+    return this.target.description || this.target.targetId;
   }
   get resultReplayed() {
     return this.result && this.result.replayed === true;
@@ -220,9 +266,14 @@ export default class AxfSourceLink extends LightningElement {
   }
   handleSourceTerm(event) {
     this.sourceTerm = event.target.value;
+    // A new term starts a new result set: page 2 of one filter never follows page 1 of another.
+    this.sources = [];
+    this.sourcePage = undefined;
   }
   handleCandidateTerm(event) {
     this.candidateTerm = event.target.value;
+    this.candidates = [];
+    this.candidatePage = undefined;
   }
   resetSources() {
     this.sources = [];
@@ -238,6 +289,11 @@ export default class AxfSourceLink extends LightningElement {
     this.error = undefined;
     const pageNumber =
       more && this.sourcePage ? this.sourcePage.pageNumber + 1 : 1;
+    const requested = {
+      holderId: this.holderId,
+      kind: this.kind,
+      term: this.sourceTerm
+    };
     try {
       const page = await listSources({
         request: JSON.stringify({
@@ -248,8 +304,17 @@ export default class AxfSourceLink extends LightningElement {
           pageSize: this.context ? this.context.pageSize : null
         })
       });
+      if (
+        requested.holderId !== this.holderId ||
+        requested.kind !== this.kind ||
+        requested.term !== this.sourceTerm
+      ) {
+        return; // the user moved on; never render another holder's facts
+      }
       this.sourcePage = page;
-      this.sources = more ? [...this.sources, ...page.items] : [...page.items];
+      this.sources = more
+        ? dedupe(this.sources, page.items, "sourceId")
+        : [...page.items];
     } catch (e) {
       this.error = parseFailure(e);
     } finally {
@@ -275,7 +340,6 @@ export default class AxfSourceLink extends LightningElement {
     this.candidates = [];
     this.candidatePage = undefined;
     this.candidateTerm = "";
-    this.operationKey = newOperationKey();
     this.step = STEP.CANDIDATE;
     this.loadCandidates(false);
   }
@@ -301,7 +365,7 @@ export default class AxfSourceLink extends LightningElement {
       this.candidatePage = page;
       this.source = page.source;
       this.candidates = more
-        ? [...this.candidates, ...page.items]
+        ? dedupe(this.candidates, page.items, "key")
         : [...page.items];
       if (!page.source.eligible) {
         this.error = parseFailure({
@@ -346,6 +410,9 @@ export default class AxfSourceLink extends LightningElement {
     this.recognitionDate = this.suggestedDate;
     this.reviewed = false;
     this.error = undefined;
+    // One key per draft (source + target choice): a retry of the same draft replays,
+    // a different choice never collides with an earlier key.
+    this.operationKey = newOperationKey();
     this.step = STEP.REVIEW;
   }
   handleAmount(event) {
@@ -362,6 +429,8 @@ export default class AxfSourceLink extends LightningElement {
   handleBack() {
     this.step = STEP.CANDIDATE;
     this.error = undefined;
+    this.target = undefined;
+    this.loadCandidates(false);
   }
 
   async handleConfirm() {
@@ -389,9 +458,31 @@ export default class AxfSourceLink extends LightningElement {
     } catch (e) {
       // The draft stays reviewable; the same operation key replays on retry.
       this.error = parseFailure(e);
+      if (conflictCode(e) === "CONFLICT") {
+        // Versions moved: refresh source and candidates so the draft can be re-reviewed.
+        await this.refreshDraft();
+      }
     } finally {
       this.busy = false;
     }
+  }
+  async refreshDraft() {
+    const targetId = this.target ? this.target.targetId : null;
+    const keep = this.error;
+    await this.loadCandidates(false);
+    this.error = keep;
+    if (targetId) {
+      this.target = this.candidates.find(
+        (c) => c.persisted && c.targetId === targetId
+      );
+      if (!this.target) {
+        this.step = STEP.CANDIDATE;
+        return;
+      }
+    }
+    this.amount = this.suggestedAmount;
+    this.recognitionDate = this.suggestedDate;
+    this.reviewed = false;
   }
 
   handleNewLink() {

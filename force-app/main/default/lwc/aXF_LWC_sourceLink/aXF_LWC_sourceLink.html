@@ -98,7 +98,7 @@
               class="slds-text-body_small slds-m-top_small"
               data-id="excludedSources"
             >
-              {excludedSourcesText}
+              {excludedSourcesText} {sourceScanTruncatedText}
             </p>
             <table
               class="slds-table slds-table_cell-buffer slds-table_bordered slds-m-top_x-small"
@@ -126,7 +126,7 @@
                     </td>
                     <td>{row.description}</td>
                     <td>{row.kindLabel} · {row.fundingLabel}</td>
-                    <td>{row.origin}</td>
+                    <td>{row.originLabel}</td>
                     <td>{row.directionLabel}</td>
                     <td>
                       <lightning-formatted-number
@@ -176,8 +176,8 @@
               <lightning-formatted-date-time
                 value={source.factDate}
               ></lightning-formatted-date-time>
-              · {source.description} · {source.fundingLabel} · {source.origin} ·
-              {sourceDirectionLabel} ·
+              · {source.description} · {source.fundingLabel} ·
+              {sourceOriginLabel} · {sourceDirectionLabel} ·
               <lightning-formatted-number
                 value={source.amount}
                 format-style="currency"
@@ -262,8 +262,7 @@
                     <td>{row.category}</td>
                     <td>
                       {row.statusLabel}
-                      <template lwc:if={row.persisted}></template>
-                      <template lwc:else>
+                      <template lwc:if={row.isVirtual}>
                         <lightning-badge
                           label={labels.virtualBadge}
                           class="slds-m-left_x-small"
@@ -343,6 +342,18 @@
             <dt class="slds-dl_horizontal__label">{labels.target}</dt>
             <dd class="slds-dl_horizontal__detail" data-id="targetSummary">
               {targetSummary}
+              <template lwc:if={hasTarget}>
+                ·
+                <lightning-formatted-date-time
+                  value={target.dueDate}
+                ></lightning-formatted-date-time>
+                ·
+                <lightning-formatted-number
+                  value={target.residual}
+                  format-style="currency"
+                  currency-code={target.currencyIso}
+                ></lightning-formatted-number>
+              </template>
             </dd>
           </dl>
           <div class="slds-grid slds-gutters slds-wrap">

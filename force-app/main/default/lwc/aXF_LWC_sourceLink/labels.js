@@ -84,6 +84,9 @@ import codeCONFLICT from "@salesforce/label/c.AXF_SourceLink_codeCONFLICT";
 import codeUNAVAILABLE_AMOUNT from "@salesforce/label/c.AXF_SourceLink_codeUNAVAILABLE_AMOUNT";
 import codeREPORTING_CURRENCY_REQUIRED from "@salesforce/label/c.AXF_SourceLink_codeREPORTING_CURRENCY_REQUIRED";
 import codeMATERIALIZATION_REQUIRED from "@salesforce/label/c.AXF_SourceLink_codeMATERIALIZATION_REQUIRED";
+import originPLUGGY from "@salesforce/label/c.AXF_SourceLink_originPLUGGY";
+import originCSV from "@salesforce/label/c.AXF_SourceLink_originCSV";
+import originMANUAL from "@salesforce/label/c.AXF_SourceLink_originMANUAL";
 
 export default {
   title,
@@ -171,5 +174,8 @@ export default {
   codeCONFLICT,
   codeUNAVAILABLE_AMOUNT,
   codeREPORTING_CURRENCY_REQUIRED,
-  codeMATERIALIZATION_REQUIRED
+  codeMATERIALIZATION_REQUIRED,
+  originPLUGGY,
+  originCSV,
+  originMANUAL
 };

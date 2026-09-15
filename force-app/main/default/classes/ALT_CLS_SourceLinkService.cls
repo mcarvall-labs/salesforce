@@ -17,6 +17,10 @@ public with sharing class ALT_CLS_SourceLinkService {
   public static final Integer MAX_SCAN = 200;
   public static final Integer MAX_SCHEDULES = 12;
   public static final Integer MAX_VIRTUAL = 60;
+  /** Highest page a caller may ask for; beyond it the scan itself is the limit. */
+  public static final Integer MAX_PAGE_NUMBER = 1000;
+  /** Allocation rows read per verification; reaching it means the net cannot be trusted. */
+  public static final Integer MAX_ALLOCATION_ROWS = 2000;
   private static final Set<String> KINDS = new Set<String>{
     KIND_BANK,
     KIND_CARD
@@ -131,6 +135,11 @@ public with sharing class ALT_CLS_SourceLinkService {
     public Integer scannedCount = 0;
     @AuraEnabled
     public Integer excludedCount = 0;
+    /** True when a kind had more rows than MAX_SCAN inside the window; narrow the search. */
+    @AuraEnabled
+    public Boolean scanTruncated = false;
+    @AuraEnabled
+    public Integer maxScan = MAX_SCAN;
     @AuraEnabled
     public List<SourceView> items = new List<SourceView>();
   }
@@ -152,6 +161,8 @@ public with sharing class ALT_CLS_SourceLinkService {
     public Boolean hasMore = false;
     @AuraEnabled
     public Boolean scanTruncated = false;
+    @AuraEnabled
+    public Integer maxScan = MAX_SCAN;
     @AuraEnabled
     public Integer excludedCount = 0;
     @AuraEnabled
@@ -218,6 +229,7 @@ public with sharing class ALT_CLS_SourceLinkService {
   }
 
   private static Integer pageNumber(Integer requested) {
+    check(requested == null || requested <= MAX_PAGE_NUMBER, 'INVALID');
     return requested == null || requested < 1 ? 1 : requested;
   }
 
@@ -252,10 +264,10 @@ public with sharing class ALT_CLS_SourceLinkService {
     check(authorizedAccounts().contains(query.accountId), 'UNAVAILABLE');
     List<SourceView> views = new List<SourceView>();
     if (query.sourceKind == null || query.sourceKind == KIND_BANK) {
-      views.addAll(bankSources(query.accountId, query.term));
+      views.addAll(truncate(bankSources(query.accountId, query.term), result));
     }
     if (query.sourceKind == null || query.sourceKind == KIND_CARD) {
-      views.addAll(cardSources(query.accountId, query.term));
+      views.addAll(truncate(cardSources(query.accountId, query.term), result));
     }
     evaluate(views);
     List<SourceView> eligible = new List<SourceView>();
@@ -281,6 +293,18 @@ public with sharing class ALT_CLS_SourceLinkService {
     return result;
   }
 
+  /** Each kind is read with a sentinel row; more than MAX_SCAN is reported, never hidden. */
+  private static List<SourceView> truncate(
+    List<SourceView> views,
+    SourcePage page
+  ) {
+    if (views.size() > MAX_SCAN) {
+      page.scanTruncated = true;
+      views.remove(views.size() - 1);
+    }
+    return views;
+  }
+
   private class SourceKey implements Comparable {
     public SourceView view;
     public SourceKey(SourceView view) {
@@ -304,7 +328,9 @@ public with sharing class ALT_CLS_SourceLinkService {
 
   private static String pattern(String term) {
     // Bound values treat escaped wildcards literally; the search never reaches the SOQL text.
-    return '%' + term.trim().replace('%', '\\%').replace('_', '\\_') + '%';
+    return ('%' +
+    term.trim().replace('\\', '\\\\').replace('%', '\\%').replace('_', '\\_') +
+    '%');
   }
 
   private List<SourceView> bankSources(Id accountId, String term) {
@@ -330,7 +356,7 @@ public with sharing class ALT_CLS_SourceLinkService {
           'accountId' => accountId,
           'floor' => floor,
           'pattern' => String.isBlank(term) ? null : pattern(term),
-          'scan' => MAX_SCAN
+          'scan' => MAX_SCAN + 1
         },
         AccessLevel.USER_MODE
       )
@@ -363,7 +389,7 @@ public with sharing class ALT_CLS_SourceLinkService {
           'accountId' => accountId,
           'floor' => floor,
           'pattern' => String.isBlank(term) ? null : pattern(term),
-          'scan' => MAX_SCAN
+          'scan' => MAX_SCAN + 1
         },
         AccessLevel.USER_MODE
       )
@@ -497,7 +523,7 @@ public with sharing class ALT_CLS_SourceLinkService {
     Set<Id> unverified
   ) {
     Map<Id, Integer> visibleCounts = new Map<Id, Integer>();
-    for (AXF_OBJ_ReconciliationAllocation__c row : [
+    List<AXF_OBJ_ReconciliationAllocation__c> visibleRows = [
       SELECT
         AXF_RA_LKP_BankTransaction__c,
         AXF_RA_LKP_CardTransaction__c,
@@ -508,8 +534,15 @@ public with sharing class ALT_CLS_SourceLinkService {
         AXF_RA_LKP_BankTransaction__c IN :ids
         OR AXF_RA_LKP_CardTransaction__c IN :ids
       WITH USER_MODE
-      LIMIT 2000
-    ]) {
+      LIMIT :MAX_ALLOCATION_ROWS
+    ];
+    Map<Id, Integer> privateCounts = new Conservation().countBySource(ids);
+    if (visibleRows.size() >= MAX_ALLOCATION_ROWS || privateCounts == null) {
+      // A truncated read can coincide by accident: everything scanned is unverified.
+      unverified.addAll(ids);
+      return;
+    }
+    for (AXF_OBJ_ReconciliationAllocation__c row : visibleRows) {
       Id key = row.AXF_RA_LKP_BankTransaction__c != null
         ? row.AXF_RA_LKP_BankTransaction__c
         : row.AXF_RA_LKP_CardTransaction__c;
@@ -524,7 +557,6 @@ public with sharing class ALT_CLS_SourceLinkService {
         (visibleCounts.containsKey(key) ? visibleCounts.get(key) : 0) + 1
       );
     }
-    Map<Id, Integer> privateCounts = new Conservation().countBySource(ids);
     for (Id id : ids) {
       Integer visible = visibleCounts.containsKey(id)
         ? visibleCounts.get(id)
@@ -766,7 +798,7 @@ public with sharing class ALT_CLS_SourceLinkService {
       return;
     }
     Map<Id, Integer> visibleCounts = new Map<Id, Integer>();
-    for (AXF_OBJ_ReconciliationAllocation__c row : [
+    List<AXF_OBJ_ReconciliationAllocation__c> visibleRows = [
       SELECT
         AXF_RA_LKP_FinancialTransaction__c,
         AXF_RA_PKL_Kind__c,
@@ -774,8 +806,14 @@ public with sharing class ALT_CLS_SourceLinkService {
       FROM AXF_OBJ_ReconciliationAllocation__c
       WHERE AXF_RA_LKP_FinancialTransaction__c IN :ids
       WITH USER_MODE
-      LIMIT 2000
-    ]) {
+      LIMIT :MAX_ALLOCATION_ROWS
+    ];
+    Map<Id, Integer> privateCounts = new Conservation().countByTarget(ids);
+    if (visibleRows.size() >= MAX_ALLOCATION_ROWS || privateCounts == null) {
+      unverified.addAll(ids);
+      return;
+    }
+    for (AXF_OBJ_ReconciliationAllocation__c row : visibleRows) {
       Id key = row.AXF_RA_LKP_FinancialTransaction__c;
       Decimal sign = row.AXF_RA_PKL_Kind__c == 'REVERSAL' ? -1 : 1;
       nets.put(
@@ -788,7 +826,6 @@ public with sharing class ALT_CLS_SourceLinkService {
         (visibleCounts.containsKey(key) ? visibleCounts.get(key) : 0) + 1
       );
     }
-    Map<Id, Integer> privateCounts = new Conservation().countByTarget(ids);
     for (Id id : ids) {
       Integer visible = visibleCounts.containsKey(id)
         ? visibleCounts.get(id)
@@ -810,6 +847,7 @@ public with sharing class ALT_CLS_SourceLinkService {
       // Virtual lines carry no description; a manual search targets persisted forecasts only.
       return result;
     }
+    Integer scheduleCap = MAX_SCHEDULES + 1;
     List<AXF_OBJ_FinancialSchedule__c> schedules = [
       SELECT Id, Name
       FROM AXF_OBJ_FinancialSchedule__c
@@ -820,8 +858,12 @@ public with sharing class ALT_CLS_SourceLinkService {
         AND AXF_FSC_PKL_Direction__c = :source.direction
       WITH USER_MODE
       ORDER BY Id
-      LIMIT :MAX_SCHEDULES
+      LIMIT :scheduleCap
     ];
+    if (schedules.size() > MAX_SCHEDULES) {
+      page.scanTruncated = true;
+      schedules.remove(schedules.size() - 1);
+    }
     for (AXF_OBJ_FinancialSchedule__c schedule : schedules) {
       ALT_CLS_ScheduleProjection.ProjectionInput request = new ALT_CLS_ScheduleProjection.ProjectionInput();
       request.scheduleId = schedule.Id;
@@ -833,8 +875,12 @@ public with sharing class ALT_CLS_SourceLinkService {
         continue;
       }
       for (ALT_CLS_ScheduleProjection.OccurrenceLine line : projection.lines) {
-        if (line.persisted == true || result.size() >= MAX_VIRTUAL) {
+        if (line.persisted == true) {
           continue;
+        }
+        if (result.size() >= MAX_VIRTUAL) {
+          page.scanTruncated = true;
+          break;
         }
         CandidateView c = new CandidateView();
         c.scheduleId = schedule.Id;
@@ -927,7 +973,12 @@ public with sharing class ALT_CLS_SourceLinkService {
       input.changesReviewed == true,
       'REVIEW_REQUIRED'
     );
-    check(input.amount <= source.residual, 'UNAVAILABLE_AMOUNT');
+    check(
+      input.amount <= source.residual &&
+      (input.targetId == null ||
+      input.amount <= suggested),
+      'UNAVAILABLE_AMOUNT'
+    );
     result.createdActualOnly = input.targetId == null;
     result.allocationId = realize(input, source);
     finish(result);
@@ -1029,14 +1080,18 @@ public with sharing class ALT_CLS_SourceLinkService {
     public Map<Id, Integer> countBySource(Set<Id> ids) {
       requireAccess();
       Map<Id, Integer> result = new Map<Id, Integer>();
-      for (AXF_OBJ_ReconciliationAllocation__c row : [
+      List<AXF_OBJ_ReconciliationAllocation__c> rows = [
         SELECT AXF_RA_LKP_BankTransaction__c, AXF_RA_LKP_CardTransaction__c
         FROM AXF_OBJ_ReconciliationAllocation__c
         WHERE
           AXF_RA_LKP_BankTransaction__c IN :ids
           OR AXF_RA_LKP_CardTransaction__c IN :ids
-        LIMIT 2000
-      ]) {
+        LIMIT :MAX_ALLOCATION_ROWS
+      ];
+      if (rows.size() >= MAX_ALLOCATION_ROWS) {
+        return null; // truncated: the caller treats every id as unverified
+      }
+      for (AXF_OBJ_ReconciliationAllocation__c row : rows) {
         Id key = row.AXF_RA_LKP_BankTransaction__c != null
           ? row.AXF_RA_LKP_BankTransaction__c
           : row.AXF_RA_LKP_CardTransaction__c;
@@ -1048,12 +1103,16 @@ public with sharing class ALT_CLS_SourceLinkService {
     public Map<Id, Integer> countByTarget(Set<Id> ids) {
       requireAccess();
       Map<Id, Integer> result = new Map<Id, Integer>();
-      for (AXF_OBJ_ReconciliationAllocation__c row : [
+      List<AXF_OBJ_ReconciliationAllocation__c> rows = [
         SELECT AXF_RA_LKP_FinancialTransaction__c
         FROM AXF_OBJ_ReconciliationAllocation__c
         WHERE AXF_RA_LKP_FinancialTransaction__c IN :ids
-        LIMIT 2000
-      ]) {
+        LIMIT :MAX_ALLOCATION_ROWS
+      ];
+      if (rows.size() >= MAX_ALLOCATION_ROWS) {
+        return null;
+      }
+      for (AXF_OBJ_ReconciliationAllocation__c row : rows) {
         Id key = row.AXF_RA_LKP_FinancialTransaction__c;
         result.put(key, (result.containsKey(key) ? result.get(key) : 0) + 1);
       }
