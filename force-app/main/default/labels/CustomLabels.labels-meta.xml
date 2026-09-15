@@ -149,4 +149,209 @@
   ><fullName>AXF_Realization_reportingCurrencyRequired</fullName><language
     >en_US</language><protected>false</protected><shortDescription
     >Realization reportingCurrencyRequired</shortDescription><value
-    >Configure the organization reporting currency before recording realization.</value></labels></CustomLabels>
+    >Configure the organization reporting currency before recording realization.</value></labels><labels
+  ><fullName>AXF_ConfidencePanel_title</fullName><language
+    >en_US</language><protected>false</protected><shortDescription
+    >Title</shortDescription><value>Confidence panel</value></labels><labels
+  ><fullName>AXF_ConfidencePanel_intro</fullName><language
+    >en_US</language><protected>false</protected><shortDescription
+    >Intro</shortDescription><value
+    >Which sources and dates this indicator depends on, so you can decide whether to trust, wait or correct the data. Levels come from the server; nothing is recalculated here.</value></labels><labels
+  ><fullName>AXF_ConfidencePanel_scope</fullName><language
+    >en_US</language><protected>false</protected><shortDescription
+    >Scope</shortDescription><value>People / companies</value></labels><labels
+  ><fullName>AXF_ConfidencePanel_scopeHelp</fullName><language
+    >en_US</language><protected>false</protected><shortDescription
+    >Scope help</shortDescription><value
+    >Only people and companies you are authorized to see are listed.</value></labels><labels
+  ><fullName>AXF_ConfidencePanel_explain</fullName><language
+    >en_US</language><protected>false</protected><shortDescription
+    >Explain</shortDescription><value>Explain confidence</value></labels><labels
+  ><fullName>AXF_ConfidencePanel_level</fullName><language
+    >en_US</language><protected>false</protected><shortDescription
+    >Level</shortDescription><value>Confidence level</value></labels><labels
+  ><fullName>AXF_ConfidencePanel_levelInformative</fullName><language
+    >en_US</language><protected>false</protected><shortDescription
+    >Informative</shortDescription><value>Informative</value></labels><labels
+  ><fullName>AXF_ConfidencePanel_levelDegraded</fullName><language
+    >en_US</language><protected>false</protected><shortDescription
+    >Degraded</shortDescription><value>Degraded</value></labels><labels
+  ><fullName>AXF_ConfidencePanel_levelBlocked</fullName><language
+    >en_US</language><protected>false</protected><shortDescription
+    >Blocked</shortDescription><value>Blocked</value></labels><labels><fullName
+    >AXF_ConfidencePanel_asOf</fullName><language>en_US</language><protected
+    >false</protected><shortDescription>As of</shortDescription><value
+    >Evaluated at</value></labels><labels><fullName
+    >AXF_ConfidencePanel_policy</fullName><language>en_US</language><protected
+    >false</protected><shortDescription>Policy</shortDescription><value
+    >Policy</value></labels><labels><fullName
+    >AXF_ConfidencePanel_sources</fullName><language>en_US</language><protected
+    >false</protected><shortDescription>Sources</shortDescription><value
+    >Sources</value></labels><labels><fullName
+    >AXF_ConfidencePanel_source</fullName><language>en_US</language><protected
+    >false</protected><shortDescription>Source</shortDescription><value
+    >Source</value></labels><labels><fullName
+    >AXF_ConfidencePanel_holder</fullName><language>en_US</language><protected
+    >false</protected><shortDescription>Holder</shortDescription><value
+    >Person / company</value></labels><labels><fullName
+    >AXF_ConfidencePanel_origin</fullName><language>en_US</language><protected
+    >false</protected><shortDescription>Origin</shortDescription><value
+    >Origin</value></labels><labels><fullName
+    >AXF_ConfidencePanel_originPluggy</fullName><language
+    >en_US</language><protected>false</protected><shortDescription
+    >Pluggy</shortDescription><value
+    >Open Finance (Pluggy)</value></labels><labels><fullName
+    >AXF_ConfidencePanel_originManual</fullName><language
+    >en_US</language><protected>false</protected><shortDescription
+    >Manual</shortDescription><value>Manual / CSV</value></labels><labels
+  ><fullName>AXF_ConfidencePanel_lastSuccess</fullName><language
+    >en_US</language><protected>false</protected><shortDescription
+    >Last success</shortDescription><value>Last success</value></labels><labels
+  ><fullName>AXF_ConfidencePanel_never</fullName><language
+    >en_US</language><protected>false</protected><shortDescription
+    >Never</shortDescription><value>No success recorded</value></labels><labels
+  ><fullName>AXF_ConfidencePanel_freshness</fullName><language
+    >en_US</language><protected>false</protected><shortDescription
+    >Freshness</shortDescription><value>Freshness</value></labels><labels
+  ><fullName>AXF_ConfidencePanel_freshnessCurrent</fullName><language
+    >en_US</language><protected>false</protected><shortDescription
+    >Current</shortDescription><value>Current</value></labels><labels><fullName
+    >AXF_ConfidencePanel_freshnessStale</fullName><language
+    >en_US</language><protected>false</protected><shortDescription
+    >Stale</shortDescription><value>Old (limit exceeded)</value></labels><labels
+  ><fullName>AXF_ConfidencePanel_freshnessUnknown</fullName><language
+    >en_US</language><protected>false</protected><shortDescription
+    >Unknown</shortDescription><value>Unknown</value></labels><labels><fullName
+    >AXF_ConfidencePanel_limit</fullName><language>en_US</language><protected
+    >false</protected><shortDescription>Limit</shortDescription><value
+    >Limit (h)</value></labels><labels><fullName
+    >AXF_ConfidencePanel_facts</fullName><language>en_US</language><protected
+    >false</protected><shortDescription>Facts</shortDescription><value
+    >Facts</value></labels><labels><fullName
+    >AXF_ConfidencePanel_factsUnknown</fullName><language
+    >en_US</language><protected>false</protected><shortDescription
+    >Facts unknown</shortDescription><value>unknown</value></labels><labels
+  ><fullName>AXF_ConfidencePanel_included</fullName><language
+    >en_US</language><protected>false</protected><shortDescription
+    >Included</shortDescription><value>Included</value></labels><labels
+  ><fullName>AXF_ConfidencePanel_excluded</fullName><language
+    >en_US</language><protected>false</protected><shortDescription
+    >Excluded</shortDescription><value>Excluded</value></labels><labels
+  ><fullName>AXF_ConfidencePanel_openSource</fullName><language
+    >en_US</language><protected>false</protected><shortDescription
+    >Open source</shortDescription><value>Open source</value></labels><labels
+  ><fullName>AXF_ConfidencePanel_exceptions</fullName><language
+    >en_US</language><protected>false</protected><shortDescription
+    >Exceptions</shortDescription><value>Exceptions</value></labels><labels
+  ><fullName>AXF_ConfidencePanel_noExceptions</fullName><language
+    >en_US</language><protected>false</protected><shortDescription
+    >No exceptions</shortDescription><value
+    >No exceptions.</value></labels><labels><fullName
+    >AXF_ConfidencePanel_exclusions</fullName><language
+    >en_US</language><protected>false</protected><shortDescription
+    >Exclusions</shortDescription><value>Exclusions</value></labels><labels
+  ><fullName>AXF_ConfidencePanel_noExclusions</fullName><language
+    >en_US</language><protected>false</protected><shortDescription
+    >No exclusions</shortDescription><value
+    >No exclusions.</value></labels><labels><fullName
+    >AXF_ConfidencePanel_fx</fullName><language>en_US</language><protected
+    >false</protected><shortDescription>FX</shortDescription><value
+    >Currency</value></labels><labels><fullName
+    >AXF_ConfidencePanel_fxSingle</fullName><language>en_US</language><protected
+    >false</protected><shortDescription>FX single</shortDescription><value
+    >Single currency; no conversion involved.</value></labels><labels><fullName
+    >AXF_ConfidencePanel_fxMulti</fullName><language>en_US</language><protected
+    >false</protected><shortDescription>FX multi</shortDescription><value
+    >Multiple currencies ({0}); original amounts are kept and no conversion is applied by this panel.</value></labels><labels
+  ><fullName>AXF_ConfidencePanel_impact</fullName><language
+    >en_US</language><protected>false</protected><shortDescription
+    >Impact</shortDescription><value>Impact</value></labels><labels><fullName
+    >AXF_ConfidencePanel_impactInformative</fullName><language
+    >en_US</language><protected>false</protected><shortDescription
+    >Impact informative</shortDescription><value
+    >All included sources are current. The indicator can be read as up to date.</value></labels><labels
+  ><fullName>AXF_ConfidencePanel_impactDegraded</fullName><language
+    >en_US</language><protected>false</protected><shortDescription
+    >Impact degraded</shortDescription><value
+    >Some data is old, unknown or excluded. The indicator remains visible but must not be read as current.</value></labels><labels
+  ><fullName>AXF_ConfidencePanel_impactBlocked</fullName><language
+    >en_US</language><protected>false</protected><shortDescription
+    >Impact blocked</shortDescription><value
+    >No authorized, readable source in this scope. The indicator cannot be trusted.</value></labels><labels
+  ><fullName>AXF_ConfidencePanel_allowedActions</fullName><language
+    >en_US</language><protected>false</protected><shortDescription
+    >Allowed actions</shortDescription><value
+    >Allowed actions</value></labels><labels><fullName
+    >AXF_ConfidencePanel_actionOpenSource</fullName><language
+    >en_US</language><protected>false</protected><shortDescription
+    >Action open</shortDescription><value
+    >Open the affected source</value></labels><labels><fullName
+    >AXF_ConfidencePanel_actionReviewHealth</fullName><language
+    >en_US</language><protected>false</protected><shortDescription
+    >Action health</shortDescription><value
+    >Review source health</value></labels><labels><fullName
+    >AXF_ConfidencePanel_actionNone</fullName><language
+    >en_US</language><protected>false</protected><shortDescription
+    >Action none</shortDescription><value
+    >No action available</value></labels><labels><fullName
+    >AXF_ConfidencePanel_reasonNotAuthorized</fullName><language
+    >en_US</language><protected>false</protected><shortDescription
+    >Reason</shortDescription><value
+    >Person/company not available to you</value></labels><labels><fullName
+    >AXF_ConfidencePanel_reasonCustody</fullName><language
+    >en_US</language><protected>false</protected><shortDescription
+    >Reason</shortDescription><value
+    >Source in custody (collection stopped)</value></labels><labels><fullName
+    >AXF_ConfidencePanel_reasonFieldAccess</fullName><language
+    >en_US</language><protected>false</protected><shortDescription
+    >Reason</shortDescription><value
+    >Missing field access</value></labels><labels><fullName
+    >AXF_ConfidencePanel_reasonNoScope</fullName><language
+    >en_US</language><protected>false</protected><shortDescription
+    >Reason</shortDescription><value>No authorized scope</value></labels><labels
+  ><fullName>AXF_ConfidencePanel_reasonPolicyMissing</fullName><language
+    >en_US</language><protected>false</protected><shortDescription
+    >Reason</shortDescription><value
+    >Confidence policy not configured</value></labels><labels><fullName
+    >AXF_ConfidencePanel_exConsentRevoked</fullName><language
+    >en_US</language><protected>false</protected><shortDescription
+    >Exception</shortDescription><value
+    >Consent revoked at the provider</value></labels><labels><fullName
+    >AXF_ConfidencePanel_exConsentStale</fullName><language
+    >en_US</language><protected>false</protected><shortDescription
+    >Exception</shortDescription><value
+    >Consent expired or stale</value></labels><labels><fullName
+    >AXF_ConfidencePanel_exCollectionPaused</fullName><language
+    >en_US</language><protected>false</protected><shortDescription
+    >Exception</shortDescription><value
+    >Collection paused</value></labels><labels><fullName
+    >AXF_ConfidencePanel_exStale</fullName><language>en_US</language><protected
+    >false</protected><shortDescription>Exception</shortDescription><value
+    >Source older than its freshness limit</value></labels><labels><fullName
+    >AXF_ConfidencePanel_exUnknown</fullName><language
+    >en_US</language><protected>false</protected><shortDescription
+    >Exception</shortDescription><value
+    >Source without recorded success</value></labels><labels><fullName
+    >AXF_ConfidencePanel_loading</fullName><language>en_US</language><protected
+    >false</protected><shortDescription>Loading</shortDescription><value
+    >Loading…</value></labels><labels><fullName
+    >AXF_ConfidencePanel_empty</fullName><language>en_US</language><protected
+    >false</protected><shortDescription>Empty</shortDescription><value
+    >Select at least one person or company.</value></labels><labels><fullName
+    >AXF_ConfidencePanel_error</fullName><language>en_US</language><protected
+    >false</protected><shortDescription>Error</shortDescription><value
+    >The panel could not be loaded.</value></labels><labels><fullName
+    >AXF_ConfidencePanel_retry</fullName><language>en_US</language><protected
+    >false</protected><shortDescription>Retry</shortDescription><value
+    >Try again</value></labels><labels><fullName
+    >AXF_ConfidencePanel_codeForbidden</fullName><language
+    >en_US</language><protected>false</protected><shortDescription
+    >Forbidden</shortDescription><value
+    >You are not allowed to open the confidence panel.</value></labels><labels
+  ><fullName>AXF_ConfidencePanel_codeInvalidInput</fullName><language
+    >en_US</language><protected>false</protected><shortDescription
+    >Invalid input</shortDescription><value
+    >Invalid request.</value></labels><labels><fullName
+    >AXF_ConfidencePanel_updated</fullName><language>en_US</language><protected
+    >false</protected><shortDescription>Updated</shortDescription><value
+    >Confidence panel updated.</value></labels></CustomLabels>

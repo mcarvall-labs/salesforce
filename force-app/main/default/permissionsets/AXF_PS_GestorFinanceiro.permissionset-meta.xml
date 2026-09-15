@@ -172,9 +172,21 @@
     <apexClass>AXF_CLS_PluggySyncScheduler</apexClass>
     <enabled>true</enabled>
   </classAccesses>
+  <classAccesses>
+    <apexClass>ALT_CLS_ConfidencePanelService</apexClass>
+    <enabled>true</enabled>
+  </classAccesses>
+  <classAccesses>
+    <apexClass>AXF_CLS_CTRL_ConfidencePanel</apexClass>
+    <enabled>true</enabled>
+  </classAccesses>
   <customPermissions>
     <enabled>true</enabled>
     <name>AXF_CanConfigure</name>
+  </customPermissions>
+  <customPermissions>
+    <enabled>true</enabled>
+    <name>AXF_CanExplainConfidence</name>
   </customPermissions>
   <fieldPermissions>
     <editable>true</editable>
@@ -1093,6 +1105,16 @@
     <field>AXF_OBJ_PluggyConnection__c.AXF_CON_LKP_Account__c</field>
     <readable>true</readable>
   </fieldPermissions>
+  <fieldPermissions>
+    <editable>true</editable>
+    <field>AXF_OBJ_BankAccount__c.AXF_BA_NUM_FreshnessLimitHours__c</field>
+    <readable>true</readable>
+  </fieldPermissions>
+  <fieldPermissions>
+    <editable>true</editable>
+    <field>AXF_OBJ_CreditCard__c.AXF_CC_NUM_FreshnessLimitHours__c</field>
+    <readable>true</readable>
+  </fieldPermissions>
   <objectPermissions>
     <allowCreate>true</allowCreate>
     <allowDelete>false</allowDelete>
@@ -1372,6 +1394,10 @@
   </tabSettings>
   <tabSettings>
     <tab>AXF_SourceHealth</tab>
+    <visibility>Visible</visibility>
+  </tabSettings>
+  <tabSettings>
+    <tab>AXF_CT_ConfidencePanel</tab>
     <visibility>Visible</visibility>
   </tabSettings>
 </PermissionSet>
