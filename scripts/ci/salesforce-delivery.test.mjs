@@ -3,28 +3,14 @@ import assert from "node:assert/strict";
 import {
   sourcePaths,
   completed,
-  selectBaseline,
   safeResult,
+  extractDeclaredTests,
+  testPlan,
   run
 } from "./salesforce-delivery.mjs";
 import fs from "node:fs";
 import os from "node:os";
 import path from "node:path";
-
-test("baseline skips failures/current reruns and chooses highest successful run number", () => {
-  const sha = "a".repeat(40);
-  const initial = "b".repeat(40);
-  const runs = [
-    { id: 1, run_number: 1, conclusion: "success", head_sha: initial },
-    { id: 2, run_number: 2, conclusion: "success", head_sha: sha },
-    { id: 3, run_number: 3, conclusion: "failure", head_sha: "c".repeat(40) },
-    { id: 4, run_number: 4, conclusion: "success", head_sha: "d".repeat(40) }
-  ];
-  assert.equal(selectBaseline(runs, "4", initial), sha);
-  assert.equal(selectBaseline([], "4", initial), initial);
-  assert.throws(() => selectBaseline([], "4", undefined), /verified initial/);
-  assert.throws(() => selectBaseline([], "4", "main"), /verified initial/);
-});
 
 test("delta deduplicates whole Lightning bundles and preserves decomposed fields", () => {
   assert.deepEqual(
@@ -97,6 +83,77 @@ test("evidence allowlist excludes authentication data and normalizes singleton f
   assert.doesNotMatch(JSON.stringify(evidence), /secret|accessToken/);
 });
 
+test("extractDeclaredTests reads bullets under the PR test classes section only", () => {
+  assert.deepEqual(
+    extractDeclaredTests(
+      [
+        "Some description.",
+        "",
+        "## Salesforce test classes",
+        "- FooTest",
+        "- `BarTest`",
+        "* BazTest",
+        "",
+        "## Another section",
+        "- NotATest"
+      ].join("\n")
+    ),
+    ["FooTest", "BarTest", "BazTest"]
+  );
+  assert.deepEqual(extractDeclaredTests(""), []);
+  assert.deepEqual(extractDeclaredTests("No section here"), []);
+});
+
+test("extractDeclaredTests accepts multiple test classes space/comma separated on one bullet", () => {
+  assert.deepEqual(
+    extractDeclaredTests(
+      [
+        "## Salesforce test classes",
+        "- FooControllerTest BarTriggerHandlerTest",
+        "* `BazTest`, QuxTest"
+      ].join("\n")
+    ),
+    ["FooControllerTest", "BarTriggerHandlerTest", "BazTest", "QuxTest"]
+  );
+});
+
+test("testPlan scopes to delta test classes and declared tests, deduplicated", () => {
+  const files = {
+    "force-app/main/default/classes/FooTest.cls": "@isTest\nclass FooTest {}",
+    "force-app/main/default/classes/Foo.cls": "public class Foo {}"
+  };
+  const plan = testPlan(Object.keys(files), (p) => files[p], [
+    "FooTest",
+    "ExtraTest"
+  ]);
+  assert.equal(plan.testLevel, "RunSpecifiedTests");
+  assert.deepEqual(new Set(plan.tests), new Set(["FooTest", "ExtraTest"]));
+});
+
+test("testPlan falls back to RunLocalTests when no Apex/trigger is in the delta", () => {
+  const plan = testPlan(
+    ["force-app/main/default/objects/A__c/fields/B__c.field-meta.xml"],
+    () => "",
+    []
+  );
+  assert.deepEqual(plan, { testLevel: "RunLocalTests", tests: [] });
+});
+
+test("testPlan fails closed when production Apex has no test coverage in scope", () => {
+  const files = {
+    "force-app/main/default/classes/Foo.cls": "public class Foo {}"
+  };
+  assert.throws(
+    () => testPlan(Object.keys(files), (p) => files[p], []),
+    /Salesforce test classes/
+  );
+  assert.throws(
+    () =>
+      testPlan(["force-app/main/default/triggers/Bar.trigger"], () => "", []),
+    /Salesforce test classes/
+  );
+});
+
 test("invalid environment is rejected and failure evidence is written", async () => {
   const dir = fs.mkdtempSync(path.join(os.tmpdir(), "axon-delivery-test-"));
   const previous = { ...process.env };
@@ -151,6 +208,28 @@ test("UAT environment rejects develop branch", async () => {
     const report = JSON.parse(fs.readFileSync(path.join(dir, "result.json")));
     assert.equal(report.outcome, "Failed");
     assert.match(report.error, /Branch\/environment mismatch/);
+    assert.equal(process.exitCode, 1);
+  } finally {
+    process.env = previous;
+    process.exitCode = previousExit;
+    fs.rmSync(dir, { recursive: true, force: true });
+  }
+});
+
+test("validate fails closed without a resolvable PR base commit (from)", async () => {
+  const dir = fs.mkdtempSync(path.join(os.tmpdir(), "axon-delivery-test-"));
+  const previous = { ...process.env };
+  const previousExit = process.exitCode;
+  try {
+    process.env.EVIDENCE_DIR = dir;
+    process.env.TARGET_ENV = "DEV";
+    process.env.TARGET_BRANCH = "develop";
+    process.env.OPERATION = "validate";
+    delete process.env.PR_BASE_SHA;
+    await run();
+    const report = JSON.parse(fs.readFileSync(path.join(dir, "result.json")));
+    assert.equal(report.outcome, "Failed");
+    assert.match(report.error, /Could not resolve the PR base branch commit/);
     assert.equal(process.exitCode, 1);
   } finally {
     process.env = previous;
