@@ -1,0 +1,24 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<CustomField xmlns="http://soap.sforce.com/2006/04/metadata">
+  <fullName>AXF_RA_PKL_ReversalReason__c</fullName>
+  <label>Reversal reason</label>
+  <description
+  >AXF-141: why a compensating REVERSAL allocation was created. Immutable, set only by the realization service; empty on APPLICATION effects.</description>
+  <type>Picklist</type>
+  <valueSet>
+    <restricted>true</restricted>
+    <valueSetDefinition>
+      <sorted>false</sorted>
+      <value><fullName>USER_ERROR</fullName><default>false</default><label
+        >USER_ERROR</label></value>
+      <value><fullName>DUPLICATE_LINK</fullName><default>false</default><label
+        >DUPLICATE_LINK</label></value>
+      <value><fullName>WRONG_TARGET</fullName><default>false</default><label
+        >WRONG_TARGET</label></value>
+      <value><fullName>SOURCE_CHANGED</fullName><default>false</default><label
+        >SOURCE_CHANGED</label></value>
+      <value><fullName>OTHER</fullName><default>false</default><label
+        >OTHER</label></value>
+    </valueSetDefinition>
+  </valueSet>
+</CustomField>

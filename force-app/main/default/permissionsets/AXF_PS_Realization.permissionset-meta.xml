@@ -125,6 +125,18 @@
   <fieldPermissions>
     <editable>true</editable>
     <field
+    >AXF_OBJ_ReconciliationAllocation__c.AXF_RA_PKL_ReversalReason__c</field>
+    <readable>true</readable>
+  </fieldPermissions>
+  <fieldPermissions>
+    <editable>true</editable>
+    <field
+    >AXF_OBJ_ReconciliationAllocation__c.AXF_RA_TXT_ReversalNote__c</field>
+    <readable>true</readable>
+  </fieldPermissions>
+  <fieldPermissions>
+    <editable>true</editable>
+    <field
     >AXF_OBJ_ReconciliationAllocation__c.AXF_RA_LKP_BankTransaction__c</field>
     <readable>true</readable>
   </fieldPermissions>

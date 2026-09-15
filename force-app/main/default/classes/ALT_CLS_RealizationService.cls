@@ -35,7 +35,7 @@ public with sharing class ALT_CLS_RealizationService {
     public String state;
     public List<AXF_OBJ_ReconciliationAllocation__c> allocations;
   }
-  private static final String RA_FIELDS = 'Id,Name,AXF_RA_LKP_FinancialTransaction__c,AXF_RA_LKP_BankTransaction__c,AXF_RA_LKP_CardTransaction__c,AXF_RA_LKP_ManualTransaction__c,AXF_RA_LKP_OriginalAllocation__c,AXF_RA_LKP_FxSnapshot__c,AXF_RA_NUM_Magnitude__c,AXF_RA_TXT_CurrencyIsoCode__c,AXF_RA_DAT_RecognitionDate__c,AXF_RA_EXI_AllocationKey__c,AXF_RA_TXT_PayloadHash__c,AXF_RA_PKL_Kind__c,AXF_RA_PKL_FxState__c,AXF_RA_TXT_ReportingIso__c,AXF_RA_NUM_ReportingAmount__c';
+  private static final String RA_FIELDS = 'Id,Name,AXF_RA_LKP_FinancialTransaction__c,AXF_RA_LKP_BankTransaction__c,AXF_RA_LKP_CardTransaction__c,AXF_RA_LKP_ManualTransaction__c,AXF_RA_LKP_OriginalAllocation__c,AXF_RA_LKP_FxSnapshot__c,AXF_RA_NUM_Magnitude__c,AXF_RA_TXT_CurrencyIsoCode__c,AXF_RA_DAT_RecognitionDate__c,AXF_RA_EXI_AllocationKey__c,AXF_RA_TXT_PayloadHash__c,AXF_RA_PKL_Kind__c,AXF_RA_PKL_FxState__c,AXF_RA_TXT_ReportingIso__c,AXF_RA_NUM_ReportingAmount__c,AXF_RA_PKL_ReversalReason__c,AXF_RA_TXT_ReversalNote__c';
   private static final String FTX_FIELDS = 'Id,AXF_FTX_LKP_Account__c,AXF_FTX_NUM_Magnitude__c,AXF_FTX_TXT_CurrencyIsoCode__c,AXF_FTX_PKL_Direction__c,AXF_FTX_DAT_PurchaseDate__c,AXF_FTX_NUM_Version__c,AXF_FTX_PKL_PlanKind__c,AXF_FTX_LKP_BankAccount__c,AXF_FTX_LKP_CreditCard__c';
 
   /** @description All mutations and reads require this explicit capability plus native record access. */
@@ -476,11 +476,25 @@ public with sharing class ALT_CLS_RealizationService {
     Decimal expectedVersion,
     String operationKey
   ) {
+    return reverse(allocationId, expectedVersion, operationKey, null, null);
+  }
+  /**
+   * @description AXF-141: the reason travels with the compensation and with its payload
+   * fingerprint, so a replay with a different reason conflicts instead of silently matching.
+   */
+  public Id reverse(
+    Id allocationId,
+    Decimal expectedVersion,
+    String operationKey,
+    String reasonCode,
+    String reasonNote
+  ) {
     requireAccess();
     check(
       !String.isBlank(operationKey) && operationKey.length() <= 80,
       'INVALID'
     );
+    check(reasonNote == null || reasonNote.length() <= 255, 'INVALID');
     Savepoint sp = Database.setSavepoint();
     try {
       writing = true;
@@ -492,9 +506,19 @@ public with sharing class ALT_CLS_RealizationService {
       );
       Source fact = source(sourceId(original), kind(original), true);
       String key = hash(new List<Object>{ 'AXF25', operationKey });
-      String payload = hash(
-        new List<Object>{ 'REVERSAL', allocationId, expectedVersion }
-      );
+      // Pre-AXF-141 fingerprints (no reason) stay replayable unchanged.
+      String payload = reasonCode == null &&
+        reasonNote == null
+        ? hash(new List<Object>{ 'REVERSAL', allocationId, expectedVersion })
+        : hash(
+            new List<Object>{
+              'REVERSAL',
+              allocationId,
+              expectedVersion,
+              reasonCode,
+              reasonNote
+            }
+          );
       List<AXF_OBJ_ReconciliationAllocation__c> prior = allocations(
         'AXF_RA_EXI_AllocationKey__c = :key',
         new Map<String, Object>{ 'key' => key }
@@ -519,6 +543,8 @@ public with sharing class ALT_CLS_RealizationService {
       reversal.AXF_RA_LKP_OriginalAllocation__c = original.Id;
       reversal.AXF_RA_EXI_AllocationKey__c = key;
       reversal.AXF_RA_TXT_PayloadHash__c = payload;
+      reversal.AXF_RA_PKL_ReversalReason__c = reasonCode;
+      reversal.AXF_RA_TXT_ReversalNote__c = reasonNote;
       insert as user reversal;
       bump(plan, fact);
       return reversal.Id;

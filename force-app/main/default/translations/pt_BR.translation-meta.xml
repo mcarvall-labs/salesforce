@@ -918,4 +918,114 @@
     >Buscar titular</label><name
     >AXF_ArchiveExplorer_holderSearch</name></customLabels><customLabels><label
     >Motivo</label><name
-    >AXF_ArchiveExplorer_colReason</name></customLabels></Translations>
+    >AXF_ArchiveExplorer_colReason</name></customLabels><customLabels><label
+    >Reverter conciliação</label><name
+    >AXF_ReconciliationReversal_title</name></customLabels><customLabels><label
+    >Escolha uma aplicação confirmada e reverta-a com um motivo. A alocação original nunca é editada nem apagada: uma alocação compensatória imutável é acrescentada e o plano e a fonte recuperam sua contribuição líquida.</label><name
+    >AXF_ReconciliationReversal_intro</name></customLabels><customLabels><label
+    >Você não tem a capacidade de reverter conciliações.</label><name
+    >AXF_ReconciliationReversal_noCapability</name></customLabels><customLabels
+  ><label>Titular</label><name
+    >AXF_ReconciliationReversal_holder</name></customLabels><customLabels><label
+    >Selecione um titular</label><name
+    >AXF_ReconciliationReversal_holderPlaceholder</name></customLabels><customLabels
+  ><label>Carregar aplicações</label><name
+    >AXF_ReconciliationReversal_load</name></customLabels><customLabels><label
+    >Carregar mais</label><name
+    >AXF_ReconciliationReversal_loadMore</name></customLabels><customLabels
+  ><label>Carregando…</label><name
+    >AXF_ReconciliationReversal_loading</name></customLabels><customLabels
+  ><label>Nenhuma aplicação confirmada para este titular.</label><name
+    >AXF_ReconciliationReversal_empty</name></customLabels><customLabels><label
+    >Reconhecida em</label><name
+    >AXF_ReconciliationReversal_colDate</name></customLabels><customLabels
+  ><label>Lançamento</label><name
+    >AXF_ReconciliationReversal_colTarget</name></customLabels><customLabels
+  ><label>Papel</label><name
+    >AXF_ReconciliationReversal_colRole</name></customLabels><customLabels
+  ><label>Fonte</label><name
+    >AXF_ReconciliationReversal_colSource</name></customLabels><customLabels
+  ><label>Valor</label><name
+    >AXF_ReconciliationReversal_colAmount</name></customLabels><customLabels
+  ><label>Situação</label><name
+    >AXF_ReconciliationReversal_colStatus</name></customLabels><customLabels
+  ><label>Ação</label><name
+    >AXF_ReconciliationReversal_colAction</name></customLabels><customLabels
+  ><label>Confirmada</label><name
+    >AXF_ReconciliationReversal_statusOpen</name></customLabels><customLabels
+  ><label>Revertida ({0})</label><name
+    >AXF_ReconciliationReversal_statusReversed</name></customLabels><customLabels
+  ><label
+    >Ocorrência de cronograma — ajuste de obrigação pendente (AXF-104)</label><name
+    >AXF_ReconciliationReversal_scheduleLinked</name></customLabels><customLabels
+  ><label>Reverter…</label><name
+    >AXF_ReconciliationReversal_select</name></customLabels><customLabels><label
+    >Confirme a reversão. O motivo fica registrado na alocação compensatória e passa a compor sua impressão digital: repetir este comando devolve o mesmo resultado; um motivo diferente conflita.</label><name
+    >AXF_ReconciliationReversal_reviewIntro</name></customLabels><customLabels
+  ><label>Aplicação selecionada</label><name
+    >AXF_ReconciliationReversal_selected</name></customLabels><customLabels
+  ><label>Motivo</label><name
+    >AXF_ReconciliationReversal_reason</name></customLabels><customLabels><label
+    >Selecione um motivo</label><name
+    >AXF_ReconciliationReversal_reasonPlaceholder</name></customLabels><customLabels
+  ><label>Erro do usuário</label><name
+    >AXF_ReconciliationReversal_reasonUSER_ERROR</name></customLabels><customLabels
+  ><label>Vínculo duplicado</label><name
+    >AXF_ReconciliationReversal_reasonDUPLICATE_LINK</name></customLabels><customLabels
+  ><label>Previsão errada</label><name
+    >AXF_ReconciliationReversal_reasonWRONG_TARGET</name></customLabels><customLabels
+  ><label>Fonte alterada</label><name
+    >AXF_ReconciliationReversal_reasonSOURCE_CHANGED</name></customLabels><customLabels
+  ><label>Outro</label><name
+    >AXF_ReconciliationReversal_reasonOTHER</name></customLabels><customLabels
+  ><label>Observação (opcional, até 255 caracteres)</label><name
+    >AXF_ReconciliationReversal_note</name></customLabels><customLabels><label
+    >Confirmar reversão</label><name
+    >AXF_ReconciliationReversal_confirm</name></customLabels><customLabels
+  ><label>Revertendo…</label><name
+    >AXF_ReconciliationReversal_confirming</name></customLabels><customLabels
+  ><label>Voltar</label><name
+    >AXF_ReconciliationReversal_back</name></customLabels><customLabels><label
+    >Reversão registrada</label><name
+    >AXF_ReconciliationReversal_done</name></customLabels><customLabels><label
+    >Este comando já havia sido processado; a compensação anterior foi devolvida.</label><name
+    >AXF_ReconciliationReversal_doneReplayed</name></customLabels><customLabels
+  ><label
+    >Lançamento apenas realizado: nenhuma dívida de previsão foi criada por esta reversão.</label><name
+    >AXF_ReconciliationReversal_doneActualOnly</name></customLabels><customLabels
+  ><label>Alocação compensatória</label><name
+    >AXF_ReconciliationReversal_doneCompensation</name></customLabels><customLabels
+  ><label>Alocação original</label><name
+    >AXF_ReconciliationReversal_doneOriginal</name></customLabels><customLabels
+  ><label
+    >Plano após: realizado {0}, remanescente {1} ({2}). Remanescente da fonte: {3}.</label><name
+    >AXF_ReconciliationReversal_doneNet</name></customLabels><customLabels
+  ><label
+    >Ajuste de obrigação e recomputação de referência recorrente não fazem parte deste comando (AXF-104).</label><name
+    >AXF_ReconciliationReversal_boundaryAXF104_OBLIGATION_ADJUSTMENT_PENDING</name></customLabels><customLabels
+  ><label>Nova reversão</label><name
+    >AXF_ReconciliationReversal_newReversal</name></customLabels><customLabels
+  ><label>Política</label><name
+    >AXF_ReconciliationReversal_policy</name></customLabels><customLabels><label
+    >Não foi possível concluir a operação. Nada foi salvo.</label><name
+    >AXF_ReconciliationReversal_error</name></customLabels><customLabels><label
+    >Alocação, titular ou fonte indisponível para você.</label><name
+    >AXF_ReconciliationReversal_codeUNAVAILABLE</name></customLabels><customLabels
+  ><label>Alguns registros não estão acessíveis para você.</label><name
+    >AXF_ReconciliationReversal_codeNOT_ACCESSIBLE</name></customLabels><customLabels
+  ><label>A solicitação está malformada.</label><name
+    >AXF_ReconciliationReversal_codeINVALID_INPUT</name></customLabels><customLabels
+  ><label>Verifique o tamanho da observação e a chave da operação.</label><name
+    >AXF_ReconciliationReversal_codeINVALID</name></customLabels><customLabels
+  ><label>Selecione um motivo válido.</label><name
+    >AXF_ReconciliationReversal_codeINVALID_REASON</name></customLabels><customLabels
+  ><label>Só aplicações confirmadas podem ser revertidas.</label><name
+    >AXF_ReconciliationReversal_codeINVALID_TARGET</name></customLabels><customLabels
+  ><label
+    >Esta alocação já foi revertida por outro comando; a compensação anterior permanece.</label><name
+    >AXF_ReconciliationReversal_codeALREADY_REVERSED</name></customLabels><customLabels
+  ><label
+    >O plano mudou desde que você o carregou, ou esta chave foi usada com dados diferentes. Recarregue e revise.</label><name
+    >AXF_ReconciliationReversal_codeCONFLICT</name></customLabels><customLabels
+  ><label>Defina a moeda de relatório primeiro.</label><name
+    >AXF_ReconciliationReversal_codeREPORTING_CURRENCY_REQUIRED</name></customLabels></Translations>

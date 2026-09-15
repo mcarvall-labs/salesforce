@@ -56,6 +56,10 @@
     <enabled>true</enabled>
   </classAccesses>
   <classAccesses>
+    <apexClass>ALT_CLS_ReconciliationReversalService</apexClass>
+    <enabled>true</enabled>
+  </classAccesses>
+  <classAccesses>
     <apexClass>ALT_CLS_SourceHolderConfirmation</apexClass>
     <enabled>true</enabled>
   </classAccesses>
@@ -169,6 +173,10 @@
   </classAccesses>
   <classAccesses>
     <apexClass>AXF_CLS_CTRL_PluggySync</apexClass>
+    <enabled>true</enabled>
+  </classAccesses>
+  <classAccesses>
+    <apexClass>AXF_CLS_CTRL_ReconciliationReversal</apexClass>
     <enabled>true</enabled>
   </classAccesses>
   <classAccesses>
@@ -318,6 +326,10 @@
   <customPermissions>
     <enabled>true</enabled>
     <name>AXF_CanReadArchive</name>
+  </customPermissions>
+  <customPermissions>
+    <enabled>true</enabled>
+    <name>AXF_CanReverseReconciliation</name>
   </customPermissions>
   <fieldPermissions>
     <editable>true</editable>
@@ -2392,6 +2404,10 @@
   </tabSettings>
 <tabSettings>
     <tab>AXF_CT_ArchiveExplorer</tab>
+    <visibility>Visible</visibility>
+  </tabSettings>
+  <tabSettings>
+    <tab>AXF_CT_ReconciliationReversal</tab>
     <visibility>Visible</visibility>
   </tabSettings>
   </PermissionSet>

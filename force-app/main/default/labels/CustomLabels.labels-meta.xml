@@ -1550,5 +1550,194 @@
     >Search holder</value></labels><labels><fullName
     >AXF_ArchiveExplorer_colReason</fullName><language
     >en_US</language><protected>false</protected><shortDescription
-    >Reason column</shortDescription><value
-    >Reason</value></labels></CustomLabels>
+    >Reason column</shortDescription><value>Reason</value></labels><labels
+  ><fullName>AXF_ReconciliationReversal_title</fullName><language
+    >en_US</language><protected>false</protected><shortDescription
+    >Title</shortDescription><value
+    >Reverse a reconciliation</value></labels><labels><fullName
+    >AXF_ReconciliationReversal_intro</fullName><language
+    >en_US</language><protected>false</protected><shortDescription
+    >Intro</shortDescription><value
+    >Pick a confirmed application and reverse it with a reason. The original allocation is never edited or deleted: an immutable compensating allocation is appended and the plan and source recover their net contribution.</value></labels><labels
+  ><fullName>AXF_ReconciliationReversal_noCapability</fullName><language
+    >en_US</language><protected>false</protected><shortDescription
+    >No capability</shortDescription><value
+    >You do not have the capability to reverse reconciliations.</value></labels><labels
+  ><fullName>AXF_ReconciliationReversal_holder</fullName><language
+    >en_US</language><protected>false</protected><shortDescription
+    >Holder</shortDescription><value>Holder</value></labels><labels><fullName
+    >AXF_ReconciliationReversal_holderPlaceholder</fullName><language
+    >en_US</language><protected>false</protected><shortDescription
+    >Holder placeholder</shortDescription><value
+    >Select a holder</value></labels><labels><fullName
+    >AXF_ReconciliationReversal_load</fullName><language
+    >en_US</language><protected>false</protected><shortDescription
+    >Load</shortDescription><value>Load applications</value></labels><labels
+  ><fullName>AXF_ReconciliationReversal_loadMore</fullName><language
+    >en_US</language><protected>false</protected><shortDescription
+    >Load more</shortDescription><value>Load more</value></labels><labels
+  ><fullName>AXF_ReconciliationReversal_loading</fullName><language
+    >en_US</language><protected>false</protected><shortDescription
+    >Loading</shortDescription><value>Loading…</value></labels><labels><fullName
+    >AXF_ReconciliationReversal_empty</fullName><language
+    >en_US</language><protected>false</protected><shortDescription
+    >Empty</shortDescription><value
+    >No confirmed application for this holder.</value></labels><labels><fullName
+    >AXF_ReconciliationReversal_colDate</fullName><language
+    >en_US</language><protected>false</protected><shortDescription
+    >Column date</shortDescription><value>Recognized on</value></labels><labels
+  ><fullName>AXF_ReconciliationReversal_colTarget</fullName><language
+    >en_US</language><protected>false</protected><shortDescription
+    >Column target</shortDescription><value
+    >Financial transaction</value></labels><labels><fullName
+    >AXF_ReconciliationReversal_colRole</fullName><language
+    >en_US</language><protected>false</protected><shortDescription
+    >Column role</shortDescription><value>Role</value></labels><labels><fullName
+    >AXF_ReconciliationReversal_colSource</fullName><language
+    >en_US</language><protected>false</protected><shortDescription
+    >Column source</shortDescription><value>Source</value></labels><labels
+  ><fullName>AXF_ReconciliationReversal_colAmount</fullName><language
+    >en_US</language><protected>false</protected><shortDescription
+    >Column amount</shortDescription><value>Amount</value></labels><labels
+  ><fullName>AXF_ReconciliationReversal_colStatus</fullName><language
+    >en_US</language><protected>false</protected><shortDescription
+    >Column status</shortDescription><value>Status</value></labels><labels
+  ><fullName>AXF_ReconciliationReversal_colAction</fullName><language
+    >en_US</language><protected>false</protected><shortDescription
+    >Column action</shortDescription><value>Action</value></labels><labels
+  ><fullName>AXF_ReconciliationReversal_statusOpen</fullName><language
+    >en_US</language><protected>false</protected><shortDescription
+    >Status open</shortDescription><value>Confirmed</value></labels><labels
+  ><fullName>AXF_ReconciliationReversal_statusReversed</fullName><language
+    >en_US</language><protected>false</protected><shortDescription
+    >Status reversed</shortDescription><value
+    >Reversed ({0})</value></labels><labels><fullName
+    >AXF_ReconciliationReversal_scheduleLinked</fullName><language
+    >en_US</language><protected>false</protected><shortDescription
+    >Schedule linked</shortDescription><value
+    >Schedule occurrence — obligation adjustment pending (AXF-104)</value></labels><labels
+  ><fullName>AXF_ReconciliationReversal_select</fullName><language
+    >en_US</language><protected>false</protected><shortDescription
+    >Select</shortDescription><value>Reverse…</value></labels><labels><fullName
+    >AXF_ReconciliationReversal_reviewIntro</fullName><language
+    >en_US</language><protected>false</protected><shortDescription
+    >Review intro</shortDescription><value
+    >Confirm the reversal. The reason is recorded on the compensating allocation and becomes part of its fingerprint: repeating this command returns the same result; a different reason conflicts.</value></labels><labels
+  ><fullName>AXF_ReconciliationReversal_selected</fullName><language
+    >en_US</language><protected>false</protected><shortDescription
+    >Selected</shortDescription><value
+    >Selected application</value></labels><labels><fullName
+    >AXF_ReconciliationReversal_reason</fullName><language
+    >en_US</language><protected>false</protected><shortDescription
+    >Reason</shortDescription><value>Reason</value></labels><labels><fullName
+    >AXF_ReconciliationReversal_reasonPlaceholder</fullName><language
+    >en_US</language><protected>false</protected><shortDescription
+    >Reason placeholder</shortDescription><value
+    >Select a reason</value></labels><labels><fullName
+    >AXF_ReconciliationReversal_reasonUSER_ERROR</fullName><language
+    >en_US</language><protected>false</protected><shortDescription
+    >Reason user error</shortDescription><value
+    >User error</value></labels><labels><fullName
+    >AXF_ReconciliationReversal_reasonDUPLICATE_LINK</fullName><language
+    >en_US</language><protected>false</protected><shortDescription
+    >Reason duplicate</shortDescription><value
+    >Duplicate link</value></labels><labels><fullName
+    >AXF_ReconciliationReversal_reasonWRONG_TARGET</fullName><language
+    >en_US</language><protected>false</protected><shortDescription
+    >Reason wrong target</shortDescription><value
+    >Wrong forecast</value></labels><labels><fullName
+    >AXF_ReconciliationReversal_reasonSOURCE_CHANGED</fullName><language
+    >en_US</language><protected>false</protected><shortDescription
+    >Reason source changed</shortDescription><value
+    >Source changed</value></labels><labels><fullName
+    >AXF_ReconciliationReversal_reasonOTHER</fullName><language
+    >en_US</language><protected>false</protected><shortDescription
+    >Reason other</shortDescription><value>Other</value></labels><labels
+  ><fullName>AXF_ReconciliationReversal_note</fullName><language
+    >en_US</language><protected>false</protected><shortDescription
+    >Note</shortDescription><value
+    >Note (optional, up to 255 characters)</value></labels><labels><fullName
+    >AXF_ReconciliationReversal_confirm</fullName><language
+    >en_US</language><protected>false</protected><shortDescription
+    >Confirm</shortDescription><value>Confirm reversal</value></labels><labels
+  ><fullName>AXF_ReconciliationReversal_confirming</fullName><language
+    >en_US</language><protected>false</protected><shortDescription
+    >Confirming</shortDescription><value>Reversing…</value></labels><labels
+  ><fullName>AXF_ReconciliationReversal_back</fullName><language
+    >en_US</language><protected>false</protected><shortDescription
+    >Back</shortDescription><value>Back</value></labels><labels><fullName
+    >AXF_ReconciliationReversal_done</fullName><language
+    >en_US</language><protected>false</protected><shortDescription
+    >Done</shortDescription><value>Reversal recorded</value></labels><labels
+  ><fullName>AXF_ReconciliationReversal_doneReplayed</fullName><language
+    >en_US</language><protected>false</protected><shortDescription
+    >Done replayed</shortDescription><value
+    >This command had already been processed; the previous compensation was returned.</value></labels><labels
+  ><fullName>AXF_ReconciliationReversal_doneActualOnly</fullName><language
+    >en_US</language><protected>false</protected><shortDescription
+    >Done actual only</shortDescription><value
+    >Realized-only entry: no forecast debt was created by this reversal.</value></labels><labels
+  ><fullName>AXF_ReconciliationReversal_doneCompensation</fullName><language
+    >en_US</language><protected>false</protected><shortDescription
+    >Done compensation</shortDescription><value
+    >Compensating allocation</value></labels><labels><fullName
+    >AXF_ReconciliationReversal_doneOriginal</fullName><language
+    >en_US</language><protected>false</protected><shortDescription
+    >Done original</shortDescription><value
+    >Original allocation</value></labels><labels><fullName
+    >AXF_ReconciliationReversal_doneNet</fullName><language
+    >en_US</language><protected>false</protected><shortDescription
+    >Done net</shortDescription><value
+    >Plan after: realized {0}, remaining {1} ({2}). Source remaining: {3}.</value></labels><labels
+  ><fullName
+    >AXF_ReconciliationReversal_boundaryAXF104_OBLIGATION_ADJUSTMENT_PENDING</fullName><language
+    >en_US</language><protected>false</protected><shortDescription
+    >Boundary AXF-104</shortDescription><value
+    >Obligation adjustment and recurring-reference recomputation are not part of this command (AXF-104).</value></labels><labels
+  ><fullName>AXF_ReconciliationReversal_newReversal</fullName><language
+    >en_US</language><protected>false</protected><shortDescription
+    >New reversal</shortDescription><value>New reversal</value></labels><labels
+  ><fullName>AXF_ReconciliationReversal_policy</fullName><language
+    >en_US</language><protected>false</protected><shortDescription
+    >Policy</shortDescription><value>Policy</value></labels><labels><fullName
+    >AXF_ReconciliationReversal_error</fullName><language
+    >en_US</language><protected>false</protected><shortDescription
+    >Error</shortDescription><value
+    >The operation could not be completed. Nothing was saved.</value></labels><labels
+  ><fullName>AXF_ReconciliationReversal_codeUNAVAILABLE</fullName><language
+    >en_US</language><protected>false</protected><shortDescription
+    >Code unavailable</shortDescription><value
+    >Allocation, holder or source unavailable to you.</value></labels><labels
+  ><fullName>AXF_ReconciliationReversal_codeNOT_ACCESSIBLE</fullName><language
+    >en_US</language><protected>false</protected><shortDescription
+    >Code not accessible</shortDescription><value
+    >Some records are not accessible to you.</value></labels><labels><fullName
+    >AXF_ReconciliationReversal_codeINVALID_INPUT</fullName><language
+    >en_US</language><protected>false</protected><shortDescription
+    >Code invalid input</shortDescription><value
+    >The request is malformed.</value></labels><labels><fullName
+    >AXF_ReconciliationReversal_codeINVALID</fullName><language
+    >en_US</language><protected>false</protected><shortDescription
+    >Code invalid</shortDescription><value
+    >Check the note length and the operation key.</value></labels><labels
+  ><fullName>AXF_ReconciliationReversal_codeINVALID_REASON</fullName><language
+    >en_US</language><protected>false</protected><shortDescription
+    >Code invalid reason</shortDescription><value
+    >Select a valid reason.</value></labels><labels><fullName
+    >AXF_ReconciliationReversal_codeINVALID_TARGET</fullName><language
+    >en_US</language><protected>false</protected><shortDescription
+    >Code invalid target</shortDescription><value
+    >Only confirmed applications can be reversed.</value></labels><labels
+  ><fullName>AXF_ReconciliationReversal_codeALREADY_REVERSED</fullName><language
+    >en_US</language><protected>false</protected><shortDescription
+    >Code already reversed</shortDescription><value
+    >This allocation was already reversed by another command; the prior compensation stands.</value></labels><labels
+  ><fullName>AXF_ReconciliationReversal_codeCONFLICT</fullName><language
+    >en_US</language><protected>false</protected><shortDescription
+    >Code conflict</shortDescription><value
+    >The plan changed since you loaded it, or this key was used with different data. Reload and review.</value></labels><labels
+  ><fullName
+    >AXF_ReconciliationReversal_codeREPORTING_CURRENCY_REQUIRED</fullName><language
+    >en_US</language><protected>false</protected><shortDescription
+    >Code reporting currency</shortDescription><value
+    >Set the reporting currency first.</value></labels></CustomLabels>
