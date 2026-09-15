@@ -105,6 +105,10 @@
         <enabled>true</enabled>
     </classAccesses>
     <classAccesses>
+        <apexClass>ALT_CLS_ExportService</apexClass>
+        <enabled>true</enabled>
+    </classAccesses>
+    <classAccesses>
         <apexClass>ALT_CLS_FinancialScheduleService</apexClass>
         <enabled>true</enabled>
     </classAccesses>
@@ -331,6 +335,10 @@
     <customPermissions>
         <enabled>true</enabled>
         <name>AXF_CanExplainConfidence</name>
+    </customPermissions>
+    <customPermissions>
+        <enabled>true</enabled>
+        <name>AXF_CanExportData</name>
     </customPermissions>
     <customPermissions>
         <enabled>true</enabled>
@@ -1244,6 +1252,41 @@
     <fieldPermissions>
         <editable>false</editable>
         <field>AXF_OBJ_ExchangeRate__c.AXF_EXR_TXT_PolicyVersion__c</field>
+        <readable>true</readable>
+    </fieldPermissions>
+    <fieldPermissions>
+        <editable>true</editable>
+        <field>AXF_OBJ_ExportRun__c.AXF_EPR_DT_ExpiresAt__c</field>
+        <readable>true</readable>
+    </fieldPermissions>
+    <fieldPermissions>
+        <editable>true</editable>
+        <field>AXF_OBJ_ExportRun__c.AXF_EPR_TXT_ContentDocument__c</field>
+        <readable>true</readable>
+    </fieldPermissions>
+    <fieldPermissions>
+        <editable>true</editable>
+        <field>AXF_OBJ_ExportRun__c.AXF_EPR_LKP_Requester__c</field>
+        <readable>true</readable>
+    </fieldPermissions>
+    <fieldPermissions>
+        <editable>true</editable>
+        <field>AXF_OBJ_ExportRun__c.AXF_EPR_NUM_Version__c</field>
+        <readable>true</readable>
+    </fieldPermissions>
+    <fieldPermissions>
+        <editable>true</editable>
+        <field>AXF_OBJ_ExportRun__c.AXF_EPR_TXT_ContentHash__c</field>
+        <readable>true</readable>
+    </fieldPermissions>
+    <fieldPermissions>
+        <editable>true</editable>
+        <field>AXF_OBJ_ExportRun__c.AXF_EPR_TXT_FileName__c</field>
+        <readable>true</readable>
+    </fieldPermissions>
+    <fieldPermissions>
+        <editable>true</editable>
+        <field>AXF_OBJ_ExportRun__c.AXF_EPR_TXT_Reason__c</field>
         <readable>true</readable>
     </fieldPermissions>
     <fieldPermissions>
@@ -2280,6 +2323,16 @@
         <allowRead>true</allowRead>
         <modifyAllRecords>false</modifyAllRecords>
         <object>AXF_OBJ_ExchangeRate__c</object>
+        <viewAllFields>false</viewAllFields>
+        <viewAllRecords>false</viewAllRecords>
+    </objectPermissions>
+    <objectPermissions>
+        <allowCreate>true</allowCreate>
+        <allowDelete>false</allowDelete>
+        <allowEdit>true</allowEdit>
+        <allowRead>true</allowRead>
+        <modifyAllRecords>false</modifyAllRecords>
+        <object>AXF_OBJ_ExportRun__c</object>
         <viewAllFields>false</viewAllFields>
         <viewAllRecords>false</viewAllRecords>
     </objectPermissions>

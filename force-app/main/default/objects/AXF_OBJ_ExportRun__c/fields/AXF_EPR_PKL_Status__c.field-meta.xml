@@ -1,0 +1,24 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<CustomField xmlns="http://soap.sforce.com/2006/04/metadata">
+    <fullName>AXF_EPR_PKL_Status__c</fullName>
+    <label>Estado</label>
+    <type>Picklist</type>
+    <required>true</required>
+    <trackHistory>true</trackHistory>
+    <valueSet>
+        <restricted>true</restricted>
+        <valueSetDefinition>
+            <sorted>false</sorted>
+            <value><fullName>REQUESTED</fullName><default>true</default><label
+        >Solicitado</label></value>
+            <value><fullName>PREPARED</fullName><default>false</default><label
+        >Preparado</label></value>
+            <value><fullName>DOWNLOADED</fullName><default>false</default><label
+        >Baixado</label></value>
+            <value><fullName>REVOKED</fullName><default>false</default><label
+        >Revogado</label></value>
+        </valueSetDefinition>
+    </valueSet>
+    <description
+  >REQUESTED -> PREPARED -> DOWNLOADED (dentro da janela) | REVOKED (ao expirar ou perder autorizacao). REVOKED exclui o artefato; uma nova solicitacao cria artefato novo no mesmo escopo.</description>
+</CustomField>
