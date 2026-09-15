@@ -13,6 +13,16 @@
     ><componentInstance><componentName
         >force:detailPanel</componentName><identifier
         >details</identifier></componentInstance></itemInstances><name
+    >main</name><type>Region</type></flexiPageRegions><flexiPageRegions
+  ><itemInstances><componentInstance><componentName
+        >c:aXF_LWC_realization</componentName><identifier
+        >realization</identifier></componentInstance></itemInstances><itemInstances
+    ><componentInstance><componentName
+        >c:aXF_LWC_economicAllocation</componentName><identifier
+        >economicAllocation</identifier></componentInstance></itemInstances><itemInstances
+    ><componentInstance><componentName
+        >force:detailPanel</componentName><identifier
+        >details</identifier></componentInstance></itemInstances><name
     >main</name><type>Region</type></flexiPageRegions><masterLabel
   >Axon - Financial transaction</masterLabel><sobjectType
   >AXF_OBJ_FinancialTransaction__c</sobjectType><template><name

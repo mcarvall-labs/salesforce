@@ -215,6 +215,22 @@
     <apexClass>AXF_CLS_CTRL_ClosureRun</apexClass>
     <enabled>true</enabled>
   </classAccesses>
+  <classAccesses>
+    <apexClass>ALT_CLS_EconomicAllocationService</apexClass>
+    <enabled>true</enabled>
+  </classAccesses>
+  <classAccesses>
+    <apexClass>ALT_CLS_EconomicAllocationGuard</apexClass>
+    <enabled>true</enabled>
+  </classAccesses>
+  <classAccesses>
+    <apexClass>ALT_CLS_EconomicAllocationIntegrity</apexClass>
+    <enabled>true</enabled>
+  </classAccesses>
+  <classAccesses>
+    <apexClass>AXF_CLS_CTRL_EconomicAllocation</apexClass>
+    <enabled>true</enabled>
+  </classAccesses>
   <customPermissions>
     <enabled>true</enabled>
     <name>AXF_CanConfigure</name>
@@ -230,6 +246,10 @@
   <customPermissions>
     <enabled>true</enabled>
     <name>AXF_CanCloseInstallation</name>
+  </customPermissions>
+  <customPermissions>
+    <enabled>true</enabled>
+    <name>AXF_CanAllocateEconomically</name>
   </customPermissions>
   <fieldPermissions>
     <editable>true</editable>
@@ -1355,6 +1375,56 @@
     <field>AXF_OBJ_FinancialTransaction__c.AXF_FTX_TXT_Description__c</field>
     <readable>true</readable>
   </fieldPermissions>
+  <fieldPermissions>
+    <editable>true</editable>
+    <field>AXF_OBJ_EconomicAllocationSet__c.AXF_EAS_DT_EffectiveAt__c</field>
+    <readable>true</readable>
+  </fieldPermissions>
+  <fieldPermissions>
+    <editable>true</editable>
+    <field>AXF_OBJ_EconomicAllocationSet__c.AXF_EAS_EXI_ActiveToken__c</field>
+    <readable>true</readable>
+  </fieldPermissions>
+  <fieldPermissions>
+    <editable>true</editable>
+    <field
+    >AXF_OBJ_EconomicAllocationSet__c.AXF_EAS_LKP_AttributedAccount__c</field>
+    <readable>true</readable>
+  </fieldPermissions>
+  <fieldPermissions>
+    <editable>true</editable>
+    <field
+    >AXF_OBJ_EconomicAllocationSet__c.AXF_EAS_LKP_BankTransaction__c</field>
+    <readable>true</readable>
+  </fieldPermissions>
+  <fieldPermissions>
+    <editable>true</editable>
+    <field
+    >AXF_OBJ_EconomicAllocationSet__c.AXF_EAS_LKP_CardTransaction__c</field>
+    <readable>true</readable>
+  </fieldPermissions>
+  <fieldPermissions>
+    <editable>true</editable>
+    <field
+    >AXF_OBJ_EconomicAllocationSet__c.AXF_EAS_LKP_FinancialTransaction__c</field>
+    <readable>true</readable>
+  </fieldPermissions>
+  <fieldPermissions>
+    <editable>true</editable>
+    <field>AXF_OBJ_EconomicAllocationSet__c.AXF_EAS_NUM_Version__c</field>
+    <readable>true</readable>
+  </fieldPermissions>
+  <fieldPermissions>
+    <editable>true</editable>
+    <field>AXF_OBJ_EconomicAllocationSet__c.AXF_EAS_TXT_OperationKey__c</field>
+    <readable>true</readable>
+  </fieldPermissions>
+  <fieldPermissions>
+    <editable>true</editable>
+    <field
+    >AXF_OBJ_EconomicAllocationSet__c.AXF_EAS_TXT_ConfirmOperationKey__c</field>
+    <readable>true</readable>
+  </fieldPermissions>
   <objectPermissions>
     <allowCreate>true</allowCreate>
     <allowDelete>false</allowDelete>
@@ -1632,6 +1702,24 @@
     <allowRead>true</allowRead>
     <modifyAllRecords>false</modifyAllRecords>
     <object>AXF_OBJ_ClosureRun__c</object>
+    <viewAllRecords>false</viewAllRecords>
+  </objectPermissions>
+  <objectPermissions>
+    <allowCreate>true</allowCreate>
+    <allowDelete>false</allowDelete>
+    <allowEdit>true</allowEdit>
+    <allowRead>true</allowRead>
+    <modifyAllRecords>false</modifyAllRecords>
+    <object>AXF_OBJ_EconomicAllocationSet__c</object>
+    <viewAllRecords>false</viewAllRecords>
+  </objectPermissions>
+  <objectPermissions>
+    <allowCreate>true</allowCreate>
+    <allowDelete>false</allowDelete>
+    <allowEdit>true</allowEdit>
+    <allowRead>true</allowRead>
+    <modifyAllRecords>false</modifyAllRecords>
+    <object>AXF_OBJ_EconomicAllocation__c</object>
     <viewAllRecords>false</viewAllRecords>
   </objectPermissions>
   <recordTypeVisibilities>

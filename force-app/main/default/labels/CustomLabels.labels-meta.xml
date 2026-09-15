@@ -929,4 +929,197 @@
     >Not confirmed at the provider</value></labels><labels><fullName
     >AXF_ClosureRun_externalCONFIRMED</fullName><language
     >en_US</language><protected>false</protected><shortDescription
-    >External</shortDescription><value>Confirmed</value></labels></CustomLabels>
+    >External</shortDescription><value>Confirmed</value></labels><labels
+  ><fullName>AXF_EconomicAllocation_title</fullName><language
+    >en_US</language><protected>false</protected><shortDescription
+    >Title</shortDescription><value>Economic allocation</value></labels><labels
+  ><fullName>AXF_EconomicAllocation_intro</fullName><language
+    >en_US</language><protected>false</protected><shortDescription
+    >Intro</shortDescription><value
+    >Distribute this fact economically among authorized people/companies. Account ownership stays separate from attribution; confirmation requires exactly 100%.</value></labels><labels
+  ><fullName>AXF_EconomicAllocation_fact</fullName><language
+    >en_US</language><protected>false</protected><shortDescription
+    >Fact</shortDescription><value>Fact</value></labels><labels><fullName
+    >AXF_EconomicAllocation_holder</fullName><language
+    >en_US</language><protected>false</protected><shortDescription
+    >Holder</shortDescription><value>Account holder</value></labels><labels
+  ><fullName>AXF_EconomicAllocation_amount</fullName><language
+    >en_US</language><protected>false</protected><shortDescription
+    >Amount</shortDescription><value>Amount</value></labels><labels><fullName
+    >AXF_EconomicAllocation_person</fullName><language
+    >en_US</language><protected>false</protected><shortDescription
+    >Person</shortDescription><value>Person / company</value></labels><labels
+  ><fullName>AXF_EconomicAllocation_percent</fullName><language
+    >en_US</language><protected>false</protected><shortDescription
+    >Percent</shortDescription><value>Percent</value></labels><labels><fullName
+    >AXF_EconomicAllocation_share</fullName><language>en_US</language><protected
+    >false</protected><shortDescription>Share</shortDescription><value
+    >Share</value></labels><labels><fullName
+    >AXF_EconomicAllocation_addShare</fullName><language
+    >en_US</language><protected>false</protected><shortDescription
+    >Add share</shortDescription><value>Add share</value></labels><labels
+  ><fullName>AXF_EconomicAllocation_removeShare</fullName><language
+    >en_US</language><protected>false</protected><shortDescription
+    >Remove share</shortDescription><value>Remove</value></labels><labels
+  ><fullName>AXF_EconomicAllocation_total</fullName><language
+    >en_US</language><protected>false</protected><shortDescription
+    >Total</shortDescription><value>Total</value></labels><labels><fullName
+    >AXF_EconomicAllocation_propose</fullName><language
+    >en_US</language><protected>false</protected><shortDescription
+    >Propose</shortDescription><value>Propose allocation</value></labels><labels
+  ><fullName>AXF_EconomicAllocation_confirm</fullName><language
+    >en_US</language><protected>false</protected><shortDescription
+    >Confirm</shortDescription><value
+    >Confirm (100% exact)</value></labels><labels><fullName
+    >AXF_EconomicAllocation_confirmTitle</fullName><language
+    >en_US</language><protected>false</protected><shortDescription
+    >Confirm title</shortDescription><value
+    >Confirm economic allocation</value></labels><labels><fullName
+    >AXF_EconomicAllocation_confirmBody</fullName><language
+    >en_US</language><protected>false</protected><shortDescription
+    >Confirm body</shortDescription><value
+    >You are about to confirm revision {0} of the allocation of {1}. Shares become immutable; corrections create a new revision.</value></labels><labels
+  ><fullName>AXF_EconomicAllocation_yes</fullName><language
+    >en_US</language><protected>false</protected><shortDescription
+    >Yes</shortDescription><value>Confirm</value></labels><labels><fullName
+    >AXF_EconomicAllocation_cancel</fullName><language
+    >en_US</language><protected>false</protected><shortDescription
+    >Cancel</shortDescription><value>Cancel</value></labels><labels><fullName
+    >AXF_EconomicAllocation_revisions</fullName><language
+    >en_US</language><protected>false</protected><shortDescription
+    >Revisions</shortDescription><value>Revisions</value></labels><labels
+  ><fullName>AXF_EconomicAllocation_revision</fullName><language
+    >en_US</language><protected>false</protected><shortDescription
+    >Revision</shortDescription><value>Revision</value></labels><labels
+  ><fullName>AXF_EconomicAllocation_state</fullName><language
+    >en_US</language><protected>false</protected><shortDescription
+    >State</shortDescription><value>State</value></labels><labels><fullName
+    >AXF_EconomicAllocation_effectiveAt</fullName><language
+    >en_US</language><protected>false</protected><shortDescription
+    >Effective at</shortDescription><value>Effective at</value></labels><labels
+  ><fullName>AXF_EconomicAllocation_noSets</fullName><language
+    >en_US</language><protected>false</protected><shortDescription
+    >No sets</shortDescription><value
+    >No allocation proposed for this fact yet.</value></labels><labels><fullName
+    >AXF_EconomicAllocation_proposed</fullName><language
+    >en_US</language><protected>false</protected><shortDescription
+    >Proposed</shortDescription><value
+    >Allocation proposed as draft.</value></labels><labels><fullName
+    >AXF_EconomicAllocation_confirmed</fullName><language
+    >en_US</language><protected>false</protected><shortDescription
+    >Confirmed</shortDescription><value
+    >Allocation confirmed.</value></labels><labels><fullName
+    >AXF_EconomicAllocation_loading</fullName><language
+    >en_US</language><protected>false</protected><shortDescription
+    >Loading</shortDescription><value>Loading…</value></labels><labels><fullName
+    >AXF_EconomicAllocation_error</fullName><language>en_US</language><protected
+    >false</protected><shortDescription>Error</shortDescription><value
+    >The operation could not be completed.</value></labels><labels><fullName
+    >AXF_EconomicAllocation_codeForbidden</fullName><language
+    >en_US</language><protected>false</protected><shortDescription
+    >Forbidden</shortDescription><value
+    >You are not allowed to allocate this fact.</value></labels><labels
+  ><fullName>AXF_EconomicAllocation_codeNotAccessible</fullName><language
+    >en_US</language><protected>false</protected><shortDescription
+    >Not accessible</shortDescription><value
+    >Fact or allocation not available to you.</value></labels><labels><fullName
+    >AXF_EconomicAllocation_codeConflict</fullName><language
+    >en_US</language><protected>false</protected><shortDescription
+    >Conflict</shortDescription><value
+    >The allocation changed since you opened it. Reload and try again.</value></labels><labels
+  ><fullName>AXF_EconomicAllocation_codeInvalidShares</fullName><language
+    >en_US</language><protected>false</protected><shortDescription
+    >Invalid shares</shortDescription><value
+    >Some shares are invalid; nothing was saved.</value></labels><labels
+  ><fullName>AXF_EconomicAllocation_codeConfirmationRejected</fullName><language
+    >en_US</language><protected>false</protected><shortDescription
+    >Rejected</shortDescription><value
+    >Confirmation rejected; nothing was saved.</value></labels><labels><fullName
+    >AXF_EconomicAllocation_codeActiveSetExists</fullName><language
+    >en_US</language><protected>false</protected><shortDescription
+    >Active exists</shortDescription><value
+    >A confirmed allocation already exists for this fact; revise it instead.</value></labels><labels
+  ><fullName>AXF_EconomicAllocation_codeNotDraft</fullName><language
+    >en_US</language><protected>false</protected><shortDescription
+    >Not draft</shortDescription><value
+    >Only a draft allocation can be confirmed.</value></labels><labels><fullName
+    >AXF_EconomicAllocation_codeFactNotAllocatable</fullName><language
+    >en_US</language><protected>false</protected><shortDescription
+    >Not allocatable</shortDescription><value
+    >This fact cannot be allocated (missing amount, currency or holder).</value></labels><labels
+  ><fullName>AXF_EconomicAllocation_codeInvalidInput</fullName><language
+    >en_US</language><protected>false</protected><shortDescription
+    >Invalid input</shortDescription><value
+    >Invalid request.</value></labels><labels><fullName
+    >AXF_EconomicAllocation_reasonNonPositive</fullName><language
+    >en_US</language><protected>false</protected><shortDescription
+    >Reason</shortDescription><value
+    >Share must be positive and at most 100%</value></labels><labels><fullName
+    >AXF_EconomicAllocation_reasonDuplicate</fullName><language
+    >en_US</language><protected>false</protected><shortDescription
+    >Reason</shortDescription><value
+    >Person/company selected more than once</value></labels><labels><fullName
+    >AXF_EconomicAllocation_reasonUnauthorized</fullName><language
+    >en_US</language><protected>false</protected><shortDescription
+    >Reason</shortDescription><value
+    >Person/company not authorized in this installation</value></labels><labels
+  ><fullName>AXF_EconomicAllocation_reasonTotalExceeds</fullName><language
+    >en_US</language><protected>false</protected><shortDescription
+    >Reason</shortDescription><value>Total exceeds 100%</value></labels><labels
+  ><fullName>AXF_EconomicAllocation_reasonTotalNot100</fullName><language
+    >en_US</language><protected>false</protected><shortDescription
+    >Reason</shortDescription><value
+    >Total must be exactly 100%</value></labels><labels><fullName
+    >AXF_EconomicAllocation_reasonFactChanged</fullName><language
+    >en_US</language><protected>false</protected><shortDescription
+    >Reason</shortDescription><value
+    >The fact changed since the proposal</value></labels><labels><fullName
+    >AXF_EconomicAllocation_reasonActiveExists</fullName><language
+    >en_US</language><protected>false</protected><shortDescription
+    >Reason</shortDescription><value
+    >A confirmed allocation already exists</value></labels><labels><fullName
+    >AXF_EconomicAllocation_codeRejected</fullName><language
+    >en_US</language><protected>false</protected><shortDescription
+    >Rejected</shortDescription><value
+    >The allocation was rejected by a data rule; nothing was saved.</value></labels><labels
+  ><fullName>AXF_EconomicAllocation_codeLocked</fullName><language
+    >en_US</language><protected>false</protected><shortDescription
+    >Locked</shortDescription><value
+    >Another operation holds this fact; try again in a moment.</value></labels><labels
+  ><fullName>AXF_EconomicAllocation_reasonFactNotSettled</fullName><language
+    >en_US</language><protected>false</protected><shortDescription
+    >Reason</shortDescription><value
+    >Fact not settled yet</value></labels><labels><fullName
+    >AXF_EconomicAllocation_reasonMagnitude</fullName><language
+    >en_US</language><protected>false</protected><shortDescription
+    >Reason</shortDescription><value
+    >Shares do not conserve the fact amount</value></labels><labels><fullName
+    >AXF_EconomicAllocation_readOnlyNotice</fullName><language
+    >en_US</language><protected>false</protected><shortDescription
+    >Read only</shortDescription><value
+    >You can view allocations but not propose or confirm them.</value></labels><labels
+  ><fullName>AXF_EconomicAllocation_discard</fullName><language
+    >en_US</language><protected>false</protected><shortDescription
+    >Discard</shortDescription><value>Discard draft</value></labels><labels
+  ><fullName>AXF_EconomicAllocation_discarded</fullName><language
+    >en_US</language><protected>false</protected><shortDescription
+    >Discarded</shortDescription><value>Draft discarded.</value></labels><labels
+  ><fullName>AXF_EconomicAllocation_stateDRAFT</fullName><language
+    >en_US</language><protected>false</protected><shortDescription
+    >State</shortDescription><value>Draft</value></labels><labels><fullName
+    >AXF_EconomicAllocation_stateCONFIRMED</fullName><language
+    >en_US</language><protected>false</protected><shortDescription
+    >State</shortDescription><value>Confirmed</value></labels><labels><fullName
+    >AXF_EconomicAllocation_stateSUPERSEDED</fullName><language
+    >en_US</language><protected>false</protected><shortDescription
+    >State</shortDescription><value>Superseded</value></labels><labels><fullName
+    >AXF_EconomicAllocation_stateREVERSED</fullName><language
+    >en_US</language><protected>false</protected><shortDescription
+    >State</shortDescription><value>Reversed</value></labels><labels><fullName
+    >AXF_EconomicAllocation_stateDISCARDED</fullName><language
+    >en_US</language><protected>false</protected><shortDescription
+    >State</shortDescription><value>Discarded</value></labels><labels><fullName
+    >AXF_EconomicAllocation_duplicateHolder</fullName><language
+    >en_US</language><protected>false</protected><shortDescription
+    >Duplicate holder</shortDescription><value
+    >The same person/company was selected twice.</value></labels></CustomLabels>

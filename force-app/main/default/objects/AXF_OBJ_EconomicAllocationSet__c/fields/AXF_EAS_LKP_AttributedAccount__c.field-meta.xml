@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<CustomField xmlns="http://soap.sforce.com/2006/04/metadata">
+    <fullName>AXF_EAS_LKP_AttributedAccount__c</fullName>
+    <label>Atribuicao Unica</label>
+    <type>Lookup</type>
+    <referenceTo>Account</referenceTo>
+    <relationshipLabel>Rateios Atribuidos</relationshipLabel>
+    <relationshipName
+  >AXF_REL_AttributedEconomicAllocationSets</relationshipName>
+    <deleteConstraint>SetNull</deleteConstraint>
+    <required>false</required>
+    <description
+  >Projecao de atribuicao unica (AC4 da AXF-5): preenchida pela historia irma somente quando o set CONFIRMED tem exatamente uma parcela de 100%; limpa em rateio; nunca autoridade de acesso ou calculo.</description>
+</CustomField>
