@@ -1,0 +1,23 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<CustomObject xmlns="http://soap.sforce.com/2006/04/metadata">
+    <deploymentStatus>Deployed</deploymentStatus>
+    <description
+  >Checkpoint privado de uma execucao de arquivamento (AXF-95): familia/escopo, versao da politica, chave deterministica, watermark, contagens/somas por moeda, hash, fase e motivo seguro de retomada. Nao e ledger generico. OWD Private; sem Delete; escrita somente pelo servico.</description>
+    <enableActivities>false</enableActivities>
+    <enableBulkApi>true</enableBulkApi>
+    <enableFeeds>false</enableFeeds>
+    <enableHistory>true</enableHistory>
+    <enableReports>true</enableReports>
+    <enableSearch>false</enableSearch>
+    <enableSharing>true</enableSharing>
+    <enableStreamingApi>true</enableStreamingApi>
+    <label>Execucao de Arquivamento</label>
+    <nameField>
+        <displayFormat>ARR-{000000}</displayFormat>
+        <label>Numero da Execucao</label>
+        <type>AutoNumber</type>
+    </nameField>
+    <pluralLabel>Execucoes de Arquivamento</pluralLabel>
+    <sharingModel>Private</sharingModel>
+    <visibility>Public</visibility>
+</CustomObject>
