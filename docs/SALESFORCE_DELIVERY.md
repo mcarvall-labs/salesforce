@@ -67,9 +67,11 @@ Full component and test failure detail lives only in `result.json`/`result.html`
 inside the artifact — it is intentionally not duplicated inline in the PR comment.
 Preflight failures may lack a scope file. Runner/setup failures are reported through
 job status and logs even if no artifact could be produced. Auth output is never uploaded.
-Configuration-only PRs report no metadata changes without contacting an org.
-They run in the secret-free `CI` environment; metadata PRs require the appropriate
-validation environment before credentials are released.
+Configuration-only PRs (no `force-app` change) skip `salesforce-validation` entirely —
+no checkout, no org contact, no environment/secret access, reported as `Skipped` in
+GitHub — and the PR comment says so explicitly instead of embedding a validation
+report. Metadata PRs require the appropriate validation environment before
+credentials are released.
 
 ## GitHub environments
 

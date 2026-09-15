@@ -69,11 +69,12 @@ jobs:
   salesforce-validation:
     name: Validate Salesforce delta
     needs: scope
+    if: needs.scope.outputs.has_metadata == 'true'
     runs-on: ubuntu-latest
     timeout-minutes: 150
     outputs:
       summary: ${{ steps.operation.outputs.summary }}
-    environment: ${{ needs.scope.outputs.has_metadata != 'true' && 'CI' || (github.base_ref == 'main' && 'PROD-VALIDATION' || (github.base_ref == 'uat' && 'UAT-VALIDATION' || 'DEV-VALIDATION')) }}
+    environment: ${{ github.base_ref == 'main' && 'PROD-VALIDATION' || (github.base_ref == 'uat' && 'UAT-VALIDATION' || 'DEV-VALIDATION') }}
     permissions:
       contents: read
     steps:
@@ -89,7 +90,6 @@ jobs:
         with:
           node-version: 22
       - name: Install Salesforce CLI
-        if: needs.scope.outputs.has_metadata == 'true'
         run: npm install --global @salesforce/cli@2.148.3
       - name: Validate delta without persisting changes
         id: operation
@@ -99,7 +99,7 @@ jobs:
           TARGET_BRANCH: ${{ github.base_ref }}
           PR_BASE_SHA: ${{ github.event.pull_request.base.sha }}
           PR_BODY: ${{ github.event.pull_request.body }}
-          SALESFORCE_AUTH_URL: ${{ needs.scope.outputs.has_metadata == 'true' && (secrets.SALESFORCE_AUTH_URL || secrets.SALESFORCE_DEV_AUTH_URL || secrets.SALESFORCE_PROD_AUTH_URL) || '' }}
+          SALESFORCE_AUTH_URL: ${{ secrets.SALESFORCE_AUTH_URL || secrets.SALESFORCE_DEV_AUTH_URL || secrets.SALESFORCE_PROD_AUTH_URL }}
           EXPECTED_ORG_ID: ${{ vars.SALESFORCE_ORG_ID }}
           EVIDENCE_DIR: ${{ runner.temp }}/salesforce-evidence
         run: node scripts/ci/salesforce-delivery.mjs
@@ -136,5 +136,8 @@ jobs:
             const artifactLinks = data.artifacts.length
               ? data.artifacts.map(a => `- [${a.name}](${runUrl}) — contains \`result.json\`, \`result.html\`, \`delta-package.zip\`, \`source-paths.txt\`, \`summary.md\``).join('\n')
               : '_No evidence artifact uploaded._';
-            await github.rest.issues.createComment({...context.repo, issue_number: context.issue.number,
-              body: `## Salesforce PR validation: ${target}\n\n**Validation job:** ${process.env.VALIDATION_RESULT}\n**Quality checks:** ${process.env.QUALITY_RESULT}\n**Validated merge SHA:** \`${process.env.VALIDATED_SHA}\`\n\n${process.env.SF_SUMMARY || 'Validation did not produce a report.'}\n\n[Validation summary and logs](${runUrl})\n\n### Evidence\n${artifactLinks}\n\nDownload the artifact and open \`result.html\` for the full validation report, or \`delta-package.zip\` for the exact metadata package validated. Validation uses dry-run: no metadata is persisted.`});
+            const skipped = process.env.VALIDATION_RESULT === 'skipped';
+            const body = skipped
+              ? `## Salesforce PR validation: ${target}\n\n**Validation job:** skipped — no \`force-app\` metadata changes in this PR.\n**Quality checks:** ${process.env.QUALITY_RESULT}\n**Validated merge SHA:** \`${process.env.VALIDATED_SHA}\`\n\nNothing to validate against ${target}.`
+              : `## Salesforce PR validation: ${target}\n\n**Validation job:** ${process.env.VALIDATION_RESULT}\n**Quality checks:** ${process.env.QUALITY_RESULT}\n**Validated merge SHA:** \`${process.env.VALIDATED_SHA}\`\n\n${process.env.SF_SUMMARY || 'Validation did not produce a report.'}\n\n[Validation summary and logs](${runUrl})\n\n### Evidence\n${artifactLinks}\n\nDownload the artifact and open \`result.html\` for the full validation report, or \`delta-package.zip\` for the exact metadata package validated. Validation uses dry-run: no metadata is persisted.`;
+            await github.rest.issues.createComment({...context.repo, issue_number: context.issue.number, body});
