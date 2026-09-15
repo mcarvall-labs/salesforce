@@ -24,9 +24,17 @@ export function extractDeclaredTests(body) {
   if (!heading) return [];
   const rest = body.slice(heading.index + heading[0].length);
   const section = rest.split(/^#{1,6}\s/m)[0];
-  const names = [
-    ...section.matchAll(/^[-*]\s*`?([A-Za-z][A-Za-z0-9_]*)`?/gm)
-  ].map((m) => m[1]);
+  const names = [];
+  for (const line of section.split("\n")) {
+    const bullet = /^[-*]\s*(.+)$/.exec(line.trim());
+    if (!bullet) continue;
+    // Test class names on a bullet may be separated by spaces and/or commas,
+    // e.g. "- FooTest BarTest, BazTest", and may be wrapped in backticks.
+    for (const token of bullet[1].split(/[\s,]+/)) {
+      const name = token.replace(/`/g, "");
+      if (/^[A-Za-z][A-Za-z0-9_]*$/.test(name)) names.push(name);
+    }
+  }
   return [...new Set(names)];
 }
 

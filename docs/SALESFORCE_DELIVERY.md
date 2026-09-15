@@ -28,12 +28,14 @@ every local test class in the org:
 
 - Any test class (`@isTest`) that is itself part of the delta is included automatically.
 - Additional coverage can be declared explicitly in the PR description under a
-  `## Salesforce test classes` heading, one Apex test class name per bullet, e.g.:
+  `## Salesforce test classes` heading. List Apex test class names in bullets,
+  separated by spaces and/or commas — one class per bullet, several per bullet, or
+  a mix, e.g.:
 
   ```
   ## Salesforce test classes
-  - FooControllerTest
-  - BarTriggerHandlerTest
+  - FooControllerTest BarTriggerHandlerTest
+  - BazServiceTest, QuxSchedulableTest
   ```
 
   Use this when a changed class or trigger is covered by a test class that isn't

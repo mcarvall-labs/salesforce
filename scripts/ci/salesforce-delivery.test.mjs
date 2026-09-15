@@ -104,6 +104,19 @@ test("extractDeclaredTests reads bullets under the PR test classes section only"
   assert.deepEqual(extractDeclaredTests("No section here"), []);
 });
 
+test("extractDeclaredTests accepts multiple test classes space/comma separated on one bullet", () => {
+  assert.deepEqual(
+    extractDeclaredTests(
+      [
+        "## Salesforce test classes",
+        "- FooControllerTest BarTriggerHandlerTest",
+        "* `BazTest`, QuxTest"
+      ].join("\n")
+    ),
+    ["FooControllerTest", "BarTriggerHandlerTest", "BazTest", "QuxTest"]
+  );
+});
+
 test("testPlan scopes to delta test classes and declared tests, deduplicated", () => {
   const files = {
     "force-app/main/default/classes/FooTest.cls": "@isTest\nclass FooTest {}",
