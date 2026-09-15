@@ -51,7 +51,7 @@ jobs:
           BASE_SHA: ${{ github.event.pull_request.base.sha }}
         run: |
           mapfile -t files < <(git diff --name-only --diff-filter=ACMR "$BASE_SHA" "$GITHUB_SHA" | grep -E '\.(cls|cmp|component|css|html|js|mjs|json|md|page|trigger|xml|yaml|yml)$' || true)
-          if ((${#files[@]})); then npx prettier --check "${files[@]}"; fi
+          if ((${#files[@]})); then printf '%s\0' "${files[@]}" | xargs -0 npx prettier --check; fi
       - name: Lint changed Lightning code
         shell: bash
         env:
