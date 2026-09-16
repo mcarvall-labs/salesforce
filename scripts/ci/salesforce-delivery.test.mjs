@@ -83,19 +83,29 @@ test("evidence allowlist excludes authentication data and normalizes singleton f
   assert.doesNotMatch(JSON.stringify(evidence), /secret|accessToken/);
 });
 
-test("extractDeclaredTests reads bullets under the PR test classes section only", () => {
+test("extractDeclaredTests reads the fenced code block under the Apex test classes heading", () => {
   assert.deepEqual(
     extractDeclaredTests(
       [
+        "### Description",
+        "",
+        "```",
         "Some description.",
+        "```",
         "",
-        "## Salesforce test classes",
-        "- FooTest",
-        "- `BarTest`",
-        "* BazTest",
+        "### Apex test classes to run",
         "",
-        "## Another section",
-        "- NotATest"
+        "Write test class names separated by space.",
+        "",
+        "```",
+        "FooTest BarTest, BazTest",
+        "```",
+        "",
+        "### Deployment Steps",
+        "",
+        "```",
+        "NotATest",
+        "```"
       ].join("\n")
     ),
     ["FooTest", "BarTest", "BazTest"]
@@ -104,16 +114,12 @@ test("extractDeclaredTests reads bullets under the PR test classes section only"
   assert.deepEqual(extractDeclaredTests("No section here"), []);
 });
 
-test("extractDeclaredTests accepts multiple test classes space/comma separated on one bullet", () => {
+test("extractDeclaredTests returns nothing for an empty test-classes code block", () => {
   assert.deepEqual(
     extractDeclaredTests(
-      [
-        "## Salesforce test classes",
-        "- FooControllerTest BarTriggerHandlerTest",
-        "* `BazTest`, QuxTest"
-      ].join("\n")
+      ["### Apex test classes to run", "", "```", "", "```"].join("\n")
     ),
-    ["FooControllerTest", "BarTriggerHandlerTest", "BazTest", "QuxTest"]
+    []
   );
 });
 

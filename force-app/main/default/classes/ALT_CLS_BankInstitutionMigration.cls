@@ -679,44 +679,38 @@ public with sharing class ALT_CLS_BankInstitutionMigration {
     }
     Map<Id, AXF_OBJ_AccountHolder__c> out = new Map<Id, AXF_OBJ_AccountHolder__c>();
     if (!bankIds.isEmpty()) {
-      for (AXF_OBJ_AccountHolder__c row : [
-        SELECT
-          Id,
-          AXF_ACH_LKP_Account__c,
-          AXF_ACH_LKP_BankAccount__c,
-          AXF_ACH_DAT_ValidFrom__c
-        FROM AXF_OBJ_AccountHolder__c
-        WHERE
-          AXF_ACH_LKP_BankAccount__c IN :bankIds
-          AND AXF_ACH_PKL_Role__c = 'PRIMARY'
-          AND AXF_ACH_PKL_State__c = 'CONFIRMED'
-          AND (AXF_ACH_DAT_ValidTo__c = NULL
-          OR AXF_ACH_DAT_ValidTo__c >= TODAY)
-        WITH USER_MODE
-        ORDER BY AXF_ACH_DAT_ValidFrom__c DESC
-      ]) {
+      for (
+        AXF_OBJ_AccountHolder__c row : (List<AXF_OBJ_AccountHolder__c>) Database.queryWithBinds(
+          'SELECT Id, AXF_ACH_LKP_Account__c, AXF_ACH_LKP_BankAccount__c, ' +
+            'AXF_ACH_DAT_ValidFrom__c FROM AXF_OBJ_AccountHolder__c ' +
+            'WHERE AXF_ACH_LKP_BankAccount__c IN :bankIds ' +
+            'AND AXF_ACH_PKL_Role__c = \'PRIMARY\' ' +
+            'AND AXF_ACH_PKL_State__c = \'CONFIRMED\' ' +
+            'AND (AXF_ACH_DAT_ValidTo__c = NULL OR AXF_ACH_DAT_ValidTo__c >= TODAY) ' +
+            'ORDER BY AXF_ACH_DAT_ValidFrom__c DESC',
+          new Map<String, Object>{ 'bankIds' => bankIds },
+          AccessLevel.USER_MODE
+        )
+      ) {
         if (!out.containsKey(row.AXF_ACH_LKP_BankAccount__c)) {
           out.put(row.AXF_ACH_LKP_BankAccount__c, row);
         }
       }
     }
     if (!cardIds.isEmpty()) {
-      for (AXF_OBJ_AccountHolder__c row : [
-        SELECT
-          Id,
-          AXF_ACH_LKP_Account__c,
-          AXF_ACH_LKP_CreditCard__c,
-          AXF_ACH_DAT_ValidFrom__c
-        FROM AXF_OBJ_AccountHolder__c
-        WHERE
-          AXF_ACH_LKP_CreditCard__c IN :cardIds
-          AND AXF_ACH_PKL_Role__c = 'PRIMARY'
-          AND AXF_ACH_PKL_State__c = 'CONFIRMED'
-          AND (AXF_ACH_DAT_ValidTo__c = NULL
-          OR AXF_ACH_DAT_ValidTo__c >= TODAY)
-        WITH USER_MODE
-        ORDER BY AXF_ACH_DAT_ValidFrom__c DESC
-      ]) {
+      for (
+        AXF_OBJ_AccountHolder__c row : (List<AXF_OBJ_AccountHolder__c>) Database.queryWithBinds(
+          'SELECT Id, AXF_ACH_LKP_Account__c, AXF_ACH_LKP_CreditCard__c, ' +
+            'AXF_ACH_DAT_ValidFrom__c FROM AXF_OBJ_AccountHolder__c ' +
+            'WHERE AXF_ACH_LKP_CreditCard__c IN :cardIds ' +
+            'AND AXF_ACH_PKL_Role__c = \'PRIMARY\' ' +
+            'AND AXF_ACH_PKL_State__c = \'CONFIRMED\' ' +
+            'AND (AXF_ACH_DAT_ValidTo__c = NULL OR AXF_ACH_DAT_ValidTo__c >= TODAY) ' +
+            'ORDER BY AXF_ACH_DAT_ValidFrom__c DESC',
+          new Map<String, Object>{ 'cardIds' => cardIds },
+          AccessLevel.USER_MODE
+        )
+      ) {
         if (!out.containsKey(row.AXF_ACH_LKP_CreditCard__c)) {
           out.put(row.AXF_ACH_LKP_CreditCard__c, row);
         }
