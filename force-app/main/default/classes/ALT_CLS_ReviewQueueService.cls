@@ -393,12 +393,13 @@ public with sharing class ALT_CLS_ReviewQueueService {
   private static String selectQuery() {
     List<String> names = new List<String>{ 'Id', 'Name' };
     for (
-      String name : AXF_OBJ_ReviewItem__c.SObjectType.getDescribe(
+      Schema.SObjectField field : AXF_OBJ_ReviewItem__c.SObjectType.getDescribe(
           SObjectDescribeOptions.DEFERRED
         )
         .fields.getMap()
-        .keySet()
+        .values()
     ) {
+      String name = field.getDescribe().getName();
       if (name.toLowerCase().startsWith('axf_rvi_'))
         names.add(name);
     }
