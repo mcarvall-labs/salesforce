@@ -73,7 +73,11 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 150
     outputs:
-      summary: ${{ steps.operation.outputs.summary }}
+      deploymentId: ${{ steps.operation.outputs.deploymentId }}
+      componentsTotal: ${{ steps.operation.outputs.componentsTotal }}
+      testsCompleted: ${{ steps.operation.outputs.testsCompleted }}
+      testsFailed: ${{ steps.operation.outputs.testsFailed }}
+      errorMessage: ${{ steps.operation.outputs.errorMessage }}
     environment: ${{ github.base_ref == 'main' && 'PROD-VALIDATION' || (github.base_ref == 'uat' && 'UAT-VALIDATION' || 'DEV-VALIDATION') }}
     permissions:
       contents: read
@@ -126,18 +130,38 @@ jobs:
           VALIDATION_RESULT: ${{ needs.salesforce-validation.result }}
           QUALITY_RESULT: ${{ needs.quality.result }}
           VALIDATED_SHA: ${{ github.sha }}
-          SF_SUMMARY: ${{ needs.salesforce-validation.outputs.summary }}
+          DEPLOYMENT_ID: ${{ needs.salesforce-validation.outputs.deploymentId }}
+          COMPONENTS_TOTAL: ${{ needs.salesforce-validation.outputs.componentsTotal }}
+          TESTS_COMPLETED: ${{ needs.salesforce-validation.outputs.testsCompleted }}
+          TESTS_FAILED: ${{ needs.salesforce-validation.outputs.testsFailed }}
+          ERROR_MESSAGE: ${{ needs.salesforce-validation.outputs.errorMessage }}
         with:
           script: |
             const runUrl = `${context.serverUrl}/${context.repo.owner}/${context.repo.repo}/actions/runs/${context.runId}`;
             const {data} = await github.rest.actions.listWorkflowRunArtifacts({...context.repo, run_id: context.runId});
+            const artifact = data.artifacts[0];
+            const artifactUrl = artifact ? `${runUrl}/artifacts/${artifact.id}` : null;
             const ref = context.payload.pull_request.base.ref;
             const target = ref === 'main' ? 'AXON_PROD' : (ref === 'uat' ? 'AXON_UAT' : 'AXON_DEV');
-            const artifactLinks = data.artifacts.length
-              ? data.artifacts.map(a => `- [${a.name}](${runUrl}) — contains \`result.json\`, \`result.html\`, \`delta-package.zip\`, \`source-paths.txt\`, \`summary.md\``).join('\n')
-              : '_No evidence artifact uploaded._';
             const skipped = process.env.VALIDATION_RESULT === 'skipped';
-            const body = skipped
-              ? `## Salesforce PR validation: ${target}\n\n**Validation job:** skipped — no \`force-app\` metadata changes in this PR.\n**Quality checks:** ${process.env.QUALITY_RESULT}\n**Validated merge SHA:** \`${process.env.VALIDATED_SHA}\`\n\nNothing to validate against ${target}.`
-              : `## Salesforce PR validation: ${target}\n\n**Validation job:** ${process.env.VALIDATION_RESULT}\n**Quality checks:** ${process.env.QUALITY_RESULT}\n**Validated merge SHA:** \`${process.env.VALIDATED_SHA}\`\n\n${process.env.SF_SUMMARY || 'Validation did not produce a report.'}\n\n[Validation summary and logs](${runUrl})\n\n### Evidence\n${artifactLinks}\n\nDownload the artifact and open \`result.html\` for the full validation report, or \`delta-package.zip\` for the exact metadata package validated. Validation uses dry-run: no metadata is persisted.`;
+            const passed = process.env.VALIDATION_RESULT === 'success';
+            const icon = skipped ? '⚪' : passed ? '✅' : '❌';
+            const status = skipped ? 'Skipped' : passed ? 'Passed' : 'Failed';
+            let body = `### ${icon} Salesforce validation — ${target}: **${status}**\n\n`;
+            if (skipped) {
+              body += `No \`force-app\` metadata changes in this PR — nothing to validate.\n`;
+            } else {
+              body += [
+                '| | |',
+                '|---|---|',
+                `| Quality checks | ${process.env.QUALITY_RESULT} |`,
+                `| Deployment ID | ${process.env.DEPLOYMENT_ID ? '`' + process.env.DEPLOYMENT_ID + '`' : 'None'} |`,
+                `| Components | ${process.env.COMPONENTS_TOTAL || '—'} |`,
+                `| Tests | ${process.env.TESTS_COMPLETED || 0} completed / ${process.env.TESTS_FAILED || 0} failed |`,
+                `| Commit | \`${process.env.VALIDATED_SHA.slice(0, 7)}\` |`
+              ].join('\n') + '\n';
+              if (process.env.ERROR_MESSAGE) body += `\n> ${process.env.ERROR_MESSAGE}\n`;
+            }
+            body += `\n${artifactUrl ? `[⬇️ Download evidence](${artifactUrl})` : '_No evidence artifact uploaded._'} · [Run logs](${runUrl})\n`;
+            body += `\nOpen \`result.html\` in the evidence zip for the full report. Validation uses dry-run: no metadata is persisted.`;
             await github.rest.issues.createComment({...context.repo, issue_number: context.issue.number, body});
