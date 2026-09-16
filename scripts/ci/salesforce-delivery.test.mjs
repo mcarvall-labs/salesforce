@@ -151,12 +151,12 @@ test("testPlan fails closed when production Apex has no test coverage in scope",
   };
   assert.throws(
     () => testPlan(Object.keys(files), (p) => files[p], []),
-    /Salesforce test classes/
+    /Apex test classes to run/
   );
   assert.throws(
     () =>
       testPlan(["force-app/main/default/triggers/Bar.trigger"], () => "", []),
-    /Salesforce test classes/
+    /Apex test classes to run/
   );
 });
 
