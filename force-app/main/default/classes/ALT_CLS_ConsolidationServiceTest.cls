@@ -708,9 +708,10 @@ private class ALT_CLS_ConsolidationServiceTest {
           scope(new List<Id>{ personId, plain.Id, null }, null, null)
         );
       Test.stopTest();
-      Assert.areEqual(1, result.holders.size(), 'so a pessoa Axon entra');
-      Assert.areEqual('AUTHORIZED', result.holders[0].state);
-      Assert.areEqual(120, total(result, 'BRL').outflow);
+      // "plain" only ends up outside the Axon record types when the org has a third,
+      // non-Axon Account record type to assign it; AXON_DEV/AXON_UAT only have
+      // AXF_Person/AXF_Business, so plain falls back to the org's default record type
+      // (an Axon type) and is itself a valid, if empty, holder.
       String plainType = [
           SELECT RecordType.DeveloperName
           FROM Account
@@ -718,7 +719,23 @@ private class ALT_CLS_ConsolidationServiceTest {
         ]
         .RecordType
         ?.DeveloperName;
-      if (plainType != 'AXF_Person' && plainType != 'AXF_Business') {
+      Boolean plainIsAxonType =
+        plainType == 'AXF_Person' || plainType == 'AXF_Business';
+      Assert.areEqual(
+        plainIsAxonType ? 2 : 1,
+        result.holders.size(),
+        'so a pessoa Axon entra'
+      );
+      ALT_CLS_ConsolidationService.HolderScope personHolder;
+      for (ALT_CLS_ConsolidationService.HolderScope holder : result.holders) {
+        if (holder.accountId == personId) {
+          personHolder = holder;
+        }
+      }
+      Assert.isNotNull(personHolder, 'pessoa deve aparecer nos titulares');
+      Assert.areEqual('AUTHORIZED', personHolder.state);
+      Assert.areEqual(120, total(result, 'BRL').outflow);
+      if (!plainIsAxonType) {
         Assert.isTrue(
           hasExclusion(result, plain.Id, 'NOT_A_HOLDER'),
           JSON.serialize(result.exclusions)
