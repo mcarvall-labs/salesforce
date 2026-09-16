@@ -52,13 +52,19 @@ private class ALT_CLS_ConfidencePanelServiceTest {
       permissionSets.put(permission.Name, permission.Id);
     }
     // Capability + object read, no FLS: exercises the BLOCKED field-access path.
-    PermissionSet noFls = new PermissionSet(
-      Name = 'AXF143TestObjectsNoFls',
-      Label = 'AXF-143 objects without FLS'
-    );
-    insert noFls;
+    // Uses the pre-deployed AXF_PS_TestNoFLS permission set (object-level read grants
+    // done at DEPLOY time) instead of dynamically inserting ObjectPermissions, since
+    // Apex-time inserts referencing certain object SobjectTypes can hit stale platform
+    // entity-cache errors (FIELD_INTEGRITY_EXCEPTION, Invalid object) unrelated to schema.
+    Id noFlsId = [
+      SELECT Id
+      FROM PermissionSet
+      WHERE Name = 'AXF_PS_TestNoFLS'
+      LIMIT 1
+    ]
+    .Id;
     insert new SetupEntityAccess(
-      ParentId = noFls.Id,
+      ParentId = noFlsId,
       SetupEntityId = [
         SELECT Id
         FROM CustomPermission
@@ -67,32 +73,13 @@ private class ALT_CLS_ConfidencePanelServiceTest {
       ]
       .Id
     );
-    List<ObjectPermissions> reads = new List<ObjectPermissions>();
-    for (
-      String objectName : new List<String>{
-        'AXF_OBJ_BankAccount__c',
-        'AXF_OBJ_CreditCard__c',
-        'AXF_OBJ_PluggyConnection__c',
-        'AXF_OBJ_BankAccountTransaction__c',
-        'AXF_OBJ_CreditCardTransaction__c'
-      }
-    ) {
-      reads.add(
-        new ObjectPermissions(
-          ParentId = noFls.Id,
-          SobjectType = objectName,
-          PermissionsRead = true
-        )
-      );
-    }
-    insert reads;
     insert new List<PermissionSetAssignment>{
       assignment(users[0].Id, permissionSets.get('AXF_PS_GestorFinanceiro')),
       assignment(users[0].Id, permissionSets.get('AXF_PS_PluggyIntegration')),
       assignment(users[1].Id, permissionSets.get('AXF_PS_GestorFinanceiro')),
       assignment(users[1].Id, permissionSets.get('AXF_PS_PluggyIntegration')),
       assignment(users[2].Id, permissionSets.get('AXF_PS_Participante')),
-      assignment(users[3].Id, noFls.Id)
+      assignment(users[3].Id, noFlsId)
     };
   }
 
