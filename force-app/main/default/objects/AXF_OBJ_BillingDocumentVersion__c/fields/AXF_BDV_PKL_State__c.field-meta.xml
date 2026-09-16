@@ -1,0 +1,29 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<CustomField xmlns="http://soap.sforce.com/2006/04/metadata">
+    <fullName>AXF_BDV_PKL_State__c</fullName>
+    <label>Estado</label>
+    <type>Picklist</type>
+    <required>true</required>
+    <valueSet>
+        <restricted>true</restricted>
+        <valueSetDefinition>
+            <sorted>false</sorted>
+            <value><fullName>DRAFT</fullName><default>true</default><label
+        >Rascunho</label></value>
+            <value><fullName>REVIEWED</fullName><default>false</default><label
+        >Revisado</label></value>
+            <value><fullName>ISSUING</fullName><default>false</default><label
+        >Emitindo</label></value>
+            <value><fullName>ISSUED</fullName><default>false</default><label
+        >Emitido</label></value>
+            <value><fullName>FAILED_BEFORE_ISSUE</fullName><default
+        >false</default><label>Falhou antes da emissao</label></value>
+            <value><fullName>CANCELLED</fullName><default>false</default><label
+        >Cancelado</label></value>
+            <value><fullName>REPLACED</fullName><default>false</default><label
+        >Substituido</label></value>
+        </valueSetDefinition>
+    </valueSet>
+    <description
+  >Lifecycle da versao (GBI-2). Somente DRAFT aceita alteracao de linhas; ISSUED e imutavel.</description>
+</CustomField>

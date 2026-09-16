@@ -1,0 +1,2487 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<CustomLabels xmlns="http://soap.sforce.com/2006/04/metadata"><labels><fullName
+    >AXF_Realization_title</fullName><language>en_US</language><protected
+    >false</protected><shortDescription
+    >Realization title</shortDescription><value
+    >Record realization</value></labels><labels><fullName
+    >AXF_Realization_target</fullName><language>en_US</language><protected
+    >false</protected><shortDescription
+    >Realization target</shortDescription><value
+    >Planned transaction</value></labels><labels><fullName
+    >AXF_Realization_actual</fullName><language>en_US</language><protected
+    >false</protected><shortDescription
+    >Realization actual</shortDescription><value
+    >No prior plan</value></labels><labels><fullName
+    >AXF_Realization_holder</fullName><language>en_US</language><protected
+    >false</protected><shortDescription
+    >Realization holder</shortDescription><value
+    >Person or company</value></labels><labels><fullName
+    >AXF_Realization_direction</fullName><language>en_US</language><protected
+    >false</protected><shortDescription
+    >Realization direction</shortDescription><value
+    >Direction</value></labels><labels><fullName
+    >AXF_Realization_debit</fullName><language>en_US</language><protected
+    >false</protected><shortDescription
+    >Realization debit</shortDescription><value>Expense</value></labels><labels
+  ><fullName>AXF_Realization_credit</fullName><language
+    >en_US</language><protected>false</protected><shortDescription
+    >Realization credit</shortDescription><value>Income</value></labels><labels
+  ><fullName>AXF_Realization_currency</fullName><language
+    >en_US</language><protected>false</protected><shortDescription
+    >Realization currency</shortDescription><value
+    >Original currency (ISO)</value></labels><labels><fullName
+    >AXF_Realization_amount</fullName><language>en_US</language><protected
+    >false</protected><shortDescription
+    >Realization amount</shortDescription><value
+    >Realized amount</value></labels><labels><fullName
+    >AXF_Realization_date</fullName><language>en_US</language><protected
+    >false</protected><shortDescription
+    >Realization date</shortDescription><value
+    >Realization date</value></labels><labels><fullName
+    >AXF_Realization_source</fullName><language>en_US</language><protected
+    >false</protected><shortDescription
+    >Realization source</shortDescription><value>Source</value></labels><labels
+  ><fullName>AXF_Realization_cash</fullName><language>en_US</language><protected
+    >false</protected><shortDescription
+    >Realization cash</shortDescription><value>Cash</value></labels><labels
+  ><fullName>AXF_Realization_bank</fullName><language>en_US</language><protected
+    >false</protected><shortDescription
+    >Realization bank</shortDescription><value
+    >Bank account</value></labels><labels><fullName
+    >AXF_Realization_card</fullName><language>en_US</language><protected
+    >false</protected><shortDescription
+    >Realization card</shortDescription><value
+    >Credit card</value></labels><labels><fullName
+    >AXF_Realization_existing</fullName><language>en_US</language><protected
+    >false</protected><shortDescription
+    >Realization existing</shortDescription><value
+    >Use an existing source fact</value></labels><labels><fullName
+    >AXF_Realization_fact</fullName><language>en_US</language><protected
+    >false</protected><shortDescription
+    >Realization fact</shortDescription><value
+    >Source transaction</value></labels><labels><fullName
+    >AXF_Realization_sourceVersion</fullName><language
+    >en_US</language><protected>false</protected><shortDescription
+    >Realization sourceVersion</shortDescription><value
+    >Observed source version</value></labels><labels><fullName
+    >AXF_Realization_funding</fullName><language>en_US</language><protected
+    >false</protected><shortDescription
+    >Realization funding</shortDescription><value
+    >Account or card</value></labels><labels><fullName
+    >AXF_Realization_confirm</fullName><language>en_US</language><protected
+    >false</protected><shortDescription
+    >Realization confirm</shortDescription><value
+    >Confirm realization</value></labels><labels><fullName
+    >AXF_Realization_reverse</fullName><language>en_US</language><protected
+    >false</protected><shortDescription
+    >Realization reverse</shortDescription><value
+    >Reverse application</value></labels><labels><fullName
+    >AXF_Realization_retry</fullName><language>en_US</language><protected
+    >false</protected><shortDescription
+    >Realization retry</shortDescription><value
+    >Retry reporting FX</value></labels><labels><fullName
+    >AXF_Realization_refresh</fullName><language>en_US</language><protected
+    >false</protected><shortDescription
+    >Realization refresh</shortDescription><value
+    >Refresh</value></labels><labels><fullName
+    >AXF_Realization_planned</fullName><language>en_US</language><protected
+    >false</protected><shortDescription
+    >Realization planned</shortDescription><value
+    >Planned</value></labels><labels><fullName
+    >AXF_Realization_realized</fullName><language>en_US</language><protected
+    >false</protected><shortDescription
+    >Realization realized</shortDescription><value
+    >Realized</value></labels><labels><fullName
+    >AXF_Realization_residual</fullName><language>en_US</language><protected
+    >false</protected><shortDescription
+    >Realization residual</shortDescription><value
+    >Outstanding</value></labels><labels><fullName
+    >AXF_Realization_reporting</fullName><language>en_US</language><protected
+    >false</protected><shortDescription
+    >Realization reporting</shortDescription><value
+    >Reporting total</value></labels><labels><fullName
+    >AXF_Realization_pending</fullName><language>en_US</language><protected
+    >false</protected><shortDescription
+    >Realization pending</shortDescription><value
+    >Reporting FX is pending. Converted total is unavailable.</value></labels><labels
+  ><fullName>AXF_Realization_empty</fullName><language
+    >en_US</language><protected>false</protected><shortDescription
+    >Realization empty</shortDescription><value
+    >No realizations yet.</value></labels><labels><fullName
+    >AXF_Realization_error</fullName><language>en_US</language><protected
+    >false</protected><shortDescription
+    >Realization error</shortDescription><value
+    >Unable to complete. Refresh access and versions, then review the values.</value></labels><labels
+  ><fullName>AXF_Realization_success</fullName><language
+    >en_US</language><protected>false</protected><shortDescription
+    >Realization success</shortDescription><value
+    >Operation recorded.</value></labels><labels><fullName
+    >AXF_Realization_loading</fullName><language>en_US</language><protected
+    >false</protected><shortDescription
+    >Realization loading</shortDescription><value
+    >Loading realization</value></labels><labels><fullName
+    >AXF_Realization_effect</fullName><language>en_US</language><protected
+    >false</protected><shortDescription
+    >Realization effect</shortDescription><value>Effect</value></labels><labels
+  ><fullName>AXF_Realization_application</fullName><language
+    >en_US</language><protected>false</protected><shortDescription
+    >Realization application</shortDescription><value
+    >Application</value></labels><labels><fullName
+    >AXF_Realization_reversal</fullName><language>en_US</language><protected
+    >false</protected><shortDescription
+    >Realization reversal</shortDescription><value
+    >Reversal</value></labels><labels><fullName
+    >AXF_Realization_ready</fullName><language>en_US</language><protected
+    >false</protected><shortDescription
+    >Realization ready</shortDescription><value>Ready</value></labels><labels
+  ><fullName>AXF_Realization_currencyMismatch</fullName><language
+    >en_US</language><protected>false</protected><shortDescription
+    >Realization currencyMismatch</shortDescription><value
+    >The source and planned transaction must use the same original currency.</value></labels><labels
+  ><fullName>AXF_Realization_conflict</fullName><language
+    >en_US</language><protected>false</protected><shortDescription
+    >Realization conflict</shortDescription><value
+    >The data changed. Refresh before confirming a new operation.</value></labels><labels
+  ><fullName>AXF_Realization_unavailableAmount</fullName><language
+    >en_US</language><protected>false</protected><shortDescription
+    >Realization unavailableAmount</shortDescription><value
+    >The amount exceeds the available source or outstanding plan.</value></labels><labels
+  ><fullName>AXF_Realization_reportingCurrencyRequired</fullName><language
+    >en_US</language><protected>false</protected><shortDescription
+    >Realization reportingCurrencyRequired</shortDescription><value
+    >Configure the organization reporting currency before recording realization.</value></labels><labels
+  ><fullName>AXF_BillingComposer_title</fullName><language
+    >en_US</language><protected>false</protected><shortDescription
+    >Composer title</shortDescription><value
+    >Billing draft composer</value></labels><labels><fullName
+    >AXF_BillingComposer_intro</fullName><language>en_US</language><protected
+    >false</protected><shortDescription>Composer intro</shortDescription><value
+    >Select compatible planned entries of one contract to review a traceable billing draft before issuance.</value></labels><labels
+  ><fullName>AXF_BillingComposer_holder</fullName><language
+    >en_US</language><protected>false</protected><shortDescription
+    >Holder</shortDescription><value>Holder</value></labels><labels><fullName
+    >AXF_BillingComposer_contract</fullName><language>en_US</language><protected
+    >false</protected><shortDescription>Contract</shortDescription><value
+    >Contract</value></labels><labels><fullName
+    >AXF_BillingComposer_counterparty</fullName><language
+    >en_US</language><protected>false</protected><shortDescription
+    >Counterparty</shortDescription><value>Counterparty</value></labels><labels
+  ><fullName>AXF_BillingComposer_currency</fullName><language
+    >en_US</language><protected>false</protected><shortDescription
+    >Currency</shortDescription><value>Currency</value></labels><labels
+  ><fullName>AXF_BillingComposer_documentKind</fullName><language
+    >en_US</language><protected>false</protected><shortDescription
+    >Document kind</shortDescription><value
+    >Document kind</value></labels><labels><fullName
+    >AXF_BillingComposer_genericInvoice</fullName><language
+    >en_US</language><protected>false</protected><shortDescription
+    >Generic invoice</shortDescription><value
+    >Generic invoice</value></labels><labels><fullName
+    >AXF_BillingComposer_genericReceipt</fullName><language
+    >en_US</language><protected>false</protected><shortDescription
+    >Generic receipt</shortDescription><value
+    >Generic receipt</value></labels><labels><fullName
+    >AXF_BillingComposer_seriesKey</fullName><language
+    >en_US</language><protected>false</protected><shortDescription
+    >Series</shortDescription><value>Series</value></labels><labels><fullName
+    >AXF_BillingComposer_periodStart</fullName><language
+    >en_US</language><protected>false</protected><shortDescription
+    >Period start</shortDescription><value>Period start</value></labels><labels
+  ><fullName>AXF_BillingComposer_periodEnd</fullName><language
+    >en_US</language><protected>false</protected><shortDescription
+    >Period end</shortDescription><value>Period end</value></labels><labels
+  ><fullName>AXF_BillingComposer_loadCandidates</fullName><language
+    >en_US</language><protected>false</protected><shortDescription
+    >Load candidates</shortDescription><value
+    >Load candidates</value></labels><labels><fullName
+    >AXF_BillingComposer_candidates</fullName><language
+    >en_US</language><protected>false</protected><shortDescription
+    >Candidates</shortDescription><value
+    >Candidate entries</value></labels><labels><fullName
+    >AXF_BillingComposer_select</fullName><language>en_US</language><protected
+    >false</protected><shortDescription>Select</shortDescription><value
+    >Select</value></labels><labels><fullName
+    >AXF_BillingComposer_entry</fullName><language>en_US</language><protected
+    >false</protected><shortDescription>Entry</shortDescription><value
+    >Entry</value></labels><labels><fullName
+    >AXF_BillingComposer_snapshot</fullName><language>en_US</language><protected
+    >false</protected><shortDescription>Snapshot</shortDescription><value
+    >Contract snapshot</value></labels><labels><fullName
+    >AXF_BillingComposer_amount</fullName><language>en_US</language><protected
+    >false</protected><shortDescription>Amount</shortDescription><value
+    >Amount</value></labels><labels><fullName
+    >AXF_BillingComposer_serviceDate</fullName><language
+    >en_US</language><protected>false</protected><shortDescription
+    >Service date</shortDescription><value>Service date</value></labels><labels
+  ><fullName>AXF_BillingComposer_lineType</fullName><language
+    >en_US</language><protected>false</protected><shortDescription
+    >Line type</shortDescription><value>Type</value></labels><labels><fullName
+    >AXF_BillingComposer_incompatibilities</fullName><language
+    >en_US</language><protected>false</protected><shortDescription
+    >Incompatibilities</shortDescription><value
+    >Incompatibilities</value></labels><labels><fullName
+    >AXF_BillingComposer_eligible</fullName><language>en_US</language><protected
+    >false</protected><shortDescription>Eligible</shortDescription><value
+    >Eligible</value></labels><labels><fullName
+    >AXF_BillingComposer_noCandidates</fullName><language
+    >en_US</language><protected>false</protected><shortDescription
+    >No candidates</shortDescription><value
+    >No planned entry was found for this contract and period.</value></labels><labels
+  ><fullName>AXF_BillingComposer_workAllocations</fullName><language
+    >en_US</language><protected>false</protected><shortDescription
+    >Work allocations</shortDescription><value
+    >Approved work allocations</value></labels><labels><fullName
+    >AXF_BillingComposer_workRecord</fullName><language
+    >en_US</language><protected>false</protected><shortDescription
+    >Work record</shortDescription><value>Work record</value></labels><labels
+  ><fullName>AXF_BillingComposer_remaining</fullName><language
+    >en_US</language><protected>false</protected><shortDescription
+    >Remaining</shortDescription><value>Remaining</value></labels><labels
+  ><fullName>AXF_BillingComposer_quantity</fullName><language
+    >en_US</language><protected>false</protected><shortDescription
+    >Quantity</shortDescription><value>Quantity</value></labels><labels
+  ><fullName>AXF_BillingComposer_addAllocation</fullName><language
+    >en_US</language><protected>false</protected><shortDescription
+    >Add allocation</shortDescription><value
+    >Add allocation</value></labels><labels><fullName
+    >AXF_BillingComposer_removeAllocation</fullName><language
+    >en_US</language><protected>false</protected><shortDescription
+    >Remove allocation</shortDescription><value
+    >Remove allocation</value></labels><labels><fullName
+    >AXF_BillingComposer_noWork</fullName><language>en_US</language><protected
+    >false</protected><shortDescription
+    >No approved work</shortDescription><value
+    >No approved work record with remaining balance.</value></labels><labels
+  ><fullName>AXF_BillingComposer_summary</fullName><language
+    >en_US</language><protected>false</protected><shortDescription
+    >Summary</shortDescription><value>Summary</value></labels><labels><fullName
+    >AXF_BillingComposer_selectedLines</fullName><language
+    >en_US</language><protected>false</protected><shortDescription
+    >Selected lines</shortDescription><value
+    >Selected lines</value></labels><labels><fullName
+    >AXF_BillingComposer_total</fullName><language>en_US</language><protected
+    >false</protected><shortDescription>Total</shortDescription><value
+    >Total</value></labels><labels><fullName
+    >AXF_BillingComposer_compose</fullName><language>en_US</language><protected
+    >false</protected><shortDescription>Compose draft</shortDescription><value
+    >Compose draft</value></labels><labels><fullName
+    >AXF_BillingComposer_composing</fullName><language
+    >en_US</language><protected>false</protected><shortDescription
+    >Composing</shortDescription><value>Composing draft…</value></labels><labels
+  ><fullName>AXF_BillingComposer_loading</fullName><language
+    >en_US</language><protected>false</protected><shortDescription
+    >Loading</shortDescription><value>Loading…</value></labels><labels><fullName
+    >AXF_BillingComposer_draft</fullName><language>en_US</language><protected
+    >false</protected><shortDescription>Draft</shortDescription><value
+    >Billing draft</value></labels><labels><fullName
+    >AXF_BillingComposer_document</fullName><language>en_US</language><protected
+    >false</protected><shortDescription>Document</shortDescription><value
+    >Document</value></labels><labels><fullName
+    >AXF_BillingComposer_revision</fullName><language>en_US</language><protected
+    >false</protected><shortDescription>Revision</shortDescription><value
+    >Revision</value></labels><labels><fullName
+    >AXF_BillingComposer_state</fullName><language>en_US</language><protected
+    >false</protected><shortDescription>State</shortDescription><value
+    >State</value></labels><labels><fullName
+    >AXF_BillingComposer_origin</fullName><language>en_US</language><protected
+    >false</protected><shortDescription>Origin</shortDescription><value
+    >Origin</value></labels><labels><fullName
+    >AXF_BillingComposer_lines</fullName><language>en_US</language><protected
+    >false</protected><shortDescription>Lines</shortDescription><value
+    >Lines</value></labels><labels><fullName
+    >AXF_BillingComposer_linesTotal</fullName><language
+    >en_US</language><protected>false</protected><shortDescription
+    >Lines total</shortDescription><value>Lines total</value></labels><labels
+  ><fullName>AXF_BillingComposer_newDraft</fullName><language
+    >en_US</language><protected>false</protected><shortDescription
+    >New draft</shortDescription><value>New draft</value></labels><labels
+  ><fullName>AXF_BillingComposer_success</fullName><language
+    >en_US</language><protected>false</protected><shortDescription
+    >Success</shortDescription><value
+    >Draft composed. Review the lines, origin and totals before issuance.</value></labels><labels
+  ><fullName>AXF_BillingComposer_error</fullName><language
+    >en_US</language><protected>false</protected><shortDescription
+    >Generic error</shortDescription><value
+    >The draft could not be composed.</value></labels><labels><fullName
+    >AXF_BillingComposer_selectionRequired</fullName><language
+    >en_US</language><protected>false</protected><shortDescription
+    >Selection required</shortDescription><value
+    >Select at least one eligible entry.</value></labels><labels><fullName
+    >AXF_BillingComposer_stepRequired</fullName><language
+    >en_US</language><protected>false</protected><shortDescription
+    >Step required</shortDescription><value
+    >Fill in holder, contract, series and period first.</value></labels><labels
+  ><fullName>AXF_BillingComposer_reasonNotAccessible</fullName><language
+    >en_US</language><protected>false</protected><shortDescription
+    >Reason</shortDescription><value
+    >Not accessible or not found</value></labels><labels><fullName
+    >AXF_BillingComposer_reasonContractMismatch</fullName><language
+    >en_US</language><protected>false</protected><shortDescription
+    >Reason</shortDescription><value
+    >Belongs to another contract</value></labels><labels><fullName
+    >AXF_BillingComposer_reasonCounterpartyMismatch</fullName><language
+    >en_US</language><protected>false</protected><shortDescription
+    >Reason</shortDescription><value
+    >Counterparty differs from the document</value></labels><labels><fullName
+    >AXF_BillingComposer_reasonAccountMismatch</fullName><language
+    >en_US</language><protected>false</protected><shortDescription
+    >Reason</shortDescription><value
+    >Holder differs from the document</value></labels><labels><fullName
+    >AXF_BillingComposer_reasonBlockedFx</fullName><language
+    >en_US</language><protected>false</protected><shortDescription
+    >Reason</shortDescription><value
+    >Currency differs; FX rule unavailable (blocked, no conversion)</value></labels><labels
+  ><fullName>AXF_BillingComposer_reasonPeriodMismatch</fullName><language
+    >en_US</language><protected>false</protected><shortDescription
+    >Reason</shortDescription><value
+    >Outside the billing period</value></labels><labels><fullName
+    >AXF_BillingComposer_reasonTypeMismatch</fullName><language
+    >en_US</language><protected>false</protected><shortDescription
+    >Reason</shortDescription><value
+    >Type differs from the other lines</value></labels><labels><fullName
+    >AXF_BillingComposer_reasonSnapshotMissing</fullName><language
+    >en_US</language><protected>false</protected><shortDescription
+    >Reason</shortDescription><value
+    >No contract snapshot</value></labels><labels><fullName
+    >AXF_BillingComposer_reasonSnapshotStale</fullName><language
+    >en_US</language><protected>false</protected><shortDescription
+    >Reason</shortDescription><value
+    >Contract snapshot is not active</value></labels><labels><fullName
+    >AXF_BillingComposer_reasonAlreadyBilled</fullName><language
+    >en_US</language><protected>false</protected><shortDescription
+    >Reason</shortDescription><value
+    >Already on an effective billing version</value></labels><labels><fullName
+    >AXF_BillingComposer_reasonNotPlanned</fullName><language
+    >en_US</language><protected>false</protected><shortDescription
+    >Reason</shortDescription><value>Not a planned entry</value></labels><labels
+  ><fullName>AXF_BillingComposer_reasonWorkNotApproved</fullName><language
+    >en_US</language><protected>false</protected><shortDescription
+    >Reason</shortDescription><value
+    >Work record not approved for this contract</value></labels><labels
+  ><fullName>AXF_BillingComposer_reasonWorkOverAllocated</fullName><language
+    >en_US</language><protected>false</protected><shortDescription
+    >Reason</shortDescription><value
+    >Work allocation exceeds the approved balance</value></labels><labels
+  ><fullName>AXF_BillingComposer_reasonWorkInvalidQuantity</fullName><language
+    >en_US</language><protected>false</protected><shortDescription
+    >Reason</shortDescription><value
+    >Work allocation quantity must be positive</value></labels><labels><fullName
+    >AXF_BillingComposer_reasonDuplicateLine</fullName><language
+    >en_US</language><protected>false</protected><shortDescription
+    >Reason</shortDescription><value
+    >Entry selected more than once</value></labels><labels><fullName
+    >AXF_BillingComposer_codeConflict</fullName><language
+    >en_US</language><protected>false</protected><shortDescription
+    >Code</shortDescription><value
+    >A different draft was already composed with this request key.</value></labels><labels
+  ><fullName>AXF_BillingComposer_codeDocumentExists</fullName><language
+    >en_US</language><protected>false</protected><shortDescription
+    >Code</shortDescription><value
+    >A document already exists for this holder, contract, kind and series.</value></labels><labels
+  ><fullName>AXF_BillingComposer_codeIncompatible</fullName><language
+    >en_US</language><protected>false</protected><shortDescription
+    >Code</shortDescription><value
+    >Some lines are incompatible; nothing was saved.</value></labels><labels
+  ><fullName>AXF_BillingComposer_codeInvalidInput</fullName><language
+    >en_US</language><protected>false</protected><shortDescription
+    >Code</shortDescription><value>Invalid request.</value></labels><labels
+  ><fullName>AXF_BillingComposer_codeNotAccessible</fullName><language
+    >en_US</language><protected>false</protected><shortDescription
+    >Code</shortDescription><value
+    >You do not have access to every record involved.</value></labels><labels
+  ><fullName>AXF_BillingComposer_codeTotalNotConserved</fullName><language
+    >en_US</language><protected>false</protected><shortDescription
+    >Code</shortDescription><value
+    >The document total does not match its lines; nothing was saved.</value></labels><labels
+  ><fullName>AXF_BillingComposer_codeRejected</fullName><language
+    >en_US</language><protected>false</protected><shortDescription
+    >Rejected</shortDescription><value
+    >The draft was rejected by a data rule; nothing was saved.</value></labels><labels
+  ><fullName>AXF_BillingComposer_codeContractNotBillable</fullName><language
+    >en_US</language><protected>false</protected><shortDescription
+    >Contract not billable</shortDescription><value
+    >This contract is cancelled or replaced and cannot be billed.</value></labels><labels
+  ><fullName>AXF_BillingComposer_reasonInvalidAmount</fullName><language
+    >en_US</language><protected>false</protected><shortDescription
+    >Invalid amount</shortDescription><value
+    >Entry without a positive amount</value></labels><labels><fullName
+    >AXF_BillingComposer_reasonWorkContractMismatch</fullName><language
+    >en_US</language><protected>false</protected><shortDescription
+    >Work contract mismatch</shortDescription><value
+    >Work record belongs to another contract</value></labels><labels><fullName
+    >AXF_BillingComposer_noEntities</fullName><language
+    >en_US</language><protected>false</protected><shortDescription
+    >No entities</shortDescription><value
+    >No authorized person or company to bill.</value></labels><labels><fullName
+    >AXF_BillingComposer_contractIncomplete</fullName><language
+    >en_US</language><protected>false</protected><shortDescription
+    >Contract incomplete</shortDescription><value
+    >The selected contract has no counterparty or currency; complete it before billing.</value></labels><labels
+  ><fullName>AXF_BillingComposer_periodInvalid</fullName><language
+    >en_US</language><protected>false</protected><shortDescription
+    >Period invalid</shortDescription><value
+    >Period end must not be before period start.</value></labels><labels
+  ><fullName>AXF_BillingComposer_quantityRequired</fullName><language
+    >en_US</language><protected>false</protected><shortDescription
+    >Quantity required</shortDescription><value
+    >Every work allocation needs a positive quantity.</value></labels><labels
+  ><fullName>AXF_BillingComposer_duplicateWork</fullName><language
+    >en_US</language><protected>false</protected><shortDescription
+    >Duplicate work</shortDescription><value
+    >The same work record was allocated twice on one line.</value></labels><labels
+  ><fullName>AXF_BillingComposer_typeMixed</fullName><language
+    >en_US</language><protected>false</protected><shortDescription
+    >Type mixed</shortDescription><value
+    >Select lines of a single remuneration type per draft.</value></labels><labels
+  ><fullName>AXF_BillingComposer_remainingBalance</fullName><language
+    >en_US</language><protected>false</protected><shortDescription
+    >Remaining</shortDescription><value>remaining</value></labels><labels
+  ><fullName>AXF_BillingComposer_stateDraft</fullName><language
+    >en_US</language><protected>false</protected><shortDescription
+    >State</shortDescription><value>Draft</value></labels><labels><fullName
+    >AXF_BillingComposer_stateReviewed</fullName><language
+    >en_US</language><protected>false</protected><shortDescription
+    >State</shortDescription><value>Reviewed</value></labels><labels><fullName
+    >AXF_BillingComposer_stateIssuing</fullName><language
+    >en_US</language><protected>false</protected><shortDescription
+    >State</shortDescription><value>Issuing</value></labels><labels><fullName
+    >AXF_BillingComposer_stateIssued</fullName><language
+    >en_US</language><protected>false</protected><shortDescription
+    >State</shortDescription><value>Issued</value></labels><labels><fullName
+    >AXF_BillingComposer_stateCancelled</fullName><language
+    >en_US</language><protected>false</protected><shortDescription
+    >State</shortDescription><value>Cancelled</value></labels><labels><fullName
+    >AXF_BillingComposer_lifecycleOpen</fullName><language
+    >en_US</language><protected>false</protected><shortDescription
+    >Lifecycle</shortDescription><value>Open</value></labels><labels><fullName
+    >AXF_BillingComposer_lifecycleClosed</fullName><language
+    >en_US</language><protected>false</protected><shortDescription
+    >Lifecycle</shortDescription><value>Closed</value></labels><labels><fullName
+    >AXF_SharedExpense_title</fullName><language>en_US</language><protected
+    >false</protected><shortDescription>Title</shortDescription><value
+    >Shared expense</value></labels><labels><fullName
+    >AXF_SharedExpense_ownerIntro</fullName><language>en_US</language><protected
+    >false</protected><shortDescription>Owner intro</shortDescription><value
+    >Grant a participant limited access to this expense: they see only the description, category, amount and due date, never the source account or other data.</value></labels><labels
+  ><fullName>AXF_SharedExpense_collaboratorIntro</fullName><language
+    >en_US</language><protected>false</protected><shortDescription
+    >Collaborator intro</shortDescription><value
+    >Expenses shared with you. You can view, and edit only the permitted fields when allowed.</value></labels><labels
+  ><fullName>AXF_SharedExpense_collaborator</fullName><language
+    >en_US</language><protected>false</protected><shortDescription
+    >Collaborator</shortDescription><value>Collaborator</value></labels><labels
+  ><fullName>AXF_SharedExpense_permission</fullName><language
+    >en_US</language><protected>false</protected><shortDescription
+    >Permission</shortDescription><value>Permission</value></labels><labels
+  ><fullName>AXF_SharedExpense_canView</fullName><language
+    >en_US</language><protected>false</protected><shortDescription
+    >Can view</shortDescription><value>Can view</value></labels><labels
+  ><fullName>AXF_SharedExpense_canEdit</fullName><language
+    >en_US</language><protected>false</protected><shortDescription
+    >Can edit</shortDescription><value>Can edit</value></labels><labels
+  ><fullName>AXF_SharedExpense_share</fullName><language
+    >en_US</language><protected>false</protected><shortDescription
+    >Share</shortDescription><value>Share</value></labels><labels><fullName
+    >AXF_SharedExpense_revoke</fullName><language>en_US</language><protected
+    >false</protected><shortDescription>Revoke</shortDescription><value
+    >Remove access</value></labels><labels><fullName
+    >AXF_SharedExpense_grants</fullName><language>en_US</language><protected
+    >false</protected><shortDescription>Grants</shortDescription><value
+    >Who has access</value></labels><labels><fullName
+    >AXF_SharedExpense_noGrants</fullName><language>en_US</language><protected
+    >false</protected><shortDescription>No grants</shortDescription><value
+    >Nobody else has access to this expense.</value></labels><labels><fullName
+    >AXF_SharedExpense_status</fullName><language>en_US</language><protected
+    >false</protected><shortDescription>Status</shortDescription><value
+    >Status</value></labels><labels><fullName
+    >AXF_SharedExpense_active</fullName><language>en_US</language><protected
+    >false</protected><shortDescription>Active</shortDescription><value
+    >Active</value></labels><labels><fullName
+    >AXF_SharedExpense_revoked</fullName><language>en_US</language><protected
+    >false</protected><shortDescription>Revoked</shortDescription><value
+    >Revoked</value></labels><labels><fullName
+    >AXF_SharedExpense_sharedList</fullName><language>en_US</language><protected
+    >false</protected><shortDescription>Shared list</shortDescription><value
+    >Shared with me</value></labels><labels><fullName
+    >AXF_SharedExpense_noShared</fullName><language>en_US</language><protected
+    >false</protected><shortDescription>No shared</shortDescription><value
+    >No expense has been shared with you.</value></labels><labels><fullName
+    >AXF_SharedExpense_expense</fullName><language>en_US</language><protected
+    >false</protected><shortDescription>Expense</shortDescription><value
+    >Expense</value></labels><labels><fullName
+    >AXF_SharedExpense_description</fullName><language
+    >en_US</language><protected>false</protected><shortDescription
+    >Description</shortDescription><value>Description</value></labels><labels
+  ><fullName>AXF_SharedExpense_category</fullName><language
+    >en_US</language><protected>false</protected><shortDescription
+    >Category</shortDescription><value>Category</value></labels><labels
+  ><fullName>AXF_SharedExpense_amount</fullName><language
+    >en_US</language><protected>false</protected><shortDescription
+    >Amount</shortDescription><value>Amount</value></labels><labels><fullName
+    >AXF_SharedExpense_dueDate</fullName><language>en_US</language><protected
+    >false</protected><shortDescription>Due date</shortDescription><value
+    >Due date (this page only)</value></labels><labels><fullName
+    >AXF_SharedExpense_yourAccess</fullName><language>en_US</language><protected
+    >false</protected><shortDescription>Your access</shortDescription><value
+    >Your access</value></labels><labels><fullName
+    >AXF_SharedExpense_viewOnly</fullName><language>en_US</language><protected
+    >false</protected><shortDescription>View only</shortDescription><value
+    >You can view this expense. Editing is not allowed.</value></labels><labels
+  ><fullName>AXF_SharedExpense_editAllowed</fullName><language
+    >en_US</language><protected>false</protected><shortDescription
+    >Edit allowed</shortDescription><value
+    >You can view and edit description and category.</value></labels><labels
+  ><fullName>AXF_SharedExpense_open</fullName><language
+    >en_US</language><protected>false</protected><shortDescription
+    >Open</shortDescription><value>Open</value></labels><labels><fullName
+    >AXF_SharedExpense_back</fullName><language>en_US</language><protected
+    >false</protected><shortDescription>Back</shortDescription><value
+    >Back</value></labels><labels><fullName
+    >AXF_SharedExpense_save</fullName><language>en_US</language><protected
+    >false</protected><shortDescription>Save</shortDescription><value
+    >Save changes</value></labels><labels><fullName
+    >AXF_SharedExpense_confirmTitle</fullName><language
+    >en_US</language><protected>false</protected><shortDescription
+    >Confirm title</shortDescription><value
+    >Confirm change</value></labels><labels><fullName
+    >AXF_SharedExpense_confirmBody</fullName><language
+    >en_US</language><protected>false</protected><shortDescription
+    >Confirm body</shortDescription><value
+    >You are about to change the permitted fields of expense {0} shared with you. The owner will be notified.</value></labels><labels
+  ><fullName>AXF_SharedExpense_confirmRealizeBody</fullName><language
+    >en_US</language><protected>false</protected><shortDescription
+    >Confirm realize body</shortDescription><value
+    >You are about to confirm the realization of expense {0} for the amount {1}. This creates an immutable financial effect and notifies the owner.</value></labels><labels
+  ><fullName>AXF_SharedExpense_confirm</fullName><language
+    >en_US</language><protected>false</protected><shortDescription
+    >Confirm</shortDescription><value>Confirm</value></labels><labels><fullName
+    >AXF_SharedExpense_cancel</fullName><language>en_US</language><protected
+    >false</protected><shortDescription>Cancel</shortDescription><value
+    >Cancel</value></labels><labels><fullName
+    >AXF_SharedExpense_markPaid</fullName><language>en_US</language><protected
+    >false</protected><shortDescription>Mark paid</shortDescription><value
+    >Mark as paid</value></labels><labels><fullName
+    >AXF_SharedExpense_realizationAmount</fullName><language
+    >en_US</language><protected>false</protected><shortDescription
+    >Realization amount</shortDescription><value
+    >Amount paid</value></labels><labels><fullName
+    >AXF_SharedExpense_realizationDate</fullName><language
+    >en_US</language><protected>false</protected><shortDescription
+    >Realization date</shortDescription><value
+    >Payment date</value></labels><labels><fullName
+    >AXF_SharedExpense_saved</fullName><language>en_US</language><protected
+    >false</protected><shortDescription>Saved</shortDescription><value
+    >Changes saved.</value></labels><labels><fullName
+    >AXF_SharedExpense_realized</fullName><language>en_US</language><protected
+    >false</protected><shortDescription>Realized</shortDescription><value
+    >Realization confirmed.</value></labels><labels><fullName
+    >AXF_SharedExpense_shared</fullName><language>en_US</language><protected
+    >false</protected><shortDescription>Shared</shortDescription><value
+    >Access granted.</value></labels><labels><fullName
+    >AXF_SharedExpense_revokedDone</fullName><language
+    >en_US</language><protected>false</protected><shortDescription
+    >Revoked done</shortDescription><value
+    >Access removed. Independent rights of the collaborator are preserved.</value></labels><labels
+  ><fullName>AXF_SharedExpense_loading</fullName><language
+    >en_US</language><protected>false</protected><shortDescription
+    >Loading</shortDescription><value>Loading…</value></labels><labels><fullName
+    >AXF_SharedExpense_error</fullName><language>en_US</language><protected
+    >false</protected><shortDescription>Error</shortDescription><value
+    >The operation could not be completed.</value></labels><labels><fullName
+    >AXF_SharedExpense_codeForbidden</fullName><language
+    >en_US</language><protected>false</protected><shortDescription
+    >Forbidden</shortDescription><value
+    >You are not allowed to perform this action.</value></labels><labels
+  ><fullName>AXF_SharedExpense_codeNotAccessible</fullName><language
+    >en_US</language><protected>false</protected><shortDescription
+    >Not accessible</shortDescription><value
+    >This expense is not available to you.</value></labels><labels><fullName
+    >AXF_SharedExpense_codeConflict</fullName><language
+    >en_US</language><protected>false</protected><shortDescription
+    >Conflict</shortDescription><value
+    >The expense changed since you opened it. Reload and try again.</value></labels><labels
+  ><fullName>AXF_SharedExpense_codeInvalidInput</fullName><language
+    >en_US</language><protected>false</protected><shortDescription
+    >Invalid input</shortDescription><value
+    >Invalid request.</value></labels><labels><fullName
+    >AXF_SharedExpense_codeRealizationDenied</fullName><language
+    >en_US</language><protected>false</protected><shortDescription
+    >Realization denied</shortDescription><value
+    >You cannot confirm the realization of this expense.</value></labels><labels
+  ><fullName>AXF_SharedExpense_codeRejected</fullName><language
+    >en_US</language><protected>false</protected><shortDescription
+    >Rejected</shortDescription><value
+    >The change was rejected by a financial protection rule.</value></labels><labels
+  ><fullName>AXF_SharedExpense_codeCollaboratorNotFound</fullName><language
+    >en_US</language><protected>false</protected><shortDescription
+    >Collaborator not found</shortDescription><value
+    >Collaborator not found or inactive.</value></labels><labels><fullName
+    >AXF_SharedExpense_codeInvalidState</fullName><language
+    >en_US</language><protected>false</protected><shortDescription
+    >Invalid state</shortDescription><value
+    >Only planned expenses can be shared or edited.</value></labels><labels
+  ><fullName>AXF_SharedExpense_codeCollaboratorNotEligible</fullName><language
+    >en_US</language><protected>false</protected><shortDescription
+    >Not eligible</shortDescription><value
+    >This user cannot collaborate (no Participante permission).</value></labels><labels
+  ><fullName>AXF_SharedExpense_noAccess</fullName><language
+    >en_US</language><protected>false</protected><shortDescription
+    >No access</shortDescription><value
+    >Nothing to show here: open a planned expense you own to share it, or ask for collaboration access.</value></labels><labels
+  ><fullName>AXF_SharedExpense_noCollaborators</fullName><language
+    >en_US</language><protected>false</protected><shortDescription
+    >No collaborators</shortDescription><value
+    >No eligible collaborator found.</value></labels><labels><fullName
+    >AXF_SharedExpense_confirmRevokeBody</fullName><language
+    >en_US</language><protected>false</protected><shortDescription
+    >Confirm revoke</shortDescription><value
+    >Revoke the access of {0}? Their independent rights are kept.</value></labels><labels
+  ><fullName>AXF_SharedExpense_statusPlanned</fullName><language
+    >en_US</language><protected>false</protected><shortDescription
+    >Status</shortDescription><value>Planned</value></labels><labels><fullName
+    >AXF_SharedExpense_statusConfirmed</fullName><language
+    >en_US</language><protected>false</protected><shortDescription
+    >Status</shortDescription><value>Confirmed</value></labels><labels><fullName
+    >AXF_SharedExpense_conflictReloaded</fullName><language
+    >en_US</language><protected>false</protected><shortDescription
+    >Conflict</shortDescription><value
+    >The expense changed meanwhile; the latest values were reloaded.</value></labels><labels
+  ><fullName>AXF_ClosureRun_title</fullName><language>en_US</language><protected
+    >false</protected><shortDescription>Title</shortDescription><value
+    >Local closure</value></labels><labels><fullName
+    >AXF_ClosureRun_intro</fullName><language>en_US</language><protected
+    >false</protected><shortDescription>Intro</shortDescription><value
+    >Runs the auditable closure sequence for one holder: export, withdraw local access, stop collection and publication, policy-governed purge, retain minimal evidence. Each stage is idempotent and resumable; CLOSED is terminal.</value></labels><labels
+  ><fullName>AXF_ClosureRun_holder</fullName><language
+    >en_US</language><protected>false</protected><shortDescription
+    >Holder</shortDescription><value>Holder</value></labels><labels><fullName
+    >AXF_ClosureRun_legalHold</fullName><language>en_US</language><protected
+    >false</protected><shortDescription>Legal hold</shortDescription><value
+    >Legal hold declared for this scope</value></labels><labels><fullName
+    >AXF_ClosureRun_start</fullName><language>en_US</language><protected
+    >false</protected><shortDescription>Start</shortDescription><value
+    >Request closure</value></labels><labels><fullName
+    >AXF_ClosureRun_runs</fullName><language>en_US</language><protected
+    >false</protected><shortDescription>Runs</shortDescription><value
+    >Closure runs</value></labels><labels><fullName
+    >AXF_ClosureRun_noRuns</fullName><language>en_US</language><protected
+    >false</protected><shortDescription>No runs</shortDescription><value
+    >No closure has been requested yet.</value></labels><labels><fullName
+    >AXF_ClosureRun_status</fullName><language>en_US</language><protected
+    >false</protected><shortDescription>Status</shortDescription><value
+    >Status</value></labels><labels><fullName
+    >AXF_ClosureRun_progress</fullName><language>en_US</language><protected
+    >false</protected><shortDescription>Progress</shortDescription><value
+    >Progress</value></labels><labels><fullName
+    >AXF_ClosureRun_lastStage</fullName><language>en_US</language><protected
+    >false</protected><shortDescription>Last stage</shortDescription><value
+    >Last completed stage</value></labels><labels><fullName
+    >AXF_ClosureRun_correlation</fullName><language>en_US</language><protected
+    >false</protected><shortDescription>Correlation</shortDescription><value
+    >Correlation</value></labels><labels><fullName
+    >AXF_ClosureRun_attempt</fullName><language>en_US</language><protected
+    >false</protected><shortDescription>Attempt</shortDescription><value
+    >Attempt</value></labels><labels><fullName
+    >AXF_ClosureRun_blockReason</fullName><language>en_US</language><protected
+    >false</protected><shortDescription>Block reason</shortDescription><value
+    >Block reason</value></labels><labels><fullName
+    >AXF_ClosureRun_nextAction</fullName><language>en_US</language><protected
+    >false</protected><shortDescription>Next action</shortDescription><value
+    >Next safe action</value></labels><labels><fullName
+    >AXF_ClosureRun_externalRevocation</fullName><language
+    >en_US</language><protected>false</protected><shortDescription
+    >External revocation</shortDescription><value
+    >Pluggy revocation (external)</value></labels><labels><fullName
+    >AXF_ClosureRun_open</fullName><language>en_US</language><protected
+    >false</protected><shortDescription>Open</shortDescription><value
+    >Open</value></labels><labels><fullName
+    >AXF_ClosureRun_back</fullName><language>en_US</language><protected
+    >false</protected><shortDescription>Back</shortDescription><value
+    >Back</value></labels><labels><fullName
+    >AXF_ClosureRun_resume</fullName><language>en_US</language><protected
+    >false</protected><shortDescription>Resume</shortDescription><value
+    >Run remaining stages</value></labels><labels><fullName
+    >AXF_ClosureRun_reconcile</fullName><language>en_US</language><protected
+    >false</protected><shortDescription>Reconcile</shortDescription><value
+    >Result reconciled — allow retry</value></labels><labels><fullName
+    >AXF_ClosureRun_attachEvidence</fullName><language
+    >en_US</language><protected>false</protected><shortDescription
+    >Attach evidence</shortDescription><value
+    >Attach export evidence</value></labels><labels><fullName
+    >AXF_ClosureRun_evidenceRef</fullName><language>en_US</language><protected
+    >false</protected><shortDescription>Evidence ref</shortDescription><value
+    >Export evidence reference</value></labels><labels><fullName
+    >AXF_ClosureRun_stages</fullName><language>en_US</language><protected
+    >false</protected><shortDescription>Stages</shortDescription><value
+    >Stage checkpoints</value></labels><labels><fullName
+    >AXF_ClosureRun_stage</fullName><language>en_US</language><protected
+    >false</protected><shortDescription>Stage</shortDescription><value
+    >Stage</value></labels><labels><fullName
+    >AXF_ClosureRun_impact</fullName><language>en_US</language><protected
+    >false</protected><shortDescription>Impact</shortDescription><value
+    >Impact</value></labels><labels><fullName
+    >AXF_ClosureRun_effectKey</fullName><language>en_US</language><protected
+    >false</protected><shortDescription>Effect key</shortDescription><value
+    >Effect</value></labels><labels><fullName
+    >AXF_ClosureRun_completedAt</fullName><language>en_US</language><protected
+    >false</protected><shortDescription>Completed at</shortDescription><value
+    >At</value></labels><labels><fullName
+    >AXF_ClosureRun_closedBanner</fullName><language>en_US</language><protected
+    >false</protected><shortDescription>Closed banner</shortDescription><value
+    >Axon closed for this holder. External Pluggy revocation is shown separately and never restarts collection.</value></labels><labels
+  ><fullName>AXF_ClosureRun_unknownBanner</fullName><language
+    >en_US</language><protected>false</protected><shortDescription
+    >Unknown banner</shortDescription><value
+    >The last stage ended with an unknown result. Verify its effect before allowing a retry.</value></labels><labels
+  ><fullName>AXF_ClosureRun_blockedBanner</fullName><language
+    >en_US</language><protected>false</protected><shortDescription
+    >Blocked banner</shortDescription><value
+    >The run is blocked with a safe reason. Resolve the next action before resuming.</value></labels><labels
+  ><fullName>AXF_ClosureRun_loading</fullName><language
+    >en_US</language><protected>false</protected><shortDescription
+    >Loading</shortDescription><value>Loading…</value></labels><labels><fullName
+    >AXF_ClosureRun_error</fullName><language>en_US</language><protected
+    >false</protected><shortDescription>Error</shortDescription><value
+    >The operation could not be completed.</value></labels><labels><fullName
+    >AXF_ClosureRun_codeForbidden</fullName><language>en_US</language><protected
+    >false</protected><shortDescription>Forbidden</shortDescription><value
+    >You are not allowed to close this scope.</value></labels><labels><fullName
+    >AXF_ClosureRun_codeNotAccessible</fullName><language
+    >en_US</language><protected>false</protected><shortDescription
+    >Not accessible</shortDescription><value
+    >Scope or run not available to you.</value></labels><labels><fullName
+    >AXF_ClosureRun_codeConflict</fullName><language>en_US</language><protected
+    >false</protected><shortDescription>Conflict</shortDescription><value
+    >The run changed since you opened it. Reload and try again.</value></labels><labels
+  ><fullName>AXF_ClosureRun_codeTerminal</fullName><language
+    >en_US</language><protected>false</protected><shortDescription
+    >Terminal</shortDescription><value
+    >This closure is already CLOSED (terminal).</value></labels><labels
+  ><fullName>AXF_ClosureRun_codeReconcileFirst</fullName><language
+    >en_US</language><protected>false</protected><shortDescription
+    >Reconcile first</shortDescription><value
+    >Reconcile the unknown result before repeating a material stage.</value></labels><labels
+  ><fullName>AXF_ClosureRun_codeNotReconcilable</fullName><language
+    >en_US</language><protected>false</protected><shortDescription
+    >Not reconcilable</shortDescription><value
+    >There is no unknown result to reconcile.</value></labels><labels><fullName
+    >AXF_ClosureRun_codeInvalidInput</fullName><language
+    >en_US</language><protected>false</protected><shortDescription
+    >Invalid input</shortDescription><value
+    >Invalid request.</value></labels><labels><fullName
+    >AXF_ClosureRun_stageEXPORT</fullName><language>en_US</language><protected
+    >false</protected><shortDescription>Stage</shortDescription><value
+    >Export</value></labels><labels><fullName
+    >AXF_ClosureRun_stageREVOKE_ACCESS</fullName><language
+    >en_US</language><protected>false</protected><shortDescription
+    >Stage</shortDescription><value
+    >Withdraw local access</value></labels><labels><fullName
+    >AXF_ClosureRun_stageSTOP_COLLECTION</fullName><language
+    >en_US</language><protected>false</protected><shortDescription
+    >Stage</shortDescription><value
+    >Stop collection, jobs and publication</value></labels><labels><fullName
+    >AXF_ClosureRun_stagePURGE</fullName><language>en_US</language><protected
+    >false</protected><shortDescription>Stage</shortDescription><value
+    >Policy-governed purge / pseudonymization</value></labels><labels><fullName
+    >AXF_ClosureRun_stageRETAIN_EVIDENCE</fullName><language
+    >en_US</language><protected>false</protected><shortDescription
+    >Stage</shortDescription><value
+    >Retain minimal evidence</value></labels><labels><fullName
+    >AXF_ClosureRun_stageNONE</fullName><language>en_US</language><protected
+    >false</protected><shortDescription>Stage</shortDescription><value
+    >Not started</value></labels><labels><fullName
+    >AXF_ClosureRun_actionATTACH_EXPORT_EVIDENCE</fullName><language
+    >en_US</language><protected>false</protected><shortDescription
+    >Action</shortDescription><value
+    >Complete the authorized export and attach its evidence.</value></labels><labels
+  ><fullName>AXF_ClosureRun_actionRESUME</fullName><language
+    >en_US</language><protected>false</protected><shortDescription
+    >Action</shortDescription><value
+    >Resume the remaining stages.</value></labels><labels><fullName
+    >AXF_ClosureRun_actionRECONCILE</fullName><language
+    >en_US</language><protected>false</protected><shortDescription
+    >Action</shortDescription><value
+    >Verify the effect of the last stage and reconcile.</value></labels><labels
+  ><fullName>AXF_ClosureRun_actionRELEASE_LEGAL_HOLD</fullName><language
+    >en_US</language><protected>false</protected><shortDescription
+    >Action</shortDescription><value
+    >Content is preserved under legal hold; release the hold to continue.</value></labels><labels
+  ><fullName>AXF_ClosureRun_actionRESOLVE_DEPENDENCIES</fullName><language
+    >en_US</language><protected>false</protected><shortDescription
+    >Action</shortDescription><value
+    >Resolve active contracts or open reviews before purging.</value></labels><labels
+  ><fullName>AXF_ClosureRun_actionNONE</fullName><language
+    >en_US</language><protected>false</protected><shortDescription
+    >Action</shortDescription><value>Nothing else to do.</value></labels><labels
+  ><fullName>AXF_ClosureRun_noAccess</fullName><language
+    >en_US</language><protected>false</protected><shortDescription
+    >No access</shortDescription><value
+    >You do not have the closure permission for this installation.</value></labels><labels
+  ><fullName>AXF_ClosureRun_confirmResumeTitle</fullName><language
+    >en_US</language><protected>false</protected><shortDescription
+    >Confirm resume</shortDescription><value
+    >Resume the closure?</value></labels><labels><fullName
+    >AXF_ClosureRun_confirmResumeBody</fullName><language
+    >en_US</language><protected>false</protected><shortDescription
+    >Confirm resume body</shortDescription><value
+    >The next stages revoke derived access, stop collection and pseudonymize descriptions for {0}. These effects cannot be undone.</value></labels><labels
+  ><fullName>AXF_ClosureRun_confirm</fullName><language
+    >en_US</language><protected>false</protected><shortDescription
+    >Confirm</shortDescription><value>Confirm</value></labels><labels><fullName
+    >AXF_ClosureRun_cancel</fullName><language>en_US</language><protected
+    >false</protected><shortDescription>Cancel</shortDescription><value
+    >Cancel</value></labels><labels><fullName
+    >AXF_ClosureRun_releaseLegalHold</fullName><language
+    >en_US</language><protected>false</protected><shortDescription
+    >Release hold</shortDescription><value
+    >Release legal hold</value></labels><labels><fullName
+    >AXF_ClosureRun_legalHoldActive</fullName><language
+    >en_US</language><protected>false</protected><shortDescription
+    >Hold active</shortDescription><value
+    >Legal hold active</value></labels><labels><fullName
+    >AXF_ClosureRun_evidenceRefLabel</fullName><language
+    >en_US</language><protected>false</protected><shortDescription
+    >Evidence</shortDescription><value>Export evidence</value></labels><labels
+  ><fullName>AXF_ClosureRun_lastCompletedAt</fullName><language
+    >en_US</language><protected>false</protected><shortDescription
+    >Last completed</shortDescription><value
+    >Last stage completed at</value></labels><labels><fullName
+    >AXF_ClosureRun_actions</fullName><language>en_US</language><protected
+    >false</protected><shortDescription>Actions</shortDescription><value
+    >Actions</value></labels><labels><fullName
+    >AXF_ClosureRun_conflictReloaded</fullName><language
+    >en_US</language><protected>false</protected><shortDescription
+    >Conflict</shortDescription><value
+    >The run changed meanwhile; the latest state was reloaded.</value></labels><labels
+  ><fullName>AXF_ClosureRun_codeCheckpointsCorrupt</fullName><language
+    >en_US</language><protected>false</protected><shortDescription
+    >Corrupt</shortDescription><value
+    >The run checkpoints are unreadable; contact the administrator.</value></labels><labels
+  ><fullName>AXF_ClosureRun_statusREQUESTED</fullName><language
+    >en_US</language><protected>false</protected><shortDescription
+    >Status</shortDescription><value>Requested</value></labels><labels><fullName
+    >AXF_ClosureRun_statusRUNNING</fullName><language>en_US</language><protected
+    >false</protected><shortDescription>Status</shortDescription><value
+    >Running</value></labels><labels><fullName
+    >AXF_ClosureRun_statusBLOCKED</fullName><language>en_US</language><protected
+    >false</protected><shortDescription>Status</shortDescription><value
+    >Blocked</value></labels><labels><fullName
+    >AXF_ClosureRun_statusRESULT_UNKNOWN</fullName><language
+    >en_US</language><protected>false</protected><shortDescription
+    >Status</shortDescription><value>Result unknown</value></labels><labels
+  ><fullName>AXF_ClosureRun_statusCLOSED</fullName><language
+    >en_US</language><protected>false</protected><shortDescription
+    >Status</shortDescription><value>Closed</value></labels><labels><fullName
+    >AXF_ClosureRun_statusDONE</fullName><language>en_US</language><protected
+    >false</protected><shortDescription>Status</shortDescription><value
+    >Done</value></labels><labels><fullName
+    >AXF_ClosureRun_statusRECONCILED</fullName><language
+    >en_US</language><protected>false</protected><shortDescription
+    >Status</shortDescription><value>Reconciled</value></labels><labels
+  ><fullName>AXF_ClosureRun_statusRELEASED</fullName><language
+    >en_US</language><protected>false</protected><shortDescription
+    >Status</shortDescription><value>Released</value></labels><labels><fullName
+    >AXF_ClosureRun_statusFOLDED</fullName><language>en_US</language><protected
+    >false</protected><shortDescription>Status</shortDescription><value
+    >Older entries</value></labels><labels><fullName
+    >AXF_ClosureRun_reasonEXPORT_PENDING</fullName><language
+    >en_US</language><protected>false</protected><shortDescription
+    >Reason</shortDescription><value
+    >Export evidence pending</value></labels><labels><fullName
+    >AXF_ClosureRun_reasonLEGAL_HOLD</fullName><language
+    >en_US</language><protected>false</protected><shortDescription
+    >Reason</shortDescription><value>Legal hold</value></labels><labels
+  ><fullName>AXF_ClosureRun_reasonACTIVE_DEPENDENCIES</fullName><language
+    >en_US</language><protected>false</protected><shortDescription
+    >Reason</shortDescription><value
+    >Active contracts depend on this scope</value></labels><labels><fullName
+    >AXF_ClosureRun_reasonOPEN_REVIEW</fullName><language
+    >en_US</language><protected>false</protected><shortDescription
+    >Reason</shortDescription><value>Open review items</value></labels><labels
+  ><fullName>AXF_ClosureRun_reasonGRANTS_NOT_ACCESSIBLE</fullName><language
+    >en_US</language><protected>false</protected><shortDescription
+    >Reason</shortDescription><value
+    >Collaboration grants not accessible</value></labels><labels><fullName
+    >AXF_ClosureRun_reasonREVOCATION_FAILED</fullName><language
+    >en_US</language><protected>false</protected><shortDescription
+    >Reason</shortDescription><value
+    >A responsibility could not be revoked</value></labels><labels><fullName
+    >AXF_ClosureRun_reasonCOLLECTION_NOT_PAUSABLE</fullName><language
+    >en_US</language><protected>false</protected><shortDescription
+    >Reason</shortDescription><value
+    >Collection could not be paused (needs configuration permission)</value></labels><labels
+  ><fullName>AXF_ClosureRun_reasonPURGE_INCOMPLETE</fullName><language
+    >en_US</language><protected>false</protected><shortDescription
+    >Reason</shortDescription><value
+    >Purge incomplete; resume to continue</value></labels><labels><fullName
+    >AXF_ClosureRun_reasonRESULT_UNKNOWN</fullName><language
+    >en_US</language><protected>false</protected><shortDescription
+    >Reason</shortDescription><value>Result unknown</value></labels><labels
+  ><fullName>AXF_ClosureRun_reasonSTAGE_FAILED</fullName><language
+    >en_US</language><protected>false</protected><shortDescription
+    >Reason</shortDescription><value>Stage failed</value></labels><labels
+  ><fullName>AXF_ClosureRun_externalNOT_APPLICABLE</fullName><language
+    >en_US</language><protected>false</protected><shortDescription
+    >External</shortDescription><value>Not applicable</value></labels><labels
+  ><fullName>AXF_ClosureRun_externalNOT_CONFIRMED</fullName><language
+    >en_US</language><protected>false</protected><shortDescription
+    >External</shortDescription><value
+    >Not confirmed at the provider</value></labels><labels><fullName
+    >AXF_ClosureRun_externalCONFIRMED</fullName><language
+    >en_US</language><protected>false</protected><shortDescription
+    >External</shortDescription><value>Confirmed</value></labels><labels
+  ><fullName>AXF_EconomicAllocation_title</fullName><language
+    >en_US</language><protected>false</protected><shortDescription
+    >Title</shortDescription><value>Economic allocation</value></labels><labels
+  ><fullName>AXF_EconomicAllocation_intro</fullName><language
+    >en_US</language><protected>false</protected><shortDescription
+    >Intro</shortDescription><value
+    >Distribute this fact economically among authorized people/companies. Account ownership stays separate from attribution; confirmation requires exactly 100%.</value></labels><labels
+  ><fullName>AXF_EconomicAllocation_fact</fullName><language
+    >en_US</language><protected>false</protected><shortDescription
+    >Fact</shortDescription><value>Fact</value></labels><labels><fullName
+    >AXF_EconomicAllocation_holder</fullName><language
+    >en_US</language><protected>false</protected><shortDescription
+    >Holder</shortDescription><value>Account holder</value></labels><labels
+  ><fullName>AXF_EconomicAllocation_amount</fullName><language
+    >en_US</language><protected>false</protected><shortDescription
+    >Amount</shortDescription><value>Amount</value></labels><labels><fullName
+    >AXF_EconomicAllocation_person</fullName><language
+    >en_US</language><protected>false</protected><shortDescription
+    >Person</shortDescription><value>Person / company</value></labels><labels
+  ><fullName>AXF_EconomicAllocation_percent</fullName><language
+    >en_US</language><protected>false</protected><shortDescription
+    >Percent</shortDescription><value>Percent</value></labels><labels><fullName
+    >AXF_EconomicAllocation_share</fullName><language>en_US</language><protected
+    >false</protected><shortDescription>Share</shortDescription><value
+    >Share</value></labels><labels><fullName
+    >AXF_EconomicAllocation_addShare</fullName><language
+    >en_US</language><protected>false</protected><shortDescription
+    >Add share</shortDescription><value>Add share</value></labels><labels
+  ><fullName>AXF_EconomicAllocation_removeShare</fullName><language
+    >en_US</language><protected>false</protected><shortDescription
+    >Remove share</shortDescription><value>Remove</value></labels><labels
+  ><fullName>AXF_EconomicAllocation_total</fullName><language
+    >en_US</language><protected>false</protected><shortDescription
+    >Total</shortDescription><value>Total</value></labels><labels><fullName
+    >AXF_EconomicAllocation_propose</fullName><language
+    >en_US</language><protected>false</protected><shortDescription
+    >Propose</shortDescription><value>Propose allocation</value></labels><labels
+  ><fullName>AXF_EconomicAllocation_confirm</fullName><language
+    >en_US</language><protected>false</protected><shortDescription
+    >Confirm</shortDescription><value
+    >Confirm (100% exact)</value></labels><labels><fullName
+    >AXF_EconomicAllocation_confirmTitle</fullName><language
+    >en_US</language><protected>false</protected><shortDescription
+    >Confirm title</shortDescription><value
+    >Confirm economic allocation</value></labels><labels><fullName
+    >AXF_EconomicAllocation_confirmBody</fullName><language
+    >en_US</language><protected>false</protected><shortDescription
+    >Confirm body</shortDescription><value
+    >You are about to confirm revision {0} of the allocation of {1}. Shares become immutable; corrections create a new revision.</value></labels><labels
+  ><fullName>AXF_EconomicAllocation_yes</fullName><language
+    >en_US</language><protected>false</protected><shortDescription
+    >Yes</shortDescription><value>Confirm</value></labels><labels><fullName
+    >AXF_EconomicAllocation_cancel</fullName><language
+    >en_US</language><protected>false</protected><shortDescription
+    >Cancel</shortDescription><value>Cancel</value></labels><labels><fullName
+    >AXF_EconomicAllocation_revisions</fullName><language
+    >en_US</language><protected>false</protected><shortDescription
+    >Revisions</shortDescription><value>Revisions</value></labels><labels
+  ><fullName>AXF_EconomicAllocation_revision</fullName><language
+    >en_US</language><protected>false</protected><shortDescription
+    >Revision</shortDescription><value>Revision</value></labels><labels
+  ><fullName>AXF_EconomicAllocation_state</fullName><language
+    >en_US</language><protected>false</protected><shortDescription
+    >State</shortDescription><value>State</value></labels><labels><fullName
+    >AXF_EconomicAllocation_effectiveAt</fullName><language
+    >en_US</language><protected>false</protected><shortDescription
+    >Effective at</shortDescription><value>Effective at</value></labels><labels
+  ><fullName>AXF_EconomicAllocation_noSets</fullName><language
+    >en_US</language><protected>false</protected><shortDescription
+    >No sets</shortDescription><value
+    >No allocation proposed for this fact yet.</value></labels><labels><fullName
+    >AXF_EconomicAllocation_proposed</fullName><language
+    >en_US</language><protected>false</protected><shortDescription
+    >Proposed</shortDescription><value
+    >Allocation proposed as draft.</value></labels><labels><fullName
+    >AXF_EconomicAllocation_confirmed</fullName><language
+    >en_US</language><protected>false</protected><shortDescription
+    >Confirmed</shortDescription><value
+    >Allocation confirmed.</value></labels><labels><fullName
+    >AXF_EconomicAllocation_loading</fullName><language
+    >en_US</language><protected>false</protected><shortDescription
+    >Loading</shortDescription><value>Loading…</value></labels><labels><fullName
+    >AXF_EconomicAllocation_error</fullName><language>en_US</language><protected
+    >false</protected><shortDescription>Error</shortDescription><value
+    >The operation could not be completed.</value></labels><labels><fullName
+    >AXF_EconomicAllocation_codeForbidden</fullName><language
+    >en_US</language><protected>false</protected><shortDescription
+    >Forbidden</shortDescription><value
+    >You are not allowed to allocate this fact.</value></labels><labels
+  ><fullName>AXF_EconomicAllocation_codeNotAccessible</fullName><language
+    >en_US</language><protected>false</protected><shortDescription
+    >Not accessible</shortDescription><value
+    >Fact or allocation not available to you.</value></labels><labels><fullName
+    >AXF_EconomicAllocation_codeConflict</fullName><language
+    >en_US</language><protected>false</protected><shortDescription
+    >Conflict</shortDescription><value
+    >The allocation changed since you opened it. Reload and try again.</value></labels><labels
+  ><fullName>AXF_EconomicAllocation_codeInvalidShares</fullName><language
+    >en_US</language><protected>false</protected><shortDescription
+    >Invalid shares</shortDescription><value
+    >Some shares are invalid; nothing was saved.</value></labels><labels
+  ><fullName>AXF_EconomicAllocation_codeConfirmationRejected</fullName><language
+    >en_US</language><protected>false</protected><shortDescription
+    >Rejected</shortDescription><value
+    >Confirmation rejected; nothing was saved.</value></labels><labels><fullName
+    >AXF_EconomicAllocation_codeActiveSetExists</fullName><language
+    >en_US</language><protected>false</protected><shortDescription
+    >Active exists</shortDescription><value
+    >A confirmed allocation already exists for this fact; revise it instead.</value></labels><labels
+  ><fullName>AXF_EconomicAllocation_codeNotDraft</fullName><language
+    >en_US</language><protected>false</protected><shortDescription
+    >Not draft</shortDescription><value
+    >Only a draft allocation can be confirmed.</value></labels><labels><fullName
+    >AXF_EconomicAllocation_codeFactNotAllocatable</fullName><language
+    >en_US</language><protected>false</protected><shortDescription
+    >Not allocatable</shortDescription><value
+    >This fact cannot be allocated (missing amount, currency or holder).</value></labels><labels
+  ><fullName>AXF_EconomicAllocation_codeInvalidInput</fullName><language
+    >en_US</language><protected>false</protected><shortDescription
+    >Invalid input</shortDescription><value
+    >Invalid request.</value></labels><labels><fullName
+    >AXF_EconomicAllocation_reasonNonPositive</fullName><language
+    >en_US</language><protected>false</protected><shortDescription
+    >Reason</shortDescription><value
+    >Share must be positive and at most 100%</value></labels><labels><fullName
+    >AXF_EconomicAllocation_reasonDuplicate</fullName><language
+    >en_US</language><protected>false</protected><shortDescription
+    >Reason</shortDescription><value
+    >Person/company selected more than once</value></labels><labels><fullName
+    >AXF_EconomicAllocation_reasonUnauthorized</fullName><language
+    >en_US</language><protected>false</protected><shortDescription
+    >Reason</shortDescription><value
+    >Person/company not authorized in this installation</value></labels><labels
+  ><fullName>AXF_EconomicAllocation_reasonTotalExceeds</fullName><language
+    >en_US</language><protected>false</protected><shortDescription
+    >Reason</shortDescription><value>Total exceeds 100%</value></labels><labels
+  ><fullName>AXF_EconomicAllocation_reasonTotalNot100</fullName><language
+    >en_US</language><protected>false</protected><shortDescription
+    >Reason</shortDescription><value
+    >Total must be exactly 100%</value></labels><labels><fullName
+    >AXF_EconomicAllocation_reasonFactChanged</fullName><language
+    >en_US</language><protected>false</protected><shortDescription
+    >Reason</shortDescription><value
+    >The fact changed since the proposal</value></labels><labels><fullName
+    >AXF_EconomicAllocation_reasonActiveExists</fullName><language
+    >en_US</language><protected>false</protected><shortDescription
+    >Reason</shortDescription><value
+    >A confirmed allocation already exists</value></labels><labels><fullName
+    >AXF_EconomicAllocation_codeRejected</fullName><language
+    >en_US</language><protected>false</protected><shortDescription
+    >Rejected</shortDescription><value
+    >The allocation was rejected by a data rule; nothing was saved.</value></labels><labels
+  ><fullName>AXF_EconomicAllocation_codeLocked</fullName><language
+    >en_US</language><protected>false</protected><shortDescription
+    >Locked</shortDescription><value
+    >Another operation holds this fact; try again in a moment.</value></labels><labels
+  ><fullName>AXF_EconomicAllocation_reasonFactNotSettled</fullName><language
+    >en_US</language><protected>false</protected><shortDescription
+    >Reason</shortDescription><value
+    >Fact not settled yet</value></labels><labels><fullName
+    >AXF_EconomicAllocation_reasonMagnitude</fullName><language
+    >en_US</language><protected>false</protected><shortDescription
+    >Reason</shortDescription><value
+    >Shares do not conserve the fact amount</value></labels><labels><fullName
+    >AXF_EconomicAllocation_readOnlyNotice</fullName><language
+    >en_US</language><protected>false</protected><shortDescription
+    >Read only</shortDescription><value
+    >You can view allocations but not propose or confirm them.</value></labels><labels
+  ><fullName>AXF_EconomicAllocation_discard</fullName><language
+    >en_US</language><protected>false</protected><shortDescription
+    >Discard</shortDescription><value>Discard draft</value></labels><labels
+  ><fullName>AXF_EconomicAllocation_discarded</fullName><language
+    >en_US</language><protected>false</protected><shortDescription
+    >Discarded</shortDescription><value>Draft discarded.</value></labels><labels
+  ><fullName>AXF_EconomicAllocation_stateDRAFT</fullName><language
+    >en_US</language><protected>false</protected><shortDescription
+    >State</shortDescription><value>Draft</value></labels><labels><fullName
+    >AXF_EconomicAllocation_stateCONFIRMED</fullName><language
+    >en_US</language><protected>false</protected><shortDescription
+    >State</shortDescription><value>Confirmed</value></labels><labels><fullName
+    >AXF_EconomicAllocation_stateSUPERSEDED</fullName><language
+    >en_US</language><protected>false</protected><shortDescription
+    >State</shortDescription><value>Superseded</value></labels><labels><fullName
+    >AXF_EconomicAllocation_stateREVERSED</fullName><language
+    >en_US</language><protected>false</protected><shortDescription
+    >State</shortDescription><value>Reversed</value></labels><labels><fullName
+    >AXF_EconomicAllocation_stateDISCARDED</fullName><language
+    >en_US</language><protected>false</protected><shortDescription
+    >State</shortDescription><value>Discarded</value></labels><labels><fullName
+    >AXF_EconomicAllocation_duplicateHolder</fullName><language
+    >en_US</language><protected>false</protected><shortDescription
+    >Duplicate holder</shortDescription><value
+    >The same person/company was selected twice.</value></labels><labels
+  ><fullName>AXF_ConfidencePanel_title</fullName><language
+    >en_US</language><protected>false</protected><shortDescription
+    >Title</shortDescription><value>Confidence panel</value></labels><labels
+  ><fullName>AXF_ConfidencePanel_intro</fullName><language
+    >en_US</language><protected>false</protected><shortDescription
+    >Intro</shortDescription><value
+    >Which sources and dates this indicator depends on, so you can decide whether to trust, wait or correct the data. Levels come from the server; nothing is recalculated here.</value></labels><labels
+  ><fullName>AXF_ConfidencePanel_scope</fullName><language
+    >en_US</language><protected>false</protected><shortDescription
+    >Scope</shortDescription><value>People / companies</value></labels><labels
+  ><fullName>AXF_ConfidencePanel_scopeHelp</fullName><language
+    >en_US</language><protected>false</protected><shortDescription
+    >Scope help</shortDescription><value
+    >Only people and companies you are authorized to see are listed.</value></labels><labels
+  ><fullName>AXF_ConfidencePanel_explain</fullName><language
+    >en_US</language><protected>false</protected><shortDescription
+    >Explain</shortDescription><value>Explain confidence</value></labels><labels
+  ><fullName>AXF_ConfidencePanel_level</fullName><language
+    >en_US</language><protected>false</protected><shortDescription
+    >Level</shortDescription><value>Confidence level</value></labels><labels
+  ><fullName>AXF_ConfidencePanel_levelInformative</fullName><language
+    >en_US</language><protected>false</protected><shortDescription
+    >Informative</shortDescription><value>Informative</value></labels><labels
+  ><fullName>AXF_ConfidencePanel_levelDegraded</fullName><language
+    >en_US</language><protected>false</protected><shortDescription
+    >Degraded</shortDescription><value>Degraded</value></labels><labels
+  ><fullName>AXF_ConfidencePanel_levelBlocked</fullName><language
+    >en_US</language><protected>false</protected><shortDescription
+    >Blocked</shortDescription><value>Blocked</value></labels><labels><fullName
+    >AXF_ConfidencePanel_asOf</fullName><language>en_US</language><protected
+    >false</protected><shortDescription>As of</shortDescription><value
+    >Evaluated at</value></labels><labels><fullName
+    >AXF_ConfidencePanel_policy</fullName><language>en_US</language><protected
+    >false</protected><shortDescription>Policy</shortDescription><value
+    >Policy</value></labels><labels><fullName
+    >AXF_ConfidencePanel_sources</fullName><language>en_US</language><protected
+    >false</protected><shortDescription>Sources</shortDescription><value
+    >Sources</value></labels><labels><fullName
+    >AXF_ConfidencePanel_source</fullName><language>en_US</language><protected
+    >false</protected><shortDescription>Source</shortDescription><value
+    >Source</value></labels><labels><fullName
+    >AXF_ConfidencePanel_holder</fullName><language>en_US</language><protected
+    >false</protected><shortDescription>Holder</shortDescription><value
+    >Person / company</value></labels><labels><fullName
+    >AXF_ConfidencePanel_origin</fullName><language>en_US</language><protected
+    >false</protected><shortDescription>Origin</shortDescription><value
+    >Origin</value></labels><labels><fullName
+    >AXF_ConfidencePanel_originPluggy</fullName><language
+    >en_US</language><protected>false</protected><shortDescription
+    >Pluggy</shortDescription><value
+    >Open Finance (Pluggy)</value></labels><labels><fullName
+    >AXF_ConfidencePanel_originManual</fullName><language
+    >en_US</language><protected>false</protected><shortDescription
+    >Manual</shortDescription><value>Manual / CSV</value></labels><labels
+  ><fullName>AXF_ConfidencePanel_lastSuccess</fullName><language
+    >en_US</language><protected>false</protected><shortDescription
+    >Last success</shortDescription><value>Last success</value></labels><labels
+  ><fullName>AXF_ConfidencePanel_never</fullName><language
+    >en_US</language><protected>false</protected><shortDescription
+    >Never</shortDescription><value>No success recorded</value></labels><labels
+  ><fullName>AXF_ConfidencePanel_freshness</fullName><language
+    >en_US</language><protected>false</protected><shortDescription
+    >Freshness</shortDescription><value>Freshness</value></labels><labels
+  ><fullName>AXF_ConfidencePanel_freshnessCurrent</fullName><language
+    >en_US</language><protected>false</protected><shortDescription
+    >Current</shortDescription><value>Current</value></labels><labels><fullName
+    >AXF_ConfidencePanel_freshnessStale</fullName><language
+    >en_US</language><protected>false</protected><shortDescription
+    >Stale</shortDescription><value>Old (limit exceeded)</value></labels><labels
+  ><fullName>AXF_ConfidencePanel_freshnessUnknown</fullName><language
+    >en_US</language><protected>false</protected><shortDescription
+    >Unknown</shortDescription><value>Unknown</value></labels><labels><fullName
+    >AXF_ConfidencePanel_limit</fullName><language>en_US</language><protected
+    >false</protected><shortDescription>Limit</shortDescription><value
+    >Limit (h)</value></labels><labels><fullName
+    >AXF_ConfidencePanel_facts</fullName><language>en_US</language><protected
+    >false</protected><shortDescription>Facts</shortDescription><value
+    >Facts</value></labels><labels><fullName
+    >AXF_ConfidencePanel_factsUnknown</fullName><language
+    >en_US</language><protected>false</protected><shortDescription
+    >Facts unknown</shortDescription><value>unknown</value></labels><labels
+  ><fullName>AXF_ConfidencePanel_included</fullName><language
+    >en_US</language><protected>false</protected><shortDescription
+    >Included</shortDescription><value>Included</value></labels><labels
+  ><fullName>AXF_ConfidencePanel_excluded</fullName><language
+    >en_US</language><protected>false</protected><shortDescription
+    >Excluded</shortDescription><value>Excluded</value></labels><labels
+  ><fullName>AXF_ConfidencePanel_openSource</fullName><language
+    >en_US</language><protected>false</protected><shortDescription
+    >Open source</shortDescription><value>Open source</value></labels><labels
+  ><fullName>AXF_ConfidencePanel_exceptions</fullName><language
+    >en_US</language><protected>false</protected><shortDescription
+    >Exceptions</shortDescription><value>Exceptions</value></labels><labels
+  ><fullName>AXF_ConfidencePanel_noExceptions</fullName><language
+    >en_US</language><protected>false</protected><shortDescription
+    >No exceptions</shortDescription><value
+    >No exceptions.</value></labels><labels><fullName
+    >AXF_ConfidencePanel_exclusions</fullName><language
+    >en_US</language><protected>false</protected><shortDescription
+    >Exclusions</shortDescription><value>Exclusions</value></labels><labels
+  ><fullName>AXF_ConfidencePanel_noExclusions</fullName><language
+    >en_US</language><protected>false</protected><shortDescription
+    >No exclusions</shortDescription><value
+    >No exclusions.</value></labels><labels><fullName
+    >AXF_ConfidencePanel_fx</fullName><language>en_US</language><protected
+    >false</protected><shortDescription>FX</shortDescription><value
+    >Currency</value></labels><labels><fullName
+    >AXF_ConfidencePanel_fxSingle</fullName><language>en_US</language><protected
+    >false</protected><shortDescription>FX single</shortDescription><value
+    >Single currency; no conversion involved.</value></labels><labels><fullName
+    >AXF_ConfidencePanel_fxMulti</fullName><language>en_US</language><protected
+    >false</protected><shortDescription>FX multi</shortDescription><value
+    >Multiple currencies ({0}); original amounts are kept and no conversion is applied by this panel.</value></labels><labels
+  ><fullName>AXF_ConfidencePanel_impact</fullName><language
+    >en_US</language><protected>false</protected><shortDescription
+    >Impact</shortDescription><value>Impact</value></labels><labels><fullName
+    >AXF_ConfidencePanel_impactInformative</fullName><language
+    >en_US</language><protected>false</protected><shortDescription
+    >Impact informative</shortDescription><value
+    >All included sources are current. The indicator can be read as up to date.</value></labels><labels
+  ><fullName>AXF_ConfidencePanel_impactDegraded</fullName><language
+    >en_US</language><protected>false</protected><shortDescription
+    >Impact degraded</shortDescription><value
+    >Some data is old, unknown or excluded. The indicator remains visible but must not be read as current.</value></labels><labels
+  ><fullName>AXF_ConfidencePanel_impactBlocked</fullName><language
+    >en_US</language><protected>false</protected><shortDescription
+    >Impact blocked</shortDescription><value
+    >No authorized, readable source in this scope. The indicator cannot be trusted.</value></labels><labels
+  ><fullName>AXF_ConfidencePanel_allowedActions</fullName><language
+    >en_US</language><protected>false</protected><shortDescription
+    >Allowed actions</shortDescription><value
+    >Allowed actions</value></labels><labels><fullName
+    >AXF_ConfidencePanel_actionOpenSource</fullName><language
+    >en_US</language><protected>false</protected><shortDescription
+    >Action open</shortDescription><value
+    >Open the affected source</value></labels><labels><fullName
+    >AXF_ConfidencePanel_actionReviewHealth</fullName><language
+    >en_US</language><protected>false</protected><shortDescription
+    >Action health</shortDescription><value
+    >Review source health</value></labels><labels><fullName
+    >AXF_ConfidencePanel_actionNone</fullName><language
+    >en_US</language><protected>false</protected><shortDescription
+    >Action none</shortDescription><value
+    >No action available</value></labels><labels><fullName
+    >AXF_ConfidencePanel_reasonNotAuthorized</fullName><language
+    >en_US</language><protected>false</protected><shortDescription
+    >Reason</shortDescription><value
+    >Person/company not available to you</value></labels><labels><fullName
+    >AXF_ConfidencePanel_reasonCustody</fullName><language
+    >en_US</language><protected>false</protected><shortDescription
+    >Reason</shortDescription><value
+    >Source in custody (collection stopped)</value></labels><labels><fullName
+    >AXF_ConfidencePanel_reasonFieldAccess</fullName><language
+    >en_US</language><protected>false</protected><shortDescription
+    >Reason</shortDescription><value
+    >Missing field access</value></labels><labels><fullName
+    >AXF_ConfidencePanel_reasonNoScope</fullName><language
+    >en_US</language><protected>false</protected><shortDescription
+    >Reason</shortDescription><value>No authorized scope</value></labels><labels
+  ><fullName>AXF_ConfidencePanel_reasonPolicyMissing</fullName><language
+    >en_US</language><protected>false</protected><shortDescription
+    >Reason</shortDescription><value
+    >Confidence policy not configured</value></labels><labels><fullName
+    >AXF_ConfidencePanel_exConsentRevoked</fullName><language
+    >en_US</language><protected>false</protected><shortDescription
+    >Exception</shortDescription><value
+    >Consent revoked at the provider</value></labels><labels><fullName
+    >AXF_ConfidencePanel_exConsentStale</fullName><language
+    >en_US</language><protected>false</protected><shortDescription
+    >Exception</shortDescription><value
+    >Consent expired or stale</value></labels><labels><fullName
+    >AXF_ConfidencePanel_exCollectionPaused</fullName><language
+    >en_US</language><protected>false</protected><shortDescription
+    >Exception</shortDescription><value
+    >Collection paused</value></labels><labels><fullName
+    >AXF_ConfidencePanel_exStale</fullName><language>en_US</language><protected
+    >false</protected><shortDescription>Exception</shortDescription><value
+    >Source older than its freshness limit</value></labels><labels><fullName
+    >AXF_ConfidencePanel_exUnknown</fullName><language
+    >en_US</language><protected>false</protected><shortDescription
+    >Exception</shortDescription><value
+    >Source without recorded success</value></labels><labels><fullName
+    >AXF_ConfidencePanel_loading</fullName><language>en_US</language><protected
+    >false</protected><shortDescription>Loading</shortDescription><value
+    >Loading…</value></labels><labels><fullName
+    >AXF_ConfidencePanel_empty</fullName><language>en_US</language><protected
+    >false</protected><shortDescription>Empty</shortDescription><value
+    >Select at least one person or company.</value></labels><labels><fullName
+    >AXF_ConfidencePanel_error</fullName><language>en_US</language><protected
+    >false</protected><shortDescription>Error</shortDescription><value
+    >The panel could not be loaded.</value></labels><labels><fullName
+    >AXF_ConfidencePanel_retry</fullName><language>en_US</language><protected
+    >false</protected><shortDescription>Retry</shortDescription><value
+    >Try again</value></labels><labels><fullName
+    >AXF_ConfidencePanel_codeForbidden</fullName><language
+    >en_US</language><protected>false</protected><shortDescription
+    >Forbidden</shortDescription><value
+    >You are not allowed to open the confidence panel.</value></labels><labels
+  ><fullName>AXF_ConfidencePanel_codeInvalidInput</fullName><language
+    >en_US</language><protected>false</protected><shortDescription
+    >Invalid input</shortDescription><value
+    >Invalid request.</value></labels><labels><fullName
+    >AXF_ConfidencePanel_updated</fullName><language>en_US</language><protected
+    >false</protected><shortDescription>Updated</shortDescription><value
+    >Confidence panel updated.</value></labels><labels><fullName
+    >AXF_ConfidencePanel_scopeAvailable</fullName><language
+    >en_US</language><protected>false</protected><shortDescription
+    >Available holders</shortDescription><value
+    >Available people and companies</value></labels><labels><fullName
+    >AXF_ConfidencePanel_fxUnknown</fullName><language
+    >en_US</language><protected>false</protected><shortDescription
+    >FX unknown</shortDescription><value
+    >No currency could be determined for the included sources.</value></labels><labels
+  ><fullName>AXF_ConfidencePanel_reasonNotAHolder</fullName><language
+    >en_US</language><protected>false</protected><shortDescription
+    >Not a holder</shortDescription><value
+    >This record is not an Axon person or company.</value></labels><labels
+  ><fullName>AXF_ConfidencePanel_exConnectionNotReadable</fullName><language
+    >en_US</language><protected>false</protected><shortDescription
+    >Connection not readable</shortDescription><value
+    >The provider connection exists but you cannot read it; its status is not asserted.</value></labels><labels
+  ><fullName>AXF_ConfidencePanel_exFutureSuccess</fullName><language
+    >en_US</language><protected>false</protected><shortDescription
+    >Future success</shortDescription><value
+    >The last recorded success is after the evaluation instant; freshness is unknown.</value></labels><labels
+  ><fullName>AXF_ConfidencePanel_exImportDateMissing</fullName><language
+    >en_US</language><protected>false</protected><shortDescription
+    >Import date missing</shortDescription><value
+    >Facts exist without an import timestamp; their creation time was used.</value></labels><labels
+  ><fullName>AXF_ConfidencePanel_codeNotAccessible</fullName><language
+    >en_US</language><protected>false</protected><shortDescription
+    >Not accessible</shortDescription><value
+    >Some of the data this panel depends on is not accessible to you.</value></labels><labels
+  ><fullName>AXF_ArchiveExplorer_title</fullName><language
+    >en_US</language><protected>false</protected><shortDescription
+    >Title</shortDescription><value>Transaction archive</value></labels><labels
+  ><fullName>AXF_ArchiveExplorer_intro</fullName><language
+    >en_US</language><protected>false</protected><shortDescription
+    >Intro</shortDescription><value
+    >Transactions before the hot window are archived and can be consulted here, read-only. Nothing is brought back into the live objects.</value></labels><labels
+  ><fullName>AXF_ArchiveExplorer_holder</fullName><language
+    >en_US</language><protected>false</protected><shortDescription
+    >Holder</shortDescription><value>Person or company</value></labels><labels
+  ><fullName>AXF_ArchiveExplorer_holderPlaceholder</fullName><language
+    >en_US</language><protected>false</protected><shortDescription
+    >Holder placeholder</shortDescription><value
+    >Select a holder</value></labels><labels><fullName
+    >AXF_ArchiveExplorer_from</fullName><language>en_US</language><protected
+    >false</protected><shortDescription>From</shortDescription><value
+    >From</value></labels><labels><fullName
+    >AXF_ArchiveExplorer_to</fullName><language>en_US</language><protected
+    >false</protected><shortDescription>To</shortDescription><value
+    >Until</value></labels><labels><fullName
+    >AXF_ArchiveExplorer_hotWindow</fullName><language
+    >en_US</language><protected>false</protected><shortDescription
+    >Hot window</shortDescription><value
+    >Hot window starts on {0}; only earlier dates are archived.</value></labels><labels
+  ><fullName>AXF_ArchiveExplorer_search</fullName><language
+    >en_US</language><protected>false</protected><shortDescription
+    >Search</shortDescription><value>Consult archive</value></labels><labels
+  ><fullName>AXF_ArchiveExplorer_loadMore</fullName><language
+    >en_US</language><protected>false</protected><shortDescription
+    >Load more</shortDescription><value>Load more</value></labels><labels
+  ><fullName>AXF_ArchiveExplorer_loading</fullName><language
+    >en_US</language><protected>false</protected><shortDescription
+    >Loading</shortDescription><value
+    >Reading the archive…</value></labels><labels><fullName
+    >AXF_ArchiveExplorer_empty</fullName><language>en_US</language><protected
+    >false</protected><shortDescription>Empty</shortDescription><value
+    >No archived transactions for this holder and period.</value></labels><labels
+  ><fullName>AXF_ArchiveExplorer_idle</fullName><language
+    >en_US</language><protected>false</protected><shortDescription
+    >Idle</shortDescription><value
+    >Choose a holder and a period before the hot window, then consult the archive.</value></labels><labels
+  ><fullName>AXF_ArchiveExplorer_archivedBadge</fullName><language
+    >en_US</language><protected>false</protected><shortDescription
+    >Archived badge</shortDescription><value>Archived</value></labels><labels
+  ><fullName>AXF_ArchiveExplorer_readOnly</fullName><language
+    >en_US</language><protected>false</protected><shortDescription
+    >Read only</shortDescription><value
+    >Archived rows are read-only.</value></labels><labels><fullName
+    >AXF_ArchiveExplorer_colDate</fullName><language>en_US</language><protected
+    >false</protected><shortDescription>Date column</shortDescription><value
+    >Date</value></labels><labels><fullName
+    >AXF_ArchiveExplorer_colDescription</fullName><language
+    >en_US</language><protected>false</protected><shortDescription
+    >Description column</shortDescription><value
+    >Description</value></labels><labels><fullName
+    >AXF_ArchiveExplorer_colAmount</fullName><language
+    >en_US</language><protected>false</protected><shortDescription
+    >Amount column</shortDescription><value>Amount</value></labels><labels
+  ><fullName>AXF_ArchiveExplorer_colDirection</fullName><language
+    >en_US</language><protected>false</protected><shortDescription
+    >Direction column</shortDescription><value>Direction</value></labels><labels
+  ><fullName>AXF_ArchiveExplorer_colStatus</fullName><language
+    >en_US</language><protected>false</protected><shortDescription
+    >Status column</shortDescription><value>Status</value></labels><labels
+  ><fullName>AXF_ArchiveExplorer_colInstitution</fullName><language
+    >en_US</language><protected>false</protected><shortDescription
+    >Institution column</shortDescription><value
+    >Institution</value></labels><labels><fullName
+    >AXF_ArchiveExplorer_colFamily</fullName><language
+    >en_US</language><protected>false</protected><shortDescription
+    >Family column</shortDescription><value>Source</value></labels><labels
+  ><fullName>AXF_ArchiveExplorer_familyBAT</fullName><language
+    >en_US</language><protected>false</protected><shortDescription
+    >Family BAT</shortDescription><value>Bank</value></labels><labels><fullName
+    >AXF_ArchiveExplorer_familyCCT</fullName><language
+    >en_US</language><protected>false</protected><shortDescription
+    >Family CCT</shortDescription><value>Card</value></labels><labels><fullName
+    >AXF_ArchiveExplorer_familyFTX</fullName><language
+    >en_US</language><protected>false</protected><shortDescription
+    >Family FTX</shortDescription><value>Manual</value></labels><labels
+  ><fullName>AXF_ArchiveExplorer_directionCREDIT</fullName><language
+    >en_US</language><protected>false</protected><shortDescription
+    >Credit</shortDescription><value>Credit</value></labels><labels><fullName
+    >AXF_ArchiveExplorer_directionDEBIT</fullName><language
+    >en_US</language><protected>false</protected><shortDescription
+    >Debit</shortDescription><value>Debit</value></labels><labels><fullName
+    >AXF_ArchiveExplorer_runs</fullName><language>en_US</language><protected
+    >false</protected><shortDescription>Runs</shortDescription><value
+    >Archive runs</value></labels><labels><fullName
+    >AXF_ArchiveExplorer_noRuns</fullName><language>en_US</language><protected
+    >false</protected><shortDescription>No runs</shortDescription><value
+    >No archive run for this holder yet.</value></labels><labels><fullName
+    >AXF_ArchiveExplorer_startArchive</fullName><language
+    >en_US</language><protected>false</protected><shortDescription
+    >Start archive</shortDescription><value>Archive now</value></labels><labels
+  ><fullName>AXF_ArchiveExplorer_startConfirm</fullName><language
+    >en_US</language><protected>false</protected><shortDescription
+    >Start confirm</shortDescription><value
+    >Archive every transaction of this holder dated before the hot window? The live copy is kept until its removal is separately authorized.</value></labels><labels
+  ><fullName>AXF_ArchiveExplorer_confirm</fullName><language
+    >en_US</language><protected>false</protected><shortDescription
+    >Confirm</shortDescription><value>Confirm</value></labels><labels><fullName
+    >AXF_ArchiveExplorer_cancel</fullName><language>en_US</language><protected
+    >false</protected><shortDescription>Cancel</shortDescription><value
+    >Cancel</value></labels><labels><fullName
+    >AXF_ArchiveExplorer_started</fullName><language>en_US</language><protected
+    >false</protected><shortDescription>Started</shortDescription><value
+    >Archive run started; refresh to follow its phase.</value></labels><labels
+  ><fullName>AXF_ArchiveExplorer_refresh</fullName><language
+    >en_US</language><protected>false</protected><shortDescription
+    >Refresh</shortDescription><value>Refresh</value></labels><labels><fullName
+    >AXF_ArchiveExplorer_colFamilyRun</fullName><language
+    >en_US</language><protected>false</protected><shortDescription
+    >Run family</shortDescription><value>Family</value></labels><labels
+  ><fullName>AXF_ArchiveExplorer_colPhase</fullName><language
+    >en_US</language><protected>false</protected><shortDescription
+    >Phase</shortDescription><value>Phase</value></labels><labels><fullName
+    >AXF_ArchiveExplorer_colCounts</fullName><language
+    >en_US</language><protected>false</protected><shortDescription
+    >Counts</shortDescription><value
+    >Read / archived / verified</value></labels><labels><fullName
+    >AXF_ArchiveExplorer_colWatermark</fullName><language
+    >en_US</language><protected>false</protected><shortDescription
+    >Watermark</shortDescription><value>Watermark</value></labels><labels
+  ><fullName>AXF_ArchiveExplorer_colHotRemoval</fullName><language
+    >en_US</language><protected>false</protected><shortDescription
+    >Hot removal</shortDescription><value>Live copy</value></labels><labels
+  ><fullName>AXF_ArchiveExplorer_colCheckpoint</fullName><language
+    >en_US</language><protected>false</protected><shortDescription
+    >Checkpoint</shortDescription><value>Last checkpoint</value></labels><labels
+  ><fullName>AXF_ArchiveExplorer_phaseSCANNING</fullName><language
+    >en_US</language><protected>false</protected><shortDescription
+    >Phase scanning</shortDescription><value>Scanning</value></labels><labels
+  ><fullName>AXF_ArchiveExplorer_phaseWRITING</fullName><language
+    >en_US</language><protected>false</protected><shortDescription
+    >Phase writing</shortDescription><value>Writing</value></labels><labels
+  ><fullName>AXF_ArchiveExplorer_phaseVERIFYING</fullName><language
+    >en_US</language><protected>false</protected><shortDescription
+    >Phase verifying</shortDescription><value>Verifying</value></labels><labels
+  ><fullName>AXF_ArchiveExplorer_phaseHOT_RETAINED</fullName><language
+    >en_US</language><protected>false</protected><shortDescription
+    >Phase retained</shortDescription><value
+    >Verified · live copy kept</value></labels><labels><fullName
+    >AXF_ArchiveExplorer_phaseCOMPLETED</fullName><language
+    >en_US</language><protected>false</protected><shortDescription
+    >Phase completed</shortDescription><value>Completed</value></labels><labels
+  ><fullName>AXF_ArchiveExplorer_phaseFAILED</fullName><language
+    >en_US</language><protected>false</protected><shortDescription
+    >Phase failed</shortDescription><value
+    >Failed · resumable</value></labels><labels><fullName
+    >AXF_ArchiveExplorer_hotBlocked</fullName><language
+    >en_US</language><protected>false</protected><shortDescription
+    >Hot blocked</shortDescription><value
+    >Kept (removal blocked)</value></labels><labels><fullName
+    >AXF_ArchiveExplorer_error</fullName><language>en_US</language><protected
+    >false</protected><shortDescription>Error</shortDescription><value
+    >The archive could not be read. Try again.</value></labels><labels><fullName
+    >AXF_ArchiveExplorer_retry</fullName><language>en_US</language><protected
+    >false</protected><shortDescription>Retry</shortDescription><value
+    >Try again</value></labels><labels><fullName
+    >AXF_ArchiveExplorer_codeForbidden</fullName><language
+    >en_US</language><protected>false</protected><shortDescription
+    >Forbidden</shortDescription><value
+    >You are not allowed to consult the archive.</value></labels><labels
+  ><fullName>AXF_ArchiveExplorer_codeNotAccessible</fullName><language
+    >en_US</language><protected>false</protected><shortDescription
+    >Not accessible</shortDescription><value
+    >This holder is not accessible to you.</value></labels><labels><fullName
+    >AXF_ArchiveExplorer_codeInvalidInput</fullName><language
+    >en_US</language><protected>false</protected><shortDescription
+    >Invalid input</shortDescription><value
+    >Invalid request.</value></labels><labels><fullName
+    >AXF_ArchiveExplorer_codePolicy</fullName><language
+    >en_US</language><protected>false</protected><shortDescription
+    >Policy</shortDescription><value
+    >The archive policy is missing, disabled or invalid.</value></labels><labels
+  ><fullName>AXF_ArchiveExplorer_codeRunInProgress</fullName><language
+    >en_US</language><protected>false</protected><shortDescription
+    >Run in progress</shortDescription><value
+    >An archive run for this holder is already in progress.</value></labels><labels
+  ><fullName>AXF_ArchiveExplorer_codeAsync</fullName><language
+    >en_US</language><protected>false</protected><shortDescription
+    >Async</shortDescription><value
+    >The platform could not schedule the run now. Try again later.</value></labels><labels
+  ><fullName>AXF_ArchiveExplorer_updated</fullName><language
+    >en_US</language><protected>false</protected><shortDescription
+    >Updated</shortDescription><value
+    >Archive results updated.</value></labels><labels><fullName
+    >AXF_ArchiveExplorer_holderSearch</fullName><language
+    >en_US</language><protected>false</protected><shortDescription
+    >Holder search</shortDescription><value
+    >Search holder</value></labels><labels><fullName
+    >AXF_ArchiveExplorer_colReason</fullName><language
+    >en_US</language><protected>false</protected><shortDescription
+    >Reason column</shortDescription><value>Reason</value></labels><labels
+  ><fullName>AXF_SourceLink_title</fullName><language>en_US</language><protected
+    >false</protected><shortDescription>Title</shortDescription><value
+    >Link bank source to forecast</value></labels><labels><fullName
+    >AXF_SourceLink_intro</fullName><language>en_US</language><protected
+    >false</protected><shortDescription>Intro</shortDescription><value
+    >Pick an eligible imported transaction, review the suggested forecasts and confirm the link explicitly. The imported fact is never copied or changed.</value></labels><labels
+  ><fullName>AXF_SourceLink_noCapability</fullName><language
+    >en_US</language><protected>false</protected><shortDescription
+    >No capability</shortDescription><value
+    >You do not have the capability to link sources.</value></labels><labels
+  ><fullName>AXF_SourceLink_stepSource</fullName><language
+    >en_US</language><protected>false</protected><shortDescription
+    >Step source</shortDescription><value>1. Source</value></labels><labels
+  ><fullName>AXF_SourceLink_stepCandidate</fullName><language
+    >en_US</language><protected>false</protected><shortDescription
+    >Step candidate</shortDescription><value>2. Forecast</value></labels><labels
+  ><fullName>AXF_SourceLink_stepReview</fullName><language
+    >en_US</language><protected>false</protected><shortDescription
+    >Step review</shortDescription><value
+    >3. Review and confirm</value></labels><labels><fullName
+    >AXF_SourceLink_holder</fullName><language>en_US</language><protected
+    >false</protected><shortDescription>Holder</shortDescription><value
+    >Holder</value></labels><labels><fullName
+    >AXF_SourceLink_holderPlaceholder</fullName><language
+    >en_US</language><protected>false</protected><shortDescription
+    >Holder placeholder</shortDescription><value
+    >Select a holder</value></labels><labels><fullName
+    >AXF_SourceLink_kind</fullName><language>en_US</language><protected
+    >false</protected><shortDescription>Kind</shortDescription><value
+    >Source kind</value></labels><labels><fullName
+    >AXF_SourceLink_kindALL</fullName><language>en_US</language><protected
+    >false</protected><shortDescription>Kind all</shortDescription><value
+    >Bank and card</value></labels><labels><fullName
+    >AXF_SourceLink_kindBANK</fullName><language>en_US</language><protected
+    >false</protected><shortDescription>Kind bank</shortDescription><value
+    >Bank account</value></labels><labels><fullName
+    >AXF_SourceLink_kindCARD</fullName><language>en_US</language><protected
+    >false</protected><shortDescription>Kind card</shortDescription><value
+    >Credit card</value></labels><labels><fullName
+    >AXF_SourceLink_search</fullName><language>en_US</language><protected
+    >false</protected><shortDescription>Search</shortDescription><value
+    >Search description</value></labels><labels><fullName
+    >AXF_SourceLink_loadSources</fullName><language>en_US</language><protected
+    >false</protected><shortDescription>Load sources</shortDescription><value
+    >Load eligible sources</value></labels><labels><fullName
+    >AXF_SourceLink_loadMore</fullName><language>en_US</language><protected
+    >false</protected><shortDescription>Load more</shortDescription><value
+    >Load more</value></labels><labels><fullName
+    >AXF_SourceLink_loading</fullName><language>en_US</language><protected
+    >false</protected><shortDescription>Loading</shortDescription><value
+    >Loading…</value></labels><labels><fullName
+    >AXF_SourceLink_noSources</fullName><language>en_US</language><protected
+    >false</protected><shortDescription>No sources</shortDescription><value
+    >No eligible source for this holder. Only POSTED bank/card transactions of an available account without open review and with remaining amount are listed.</value></labels><labels
+  ><fullName>AXF_SourceLink_excludedSources</fullName><language
+    >en_US</language><protected>false</protected><shortDescription
+    >Excluded sources</shortDescription><value
+    >{0} transaction(s) scanned, {1} not eligible.</value></labels><labels
+  ><fullName>AXF_SourceLink_colDate</fullName><language
+    >en_US</language><protected>false</protected><shortDescription
+    >Column date</shortDescription><value>Date</value></labels><labels><fullName
+    >AXF_SourceLink_colDescription</fullName><language
+    >en_US</language><protected>false</protected><shortDescription
+    >Column description</shortDescription><value
+    >Description</value></labels><labels><fullName
+    >AXF_SourceLink_colFunding</fullName><language>en_US</language><protected
+    >false</protected><shortDescription>Column funding</shortDescription><value
+    >Account / card</value></labels><labels><fullName
+    >AXF_SourceLink_colOrigin</fullName><language>en_US</language><protected
+    >false</protected><shortDescription>Column origin</shortDescription><value
+    >Origin</value></labels><labels><fullName
+    >AXF_SourceLink_colAmount</fullName><language>en_US</language><protected
+    >false</protected><shortDescription>Column amount</shortDescription><value
+    >Amount</value></labels><labels><fullName
+    >AXF_SourceLink_colResidual</fullName><language>en_US</language><protected
+    >false</protected><shortDescription>Column residual</shortDescription><value
+    >Remaining</value></labels><labels><fullName
+    >AXF_SourceLink_colDirection</fullName><language>en_US</language><protected
+    >false</protected><shortDescription
+    >Column direction</shortDescription><value>Direction</value></labels><labels
+  ><fullName>AXF_SourceLink_colDue</fullName><language
+    >en_US</language><protected>false</protected><shortDescription
+    >Column due</shortDescription><value>Due</value></labels><labels><fullName
+    >AXF_SourceLink_colCategory</fullName><language>en_US</language><protected
+    >false</protected><shortDescription>Column category</shortDescription><value
+    >Category</value></labels><labels><fullName
+    >AXF_SourceLink_colStatus</fullName><language>en_US</language><protected
+    >false</protected><shortDescription>Column status</shortDescription><value
+    >Status</value></labels><labels><fullName
+    >AXF_SourceLink_colAction</fullName><language>en_US</language><protected
+    >false</protected><shortDescription>Column action</shortDescription><value
+    >Action</value></labels><labels><fullName
+    >AXF_SourceLink_select</fullName><language>en_US</language><protected
+    >false</protected><shortDescription>Select</shortDescription><value
+    >Select</value></labels><labels><fullName
+    >AXF_SourceLink_selected</fullName><language>en_US</language><protected
+    >false</protected><shortDescription>Selected</shortDescription><value
+    >Selected</value></labels><labels><fullName
+    >AXF_SourceLink_directionDEBIT</fullName><language
+    >en_US</language><protected>false</protected><shortDescription
+    >Direction debit</shortDescription><value>Outflow</value></labels><labels
+  ><fullName>AXF_SourceLink_directionCREDIT</fullName><language
+    >en_US</language><protected>false</protected><shortDescription
+    >Direction credit</shortDescription><value>Inflow</value></labels><labels
+  ><fullName>AXF_SourceLink_sourceSummary</fullName><language
+    >en_US</language><protected>false</protected><shortDescription
+    >Source summary</shortDescription><value
+    >Selected source</value></labels><labels><fullName
+    >AXF_SourceLink_changeSource</fullName><language>en_US</language><protected
+    >false</protected><shortDescription>Change source</shortDescription><value
+    >Change source</value></labels><labels><fullName
+    >AXF_SourceLink_candidatesIntro</fullName><language
+    >en_US</language><protected>false</protected><shortDescription
+    >Candidates intro</shortDescription><value
+    >Forecasts of the same holder, currency and direction, compatible with the funding account. Ordered by due date, amount and identity — never by a score. No forecast is linked automatically.</value></labels><labels
+  ><fullName>AXF_SourceLink_noCandidates</fullName><language
+    >en_US</language><protected>false</protected><shortDescription
+    >No candidates</shortDescription><value
+    >No eligible forecast. You can still register the source as a realized entry without a forecast.</value></labels><labels
+  ><fullName>AXF_SourceLink_virtualBadge</fullName><language
+    >en_US</language><protected>false</protected><shortDescription
+    >Virtual badge</shortDescription><value
+    >Projected — materialization pending (AXF-136)</value></labels><labels
+  ><fullName>AXF_SourceLink_virtualCount</fullName><language
+    >en_US</language><protected>false</protected><shortDescription
+    >Virtual count</shortDescription><value
+    >{0} projected occurrence(s) shown for context; they cannot be linked yet.</value></labels><labels
+  ><fullName>AXF_SourceLink_scanTruncated</fullName><language
+    >en_US</language><protected>false</protected><shortDescription
+    >Scan truncated</shortDescription><value
+    >Only the first {0} forecasts were scanned. Narrow the search to see the rest.</value></labels><labels
+  ><fullName>AXF_SourceLink_excludedCandidates</fullName><language
+    >en_US</language><protected>false</protected><shortDescription
+    >Excluded candidates</shortDescription><value
+    >{0} forecast(s) excluded (already realized or cancelled).</value></labels><labels
+  ><fullName>AXF_SourceLink_noForecastOption</fullName><language
+    >en_US</language><protected>false</protected><shortDescription
+    >No forecast option</shortDescription><value
+    >Register without a forecast (realized entry only)</value></labels><labels
+  ><fullName>AXF_SourceLink_statusPLANNED</fullName><language
+    >en_US</language><protected>false</protected><shortDescription
+    >Status planned</shortDescription><value>Planned</value></labels><labels
+  ><fullName>AXF_SourceLink_statusCONFIRMED</fullName><language
+    >en_US</language><protected>false</protected><shortDescription
+    >Status confirmed</shortDescription><value>Confirmed</value></labels><labels
+  ><fullName>AXF_SourceLink_statusESTIMATED</fullName><language
+    >en_US</language><protected>false</protected><shortDescription
+    >Status estimated</shortDescription><value>Estimated</value></labels><labels
+  ><fullName>AXF_SourceLink_reviewIntro</fullName><language
+    >en_US</language><protected>false</protected><shortDescription
+    >Review intro</shortDescription><value
+    >Amount, currency and source stay visible. Any change to the suggested amount or date requires explicit review before confirming.</value></labels><labels
+  ><fullName>AXF_SourceLink_target</fullName><language
+    >en_US</language><protected>false</protected><shortDescription
+    >Target</shortDescription><value>Forecast</value></labels><labels><fullName
+    >AXF_SourceLink_targetNone</fullName><language>en_US</language><protected
+    >false</protected><shortDescription>Target none</shortDescription><value
+    >No forecast — a realized entry will be created from the source.</value></labels><labels
+  ><fullName>AXF_SourceLink_amount</fullName><language
+    >en_US</language><protected>false</protected><shortDescription
+    >Amount</shortDescription><value>Amount to link</value></labels><labels
+  ><fullName>AXF_SourceLink_amountHelp</fullName><language
+    >en_US</language><protected>false</protected><shortDescription
+    >Amount help</shortDescription><value
+    >Suggested: the remaining amount of the source, capped by the forecast residual.</value></labels><labels
+  ><fullName>AXF_SourceLink_recognitionDate</fullName><language
+    >en_US</language><protected>false</protected><shortDescription
+    >Recognition date</shortDescription><value
+    >Recognition date</value></labels><labels><fullName
+    >AXF_SourceLink_changed</fullName><language>en_US</language><protected
+    >false</protected><shortDescription>Changed</shortDescription><value
+    >You changed the suggested amount or date.</value></labels><labels><fullName
+    >AXF_SourceLink_reviewed</fullName><language>en_US</language><protected
+    >false</protected><shortDescription>Reviewed</shortDescription><value
+    >I reviewed the changes and confirm them</value></labels><labels><fullName
+    >AXF_SourceLink_confirm</fullName><language>en_US</language><protected
+    >false</protected><shortDescription>Confirm</shortDescription><value
+    >Confirm link</value></labels><labels><fullName
+    >AXF_SourceLink_confirming</fullName><language>en_US</language><protected
+    >false</protected><shortDescription>Confirming</shortDescription><value
+    >Confirming…</value></labels><labels><fullName
+    >AXF_SourceLink_back</fullName><language>en_US</language><protected
+    >false</protected><shortDescription>Back</shortDescription><value
+    >Back</value></labels><labels><fullName
+    >AXF_SourceLink_done</fullName><language>en_US</language><protected
+    >false</protected><shortDescription>Done</shortDescription><value
+    >Link confirmed</value></labels><labels><fullName
+    >AXF_SourceLink_doneReplayed</fullName><language>en_US</language><protected
+    >false</protected><shortDescription>Done replayed</shortDescription><value
+    >This confirmation had already been processed; the previous result was returned.</value></labels><labels
+  ><fullName>AXF_SourceLink_doneActualOnly</fullName><language
+    >en_US</language><protected>false</protected><shortDescription
+    >Done actual only</shortDescription><value
+    >A realized entry was created from the source.</value></labels><labels
+  ><fullName>AXF_SourceLink_doneAllocation</fullName><language
+    >en_US</language><protected>false</protected><shortDescription
+    >Done allocation</shortDescription><value>Allocation</value></labels><labels
+  ><fullName>AXF_SourceLink_doneTarget</fullName><language
+    >en_US</language><protected>false</protected><shortDescription
+    >Done target</shortDescription><value
+    >Financial transaction</value></labels><labels><fullName
+    >AXF_SourceLink_newLink</fullName><language>en_US</language><protected
+    >false</protected><shortDescription>New link</shortDescription><value
+    >New link</value></labels><labels><fullName
+    >AXF_SourceLink_policy</fullName><language>en_US</language><protected
+    >false</protected><shortDescription>Policy</shortDescription><value
+    >Policy</value></labels><labels><fullName
+    >AXF_SourceLink_error</fullName><language>en_US</language><protected
+    >false</protected><shortDescription>Error</shortDescription><value
+    >The operation could not be completed. Nothing was saved.</value></labels><labels
+  ><fullName>AXF_SourceLink_codeUNAVAILABLE</fullName><language
+    >en_US</language><protected>false</protected><shortDescription
+    >Code unavailable</shortDescription><value
+    >Source, holder or forecast unavailable to you.</value></labels><labels
+  ><fullName>AXF_SourceLink_codeNOT_ACCESSIBLE</fullName><language
+    >en_US</language><protected>false</protected><shortDescription
+    >Code not accessible</shortDescription><value
+    >Some records are not accessible to you.</value></labels><labels><fullName
+    >AXF_SourceLink_codeINVALID_INPUT</fullName><language
+    >en_US</language><protected>false</protected><shortDescription
+    >Code invalid input</shortDescription><value
+    >The request is malformed.</value></labels><labels><fullName
+    >AXF_SourceLink_codeINVALID</fullName><language>en_US</language><protected
+    >false</protected><shortDescription>Code invalid</shortDescription><value
+    >Check amount, date and operation key.</value></labels><labels><fullName
+    >AXF_SourceLink_codeINVALID_SOURCE</fullName><language
+    >en_US</language><protected>false</protected><shortDescription
+    >Code invalid source</shortDescription><value
+    >Only existing bank or card transactions can be linked.</value></labels><labels
+  ><fullName>AXF_SourceLink_codeINVALID_SOURCE_DATA</fullName><language
+    >en_US</language><protected>false</protected><shortDescription
+    >Code invalid source data</shortDescription><value
+    >The source lacks valid date, amount, currency or direction.</value></labels><labels
+  ><fullName>AXF_SourceLink_codeNOT_POSTED</fullName><language
+    >en_US</language><protected>false</protected><shortDescription
+    >Code not posted</shortDescription><value
+    >The source is not POSTED.</value></labels><labels><fullName
+    >AXF_SourceLink_codeFUNDING_NOT_AVAILABLE</fullName><language
+    >en_US</language><protected>false</protected><shortDescription
+    >Code funding not available</shortDescription><value
+    >The bank account or card is not available.</value></labels><labels
+  ><fullName>AXF_SourceLink_codeREVIEW_OPEN</fullName><language
+    >en_US</language><protected>false</protected><shortDescription
+    >Code review open</shortDescription><value
+    >The source has an open review; resolve it first.</value></labels><labels
+  ><fullName>AXF_SourceLink_codeSOURCE_EXHAUSTED</fullName><language
+    >en_US</language><protected>false</protected><shortDescription
+    >Code source exhausted</shortDescription><value
+    >The source has no remaining amount.</value></labels><labels><fullName
+    >AXF_SourceLink_codeALLOCATIONS_UNVERIFIED</fullName><language
+    >en_US</language><protected>false</protected><shortDescription
+    >Code allocations unverified</shortDescription><value
+    >Existing allocations could not be verified with your access.</value></labels><labels
+  ><fullName>AXF_SourceLink_codeINVALID_TARGET</fullName><language
+    >en_US</language><protected>false</protected><shortDescription
+    >Code invalid target</shortDescription><value
+    >The forecast is not a valid target for this source.</value></labels><labels
+  ><fullName>AXF_SourceLink_codeTARGET_CANCELLED</fullName><language
+    >en_US</language><protected>false</protected><shortDescription
+    >Code target cancelled</shortDescription><value
+    >The forecast was cancelled.</value></labels><labels><fullName
+    >AXF_SourceLink_codeTARGET_REALIZED</fullName><language
+    >en_US</language><protected>false</protected><shortDescription
+    >Code target realized</shortDescription><value
+    >The forecast is already fully realized.</value></labels><labels><fullName
+    >AXF_SourceLink_codeFUNDING_MISMATCH</fullName><language
+    >en_US</language><protected>false</protected><shortDescription
+    >Code funding mismatch</shortDescription><value
+    >The forecast expects another funding account or card.</value></labels><labels
+  ><fullName>AXF_SourceLink_codeCURRENCY_MISMATCH</fullName><language
+    >en_US</language><protected>false</protected><shortDescription
+    >Code currency mismatch</shortDescription><value
+    >Source and forecast currencies differ.</value></labels><labels><fullName
+    >AXF_SourceLink_codeALREADY_LINKED</fullName><language
+    >en_US</language><protected>false</protected><shortDescription
+    >Code already linked</shortDescription><value
+    >This source is already linked to this forecast.</value></labels><labels
+  ><fullName>AXF_SourceLink_codeREVIEW_REQUIRED</fullName><language
+    >en_US</language><protected>false</protected><shortDescription
+    >Code review required</shortDescription><value
+    >Confirm that you reviewed the changed amount or date.</value></labels><labels
+  ><fullName>AXF_SourceLink_codeCONFLICT</fullName><language
+    >en_US</language><protected>false</protected><shortDescription
+    >Code conflict</shortDescription><value
+    >Source or forecast changed since you loaded them, or this key was used with different data. Reload and review.</value></labels><labels
+  ><fullName>AXF_SourceLink_codeUNAVAILABLE_AMOUNT</fullName><language
+    >en_US</language><protected>false</protected><shortDescription
+    >Code unavailable amount</shortDescription><value
+    >Amount exceeds the remaining capacity of the source or forecast.</value></labels><labels
+  ><fullName>AXF_SourceLink_codeREPORTING_CURRENCY_REQUIRED</fullName><language
+    >en_US</language><protected>false</protected><shortDescription
+    >Code reporting currency</shortDescription><value
+    >Set the reporting currency before linking.</value></labels><labels
+  ><fullName>AXF_SourceLink_codeMATERIALIZATION_REQUIRED</fullName><language
+    >en_US</language><protected>false</protected><shortDescription
+    >Code materialization</shortDescription><value
+    >Projected occurrences must be materialized before linking (AXF-136).</value></labels><labels
+  ><fullName>AXF_SourceLink_evIntro</fullName><language
+    >en_US</language><protected>false</protected><shortDescription
+    >Evidence intro</shortDescription><value
+    >Evidence is shown as independent facts under {0} (cutoff below). There is no score, weight or tolerance; ties and uncertainty stay explicit and nothing is confirmed automatically.</value></labels><labels
+  ><fullName>AXF_SourceLink_evColumn</fullName><language
+    >en_US</language><protected>false</protected><shortDescription
+    >Evidence column</shortDescription><value>Evidence</value></labels><labels
+  ><fullName>AXF_SourceLink_evConsultative</fullName><language
+    >en_US</language><protected>false</protected><shortDescription
+    >Consultative</shortDescription><value>Consultative</value></labels><labels
+  ><fullName>AXF_SourceLink_evTied</fullName><language
+    >en_US</language><protected>false</protected><shortDescription
+    >Tied</shortDescription><value
+    >Tie — identical evidence</value></labels><labels><fullName
+    >AXF_SourceLink_evLowEvidence</fullName><language>en_US</language><protected
+    >false</protected><shortDescription>Low evidence</shortDescription><value
+    >Low evidence — uncertain</value></labels><labels><fullName
+    >AXF_SourceLink_evTieCount</fullName><language>en_US</language><protected
+    >false</protected><shortDescription>Tie count</shortDescription><value
+    >{0} candidate(s) in a tie; {1} with low evidence. No winner is selected.</value></labels><labels
+  ><fullName>AXF_SourceLink_evSort</fullName><language
+    >en_US</language><protected>false</protected><shortDescription
+    >Sort</shortDescription><value>Presentation order</value></labels><labels
+  ><fullName>AXF_SourceLink_evSortPOLICY</fullName><language
+    >en_US</language><protected>false</protected><shortDescription
+    >Sort policy</shortDescription><value
+    >Policy order (identity, type, record)</value></labels><labels><fullName
+    >AXF_SourceLink_evSortDUE_DATE</fullName><language
+    >en_US</language><protected>false</protected><shortDescription
+    >Sort due date</shortDescription><value>Due date</value></labels><labels
+  ><fullName>AXF_SourceLink_evfEXTERNAL_IDENTITY</fullName><language
+    >en_US</language><protected>false</protected><shortDescription
+    >Feature external identity</shortDescription><value
+    >External identity</value></labels><labels><fullName
+    >AXF_SourceLink_evfSOURCE_IDENTITY</fullName><language
+    >en_US</language><protected>false</protected><shortDescription
+    >Feature source identity</shortDescription><value
+    >Source account/card</value></labels><labels><fullName
+    >AXF_SourceLink_evfHOLDER</fullName><language>en_US</language><protected
+    >false</protected><shortDescription>Feature holder</shortDescription><value
+    >Holder</value></labels><labels><fullName
+    >AXF_SourceLink_evfCURRENCY</fullName><language>en_US</language><protected
+    >false</protected><shortDescription
+    >Feature currency</shortDescription><value>Currency</value></labels><labels
+  ><fullName>AXF_SourceLink_evfAMOUNT</fullName><language
+    >en_US</language><protected>false</protected><shortDescription
+    >Feature amount</shortDescription><value>Amount</value></labels><labels
+  ><fullName>AXF_SourceLink_evfRESIDUAL</fullName><language
+    >en_US</language><protected>false</protected><shortDescription
+    >Feature residual</shortDescription><value>Remaining</value></labels><labels
+  ><fullName>AXF_SourceLink_evfDATE</fullName><language
+    >en_US</language><protected>false</protected><shortDescription
+    >Feature date</shortDescription><value>Date</value></labels><labels
+  ><fullName>AXF_SourceLink_evfDESCRIPTION</fullName><language
+    >en_US</language><protected>false</protected><shortDescription
+    >Feature description</shortDescription><value
+    >Description</value></labels><labels><fullName
+    >AXF_SourceLink_evfCATEGORY</fullName><language>en_US</language><protected
+    >false</protected><shortDescription
+    >Feature category</shortDescription><value>Category</value></labels><labels
+  ><fullName>AXF_SourceLink_evrEXACT</fullName><language
+    >en_US</language><protected>false</protected><shortDescription
+    >Relation exact</shortDescription><value>identical</value></labels><labels
+  ><fullName>AXF_SourceLink_evrCONTAINS</fullName><language
+    >en_US</language><protected>false</protected><shortDescription
+    >Relation contains</shortDescription><value
+    >one contains the other</value></labels><labels><fullName
+    >AXF_SourceLink_evrCOVERS</fullName><language>en_US</language><protected
+    >false</protected><shortDescription>Relation covers</shortDescription><value
+    >source covers candidate</value></labels><labels><fullName
+    >AXF_SourceLink_evrPARTIAL</fullName><language>en_US</language><protected
+    >false</protected><shortDescription
+    >Relation partial</shortDescription><value
+    >source covers part</value></labels><labels><fullName
+    >AXF_SourceLink_evrDIFFERENT</fullName><language>en_US</language><protected
+    >false</protected><shortDescription
+    >Relation different</shortDescription><value
+    >different</value></labels><labels><fullName
+    >AXF_SourceLink_evrUNKNOWN</fullName><language>en_US</language><protected
+    >false</protected><shortDescription
+    >Relation unknown</shortDescription><value>unknown</value></labels><labels
+  ><fullName>AXF_SourceLink_evrREDACTED</fullName><language
+    >en_US</language><protected>false</protected><shortDescription
+    >Relation redacted</shortDescription><value>redacted</value></labels><labels
+  ><fullName>AXF_SourceLink_evxEXACT</fullName><language
+    >en_US</language><protected>false</protected><shortDescription
+    >Explain exact</shortDescription><value
+    >Identical on both sides.</value></labels><labels><fullName
+    >AXF_SourceLink_evxCONTAINS</fullName><language>en_US</language><protected
+    >false</protected><shortDescription
+    >Explain contains</shortDescription><value
+    >After folding case, spaces and accents, one text contains the other. No fuzzy similarity is applied.</value></labels><labels
+  ><fullName>AXF_SourceLink_evxCOVERS</fullName><language
+    >en_US</language><protected>false</protected><shortDescription
+    >Explain covers</shortDescription><value
+    >The source remaining amount extinguishes the candidate remaining amount (difference {0}).</value></labels><labels
+  ><fullName>AXF_SourceLink_evxPARTIAL</fullName><language
+    >en_US</language><protected>false</protected><shortDescription
+    >Explain partial</shortDescription><value
+    >The source remaining amount covers only part of the candidate (missing {0}).</value></labels><labels
+  ><fullName>AXF_SourceLink_evxDIFFERENT</fullName><language
+    >en_US</language><protected>false</protected><shortDescription
+    >Explain different</shortDescription><value
+    >Different on both sides ({0}). Shown as a fact — no tolerance decides for you.</value></labels><labels
+  ><fullName>AXF_SourceLink_evxUNKNOWN</fullName><language
+    >en_US</language><protected>false</protected><shortDescription
+    >Explain unknown</shortDescription><value
+    >Not available on one side. Unknown is never a negative signal.</value></labels><labels
+  ><fullName>AXF_SourceLink_evxREDACTED</fullName><language
+    >en_US</language><protected>false</protected><shortDescription
+    >Explain redacted</shortDescription><value
+    >Not authorized for you; redacted and excluded from ordering.</value></labels><labels
+  ><fullName>AXF_SourceLink_evxDATE_AFTER</fullName><language
+    >en_US</language><protected>false</protected><shortDescription
+    >Explain date after</shortDescription><value
+    >Candidate is due {0} day(s) after the source date.</value></labels><labels
+  ><fullName>AXF_SourceLink_evxDATE_BEFORE</fullName><language
+    >en_US</language><protected>false</protected><shortDescription
+    >Explain date before</shortDescription><value
+    >Candidate is due {0} day(s) before the source date.</value></labels><labels
+  ><fullName>AXF_SourceLink_originPLUGGY</fullName><language
+    >en_US</language><protected>false</protected><shortDescription
+    >Origin Pluggy</shortDescription><value
+    >Open Finance (Pluggy)</value></labels><labels><fullName
+    >AXF_SourceLink_originCSV</fullName><language>en_US</language><protected
+    >false</protected><shortDescription>Origin CSV</shortDescription><value
+    >CSV import</value></labels><labels><fullName
+    >AXF_SourceLink_originMANUAL</fullName><language>en_US</language><protected
+    >false</protected><shortDescription>Origin manual</shortDescription><value
+    >Manual</value></labels><labels><fullName
+    >AXF_SourceLink_evxDESCRIPTION_CONTAINS_CANDIDATE</fullName><language
+    >en_US</language><protected>false</protected><shortDescription
+    >Explain contains candidate</shortDescription><value
+    >The source description contains the forecast description (case, spaces and accents folded; no fuzzy similarity).</value></labels><labels
+  ><fullName
+    >AXF_SourceLink_evxDESCRIPTION_CONTAINED_IN_CANDIDATE</fullName><language
+    >en_US</language><protected>false</protected><shortDescription
+    >Explain contained in candidate</shortDescription><value
+    >The forecast description contains the source description (case, spaces and accents folded; no fuzzy similarity).</value></labels><labels
+  ><fullName>AXF_SourceLink_evxCATEGORY_CONTAINS_CANDIDATE</fullName><language
+    >en_US</language><protected>false</protected><shortDescription
+    >Explain category contains candidate</shortDescription><value
+    >The source category contains the forecast category.</value></labels><labels
+  ><fullName
+    >AXF_SourceLink_evxCATEGORY_CONTAINED_IN_CANDIDATE</fullName><language
+    >en_US</language><protected>false</protected><shortDescription
+    >Explain category contained</shortDescription><value
+    >The forecast category contains the source category.</value></labels><labels
+  ><fullName>AXF_ForecastComparison_title</fullName><language
+    >en_US</language><protected>false</protected><shortDescription
+    >Title</shortDescription><value
+    >Horizons and scenarios</value></labels><labels><fullName
+    >AXF_ForecastComparison_intro</fullName><language>en_US</language><protected
+    >false</protected><shortDescription>Intro</shortDescription><value
+    >Compare what is committed, probable and uncertain over 3 to 24 months. Amounts are included in full — nothing is weighted by probability.</value></labels><labels
+  ><fullName>AXF_ForecastComparison_scope</fullName><language
+    >en_US</language><protected>false</protected><shortDescription
+    >Scope</shortDescription><value
+    >People and companies in scope</value></labels><labels><fullName
+    >AXF_ForecastComparison_scopeAvailable</fullName><language
+    >en_US</language><protected>false</protected><shortDescription
+    >Scope available</shortDescription><value>Available</value></labels><labels
+  ><fullName>AXF_ForecastComparison_scopeHelp</fullName><language
+    >en_US</language><protected>false</protected><shortDescription
+    >Scope help</shortDescription><value
+    >Only holders you are authorized to see are listed; partially shared holders are withheld from totals.</value></labels><labels
+  ><fullName>AXF_ForecastComparison_horizon</fullName><language
+    >en_US</language><protected>false</protected><shortDescription
+    >Horizon</shortDescription><value>Horizon (months)</value></labels><labels
+  ><fullName>AXF_ForecastComparison_scenario</fullName><language
+    >en_US</language><protected>false</protected><shortDescription
+    >Scenario</shortDescription><value>Scenario</value></labels><labels
+  ><fullName>AXF_ForecastComparison_scenarioCONSERVATIVE</fullName><language
+    >en_US</language><protected>false</protected><shortDescription
+    >Conservative</shortDescription><value
+    >Conservative — confirmed only</value></labels><labels><fullName
+    >AXF_ForecastComparison_scenarioINTERMEDIATE</fullName><language
+    >en_US</language><protected>false</protected><shortDescription
+    >Intermediate</shortDescription><value
+    >Intermediate — adds probable</value></labels><labels><fullName
+    >AXF_ForecastComparison_scenarioOPTIMISTIC</fullName><language
+    >en_US</language><protected>false</protected><shortDescription
+    >Optimistic</shortDescription><value
+    >Optimistic — adds uncertain</value></labels><labels><fullName
+    >AXF_ForecastComparison_compare</fullName><language
+    >en_US</language><protected>false</protected><shortDescription
+    >Compare</shortDescription><value>Compare</value></labels><labels><fullName
+    >AXF_ForecastComparison_loading</fullName><language
+    >en_US</language><protected>false</protected><shortDescription
+    >Loading</shortDescription><value
+    >Computing scenarios…</value></labels><labels><fullName
+    >AXF_ForecastComparison_idle</fullName><language>en_US</language><protected
+    >false</protected><shortDescription>Idle</shortDescription><value
+    >Choose the scope, a horizon and a scenario, then compare.</value></labels><labels
+  ><fullName>AXF_ForecastComparison_empty</fullName><language
+    >en_US</language><protected>false</protected><shortDescription
+    >Empty</shortDescription><value
+    >No commitments or plans found in scope.</value></labels><labels><fullName
+    >AXF_ForecastComparison_confidence</fullName><language
+    >en_US</language><protected>false</protected><shortDescription
+    >Confidence</shortDescription><value>Confidence</value></labels><labels
+  ><fullName>AXF_ForecastComparison_confidenceINFORMATIVE</fullName><language
+    >en_US</language><protected>false</protected><shortDescription
+    >Informative</shortDescription><value
+    >Informative (display only)</value></labels><labels><fullName
+    >AXF_ForecastComparison_confidenceDEGRADED</fullName><language
+    >en_US</language><protected>false</protected><shortDescription
+    >Degraded</shortDescription><value>Degraded</value></labels><labels
+  ><fullName>AXF_ForecastComparison_confidenceBLOCKED</fullName><language
+    >en_US</language><protected>false</protected><shortDescription
+    >Blocked</shortDescription><value>Blocked</value></labels><labels><fullName
+    >AXF_ForecastComparison_asOf</fullName><language>en_US</language><protected
+    >false</protected><shortDescription>As of</shortDescription><value
+    >As of</value></labels><labels><fullName
+    >AXF_ForecastComparison_policy</fullName><language
+    >en_US</language><protected>false</protected><shortDescription
+    >Policy</shortDescription><value>Policy</value></labels><labels><fullName
+    >AXF_ForecastComparison_horizonEnd</fullName><language
+    >en_US</language><protected>false</protected><shortDescription
+    >Horizon end</shortDescription><value
+    >Horizon ends on</value></labels><labels><fullName
+    >AXF_ForecastComparison_explanation</fullName><language
+    >en_US</language><protected>false</protected><shortDescription
+    >Explanation</shortDescription><value>Explanation</value></labels><labels
+  ><fullName
+    >AXF_ForecastComparison_reasonCOVERAGE_UNVERIFIED</fullName><language
+    >en_US</language><protected>false</protected><shortDescription
+    >Coverage unverified</shortDescription><value
+    >A holder in scope is only partially shared with you; its commitments were withheld.</value></labels><labels
+  ><fullName
+    >AXF_ForecastComparison_reasonNO_AUTHORIZED_SCOPE</fullName><language
+    >en_US</language><protected>false</protected><shortDescription
+    >No scope</shortDescription><value
+    >No authorized holder in scope.</value></labels><labels><fullName
+    >AXF_ForecastComparison_reasonVOLUME_EXCEEDED</fullName><language
+    >en_US</language><protected>false</protected><shortDescription
+    >Volume</shortDescription><value
+    >The scope holds more schedules or plans than one comparison can evaluate.</value></labels><labels
+  ><fullName
+    >AXF_ForecastComparison_reasonCOMMITMENT_UNBOUNDED</fullName><language
+    >en_US</language><protected>false</protected><shortDescription
+    >Unbounded</shortDescription><value
+    >A schedule continues beyond what was evaluated (indefinite recurrence or evaluation ceiling); totals are not complete.</value></labels><labels
+  ><fullName
+    >AXF_ForecastComparison_reasonOBLIGATIONS_BEYOND_HORIZON</fullName><language
+    >en_US</language><protected>false</protected><shortDescription
+    >Beyond horizon</shortDescription><value
+    >Obligations exist after the selected horizon; they are shown below and affect capacity.</value></labels><labels
+  ><fullName
+    >AXF_ForecastComparison_reasonOVERDUE_OBLIGATIONS</fullName><language
+    >en_US</language><protected>false</protected><shortDescription
+    >Overdue</shortDescription><value
+    >Overdue occurrences exist before the as-of date; they are listed separately.</value></labels><labels
+  ><fullName>AXF_ForecastComparison_reasonMULTI_CURRENCY</fullName><language
+    >en_US</language><protected>false</protected><shortDescription
+    >Multi currency</shortDescription><value
+    >More than one currency in scope; amounts stay in their original currency, no conversion applied.</value></labels><labels
+  ><fullName>AXF_ForecastComparison_reasonAS_OF_NOT_TODAY</fullName><language
+    >en_US</language><protected>false</protected><shortDescription
+    >As of</shortDescription><value
+    >The as-of date is not today.</value></labels><labels><fullName
+    >AXF_ForecastComparison_reasonNO_CONTRIBUTIONS</fullName><language
+    >en_US</language><protected>false</protected><shortDescription
+    >No contributions</shortDescription><value
+    >No schedule occurrence or plan contributed.</value></labels><labels
+  ><fullName
+    >AXF_ForecastComparison_reasonINCOMPLETE_CONTRIBUTION</fullName><language
+    >en_US</language><protected>false</protected><shortDescription
+    >Incomplete</shortDescription><value
+    >A contribution without currency or date was ignored.</value></labels><labels
+  ><fullName>AXF_ForecastComparison_reasonSCHEDULE_STALE</fullName><language
+    >en_US</language><protected>false</protected><shortDescription
+    >Stale</shortDescription><value
+    >A schedule changed while being read; its commitment is not summed.</value></labels><labels
+  ><fullName>AXF_ForecastComparison_reasonSCHEDULE_AMBIGUOUS</fullName><language
+    >en_US</language><protected>false</protected><shortDescription
+    >Ambiguous</shortDescription><value
+    >A schedule has conflicting confirmed references; its commitment is blocked.</value></labels><labels
+  ><fullName>AXF_ForecastComparison_reasonSCHEDULE_INVALID</fullName><language
+    >en_US</language><protected>false</protected><shortDescription
+    >Invalid</shortDescription><value
+    >A schedule could not be projected.</value></labels><labels><fullName
+    >AXF_ForecastComparison_reasonSCHEDULE_UNSUPPORTED</fullName><language
+    >en_US</language><protected>false</protected><shortDescription
+    >Unsupported</shortDescription><value
+    >A schedule uses an unsupported modality.</value></labels><labels><fullName
+    >AXF_ForecastComparison_reasonSCHEDULE_FORBIDDEN</fullName><language
+    >en_US</language><protected>false</protected><shortDescription
+    >Forbidden</shortDescription><value
+    >A schedule in scope is not accessible to you.</value></labels><labels
+  ><fullName>AXF_ForecastComparison_reasonSCHEDULE_NOT_FOUND</fullName><language
+    >en_US</language><protected>false</protected><shortDescription
+    >Not found</shortDescription><value
+    >A schedule in scope could not be read.</value></labels><labels><fullName
+    >AXF_ForecastComparison_colPeriod</fullName><language
+    >en_US</language><protected>false</protected><shortDescription
+    >Period</shortDescription><value>Month</value></labels><labels><fullName
+    >AXF_ForecastComparison_colIn</fullName><language>en_US</language><protected
+    >false</protected><shortDescription>Inflow</shortDescription><value
+    >Inflow</value></labels><labels><fullName
+    >AXF_ForecastComparison_colOut</fullName><language
+    >en_US</language><protected>false</protected><shortDescription
+    >Outflow</shortDescription><value>Outflow</value></labels><labels><fullName
+    >AXF_ForecastComparison_colNet</fullName><language
+    >en_US</language><protected>false</protected><shortDescription
+    >Net</shortDescription><value>Net</value></labels><labels><fullName
+    >AXF_ForecastComparison_colConfirmed</fullName><language
+    >en_US</language><protected>false</protected><shortDescription
+    >Confirmed</shortDescription><value>Confirmed</value></labels><labels
+  ><fullName>AXF_ForecastComparison_colProbable</fullName><language
+    >en_US</language><protected>false</protected><shortDescription
+    >Probable</shortDescription><value>Probable</value></labels><labels
+  ><fullName>AXF_ForecastComparison_colUncertain</fullName><language
+    >en_US</language><protected>false</protected><shortDescription
+    >Uncertain</shortDescription><value>Uncertain</value></labels><labels
+  ><fullName>AXF_ForecastComparison_periods</fullName><language
+    >en_US</language><protected>false</protected><shortDescription
+    >Periods</shortDescription><value
+    >Month by month ({0})</value></labels><labels><fullName
+    >AXF_ForecastComparison_horizons</fullName><language
+    >en_US</language><protected>false</protected><shortDescription
+    >Horizons</shortDescription><value>All horizons</value></labels><labels
+  ><fullName>AXF_ForecastComparison_colHorizon</fullName><language
+    >en_US</language><protected>false</protected><shortDescription
+    >Horizon column</shortDescription><value>Horizon</value></labels><labels
+  ><fullName>AXF_ForecastComparison_colConservative</fullName><language
+    >en_US</language><protected>false</protected><shortDescription
+    >Conservative column</shortDescription><value
+    >Conservative</value></labels><labels><fullName
+    >AXF_ForecastComparison_colIntermediate</fullName><language
+    >en_US</language><protected>false</protected><shortDescription
+    >Intermediate column</shortDescription><value
+    >Intermediate</value></labels><labels><fullName
+    >AXF_ForecastComparison_colOptimistic</fullName><language
+    >en_US</language><protected>false</protected><shortDescription
+    >Optimistic column</shortDescription><value
+    >Optimistic</value></labels><labels><fullName
+    >AXF_ForecastComparison_colBeyond</fullName><language
+    >en_US</language><protected>false</protected><shortDescription
+    >Beyond column</shortDescription><value
+    >Beyond horizon (out / in)</value></labels><labels><fullName
+    >AXF_ForecastComparison_beyond</fullName><language
+    >en_US</language><protected>false</protected><shortDescription
+    >Beyond</shortDescription><value
+    >Beyond the selected horizon</value></labels><labels><fullName
+    >AXF_ForecastComparison_beyondText</fullName><language
+    >en_US</language><protected>false</protected><shortDescription
+    >Beyond text</shortDescription><value
+    >{0} occurrence(s) after {1}: {2} out, {3} in. A short horizon does not hide them.</value></labels><labels
+  ><fullName>AXF_ForecastComparison_overdue</fullName><language
+    >en_US</language><protected>false</protected><shortDescription
+    >Overdue</shortDescription><value
+    >Overdue before the as-of date</value></labels><labels><fullName
+    >AXF_ForecastComparison_sources</fullName><language
+    >en_US</language><protected>false</protected><shortDescription
+    >Sources</shortDescription><value>Sources</value></labels><labels><fullName
+    >AXF_ForecastComparison_sourceSCHEDULE</fullName><language
+    >en_US</language><protected>false</protected><shortDescription
+    >Schedule</shortDescription><value>Schedule</value></labels><labels
+  ><fullName>AXF_ForecastComparison_sourcePLAN</fullName><language
+    >en_US</language><protected>false</protected><shortDescription
+    >Plan</shortDescription><value>Standalone plans</value></labels><labels
+  ><fullName>AXF_ForecastComparison_occurrences</fullName><language
+    >en_US</language><protected>false</protected><shortDescription
+    >Occurrences</shortDescription><value>occurrences</value></labels><labels
+  ><fullName>AXF_ForecastComparison_incompleteCoverage</fullName><language
+    >en_US</language><protected>false</protected><shortDescription
+    >Incomplete coverage</shortDescription><value
+    >coverage incomplete</value></labels><labels><fullName
+    >AXF_ForecastComparison_exclusions</fullName><language
+    >en_US</language><protected>false</protected><shortDescription
+    >Exclusions</shortDescription><value>Exclusions</value></labels><labels
+  ><fullName>AXF_ForecastComparison_exNOT_AUTHORIZED</fullName><language
+    >en_US</language><protected>false</protected><shortDescription
+    >Not authorized</shortDescription><value
+    >Holder not authorized (not shown)</value></labels><labels><fullName
+    >AXF_ForecastComparison_exNOT_A_HOLDER</fullName><language
+    >en_US</language><protected>false</protected><shortDescription
+    >Not a holder</shortDescription><value
+    >Record is not an Axon person or company</value></labels><labels><fullName
+    >AXF_ForecastComparison_exCOVERAGE_UNVERIFIED</fullName><language
+    >en_US</language><protected>false</protected><shortDescription
+    >Unverified</shortDescription><value
+    >Partially shared holder withheld</value></labels><labels><fullName
+    >AXF_ForecastComparison_actionREVIEW_SCHEDULES</fullName><language
+    >en_US</language><protected>false</protected><shortDescription
+    >Review</shortDescription><value
+    >Review the schedules that feed these totals</value></labels><labels
+  ><fullName>AXF_ForecastComparison_actionNone</fullName><language
+    >en_US</language><protected>false</protected><shortDescription
+    >No action</shortDescription><value
+    >No action can be taken from this comparison.</value></labels><labels
+  ><fullName>AXF_ForecastComparison_error</fullName><language
+    >en_US</language><protected>false</protected><shortDescription
+    >Error</shortDescription><value
+    >The comparison could not be computed. Try again.</value></labels><labels
+  ><fullName>AXF_ForecastComparison_retry</fullName><language
+    >en_US</language><protected>false</protected><shortDescription
+    >Retry</shortDescription><value>Try again</value></labels><labels><fullName
+    >AXF_ForecastComparison_codeForbidden</fullName><language
+    >en_US</language><protected>false</protected><shortDescription
+    >Forbidden</shortDescription><value
+    >You are not allowed to compare forecasts.</value></labels><labels><fullName
+    >AXF_ForecastComparison_codeNotAccessible</fullName><language
+    >en_US</language><protected>false</protected><shortDescription
+    >Not accessible</shortDescription><value
+    >Some of the data this comparison depends on is not accessible to you.</value></labels><labels
+  ><fullName>AXF_ForecastComparison_codeInvalidInput</fullName><language
+    >en_US</language><protected>false</protected><shortDescription
+    >Invalid input</shortDescription><value
+    >Invalid request.</value></labels><labels><fullName
+    >AXF_ForecastComparison_updated</fullName><language
+    >en_US</language><protected>false</protected><shortDescription
+    >Updated</shortDescription><value
+    >Comparison updated: {0}, {1} months, confidence {2}.</value></labels><labels
+  ><fullName>AXF_ForecastComparison_codeUnavailable</fullName><language
+    >en_US</language><protected>false</protected><shortDescription
+    >Code unavailable</shortDescription><value
+    >The scope is temporarily unavailable. Try again.</value></labels><labels
+  ><fullName>AXF_ForecastComparison_codeUnexpected</fullName><language
+    >en_US</language><protected>false</protected><shortDescription
+    >Code unexpected</shortDescription><value
+    >An unexpected error occurred. Nothing was changed.</value></labels><labels
+  ><fullName>AXF_ReconciliationReversal_title</fullName><language
+    >en_US</language><protected>false</protected><shortDescription
+    >Title</shortDescription><value
+    >Reverse a reconciliation</value></labels><labels><fullName
+    >AXF_ReconciliationReversal_intro</fullName><language
+    >en_US</language><protected>false</protected><shortDescription
+    >Intro</shortDescription><value
+    >Pick a confirmed application and reverse it with a reason. The original allocation is never edited or deleted: an immutable compensating allocation is appended and the plan and source recover their net contribution.</value></labels><labels
+  ><fullName>AXF_ReconciliationReversal_noCapability</fullName><language
+    >en_US</language><protected>false</protected><shortDescription
+    >No capability</shortDescription><value
+    >You do not have the capability to reverse reconciliations.</value></labels><labels
+  ><fullName>AXF_ReconciliationReversal_holder</fullName><language
+    >en_US</language><protected>false</protected><shortDescription
+    >Holder</shortDescription><value>Holder</value></labels><labels><fullName
+    >AXF_ReconciliationReversal_holderPlaceholder</fullName><language
+    >en_US</language><protected>false</protected><shortDescription
+    >Holder placeholder</shortDescription><value
+    >Select a holder</value></labels><labels><fullName
+    >AXF_ReconciliationReversal_load</fullName><language
+    >en_US</language><protected>false</protected><shortDescription
+    >Load</shortDescription><value>Load applications</value></labels><labels
+  ><fullName>AXF_ReconciliationReversal_loadMore</fullName><language
+    >en_US</language><protected>false</protected><shortDescription
+    >Load more</shortDescription><value>Load more</value></labels><labels
+  ><fullName>AXF_ReconciliationReversal_loading</fullName><language
+    >en_US</language><protected>false</protected><shortDescription
+    >Loading</shortDescription><value>Loading…</value></labels><labels><fullName
+    >AXF_ReconciliationReversal_empty</fullName><language
+    >en_US</language><protected>false</protected><shortDescription
+    >Empty</shortDescription><value
+    >No confirmed application for this holder.</value></labels><labels><fullName
+    >AXF_ReconciliationReversal_colDate</fullName><language
+    >en_US</language><protected>false</protected><shortDescription
+    >Column date</shortDescription><value>Recognized on</value></labels><labels
+  ><fullName>AXF_ReconciliationReversal_colTarget</fullName><language
+    >en_US</language><protected>false</protected><shortDescription
+    >Column target</shortDescription><value
+    >Financial transaction</value></labels><labels><fullName
+    >AXF_ReconciliationReversal_colRole</fullName><language
+    >en_US</language><protected>false</protected><shortDescription
+    >Column role</shortDescription><value>Role</value></labels><labels><fullName
+    >AXF_ReconciliationReversal_colSource</fullName><language
+    >en_US</language><protected>false</protected><shortDescription
+    >Column source</shortDescription><value>Source</value></labels><labels
+  ><fullName>AXF_ReconciliationReversal_colAmount</fullName><language
+    >en_US</language><protected>false</protected><shortDescription
+    >Column amount</shortDescription><value>Amount</value></labels><labels
+  ><fullName>AXF_ReconciliationReversal_colStatus</fullName><language
+    >en_US</language><protected>false</protected><shortDescription
+    >Column status</shortDescription><value>Status</value></labels><labels
+  ><fullName>AXF_ReconciliationReversal_colAction</fullName><language
+    >en_US</language><protected>false</protected><shortDescription
+    >Column action</shortDescription><value>Action</value></labels><labels
+  ><fullName>AXF_ReconciliationReversal_statusOpen</fullName><language
+    >en_US</language><protected>false</protected><shortDescription
+    >Status open</shortDescription><value>Confirmed</value></labels><labels
+  ><fullName>AXF_ReconciliationReversal_statusReversed</fullName><language
+    >en_US</language><protected>false</protected><shortDescription
+    >Status reversed</shortDescription><value
+    >Reversed ({0})</value></labels><labels><fullName
+    >AXF_ReconciliationReversal_scheduleLinked</fullName><language
+    >en_US</language><protected>false</protected><shortDescription
+    >Schedule linked</shortDescription><value
+    >Schedule occurrence — obligation adjustment pending (AXF-104)</value></labels><labels
+  ><fullName>AXF_ReconciliationReversal_select</fullName><language
+    >en_US</language><protected>false</protected><shortDescription
+    >Select</shortDescription><value>Reverse…</value></labels><labels><fullName
+    >AXF_ReconciliationReversal_reviewIntro</fullName><language
+    >en_US</language><protected>false</protected><shortDescription
+    >Review intro</shortDescription><value
+    >Confirm the reversal. The reason is recorded on the compensating allocation and becomes part of its fingerprint: repeating this command returns the same result; a different reason conflicts.</value></labels><labels
+  ><fullName>AXF_ReconciliationReversal_selected</fullName><language
+    >en_US</language><protected>false</protected><shortDescription
+    >Selected</shortDescription><value
+    >Selected application</value></labels><labels><fullName
+    >AXF_ReconciliationReversal_reason</fullName><language
+    >en_US</language><protected>false</protected><shortDescription
+    >Reason</shortDescription><value>Reason</value></labels><labels><fullName
+    >AXF_ReconciliationReversal_reasonPlaceholder</fullName><language
+    >en_US</language><protected>false</protected><shortDescription
+    >Reason placeholder</shortDescription><value
+    >Select a reason</value></labels><labels><fullName
+    >AXF_ReconciliationReversal_reasonUSER_ERROR</fullName><language
+    >en_US</language><protected>false</protected><shortDescription
+    >Reason user error</shortDescription><value
+    >User error</value></labels><labels><fullName
+    >AXF_ReconciliationReversal_reasonDUPLICATE_LINK</fullName><language
+    >en_US</language><protected>false</protected><shortDescription
+    >Reason duplicate</shortDescription><value
+    >Duplicate link</value></labels><labels><fullName
+    >AXF_ReconciliationReversal_reasonWRONG_TARGET</fullName><language
+    >en_US</language><protected>false</protected><shortDescription
+    >Reason wrong target</shortDescription><value
+    >Wrong forecast</value></labels><labels><fullName
+    >AXF_ReconciliationReversal_reasonSOURCE_CHANGED</fullName><language
+    >en_US</language><protected>false</protected><shortDescription
+    >Reason source changed</shortDescription><value
+    >Source changed</value></labels><labels><fullName
+    >AXF_ReconciliationReversal_reasonOTHER</fullName><language
+    >en_US</language><protected>false</protected><shortDescription
+    >Reason other</shortDescription><value>Other</value></labels><labels
+  ><fullName>AXF_ReconciliationReversal_note</fullName><language
+    >en_US</language><protected>false</protected><shortDescription
+    >Note</shortDescription><value
+    >Note (optional, up to 255 characters)</value></labels><labels><fullName
+    >AXF_ReconciliationReversal_confirm</fullName><language
+    >en_US</language><protected>false</protected><shortDescription
+    >Confirm</shortDescription><value>Confirm reversal</value></labels><labels
+  ><fullName>AXF_ReconciliationReversal_confirming</fullName><language
+    >en_US</language><protected>false</protected><shortDescription
+    >Confirming</shortDescription><value>Reversing…</value></labels><labels
+  ><fullName>AXF_ReconciliationReversal_back</fullName><language
+    >en_US</language><protected>false</protected><shortDescription
+    >Back</shortDescription><value>Back</value></labels><labels><fullName
+    >AXF_ReconciliationReversal_done</fullName><language
+    >en_US</language><protected>false</protected><shortDescription
+    >Done</shortDescription><value>Reversal recorded</value></labels><labels
+  ><fullName>AXF_ReconciliationReversal_doneReplayed</fullName><language
+    >en_US</language><protected>false</protected><shortDescription
+    >Done replayed</shortDescription><value
+    >This command had already been processed; the previous compensation was returned.</value></labels><labels
+  ><fullName>AXF_ReconciliationReversal_doneActualOnly</fullName><language
+    >en_US</language><protected>false</protected><shortDescription
+    >Done actual only</shortDescription><value
+    >Realized-only entry: no forecast debt was created by this reversal.</value></labels><labels
+  ><fullName>AXF_ReconciliationReversal_doneCompensation</fullName><language
+    >en_US</language><protected>false</protected><shortDescription
+    >Done compensation</shortDescription><value
+    >Compensating allocation</value></labels><labels><fullName
+    >AXF_ReconciliationReversal_doneOriginal</fullName><language
+    >en_US</language><protected>false</protected><shortDescription
+    >Done original</shortDescription><value
+    >Original allocation</value></labels><labels><fullName
+    >AXF_ReconciliationReversal_doneNet</fullName><language
+    >en_US</language><protected>false</protected><shortDescription
+    >Done net</shortDescription><value
+    >Plan after: realized {0}, remaining {1} ({2}). Source remaining: {3}.</value></labels><labels
+  ><fullName
+    >AXF_ReconciliationReversal_boundaryAXF104_OBLIGATION_ADJUSTMENT_PENDING</fullName><language
+    >en_US</language><protected>false</protected><shortDescription
+    >Boundary AXF-104</shortDescription><value
+    >Obligation adjustment and recurring-reference recomputation are not part of this command (AXF-104).</value></labels><labels
+  ><fullName>AXF_ReconciliationReversal_newReversal</fullName><language
+    >en_US</language><protected>false</protected><shortDescription
+    >New reversal</shortDescription><value>New reversal</value></labels><labels
+  ><fullName>AXF_ReconciliationReversal_policy</fullName><language
+    >en_US</language><protected>false</protected><shortDescription
+    >Policy</shortDescription><value>Policy</value></labels><labels><fullName
+    >AXF_ReconciliationReversal_error</fullName><language
+    >en_US</language><protected>false</protected><shortDescription
+    >Error</shortDescription><value
+    >The operation could not be completed. Nothing was saved.</value></labels><labels
+  ><fullName>AXF_ReconciliationReversal_codeUNAVAILABLE</fullName><language
+    >en_US</language><protected>false</protected><shortDescription
+    >Code unavailable</shortDescription><value
+    >Allocation, holder or source unavailable to you.</value></labels><labels
+  ><fullName>AXF_ReconciliationReversal_codeNOT_ACCESSIBLE</fullName><language
+    >en_US</language><protected>false</protected><shortDescription
+    >Code not accessible</shortDescription><value
+    >Some records are not accessible to you.</value></labels><labels><fullName
+    >AXF_ReconciliationReversal_codeINVALID_INPUT</fullName><language
+    >en_US</language><protected>false</protected><shortDescription
+    >Code invalid input</shortDescription><value
+    >The request is malformed.</value></labels><labels><fullName
+    >AXF_ReconciliationReversal_codeINVALID</fullName><language
+    >en_US</language><protected>false</protected><shortDescription
+    >Code invalid</shortDescription><value
+    >Check the note length and the operation key.</value></labels><labels
+  ><fullName>AXF_ReconciliationReversal_codeINVALID_REASON</fullName><language
+    >en_US</language><protected>false</protected><shortDescription
+    >Code invalid reason</shortDescription><value
+    >Select a valid reason.</value></labels><labels><fullName
+    >AXF_ReconciliationReversal_codeINVALID_TARGET</fullName><language
+    >en_US</language><protected>false</protected><shortDescription
+    >Code invalid target</shortDescription><value
+    >Only confirmed applications can be reversed.</value></labels><labels
+  ><fullName>AXF_ReconciliationReversal_codeALREADY_REVERSED</fullName><language
+    >en_US</language><protected>false</protected><shortDescription
+    >Code already reversed</shortDescription><value
+    >This allocation was already reversed by another command; the prior compensation stands.</value></labels><labels
+  ><fullName>AXF_ReconciliationReversal_codeCONFLICT</fullName><language
+    >en_US</language><protected>false</protected><shortDescription
+    >Code conflict</shortDescription><value
+    >The plan changed since you loaded it, or this key was used with different data. Reload and review.</value></labels><labels
+  ><fullName
+    >AXF_ReconciliationReversal_codeREPORTING_CURRENCY_REQUIRED</fullName><language
+    >en_US</language><protected>false</protected><shortDescription
+    >Code reporting currency</shortDescription><value
+    >Set the reporting currency first.</value></labels><labels><fullName
+    >AXF_ReconciliationReversal_kindBANK</fullName><language
+    >en_US</language><protected>false</protected><shortDescription
+    >Kind bank</shortDescription><value>Bank account</value></labels><labels
+  ><fullName>AXF_ReconciliationReversal_kindCARD</fullName><language
+    >en_US</language><protected>false</protected><shortDescription
+    >Kind card</shortDescription><value>Credit card</value></labels><labels
+  ><fullName>AXF_ReconciliationReversal_kindCASH</fullName><language
+    >en_US</language><protected>false</protected><shortDescription
+    >Kind cash</shortDescription><value>Cash</value></labels><labels><fullName
+    >AXF_ReconciliationReversal_doneRealized</fullName><language
+    >en_US</language><protected>false</protected><shortDescription
+    >Done realized</shortDescription><value
+    >Plan realized after:</value></labels><labels><fullName
+    >AXF_ReconciliationReversal_doneRemaining</fullName><language
+    >en_US</language><protected>false</protected><shortDescription
+    >Done remaining</shortDescription><value>remaining</value></labels><labels
+  ><fullName>AXF_ReconciliationReversal_doneSourceRemaining</fullName><language
+    >en_US</language><protected>false</protected><shortDescription
+    >Done source remaining</shortDescription><value
+    >source remaining (visible effects)</value></labels><labels><fullName
+    >AXF_ReconciliationReversal_doneSourceUnknown</fullName><language
+    >en_US</language><protected>false</protected><shortDescription
+    >Done source unknown</shortDescription><value
+    >source remaining not verifiable with your access</value></labels></CustomLabels>

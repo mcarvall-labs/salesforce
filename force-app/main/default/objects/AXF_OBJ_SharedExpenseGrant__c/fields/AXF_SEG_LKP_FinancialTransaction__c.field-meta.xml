@@ -1,0 +1,13 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<CustomField xmlns="http://soap.sforce.com/2006/04/metadata">
+    <fullName>AXF_SEG_LKP_FinancialTransaction__c</fullName>
+    <label>Lancamento Financeiro</label>
+    <type>Lookup</type>
+    <referenceTo>AXF_OBJ_FinancialTransaction__c</referenceTo>
+    <relationshipName>AXF_REL_SharedExpenseGrants</relationshipName>
+    <relationshipLabel>Colaboracoes</relationshipLabel>
+    <deleteConstraint>Restrict</deleteConstraint>
+    <required>true</required>
+    <description
+  >Despesa compartilhada (lancamento previsto do titular).</description>
+</CustomField>

@@ -1,0 +1,1241 @@
+/**
+ * @description AXF-134: basic link flow from an imported bank/card fact to a planned financial
+ * transaction. Selects eligible sources (BANK/CARD, POSTED, AVAILABLE parent, authorized holder,
+ * no OPEN review), suggests persisted and virtual forecast candidates in a deterministic order
+ * without any undocumented amount/date tolerance, and confirms the link through the AXF-25
+ * realization contract (typed allocation, idempotent operation key, CONFLICT on divergence).
+ * The source fact is never copied or altered; only its optimistic version is bumped by AXF-25.
+ * AXF-139: every candidate carries independent observable evidence (ALT_CLS_MatchEvidence,
+ * AXF-MATCHING@1.0.0), stays CONSULTATIVE, and is ordered by the policy's presentation order.
+ */
+public with sharing class ALT_CLS_SourceLinkService {
+  public static final String POLICY_VERSION = 'AXF-SOURCE-LINK@1.0.0';
+  public static final String CP_LINK = 'AXF_CanLinkSource';
+  public static final String KIND_BANK = 'BANK';
+  public static final String KIND_CARD = 'CARD';
+  public static final Integer DEFAULT_PAGE = 25;
+  public static final Integer MAX_PAGE = 50;
+  /** Rows scanned per candidate query before in-memory exclusion of realized/cancelled targets. */
+  public static final Integer MAX_SCAN = 200;
+  public static final Integer MAX_SCHEDULES = 12;
+  public static final Integer MAX_VIRTUAL = 60;
+  /** Highest page a caller may ask for; beyond it the scan itself is the limit. */
+  public static final Integer MAX_PAGE_NUMBER = 1000;
+  /** Allocation rows read per verification; reaching it means the net cannot be trusted. */
+  public static final Integer MAX_ALLOCATION_ROWS = 2000;
+  private static final Set<String> KINDS = new Set<String>{
+    KIND_BANK,
+    KIND_CARD
+  };
+  private static final Set<String> DIRECTIONS = new Set<String>{
+    'DEBIT',
+    'CREDIT'
+  };
+  private static final Set<String> SOURCES = new Set<String>{
+    'PLUGGY',
+    'CSV',
+    'MANUAL'
+  };
+  @TestVisible
+  private static Date todayOverride;
+
+  public class SourceLinkException extends Exception {
+  }
+
+  public class SourceView {
+    @AuraEnabled
+    public Id sourceId;
+    @AuraEnabled
+    public String sourceKind;
+    @AuraEnabled
+    public Id accountId;
+    @AuraEnabled
+    public Id fundingId;
+    @AuraEnabled
+    public String fundingLabel;
+    @AuraEnabled
+    public String origin;
+    @AuraEnabled
+    public Decimal amount;
+    @AuraEnabled
+    public Decimal residual;
+    @AuraEnabled
+    public String currencyIso;
+    @AuraEnabled
+    public String direction;
+    @AuraEnabled
+    public Date factDate;
+    @AuraEnabled
+    public String description;
+    @AuraEnabled
+    public String category;
+    /** Provider key: used server-side for the EXTERNAL_IDENTITY feature, never sent to the client. */
+    public transient String sourceKey;
+    @AuraEnabled
+    public Decimal version;
+    @AuraEnabled
+    public Boolean eligible = false;
+    @AuraEnabled
+    public List<String> reasons = new List<String>();
+  }
+
+  public class CandidateView {
+    @AuraEnabled
+    public Id targetId;
+    @AuraEnabled
+    public Id scheduleId;
+    @AuraEnabled
+    public Integer sequence;
+    @AuraEnabled
+    public Boolean persisted = false;
+    @AuraEnabled
+    public Decimal amount;
+    @AuraEnabled
+    public Decimal residual;
+    @AuraEnabled
+    public String currencyIso;
+    @AuraEnabled
+    public String direction;
+    @AuraEnabled
+    public Date dueDate;
+    @AuraEnabled
+    public String description;
+    @AuraEnabled
+    public String category;
+    @AuraEnabled
+    public String status;
+    @AuraEnabled
+    public Decimal version;
+    @AuraEnabled
+    public Boolean linkable = false;
+    @AuraEnabled
+    public List<String> reasons = new List<String>();
+    /** AXF-139: consultative state, independent evidence, explicit tie / low-evidence flags. */
+    @AuraEnabled
+    public String state = ALT_CLS_MatchEvidence.STATE_CONSULTATIVE;
+    @AuraEnabled
+    public List<ALT_CLS_MatchEvidence.EvidenceView> evidence = new List<ALT_CLS_MatchEvidence.EvidenceView>();
+    @AuraEnabled
+    public Boolean tied = false;
+    @AuraEnabled
+    public Boolean lowEvidence = false;
+    public Id fundingId;
+    public Id holderId;
+    public transient String signature;
+  }
+
+  public class SourceQuery {
+    public Id accountId;
+    public String sourceKind;
+    public String term;
+    public Integer pageNumber;
+    public Integer pageSize;
+  }
+
+  public class CandidateQuery {
+    public Id sourceId;
+    public String sourceKind;
+    public String term;
+    public Integer pageNumber;
+    public Integer pageSize;
+  }
+
+  public class SourcePage {
+    @AuraEnabled
+    public String policyVersion = POLICY_VERSION;
+    @AuraEnabled
+    public Integer pageNumber;
+    @AuraEnabled
+    public Integer pageSize;
+    @AuraEnabled
+    public Boolean hasMore = false;
+    @AuraEnabled
+    public Integer scannedCount = 0;
+    @AuraEnabled
+    public Integer excludedCount = 0;
+    /** True when a kind had more rows than MAX_SCAN inside the window; narrow the search. */
+    @AuraEnabled
+    public Boolean scanTruncated = false;
+    @AuraEnabled
+    public Integer maxScan = MAX_SCAN;
+    @AuraEnabled
+    public List<SourceView> items = new List<SourceView>();
+  }
+
+  public class CandidatePage {
+    @AuraEnabled
+    public String policyVersion = POLICY_VERSION;
+    @AuraEnabled
+    public String matchingPolicy = ALT_CLS_MatchEvidence.MATCHING_POLICY;
+    @AuraEnabled
+    public String state = ALT_CLS_MatchEvidence.STATE_CONSULTATIVE;
+    @AuraEnabled
+    public Datetime evidenceCutoff;
+    @AuraEnabled
+    public Integer tieCount = 0;
+    @AuraEnabled
+    public Integer lowEvidenceCount = 0;
+    @AuraEnabled
+    public SourceView source;
+    @AuraEnabled
+    public Decimal suggestedAmount;
+    @AuraEnabled
+    public Date suggestedDate;
+    @AuraEnabled
+    public Integer pageNumber;
+    @AuraEnabled
+    public Integer pageSize;
+    @AuraEnabled
+    public Boolean hasMore = false;
+    @AuraEnabled
+    public Boolean scanTruncated = false;
+    @AuraEnabled
+    public Integer maxScan = MAX_SCAN;
+    @AuraEnabled
+    public Integer excludedCount = 0;
+    @AuraEnabled
+    public Integer virtualCount = 0;
+    @AuraEnabled
+    public List<CandidateView> items = new List<CandidateView>();
+  }
+
+  public class ConfirmInput {
+    public Id sourceId;
+    public String sourceKind;
+    public Decimal sourceVersion;
+    public Id targetId;
+    public Decimal targetVersion;
+    public Decimal amount;
+    public Date recognitionDate;
+    /** Explicit review acknowledgement, required whenever amount/date differ from the suggestion. */
+    public Boolean changesReviewed;
+    public String operationKey;
+  }
+
+  public class ConfirmResult {
+    @AuraEnabled
+    public String policyVersion = POLICY_VERSION;
+    @AuraEnabled
+    public Id allocationId;
+    @AuraEnabled
+    public Id targetId;
+    @AuraEnabled
+    public Boolean replayed = false;
+    @AuraEnabled
+    public Boolean createdActualOnly = false;
+    @AuraEnabled
+    public Decimal amount;
+    @AuraEnabled
+    public String currencyIso;
+  }
+
+  /** @description Capability plus the AXF-25 realization capability; neither grants record access. */
+  public static void requireAccess() {
+    if (
+      !FeatureManagement.checkPermission(CP_LINK) ||
+      !FeatureManagement.checkPermission('AXF_CanRealize')
+    ) {
+      throw new SourceLinkException('UNAVAILABLE');
+    }
+  }
+
+  private static void check(Boolean valid, String code) {
+    if (!valid) {
+      throw new SourceLinkException(code);
+    }
+  }
+
+  private static Date today() {
+    return todayOverride == null ? Date.today() : todayOverride;
+  }
+
+  private static Integer pageSize(Integer requested) {
+    return requested == null ||
+      requested < 1
+      ? DEFAULT_PAGE
+      : Math.min(requested, MAX_PAGE);
+  }
+
+  private static Integer pageNumber(Integer requested) {
+    check(requested == null || requested <= MAX_PAGE_NUMBER, 'INVALID');
+    return requested == null || requested < 1 ? 1 : requested;
+  }
+
+  /** Authorized holders are resolved once per request; the context service is the authority. */
+  private Set<Id> authorizedCache;
+  private Set<Id> authorizedAccounts() {
+    if (authorizedCache == null) {
+      authorizedCache = new Set<Id>();
+      for (
+        AXF_CLS_AuthorizedContextService.ContextView context : AXF_CLS_AuthorizedContextService.listAuthorizedContexts()
+      ) {
+        authorizedCache.add(context.accountId);
+      }
+    }
+    return authorizedCache;
+  }
+
+  // ---------------------------------------------------------------- sources
+
+  /** @description Lists eligible facts of one authorized holder; ineligible rows are counted, never shown. */
+  public SourcePage listSources(SourceQuery query) {
+    requireAccess();
+    check(query != null && query.accountId != null, 'INVALID');
+    check(
+      query.sourceKind == null || KINDS.contains(query.sourceKind),
+      'INVALID_SOURCE'
+    );
+    SourcePage result = new SourcePage();
+    result.pageNumber = pageNumber(query.pageNumber);
+    result.pageSize = pageSize(query.pageSize);
+    // Holder existence is disclosed only through the authorized context list.
+    check(authorizedAccounts().contains(query.accountId), 'UNAVAILABLE');
+    List<SourceView> views = new List<SourceView>();
+    if (query.sourceKind == null || query.sourceKind == KIND_BANK) {
+      views.addAll(truncate(bankSources(query.accountId, query.term), result));
+    }
+    if (query.sourceKind == null || query.sourceKind == KIND_CARD) {
+      views.addAll(truncate(cardSources(query.accountId, query.term), result));
+    }
+    evaluate(views);
+    List<SourceView> eligible = new List<SourceView>();
+    for (SourceView view : views) {
+      result.scannedCount++;
+      if (view.eligible) {
+        eligible.add(view);
+      } else {
+        result.excludedCount++;
+      }
+    }
+    // Deterministic: date, amount, kind, id; independent of query interleaving.
+    List<SourceKey> keys = new List<SourceKey>();
+    for (SourceView view : eligible) {
+      keys.add(new SourceKey(view));
+    }
+    keys.sort();
+    Integer skip = (result.pageNumber - 1) * result.pageSize;
+    for (Integer i = skip; i < keys.size() && i < skip + result.pageSize; i++) {
+      result.items.add(keys[i].view);
+    }
+    result.hasMore = keys.size() > skip + result.pageSize;
+    return result;
+  }
+
+  /** Each kind is read with a sentinel row; more than MAX_SCAN is reported, never hidden. */
+  private static List<SourceView> truncate(
+    List<SourceView> views,
+    SourcePage page
+  ) {
+    if (views.size() > MAX_SCAN) {
+      page.scanTruncated = true;
+      views.remove(views.size() - 1);
+    }
+    return views;
+  }
+
+  private class SourceKey implements Comparable {
+    public SourceView view;
+    public SourceKey(SourceView view) {
+      this.view = view;
+    }
+    public Integer compareTo(Object other) {
+      SourceView b = ((SourceKey) other).view;
+      if (view.factDate != b.factDate) {
+        return view.factDate > b.factDate ? -1 : 1;
+      }
+      if (view.amount != b.amount) {
+        return view.amount < b.amount ? -1 : 1;
+      }
+      if (view.sourceKind != b.sourceKind) {
+        return view.sourceKind < b.sourceKind ? -1 : 1;
+      }
+      return String.valueOf(view.sourceId)
+        .compareTo(String.valueOf(b.sourceId));
+    }
+  }
+
+  private static String pattern(String term) {
+    // Bound values treat escaped wildcards literally; the search never reaches the SOQL text.
+    return ('%' +
+    term.trim().replace('\\', '\\\\').replace('%', '\\%').replace('_', '\\_') +
+    '%');
+  }
+
+  private List<SourceView> bankSources(Id accountId, String term) {
+    Date floor = today().addYears(-1);
+    String soql =
+      'SELECT Id, AXF_BAT_MDR_BankAccount__c, AXF_BAT_NUM_Magnitude__c, AXF_BAT_TXT_CurrencyIsoCode__c,' +
+      ' AXF_BAT_PKL_Direction__c, AXF_BAT_DAT_Date__c, AXF_BAT_TXT_Description__c, AXF_BAT_PKL_Source__c,' +
+      ' AXF_BAT_TXT_ProviderCategory__c, AXF_BAT_EXI_SourceKey__c,' +
+      ' AXF_BAT_PKL_Status__c, AXF_BAT_NUM_Version__c, AXF_BAT_MDR_BankAccount__r.AXF_BA_LKP_Account__c,' +
+      ' AXF_BAT_MDR_BankAccount__r.AXF_BA_PKL_AvailabilityState__c, AXF_BAT_MDR_BankAccount__r.AXF_BA_TXT_InstitutionName__c,' +
+      ' AXF_BAT_MDR_BankAccount__r.AXF_BA_TXT_NumberMasked__c' +
+      ' FROM AXF_OBJ_BankAccountTransaction__c' +
+      ' WHERE AXF_BAT_MDR_BankAccount__r.AXF_BA_LKP_Account__c = :accountId' +
+      ' AND AXF_BAT_PKL_Status__c = \'POSTED\' AND AXF_BAT_DAT_Date__c >= :floor' +
+      (String.isBlank(term)
+        ? ''
+        : ' AND AXF_BAT_TXT_Description__c LIKE :pattern') +
+      ' ORDER BY AXF_BAT_DAT_Date__c DESC, AXF_BAT_NUM_Magnitude__c ASC, Id ASC LIMIT :scan';
+    List<SourceView> result = new List<SourceView>();
+    for (
+      SObject row : Database.queryWithBinds(
+        soql,
+        new Map<String, Object>{
+          'accountId' => accountId,
+          'floor' => floor,
+          'pattern' => String.isBlank(term) ? null : pattern(term),
+          'scan' => MAX_SCAN + 1
+        },
+        AccessLevel.USER_MODE
+      )
+    ) {
+      result.add(view((AXF_OBJ_BankAccountTransaction__c) row));
+    }
+    return result;
+  }
+
+  private List<SourceView> cardSources(Id accountId, String term) {
+    Date floor = today().addYears(-1);
+    String soql =
+      'SELECT Id, AXF_CCT_MDR_CreditCard__c, AXF_CCT_NUM_Magnitude__c, AXF_CCT_TXT_CurrencyIsoCode__c,' +
+      ' AXF_CCT_PKL_Direction__c, AXF_CCT_DAT_Date__c, AXF_CCT_TXT_Description__c, AXF_CCT_PKL_Source__c,' +
+      ' AXF_CCT_TXT_ProviderCategory__c, AXF_CCT_EXI_SourceKey__c,' +
+      ' AXF_CCT_PKL_Status__c, AXF_CCT_NUM_Version__c, AXF_CCT_MDR_CreditCard__r.AXF_CC_LKP_Account__c,' +
+      ' AXF_CCT_MDR_CreditCard__r.AXF_CC_PKL_AvailabilityState__c, AXF_CCT_MDR_CreditCard__r.AXF_CC_TXT_InstitutionName__c,' +
+      ' AXF_CCT_MDR_CreditCard__r.AXF_CC_TXT_LastFourMasked__c' +
+      ' FROM AXF_OBJ_CreditCardTransaction__c' +
+      ' WHERE AXF_CCT_MDR_CreditCard__r.AXF_CC_LKP_Account__c = :accountId' +
+      ' AND AXF_CCT_PKL_Status__c = \'POSTED\' AND AXF_CCT_DAT_Date__c >= :floor' +
+      (String.isBlank(term)
+        ? ''
+        : ' AND AXF_CCT_TXT_Description__c LIKE :pattern') +
+      ' ORDER BY AXF_CCT_DAT_Date__c DESC, AXF_CCT_NUM_Magnitude__c ASC, Id ASC LIMIT :scan';
+    List<SourceView> result = new List<SourceView>();
+    for (
+      SObject row : Database.queryWithBinds(
+        soql,
+        new Map<String, Object>{
+          'accountId' => accountId,
+          'floor' => floor,
+          'pattern' => String.isBlank(term) ? null : pattern(term),
+          'scan' => MAX_SCAN + 1
+        },
+        AccessLevel.USER_MODE
+      )
+    ) {
+      result.add(view((AXF_OBJ_CreditCardTransaction__c) row));
+    }
+    return result;
+  }
+
+  private static SourceView view(AXF_OBJ_BankAccountTransaction__c row) {
+    SourceView v = new SourceView();
+    v.sourceId = row.Id;
+    v.sourceKind = KIND_BANK;
+    v.fundingId = row.AXF_BAT_MDR_BankAccount__c;
+    v.accountId = row.AXF_BAT_MDR_BankAccount__r?.AXF_BA_LKP_Account__c;
+    v.fundingLabel = label(
+      row.AXF_BAT_MDR_BankAccount__r?.AXF_BA_TXT_InstitutionName__c,
+      row.AXF_BAT_MDR_BankAccount__r?.AXF_BA_TXT_NumberMasked__c
+    );
+    v.origin = row.AXF_BAT_PKL_Source__c;
+    v.amount = row.AXF_BAT_NUM_Magnitude__c;
+    v.currencyIso = row.AXF_BAT_TXT_CurrencyIsoCode__c;
+    v.direction = row.AXF_BAT_PKL_Direction__c;
+    v.factDate = row.AXF_BAT_DAT_Date__c;
+    v.description = row.AXF_BAT_TXT_Description__c;
+    v.category = row.AXF_BAT_TXT_ProviderCategory__c;
+    v.sourceKey = row.AXF_BAT_EXI_SourceKey__c;
+    v.version = row.AXF_BAT_NUM_Version__c == null
+      ? 0
+      : row.AXF_BAT_NUM_Version__c;
+    if (row.AXF_BAT_PKL_Status__c != 'POSTED') {
+      v.reasons.add('NOT_POSTED');
+    }
+    if (
+      row.AXF_BAT_MDR_BankAccount__r?.AXF_BA_PKL_AvailabilityState__c !=
+      'AVAILABLE'
+    ) {
+      v.reasons.add('FUNDING_NOT_AVAILABLE');
+    }
+    return v;
+  }
+
+  private static SourceView view(AXF_OBJ_CreditCardTransaction__c row) {
+    SourceView v = new SourceView();
+    v.sourceId = row.Id;
+    v.sourceKind = KIND_CARD;
+    v.fundingId = row.AXF_CCT_MDR_CreditCard__c;
+    v.accountId = row.AXF_CCT_MDR_CreditCard__r?.AXF_CC_LKP_Account__c;
+    v.fundingLabel = label(
+      row.AXF_CCT_MDR_CreditCard__r?.AXF_CC_TXT_InstitutionName__c,
+      row.AXF_CCT_MDR_CreditCard__r?.AXF_CC_TXT_LastFourMasked__c
+    );
+    v.origin = row.AXF_CCT_PKL_Source__c;
+    v.amount = row.AXF_CCT_NUM_Magnitude__c;
+    v.currencyIso = row.AXF_CCT_TXT_CurrencyIsoCode__c;
+    v.direction = row.AXF_CCT_PKL_Direction__c;
+    v.factDate = row.AXF_CCT_DAT_Date__c;
+    v.description = row.AXF_CCT_TXT_Description__c;
+    v.category = row.AXF_CCT_TXT_ProviderCategory__c;
+    v.sourceKey = row.AXF_CCT_EXI_SourceKey__c;
+    v.version = row.AXF_CCT_NUM_Version__c == null
+      ? 0
+      : row.AXF_CCT_NUM_Version__c;
+    if (row.AXF_CCT_PKL_Status__c != 'POSTED') {
+      v.reasons.add('NOT_POSTED');
+    }
+    if (
+      row.AXF_CCT_MDR_CreditCard__r?.AXF_CC_PKL_AvailabilityState__c !=
+      'AVAILABLE'
+    ) {
+      v.reasons.add('FUNDING_NOT_AVAILABLE');
+    }
+    return v;
+  }
+
+  private static String label(String institution, String masked) {
+    String result = String.isBlank(institution) ? '' : institution.trim();
+    if (!String.isBlank(masked)) {
+      result += (result == '' ? '' : ' ') + masked.trim();
+    }
+    return result;
+  }
+
+  /** Completes eligibility: holder authorization, fact data, open reviews and residual capacity. */
+  private void evaluate(List<SourceView> views) {
+    if (views.isEmpty()) {
+      return;
+    }
+    Set<Id> authorized = authorizedAccounts();
+    Set<Id> ids = new Set<Id>();
+    for (SourceView v : views) {
+      ids.add(v.sourceId);
+    }
+    Set<Id> reviewed = new Conservation().openReviews(ids);
+    Map<Id, Decimal> nets = new Map<Id, Decimal>();
+    Set<Id> unverified = new Set<Id>();
+    netBySource(ids, nets, unverified);
+    for (SourceView v : views) {
+      if (v.accountId == null || !authorized.contains(v.accountId)) {
+        v.reasons.add('NOT_AUTHORIZED');
+      }
+      if (
+        v.origin == null ||
+        !SOURCES.contains(v.origin) ||
+        v.amount == null ||
+        v.amount <= 0 ||
+        v.factDate == null ||
+        v.currencyIso == null ||
+        !Pattern.matches('[A-Z]{3}', v.currencyIso) ||
+        !DIRECTIONS.contains(v.direction)
+      ) {
+        v.reasons.add('INVALID_SOURCE_DATA');
+      }
+      if (reviewed.contains(v.sourceId)) {
+        v.reasons.add('REVIEW_OPEN');
+      }
+      if (unverified.contains(v.sourceId)) {
+        v.reasons.add('ALLOCATIONS_UNVERIFIED');
+        v.residual = null;
+      } else if (v.amount != null) {
+        Decimal net = nets.containsKey(v.sourceId) ? nets.get(v.sourceId) : 0;
+        v.residual = v.amount - net;
+        if (v.residual <= 0) {
+          v.reasons.add('SOURCE_EXHAUSTED');
+        }
+      }
+      v.eligible = v.reasons.isEmpty();
+    }
+  }
+
+  /** User-visible net per source; a source whose allocation count differs from the private count is unverified. */
+  private void netBySource(
+    Set<Id> ids,
+    Map<Id, Decimal> nets,
+    Set<Id> unverified
+  ) {
+    Map<Id, Integer> visibleCounts = new Map<Id, Integer>();
+    List<AXF_OBJ_ReconciliationAllocation__c> visibleRows = [
+      SELECT
+        AXF_RA_LKP_BankTransaction__c,
+        AXF_RA_LKP_CardTransaction__c,
+        AXF_RA_PKL_Kind__c,
+        AXF_RA_NUM_Magnitude__c
+      FROM AXF_OBJ_ReconciliationAllocation__c
+      WHERE
+        AXF_RA_LKP_BankTransaction__c IN :ids
+        OR AXF_RA_LKP_CardTransaction__c IN :ids
+      WITH USER_MODE
+      LIMIT :MAX_ALLOCATION_ROWS
+    ];
+    Map<Id, Integer> privateCounts = new Conservation().countBySource(ids);
+    if (visibleRows.size() >= MAX_ALLOCATION_ROWS || privateCounts == null) {
+      // A truncated read can coincide by accident: everything scanned is unverified.
+      unverified.addAll(ids);
+      return;
+    }
+    for (AXF_OBJ_ReconciliationAllocation__c row : visibleRows) {
+      Id key = row.AXF_RA_LKP_BankTransaction__c != null
+        ? row.AXF_RA_LKP_BankTransaction__c
+        : row.AXF_RA_LKP_CardTransaction__c;
+      Decimal sign = row.AXF_RA_PKL_Kind__c == 'REVERSAL' ? -1 : 1;
+      nets.put(
+        key,
+        (nets.containsKey(key) ? nets.get(key) : 0) +
+        sign * row.AXF_RA_NUM_Magnitude__c
+      );
+      visibleCounts.put(
+        key,
+        (visibleCounts.containsKey(key) ? visibleCounts.get(key) : 0) + 1
+      );
+    }
+    for (Id id : ids) {
+      Integer visible = visibleCounts.containsKey(id)
+        ? visibleCounts.get(id)
+        : 0;
+      Integer total = privateCounts.containsKey(id) ? privateCounts.get(id) : 0;
+      if (visible != total) {
+        unverified.add(id);
+      }
+    }
+  }
+
+  /** @description Reads and evaluates one fact; unauthorized or missing facts are indistinguishable. */
+  public SourceView readSource(Id sourceId, String sourceKind) {
+    requireAccess();
+    check(sourceId != null && KINDS.contains(sourceKind), 'INVALID_SOURCE');
+    List<SourceView> views = new List<SourceView>();
+    if (sourceKind == KIND_BANK) {
+      for (AXF_OBJ_BankAccountTransaction__c row : [
+        SELECT
+          Id,
+          AXF_BAT_MDR_BankAccount__c,
+          AXF_BAT_NUM_Magnitude__c,
+          AXF_BAT_TXT_CurrencyIsoCode__c,
+          AXF_BAT_PKL_Direction__c,
+          AXF_BAT_DAT_Date__c,
+          AXF_BAT_TXT_Description__c,
+          AXF_BAT_PKL_Source__c,
+          AXF_BAT_TXT_ProviderCategory__c,
+          AXF_BAT_EXI_SourceKey__c,
+          AXF_BAT_PKL_Status__c,
+          AXF_BAT_NUM_Version__c,
+          AXF_BAT_MDR_BankAccount__r.AXF_BA_LKP_Account__c,
+          AXF_BAT_MDR_BankAccount__r.AXF_BA_PKL_AvailabilityState__c,
+          AXF_BAT_MDR_BankAccount__r.AXF_BA_TXT_InstitutionName__c,
+          AXF_BAT_MDR_BankAccount__r.AXF_BA_TXT_NumberMasked__c
+        FROM AXF_OBJ_BankAccountTransaction__c
+        WHERE Id = :sourceId
+        WITH USER_MODE
+      ]) {
+        views.add(view(row));
+      }
+    } else {
+      for (AXF_OBJ_CreditCardTransaction__c row : [
+        SELECT
+          Id,
+          AXF_CCT_MDR_CreditCard__c,
+          AXF_CCT_NUM_Magnitude__c,
+          AXF_CCT_TXT_CurrencyIsoCode__c,
+          AXF_CCT_PKL_Direction__c,
+          AXF_CCT_DAT_Date__c,
+          AXF_CCT_TXT_Description__c,
+          AXF_CCT_PKL_Source__c,
+          AXF_CCT_TXT_ProviderCategory__c,
+          AXF_CCT_EXI_SourceKey__c,
+          AXF_CCT_PKL_Status__c,
+          AXF_CCT_NUM_Version__c,
+          AXF_CCT_MDR_CreditCard__r.AXF_CC_LKP_Account__c,
+          AXF_CCT_MDR_CreditCard__r.AXF_CC_PKL_AvailabilityState__c,
+          AXF_CCT_MDR_CreditCard__r.AXF_CC_TXT_InstitutionName__c,
+          AXF_CCT_MDR_CreditCard__r.AXF_CC_TXT_LastFourMasked__c
+        FROM AXF_OBJ_CreditCardTransaction__c
+        WHERE Id = :sourceId
+        WITH USER_MODE
+      ]) {
+        views.add(view(row));
+      }
+    }
+    check(views.size() == 1, 'UNAVAILABLE');
+    evaluate(views);
+    check(!views[0].reasons.contains('NOT_AUTHORIZED'), 'UNAVAILABLE');
+    return views[0];
+  }
+
+  // ------------------------------------------------------------- candidates
+
+  /** @description Persisted forecasts (linkable) and virtual projection lines (materialization pending, AXF-136). */
+  public CandidatePage listCandidates(CandidateQuery query) {
+    requireAccess();
+    check(query != null, 'INVALID');
+    CandidatePage result = new CandidatePage();
+    result.pageNumber = pageNumber(query.pageNumber);
+    result.pageSize = pageSize(query.pageSize);
+    result.source = readSource(query.sourceId, query.sourceKind);
+    result.suggestedDate = result.source.factDate;
+    List<CandidateView> all = new List<CandidateView>();
+    if (result.source.eligible) {
+      all.addAll(persistedCandidates(result.source, query.term, result));
+      all.addAll(virtualCandidates(result.source, query.term, result));
+    }
+    result.evidenceCutoff = System.now();
+    List<ALT_CLS_MatchEvidence.OrderKey> keys = new List<ALT_CLS_MatchEvidence.OrderKey>();
+    Map<String, Integer> signatures = new Map<String, Integer>();
+    for (CandidateView c : all) {
+      c.evidence = ALT_CLS_MatchEvidence.evaluate(side(result.source), side(c));
+      c.lowEvidence = ALT_CLS_MatchEvidence.lowEvidence(c.evidence);
+      c.signature = ALT_CLS_MatchEvidence.signature(c.evidence);
+      signatures.put(
+        c.signature,
+        (signatures.containsKey(c.signature)
+          ? signatures.get(c.signature)
+          : 0) + 1
+      );
+      keys.add(
+        new ALT_CLS_MatchEvidence.OrderKey(
+          c.evidence,
+          c.persisted ? 0 : 1,
+          c.persisted
+            ? String.valueOf(c.targetId)
+            : String.valueOf(c.scheduleId) +
+              '#' +
+              String.valueOf(c.sequence == null ? 0 : c.sequence)
+                .leftPad(6, '0'),
+          c
+        )
+      );
+    }
+    for (CandidateView c : all) {
+      // A tie is explicit: identical evidence (relations and exact deltas) on every
+      // feature never selects a winner.
+      c.tied = signatures.get(c.signature) > 1;
+      if (c.tied) {
+        result.tieCount++;
+      }
+      if (c.lowEvidence) {
+        result.lowEvidenceCount++;
+      }
+    }
+    keys.sort();
+    Integer skip = (result.pageNumber - 1) * result.pageSize;
+    for (Integer i = skip; i < keys.size() && i < skip + result.pageSize; i++) {
+      result.items.add((CandidateView) keys[i].payload);
+    }
+    result.hasMore = keys.size() > skip + result.pageSize;
+    result.suggestedAmount = result.source.eligible
+      ? result.source.residual
+      : null;
+    return result;
+  }
+
+  private static ALT_CLS_MatchEvidence.Side side(SourceView source) {
+    ALT_CLS_MatchEvidence.Side result = new ALT_CLS_MatchEvidence.Side();
+    // The fact's own identity: origin + provider key. Forecasts carry no external identity in v1.
+    result.externalIdentity = source.sourceKey == null
+      ? null
+      : source.origin + ':' + source.sourceKey;
+    result.sourceIdentity = source.fundingId;
+    result.holderId = source.accountId;
+    result.currencyIso = source.currencyIso;
+    result.amount = source.amount;
+    result.residual = source.residual;
+    result.onDate = source.factDate;
+    result.description = source.description;
+    result.category = source.category;
+    return result;
+  }
+
+  private static ALT_CLS_MatchEvidence.Side side(CandidateView candidate) {
+    ALT_CLS_MatchEvidence.Side result = new ALT_CLS_MatchEvidence.Side();
+    result.sourceIdentity = candidate.fundingId;
+    result.holderId = candidate.holderId;
+    result.currencyIso = candidate.currencyIso;
+    result.amount = candidate.amount;
+    result.residual = candidate.residual;
+    result.onDate = candidate.dueDate;
+    result.description = candidate.description;
+    result.category = candidate.category;
+    return result;
+  }
+
+  private static String fundingField(String kind) {
+    return kind == KIND_BANK
+      ? 'AXF_FTX_LKP_BankAccount__c'
+      : 'AXF_FTX_LKP_CreditCard__c';
+  }
+
+  private static String otherFundingField(String kind) {
+    return kind == KIND_BANK
+      ? 'AXF_FTX_LKP_CreditCard__c'
+      : 'AXF_FTX_LKP_BankAccount__c';
+  }
+
+  private List<CandidateView> persistedCandidates(
+    SourceView source,
+    String term,
+    CandidatePage page
+  ) {
+    String soql =
+      'SELECT Id, AXF_FTX_NUM_Magnitude__c, AXF_FTX_TXT_CurrencyIsoCode__c, AXF_FTX_PKL_Direction__c,' +
+      ' AXF_FTX_DAT_DueDate__c, AXF_FTX_DAT_PurchaseDate__c, AXF_FTX_TXT_Description__c, AXF_FTX_TXT_UserCategory__c,' +
+      ' AXF_FTX_PKL_Status__c, AXF_FTX_NUM_Version__c, AXF_FTX_PKL_ScheduleState__c, AXF_FTX_LKP_Schedule__c,' +
+      ' AXF_FTX_NUM_Sequence__c, AXF_FTX_LKP_BankAccount__c, AXF_FTX_LKP_CreditCard__c, AXF_FTX_LKP_Account__c' +
+      ' FROM AXF_OBJ_FinancialTransaction__c' +
+      ' WHERE AXF_FTX_LKP_Account__c = :accountId AND AXF_FTX_PKL_PlanKind__c = \'PLANNED\'' +
+      ' AND AXF_FTX_TXT_CurrencyIsoCode__c = :iso AND AXF_FTX_PKL_Direction__c = :direction' +
+      ' AND (AXF_FTX_PKL_ScheduleState__c = NULL OR AXF_FTX_PKL_ScheduleState__c != \'CANCELLED\')' +
+      ' AND (' +
+      fundingField(source.sourceKind) +
+      ' = NULL OR ' +
+      fundingField(source.sourceKind) +
+      ' = :fundingId) AND ' +
+      otherFundingField(source.sourceKind) +
+      ' = NULL' +
+      (String.isBlank(term)
+        ? ''
+        : ' AND AXF_FTX_TXT_Description__c LIKE :pattern') +
+      ' ORDER BY AXF_FTX_DAT_DueDate__c ASC NULLS LAST, AXF_FTX_DAT_PurchaseDate__c ASC, AXF_FTX_NUM_Magnitude__c ASC, Id ASC' +
+      ' LIMIT :scan';
+    List<AXF_OBJ_FinancialTransaction__c> rows = (List<AXF_OBJ_FinancialTransaction__c>) Database.queryWithBinds(
+      soql,
+      new Map<String, Object>{
+        'accountId' => source.accountId,
+        'iso' => source.currencyIso,
+        'direction' => source.direction,
+        'fundingId' => source.fundingId,
+        'pattern' => String.isBlank(term) ? null : pattern(term),
+        'scan' => MAX_SCAN + 1
+      },
+      AccessLevel.USER_MODE
+    );
+    if (rows.size() > MAX_SCAN) {
+      page.scanTruncated = true;
+      rows.remove(rows.size() - 1);
+    }
+    Map<Id, Decimal> nets = new Map<Id, Decimal>();
+    Set<Id> unverified = new Set<Id>();
+    netByTarget(
+      new Map<Id, AXF_OBJ_FinancialTransaction__c>(rows).keySet(),
+      nets,
+      unverified
+    );
+    List<CandidateView> result = new List<CandidateView>();
+    for (AXF_OBJ_FinancialTransaction__c row : rows) {
+      if (unverified.contains(row.Id)) {
+        page.excludedCount++;
+        continue;
+      }
+      Decimal net = nets.containsKey(row.Id) ? nets.get(row.Id) : 0;
+      Decimal residual = row.AXF_FTX_NUM_Magnitude__c == null
+        ? 0
+        : row.AXF_FTX_NUM_Magnitude__c - net;
+      if (residual <= 0) {
+        page.excludedCount++;
+        continue;
+      }
+      CandidateView c = new CandidateView();
+      c.targetId = row.Id;
+      c.scheduleId = row.AXF_FTX_LKP_Schedule__c;
+      c.sequence = row.AXF_FTX_NUM_Sequence__c == null
+        ? null
+        : row.AXF_FTX_NUM_Sequence__c.intValue();
+      c.persisted = true;
+      c.amount = row.AXF_FTX_NUM_Magnitude__c;
+      c.residual = residual;
+      c.currencyIso = row.AXF_FTX_TXT_CurrencyIsoCode__c;
+      c.direction = row.AXF_FTX_PKL_Direction__c;
+      c.dueDate = row.AXF_FTX_DAT_DueDate__c == null
+        ? row.AXF_FTX_DAT_PurchaseDate__c
+        : row.AXF_FTX_DAT_DueDate__c;
+      c.description = row.AXF_FTX_TXT_Description__c;
+      c.category = row.AXF_FTX_TXT_UserCategory__c;
+      c.status = row.AXF_FTX_PKL_Status__c;
+      c.version = row.AXF_FTX_NUM_Version__c == null
+        ? 0
+        : row.AXF_FTX_NUM_Version__c;
+      c.linkable = true;
+      c.fundingId = (Id) row.get(fundingField(source.sourceKind));
+      c.holderId = row.AXF_FTX_LKP_Account__c; // observed, not copied from the source
+      result.add(c);
+    }
+    return result;
+  }
+
+  private void netByTarget(
+    Set<Id> ids,
+    Map<Id, Decimal> nets,
+    Set<Id> unverified
+  ) {
+    if (ids.isEmpty()) {
+      return;
+    }
+    Map<Id, Integer> visibleCounts = new Map<Id, Integer>();
+    List<AXF_OBJ_ReconciliationAllocation__c> visibleRows = [
+      SELECT
+        AXF_RA_LKP_FinancialTransaction__c,
+        AXF_RA_PKL_Kind__c,
+        AXF_RA_NUM_Magnitude__c
+      FROM AXF_OBJ_ReconciliationAllocation__c
+      WHERE AXF_RA_LKP_FinancialTransaction__c IN :ids
+      WITH USER_MODE
+      LIMIT :MAX_ALLOCATION_ROWS
+    ];
+    Map<Id, Integer> privateCounts = new Conservation().countByTarget(ids);
+    if (visibleRows.size() >= MAX_ALLOCATION_ROWS || privateCounts == null) {
+      unverified.addAll(ids);
+      return;
+    }
+    for (AXF_OBJ_ReconciliationAllocation__c row : visibleRows) {
+      Id key = row.AXF_RA_LKP_FinancialTransaction__c;
+      Decimal sign = row.AXF_RA_PKL_Kind__c == 'REVERSAL' ? -1 : 1;
+      nets.put(
+        key,
+        (nets.containsKey(key) ? nets.get(key) : 0) +
+        sign * row.AXF_RA_NUM_Magnitude__c
+      );
+      visibleCounts.put(
+        key,
+        (visibleCounts.containsKey(key) ? visibleCounts.get(key) : 0) + 1
+      );
+    }
+    for (Id id : ids) {
+      Integer visible = visibleCounts.containsKey(id)
+        ? visibleCounts.get(id)
+        : 0;
+      Integer total = privateCounts.containsKey(id) ? privateCounts.get(id) : 0;
+      if (visible != total) {
+        unverified.add(id);
+      }
+    }
+  }
+
+  private List<CandidateView> virtualCandidates(
+    SourceView source,
+    String term,
+    CandidatePage page
+  ) {
+    List<CandidateView> result = new List<CandidateView>();
+    if (!String.isBlank(term)) {
+      // Virtual lines carry no description; a manual search targets persisted forecasts only.
+      return result;
+    }
+    Integer scheduleCap = MAX_SCHEDULES + 1;
+    List<AXF_OBJ_FinancialSchedule__c> schedules = [
+      SELECT Id, Name, AXF_FSC_LKP_Account__c
+      FROM AXF_OBJ_FinancialSchedule__c
+      WHERE
+        AXF_FSC_LKP_Account__c = :source.accountId
+        AND AXF_FSC_PKL_State__c = 'ACTIVE'
+        AND AXF_FSC_TXT_CurrencyIsoCode__c = :source.currencyIso
+        AND AXF_FSC_PKL_Direction__c = :source.direction
+      WITH USER_MODE
+      ORDER BY Id
+      LIMIT :scheduleCap
+    ];
+    if (schedules.size() > MAX_SCHEDULES) {
+      page.scanTruncated = true;
+      schedules.remove(schedules.size() - 1);
+    }
+    for (AXF_OBJ_FinancialSchedule__c schedule : schedules) {
+      ALT_CLS_ScheduleProjection.ProjectionInput request = new ALT_CLS_ScheduleProjection.ProjectionInput();
+      request.scheduleId = schedule.Id;
+      request.asOfDate = today();
+      ALT_CLS_ScheduleProjection.ProjectionResult projection = ALT_CLS_FinancialScheduleService.readProjection(
+        request
+      );
+      if (projection.outcome != ALT_CLS_ScheduleProjection.OUTCOME_OK) {
+        continue;
+      }
+      for (ALT_CLS_ScheduleProjection.OccurrenceLine line : projection.lines) {
+        if (line.persisted == true) {
+          continue;
+        }
+        if (result.size() >= MAX_VIRTUAL) {
+          page.scanTruncated = true;
+          break;
+        }
+        CandidateView c = new CandidateView();
+        c.scheduleId = schedule.Id;
+        c.sequence = line.sequence;
+        c.persisted = false;
+        c.amount = line.amount;
+        c.residual = line.amount;
+        c.currencyIso = source.currencyIso;
+        c.direction = source.direction;
+        c.dueDate = line.effectiveDueDate == null
+          ? line.nominalDueDate
+          : line.effectiveDueDate;
+        c.description = schedule.Name;
+        c.status = line.estimated == true ? 'ESTIMATED' : 'PLANNED';
+        c.linkable = false;
+        c.holderId = schedule.AXF_FSC_LKP_Account__c;
+        c.reasons.add('MATERIALIZATION_REQUIRED');
+        result.add(c);
+        page.virtualCount++;
+      }
+    }
+    return result;
+  }
+
+  // ---------------------------------------------------------------- confirm
+
+  /** @description Re-validates eligibility, then realizes through AXF-25; replay returns the prior result. */
+  public ConfirmResult confirm(ConfirmInput input) {
+    requireAccess();
+    check(
+      input != null &&
+        !String.isBlank(input.operationKey) &&
+        input.operationKey.length() <= 80 &&
+        input.sourceId != null &&
+        KINDS.contains(input.sourceKind),
+      'INVALID'
+    );
+    ConfirmResult result = new ConfirmResult();
+    // Visibility and holder authorization first; a hidden fact never reaches the key lookup.
+    SourceView source = readSource(input.sourceId, input.sourceKind);
+    String operation = AXF_CLS_IdentityFraming.key(
+      new List<Object>{ 'AXF25', input.operationKey }
+    );
+    List<AXF_OBJ_ReconciliationAllocation__c> previous = [
+      SELECT Id
+      FROM AXF_OBJ_ReconciliationAllocation__c
+      WHERE AXF_RA_EXI_AllocationKey__c = :operation
+      WITH USER_MODE
+      LIMIT 1
+    ];
+    if (!previous.isEmpty()) {
+      // Replay skips eligibility (the link may have exhausted the source); AXF-25 compares
+      // the payload hash and answers CONFLICT on any divergence.
+      result.replayed = true;
+      result.createdActualOnly = input.targetId == null;
+      result.allocationId = realize(input, source);
+      finish(result);
+      return result;
+    }
+    if (!source.eligible) {
+      throw new SourceLinkException(source.reasons[0]);
+    }
+    check(
+      input.sourceVersion != null && input.sourceVersion == source.version,
+      'CONFLICT'
+    );
+    check(
+      input.amount != null &&
+        input.amount > 0 &&
+        input.amount == input.amount.setScale(2) &&
+        input.recognitionDate != null,
+      'INVALID'
+    );
+    Decimal suggested = source.residual;
+    if (input.targetId != null) {
+      CandidateView target = candidate(source, input.targetId);
+      check(target != null, 'INVALID_TARGET');
+      check(
+        input.targetVersion != null && input.targetVersion == target.version,
+        'CONFLICT'
+      );
+      check(
+        !new Conservation().linked(input.targetId, input.sourceId),
+        'ALREADY_LINKED'
+      );
+      suggested = Math.min(suggested, target.residual);
+    }
+    // Any deviation from the visible suggestion demands an explicit review acknowledgement.
+    check(
+      (input.amount == suggested && input.recognitionDate == source.factDate) ||
+      input.changesReviewed == true,
+      'REVIEW_REQUIRED'
+    );
+    check(
+      input.amount <= source.residual &&
+      (input.targetId == null ||
+      input.amount <= suggested),
+      'UNAVAILABLE_AMOUNT'
+    );
+    result.createdActualOnly = input.targetId == null;
+    result.allocationId = realize(input, source);
+    finish(result);
+    return result;
+  }
+
+  private CandidateView candidate(SourceView source, Id targetId) {
+    List<AXF_OBJ_FinancialTransaction__c> rows = [
+      SELECT
+        Id,
+        AXF_FTX_LKP_Account__c,
+        AXF_FTX_NUM_Magnitude__c,
+        AXF_FTX_TXT_CurrencyIsoCode__c,
+        AXF_FTX_PKL_Direction__c,
+        AXF_FTX_PKL_PlanKind__c,
+        AXF_FTX_PKL_ScheduleState__c,
+        AXF_FTX_NUM_Version__c,
+        AXF_FTX_LKP_BankAccount__c,
+        AXF_FTX_LKP_CreditCard__c
+      FROM AXF_OBJ_FinancialTransaction__c
+      WHERE Id = :targetId
+      WITH USER_MODE
+    ];
+    check(rows.size() == 1, 'UNAVAILABLE');
+    AXF_OBJ_FinancialTransaction__c row = rows[0];
+    check(row.AXF_FTX_LKP_Account__c == source.accountId, 'UNAVAILABLE');
+    check(row.AXF_FTX_PKL_PlanKind__c == 'PLANNED', 'INVALID_TARGET');
+    check(row.AXF_FTX_PKL_ScheduleState__c != 'CANCELLED', 'TARGET_CANCELLED');
+    check(
+      row.AXF_FTX_TXT_CurrencyIsoCode__c == source.currencyIso,
+      'CURRENCY_MISMATCH'
+    );
+    check(row.AXF_FTX_PKL_Direction__c == source.direction, 'INVALID_TARGET');
+    Id expected = (Id) row.get(fundingField(source.sourceKind));
+    Id other = (Id) row.get(otherFundingField(source.sourceKind));
+    check(
+      other == null && (expected == null || expected == source.fundingId),
+      'FUNDING_MISMATCH'
+    );
+    Map<Id, Decimal> nets = new Map<Id, Decimal>();
+    Set<Id> unverified = new Set<Id>();
+    netByTarget(new Set<Id>{ row.Id }, nets, unverified);
+    check(!unverified.contains(row.Id), 'ALLOCATIONS_UNVERIFIED');
+    CandidateView c = new CandidateView();
+    c.targetId = row.Id;
+    c.amount = row.AXF_FTX_NUM_Magnitude__c;
+    c.residual =
+      row.AXF_FTX_NUM_Magnitude__c -
+      (nets.containsKey(row.Id) ? nets.get(row.Id) : 0);
+    check(c.residual > 0, 'TARGET_REALIZED');
+    c.version = row.AXF_FTX_NUM_Version__c == null
+      ? 0
+      : row.AXF_FTX_NUM_Version__c;
+    return c;
+  }
+
+  private Id realize(ConfirmInput input, SourceView source) {
+    ALT_CLS_RealizationService.Input request = new ALT_CLS_RealizationService.Input();
+    request.targetId = input.targetId;
+    request.sourceId = input.sourceId;
+    request.sourceKind = input.sourceKind;
+    request.amount = input.amount;
+    request.recognitionDate = input.recognitionDate;
+    request.targetVersion = input.targetVersion;
+    request.sourceVersion = input.sourceVersion;
+    request.operationKey = input.operationKey;
+    if (input.targetId == null) {
+      // ACTUAL_ONLY: the plan is born from the fact itself (holder, currency, direction).
+      request.accountId = source.accountId;
+      request.currencyIso = source.currencyIso;
+      request.direction = source.direction;
+    }
+    try {
+      return new ALT_CLS_RealizationService().apply(request);
+    } catch (ALT_CLS_RealizationService.RealizationException failure) {
+      throw new SourceLinkException(failure.getMessage());
+    }
+  }
+
+  private void finish(ConfirmResult result) {
+    List<AXF_OBJ_ReconciliationAllocation__c> rows = [
+      SELECT
+        AXF_RA_LKP_FinancialTransaction__c,
+        AXF_RA_NUM_Magnitude__c,
+        AXF_RA_TXT_CurrencyIsoCode__c
+      FROM AXF_OBJ_ReconciliationAllocation__c
+      WHERE Id = :result.allocationId
+      WITH USER_MODE
+    ];
+    check(rows.size() == 1, 'UNAVAILABLE');
+    result.targetId = rows[0].AXF_RA_LKP_FinancialTransaction__c;
+    result.amount = rows[0].AXF_RA_NUM_Magnitude__c;
+    result.currencyIso = rows[0].AXF_RA_TXT_CurrencyIsoCode__c;
+  }
+
+  /** @description Private verification only: counts and booleans leave this boundary, never amounts or rows. */
+  private without sharing class Conservation {
+    @SuppressWarnings('PMD.ApexCRUDViolation')
+    public Map<Id, Integer> countBySource(Set<Id> ids) {
+      requireAccess();
+      Map<Id, Integer> result = new Map<Id, Integer>();
+      List<AXF_OBJ_ReconciliationAllocation__c> rows = [
+        SELECT AXF_RA_LKP_BankTransaction__c, AXF_RA_LKP_CardTransaction__c
+        FROM AXF_OBJ_ReconciliationAllocation__c
+        WHERE
+          AXF_RA_LKP_BankTransaction__c IN :ids
+          OR AXF_RA_LKP_CardTransaction__c IN :ids
+        LIMIT :MAX_ALLOCATION_ROWS
+      ];
+      if (rows.size() >= MAX_ALLOCATION_ROWS) {
+        return null; // truncated: the caller treats every id as unverified
+      }
+      for (AXF_OBJ_ReconciliationAllocation__c row : rows) {
+        Id key = row.AXF_RA_LKP_BankTransaction__c != null
+          ? row.AXF_RA_LKP_BankTransaction__c
+          : row.AXF_RA_LKP_CardTransaction__c;
+        result.put(key, (result.containsKey(key) ? result.get(key) : 0) + 1);
+      }
+      return result;
+    }
+    @SuppressWarnings('PMD.ApexCRUDViolation')
+    public Map<Id, Integer> countByTarget(Set<Id> ids) {
+      requireAccess();
+      Map<Id, Integer> result = new Map<Id, Integer>();
+      List<AXF_OBJ_ReconciliationAllocation__c> rows = [
+        SELECT AXF_RA_LKP_FinancialTransaction__c
+        FROM AXF_OBJ_ReconciliationAllocation__c
+        WHERE AXF_RA_LKP_FinancialTransaction__c IN :ids
+        LIMIT :MAX_ALLOCATION_ROWS
+      ];
+      if (rows.size() >= MAX_ALLOCATION_ROWS) {
+        return null;
+      }
+      for (AXF_OBJ_ReconciliationAllocation__c row : rows) {
+        Id key = row.AXF_RA_LKP_FinancialTransaction__c;
+        result.put(key, (result.containsKey(key) ? result.get(key) : 0) + 1);
+      }
+      return result;
+    }
+    /** An OPEN review of any type (SOURCE_CHANGE, SOURCE_DELETE, ...) blocks the fact regardless of queue visibility. */
+    @SuppressWarnings('PMD.ApexCRUDViolation')
+    public Set<Id> openReviews(Set<Id> ids) {
+      requireAccess();
+      Set<Id> result = new Set<Id>();
+      for (AXF_OBJ_ReviewItem__c row : [
+        SELECT
+          AXF_RVI_LKP_BankAccountTransaction__c,
+          AXF_RVI_LKP_CreditCardTransaction__c
+        FROM AXF_OBJ_ReviewItem__c
+        WHERE
+          AXF_RVI_PKL_State__c = 'OPEN'
+          AND (AXF_RVI_LKP_BankAccountTransaction__c IN :ids
+          OR AXF_RVI_LKP_CreditCardTransaction__c IN :ids)
+        LIMIT 2000
+      ]) {
+        if (row.AXF_RVI_LKP_BankAccountTransaction__c != null) {
+          result.add(row.AXF_RVI_LKP_BankAccountTransaction__c);
+        }
+        if (row.AXF_RVI_LKP_CreditCardTransaction__c != null) {
+          result.add(row.AXF_RVI_LKP_CreditCardTransaction__c);
+        }
+      }
+      return result;
+    }
+    @SuppressWarnings('PMD.ApexCRUDViolation')
+    public Boolean linked(Id targetId, Id sourceId) {
+      requireAccess();
+      Decimal net = 0;
+      for (AXF_OBJ_ReconciliationAllocation__c row : [
+        SELECT AXF_RA_PKL_Kind__c, AXF_RA_NUM_Magnitude__c
+        FROM AXF_OBJ_ReconciliationAllocation__c
+        WHERE
+          AXF_RA_LKP_FinancialTransaction__c = :targetId
+          AND (AXF_RA_LKP_BankTransaction__c = :sourceId
+          OR AXF_RA_LKP_CardTransaction__c = :sourceId)
+        LIMIT 2000
+      ]) {
+        net +=
+          (row.AXF_RA_PKL_Kind__c == 'REVERSAL' ? -1 : 1) *
+          row.AXF_RA_NUM_Magnitude__c;
+      }
+      return net > 0;
+    }
+  }
+}

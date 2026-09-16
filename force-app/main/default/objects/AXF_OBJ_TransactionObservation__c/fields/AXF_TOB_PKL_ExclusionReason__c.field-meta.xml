@@ -1,0 +1,33 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<CustomField xmlns="http://soap.sforce.com/2006/04/metadata">
+    <fullName>AXF_TOB_PKL_ExclusionReason__c</fullName>
+    <label>Motivo de Exclusao</label>
+    <type>Picklist</type>
+    <required>true</required>
+    <valueSet>
+        <restricted>true</restricted>
+        <valueSetDefinition>
+            <sorted>false</sorted>
+            <value><fullName>NONE</fullName><default>true</default><label
+        >Nenhum</label></value>
+            <value><fullName>CREDIT</fullName><default>false</default><label
+        >Credito/entrada</label></value>
+            <value><fullName>INSTALLMENT</fullName><default
+        >false</default><label>Parcelamento</label></value>
+            <value><fullName>TRANSFER</fullName><default>false</default><label
+        >Transferencia</label></value>
+            <value><fullName>INVOICE_PAYMENT</fullName><default
+        >false</default><label>Pagamento de fatura</label></value>
+            <value><fullName>REVERSAL</fullName><default>false</default><label
+        >Estorno/reversao</label></value>
+            <value><fullName>UTILITY</fullName><default>false</default><label
+        >Conta de consumo</label></value>
+            <value><fullName>INSURANCE</fullName><default>false</default><label
+        >Seguro</label></value>
+            <value><fullName>LOAN_OR_TAX</fullName><default
+        >false</default><label>Emprestimo/imposto</label></value>
+        </valueSetDefinition>
+    </valueSet>
+    <description
+  >Motivo deterministico da exclusao (P3), versionado.</description>
+</CustomField>

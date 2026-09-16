@@ -1,0 +1,185 @@
+<template>
+  <lightning-card
+    title="Planejar cronograma (recorrência, parcelas, PRICE, SAC)"
+  >
+    <div class="slds-var-p-around_medium">
+      <template if:true={errorMessage}>
+        <div
+          class="slds-notify slds-notify_alert slds-theme_alert-texture slds-theme_warning"
+          role="alert"
+        >
+          {errorMessage}
+        </div>
+      </template>
+
+      <lightning-combobox
+        label="Modalidade"
+        data-field="modality"
+        value={modality}
+        options={modalityOptions}
+        onchange={handleChange}
+      ></lightning-combobox>
+
+      <lightning-combobox
+        label="Entidade titular"
+        data-field="accountId"
+        value={accountId}
+        options={contextOptions}
+        onchange={handleChange}
+        placeholder="Selecione"
+      ></lightning-combobox>
+
+      <lightning-combobox
+        label="Natureza"
+        data-field="direction"
+        value={direction}
+        options={directionOptions}
+        onchange={handleChange}
+      ></lightning-combobox>
+
+      <lightning-input
+        label="Moeda (ISO)"
+        data-field="currencyIsoCode"
+        value={currencyIsoCode}
+        max-length="3"
+        onchange={handleChange}
+      ></lightning-input>
+
+      <template if:true={showPrincipal}>
+        <lightning-input
+          type="number"
+          label="Principal / total financiado"
+          data-field="principal"
+          value={principal}
+          step="0.01"
+          onchange={handleChange}
+        ></lightning-input>
+      </template>
+
+      <template if:true={showFixedValue}>
+        <lightning-input
+          type="number"
+          label="Valor fixo por ocorrência"
+          data-field="fixedValue"
+          value={fixedValue}
+          step="0.01"
+          onchange={handleChange}
+        ></lightning-input>
+      </template>
+
+      <lightning-input
+        type="number"
+        label="Número de parcelas / ocorrências"
+        data-field="installments"
+        value={installments}
+        min="1"
+        step="1"
+        onchange={handleChange}
+      ></lightning-input>
+
+      <template if:true={showRate}>
+        <lightning-input
+          type="number"
+          label="Taxa do período (fração, ex.: 0.02 = 2%)"
+          data-field="periodRate"
+          value={periodRate}
+          step="0.0001"
+          onchange={handleChange}
+        ></lightning-input>
+      </template>
+
+      <lightning-input
+        type="date"
+        label="Primeiro vencimento"
+        data-field="firstDueDate"
+        value={firstDueDate}
+        onchange={handleChange}
+      ></lightning-input>
+
+      <lightning-input
+        type="number"
+        label="Tarifa fixa por parcela (opcional)"
+        data-field="flatFeePerInstallment"
+        value={flatFeePerInstallment}
+        step="0.01"
+        onchange={handleChange}
+      ></lightning-input>
+
+      <lightning-input
+        type="number"
+        label="Tarifa inicial (opcional)"
+        data-field="upfrontFee"
+        value={upfrontFee}
+        step="0.01"
+        onchange={handleChange}
+      ></lightning-input>
+
+      <div class="slds-var-m-top_medium">
+        <lightning-button
+          label="Gerar prévia"
+          onclick={handlePlan}
+          disabled={planDisabled}
+        ></lightning-button>
+        <lightning-button
+          variant="brand"
+          label="Salvar cronograma"
+          onclick={handleSave}
+          disabled={saveDisabled}
+          class="slds-var-m-left_small"
+        ></lightning-button>
+      </div>
+
+      <template if:true={loading}>
+        <lightning-spinner
+          alternative-text="Processando"
+          size="small"
+        ></lightning-spinner>
+      </template>
+
+      <template if:true={hasSchedule}>
+        <p class="slds-var-m-top_medium">
+          Total principal: {schedule.totalPrincipal} · juros:
+          {schedule.totalInterest} · tarifas: {schedule.totalFees}
+        </p>
+        <table
+          class="slds-table slds-table_bordered slds-var-m-top_small"
+          aria-label="Cronograma gerado"
+        >
+          <thead>
+            <tr>
+              <th scope="col">#</th>
+              <th scope="col">Vencimento</th>
+              <th scope="col">Pagamento</th>
+              <th scope="col">Principal</th>
+              <th scope="col">Juros</th>
+              <th scope="col">Tarifa</th>
+              <th scope="col">Saldo</th>
+            </tr>
+          </thead>
+          <tbody>
+            <template for:each={scheduleRows} for:item="row">
+              <tr key={row.key}>
+                <td data-label="#">{row.sequence}</td>
+                <td data-label="Vencimento">{row.dueDate}</td>
+                <td data-label="Pagamento">{row.payment}</td>
+                <td data-label="Principal">{row.principalPortion}</td>
+                <td data-label="Juros">{row.interestPortion}</td>
+                <td data-label="Tarifa">{row.feePortion}</td>
+                <td data-label="Saldo">{row.closingBalance}</td>
+              </tr>
+            </template>
+          </tbody>
+        </table>
+      </template>
+
+      <template if:true={saveResult}>
+        <p aria-live="polite" class="slds-var-m-top_medium">
+          <strong>{saveOutcomeLabel}</strong>
+          <template if:true={saveResult.occurrenceCount}>
+            ({saveResult.occurrenceCount} ocorrências)
+          </template>
+        </p>
+      </template>
+    </div>
+  </lightning-card>
+</template>

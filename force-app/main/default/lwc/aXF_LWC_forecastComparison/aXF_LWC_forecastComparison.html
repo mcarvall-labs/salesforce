@@ -1,0 +1,328 @@
+<template>
+  <lightning-card
+    lwc:if={canRender}
+    title={labels.title}
+    icon-name="utility:trending"
+  >
+    <div class="slds-p-horizontal_medium slds-p-bottom_medium">
+      <p class="slds-text-body_small slds-m-bottom_small">{labels.intro}</p>
+      <div class="slds-assistive-text" aria-live="polite" data-id="announcer">
+        {announcement}
+      </div>
+
+      <lightning-dual-listbox
+        data-id="scope"
+        name="scope"
+        label={labels.scope}
+        field-level-help={labels.scopeHelp}
+        source-label={labels.scopeAvailable}
+        selected-label={labels.scope}
+        options={holderOptions}
+        value={selected}
+        onchange={handleScopeChange}
+      ></lightning-dual-listbox>
+      <div class="slds-grid slds-gutters slds-wrap slds-m-top_small">
+        <div class="slds-col slds-size_1-of-1 slds-medium-size_1-of-2">
+          <lightning-radio-group
+            data-id="horizon"
+            name="horizon"
+            label={labels.horizon}
+            options={horizonOptions}
+            value={horizonValue}
+            type="button"
+            onchange={handleHorizonChange}
+          ></lightning-radio-group>
+        </div>
+        <div class="slds-col slds-size_1-of-1 slds-medium-size_1-of-2">
+          <lightning-radio-group
+            data-id="scenario"
+            name="scenario"
+            label={labels.scenario}
+            options={scenarioOptions}
+            value={scenario}
+            onchange={handleScenarioChange}
+          ></lightning-radio-group>
+        </div>
+      </div>
+      <lightning-button
+        data-id="compare"
+        class="slds-m-top_small"
+        variant="brand"
+        label={labels.compare}
+        disabled={compareDisabled}
+        onclick={handleCompare}
+      ></lightning-button>
+
+      <template lwc:if={isIdle}>
+        <p class="slds-m-top_medium slds-text-color_weak" data-id="idle">
+          {labels.idle}
+        </p>
+      </template>
+      <template lwc:if={isLoading}>
+        <div
+          class="slds-m-top_medium slds-is-relative"
+          style="min-height: 3rem"
+        >
+          <lightning-spinner
+            alternative-text={labels.loading}
+            size="small"
+          ></lightning-spinner>
+        </div>
+      </template>
+      <template lwc:if={isError}>
+        <div
+          class="slds-notify slds-notify_alert slds-alert_error slds-m-top_medium"
+          role="alert"
+          data-id="error"
+        >
+          <span>{errorMessage}</span>
+          <lightning-button
+            class="slds-m-left_small"
+            variant="base"
+            label={labels.retry}
+            data-id="retry"
+            onclick={handleRetry}
+          ></lightning-button>
+        </div>
+      </template>
+
+      <template lwc:if={isReady}>
+        <section
+          class="slds-m-top_medium"
+          aria-labelledby="axf-fc-confidence"
+          role="region"
+        >
+          <h2 id="axf-fc-confidence" class="slds-text-heading_small">
+            {labels.confidence}
+          </h2>
+          <p class="slds-m-top_x-small">
+            <span class={confidenceClass} data-id="confidence"
+              >{confidenceLabel}</span
+            >
+            <span class="slds-m-left_small slds-text-body_small">
+              {labels.asOf}: {result.asOf} · {labels.horizonEnd}:
+              {result.horizonEnd} · {labels.policy}: {result.policyVersion}
+            </span>
+          </p>
+          <h3 class="slds-text-title_caps slds-m-top_small">
+            {labels.explanation}
+          </h3>
+          <ul class="slds-list_dotted" data-id="reasons">
+            <template for:each={reasons} for:item="reason">
+              <li key={reason.key}>{reason.text}</li>
+            </template>
+          </ul>
+          <template lwc:if={hasExclusions}>
+            <ul
+              class="slds-list_dotted slds-m-top_x-small"
+              data-id="exclusions"
+            >
+              <template for:each={exclusions} for:item="exclusion">
+                <li key={exclusion.key}>{exclusion.text}</li>
+              </template>
+            </ul>
+          </template>
+          <ul class="slds-list_dotted slds-m-top_x-small" data-id="actions">
+            <template for:each={actions} for:item="action">
+              <li key={action.key}>{action.text}</li>
+            </template>
+          </ul>
+        </section>
+
+        <template lwc:if={hasBeyond}>
+          <section
+            class="slds-box slds-theme_warning slds-m-top_medium"
+            data-id="beyond"
+          >
+            <h2 class="slds-text-heading_small">{labels.beyond}</h2>
+            <template for:each={beyondRows} for:item="row">
+              <p key={row.key}>{row.text}</p>
+            </template>
+          </section>
+        </template>
+
+        <template lwc:if={hasOverdue}>
+          <section class="slds-box slds-m-top_medium" data-id="overdue">
+            <h2 class="slds-text-heading_small">{labels.overdue}</h2>
+            <template for:each={overdueRows} for:item="row">
+              <p key={row.key}>
+                {row.count} · {labels.colOut}
+                <lightning-formatted-number
+                  value={row.amountOut}
+                  minimum-fraction-digits="2"
+                  maximum-fraction-digits="2"
+                ></lightning-formatted-number>
+                · {labels.colIn}
+                <lightning-formatted-number
+                  value={row.amountIn}
+                  minimum-fraction-digits="2"
+                  maximum-fraction-digits="2"
+                ></lightning-formatted-number>
+                {row.currencyIso}
+              </p>
+            </template>
+          </section>
+        </template>
+
+        <template lwc:if={hasHorizons}>
+          <section
+            class="slds-m-top_medium"
+            aria-labelledby="axf-fc-h"
+            role="region"
+          >
+            <h2 id="axf-fc-h" class="slds-text-heading_small">
+              {labels.horizons}
+            </h2>
+            <div class="slds-scrollable_x">
+              <table
+                class="slds-table slds-table_bordered slds-table_cell-buffer slds-m-top_x-small"
+                data-id="horizons"
+              >
+                <thead>
+                  <tr class="slds-line-height_reset">
+                    <th scope="col">{labels.colHorizon}</th>
+                    <th scope="col">{labels.colConservative}</th>
+                    <th scope="col">{labels.colIntermediate}</th>
+                    <th scope="col">{labels.colOptimistic}</th>
+                    <th scope="col">{labels.colBeyond}</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <template for:each={horizonRows} for:item="row">
+                    <tr
+                      key={row.key}
+                      class={row.rowClass}
+                      data-horizon={row.horizonMonths}
+                      data-currency={row.currencyIso}
+                    >
+                      <th scope="row">
+                        {row.horizonMonths} · {row.currencyIso}
+                      </th>
+                      <td data-id="conservative">
+                        <lightning-formatted-number
+                          value={row.conservativeNet}
+                          minimum-fraction-digits="2"
+                          maximum-fraction-digits="2"
+                        ></lightning-formatted-number>
+                      </td>
+                      <td data-id="intermediate">
+                        <lightning-formatted-number
+                          value={row.intermediateNet}
+                          minimum-fraction-digits="2"
+                          maximum-fraction-digits="2"
+                        ></lightning-formatted-number>
+                      </td>
+                      <td data-id="optimistic">
+                        <lightning-formatted-number
+                          value={row.optimisticNet}
+                          minimum-fraction-digits="2"
+                          maximum-fraction-digits="2"
+                        ></lightning-formatted-number>
+                      </td>
+                      <td data-id="beyond-cell">
+                        <lightning-formatted-number
+                          value={row.beyondOut}
+                          minimum-fraction-digits="2"
+                          maximum-fraction-digits="2"
+                        ></lightning-formatted-number>
+                        /
+                        <lightning-formatted-number
+                          value={row.beyondIn}
+                          minimum-fraction-digits="2"
+                          maximum-fraction-digits="2"
+                        ></lightning-formatted-number>
+                      </td>
+                    </tr>
+                  </template>
+                </tbody>
+              </table>
+            </div>
+          </section>
+        </template>
+
+        <template lwc:if={hasPeriods}>
+          <section
+            class="slds-m-top_medium"
+            aria-labelledby="axf-fc-p"
+            role="region"
+          >
+            <h2 id="axf-fc-p" class="slds-text-heading_small">
+              {periodsTitle}
+            </h2>
+            <div class="slds-scrollable_x">
+              <table
+                class="slds-table slds-table_bordered slds-table_cell-buffer slds-m-top_x-small"
+                data-id="periods"
+              >
+                <thead>
+                  <tr class="slds-line-height_reset">
+                    <th scope="col">{labels.colPeriod}</th>
+                    <th scope="col">{labels.colIn}</th>
+                    <th scope="col">{labels.colOut}</th>
+                    <th scope="col">{labels.colNet}</th>
+                    <th scope="col">{labels.colConfirmed}</th>
+                    <th scope="col">{labels.colProbable}</th>
+                    <th scope="col">{labels.colUncertain}</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <template for:each={periodRows} for:item="row">
+                    <tr key={row.key} data-period={row.periodKey}>
+                      <th scope="row">{row.periodKey} · {row.currencyIso}</th>
+                      <td>
+                        <lightning-formatted-number
+                          value={row.inflow}
+                          minimum-fraction-digits="2"
+                          maximum-fraction-digits="2"
+                        ></lightning-formatted-number>
+                      </td>
+                      <td>
+                        <lightning-formatted-number
+                          value={row.outflow}
+                          minimum-fraction-digits="2"
+                          maximum-fraction-digits="2"
+                        ></lightning-formatted-number>
+                      </td>
+                      <td data-id="net">
+                        <lightning-formatted-number
+                          value={row.net}
+                          minimum-fraction-digits="2"
+                          maximum-fraction-digits="2"
+                        ></lightning-formatted-number>
+                      </td>
+                      <td>{row.confirmedOut} / {row.confirmedIn}</td>
+                      <td>{row.probableOut} / {row.probableIn}</td>
+                      <td>{row.uncertainOut} / {row.uncertainIn}</td>
+                    </tr>
+                  </template>
+                </tbody>
+              </table>
+            </div>
+          </section>
+        </template>
+
+        <template lwc:if={noContributions}>
+          <p class="slds-m-top_medium slds-text-color_weak" data-id="empty">
+            {labels.empty}
+          </p>
+        </template>
+        <section class="slds-m-top_medium" data-id="sources">
+          <h2 class="slds-text-heading_small">{labels.sources}</h2>
+          <ul class="slds-list_dotted">
+            <template for:each={sourceRows} for:item="source">
+              <li key={source.key}>
+                {source.kindLabel}: {source.label} · {source.occurrenceCount}
+                {labels.occurrences} · {source.outcome} {source.coverageText}
+              </li>
+            </template>
+          </ul>
+        </section>
+      </template>
+    </div>
+  </lightning-card>
+  <template lwc:if={isForbidden}>
+    <p class="slds-p-around_medium slds-text-color_weak" data-id="forbidden">
+      {labels.codeForbidden}
+    </p>
+  </template>
+</template>

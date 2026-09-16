@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<CustomField xmlns="http://soap.sforce.com/2006/04/metadata">
+  <fullName>AXF_FSC_NUM_HorizonMonths__c</fullName>
+  <label>Horizonte (meses)</label>
+  <type>Number</type>
+  <precision>2</precision>
+  <scale>0</scale>
+  <required>true</required>
+  <defaultValue>12</defaultValue>
+  <description
+  >Janela rolante em meses de calendário usada pela leitura: mês corrente mais onze. Materializar além disso, ou alterar este padrão, exige aprovação humana (AXF-103).</description>
+</CustomField>

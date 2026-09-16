@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<CustomField xmlns="http://soap.sforce.com/2006/04/metadata">
+    <fullName>AXF_BWA_NUM_AllocatedQuantity__c</fullName>
+    <label>Quantidade Alocada</label>
+    <type>Number</type>
+    <precision>18</precision>
+    <scale>8</scale>
+    <required>true</required>
+    <description
+  >Quantidade do WorkRecord aplicada a linha; soma por WorkRecord nao excede a quantidade aprovada.</description>
+</CustomField>

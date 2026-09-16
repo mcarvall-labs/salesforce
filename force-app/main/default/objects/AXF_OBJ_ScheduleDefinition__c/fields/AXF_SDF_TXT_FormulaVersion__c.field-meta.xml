@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<CustomField xmlns="http://soap.sforce.com/2006/04/metadata">
+  <fullName>AXF_SDF_TXT_FormulaVersion__c</fullName>
+  <label>Versão da Fórmula</label>
+  <type>Text</type>
+  <length>80</length>
+  <required>false</required>
+  <description
+  >Versão da política de amortização usada na definição (por exemplo, ALT_CLS_AmortizationSchedule.POLICY_VERSION). Registra qual autoridade produziu os valores calculados (AXF-103).</description>
+</CustomField>

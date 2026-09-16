@@ -54,6 +54,9 @@ global with sharing class AXF_CLS_PluggyWebhookResource {
     }
 
     String itemId;
+    String eventType;
+    String accountId;
+    List<String> transactionIds = new List<String>();
     try {
       Map<String, Object> payload = (Map<String, Object>) JSON.deserializeUntyped(
         rawBody
@@ -62,8 +65,40 @@ global with sharing class AXF_CLS_PluggyWebhookResource {
         strval(payload.get('itemId')),
         strval(payload.get('id'))
       );
+      eventType = strval(payload.get('event'));
+      if (eventType == 'transactions/deleted') {
+        if (String.isBlank(itemId) || itemId.length() > 64)
+          throw new AXF_CLS_ReviewQueueException('Invalid deletion item.');
+        accountId = strval(payload.get('accountId'));
+        Object ids = payload.get('transactionIds');
+        if (String.isBlank(accountId) || !(ids instanceof List<Object>))
+          throw new AXF_CLS_ReviewQueueException(
+            'Invalid deletion identifiers.'
+          );
+        Set<String> distinctIds = new Set<String>();
+        for (Object value : (List<Object>) ids) {
+          String identifier = strval(value);
+          if (String.isBlank(identifier) || identifier.length() > 255)
+            throw new AXF_CLS_ReviewQueueException(
+              'Invalid deletion identifier.'
+            );
+          distinctIds.add(identifier);
+        }
+        transactionIds.addAll(distinctIds);
+        if (
+          transactionIds.isEmpty() ||
+          transactionIds.size() > 500 ||
+          accountId.length() > 255
+        )
+          throw new AXF_CLS_ReviewQueueException('Invalid deletion batch.');
+      }
     } catch (Exception ignored) {
       itemId = null;
+      if (eventType == 'transactions/deleted') {
+        res.statusCode = 400;
+        res.responseBody = Blob.valueOf('{"accepted":false}');
+        return;
+      }
     }
 
     Boolean queued = false;
@@ -73,13 +108,20 @@ global with sharing class AXF_CLS_PluggyWebhookResource {
       Database.SaveResult published = EventBus.publish(
         new AXF_PluggyWebhookEvent__e(
           AXF_PWE_TXT_ObservedItemId__c = itemId,
-          AXF_PWE_TXT_CorrelationId__c = correlationId
+          AXF_PWE_TXT_CorrelationId__c = correlationId,
+          AXF_PWE_TXT_EventType__c = eventType == 'transactions/deleted'
+            ? eventType
+            : null,
+          AXF_PWE_TXT_AccountId__c = accountId,
+          AXF_PWE_TAL_TransactionIds__c = transactionIds.isEmpty()
+            ? null
+            : JSON.serialize(transactionIds)
         )
       );
       queued = published != null && published.isSuccess();
     }
 
-    res.statusCode = 200;
+    res.statusCode = String.isNotBlank(itemId) && !queued ? 503 : 200;
     res.responseBody = Blob.valueOf(
       '{"accepted":true,"queued":' +
         String.valueOf(queued) +

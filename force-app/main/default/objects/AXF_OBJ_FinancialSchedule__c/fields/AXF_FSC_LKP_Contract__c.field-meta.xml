@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<CustomField xmlns="http://soap.sforce.com/2006/04/metadata">
+  <fullName>AXF_FSC_LKP_Contract__c</fullName>
+  <label>Contrato</label>
+  <type>Lookup</type>
+  <referenceTo>AXF_OBJ_Contract__c</referenceTo>
+  <relationshipName>AXF_REL_FinancialSchedules</relationshipName>
+  <deleteConstraint>Restrict</deleteConstraint>
+  <required>false</required>
+  <description
+  >Contrato opcional ao qual o cronograma pertence. Um cronograma pertence a no máximo um contrato; o total do contrato agrega ocorrências distintas de seus cronogramas sem duplicação. Exclusão restrita preserva a história (AXF-103).</description>
+</CustomField>

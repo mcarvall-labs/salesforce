@@ -1,7 +1,7 @@
-import { LightningElement, track } from "lwc";
+import { LightningElement, api, track } from "lwc";
 import GUIDE_MEDIA from "@salesforce/resourceUrl/AXF_pluggyGuideMedia";
 import L from "./labels";
-import { STEPS, OFFICIAL_LINKS } from "./steps";
+import { stepsForPhase, OFFICIAL_LINKS } from "./steps";
 
 /**
  * Pluggy setup mini-wizard (AXF-89). Instructional only — no server calls,
@@ -24,6 +24,20 @@ export default class AxfLwcPluggyGuide extends LightningElement {
   index = 0;
   @track helpOpen = false;
   reducedMotion = false;
+
+  _phase = "credentials";
+  @api
+  get phase() {
+    return this._phase;
+  }
+  set phase(value) {
+    this._phase = value === "discovery" ? "discovery" : "credentials";
+    this.index = 0;
+  }
+
+  get steps() {
+    return stepsForPhase(this._phase);
+  }
 
   connectedCallback() {
     this.reducedMotion = this.prefersReducedMotion();
@@ -59,13 +73,13 @@ export default class AxfLwcPluggyGuide extends LightningElement {
 
   // ---- step model ----
   get step() {
-    return STEPS[this.index];
+    return this.steps[this.index];
   }
   get content() {
     return L.steps[this.step.id];
   }
   get total() {
-    return STEPS.length;
+    return this.steps.length;
   }
   get humanIndex() {
     return this.index + 1;
@@ -80,7 +94,18 @@ export default class AxfLwcPluggyGuide extends LightningElement {
     return `width:${this.progressPercent}%`;
   }
   get bodyParagraphs() {
-    return (this.content.body || []).map((text, i) => ({ key: i, text }));
+    // A body entry is either a plain string (paragraph) or { list: [...] }
+    // for an ordered set of short actions (D-56 readability).
+    return (this.content.body || []).map((entry, i) => {
+      if (entry && typeof entry === "object" && Array.isArray(entry.list)) {
+        return {
+          key: `b${i}`,
+          isList: true,
+          items: entry.list.map((text, j) => ({ key: `b${i}-${j}`, text }))
+        };
+      }
+      return { key: `b${i}`, isList: false, text: entry };
+    });
   }
   get helpParagraphs() {
     return (this.content.help || []).map((text, i) => ({ key: i, text }));
@@ -120,7 +145,7 @@ export default class AxfLwcPluggyGuide extends LightningElement {
     return this.index === 0;
   }
   get isLast() {
-    return this.index === STEPS.length - 1;
+    return this.index === this.steps.length - 1;
   }
   get nextLabel() {
     return this.isLast ? this.chrome.finish : this.chrome.next;

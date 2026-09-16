@@ -1,0 +1,7 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<CustomPermission xmlns="http://soap.sforce.com/2006/04/metadata">
+    <isLicensed>false</isLicensed>
+    <label>AXF - Pode Explicar Confianca</label>
+    <description
+  >Capacidade de abrir o confidence-panel (AXF-143). Concedida por AXF_PS_GestorFinanceiro. Nao concede acesso a registros: fontes e datas aparecem apenas conforme ownership/sharing, CRUD e FLS.</description>
+</CustomPermission>

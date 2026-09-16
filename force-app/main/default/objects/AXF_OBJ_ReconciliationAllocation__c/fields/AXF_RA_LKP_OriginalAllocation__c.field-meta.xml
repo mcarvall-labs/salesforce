@@ -1,0 +1,8 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<CustomField xmlns="http://soap.sforce.com/2006/04/metadata"><fullName
+  >AXF_RA_LKP_OriginalAllocation__c</fullName><label
+  >Original application</label><deleteConstraint
+  >SetNull</deleteConstraint><referenceTo
+  >AXF_OBJ_ReconciliationAllocation__c</referenceTo><relationshipLabel
+  >Original application allocations</relationshipLabel><relationshipName
+  >Reversals</relationshipName><type>Lookup</type></CustomField>

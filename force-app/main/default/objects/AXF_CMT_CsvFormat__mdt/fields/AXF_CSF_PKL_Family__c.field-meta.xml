@@ -1,0 +1,18 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<CustomField xmlns="http://soap.sforce.com/2006/04/metadata">
+    <fullName>AXF_CSF_PKL_Family__c</fullName>
+    <label>Familia de parsing</label>
+    <type>Picklist</type>
+    <valueSet>
+        <restricted>true</restricted>
+        <valueSetDefinition>
+            <sorted>false</sorted>
+            <value><fullName>BANK_STATEMENT_V1</fullName><default
+        >true</default><label>Extrato bancario v1</label></value>
+        </valueSetDefinition>
+    </valueSet>
+    <required>true</required>
+    <description
+  >Familia de parsing suportada pelo codigo. Um formato que exija logica nova fica BLOCKED ate existir familia implementada (AXF-72 AC3).</description>
+    <fieldManageability>SubscriberControlled</fieldManageability>
+</CustomField>

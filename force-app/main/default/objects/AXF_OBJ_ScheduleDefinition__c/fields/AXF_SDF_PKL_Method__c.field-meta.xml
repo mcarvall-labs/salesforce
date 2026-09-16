@@ -1,0 +1,40 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<CustomField xmlns="http://soap.sforce.com/2006/04/metadata">
+  <fullName>AXF_SDF_PKL_Method__c</fullName>
+  <label>Método</label>
+  <type>Picklist</type>
+  <required>true</required>
+  <valueSet>
+    <restricted>true</restricted>
+    <valueSetDefinition>
+      <sorted>false</sorted>
+      <value>
+        <fullName>RECURRING</fullName>
+        <default>false</default>
+        <label>Recorrente</label>
+      </value>
+      <value>
+        <fullName>INSTALLMENT</fullName>
+        <default>true</default>
+        <label>Parcelado</label>
+      </value>
+      <value>
+        <fullName>PRICE</fullName>
+        <default>false</default>
+        <label>PRICE</label>
+      </value>
+      <value>
+        <fullName>SAC</fullName>
+        <default>false</default>
+        <label>SAC</label>
+      </value>
+      <value>
+        <fullName>ESTIMATED</fullName>
+        <default>false</default>
+        <label>Estimado por referência</label>
+      </value>
+    </valueSetDefinition>
+  </valueSet>
+  <description
+  >Método de cálculo da ocorrência. RECURRING/INSTALLMENT/PRICE/SAC reutilizam ALT_CLS_AmortizationSchedule (nenhuma fórmula nova); ESTIMATED usa o valor de referência em vez de fórmula e exige referência vigente (AXF-103).</description>
+</CustomField>

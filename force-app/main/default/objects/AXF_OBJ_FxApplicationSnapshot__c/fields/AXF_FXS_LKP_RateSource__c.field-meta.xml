@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<CustomField xmlns="http://soap.sforce.com/2006/04/metadata">
+    <fullName>AXF_FXS_LKP_RateSource__c</fullName>
+    <label>Cotacao Fonte</label>
+    <type>Lookup</type>
+    <referenceTo>AXF_OBJ_ExchangeRate__c</referenceTo>
+    <relationshipName>FxApplicationSnapshots</relationshipName>
+    <deleteConstraint>Restrict</deleteConstraint>
+    <required>false</required>
+    <description
+  >ExchangeRate usada como fonte do snapshot; ID/effective date persistidos (AXF-24).</description>
+</CustomField>

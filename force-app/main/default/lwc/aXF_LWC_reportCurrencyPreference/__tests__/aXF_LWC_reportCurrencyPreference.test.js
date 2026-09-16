@@ -1,4 +1,7 @@
 import { createElement } from "lwc";
+jest.mock("@salesforce/i18n/lang", () => ({ default: "pt-BR" }), {
+  virtual: true
+});
 import Pref from "c/aXF_LWC_reportCurrencyPreference";
 import getState from "@salesforce/apex/AXF_CLS_CTRL_ReportCurrencyPref.getState";
 import setPreference from "@salesforce/apex/AXF_CLS_CTRL_ReportCurrencyPref.setPreference";

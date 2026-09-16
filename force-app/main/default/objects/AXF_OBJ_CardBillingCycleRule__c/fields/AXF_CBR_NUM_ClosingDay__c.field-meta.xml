@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<CustomField xmlns="http://soap.sforce.com/2006/04/metadata">
+  <fullName>AXF_CBR_NUM_ClosingDay__c</fullName>
+  <label>Dia de Fechamento</label>
+  <type>Number</type>
+  <precision>2</precision>
+  <scale>0</scale>
+  <required>false</required>
+  <description
+  >Dia do mes do fechamento (1-31); dia alem do fim do mes e ajustado para o ultimo dia (AXF-35).</description>
+</CustomField>

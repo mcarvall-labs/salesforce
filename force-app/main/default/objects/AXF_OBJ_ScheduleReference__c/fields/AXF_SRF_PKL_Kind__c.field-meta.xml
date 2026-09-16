@@ -1,0 +1,35 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<CustomField xmlns="http://soap.sforce.com/2006/04/metadata">
+  <fullName>AXF_SRF_PKL_Kind__c</fullName>
+  <label>Tipo de Referência</label>
+  <type>Picklist</type>
+  <required>true</required>
+  <valueSet>
+    <restricted>true</restricted>
+    <valueSetDefinition>
+      <sorted>false</sorted>
+      <value>
+        <fullName>INITIAL</fullName>
+        <default>true</default>
+        <label>Inicial</label>
+      </value>
+      <value>
+        <fullName>MANUAL</fullName>
+        <default>false</default>
+        <label>Manual</label>
+      </value>
+      <value>
+        <fullName>REALIZATION</fullName>
+        <default>false</default>
+        <label>Realização</label>
+      </value>
+      <value>
+        <fullName>COMPENSATION</fullName>
+        <default>false</default>
+        <label>Compensação</label>
+      </value>
+    </valueSetDefinition>
+  </valueSet>
+  <description
+  >Proveniência da referência. A precedência de uma referência manual é representada explicitamente como evento efetivo, nunca inferida pelo relógio (AXF-103).</description>
+</CustomField>

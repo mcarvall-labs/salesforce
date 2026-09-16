@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<CustomField xmlns="http://soap.sforce.com/2006/04/metadata">
+  <fullName>AXF_FSC_NUM_ProjectionRevision__c</fullName>
+  <label>Revisão de Projeção</label>
+  <type>Number</type>
+  <precision>18</precision>
+  <scale>0</scale>
+  <required>true</required>
+  <defaultValue>0</defaultValue>
+  <description
+  >Revisão de projeção solicitada e vigente. Leitores capturam esta revisão antes da leitura e a reconferem depois: divergência devolve STALE em vez de um total apresentado como completo. Campo derivado (AXF-103).</description>
+</CustomField>

@@ -1,0 +1,259 @@
+<template>
+  <lightning-card
+    lwc:if={canRender}
+    title={labels.title}
+    icon-name="utility:metrics"
+  >
+    <div class="slds-p-horizontal_medium slds-p-bottom_medium">
+      <p class="slds-text-body_small slds-m-bottom_small">{labels.intro}</p>
+      <div class="slds-assistive-text" aria-live="polite" data-id="announcer">
+        {announcement}
+      </div>
+
+      <template lwc:if={showSelector}>
+        <lightning-dual-listbox
+          data-id="scope"
+          name="scope"
+          label={labels.scope}
+          field-level-help={labels.scopeHelp}
+          source-label={labels.scopeAvailable}
+          selected-label={labels.scope}
+          options={holderOptions}
+          value={selected}
+          onchange={handleScopeChange}
+        ></lightning-dual-listbox>
+        <lightning-button
+          data-id="explain"
+          class="slds-m-top_small"
+          variant="brand"
+          label={labels.explain}
+          disabled={canExplainDisabled}
+          onclick={handleExplain}
+        ></lightning-button>
+      </template>
+
+      <template lwc:if={isLoading}>
+        <div class="slds-m-top_medium" role="status">
+          <lightning-spinner
+            alternative-text={labels.loading}
+            size="small"
+          ></lightning-spinner>
+          <span class="slds-assistive-text">{labels.loading}</span>
+        </div>
+      </template>
+
+      <template lwc:if={isIdle}>
+        <p class="slds-m-top_medium slds-text-color_weak" data-id="empty">
+          {labels.empty}
+        </p>
+      </template>
+
+      <template lwc:if={isError}>
+        <div
+          class="slds-notify slds-notify_alert slds-alert_error slds-m-top_medium"
+          role="alert"
+          data-id="error"
+        >
+          <span>{errorMessage}</span>
+          <lightning-button
+            class="slds-m-left_small"
+            variant="base"
+            label={labels.retry}
+            data-id="retry"
+            onclick={handleRetry}
+          ></lightning-button>
+        </div>
+      </template>
+
+      <template lwc:if={isReady}>
+        <section
+          class="slds-m-top_medium"
+          aria-labelledby="axf-cp-level"
+          role="region"
+        >
+          <h2 id="axf-cp-level" class="slds-text-heading_small">
+            {labels.level}
+          </h2>
+          <p class="slds-m-top_x-small">
+            <span class={levelClass} data-id="level">{levelLabel}</span>
+            <span class="slds-m-left_small slds-text-body_small">
+              {labels.asOf}:
+              <lightning-formatted-date-time
+                value={panel.asOf}
+                year="numeric"
+                month="short"
+                day="2-digit"
+                hour="2-digit"
+                minute="2-digit"
+              ></lightning-formatted-date-time>
+              · {labels.policy}: {panel.policyVersion}
+            </span>
+          </p>
+          <p class="slds-m-top_x-small" data-id="impact">{impactText}</p>
+          <template lwc:if={isBlocked}>
+            <ul
+              class="slds-list_dotted slds-m-top_x-small"
+              data-id="blocked-reasons"
+            >
+              <template for:each={blockedReasons} for:item="reason">
+                <li key={reason.key}>{reason.text}</li>
+              </template>
+            </ul>
+          </template>
+        </section>
+
+        <section
+          class="slds-m-top_medium"
+          aria-labelledby="axf-cp-sources"
+          role="region"
+        >
+          <h2 id="axf-cp-sources" class="slds-text-heading_small">
+            {labels.sources}
+          </h2>
+          <div class="slds-scrollable_x">
+            <table
+              class="slds-table slds-table_bordered slds-table_cell-buffer slds-m-top_x-small"
+              data-id="sources"
+            >
+              <thead>
+                <tr class="slds-line-height_reset">
+                  <th scope="col">{labels.source}</th>
+                  <th scope="col">{labels.holder}</th>
+                  <th scope="col">{labels.origin}</th>
+                  <th scope="col">{labels.lastSuccess}</th>
+                  <th scope="col">{labels.freshness}</th>
+                  <th scope="col">{labels.limit}</th>
+                  <th scope="col">{labels.facts}</th>
+                  <th scope="col">{labels.included}</th>
+                  <th scope="col">
+                    <span class="slds-assistive-text">{labels.openSource}</span>
+                  </th>
+                </tr>
+              </thead>
+              <tbody>
+                <template for:each={sources} for:item="source">
+                  <tr key={source.key} data-source={source.sourceId}>
+                    <th scope="row">
+                      {source.label}
+                      <template lwc:if={source.hasCurrency}>
+                        <span class="slds-text-color_weak"
+                          >({source.currencyIso})</span
+                        >
+                      </template>
+                    </th>
+                    <td>{source.holderName}</td>
+                    <td>{source.originLabel}</td>
+                    <td>
+                      <template lwc:if={source.hasLastSuccess}>
+                        <lightning-formatted-date-time
+                          value={source.lastSuccessAt}
+                          year="numeric"
+                          month="short"
+                          day="2-digit"
+                          hour="2-digit"
+                          minute="2-digit"
+                        ></lightning-formatted-date-time>
+                      </template>
+                      <template lwc:else><span>{labels.never}</span></template>
+                    </td>
+                    <td>
+                      <span
+                        class={source.freshnessClass}
+                        data-freshness={source.freshness}
+                        >{source.freshnessLabel}</span
+                      >
+                    </td>
+                    <td>{source.freshnessLimitHours}</td>
+                    <td>{source.factsLabel}</td>
+                    <td>{source.inclusionLabel}</td>
+                    <td>
+                      <template lwc:if={source.navigable}>
+                        <lightning-button
+                          variant="base"
+                          label={labels.openSource}
+                          title={source.ariaLabel}
+                          data-id="open"
+                          data-source={source.sourceId}
+                          onclick={handleOpenSource}
+                        ></lightning-button>
+                      </template>
+                    </td>
+                  </tr>
+                </template>
+              </tbody>
+            </table>
+          </div>
+        </section>
+
+        <div class="slds-grid slds-wrap slds-gutters_small slds-m-top_medium">
+          <section
+            class="slds-col slds-size_1-of-1 slds-medium-size_1-of-2"
+            aria-labelledby="axf-cp-exceptions"
+            role="region"
+          >
+            <h2 id="axf-cp-exceptions" class="slds-text-heading_small">
+              {labels.exceptions}
+            </h2>
+            <template lwc:if={hasExceptions}>
+              <ul class="slds-list_dotted" data-id="exceptions">
+                <template for:each={exceptions} for:item="row">
+                  <li key={row.key}>{row.text}</li>
+                </template>
+              </ul>
+            </template>
+            <template lwc:else
+              ><p class="slds-text-color_weak">
+                {labels.noExceptions}
+              </p></template
+            >
+          </section>
+          <section
+            class="slds-col slds-size_1-of-1 slds-medium-size_1-of-2"
+            aria-labelledby="axf-cp-exclusions"
+            role="region"
+          >
+            <h2 id="axf-cp-exclusions" class="slds-text-heading_small">
+              {labels.exclusions}
+            </h2>
+            <template lwc:if={hasExclusions}>
+              <ul class="slds-list_dotted" data-id="exclusions">
+                <template for:each={exclusions} for:item="row">
+                  <li key={row.key}>{row.text}</li>
+                </template>
+              </ul>
+            </template>
+            <template lwc:else
+              ><p class="slds-text-color_weak">
+                {labels.noExclusions}
+              </p></template
+            >
+          </section>
+        </div>
+
+        <section
+          class="slds-m-top_medium"
+          aria-labelledby="axf-cp-fx"
+          role="region"
+        >
+          <h2 id="axf-cp-fx" class="slds-text-heading_small">{labels.fx}</h2>
+          <p data-id="fx">{fxText}</p>
+        </section>
+
+        <section
+          class="slds-m-top_medium"
+          aria-labelledby="axf-cp-actions"
+          role="region"
+        >
+          <h2 id="axf-cp-actions" class="slds-text-heading_small">
+            {labels.allowedActions}
+          </h2>
+          <ul class="slds-list_dotted" data-id="actions">
+            <template for:each={actions} for:item="action">
+              <li key={action.key}>{action.text}</li>
+            </template>
+          </ul>
+        </section>
+      </template>
+    </div>
+  </lightning-card>
+</template>

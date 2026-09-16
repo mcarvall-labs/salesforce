@@ -1,0 +1,25 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<CustomField xmlns="http://soap.sforce.com/2006/04/metadata">
+    <fullName>AXF_FXC_PKL_ChargeType__c</fullName>
+    <label>Natureza</label>
+    <type>Picklist</type>
+    <required>true</required>
+    <valueSet>
+        <restricted>true</restricted>
+        <valueSetDefinition>
+            <sorted>false</sorted>
+            <value><fullName>FEE</fullName><default>false</default><label
+        >Tarifa</label></value>
+            <value><fullName>IOF</fullName><default>false</default><label
+        >IOF</label></value>
+            <value><fullName>TAX</fullName><default>false</default><label
+        >Tributo</label></value>
+            <value><fullName>INTERMEDIARY</fullName><default
+        >false</default><label>Intermediario</label></value>
+            <value><fullName>OTHER</fullName><default>false</default><label
+        >Outro</label></value>
+        </valueSetDefinition>
+    </valueSet>
+    <description
+  >Natureza do encargo comprovado (AXF-61). Spread/VET sao metricas, nunca ChargeType.</description>
+</CustomField>

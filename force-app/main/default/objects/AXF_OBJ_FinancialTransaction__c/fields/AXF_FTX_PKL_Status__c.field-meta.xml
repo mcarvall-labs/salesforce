@@ -10,8 +10,10 @@
             <sorted>false</sorted>
             <value><fullName>CONFIRMED</fullName><default>true</default><label
         >Confirmado</label></value>
+            <value><fullName>PLANNED</fullName><default>false</default><label
+        >Planejado</label></value>
         </valueSetDefinition>
     </valueSet>
     <description
-  >Lifecycle ACTUAL_ONLY nesta US (G1-3) — só lançamento à vista confirmado pelo wizard. Estados de previsão/parcela (PLANNED/ESTIMATED) entram com AXF-20/21, sem quebrar este valor.</description>
+  >CONFIRMED = lançamento à vista confirmado pelo wizard (AXF-19). PLANNED = ocorrência de cronograma gerado, ainda um rascunho (AXF-20). ESTIMATED entra com AXF-21.</description>
 </CustomField>

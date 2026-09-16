@@ -1,0 +1,24 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<CustomFieldTranslation xmlns="http://soap.sforce.com/2006/04/metadata">
+  <name>AXF_SDF_PKL_Method__c</name>
+  <picklistValues>
+    <masterLabel>Recorrente</masterLabel>
+    <translation>Recorrente</translation>
+  </picklistValues>
+  <picklistValues>
+    <masterLabel>Parcelado</masterLabel>
+    <translation>Parcelado</translation>
+  </picklistValues>
+  <picklistValues>
+    <masterLabel>PRICE</masterLabel>
+    <translation>PRICE</translation>
+  </picklistValues>
+  <picklistValues>
+    <masterLabel>SAC</masterLabel>
+    <translation>SAC</translation>
+  </picklistValues>
+  <picklistValues>
+    <masterLabel>Estimado por referência</masterLabel>
+    <translation>Estimado por referência</translation>
+  </picklistValues>
+</CustomFieldTranslation>

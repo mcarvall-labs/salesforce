@@ -112,4 +112,29 @@ private class AXF_CLS_PluggyAuthServiceTest {
 
     System.assertEquals('candidate-key', key);
   }
+
+  @IsTest
+  static void calloutFailureDuringAuthIsAConfigErrorNotARawCallout() {
+    AXF_CLS_PluggyHttpCalloutMock mock = new AXF_CLS_PluggyHttpCalloutMock();
+    // Simulates the merge fields failing to resolve in the /auth body
+    // (System.CalloutException: Field ... does not exist).
+    mock.throwCallout = true;
+    Test.setMock(HttpCalloutMock.class, mock);
+
+    Test.startTest();
+    try {
+      AXF_CLS_PluggyAuthService.getValidApiKey();
+      System.assert(false, 'an auth-phase callout failure must be wrapped');
+    } catch (AXF_CLS_PluggyConfigException e) {
+      System.assert(
+        e.getMessage().containsIgnoreCase('autenticacao'),
+        'must name the authentication concern: ' + e.getMessage()
+      );
+      System.assert(
+        !e.getMessage().containsIgnoreCase('GET /items'),
+        'must not be mislabeled as an item lookup: ' + e.getMessage()
+      );
+    }
+    Test.stopTest();
+  }
 }

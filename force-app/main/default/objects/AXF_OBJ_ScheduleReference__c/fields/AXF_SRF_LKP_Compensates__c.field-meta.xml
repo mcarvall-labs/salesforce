@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<CustomField xmlns="http://soap.sforce.com/2006/04/metadata">
+  <fullName>AXF_SRF_LKP_Compensates__c</fullName>
+  <label>Compensa</label>
+  <type>Lookup</type>
+  <referenceTo>AXF_OBJ_ScheduleReference__c</referenceTo>
+  <relationshipName>AXF_REL_CompensatingReferences</relationshipName>
+  <deleteConstraint>SetNull</deleteConstraint>
+  <required>false</required>
+  <description
+  >Referência retirada que esta compensação neutraliza. Obrigatória quando Kind é COMPENSATION. Nunca representa um pagamento negativo. A plataforma não permite exclusão restrita em auto-relacionamento; a guarda de delete é do handler (AXF-103).</description>
+</CustomField>

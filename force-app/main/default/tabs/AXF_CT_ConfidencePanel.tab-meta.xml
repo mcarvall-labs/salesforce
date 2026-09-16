@@ -1,0 +1,6 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<CustomTab xmlns="http://soap.sforce.com/2006/04/metadata">
+  <label>Painel de confianca</label>
+  <lwcComponent>aXF_LWC_confidencePanel</lwcComponent>
+  <motif>Custom25: Gauge</motif>
+</CustomTab>

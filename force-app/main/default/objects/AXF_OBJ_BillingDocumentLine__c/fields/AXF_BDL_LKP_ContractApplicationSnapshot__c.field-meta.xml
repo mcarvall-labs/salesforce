@@ -1,0 +1,13 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<CustomField xmlns="http://soap.sforce.com/2006/04/metadata">
+    <fullName>AXF_BDL_LKP_ContractApplicationSnapshot__c</fullName>
+    <label>Snapshot Contratual</label>
+    <type>Lookup</type>
+    <referenceTo>AXF_OBJ_ContractApplicationSnapshot__c</referenceTo>
+    <relationshipName>AXF_REL_BillingLines</relationshipName>
+    <relationshipLabel>Linhas de Cobranca</relationshipLabel>
+    <deleteConstraint>Restrict</deleteConstraint>
+    <required>true</required>
+    <description
+  >Snapshot ACTIVE do termo aplicado ao lancamento no momento da composicao; nunca o contrato corrente (GBI-3).</description>
+</CustomField>

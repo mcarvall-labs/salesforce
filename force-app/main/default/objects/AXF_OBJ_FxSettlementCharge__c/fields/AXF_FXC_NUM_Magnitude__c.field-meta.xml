@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<CustomField xmlns="http://soap.sforce.com/2006/04/metadata">
+    <fullName>AXF_FXC_NUM_Magnitude__c</fullName>
+    <label>Valor</label>
+    <type>Number</type>
+    <precision>18</precision>
+    <scale>8</scale>
+    <required>true</required>
+    <description
+  >Magnitude do encargo comprovado (Number(18,8)) na moeda AXF_FXC_TXT_CurrencyIsoCode__c (AXF-61). IOF/tributo sem aliquota hardcoded; valor explicito do comprovante/provedor.</description>
+</CustomField>

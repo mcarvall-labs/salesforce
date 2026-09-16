@@ -1,0 +1,23 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<CustomObject xmlns="http://soap.sforce.com/2006/04/metadata">
+  <deploymentStatus>Deployed</deploymentStatus>
+  <description
+  >Recibo imutável de alteração do cronograma (AXF-103), delimitado por OperationKey (hash do payload canônico) — não é um ledger genérico de comandos. Nesta fatia recebe apenas o recibo de CREATE; os comandos de edição e encerramento são da fatia seguinte. Sem Delete e sem exposição nativa de lista/relatório até a paridade de compartilhamento. AXF-103.</description>
+  <enableActivities>false</enableActivities>
+  <enableBulkApi>true</enableBulkApi>
+  <enableFeeds>false</enableFeeds>
+  <enableHistory>false</enableHistory>
+  <enableReports>false</enableReports>
+  <enableSearch>false</enableSearch>
+  <enableSharing>true</enableSharing>
+  <enableStreamingApi>true</enableStreamingApi>
+  <label>Alteração de Cronograma</label>
+  <nameField>
+    <displayFormat>SCH-{000000}</displayFormat>
+    <label>Número da Alteração</label>
+    <type>AutoNumber</type>
+  </nameField>
+  <pluralLabel>Alterações de Cronograma</pluralLabel>
+  <sharingModel>Private</sharingModel>
+  <visibility>Public</visibility>
+</CustomObject>

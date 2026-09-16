@@ -1,0 +1,4 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<CustomField xmlns="http://soap.sforce.com/2006/04/metadata"><fullName
+  >AXF_RA_TXT_ReportingIso__c</fullName><label>Reporting currency</label><length
+  >3</length><type>Text</type></CustomField>

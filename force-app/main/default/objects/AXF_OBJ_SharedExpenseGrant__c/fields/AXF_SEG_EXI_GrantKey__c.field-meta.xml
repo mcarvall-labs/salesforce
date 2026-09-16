@@ -1,0 +1,13 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<CustomField xmlns="http://soap.sforce.com/2006/04/metadata">
+    <fullName>AXF_SEG_EXI_GrantKey__c</fullName>
+    <label>Chave da Concessao</label>
+    <type>Text</type>
+    <length>64</length>
+    <unique>true</unique>
+    <externalId>true</externalId>
+    <caseSensitive>true</caseSensitive>
+    <required>true</required>
+    <description
+  >Unique = FinancialTransaction + Collaborator (uma concessao por par; reativacao reutiliza o registro).</description>
+</CustomField>

@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<CustomField xmlns="http://soap.sforce.com/2006/04/metadata">
+    <fullName>AXF_SEG_LKP_Collaborator__c</fullName>
+    <label>Colaborador</label>
+    <type>Lookup</type>
+    <referenceTo>User</referenceTo>
+    <relationshipName>AXF_REL_SharedExpenseGrants</relationshipName>
+    <deleteConstraint>SetNull</deleteConstraint>
+    <required>false</required>
+    <description
+  >Usuario Participante autorizado a visualizar ou editar em escopo limitado. Obrigatorio (validado no handler: lookups para User nao aceitam Restrict).</description>
+</CustomField>

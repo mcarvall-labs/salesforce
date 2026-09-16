@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<CustomField xmlns="http://soap.sforce.com/2006/04/metadata">
+    <fullName>AXF_BDV_CUR_LinesTotal__c</fullName>
+    <label>Soma das Linhas</label>
+    <type>Summary</type>
+    <summaryForeignKey
+  >AXF_OBJ_BillingDocumentLine__c.AXF_BDL_MDR_DocumentVersion__c</summaryForeignKey>
+    <summarizedField
+  >AXF_OBJ_BillingDocumentLine__c.AXF_BDL_CUR_Amount__c</summarizedField>
+    <summaryOperation>sum</summaryOperation>
+    <required>false</required>
+    <description
+  >Roll-up nativo: soma dos valores das linhas; evidencia de conservacao do total (GBI-3).</description>
+</CustomField>

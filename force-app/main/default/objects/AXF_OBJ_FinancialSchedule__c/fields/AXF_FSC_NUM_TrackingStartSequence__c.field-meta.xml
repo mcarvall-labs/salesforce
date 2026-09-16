@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<CustomField xmlns="http://soap.sforce.com/2006/04/metadata">
+  <fullName>AXF_FSC_NUM_TrackingStartSequence__c</fullName>
+  <label>Sequência Inicial de Rastreamento</label>
+  <type>Number</type>
+  <precision>5</precision>
+  <scale>0</scale>
+  <required>true</required>
+  <description
+  >Primeira parcela rastreada. Nada é gerado nem somado abaixo desta sequência: o histórico pré-rastreamento permanece desconhecido, nunca inferido (AXF-103).</description>
+</CustomField>

@@ -103,7 +103,12 @@ private class AXF_CLS_CTRL_UserProvisioningTest {
       si.name = 'Ctrl Person';
 
       ALT_CLS_AxonUserProvisioning.Result started = AXF_CLS_CTRL_UserProvisioning.start(
-        si
+        si.personId,
+        si.mode,
+        si.scope,
+        si.name,
+        si.email,
+        si.existingUserId
       );
       System.assertEquals('STARTED', started.outcome, started.message);
 

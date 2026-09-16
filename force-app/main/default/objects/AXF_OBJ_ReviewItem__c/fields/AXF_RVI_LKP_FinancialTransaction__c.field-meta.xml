@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<CustomField xmlns="http://soap.sforce.com/2006/04/metadata">
+    <fullName>AXF_RVI_LKP_FinancialTransaction__c</fullName>
+    <label>Lancamento Financeiro</label>
+    <type>Lookup</type>
+    <referenceTo>AXF_OBJ_FinancialTransaction__c</referenceTo>
+    <relationshipName>AXF_REL_RVI_Ftx</relationshipName>
+    <deleteConstraint>SetNull</deleteConstraint>
+    <required>false</required>
+    <description
+  >Registro envolvido (tipo FINANCIAL_TRANSACTION) (AXF-94).</description>
+</CustomField>

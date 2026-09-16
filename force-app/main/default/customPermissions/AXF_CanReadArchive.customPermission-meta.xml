@@ -1,0 +1,7 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<CustomPermission xmlns="http://soap.sforce.com/2006/04/metadata">
+    <isLicensed>false</isLicensed>
+    <label>AXF - Pode Consultar Arquivo</label>
+    <description
+  >Capacidade de consultar o arquivo de transacoes (AXF-95), sempre revalidando o acesso ao titular no pedido e na entrega. Concedida por AXF_PS_GestorFinanceiro.</description>
+</CustomPermission>

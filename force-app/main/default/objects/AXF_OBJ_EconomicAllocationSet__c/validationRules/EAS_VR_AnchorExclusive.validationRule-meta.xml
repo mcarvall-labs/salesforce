@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<ValidationRule xmlns="http://soap.sforce.com/2006/04/metadata">
+    <fullName>EAS_VR_AnchorExclusive</fullName>
+    <active>true</active>
+    <description
+  >Exatamente um fato de origem (BAT, CCT ou FTX) ancora o rateio (R1, AXF-126).</description>
+    <errorConditionFormula
+  >(IF(ISBLANK(AXF_EAS_LKP_BankTransaction__c), 0, 1) + IF(ISBLANK(AXF_EAS_LKP_CardTransaction__c), 0, 1) + IF(ISBLANK(AXF_EAS_LKP_FinancialTransaction__c), 0, 1)) &lt;&gt; 1</errorConditionFormula>
+    <errorMessage
+  >O rateio deve apontar para exatamente um fato de origem (transacao bancaria, de cartao ou lancamento manual).</errorMessage>
+</ValidationRule>

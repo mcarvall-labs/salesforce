@@ -1,0 +1,8 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<CustomField xmlns="http://soap.sforce.com/2006/04/metadata"><fullName
+  >AXF_RA_PKL_FxState__c</fullName><label>Reporting FX state</label><type
+  >Picklist</type><valueSet><restricted>true</restricted><valueSetDefinition
+    ><sorted>false</sorted><value><fullName>PENDING_FX</fullName><default
+        >true</default><label>PENDING_FX</label></value><value><fullName
+        >READY</fullName><default>false</default><label
+        >READY</label></value></valueSetDefinition></valueSet></CustomField>

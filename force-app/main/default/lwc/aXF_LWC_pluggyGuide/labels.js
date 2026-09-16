@@ -28,10 +28,20 @@ const PT = {
   },
   steps: {
     intro: {
-      title: "O que você vai fazer",
+      title: "O que você vai fazer nesta etapa",
       body: [
-        "Antes de configurar o Axon, você precisa: (1) conectar seus bancos no MeuPluggy e (2) autorizar esses dados para a aplicação certa no painel do Pluggy.",
-        "Este guia mostra uma ação por vez. Você pode voltar a qualquer momento. Nada aqui conecta banco nem envia senha — as instruções são só de apoio."
+        "Aqui você prepara o acesso do Axon à Pluggy. Os passos são:",
+        {
+          list: [
+            "criar ou entrar na conta MeuPluggy;",
+            "conectar o primeiro banco (Open Finance) no MeuPluggy;",
+            "adicionar as próximas conexões de banco;",
+            "criar a aplicação no painel do Pluggy;",
+            "copiar o Client ID e o Client Secret da aplicação."
+          ]
+        },
+        "Autorizar as conexões para a aplicação e copiar o Item ID de cada uma você faz na etapa seguinte, ao buscar contas e cartões.",
+        "Este guia mostra uma ação por vez e você pode voltar a qualquer momento. Nada aqui conecta banco nem envia senha — as instruções são só de apoio."
       ]
     },
     meupluggyAccount: {
@@ -43,17 +53,30 @@ const PT = {
       mediaAlt:
         "Tela inicial do MeuPluggy com os botões de criar conta e entrar, com dados fictícios."
     },
-    meupluggyConnect: {
-      title: "Conectar um banco no MeuPluggy",
+    meupluggyConnectFirst: {
+      title: "Conectar o primeiro banco",
       body: [
-        "No MeuPluggy, abra Conexões e clique em Nova conexão.",
-        "Clique em Continuar, escolha a instituição e conclua a autorização que o banco pedir. Os campos mudam de um banco para outro."
+        "No MeuPluggy, clique em Conectar minha conta e escolha a instituição.",
+        "Leia as informações, clique em Continuar, informe os dados que o banco pedir e conclua a autorização. Os campos mudam de um banco para outro."
       ],
       mediaAlt:
-        "Tela de Conexões do MeuPluggy com o botão Nova conexão em destaque, com dados fictícios.",
+        "Fluxo do MeuPluggy: Conectar minha conta, escolher a instituição, autorizar no banco e ver a conta conectada, com dados fictícios.",
       help: [
-        "Repita esta etapa para cada banco que você quer disponibilizar ao Axon.",
-        "Alguns bancos pedem confirmação no aplicativo do próprio banco ou um código enviado a você."
+        "Alguns bancos pedem confirmação no aplicativo do próprio banco ou um código enviado a você.",
+        "Ao final, a conexão aparece na tela inicial do MeuPluggy como ativa."
+      ]
+    },
+    meupluggyConnectNext: {
+      title: "Adicionar a próxima conexão",
+      body: [
+        "Na tela de Conexões do MeuPluggy, clique em Nova conexão e repita o processo para o próximo banco.",
+        "Faça isso para cada banco que você quer disponibilizar ao Axon."
+      ],
+      mediaAlt:
+        "Tela de Conexões do MeuPluggy com uma conexão ativa, o botão Nova conexão e uma segunda conexão sendo adicionada, com dados fictícios.",
+      help: [
+        "Cada banco conectado vira uma conexão separada, com o seu próprio Item ID.",
+        "Você pode adicionar e remover conexões a qualquer momento pelo MeuPluggy."
       ]
     },
     dashboardApp: {
@@ -93,19 +116,28 @@ const PT = {
         "O Axon guarda essas credenciais só pelo fluxo oficial e seguro; este guia não as recebe."
       ]
     },
+    discoveryIntro: {
+      title: "O que você vai fazer nesta etapa",
+      body: [
+        "As credenciais já estão salvas. Agora o Axon precisa saber quais conexões bancárias buscar.",
+        "Cada banco que você conectou no Pluggy tem um Item ID próprio. Você vai copiar o Item ID de cada conexão e cadastrar aqui — uma de cada vez.",
+        "Depois de cadastrar as conexões, o botão Descobrir agora carrega as contas e cartões de todas elas."
+      ]
+    },
     itemId: {
-      title: "Copiar o Item ID de uma conexão",
+      title: "Copiar o Item ID de cada conexão",
       body: [
         "No painel do Pluggy (dashboard.pluggy.ai), entre e vá em Aplicações. Clique no ▶ da aplicação usada no Axon.",
-        "Selecione o Item, abra o menu ⋮ e clique em Copiar Item ID. Cole no Axon e use Buscar contas e cartões."
+        "Para cada conexão: selecione o Item, abra o menu ⋮ e clique em Copiar Item ID. Volte ao Axon, cole no campo Item ID e clique em Registrar.",
+        "Repita para todas as conexões que você quer no Axon. Quando terminar, use Descobrir agora."
       ],
       mediaAlt:
         "Sequência no painel do Pluggy: abrir a aplicação, escolher o Item, menu de três pontos, Copiar Item ID.",
       help: [
         "Item ID, Client ID e Client Secret são três coisas diferentes.",
         "Não use recuperação por URL nem Copiar link do MeuPluggy — o caminho é o Item ID pelo painel.",
-        "Depois de copiar, você pode Adicionar outra conexão ou Continuar.",
-        "Ver a animação até o fim não executa a busca — você ainda precisa colar o Item ID e clicar em Buscar contas e cartões no Axon."
+        "Cada conexão de banco gera um Item ID; cadastre todos, um por vez.",
+        "Ver a animação até o fim não executa a busca — você ainda precisa colar o Item ID e registrar no Axon."
       ]
     },
     historyPeriod: {
@@ -159,10 +191,20 @@ const EN = {
   },
   steps: {
     intro: {
-      title: "What you are going to do",
+      title: "What you will do in this step",
       body: [
-        "Before setting up Axon you need to: (1) connect your banks on MeuPluggy and (2) authorize that data for the right application in the Pluggy dashboard.",
-        "This guide shows one action at a time. You can go back anytime. Nothing here connects a bank or sends a password — the instructions are support only."
+        "Here you prepare Axon's access to Pluggy. The steps are:",
+        {
+          list: [
+            "create or sign in to the MeuPluggy account;",
+            "connect the first bank (Open Finance) on MeuPluggy;",
+            "add the next bank connections;",
+            "create the application in the Pluggy dashboard;",
+            "copy the application's Client ID and Client Secret."
+          ]
+        },
+        "Authorizing the connections for the application and copying each connection's Item ID happen in the next step, when finding accounts and cards.",
+        "This guide shows one action at a time and you can go back anytime. Nothing here connects a bank or sends a password — the instructions are support only."
       ]
     },
     meupluggyAccount: {
@@ -174,17 +216,30 @@ const EN = {
       mediaAlt:
         "MeuPluggy home screen with the create-account and sign-in buttons, using fictitious data."
     },
-    meupluggyConnect: {
-      title: "Connect a bank on MeuPluggy",
+    meupluggyConnectFirst: {
+      title: "Connect the first bank",
       body: [
-        "On MeuPluggy, open Conexões and click Nova conexão.",
-        "Click Continuar, choose the institution and complete the authorization the bank asks for. Fields differ from bank to bank."
+        "On MeuPluggy, click Conectar minha conta and choose the institution.",
+        "Read the information, click Continuar, enter what the bank asks for and complete the authorization. Fields differ from bank to bank."
       ],
       mediaAlt:
-        "MeuPluggy Conexões screen with the Nova conexão button highlighted, using fictitious data.",
+        "MeuPluggy flow: Conectar minha conta, choose the institution, authorize at the bank and see the connected account, using fictitious data.",
       help: [
-        "Repeat this step for every bank you want to make available to Axon.",
-        "Some banks ask for confirmation in their own app or a code sent to you."
+        "Some banks ask for confirmation in their own app or a code sent to you.",
+        "When done, the connection shows as active on the MeuPluggy home screen."
+      ]
+    },
+    meupluggyConnectNext: {
+      title: "Add the next connection",
+      body: [
+        "On the MeuPluggy Conexões screen, click Nova conexão and repeat the process for the next bank.",
+        "Do this for every bank you want to make available to Axon."
+      ],
+      mediaAlt:
+        "MeuPluggy Conexões screen with one active connection, the Nova conexão button and a second connection being added, using fictitious data.",
+      help: [
+        "Each connected bank becomes a separate connection, with its own Item ID.",
+        "You can add and remove connections anytime from MeuPluggy."
       ]
     },
     dashboardApp: {
@@ -224,19 +279,28 @@ const EN = {
         "Axon stores these credentials only through the official secure flow; this guide never receives them."
       ]
     },
+    discoveryIntro: {
+      title: "What you will do in this step",
+      body: [
+        "Credentials are saved. Now Axon needs to know which bank connections to fetch.",
+        "Each bank you connected on Pluggy has its own Item ID. You will copy each connection's Item ID and register it here — one at a time.",
+        "Once the connections are registered, the Descobrir agora button loads the accounts and cards of all of them."
+      ]
+    },
     itemId: {
-      title: "Copy a connection's Item ID",
+      title: "Copy each connection's Item ID",
       body: [
         "In the Pluggy dashboard (dashboard.pluggy.ai), sign in and go to Aplicações. Click the ▶ of the application used in Axon.",
-        "Select the Item, open the ⋮ menu and click Copiar Item ID. Paste it in Axon and use Buscar contas e cartões."
+        "For each connection: select the Item, open the ⋮ menu and click Copiar Item ID. Back in Axon, paste it in the Item ID field and click Registrar.",
+        "Repeat for every connection you want in Axon. When done, use Descobrir agora."
       ],
       mediaAlt:
         "Sequence in the Pluggy dashboard: open the application, choose the Item, three-dot menu, Copiar Item ID.",
       help: [
         "Item ID, Client ID and Client Secret are three different things.",
         "Do not use URL recovery or Copiar link on MeuPluggy — the path is the Item ID from the dashboard.",
-        "After copying you can Adicionar outra conexão or Continuar.",
-        "Watching the animation to the end does not run the search — you still have to paste the Item ID and click Buscar contas e cartões in Axon."
+        "Each bank connection has its own Item ID; register them all, one at a time.",
+        "Watching the animation to the end does not run the search — you still have to paste the Item ID and register it in Axon."
       ]
     },
     historyPeriod: {

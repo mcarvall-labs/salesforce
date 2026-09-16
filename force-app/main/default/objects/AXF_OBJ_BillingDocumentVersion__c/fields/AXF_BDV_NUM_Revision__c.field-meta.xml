@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<CustomField xmlns="http://soap.sforce.com/2006/04/metadata">
+    <fullName>AXF_BDV_NUM_Revision__c</fullName>
+    <label>Revisao</label>
+    <type>Number</type>
+    <precision>18</precision>
+    <scale>0</scale>
+    <required>true</required>
+    <description
+  >Revisao sequencial dentro do documento; unique Document+Revision via VersionKey.</description>
+</CustomField>

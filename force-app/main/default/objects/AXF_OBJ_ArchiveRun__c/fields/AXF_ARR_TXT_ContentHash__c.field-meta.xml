@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<CustomField xmlns="http://soap.sforce.com/2006/04/metadata">
+    <fullName>AXF_ARR_TXT_ContentHash__c</fullName>
+    <label>Hash da Execucao</label>
+    <type>Text</type>
+    <length>64</length>
+    <required>false</required>
+    <description
+  >SHA-256 encadeado das ArchiveKeys gravadas (ordem deterministica).</description>
+</CustomField>
