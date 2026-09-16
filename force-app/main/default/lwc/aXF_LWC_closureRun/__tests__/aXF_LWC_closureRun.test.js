@@ -300,4 +300,67 @@ describe("c-aXF_LWC_closureRun", () => {
       failureMessage({})
     );
   });
+
+  it("shows the closed state with the unconfirmed external revocation separately", async () => {
+    listRuns.mockResolvedValue([blocked]);
+    const closedPending = {
+      ...blocked,
+      status: "CLOSED",
+      closed: true,
+      canAdvance: false,
+      progressPercent: 100,
+      lastCompletedStage: "RETAIN_EVIDENCE",
+      blockReason: null,
+      nextAction: "NONE",
+      externalRevocation: "NOT_CONFIRMED",
+      externalRevocationAction: "REVOKE_IN_PLUGGY"
+    };
+    read.mockResolvedValueOnce(closedPending);
+    const element = build();
+    await flush();
+    [...element.shadowRoot.querySelectorAll("lightning-button")]
+      .find((button) => button.dataset.id === "clr1")
+      .click();
+    await flush();
+    // "Axon closed" and the unconfirmed external revocation appear together but apart.
+    expect(
+      element.shadowRoot.querySelector('[data-id="closed"]')
+    ).not.toBeNull();
+    const pendingNotice = element.shadowRoot.querySelector(
+      '[data-id="external-pending"]'
+    );
+    expect(pendingNotice).not.toBeNull();
+    expect(pendingNotice.textContent).toContain(
+      "AXF_ClosureRun_externalPendingBanner"
+    );
+    expect(
+      element.shadowRoot.querySelector('[data-id="external-action"]')
+        .textContent
+    ).toBe(actionLabel("REVOKE_IN_PLUGGY"));
+    // The step at the provider is never the run's own next action.
+    expect(
+      element.shadowRoot.querySelector('[data-id="next-action"]').textContent
+    ).toBe(actionLabel("NONE"));
+    expect(element.shadowRoot.querySelector('[data-id="advance"]')).toBeNull();
+
+    // A revocation observed at the provider carries no pending guidance.
+    read.mockResolvedValueOnce({
+      ...closedPending,
+      externalRevocation: "CONFIRMED",
+      externalRevocationAction: null
+    });
+    element.shadowRoot.querySelector('[data-id="back"]').click();
+    await flush();
+    [...element.shadowRoot.querySelectorAll("lightning-button")]
+      .find((button) => button.dataset.id === "clr1")
+      .click();
+    await flush();
+    expect(
+      element.shadowRoot.querySelector('[data-id="external-pending"]')
+    ).toBeNull();
+    expect(
+      element.shadowRoot.querySelector('[data-id="external-action"]')
+        .textContent
+    ).toBe("—");
+  });
 });

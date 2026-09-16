@@ -4,6 +4,9 @@
  * coleta/publicacao sem chamada ao provedor, expurgo governado por policy (ausencia nao expurga;
  * legal hold bloqueia), evidencia minima e CLOSED terminal; RESULT_UNKNOWN exige reconciliacao;
  * acesso negado e erros sanitizados.
+ * AXF-120: impedimentos da exclusao (legal hold, arquivo sem copia recuperavel confirmada, backup
+ * obrigatorio pendente) com motivo seguro e acao autorizada, retencao sem reativar acesso, e o
+ * estado dividido "Axon encerrado" + revogacao externa nao confirmada sem DELETE /items.
  */
 @IsTest
 private class ALT_CLS_ClosureOrchestratorTest {
@@ -852,5 +855,330 @@ private class ALT_CLS_ClosureOrchestratorTest {
       Assert.areEqual('REQUESTED', view.status);
     }
     Test.stopTest();
+  }
+
+  /**
+   * AXF-120 AC-1: legal hold, arquivo sem copia recuperavel confirmada e backup obrigatorio
+   * pendente bloqueiam a exclusao com motivo seguro e acao autorizada; enquanto isso o conteudo e
+   * preservado e a retencao que o preserva nunca devolve o acesso ja retirado.
+   */
+  @IsTest
+  static void archiveAndBackupImpedimentsBlockDeletionWithoutReactivatingAccess() {
+    System.runAs(admin()) {
+      Scope scope = makeScope('g');
+      scope.plan.AXF_FTX_TXT_Description__c = 'Aluguel sala 20 - Ana';
+      update scope.plan;
+      AXF_OBJ_BankAccountTransaction__c fact = new AXF_OBJ_BankAccountTransaction__c(
+        AXF_BAT_MDR_BankAccount__c = scope.bank.Id,
+        AXF_BAT_EXI_SourceKey__c = 'bat-g-' + System.now().getTime(),
+        AXF_BAT_PKL_Source__c = 'MANUAL',
+        AXF_BAT_DAT_Date__c = Date.today(),
+        AXF_BAT_NUM_Magnitude__c = 20,
+        AXF_BAT_PKL_Direction__c = 'DEBIT',
+        AXF_BAT_TXT_CurrencyIsoCode__c = 'BRL',
+        AXF_BAT_TXT_Description__c = 'PIX Bruno',
+        AXF_BAT_NUM_Version__c = 0
+      );
+      insert fact;
+      // Arquivamento iniciado e nunca verificado: nenhuma copia recuperavel confirmada.
+      AXF_OBJ_ArchiveRun__c archive = archiveRun(scope.holder.Id, 'g', null);
+      ALT_CLS_RetentionPolicy.policyFixtures = descriptionPolicy();
+      ALT_CLS_ClosureOrchestrator service = new ALT_CLS_ClosureOrchestrator();
+      ALT_CLS_ClosureOrchestrator.RunView run = service.request(
+        scope.holder.Id,
+        false
+      );
+      run = service.attachExportEvidence(run.runId, 'evidence-g', run.version);
+      // A policy de retencao ja venceu: sem os impedimentos a exclusao aconteceria.
+      Test.setCreatedDate(run.runId, Datetime.now().addDays(-3));
+      Test.startTest();
+
+      run = service.advance(run.runId, run.version);
+      Assert.areEqual('BLOCKED', run.status, run.blockReason);
+      Assert.areEqual('ARCHIVE_UNVERIFIED', run.blockReason);
+      Assert.areEqual('VERIFY_ARCHIVE', run.nextAction);
+      Assert.areEqual('STOP_COLLECTION', run.lastCompletedStage);
+      assertDeletionBlocked(scope, fact);
+
+      // Verificacao amostrada tambem nao confirma a copia recuperavel.
+      setArchiveGate(archive, 'BLOCKED:VERIFY_SAMPLED');
+      run = service.advance(run.runId, run.version);
+      Assert.areEqual('ARCHIVE_UNVERIFIED', run.blockReason);
+      Assert.areEqual('VERIFY_ARCHIVE', run.nextAction);
+      assertDeletionBlocked(scope, fact);
+
+      // Copia verificada, mas o gate de recuperacao/backup segue aberto (AD-18).
+      setArchiveGate(archive, 'BLOCKED:RECOVERY_GATE_OPEN');
+      run = service.advance(run.runId, run.version);
+      Assert.areEqual('BACKUP_PENDING', run.blockReason);
+      Assert.areEqual('AWAIT_BACKUP_CONFIRMATION', run.nextAction);
+      assertDeletionBlocked(scope, fact);
+
+      // Copia verificada e mantida quente: o impedimento cai e a policy expurga o previsto.
+      setArchiveGate(archive, 'BLOCKED:HOT_REMOVAL_NOT_AUTHORIZED');
+      run = service.advance(run.runId, run.version);
+      Test.stopTest();
+
+      Assert.areEqual(
+        'CLOSED',
+        run.status,
+        run.blockReason + ' ' + ALT_CLS_ClosureOrchestrator.lastStageFailure
+      );
+      Assert.isTrue(
+        [
+            SELECT AXF_BAT_TXT_Description__c
+            FROM AXF_OBJ_BankAccountTransaction__c
+            WHERE Id = :fact.Id
+          ]
+          .AXF_BAT_TXT_Description__c.startsWith('pseudo:'),
+        'Com a copia confirmada a policy volta a expurgar.'
+      );
+      assertAccessWithdrawn(scope);
+    }
+  }
+
+  /**
+   * AXF-120 AC-1: o legal hold bloqueia a exclusao com motivo seguro e acao autorizada mesmo sem
+   * nenhuma policy de retencao configurada.
+   */
+  @IsTest
+  static void legalHoldBlocksDeletionWithoutAnyRetentionPolicy() {
+    System.runAs(admin()) {
+      Scope scope = makeScope('j');
+      scope.plan.AXF_FTX_TXT_Description__c = 'Aluguel sala 30 - Ana';
+      update scope.plan;
+      ALT_CLS_RetentionPolicy.policyFixtures = new List<AXF_CMT_RetentionPolicy__mdt>();
+      ALT_CLS_ClosureOrchestrator service = new ALT_CLS_ClosureOrchestrator();
+      ALT_CLS_ClosureOrchestrator.RunView run = service.request(
+        scope.holder.Id,
+        true
+      );
+      run = service.attachExportEvidence(run.runId, 'evidence-j', run.version);
+      Test.startTest();
+      run = service.advance(run.runId, run.version);
+      Test.stopTest();
+      Assert.areEqual('BLOCKED', run.status, run.blockReason);
+      Assert.areEqual('LEGAL_HOLD', run.blockReason);
+      Assert.areEqual('RELEASE_LEGAL_HOLD', run.nextAction);
+      Assert.areEqual('STOP_COLLECTION', run.lastCompletedStage);
+      Assert.areEqual(
+        'Aluguel sala 30 - Ana',
+        [
+          SELECT AXF_FTX_TXT_Description__c
+          FROM AXF_OBJ_FinancialTransaction__c
+          WHERE Id = :scope.plan.Id
+        ]
+        .AXF_FTX_TXT_Description__c,
+        'Legal hold preserva o conteudo.'
+      );
+      assertAccessWithdrawn(scope);
+    }
+  }
+
+  /**
+   * AXF-120 AC-2: com todas as condicoes locais cumpridas a revogacao externa nao confirmada nao
+   * impede "Axon encerrado"; ela e apresentada separadamente com a orientacao de revogar no
+   * provedor, nunca e afirmada, nao reativa coleta e nao executa DELETE /items.
+   */
+  @IsTest
+  static void unconfirmedExternalRevocationIsSeparateAndNeverCallsTheProvider() {
+    AXF_CLS_PluggyHttpCalloutMock mock = new AXF_CLS_PluggyHttpCalloutMock();
+    Test.setMock(HttpCalloutMock.class, mock);
+    Scope pendingScope;
+    ALT_CLS_ClosureOrchestrator.RunView pending;
+    ALT_CLS_ClosureOrchestrator.RunView providerConfirmed;
+    System.runAs(admin()) {
+      pendingScope = makeScope('h');
+      Scope revokedScope = makeScope('i');
+      revokedScope.connection.AXF_CON_PKL_ConsentState__c = 'REVOKED';
+      update revokedScope.connection;
+      ALT_CLS_ClosureOrchestrator service = new ALT_CLS_ClosureOrchestrator();
+      Test.startTest();
+      pending = service.request(pendingScope.holder.Id, false);
+      pending = service.attachExportEvidence(
+        pending.runId,
+        'evidence-h',
+        pending.version
+      );
+      pending = service.advance(pending.runId, pending.version);
+      providerConfirmed = service.request(revokedScope.holder.Id, false);
+      providerConfirmed = service.attachExportEvidence(
+        providerConfirmed.runId,
+        'evidence-i',
+        providerConfirmed.version
+      );
+      providerConfirmed = service.advance(
+        providerConfirmed.runId,
+        providerConfirmed.version
+      );
+      Test.stopTest();
+
+      Assert.areEqual(
+        'CLOSED',
+        pending.status,
+        pending.blockReason + ' ' + ALT_CLS_ClosureOrchestrator.lastStageFailure
+      );
+      Assert.isTrue(
+        pending.closed,
+        'A pendencia externa nao impede o encerramento local.'
+      );
+      Assert.areEqual(100, pending.progressPercent);
+      Assert.areEqual(
+        'NOT_CONFIRMED',
+        pending.externalRevocation,
+        'Pluggy exibida separadamente do encerramento.'
+      );
+      Assert.areEqual(
+        ALT_CLS_ClosureOrchestrator.EXTERNAL_REVOKE_ACTION,
+        pending.externalRevocationAction,
+        'Orientacao de revogar no provedor, separada da proxima acao do run.'
+      );
+      Assert.areEqual(
+        'NONE',
+        pending.nextAction,
+        'A pendencia externa nao vira etapa do encerramento.'
+      );
+      // Zero requisicoes ao provedor: DELETE /items e impossivel sem chamada alguma.
+      Assert.isTrue(
+        mock.requestedPaths.isEmpty(),
+        'Encerramento nunca chama a Pluggy: ' + mock.requestedPaths
+      );
+      // A pendencia nao reativa a coleta.
+      Assert.areEqual(
+        'PAUSED',
+        [
+          SELECT AXF_CON_PKL_CollectionState__c
+          FROM AXF_OBJ_PluggyConnection__c
+          WHERE Id = :pendingScope.connection.Id
+        ]
+        .AXF_CON_PKL_CollectionState__c
+      );
+      assertAccessWithdrawn(pendingScope);
+      String summary = [
+        SELECT AXF_CLR_TAL_EvidenceSummary__c
+        FROM AXF_OBJ_ClosureRun__c
+        WHERE Id = :pending.runId
+      ]
+      .AXF_CLR_TAL_EvidenceSummary__c;
+      Assert.isTrue(summary.contains('NOT_CONFIRMED'), summary);
+      Assert.isFalse(
+        summary.contains('"externalRevocation":"CONFIRMED"'),
+        'A evidencia nunca afirma revogacao externa: ' + summary
+      );
+      // Somente a revogacao observada no provedor confirma; o operador nunca a declara.
+      Assert.areEqual('CLOSED', providerConfirmed.status);
+      Assert.areEqual('CONFIRMED', providerConfirmed.externalRevocation);
+      Assert.isNull(
+        providerConfirmed.externalRevocationAction,
+        'Nada a orientar quando o provedor confirma a revogacao.'
+      );
+    }
+  }
+
+  /** Checkpoint de arquivamento do titular; escrita somente via o seam do servico (AXF-95). */
+  private static AXF_OBJ_ArchiveRun__c archiveRun(
+    Id accountId,
+    String key,
+    String gate
+  ) {
+    ALT_CLS_ArchiveRunService.writing = true;
+    try {
+      AXF_OBJ_ArchiveRun__c run = new AXF_OBJ_ArchiveRun__c(
+        AXF_ARR_EXI_RunKey__c = 'axf120-' + key,
+        AXF_ARR_PKL_SourceFamily__c = 'BAT',
+        AXF_ARR_LKP_Account__c = accountId,
+        AXF_ARR_PKL_Phase__c = 'SCANNING',
+        AXF_ARR_TXT_PolicyVersion__c = 'archive-policy@1.0.0',
+        AXF_ARR_DAT_HotWindowStart__c = Date.today()
+          .toStartOfMonth()
+          .addMonths(-24),
+        AXF_ARR_TXT_HotRemoval__c = gate
+      );
+      insert run;
+      return run;
+    } finally {
+      ALT_CLS_ArchiveRunService.writing = false;
+    }
+  }
+
+  private static void setArchiveGate(AXF_OBJ_ArchiveRun__c run, String gate) {
+    run.AXF_ARR_PKL_Phase__c = 'HOT_RETAINED';
+    run.AXF_ARR_TXT_HotRemoval__c = gate;
+    ALT_CLS_ArchiveRunService.writing = true;
+    try {
+      update run;
+    } finally {
+      ALT_CLS_ArchiveRunService.writing = false;
+    }
+  }
+
+  private static List<AXF_CMT_RetentionPolicy__mdt> descriptionPolicy() {
+    return new List<AXF_CMT_RetentionPolicy__mdt>{
+      new AXF_CMT_RetentionPolicy__mdt(
+        DeveloperName = 'Closure_Description',
+        MasterLabel = 'Closure description',
+        AXF_RPT_TXT_Domain__c = ALT_CLS_ClosureOrchestrator.DOMAIN_TRANSACTION_DESCRIPTION,
+        AXF_RPT_TXT_PurgeTrigger__c = 'CLOSURE',
+        AXF_RPT_NUM_RetentionDays__c = 1,
+        AXF_RPT_BOL_Enabled__c = true,
+        AXF_RPT_TXT_Version__c = '1.0.0'
+      )
+    };
+  }
+
+  /** Nada foi excluido e o acesso retirado continua retirado. */
+  private static void assertDeletionBlocked(
+    Scope scope,
+    AXF_OBJ_BankAccountTransaction__c fact
+  ) {
+    Assert.areEqual(
+      'PIX Bruno',
+      [
+        SELECT AXF_BAT_TXT_Description__c
+        FROM AXF_OBJ_BankAccountTransaction__c
+        WHERE Id = :fact.Id
+      ]
+      .AXF_BAT_TXT_Description__c,
+      'Exclusao bloqueada preserva o conteudo.'
+    );
+    Assert.areEqual(
+      'Aluguel sala 20 - Ana',
+      [
+        SELECT AXF_FTX_TXT_Description__c
+        FROM AXF_OBJ_FinancialTransaction__c
+        WHERE Id = :scope.plan.Id
+      ]
+      .AXF_FTX_TXT_Description__c
+    );
+    assertAccessWithdrawn(scope);
+  }
+
+  /** Retencao e pausa nunca devolvem acesso ao conteudo do escopo. */
+  private static void assertAccessWithdrawn(Scope scope) {
+    Assert.areEqual(
+      'CUSTODY',
+      [
+        SELECT AXF_BA_PKL_AvailabilityState__c
+        FROM AXF_OBJ_BankAccount__c
+        WHERE Id = :scope.bank.Id
+      ]
+      .AXF_BA_PKL_AvailabilityState__c,
+      'Fonte retirada nao volta a ficar disponivel.'
+    );
+    Assert.areEqual(
+      'PAUSED',
+      [
+        SELECT AXF_CON_PKL_CollectionState__c
+        FROM AXF_OBJ_PluggyConnection__c
+        WHERE Id = :scope.connection.Id
+      ]
+      .AXF_CON_PKL_CollectionState__c,
+      'Coleta pausada nao reinicia pela pendencia.'
+    );
+    Assert.isFalse(
+      new AXF_CLS_PluggyCollectionControlService()
+        .isCollectionAllowed(scope.connection.Id),
+      'A pendencia de encerramento nao reativa a coleta.'
+    );
   }
 }

@@ -473,6 +473,15 @@
     >AXF_ClosureRun_actionRESOLVE_DEPENDENCIES</name></customLabels><customLabels
   ><label>Nada mais a fazer.</label><name
     >AXF_ClosureRun_actionNONE</name></customLabels><customLabels><label
+    >Conclua a verificação da cópia arquivada antes de qualquer exclusão.</label><name
+    >AXF_ClosureRun_actionVERIFY_ARCHIVE</name></customLabels><customLabels
+  ><label
+    >A exclusão aguarda a confirmação do backup/recuperação obrigatório.</label><name
+    >AXF_ClosureRun_actionAWAIT_BACKUP_CONFIRMATION</name></customLabels><customLabels
+  ><label
+    >Revogue o consentimento desta instalação na Pluggy; o Axon nunca faz isso por você.</label><name
+    >AXF_ClosureRun_actionREVOKE_IN_PLUGGY</name></customLabels><customLabels
+  ><label
     >Você não tem a permissão de encerramento desta instalação.</label><name
     >AXF_ClosureRun_noAccess</name></customLabels><customLabels><label
     >Retomar o encerramento?</label><name
@@ -536,13 +545,21 @@
     >AXF_ClosureRun_reasonRESULT_UNKNOWN</name></customLabels><customLabels
   ><label>Etapa falhou</label><name
     >AXF_ClosureRun_reasonSTAGE_FAILED</name></customLabels><customLabels><label
-    >Não se aplica</label><name
+    >Arquivo sem cópia recuperável confirmada</label><name
+    >AXF_ClosureRun_reasonARCHIVE_UNVERIFIED</name></customLabels><customLabels
+  ><label>Backup obrigatório ainda pendente</label><name
+    >AXF_ClosureRun_reasonBACKUP_PENDING</name></customLabels><customLabels
+  ><label>Não se aplica</label><name
     >AXF_ClosureRun_externalNOT_APPLICABLE</name></customLabels><customLabels
   ><label>Não confirmada no provedor</label><name
     >AXF_ClosureRun_externalNOT_CONFIRMED</name></customLabels><customLabels
   ><label>Confirmada</label><name
     >AXF_ClosureRun_externalCONFIRMED</name></customLabels><customLabels><label
-    >Rateio econômico</label><name
+    >Revogação externa (próximo passo)</label><name
+    >AXF_ClosureRun_externalGuidance</name></customLabels><customLabels><label
+    >Axon encerrado para este titular. A revogação externa na Pluggy não está confirmada e é exibida separadamente: revogue no provedor. A coleta permanece interrompida.</label><name
+    >AXF_ClosureRun_externalPendingBanner</name></customLabels><customLabels
+  ><label>Rateio econômico</label><name
     >AXF_EconomicAllocation_title</name></customLabels><customLabels><label
     >Distribua este fato economicamente entre pessoas/empresas autorizadas. A propriedade da conta permanece separada da atribuição; a confirmação exige exatamente 100%.</label><name
     >AXF_EconomicAllocation_intro</name></customLabels><customLabels><label

@@ -6,9 +6,15 @@
  * acao segura) e retomavel pelo mesmo escopo; etapa material nao se repete enquanto o resultado
  * anterior nao for reconciliado (RESULT_UNKNOWN) ou o bloqueio removido (BLOCKED).
  *
- * Limites desta fatia: a exportacao (historia irma) anexa sua evidencia via attachExportEvidence;
- * estados bloqueados/Pluggy externos e a invariante de restore sao historias irmas. Nunca executa
- * DELETE /items na Pluggy; nao concede Delete; ausencia de policy de retencao nao expurga.
+ * Limites desta fatia: a exportacao anexa sua evidencia via attachExportEvidence e a invariante de
+ * restore e historia irma. Nunca executa DELETE /items na Pluggy; nao concede Delete; ausencia de
+ * policy de retencao nao expurga.
+ *
+ * Impedimentos (AXF-120): legal hold, arquivo sem copia recuperavel confirmada e backup
+ * obrigatorio pendente sao avaliados antes de qualquer efeito destrutivo e expostos como BLOCKED
+ * com motivo seguro e acao autorizada; a retencao nunca reativa acesso ao conteudo. A revogacao
+ * externa e exibida separadamente: so a evidencia observada no provedor confirma, o operador
+ * nunca a afirma, e a pendencia nao reativa coleta nem vira proxima acao do run.
  */
 public with sharing class ALT_CLS_ClosureOrchestrator {
   public static final String CP_CLOSE = 'AXF_CanCloseInstallation';
@@ -34,6 +40,15 @@ public with sharing class ALT_CLS_ClosureOrchestrator {
     'ACTIVE',
     'SUSPENDED'
   };
+  /**
+   * AXF-95 writes AXF_ARR_TXT_HotRemoval__c only when verification closes a run, so the value
+   * tells whether the scope has a confirmed recoverable copy. Verified and kept hot by policy.
+   */
+  private static final String ARCHIVE_VERIFIED_RETAINED = 'BLOCKED:HOT_REMOVAL_NOT_AUTHORIZED';
+  /** Verified copy whose removal the recovery/backup acceptance still holds open (AD-18). */
+  private static final String ARCHIVE_RECOVERY_GATE_OPEN = 'BLOCKED:RECOVERY_GATE_OPEN';
+  /** Guidance shown next to a closed run while the provider has not confirmed the revocation. */
+  public static final String EXTERNAL_REVOKE_ACTION = 'REVOKE_IN_PLUGGY';
   private static Boolean writing = false;
 
   /** ClosureRun rows are written only by the orchestrator (trigger guard). */
@@ -99,6 +114,8 @@ public with sharing class ALT_CLS_ClosureOrchestrator {
     public Datetime lastCompletedAt;
     @AuraEnabled
     public String externalRevocation;
+    @AuraEnabled
+    public String externalRevocationAction;
     @AuraEnabled
     public Boolean legalHold;
     @AuraEnabled
@@ -419,7 +436,13 @@ public with sharing class ALT_CLS_ClosureOrchestrator {
     view.blockReason = run.AXF_CLR_TXT_BlockReason__c;
     view.nextAction = run.AXF_CLR_TXT_NextAction__c;
     view.lastCompletedAt = run.AXF_CLR_DT_LastCompletedAt__c;
-    view.externalRevocation = run.AXF_CLR_PKL_ExternalRevocation__c;
+    String revocation = run.AXF_CLR_PKL_ExternalRevocation__c;
+    view.externalRevocation = revocation;
+    // Separately from the run's own next action: a pending external revocation is the
+    // operator's own step at the provider, never a step of this closure.
+    view.externalRevocationAction = revocation == 'NOT_CONFIRMED'
+      ? EXTERNAL_REVOKE_ACTION
+      : null;
     view.legalHold = run.AXF_CLR_BOL_LegalHold__c;
     view.exportEvidenceRef = run.AXF_CLR_TXT_ExportEvidenceRef__c;
     view.version = run.AXF_CLR_NUM_Version__c;
@@ -577,7 +600,7 @@ public with sharing class ALT_CLS_ClosureOrchestrator {
     AXF_CLS_PluggyCollectionControlService control = new AXF_CLS_PluggyCollectionControlService();
     Integer paused = 0;
     List<AXF_OBJ_PluggyConnection__c> connections = [
-      SELECT Id, AXF_CON_PKL_CollectionState__c
+      SELECT Id, AXF_CON_PKL_CollectionState__c, AXF_CON_PKL_ConsentState__c
       FROM AXF_OBJ_PluggyConnection__c
       WHERE AXF_CON_LKP_Account__c = :accountId
       WITH USER_MODE
@@ -597,9 +620,21 @@ public with sharing class ALT_CLS_ClosureOrchestrator {
       }
     }
     outcome.impact.put('connectionsPaused', paused);
+
+    // Pausing is local and proves nothing about the provider. The consent state observed by the
+    // AXF-11 consent surface is the only evidence of an external revocation: it stays pending
+    // until every connection of the scope reports revoked, and an operator never asserts it.
+    Boolean allRevoked = !connections.isEmpty();
+    for (AXF_OBJ_PluggyConnection__c connection : connections) {
+      if (connection.AXF_CON_PKL_ConsentState__c != 'REVOKED') {
+        allRevoked = false;
+      }
+    }
     outcome.evidence.put(
       'externalRevocation',
-      connections.isEmpty() ? 'NOT_APPLICABLE' : 'NOT_CONFIRMED'
+      connections.isEmpty()
+        ? 'NOT_APPLICABLE'
+        : (allRevoked ? 'CONFIRMED' : 'NOT_CONFIRMED')
     );
 
     List<AXF_OBJ_BankAccount__c> banks = [
@@ -643,6 +678,11 @@ public with sharing class ALT_CLS_ClosureOrchestrator {
    */
   private StageOutcome stagePurge(AXF_OBJ_ClosureRun__c run, Account holder) {
     StageOutcome outcome = new StageOutcome();
+    // Nothing destructive runs while an impediment of the closure is in force.
+    StageOutcome safeguard = deletionSafeguard(run, holder);
+    if (safeguard != null) {
+      return safeguard;
+    }
     Datetime now = Datetime.now();
     List<String> domains = new List<String>{ DOMAIN_TRANSACTION_DESCRIPTION };
     domains.addAll(REVALIDATED_DOMAINS);
@@ -712,6 +752,69 @@ public with sharing class ALT_CLS_ClosureOrchestrator {
   private StageOutcome stageRetainEvidence(Account holder) {
     StageOutcome outcome = new StageOutcome();
     outcome.impact.put('evidenceRetained', 1);
+    return outcome;
+  }
+
+  /**
+   * A deletion only happens when no impediment of the closure is in force (AXF-120). The legal
+   * hold is declared on the run itself and outranks the policy evaluation, which only exists
+   * where an administrator configured a policy for the domain. The other causes come from the
+   * recoverable copy of the scope.
+   */
+  private StageOutcome deletionSafeguard(
+    AXF_OBJ_ClosureRun__c run,
+    Account holder
+  ) {
+    if (run.AXF_CLR_BOL_LegalHold__c == true) {
+      return blockedStage('LEGAL_HOLD', 'RELEASE_LEGAL_HOLD');
+    }
+    return archiveSafeguard(holder);
+  }
+
+  /**
+   * AXF-95 never removes the hot copy, so an archive whose verification never closed leaves the
+   * scope with no confirmed recoverable copy and deleting content would destroy the only one. A
+   * verified archive whose removal gate is still held open by the recovery/backup acceptance is
+   * the pending mandatory backup (AD-18). `BLOCKED:HOT_REMOVAL_NOT_AUTHORIZED` is the opposite:
+   * a verified copy the policy keeps hot, which does not impede a governed purge. With no archive
+   * attempt there is no copy to confirm and the retention policy of each domain governs alone.
+   */
+  private StageOutcome archiveSafeguard(Account holder) {
+    Id accountId = holder.Id;
+    Boolean verifiedCopy = false;
+    Boolean recoveryGateOpen = false;
+    Boolean unverifiedAttempt = false;
+    for (AXF_OBJ_ArchiveRun__c run : [
+      SELECT AXF_ARR_TXT_HotRemoval__c
+      FROM AXF_OBJ_ArchiveRun__c
+      WHERE AXF_ARR_LKP_Account__c = :accountId
+      WITH USER_MODE
+      LIMIT 200
+    ]) {
+      String gate = run.AXF_ARR_TXT_HotRemoval__c;
+      if (gate == ARCHIVE_VERIFIED_RETAINED) {
+        verifiedCopy = true;
+      } else if (gate == ARCHIVE_RECOVERY_GATE_OPEN) {
+        recoveryGateOpen = true;
+      } else {
+        // A null gate means verification never closed the run (scanning, writing or failed).
+        unverifiedAttempt = true;
+      }
+    }
+    if (recoveryGateOpen) {
+      return blockedStage('BACKUP_PENDING', 'AWAIT_BACKUP_CONFIRMATION');
+    }
+    if (unverifiedAttempt && !verifiedCopy) {
+      return blockedStage('ARCHIVE_UNVERIFIED', 'VERIFY_ARCHIVE');
+    }
+    return null;
+  }
+
+  private static StageOutcome blockedStage(String reason, String nextAction) {
+    StageOutcome outcome = new StageOutcome();
+    outcome.status = 'BLOCKED';
+    outcome.reason = reason;
+    outcome.nextAction = nextAction;
     return outcome;
   }
 
