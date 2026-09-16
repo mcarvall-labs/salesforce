@@ -123,6 +123,21 @@ test("extractDeclaredTests returns nothing for an empty test-classes code block"
   );
 });
 
+test("extractDeclaredTests ignores prose typed into the code block instead of class names", () => {
+  assert.deepEqual(
+    extractDeclaredTests(
+      [
+        "### Apex test classes to run",
+        "",
+        "```",
+        "ALT_CLS_FooTest and the remaining seven changed classes each match a class of same name",
+        "```"
+      ].join("\n")
+    ),
+    ["ALT_CLS_FooTest"]
+  );
+});
+
 test("testPlan scopes to delta test classes and declared tests, deduplicated", () => {
   const files = {
     "force-app/main/default/classes/FooTest.cls": "@isTest\nclass FooTest {}",
@@ -237,6 +252,29 @@ test("validate fails closed without a resolvable PR base commit (from)", async (
     assert.equal(report.outcome, "Failed");
     assert.match(report.error, /Could not resolve the PR base branch commit/);
     assert.equal(process.exitCode, 1);
+  } finally {
+    process.env = previous;
+    process.exitCode = previousExit;
+    fs.rmSync(dir, { recursive: true, force: true });
+  }
+});
+
+test("run() writes structured single-line GITHUB_OUTPUT fields for the PR comment", async () => {
+  const dir = fs.mkdtempSync(path.join(os.tmpdir(), "axon-delivery-test-"));
+  const outputFile = path.join(dir, "github-output");
+  fs.writeFileSync(outputFile, "");
+  const previous = { ...process.env };
+  const previousExit = process.exitCode;
+  try {
+    process.env.EVIDENCE_DIR = dir;
+    process.env.GITHUB_OUTPUT = outputFile;
+    process.env.TARGET_ENV = "STAGING";
+    process.env.OPERATION = "deploy";
+    await run();
+    const output = fs.readFileSync(outputFile, "utf8");
+    assert.match(output, /^outcome=Failed$/m);
+    assert.match(output, /^deploymentId=$/m);
+    assert.match(output, /^errorMessage=Only DEV\/UAT\/PROD/m);
   } finally {
     process.env = previous;
     process.exitCode = previousExit;
