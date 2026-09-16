@@ -51,10 +51,10 @@ export function testPlan(paths, readFile, declaredTests) {
   const tests = [...new Set([...testsInDelta, ...declaredTests])];
   if (hasProductionApex && tests.length === 0)
     throw new Error(
-      "Changed Apex classes/triggers have no test coverage in this delta. Add the " +
-        '"## Salesforce test classes" section to the PR description listing the Apex ' +
-        "test class name(s) that cover this change (one per bullet), or include the " +
-        "corresponding test class(es) in this PR."
+      "Changed Apex classes/triggers have no test coverage in this delta. List the " +
+        "Apex test class name(s) that cover this change in the PR description's " +
+        '"### Apex test classes to run" code block (space/comma-separated), or ' +
+        "include the corresponding test class(es) in this PR."
     );
   return {
     testLevel: tests.length ? "RunSpecifiedTests" : "RunLocalTests",
@@ -259,7 +259,8 @@ export async function run() {
     report.orgId = org.result.id;
     // Every environment scopes tests to what the delta actually touches instead of
     // running every local test class: any test class included in the delta itself,
-    // plus anything declared via the PR's "## Salesforce test classes" section.
+    // plus anything declared in the PR's "### Apex test classes to run" code block.
+    // Applies to both validate (dry-run) and deploy — same code path either way.
     // Falls back to RunLocalTests only when the delta has no Apex/trigger at all.
     const plan = testPlan(
       report.paths,
