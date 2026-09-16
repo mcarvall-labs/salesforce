@@ -720,7 +720,8 @@ private class ALT_CLS_ConsolidationServiceTest {
         .RecordType
         ?.DeveloperName;
       Boolean plainIsAxonType =
-        plainType == 'AXF_Person' || plainType == 'AXF_Business';
+        plainType == 'AXF_Person' ||
+        plainType == 'AXF_Business';
       Assert.areEqual(
         plainIsAxonType ? 2 : 1,
         result.holders.size(),
