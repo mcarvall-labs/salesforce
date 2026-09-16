@@ -2,7 +2,6 @@ import fs from "node:fs";
 import path from "node:path";
 import { spawnSync } from "node:child_process";
 import { pathToFileURL } from "node:url";
-import { randomUUID } from "node:crypto";
 
 export function sourcePaths(entries) {
   const paths = new Set();
@@ -30,7 +29,10 @@ export function extractDeclaredTests(body) {
   const names = [];
   for (const token of fence[1].split(/[\s,]+/)) {
     const name = token.trim();
-    if (/^[A-Za-z][A-Za-z0-9_]*$/.test(name)) names.push(name);
+    // Apex class names are PascalCase by convention; requiring an uppercase
+    // first letter rejects prose accidentally typed into the block (e.g. a
+    // sentence like "the remaining seven classes...") instead of class names.
+    if (/^[A-Z][A-Za-z0-9_]*$/.test(name)) names.push(name);
   }
   return [...new Set(names)];
 }
@@ -452,27 +454,23 @@ ${
 `;
     fs.writeFileSync(path.join(directory, "result.html"), html);
 
-    // Kept short: the full component/test failure detail lives in result.json
-    // and result.html inside the evidence artifact, not inline in the PR comment.
-    const shortSummary = [
-      `## Salesforce ${report.operation}: ${report.environment}`,
-      "",
-      `**Result:** ${report.outcome}`,
-      `**Commit (to):** \`${report.sha}\``,
-      `**Base (from):** \`${report.base || "Not required / not configured"}\``,
-      `**Metadata paths:** ${report.paths.length}`,
-      `**Test level:** ${report.testLevel || "N/A"}${report.tests?.length ? ` (${report.tests.join(", ")})` : ""}`,
-      `**Deployment ID:** ${report.salesforce?.id || "None"}`,
-      `**Tests completed / failed:** ${report.salesforce?.numberTestsCompleted ?? 0} / ${report.salesforce?.numberTestErrors ?? 0}`,
-      report.error || "",
-      "",
-      "Full component/test failure detail, the JSON result and the validated delta package zip are attached as workflow run artifacts: `result.json`, `result.html`, `delta-package.zip`."
-    ].join("\n");
+    // Structured, single-line outputs let the workflow build a compact, visual
+    // PR comment (icon/badge + a few key facts) without parsing a text blob.
+    // Full component/test failure detail lives only in result.json/result.html
+    // inside the evidence artifact, never inline in the PR comment.
     if (e.GITHUB_OUTPUT) {
-      const delimiter = randomUUID();
+      const line = (key, value) =>
+        `${key}=${String(value ?? "")
+          .replace(/[\r\n]/g, " ")
+          .slice(0, 300)}\n`;
       fs.appendFileSync(
         e.GITHUB_OUTPUT,
-        `summary<<${delimiter}\n${shortSummary}\n${delimiter}\n`
+        line("outcome", report.outcome) +
+          line("deploymentId", report.salesforce?.id) +
+          line("componentsTotal", report.salesforce?.numberComponentsTotal) +
+          line("testsCompleted", report.salesforce?.numberTestsCompleted ?? 0) +
+          line("testsFailed", report.salesforce?.numberTestErrors ?? 0) +
+          line("errorMessage", report.error)
       );
     }
   }
