@@ -50,7 +50,8 @@ private class ALT_CLS_RestoreInvariantTest {
         Name IN (
           'AXF_PS_GestorFinanceiro',
           'AXF_PS_FinancialEntry',
-          'AXF_PS_PluggyIntegration'
+          'AXF_PS_PluggyIntegration',
+          'AXF_PS_Realization'
         )
     ]) {
       assignments.add(
@@ -60,6 +61,29 @@ private class ALT_CLS_RestoreInvariantTest {
         )
       );
     }
+    // The closure path reads realization allocations to keep referenced facts as evidence, so the
+    // operator carries the realization capability exactly as AXF-119's own tests require.
+    PermissionSet realize = new PermissionSet(
+      Name = 'AXF121TestRealize',
+      Label = 'AXF121 realization capability'
+    );
+    insert realize;
+    insert new SetupEntityAccess(
+      ParentId = realize.Id,
+      SetupEntityId = [
+        SELECT Id
+        FROM CustomPermission
+        WHERE DeveloperName = 'AXF_CanRealize'
+        LIMIT 1
+      ]
+      .Id
+    );
+    assignments.add(
+      new PermissionSetAssignment(
+        AssigneeId = admin.Id,
+        PermissionSetId = realize.Id
+      )
+    );
     insert assignments;
     grantCollaborationObjectIfInstalled(admin.Id);
     System.runAs(new User(Id = UserInfo.getUserId())) {
