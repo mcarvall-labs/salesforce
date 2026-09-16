@@ -1,22 +1,22 @@
-## Summary
+### Description
 
-<!-- What changed and why. -->
+```
+Write here a short description about the content of this Pull Request
+```
 
-<!--
-CI validates/deploys Apex with RunSpecifiedTests, scoped to whatever Apex test
-classes are present in this PR's delta. If a changed Apex class or trigger is
-covered only by a test class that is NOT part of this PR's delta, add a
-"Salesforce test classes" heading (H2, i.e. two # marks) below and list that
-test class's name in a bullet. Multiple classes can go on one bullet or several,
-separated by spaces and/or commas, e.g.:
+### Apex test classes to run
 
-  - FooControllerTest BarTriggerHandlerTest, BazServiceTest
+Write test class names separated by space, e.g. `ALT_CLS_AbcClassTest ALT_CLS_DefClassTest`. CI runs `RunSpecifiedTests` scoped to any test class already in this PR's delta plus whatever you list here. Leave the block below empty only if this PR has no Apex/trigger changes, or the covering test class is already part of the delta — otherwise the pipeline fails closed for missing coverage.
 
-Otherwise the pipeline fails closed for missing coverage. See
-docs/SALESFORCE_DELIVERY.md. Delete this comment and the heading if they don't
-apply.
--->
+```
 
-## Test plan
+```
 
-<!-- How you verified this change. -->
+### Deployment Steps
+
+```
+Pre or Post deployment steps needs to be performed
+Target orgs -
+Estimated time to perform the steps -
+Steps -
+```

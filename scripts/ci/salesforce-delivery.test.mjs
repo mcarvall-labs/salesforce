@@ -83,19 +83,29 @@ test("evidence allowlist excludes authentication data and normalizes singleton f
   assert.doesNotMatch(JSON.stringify(evidence), /secret|accessToken/);
 });
 
-test("extractDeclaredTests reads bullets under the PR test classes section only", () => {
+test("extractDeclaredTests reads the fenced code block under the Apex test classes heading", () => {
   assert.deepEqual(
     extractDeclaredTests(
       [
+        "### Description",
+        "",
+        "```",
         "Some description.",
+        "```",
         "",
-        "## Salesforce test classes",
-        "- FooTest",
-        "- `BarTest`",
-        "* BazTest",
+        "### Apex test classes to run",
         "",
-        "## Another section",
-        "- NotATest"
+        "Write test class names separated by space.",
+        "",
+        "```",
+        "FooTest BarTest, BazTest",
+        "```",
+        "",
+        "### Deployment Steps",
+        "",
+        "```",
+        "NotATest",
+        "```"
       ].join("\n")
     ),
     ["FooTest", "BarTest", "BazTest"]
@@ -104,16 +114,27 @@ test("extractDeclaredTests reads bullets under the PR test classes section only"
   assert.deepEqual(extractDeclaredTests("No section here"), []);
 });
 
-test("extractDeclaredTests accepts multiple test classes space/comma separated on one bullet", () => {
+test("extractDeclaredTests returns nothing for an empty test-classes code block", () => {
+  assert.deepEqual(
+    extractDeclaredTests(
+      ["### Apex test classes to run", "", "```", "", "```"].join("\n")
+    ),
+    []
+  );
+});
+
+test("extractDeclaredTests ignores prose typed into the code block instead of class names", () => {
   assert.deepEqual(
     extractDeclaredTests(
       [
-        "## Salesforce test classes",
-        "- FooControllerTest BarTriggerHandlerTest",
-        "* `BazTest`, QuxTest"
+        "### Apex test classes to run",
+        "",
+        "```",
+        "ALT_CLS_FooTest and the remaining seven changed classes each match a class of same name",
+        "```"
       ].join("\n")
     ),
-    ["FooControllerTest", "BarTriggerHandlerTest", "BazTest", "QuxTest"]
+    ["ALT_CLS_FooTest"]
   );
 });
 
@@ -145,12 +166,12 @@ test("testPlan fails closed when production Apex has no test coverage in scope",
   };
   assert.throws(
     () => testPlan(Object.keys(files), (p) => files[p], []),
-    /Salesforce test classes/
+    /Apex test classes to run/
   );
   assert.throws(
     () =>
       testPlan(["force-app/main/default/triggers/Bar.trigger"], () => "", []),
-    /Salesforce test classes/
+    /Apex test classes to run/
   );
 });
 
@@ -231,6 +252,29 @@ test("validate fails closed without a resolvable PR base commit (from)", async (
     assert.equal(report.outcome, "Failed");
     assert.match(report.error, /Could not resolve the PR base branch commit/);
     assert.equal(process.exitCode, 1);
+  } finally {
+    process.env = previous;
+    process.exitCode = previousExit;
+    fs.rmSync(dir, { recursive: true, force: true });
+  }
+});
+
+test("run() writes structured single-line GITHUB_OUTPUT fields for the PR comment", async () => {
+  const dir = fs.mkdtempSync(path.join(os.tmpdir(), "axon-delivery-test-"));
+  const outputFile = path.join(dir, "github-output");
+  fs.writeFileSync(outputFile, "");
+  const previous = { ...process.env };
+  const previousExit = process.exitCode;
+  try {
+    process.env.EVIDENCE_DIR = dir;
+    process.env.GITHUB_OUTPUT = outputFile;
+    process.env.TARGET_ENV = "STAGING";
+    process.env.OPERATION = "deploy";
+    await run();
+    const output = fs.readFileSync(outputFile, "utf8");
+    assert.match(output, /^outcome=Failed$/m);
+    assert.match(output, /^deploymentId=$/m);
+    assert.match(output, /^errorMessage=Only DEV\/UAT\/PROD/m);
   } finally {
     process.env = previous;
     process.exitCode = previousExit;

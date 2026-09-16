@@ -27,24 +27,26 @@ scoped to the Apex test classes actually relevant to the delta, instead of runni
 every local test class in the org:
 
 - Any test class (`@isTest`) that is itself part of the delta is included automatically.
-- Additional coverage can be declared explicitly in the PR description under a
-  `## Salesforce test classes` heading. List Apex test class names in bullets,
-  separated by spaces and/or commas — one class per bullet, several per bullet, or
-  a mix, e.g.:
+- Additional coverage can be declared explicitly in the PR description
+  ([`.github/PULL_REQUEST_TEMPLATE.md`](../.github/PULL_REQUEST_TEMPLATE.md)) under
+  the `### Apex test classes to run` heading, in the fenced code block that follows
+  it. List class names separated by spaces and/or commas, e.g.:
+
+  ````
+  ### Apex test classes to run
 
   ```
-  ## Salesforce test classes
-  - FooControllerTest BarTriggerHandlerTest
-  - BazServiceTest, QuxSchedulableTest
+  FooControllerTest BarTriggerHandlerTest, BazServiceTest
   ```
+  ````
 
   Use this when a changed class or trigger is covered by a test class that isn't
   itself part of this delta.
 
 - If the delta changes a non-test Apex class or trigger and no test class is found
   either in the delta or declared in the PR body, the operation fails closed with a
-  message asking for the `## Salesforce test classes` section — Salesforce cannot
-  compute coverage for `RunSpecifiedTests` without an explicit test list.
+  message asking for the `### Apex test classes to run` code block — Salesforce
+  cannot compute coverage for `RunSpecifiedTests` without an explicit test list.
 - If the delta has no Apex/trigger at all (e.g. only LWC, Flow or layout changes),
   the operation falls back to `RunLocalTests` so production code coverage is still
   proven.
@@ -53,8 +55,12 @@ PRs never persist metadata. Deployment reruns tests for the actual merged commit
 rather than quick-deploying a synthetic PR merge. Authenticated Org IDs are checked
 before metadata operations.
 
-Each operation publishes a short PR comment (outcome, commit, baseline, deployment ID,
-test counts, initial error) plus a 30-day evidence artifact containing:
+Each operation publishes a compact, visual PR comment — a ✅/❌/⚪ status heading, a
+small table (deployment ID, component count, tests completed/failed, commit), the
+error message when failed, and a direct link to download the evidence artifact
+(`.../actions/runs/{run}/artifacts/{id}`, opens the zip download for anyone with repo
+read access already signed in) plus a link to the full run logs — alongside a 30-day
+evidence artifact containing:
 
 - `result.json` — machine-readable outcome, org ID, and full component/test failures.
 - `result.html` — human-readable report of the same data, viewable in a browser.

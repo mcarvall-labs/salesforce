@@ -125,6 +125,22 @@ import evxDESCRIPTION_CONTAINS_CANDIDATE from "@salesforce/label/c.AXF_SourceLin
 import evxDESCRIPTION_CONTAINED_IN_CANDIDATE from "@salesforce/label/c.AXF_SourceLink_evxDESCRIPTION_CONTAINED_IN_CANDIDATE";
 import evxCATEGORY_CONTAINS_CANDIDATE from "@salesforce/label/c.AXF_SourceLink_evxCATEGORY_CONTAINS_CANDIDATE";
 import evxCATEGORY_CONTAINED_IN_CANDIDATE from "@salesforce/label/c.AXF_SourceLink_evxCATEGORY_CONTAINED_IN_CANDIDATE";
+import codeMISSING_MATERIAL_FX from "@salesforce/label/c.AXF_SourceLink_codeMISSING_MATERIAL_FX";
+import evBlocked from "@salesforce/label/c.AXF_SourceLink_evBlocked";
+import evPartial from "@salesforce/label/c.AXF_SourceLink_evPartial";
+import factResidualAfter from "@salesforce/label/c.AXF_SourceLink_factResidualAfter";
+import convEstimatedLine from "@salesforce/label/c.AXF_SourceLink_convEstimatedLine";
+import convStaleLine from "@salesforce/label/c.AXF_SourceLink_convStaleLine";
+import convUnavailableLine from "@salesforce/label/c.AXF_SourceLink_convUnavailableLine";
+import economicRole from "@salesforce/label/c.AXF_SourceLink_economicRole";
+import roleHelp from "@salesforce/label/c.AXF_SourceLink_roleHelp";
+import roleAPPLICATION from "@salesforce/label/c.AXF_SourceLink_roleAPPLICATION";
+import roleINVOICE_PAYMENT from "@salesforce/label/c.AXF_SourceLink_roleINVOICE_PAYMENT";
+import roleTRANSFER from "@salesforce/label/c.AXF_SourceLink_roleTRANSFER";
+import roleREFUND from "@salesforce/label/c.AXF_SourceLink_roleREFUND";
+import sourceRemainder from "@salesforce/label/c.AXF_SourceLink_sourceRemainder";
+import codeUNSUPPORTED_ECONOMIC_ROLE from "@salesforce/label/c.AXF_SourceLink_codeUNSUPPORTED_ECONOMIC_ROLE";
+import codeINVALID_ECONOMIC_ROLE from "@salesforce/label/c.AXF_SourceLink_codeINVALID_ECONOMIC_ROLE";
 
 export default {
   title,
@@ -253,5 +269,21 @@ export default {
   evxDESCRIPTION_CONTAINS_CANDIDATE,
   evxDESCRIPTION_CONTAINED_IN_CANDIDATE,
   evxCATEGORY_CONTAINS_CANDIDATE,
-  evxCATEGORY_CONTAINED_IN_CANDIDATE
+  evxCATEGORY_CONTAINED_IN_CANDIDATE,
+  codeMISSING_MATERIAL_FX,
+  evBlocked,
+  evPartial,
+  factResidualAfter,
+  convEstimatedLine,
+  convStaleLine,
+  convUnavailableLine,
+  economicRole,
+  roleHelp,
+  roleAPPLICATION,
+  roleINVOICE_PAYMENT,
+  roleTRANSFER,
+  roleREFUND,
+  sourceRemainder,
+  codeUNSUPPORTED_ECONOMIC_ROLE,
+  codeINVALID_ECONOMIC_ROLE
 };

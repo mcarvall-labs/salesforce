@@ -801,6 +801,18 @@
   ><label
     >Parte dos dados de que este painel depende não está acessível para você.</label><name
     >AXF_ConfidencePanel_codeNotAccessible</name></customLabels><customLabels
+  ><label>Política canônica</label><name
+    >AXF_ConfidencePanel_authority</name></customLabels><customLabels><label
+    >Cobertura</label><name
+    >AXF_ConfidencePanel_coverage</name></customLabels><customLabels><label
+    >A cobertura não foi informada para este resultado.</label><name
+    >AXF_ConfidencePanel_coverageUnknown</name></customLabels><customLabels
+  ><label>Fallbacks aplicados</label><name
+    >AXF_ConfidencePanel_fallbacks</name></customLabels><customLabels><label
+    >Nenhum fallback foi necessário para derivar este resultado.</label><name
+    >AXF_ConfidencePanel_noFallbacks</name></customLabels><customLabels><label
+    >A fonte não declara limite próprio de atualidade; foi usado o padrão da política.</label><name
+    >AXF_ConfidencePanel_fallbackFreshnessLimitDefault</name></customLabels><customLabels
   ><label>Arquivo de transações</label><name
     >AXF_ArchiveExplorer_title</name></customLabels><customLabels><label
     >Transações anteriores à janela quente ficam arquivadas e podem ser consultadas aqui, somente leitura. Nada é reidratado para os objetos ativos.</label><name
@@ -1247,6 +1259,9 @@
   ><label>Uma contribuição sem moeda ou data foi ignorada.</label><name
     >AXF_ForecastComparison_reasonINCOMPLETE_CONTRIBUTION</name></customLabels><customLabels
   ><label
+    >Uma categoria no horizonte não tem método aprovado pela versão da política de previsão; nada é estimado para ela.</label><name
+    >AXF_ForecastComparison_reasonNO_APPROVED_METHOD</name></customLabels><customLabels
+  ><label
     >Um cronograma mudou durante a leitura; seu compromisso não foi somado.</label><name
     >AXF_ForecastComparison_reasonSCHEDULE_STALE</name></customLabels><customLabels
   ><label
@@ -1456,4 +1471,38 @@
   ><label>remanescente da fonte (efeitos visíveis)</label><name
     >AXF_ReconciliationReversal_doneSourceRemaining</name></customLabels><customLabels
   ><label>remanescente da fonte não verificável com o seu acesso</label><name
-    >AXF_ReconciliationReversal_doneSourceUnknown</name></customLabels></Translations>
+    >AXF_ReconciliationReversal_doneSourceUnknown</name></customLabels><customLabels
+  ><label>Bloqueado</label><name
+    >AXF_SourceLink_evBlocked</name></customLabels><customLabels><label
+    >Remanescente depois:</label><name
+    >AXF_SourceLink_factResidualAfter</name></customLabels><customLabels><label
+    >Convertido para comparação:</label><name
+    >AXF_SourceLink_convEstimatedLine</name></customLabels><customLabels><label
+    >Cotação mais antiga que o limite aprovado, valor omitido:</label><name
+    >AXF_SourceLink_convStaleLine</name></customLabels><customLabels><label
+    >Sem taxa material, confirmação bloqueada:</label><name
+    >AXF_SourceLink_convUnavailableLine</name></customLabels><customLabels
+  ><label
+    >Sem taxa de câmbio material para este par de moedas; a confirmação fica bloqueada.</label><name
+    >AXF_SourceLink_codeMISSING_MATERIAL_FX</name></customLabels><customLabels
+  ><label>Parcial — remanescente</label><name
+    >AXF_SourceLink_evPartial</name></customLabels><customLabels><label
+    >Papel econômico do vínculo</label><name
+    >AXF_SourceLink_economicRole</name></customLabels><customLabels><label
+    >Declare o papel deste vínculo. Ele nunca é inferido da descrição nem da associação de extrato da linha do cartão (BillReference).</label><name
+    >AXF_SourceLink_roleHelp</name></customLabels><customLabels><label
+    >Aplicação — o fato quita a obrigação (despesa ou receita conforme a direção)</label><name
+    >AXF_SourceLink_roleAPPLICATION</name></customLabels><customLabels><label
+    >Pagamento de fatura</label><name
+    >AXF_SourceLink_roleINVOICE_PAYMENT</name></customLabels><customLabels
+  ><label>Transferência</label><name
+    >AXF_SourceLink_roleTRANSFER</name></customLabels><customLabels><label
+    >Estorno</label><name
+    >AXF_SourceLink_roleREFUND</name></customLabels><customLabels><label
+    >Sobra da fonte para outros alvos após esta obrigação — necessidade multi-alvo (AXF-30):</label><name
+    >AXF_SourceLink_sourceRemainder</name></customLabels><customLabels><label
+    >Este papel econômico ainda não tem capacidade de vínculo nesta versão. Nada foi gravado — declare o papel de aplicação, o único que este fluxo consegue encaminhar hoje.</label><name
+    >AXF_SourceLink_codeUNSUPPORTED_ECONOMIC_ROLE</name></customLabels><customLabels
+  ><label
+    >Declare o papel econômico do vínculo — ele nunca é inferido da descrição nem do extrato da linha do cartão — e confirme novamente. Nada foi gravado.</label><name
+    >AXF_SourceLink_codeINVALID_ECONOMIC_ROLE</name></customLabels></Translations>

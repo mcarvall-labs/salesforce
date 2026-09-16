@@ -3,12 +3,22 @@
  * de AXF-5; contrato fisico ratificado em 13/09/2026: ancora XOR no fato tipado, EA -> Account,
  * identidade alloc-v2, ordem de lock token(20) -> fato(30) -> RA/FTX(50) -> EAS/EA(60)).
  *
- * Operacoes: economicallocation.set.propose.v1 (cria revisao DRAFT com parcelas validadas) e
- * economicallocation.set.confirm.v1 (exige soma exata de 100% e confirma atomicamente).
+ * Operacoes: economicallocation.set.propose.v1 (cria revisao DRAFT com parcelas validadas),
+ * economicallocation.set.confirm.v1 (exige soma exata de 100% e confirma atomicamente) e
+ * economicallocation.set.reverse.v1 (AXF-128: encerra a confirmacao com registros compensatorios).
  * Toda rejeicao e atomica: nada parcial persiste. A propriedade da conta permanece separada
  * da atribuicao economica: nenhuma parcela e inferida na ingestao. Rateio nao cria share.
- * Revisao (supersessao), neutralizacao/reversao e projecao de atribuicao unica sao historias
- * irmas (AXF-127/128/129).
+ * A projecao derivada de atribuicao unica (AXF-127) e gravada na propria confirmacao: pelo
+ * contrato ratificado da AXF-5 (secao 5) ela reflete a unica pessoa/empresa somente quando o set
+ * CONFIRMED tem exatamente uma parcela de 100% e fica vazia em rateio; G1 apenas fixa a forma do
+ * sujeito (Account AXF_Person|AXF_Business). Enquanto um set tem autoridade, a projecao pode
+ * existir; ao terminar a autoridade ela e limpa (discard e reversao). A reversao (AXF-128) cria
+ * um set compensatorio de mesma identidade, na maior revisao do fato em qualquer estado mais uma,
+ * com uma unica parcela de 100% para o titular do fato, de modo que o fato volta a ter uma unica
+ * autoridade de atribuicao e um unico token ativo; a confirmacao revertida nunca e editada e o
+ * replay e reconhecido pela chave de operacao enquadrada mais a identidade do fato, nunca por uma
+ * revisao inferida. Revisao (supersessao) e neutralizacao no consolidado sao historias irmas
+ * (AXF-128/129).
  */
 public with sharing class ALT_CLS_EconomicAllocationService {
   public static final String IDENTITY_VERSION = 'alloc-v2';
@@ -17,6 +27,9 @@ public with sharing class ALT_CLS_EconomicAllocationService {
   public static final String CP_ALLOCATE = 'AXF_CanAllocateEconomically';
   public static final String STATE_DRAFT = 'DRAFT';
   public static final String STATE_CONFIRMED = 'CONFIRMED';
+  public static final String STATE_REVERSED = 'REVERSED';
+  /** Ratified operationId of the reversal (AXF-5 reconciliation, ratified 13/09/2026). */
+  public static final String OP_REVERSE = 'economicallocation.set.reverse.v1';
   private static final Set<String> HOLDER_RECORD_TYPES = new Set<String>{
     'AXF_Person',
     'AXF_Business'
@@ -43,6 +56,15 @@ public with sharing class ALT_CLS_EconomicAllocationService {
     public String operationKey;
     @AuraEnabled
     public List<ShareInput> shares;
+  }
+
+  public class ReverseInput {
+    @AuraEnabled
+    public Id setId;
+    @AuraEnabled
+    public Decimal expectedVersion;
+    @AuraEnabled
+    public String operationKey;
   }
 
   public class ShareView {
@@ -322,6 +344,12 @@ public with sharing class ALT_CLS_EconomicAllocationService {
       allocationSet.AXF_EAS_PKL_State__c = STATE_CONFIRMED;
       allocationSet.AXF_EAS_DT_EffectiveAt__c = Datetime.now();
       allocationSet.AXF_EAS_EXI_ActiveToken__c = activeToken(fact.identity);
+      // AXF-127: derived singular projection, per the ratified AXF-5 contract (5) — assignment
+      // unconditional on purpose: apportionment always writes null, so no primary or first holder
+      // is ever promoted.
+      allocationSet.AXF_EAS_LKP_AttributedAccount__c = attributedAccount(
+        allocations
+      );
       // The proposal key stays so a propose replay still finds this set.
       allocationSet.AXF_EAS_TXT_ConfirmOperationKey__c = operationKey;
       allocationSet.AXF_EAS_NUM_Version__c =
@@ -364,6 +392,11 @@ public with sharing class ALT_CLS_EconomicAllocationService {
     try {
       ALT_CLS_EconomicAllocationGuard.beginWrite();
       allocationSet.AXF_EAS_PKL_State__c = STATE_DISCARDED;
+      // AXF-127/G1: a set that lost its authority keeps no singular projection. The field is
+      // readable and editable and feeds reports/list views, so a discarded set must not keep a
+      // value that no longer corresponds to any confirmed authority. Assigned in the same DML
+      // that ends the set, exactly as confirm() assigns it when the authority begins.
+      allocationSet.AXF_EAS_LKP_AttributedAccount__c = null;
       allocationSet.AXF_EAS_NUM_Version__c =
         nz(allocationSet.AXF_EAS_NUM_Version__c) + 1;
       Database.update(allocationSet, AccessLevel.USER_MODE);
@@ -374,6 +407,210 @@ public with sharing class ALT_CLS_EconomicAllocationService {
     } finally {
       ALT_CLS_EconomicAllocationGuard.endWrite();
     }
+  }
+
+  // ------------------------------------------------------------------ reverse
+
+  /**
+   * economicallocation.set.reverse.v1 — ends a confirmation with compensating records. The
+   * compensation is a new set of the next revision whose single 100% parcel gives the fact back
+   * to its own holder, so the fact keeps one attribution authority and one active token. The
+   * confirmed set is never edited: only its state, its optimistic version and the two fields
+   * that must not outlive the authority move, in the same transaction. A replay of the same
+   * command returns the durable compensation; a divergent payload — including a key already spent
+   * on another target — conflicts and never appends a second compensation.
+   */
+  public SetView reverse(ReverseInput input) {
+    if (
+      input == null ||
+      input.setId == null ||
+      input.expectedVersion == null ||
+      String.isBlank(input.operationKey)
+    ) {
+      throw failure('INVALID_INPUT', new List<String>());
+    }
+    requireKey(input.operationKey);
+    requireCapability();
+    String reverseKey = reverseOperationKey(input.operationKey);
+    // Lock order: the fact (30) before the set (60), as in propose and confirm.
+    AXF_OBJ_EconomicAllocationSet__c anchor = readSet(input.setId);
+    Fact fact = lockFact(factKind(anchor), factId(anchor));
+    AXF_OBJ_EconomicAllocationSet__c allocationSet = lockSet(input.setId);
+    if (allocationSet.AXF_EAS_PKL_State__c == STATE_REVERSED) {
+      return priorCompensation(fact, allocationSet, input, reverseKey);
+    }
+    if (allocationSet.AXF_EAS_PKL_State__c != STATE_CONFIRMED) {
+      // Only a confirmation is reversed; a DRAFT is discarded and an ended set stays ended.
+      throw failure('NOT_CONFIRMED', new List<String>());
+    }
+    if (input.expectedVersion != nz(allocationSet.AXF_EAS_NUM_Version__c)) {
+      throw failure('CONFLICT', new List<String>());
+    }
+    // G6: the framed key is the identity of this effect, and `AXF_EAS_TXT_OperationKey__c` is not
+    // unique, so a key already stored anywhere — on another fact, on another confirmation, or by
+    // an earlier reversal of this very fact — is refused before anything is written. An
+    // equivalent replay never reaches this point: it is recognised by the REVERSED state above.
+    if (!setsStoringKey(reverseKey).isEmpty()) {
+      throw failure('CONFLICT', new List<String>());
+    }
+    List<String> reasons = new List<String>();
+    if (
+      fact.identity != allocationSet.AXF_EAS_TXT_FactIdentity__c ||
+      fact.magnitude != allocationSet.AXF_EAS_NUM_FactMagnitude__c ||
+      fact.currencyIso != allocationSet.AXF_EAS_TXT_CurrencyIsoCode__c ||
+      fact.holderId != allocationSet.AXF_EAS_LKP_HolderAccount__c
+    ) {
+      // The compensation conserves the fact *and its identity*; a fact that moved, or whose
+      // source key changed after the confirmation, cannot be compensated here.
+      reasons.add('FACT_CHANGED');
+    }
+    // The compensating parcel goes back to the fact's own holder, so that person/company must
+    // still be an authorized holder.
+    ShareInput back = new ShareInput();
+    back.accountId = fact.holderId;
+    authorizedHolders(new List<ShareInput>{ back }, reasons);
+    if (!reasons.isEmpty()) {
+      throw failure('REVERSAL_REJECTED', reasons);
+    }
+    Integer revision = nextRevision(fact.identity);
+    Savepoint point = Database.setSavepoint();
+    try {
+      ALT_CLS_EconomicAllocationGuard.beginWrite();
+      // Compensating records: a new set that returns the fact to its holder, plus its parcel.
+      AXF_OBJ_EconomicAllocationSet__c compensation = new AXF_OBJ_EconomicAllocationSet__c(
+        AXF_EAS_LKP_BankTransaction__c = fact.kind == 'BANK' ? fact.id : null,
+        AXF_EAS_LKP_CardTransaction__c = fact.kind == 'CARD' ? fact.id : null,
+        AXF_EAS_LKP_FinancialTransaction__c = fact.kind == 'MANUAL'
+          ? fact.id
+          : null,
+        AXF_EAS_LKP_HolderAccount__c = fact.holderId,
+        AXF_EAS_TXT_FactIdentity__c = fact.identity.left(128),
+        AXF_EAS_NUM_Revision__c = revision,
+        AXF_EAS_PKL_State__c = STATE_DRAFT,
+        AXF_EAS_EXI_SetKey__c = AXF_CLS_IdentityFraming.key(
+          new List<Object>{ fact.identity, revision }
+        ),
+        AXF_EAS_NUM_FactMagnitude__c = fact.magnitude,
+        AXF_EAS_TXT_CurrencyIsoCode__c = fact.currencyIso,
+        AXF_EAS_TXT_OperationKey__c = reverseKey,
+        AXF_EAS_NUM_Version__c = 1,
+        OwnerId = holderOwner(fact.holderId)
+      );
+      Database.insert(compensation, AccessLevel.USER_MODE);
+      grantProposerAccess(compensation.Id, compensation.OwnerId);
+      Database.insert(
+        new AXF_OBJ_EconomicAllocation__c(
+          AXF_EA_MDR_AllocationSet__c = compensation.Id,
+          AXF_EA_LKP_Account__c = fact.holderId,
+          AXF_EA_NUM_Percent__c = 100,
+          AXF_EA_NUM_Magnitude__c = fact.magnitude,
+          AXF_EA_TXT_CurrencyIsoCode__c = fact.currencyIso,
+          AXF_EA_PKL_RedactionPolicy__c = 'OWN_SHARE_ONLY',
+          AXF_EA_EXI_AllocationKey__c = AXF_CLS_IdentityFraming.key(
+            new List<Object>{
+              IDENTITY_VERSION,
+              fact.identity,
+              TARGET_TYPE,
+              String.valueOf(fact.holderId),
+              ECONOMIC_KIND,
+              revision
+            }
+          )
+        ),
+        AccessLevel.USER_MODE
+      );
+      // The ended set keeps its confirmed content byte for byte: state, optimistic version and
+      // the two fields that must not outlive the authority — the single active token, released
+      // here so the compensation can take it, and the derived projection (AXF-127).
+      allocationSet.AXF_EAS_PKL_State__c = STATE_REVERSED;
+      allocationSet.AXF_EAS_EXI_ActiveToken__c = null;
+      allocationSet.AXF_EAS_LKP_AttributedAccount__c = null;
+      allocationSet.AXF_EAS_NUM_Version__c =
+        nz(allocationSet.AXF_EAS_NUM_Version__c) + 1;
+      Database.update(allocationSet, AccessLevel.USER_MODE);
+      // The compensation is the authority from now on: confirmed by the parity rule the
+      // confirmation itself applies (one 100% parcel), carrying the singular projection.
+      compensation.AXF_EAS_PKL_State__c = STATE_CONFIRMED;
+      compensation.AXF_EAS_DT_EffectiveAt__c = Datetime.now();
+      compensation.AXF_EAS_EXI_ActiveToken__c = activeToken(fact.identity);
+      compensation.AXF_EAS_LKP_AttributedAccount__c = fact.holderId;
+      compensation.AXF_EAS_NUM_Version__c = 2;
+      Database.update(compensation, AccessLevel.USER_MODE);
+      return read(compensation.Id);
+    } catch (Exception failure) {
+      Database.rollback(point);
+      throw failure;
+    } finally {
+      ALT_CLS_EconomicAllocationGuard.endWrite();
+    }
+  }
+
+  /**
+   * Replay of a reversal that already happened (G6). The compensation this very command produced
+   * is returned and nothing is appended; a different command, a different version or a target
+   * already reversed by another command conflicts. The command is recognised by its framed key
+   * plus the version it consumed: the reversal bumped the set's version exactly once and a
+   * REVERSED set has no other writer (the guard freezes it and the service has no method for it).
+   *
+   * The compensation is *not* identified by an inferred revision: `nextRevision()` takes the
+   * highest revision of the fact in **any** state, so an intervening draft — or a discarded one —
+   * pushes the compensation beyond `reversed.Revision + 1` and the same command would conflict
+   * against its own durable effect. Its identity is the ratified operation key plus the fact
+   * identity, exactly as the AXF-25 sibling identifies its prior reversal by the original
+   * allocation it compensated.
+   */
+  private SetView priorCompensation(
+    Fact fact,
+    AXF_OBJ_EconomicAllocationSet__c reversed,
+    ReverseInput input,
+    String reverseKey
+  ) {
+    if (input.expectedVersion != nz(reversed.AXF_EAS_NUM_Version__c) - 1) {
+      throw failure('CONFLICT', new List<String>());
+    }
+    AXF_OBJ_EconomicAllocationSet__c found;
+    for (AXF_OBJ_EconomicAllocationSet__c row : setsStoringKey(reverseKey)) {
+      if (
+        row.AXF_EAS_TXT_FactIdentity__c == fact.identity &&
+        row.AXF_EAS_PKL_State__c == STATE_CONFIRMED &&
+        (found == null ||
+        nz(row.AXF_EAS_NUM_Revision__c) > nz(found.AXF_EAS_NUM_Revision__c))
+      ) {
+        found = row;
+      }
+    }
+    if (found == null) {
+      throw failure('CONFLICT', new List<String>());
+    }
+    return read(found.Id);
+  }
+
+  /**
+   * Every set that already stores this framed key. `AXF_EAS_TXT_OperationKey__c` is not unique
+   * and the field is shared with the raw `propose` key, so the key is never trusted on its own:
+   * there is no blind `LIMIT 1`, and every caller filters by the fact identity and by state, so a
+   * row of another fact can never answer for this one.
+   */
+  private static List<AXF_OBJ_EconomicAllocationSet__c> setsStoringKey(
+    String operationKey
+  ) {
+    return [
+      SELECT
+        Id,
+        AXF_EAS_TXT_FactIdentity__c,
+        AXF_EAS_NUM_Revision__c,
+        AXF_EAS_PKL_State__c
+      FROM AXF_OBJ_EconomicAllocationSet__c
+      WHERE AXF_EAS_TXT_OperationKey__c = :operationKey
+      WITH SYSTEM_MODE
+    ];
+  }
+
+  /** G6 identity of the reversal effect: the operation key framed under its own operationId. */
+  private static String reverseOperationKey(String operationKey) {
+    return AXF_CLS_IdentityFraming.key(
+      new List<Object>{ OP_REVERSE, operationKey }
+    );
   }
 
   // ------------------------------------------------------------------ read
@@ -550,6 +787,26 @@ public with sharing class ALT_CLS_EconomicAllocationService {
     return result;
   }
 
+  /**
+   * Derived singular projection (AXF-127), as ratified by the AXF-5 lineage contract (section 5):
+   * the sole person/company only while the confirmed set carries exactly one 100% parcel.
+   * Apportionment derives null — never a primary or first participant. G1 is what makes the
+   * subject valid: the allocated account is an `Account` of record type `AXF_Person` or
+   * `AXF_Business`, because `authorizedHolders()` gated it. The value is a read-only projection:
+   * it is not consulted by authorization, sharing or calculation anywhere.
+   */
+  private static Id attributedAccount(
+    List<AXF_OBJ_EconomicAllocation__c> allocations
+  ) {
+    if (
+      allocations.size() != 1 ||
+      nz(allocations[0].AXF_EA_NUM_Percent__c).setScale(6) != 100
+    ) {
+      return null;
+    }
+    return allocations[0].AXF_EA_LKP_Account__c;
+  }
+
   /** The set follows the holder's owner (G2); the proposer keeps access through a share row. */
   @SuppressWarnings('PMD.ApexCRUDViolation')
   private static void grantProposerAccess(Id setId, Id ownerId) {
@@ -669,9 +926,11 @@ public with sharing class ALT_CLS_EconomicAllocationService {
         AXF_EAS_LKP_CardTransaction__c,
         AXF_EAS_LKP_FinancialTransaction__c,
         AXF_EAS_LKP_HolderAccount__c,
+        AXF_EAS_TXT_FactIdentity__c,
         AXF_EAS_PKL_State__c,
         AXF_EAS_NUM_FactMagnitude__c,
         AXF_EAS_TXT_CurrencyIsoCode__c,
+        AXF_EAS_NUM_Revision__c,
         AXF_EAS_NUM_Version__c,
         AXF_EAS_TXT_OperationKey__c,
         AXF_EAS_TXT_ConfirmOperationKey__c

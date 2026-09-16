@@ -74,6 +74,12 @@ const ACTION_LABEL = {
   REVIEW_SOURCE_HEALTH: labels.actionReviewHealth
 };
 
+/** Fallbacks the server reports as applied; the UI never applies one on its own. */
+const FALLBACK_LABEL = {
+  FRESHNESS_LIMIT_DEFAULT: labels.fallbackFreshnessLimitDefault,
+  IMPORT_DATE_MISSING: labels.exImportDateMissing
+};
+
 export default class AxfConfidencePanel extends NavigationMixin(
   LightningElement
 ) {
@@ -170,8 +176,54 @@ export default class AxfConfidencePanel extends NavigationMixin(
   get hasHolders() {
     return this.holderOptions.length > 0;
   }
-  get isBlocked() {
-    return this.panel && this.panel.level === "BLOCKED";
+  /** The canonical policy that declares the states and actions; never derived here. */
+  get gatePolicyText() {
+    return (this.panel && this.panel.gatePolicy) || "";
+  }
+  /** Coverage counts may be absent from an older response; never render "undefined". */
+  get coverageText() {
+    if (!this.panel) {
+      return "";
+    }
+    if (
+      typeof this.panel.includedCount !== "number" ||
+      typeof this.panel.excludedCount !== "number"
+    ) {
+      return labels.coverageUnknown;
+    }
+    return (
+      this.panel.includedCount +
+      " " +
+      labels.included +
+      " · " +
+      this.panel.excludedCount +
+      " " +
+      labels.excluded
+    );
+  }
+  get hasFallbacks() {
+    return this.fallbacks.length > 0;
+  }
+  /**
+   * "No fallback was needed" is asserted only for a derived result whose fallback list the server
+   * actually returned: a blocked panel derives nothing, and an older response may omit the field.
+   */
+  get showsNoFallbacks() {
+    return (
+      !!this.panel &&
+      this.panel.level !== "BLOCKED" &&
+      Array.isArray(this.panel.fallbacks) &&
+      this.panel.fallbacks.length === 0
+    );
+  }
+  get fallbacks() {
+    if (!this.panel) {
+      return [];
+    }
+    return (this.panel.fallbacks || []).map((code) => ({
+      key: code,
+      text: FALLBACK_LABEL[code] || code
+    }));
   }
 
   get sources() {
@@ -252,7 +304,10 @@ export default class AxfConfidencePanel extends NavigationMixin(
       text: ACTION_LABEL[code] || code
     }));
   }
-  get blockedReasons() {
+  get hasReasons() {
+    return !!(this.panel && this.panel.reasons.length > 0);
+  }
+  get gateReasons() {
     if (!this.panel) {
       return [];
     }

@@ -17,18 +17,29 @@ const CODE_LABEL = {
   TARGET_REALIZED: labels.codeTARGET_REALIZED,
   FUNDING_MISMATCH: labels.codeFUNDING_MISMATCH,
   CURRENCY_MISMATCH: labels.codeCURRENCY_MISMATCH,
+  MISSING_MATERIAL_FX: labels.codeMISSING_MATERIAL_FX,
   ALREADY_LINKED: labels.codeALREADY_LINKED,
   REVIEW_REQUIRED: labels.codeREVIEW_REQUIRED,
   CONFLICT: labels.codeCONFLICT,
   UNAVAILABLE_AMOUNT: labels.codeUNAVAILABLE_AMOUNT,
   REPORTING_CURRENCY_REQUIRED: labels.codeREPORTING_CURRENCY_REQUIRED,
-  MATERIALIZATION_REQUIRED: labels.codeMATERIALIZATION_REQUIRED
+  MATERIALIZATION_REQUIRED: labels.codeMATERIALIZATION_REQUIRED,
+  INVALID_ECONOMIC_ROLE: labels.codeINVALID_ECONOMIC_ROLE,
+  UNSUPPORTED_ECONOMIC_ROLE: labels.codeUNSUPPORTED_ECONOMIC_ROLE
 };
 
 /** Server failures arrive as a sanitized {code}; anything else is the generic message. */
 export function parseFailure(error) {
   const raw = error && error.body && error.body.message;
   return CODE_LABEL[raw] || labels.error;
+}
+
+/**
+ * AXF-140: a candidate reason is the same sanitized server code, so it resolves through the same
+ * map; a code this component does not know is shown as the code itself rather than dropped.
+ */
+export function reasonLabel(code) {
+  return CODE_LABEL[code] || code;
 }
 
 export function format(template, ...args) {

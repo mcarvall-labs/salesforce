@@ -352,6 +352,56 @@ private class ALT_CLS_RealizationServiceTest {
       Assert.areEqual(2, [SELECT COUNT() FROM AXF_OBJ_FinancialTransaction__c]);
     }
   }
+  /**
+   * AXF-135: a blank declared role is no declaration. It never enters the canonical payload, so the
+   * fingerprint stays the pre-AXF-135 one instead of becoming a third fingerprint that turns a
+   * legitimate replay of the same logical operation into a CONFLICT.
+   */
+  @IsTest
+  static void blankEconomicRoleIsAbsentFromTheCanonicalPayload() {
+    System.runAs(actor()) {
+      AXF_OBJ_FinancialTransaction__c target = plan('BRL');
+      ALT_CLS_RealizationService service = new ALT_CLS_RealizationService();
+      ALT_CLS_RealizationService.Input blank = request(
+        target.Id,
+        40,
+        0,
+        'blank-role'
+      );
+      blank.economicRole = '';
+      Test.startTest();
+      Id applied = service.apply(blank);
+      // The same operation, this time declaring nothing at all: a replay, never a conflict.
+      blank.economicRole = null;
+      Assert.areEqual(applied, service.apply(blank));
+      Test.stopTest();
+      Assert.areEqual(
+        AXF_CLS_IdentityFraming.key(
+          new List<Object>{
+            'APPLICATION',
+            target.Id,
+            null,
+            null,
+            'CASH',
+            null,
+            40,
+            null,
+            null,
+            Date.today(),
+            0,
+            null
+          }
+        ),
+        [
+          SELECT AXF_RA_TXT_PayloadHash__c
+          FROM AXF_OBJ_ReconciliationAllocation__c
+          WHERE Id = :applied
+        ]
+        .AXF_RA_TXT_PayloadHash__c,
+        'a blank role is absent from the canonical payload'
+      );
+    }
+  }
   @IsTest
   static void excessRollsBackCreatedCashFact() {
     System.runAs(actor()) {

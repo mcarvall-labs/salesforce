@@ -229,4 +229,34 @@ describe("c-aXF_LWC_forecastComparison", () => {
       denied.shadowRoot.querySelector('[data-id="forbidden"]')
     ).not.toBeNull();
   });
+
+  it("renders the category without an approved method as an explained reason", async () => {
+    compare.mockResolvedValueOnce({
+      ...result,
+      confidence: "BLOCKED",
+      reasons: ["NO_APPROVED_METHOD"],
+      // The omitted occurrence is recorded against its holder, not dropped in silence.
+      exclusions: [{ accountId: "001A", reason: "NO_APPROVED_METHOD" }],
+      allowedActions: []
+    });
+    const element = build();
+    getContext.emit(context);
+    await flush();
+    await select(element);
+    element.shadowRoot.querySelector('[data-id="compare"]').click();
+    await flush();
+    const reasons = element.shadowRoot.querySelector(
+      '[data-id="reasons"]'
+    ).textContent;
+    // The label, not the raw server code the fallback would print.
+    expect(reasons).toContain(
+      "AXF_ForecastComparison_reasonNO_APPROVED_METHOD"
+    );
+    const exclusions = element.shadowRoot.querySelector(
+      '[data-id="exclusions"]'
+    ).textContent;
+    expect(exclusions).toContain(
+      "AXF_ForecastComparison_reasonNO_APPROVED_METHOD"
+    );
+  });
 });

@@ -5,7 +5,7 @@
  * holders it can actually read (effective sharing + CRUD/FLS, `USER_MODE`), sums only the
  * settled facts (BAT/CCT, status POSTED) of the sources it can read, and keeps every
  * contribution attributed to its person/company, in its original currency, with its effective
- * date range and the source it came from. Nothing is converted, neutralized or reallocated here
+ * date range and the source it came from. Nothing is converted or reallocated here
  * (siblings AXF-123/124/125).
  *
  * Access contract (AXF-4 AC2/AC3, AD-19/AD-21/AD-22):
@@ -24,6 +24,16 @@
  *   `ALLOCATED_OUTSIDE_SCOPE` (strangers) or `ALLOCATED_TO_UNVERIFIED_HOLDER` (requested holders
  *   whose coverage is unverified) without naming anyone. Invalid, incomplete or ambiguous
  *   allocations degrade the result instead of being summed.
+ * - AXF-128 internal counter-entries: a confirmed allocation derives one counter-entry between
+ *   the fact's holder and each allocated person/company. They are neutralized atomically — the
+ *   fact then contributes once, through its economic attribution — only when the calculation
+ *   receives *every* participant as an authorized holder; that is the consolidated view. While
+ *   any participant is missing from the authorized scope nothing is netted: the fact contributes
+ *   once at its material location, on its holder (`HOLDER`), and each authorized participant
+ *   other than the holder still contributes its own parcel, redacted, so an individual view never
+ *   loses its contribution to an attribution it cannot see. A pending counter-entry leaves the
+ *   result `DEGRADED` with the existing exclusion reasons — the pair is not netted, so no total
+ *   is presented as if it had been.
  * - Unbounded scopes are refused: at most `MAX_SCOPE` holders and `MAX_FACTS` facts per kind;
  *   beyond that the result is `BLOCKED` with `VOLUME_EXCEEDED` rather than partially summed.
  * - Any unexpected platform failure surfaces as `UNAVAILABLE`, never as a raw exception.
@@ -299,6 +309,33 @@ public with sharing class ALT_CLS_ConsolidationService {
         );
         continue;
       }
+      // Internal counter-entries (AXF-128). Each confirmed parcel derives a counter-entry
+      // between the fact's holder and the allocated person/company; the pair reconciles the two
+      // individual views and is neutralized only once the calculation holds *all* participants
+      // as authorized holders. The decision is taken for the allocation as a whole, so a fact
+      // is never netted by halves.
+      Boolean neutralized = true;
+      for (AllocationShare share : shares) {
+        if (!fullScope.contains(share.accountId)) {
+          neutralized = false;
+          break;
+        }
+      }
+      if (!neutralized) {
+        // Not the consolidated view: nothing is netted. The fact keeps its contribution where
+        // it materially is, so the holder's individual view does not lose it, and no private
+        // participant is named for the parcels that stay outside.
+        accumulate(
+          byKey,
+          visible,
+          source,
+          fact,
+          fact.holderId,
+          'HOLDER',
+          fact.magnitude,
+          result
+        );
+      }
       for (AllocationShare share : shares) {
         if (!fullScope.contains(share.accountId)) {
           if (visible.containsKey(share.accountId)) {
@@ -306,6 +343,11 @@ public with sharing class ALT_CLS_ConsolidationService {
           } else {
             outsideScope++;
           }
+          continue;
+        }
+        if (!neutralized && share.accountId == fact.holderId) {
+          // The holder's own parcel is already inside the material contribution it kept;
+          // counting it again would inflate the very view it belongs to.
           continue;
         }
         Decimal magnitude = share.magnitude != null

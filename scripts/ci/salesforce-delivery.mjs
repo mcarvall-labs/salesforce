@@ -2,7 +2,6 @@ import fs from "node:fs";
 import path from "node:path";
 import { spawnSync } from "node:child_process";
 import { pathToFileURL } from "node:url";
-import { randomUUID } from "node:crypto";
 
 export function sourcePaths(entries) {
   const paths = new Set();
@@ -20,20 +19,20 @@ export function sourcePaths(entries) {
 }
 
 export function extractDeclaredTests(body) {
-  const heading = /^#{1,6}\s*salesforce test classes\s*$/im.exec(body || "");
+  const heading = /^#{1,6}\s*apex test classes to run\s*$/im.exec(body || "");
   if (!heading) return [];
   const rest = body.slice(heading.index + heading[0].length);
-  const section = rest.split(/^#{1,6}\s/m)[0];
+  // The PR template's answer area is the first fenced code block after the
+  // heading; class names inside it may be separated by spaces and/or commas.
+  const fence = /```[^\n]*\n([\s\S]*?)```/.exec(rest);
+  if (!fence) return [];
   const names = [];
-  for (const line of section.split("\n")) {
-    const bullet = /^[-*]\s*(.+)$/.exec(line.trim());
-    if (!bullet) continue;
-    // Test class names on a bullet may be separated by spaces and/or commas,
-    // e.g. "- FooTest BarTest, BazTest", and may be wrapped in backticks.
-    for (const token of bullet[1].split(/[\s,]+/)) {
-      const name = token.replace(/`/g, "");
-      if (/^[A-Za-z][A-Za-z0-9_]*$/.test(name)) names.push(name);
-    }
+  for (const token of fence[1].split(/[\s,]+/)) {
+    const name = token.trim();
+    // Apex class names are PascalCase by convention; requiring an uppercase
+    // first letter rejects prose accidentally typed into the block (e.g. a
+    // sentence like "the remaining seven classes...") instead of class names.
+    if (/^[A-Z][A-Za-z0-9_]*$/.test(name)) names.push(name);
   }
   return [...new Set(names)];
 }
@@ -54,10 +53,10 @@ export function testPlan(paths, readFile, declaredTests) {
   const tests = [...new Set([...testsInDelta, ...declaredTests])];
   if (hasProductionApex && tests.length === 0)
     throw new Error(
-      "Changed Apex classes/triggers have no test coverage in this delta. Add the " +
-        '"## Salesforce test classes" section to the PR description listing the Apex ' +
-        "test class name(s) that cover this change (one per bullet), or include the " +
-        "corresponding test class(es) in this PR."
+      "Changed Apex classes/triggers have no test coverage in this delta. List the " +
+        "Apex test class name(s) that cover this change in the PR description's " +
+        '"### Apex test classes to run" code block (space/comma-separated), or ' +
+        "include the corresponding test class(es) in this PR."
     );
   return {
     testLevel: tests.length ? "RunSpecifiedTests" : "RunLocalTests",
@@ -262,7 +261,8 @@ export async function run() {
     report.orgId = org.result.id;
     // Every environment scopes tests to what the delta actually touches instead of
     // running every local test class: any test class included in the delta itself,
-    // plus anything declared via the PR's "## Salesforce test classes" section.
+    // plus anything declared in the PR's "### Apex test classes to run" code block.
+    // Applies to both validate (dry-run) and deploy — same code path either way.
     // Falls back to RunLocalTests only when the delta has no Apex/trigger at all.
     const plan = testPlan(
       report.paths,
@@ -454,27 +454,23 @@ ${
 `;
     fs.writeFileSync(path.join(directory, "result.html"), html);
 
-    // Kept short: the full component/test failure detail lives in result.json
-    // and result.html inside the evidence artifact, not inline in the PR comment.
-    const shortSummary = [
-      `## Salesforce ${report.operation}: ${report.environment}`,
-      "",
-      `**Result:** ${report.outcome}`,
-      `**Commit (to):** \`${report.sha}\``,
-      `**Base (from):** \`${report.base || "Not required / not configured"}\``,
-      `**Metadata paths:** ${report.paths.length}`,
-      `**Test level:** ${report.testLevel || "N/A"}${report.tests?.length ? ` (${report.tests.join(", ")})` : ""}`,
-      `**Deployment ID:** ${report.salesforce?.id || "None"}`,
-      `**Tests completed / failed:** ${report.salesforce?.numberTestsCompleted ?? 0} / ${report.salesforce?.numberTestErrors ?? 0}`,
-      report.error || "",
-      "",
-      "Full component/test failure detail, the JSON result and the validated delta package zip are attached as workflow run artifacts: `result.json`, `result.html`, `delta-package.zip`."
-    ].join("\n");
+    // Structured, single-line outputs let the workflow build a compact, visual
+    // PR comment (icon/badge + a few key facts) without parsing a text blob.
+    // Full component/test failure detail lives only in result.json/result.html
+    // inside the evidence artifact, never inline in the PR comment.
     if (e.GITHUB_OUTPUT) {
-      const delimiter = randomUUID();
+      const line = (key, value) =>
+        `${key}=${String(value ?? "")
+          .replace(/[\r\n]/g, " ")
+          .slice(0, 300)}\n`;
       fs.appendFileSync(
         e.GITHUB_OUTPUT,
-        `summary<<${delimiter}\n${shortSummary}\n${delimiter}\n`
+        line("outcome", report.outcome) +
+          line("deploymentId", report.salesforce?.id) +
+          line("componentsTotal", report.salesforce?.numberComponentsTotal) +
+          line("testsCompleted", report.salesforce?.numberTestsCompleted ?? 0) +
+          line("testsFailed", report.salesforce?.numberTestErrors ?? 0) +
+          line("errorMessage", report.error)
       );
     }
   }

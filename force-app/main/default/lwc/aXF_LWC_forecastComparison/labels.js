@@ -30,6 +30,7 @@ import reasonMULTI_CURRENCY from "@salesforce/label/c.AXF_ForecastComparison_rea
 import reasonAS_OF_NOT_TODAY from "@salesforce/label/c.AXF_ForecastComparison_reasonAS_OF_NOT_TODAY";
 import reasonNO_CONTRIBUTIONS from "@salesforce/label/c.AXF_ForecastComparison_reasonNO_CONTRIBUTIONS";
 import reasonINCOMPLETE_CONTRIBUTION from "@salesforce/label/c.AXF_ForecastComparison_reasonINCOMPLETE_CONTRIBUTION";
+import reasonNO_APPROVED_METHOD from "@salesforce/label/c.AXF_ForecastComparison_reasonNO_APPROVED_METHOD";
 import reasonSCHEDULE_STALE from "@salesforce/label/c.AXF_ForecastComparison_reasonSCHEDULE_STALE";
 import reasonSCHEDULE_AMBIGUOUS from "@salesforce/label/c.AXF_ForecastComparison_reasonSCHEDULE_AMBIGUOUS";
 import reasonSCHEDULE_INVALID from "@salesforce/label/c.AXF_ForecastComparison_reasonSCHEDULE_INVALID";
@@ -106,6 +107,7 @@ export default {
   reasonAS_OF_NOT_TODAY,
   reasonNO_CONTRIBUTIONS,
   reasonINCOMPLETE_CONTRIBUTION,
+  reasonNO_APPROVED_METHOD,
   reasonSCHEDULE_STALE,
   reasonSCHEDULE_AMBIGUOUS,
   reasonSCHEDULE_INVALID,

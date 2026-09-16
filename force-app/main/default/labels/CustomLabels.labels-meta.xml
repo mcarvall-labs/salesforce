@@ -1356,6 +1356,30 @@
     >en_US</language><protected>false</protected><shortDescription
     >Not accessible</shortDescription><value
     >Some of the data this panel depends on is not accessible to you.</value></labels><labels
+  ><fullName>AXF_ConfidencePanel_authority</fullName><language
+    >en_US</language><protected>false</protected><shortDescription
+    >Canonical policy</shortDescription><value
+    >Canonical policy</value></labels><labels><fullName
+    >AXF_ConfidencePanel_coverage</fullName><language>en_US</language><protected
+    >false</protected><shortDescription>Coverage</shortDescription><value
+    >Coverage</value></labels><labels><fullName
+    >AXF_ConfidencePanel_coverageUnknown</fullName><language
+    >en_US</language><protected>false</protected><shortDescription
+    >Coverage not reported</shortDescription><value
+    >Coverage was not reported for this result.</value></labels><labels
+  ><fullName>AXF_ConfidencePanel_fallbacks</fullName><language
+    >en_US</language><protected>false</protected><shortDescription
+    >Fallbacks</shortDescription><value
+    >Fallbacks applied</value></labels><labels><fullName
+    >AXF_ConfidencePanel_noFallbacks</fullName><language
+    >en_US</language><protected>false</protected><shortDescription
+    >No fallbacks</shortDescription><value
+    >No fallback was needed to derive this result.</value></labels><labels
+  ><fullName
+    >AXF_ConfidencePanel_fallbackFreshnessLimitDefault</fullName><language
+    >en_US</language><protected>false</protected><shortDescription
+    >Default freshness limit</shortDescription><value
+    >The source declares no freshness limit of its own; the policy default was used.</value></labels><labels
   ><fullName>AXF_ArchiveExplorer_title</fullName><language
     >en_US</language><protected>false</protected><shortDescription
     >Title</shortDescription><value>Transaction archive</value></labels><labels
@@ -2118,6 +2142,10 @@
     >en_US</language><protected>false</protected><shortDescription
     >Incomplete</shortDescription><value
     >A contribution without currency or date was ignored.</value></labels><labels
+  ><fullName>AXF_ForecastComparison_reasonNO_APPROVED_METHOD</fullName><language
+    >en_US</language><protected>false</protected><shortDescription
+    >No approved method</shortDescription><value
+    >A category in the horizon has no method approved by the forecasting policy version; nothing is estimated for it.</value></labels><labels
   ><fullName>AXF_ForecastComparison_reasonSCHEDULE_STALE</fullName><language
     >en_US</language><protected>false</protected><shortDescription
     >Stale</shortDescription><value
@@ -2484,4 +2512,63 @@
     >AXF_ReconciliationReversal_doneSourceUnknown</fullName><language
     >en_US</language><protected>false</protected><shortDescription
     >Done source unknown</shortDescription><value
-    >source remaining not verifiable with your access</value></labels></CustomLabels>
+    >source remaining not verifiable with your access</value></labels><labels
+  ><fullName>AXF_SourceLink_evBlocked</fullName><language
+    >en_US</language><protected>false</protected><shortDescription
+    >Blocked</shortDescription><value>Blocked</value></labels><labels><fullName
+    >AXF_SourceLink_factResidualAfter</fullName><language
+    >en_US</language><protected>false</protected><shortDescription
+    >Remaining after</shortDescription><value
+    >Remaining after:</value></labels><labels><fullName
+    >AXF_SourceLink_convEstimatedLine</fullName><language
+    >en_US</language><protected>false</protected><shortDescription
+    >Conversion estimated</shortDescription><value
+    >Converted for comparison:</value></labels><labels><fullName
+    >AXF_SourceLink_convStaleLine</fullName><language>en_US</language><protected
+    >false</protected><shortDescription
+    >Conversion stale</shortDescription><value
+    >Quote older than the approved limit, amount omitted:</value></labels><labels
+  ><fullName>AXF_SourceLink_convUnavailableLine</fullName><language
+    >en_US</language><protected>false</protected><shortDescription
+    >Conversion unavailable</shortDescription><value
+    >No material rate, confirmation blocked:</value></labels><labels><fullName
+    >AXF_SourceLink_codeMISSING_MATERIAL_FX</fullName><language
+    >en_US</language><protected>false</protected><shortDescription
+    >Code missing material fx</shortDescription><value
+    >No material exchange rate for this currency pair; confirmation is blocked.</value></labels><labels
+  ><fullName>AXF_SourceLink_evPartial</fullName><language
+    >en_US</language><protected>false</protected><shortDescription
+    >Partial</shortDescription><value
+    >Partial — remainder left</value></labels><labels><fullName
+    >AXF_SourceLink_economicRole</fullName><language>en_US</language><protected
+    >false</protected><shortDescription>Economic role</shortDescription><value
+    >Economic role of the link</value></labels><labels><fullName
+    >AXF_SourceLink_roleHelp</fullName><language>en_US</language><protected
+    >false</protected><shortDescription>Role help</shortDescription><value
+    >Declare the role of this link. It is never inferred from the description or from the statement association of the card line (BillReference).</value></labels><labels
+  ><fullName>AXF_SourceLink_roleAPPLICATION</fullName><language
+    >en_US</language><protected>false</protected><shortDescription
+    >Role application</shortDescription><value
+    >Application — the fact settles the obligation (expense or revenue by its direction)</value></labels><labels
+  ><fullName>AXF_SourceLink_roleINVOICE_PAYMENT</fullName><language
+    >en_US</language><protected>false</protected><shortDescription
+    >Role invoice payment</shortDescription><value
+    >Invoice payment</value></labels><labels><fullName
+    >AXF_SourceLink_roleTRANSFER</fullName><language>en_US</language><protected
+    >false</protected><shortDescription>Role transfer</shortDescription><value
+    >Transfer</value></labels><labels><fullName
+    >AXF_SourceLink_roleREFUND</fullName><language>en_US</language><protected
+    >false</protected><shortDescription>Role refund</shortDescription><value
+    >Refund</value></labels><labels><fullName
+    >AXF_SourceLink_sourceRemainder</fullName><language
+    >en_US</language><protected>false</protected><shortDescription
+    >Source remainder</shortDescription><value
+    >Source left for other targets after this obligation — multi-target need (AXF-30):</value></labels><labels
+  ><fullName>AXF_SourceLink_codeUNSUPPORTED_ECONOMIC_ROLE</fullName><language
+    >en_US</language><protected>false</protected><shortDescription
+    >Code unsupported economic role</shortDescription><value
+    >This economic role has no link capability in this version. Nothing was saved — declare the application role, the only one this flow can route.</value></labels><labels
+  ><fullName>AXF_SourceLink_codeINVALID_ECONOMIC_ROLE</fullName><language
+    >en_US</language><protected>false</protected><shortDescription
+    >Code invalid economic role</shortDescription><value
+    >Declare the economic role of the link — it is never inferred from the description or from the statement of the card line — and confirm again. Nothing was saved.</value></labels></CustomLabels>
