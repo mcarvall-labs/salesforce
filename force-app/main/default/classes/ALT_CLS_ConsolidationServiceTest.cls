@@ -58,12 +58,19 @@ private class ALT_CLS_ConsolidationServiceTest {
       Name = 'AXF122TestCapabilityOnly',
       Label = 'AXF-122 capability only'
     );
+    insert bare;
     // Capability + object read, no FLS: exercises the per-field BLOCKED path.
-    PermissionSet noFls = new PermissionSet(
-      Name = 'AXF122TestObjectsNoFls',
-      Label = 'AXF-122 objects without FLS'
-    );
-    insert new List<PermissionSet>{ bare, noFls };
+    // Uses the pre-deployed AXF_PS_TestNoFLS permission set (object-level read grants
+    // done at DEPLOY time) instead of dynamically inserting ObjectPermissions, since
+    // Apex-time inserts referencing certain object SobjectTypes can hit stale platform
+    // entity-cache errors (FIELD_INTEGRITY_EXCEPTION, Invalid object) unrelated to schema.
+    Id noFlsId = [
+      SELECT Id
+      FROM PermissionSet
+      WHERE Name = 'AXF_PS_TestNoFLS'
+      LIMIT 1
+    ]
+    .Id;
     Id capability = [
       SELECT Id
       FROM CustomPermission
@@ -73,26 +80,8 @@ private class ALT_CLS_ConsolidationServiceTest {
     .Id;
     insert new List<SetupEntityAccess>{
       new SetupEntityAccess(ParentId = bare.Id, SetupEntityId = capability),
-      new SetupEntityAccess(ParentId = noFls.Id, SetupEntityId = capability)
+      new SetupEntityAccess(ParentId = noFlsId, SetupEntityId = capability)
     };
-    List<ObjectPermissions> reads = new List<ObjectPermissions>();
-    for (
-      String objectName : new List<String>{
-        'AXF_OBJ_BankAccountTransaction__c',
-        'AXF_OBJ_CreditCardTransaction__c',
-        'AXF_OBJ_BankAccount__c',
-        'AXF_OBJ_CreditCard__c'
-      }
-    ) {
-      reads.add(
-        new ObjectPermissions(
-          ParentId = noFls.Id,
-          SobjectType = objectName,
-          PermissionsRead = true
-        )
-      );
-    }
-    insert reads;
     List<PermissionSetAssignment> assignments = new List<PermissionSetAssignment>();
     assignments.add(
       assignment(users[0].Id, permissionSets.get('AXF_PS_GestorFinanceiro'))
@@ -104,7 +93,7 @@ private class ALT_CLS_ConsolidationServiceTest {
       assignment(users[2].Id, permissionSets.get('AXF_PS_Participante'))
     );
     assignments.add(assignment(users[3].Id, bare.Id));
-    assignments.add(assignment(users[4].Id, noFls.Id));
+    assignments.add(assignment(users[4].Id, noFlsId));
     insert assignments;
   }
 
@@ -719,9 +708,10 @@ private class ALT_CLS_ConsolidationServiceTest {
           scope(new List<Id>{ personId, plain.Id, null }, null, null)
         );
       Test.stopTest();
-      Assert.areEqual(1, result.holders.size(), 'so a pessoa Axon entra');
-      Assert.areEqual('AUTHORIZED', result.holders[0].state);
-      Assert.areEqual(120, total(result, 'BRL').outflow);
+      // "plain" only ends up outside the Axon record types when the org has a third,
+      // non-Axon Account record type to assign it; AXON_DEV/AXON_UAT only have
+      // AXF_Person/AXF_Business, so plain falls back to the org's default record type
+      // (an Axon type) and is itself a valid, if empty, holder.
       String plainType = [
           SELECT RecordType.DeveloperName
           FROM Account
@@ -729,7 +719,24 @@ private class ALT_CLS_ConsolidationServiceTest {
         ]
         .RecordType
         ?.DeveloperName;
-      if (plainType != 'AXF_Person' && plainType != 'AXF_Business') {
+      Boolean plainIsAxonType =
+        plainType == 'AXF_Person' ||
+        plainType == 'AXF_Business';
+      Assert.areEqual(
+        plainIsAxonType ? 2 : 1,
+        result.holders.size(),
+        'so a pessoa Axon entra'
+      );
+      ALT_CLS_ConsolidationService.HolderScope personHolder;
+      for (ALT_CLS_ConsolidationService.HolderScope holder : result.holders) {
+        if (holder.accountId == personId) {
+          personHolder = holder;
+        }
+      }
+      Assert.isNotNull(personHolder, 'pessoa deve aparecer nos titulares');
+      Assert.areEqual('AUTHORIZED', personHolder.state);
+      Assert.areEqual(120, total(result, 'BRL').outflow);
+      if (!plainIsAxonType) {
         Assert.isTrue(
           hasExclusion(result, plain.Id, 'NOT_A_HOLDER'),
           JSON.serialize(result.exclusions)
