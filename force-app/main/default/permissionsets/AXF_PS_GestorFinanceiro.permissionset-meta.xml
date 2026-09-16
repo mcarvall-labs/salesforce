@@ -2527,4 +2527,12 @@
         <tab>AXF_SourceHealth</tab>
         <visibility>Visible</visibility>
     </tabSettings>
+    <recordTypeVisibilities>
+        <recordType>PersonAccount.AXF_Person</recordType>
+        <visible>true</visible>
+    </recordTypeVisibilities>
+    <recordTypeVisibilities>
+        <recordType>Account.AXF_Business</recordType>
+        <visible>true</visible>
+    </recordTypeVisibilities>
 </PermissionSet>
