@@ -20,20 +20,17 @@ export function sourcePaths(entries) {
 }
 
 export function extractDeclaredTests(body) {
-  const heading = /^#{1,6}\s*salesforce test classes\s*$/im.exec(body || "");
+  const heading = /^#{1,6}\s*apex test classes to run\s*$/im.exec(body || "");
   if (!heading) return [];
   const rest = body.slice(heading.index + heading[0].length);
-  const section = rest.split(/^#{1,6}\s/m)[0];
+  // The PR template's answer area is the first fenced code block after the
+  // heading; class names inside it may be separated by spaces and/or commas.
+  const fence = /```[^\n]*\n([\s\S]*?)```/.exec(rest);
+  if (!fence) return [];
   const names = [];
-  for (const line of section.split("\n")) {
-    const bullet = /^[-*]\s*(.+)$/.exec(line.trim());
-    if (!bullet) continue;
-    // Test class names on a bullet may be separated by spaces and/or commas,
-    // e.g. "- FooTest BarTest, BazTest", and may be wrapped in backticks.
-    for (const token of bullet[1].split(/[\s,]+/)) {
-      const name = token.replace(/`/g, "");
-      if (/^[A-Za-z][A-Za-z0-9_]*$/.test(name)) names.push(name);
-    }
+  for (const token of fence[1].split(/[\s,]+/)) {
+    const name = token.trim();
+    if (/^[A-Za-z][A-Za-z0-9_]*$/.test(name)) names.push(name);
   }
   return [...new Set(names)];
 }
