@@ -383,7 +383,21 @@ private class ALT_CLS_EconomicAllocationServiceTest {
     System.runAs(gestor()) {
       Account owner = holder('Titular B', 'AXF_Person');
       Account partner = holder('Empresa B', 'AXF_Business');
+      // Explicitly pinned to a non-Axon record type: the org default record type for a bare
+      // insert is not guaranteed to fall outside AXF_Person/AXF_Business.
+      List<RecordType> foreign = [
+        SELECT Id
+        FROM RecordType
+        WHERE
+          SobjectType = 'Account'
+          AND IsActive = TRUE
+          AND DeveloperName NOT IN ('AXF_Person', 'AXF_Business')
+        LIMIT 1
+      ];
       Account unauthorized = new Account(Name = 'Conta comum sem tipo Axon');
+      if (!foreign.isEmpty()) {
+        unauthorized.RecordTypeId = foreign[0].Id;
+      }
       insert unauthorized;
       AXF_OBJ_BankAccountTransaction__c fact = bankFact(owner, 'b');
       ALT_CLS_EconomicAllocationService service = new ALT_CLS_EconomicAllocationService();
