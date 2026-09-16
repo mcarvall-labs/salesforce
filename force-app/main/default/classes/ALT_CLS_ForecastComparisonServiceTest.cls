@@ -662,7 +662,21 @@ private class ALT_CLS_ForecastComparisonServiceTest {
       Assert.areEqual(1, mixed.sources[0].occurrenceCount);
 
       // A non-Axon account and an invisible account are excluded with their own reason.
+      // Explicitly pinned to a non-Axon record type: the org default record type for a bare
+      // insert is not guaranteed to fall outside AXF_Person/AXF_Business.
+      List<RecordType> foreignTypes = [
+        SELECT Id
+        FROM RecordType
+        WHERE
+          SobjectType = 'Account'
+          AND IsActive = TRUE
+          AND DeveloperName NOT IN ('AXF_Person', 'AXF_Business')
+        LIMIT 1
+      ];
       Account plain = new Account(Name = 'Sem tipo Axon');
+      if (!foreignTypes.isEmpty()) {
+        plain.RecordTypeId = foreignTypes[0].Id;
+      }
       insert plain;
       ALT_CLS_ForecastComparisonService.Result typed = service.compare(
         input(
