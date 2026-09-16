@@ -1,0 +1,13 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<CustomField xmlns="http://soap.sforce.com/2006/04/metadata">
+  <fullName>AXF_OAD_LKP_OriginalAdjustment__c</fullName>
+  <label>Ajuste Original</label>
+  <type>Lookup</type>
+  <referenceTo>AXF_OBJ_ObligationAdjustment__c</referenceTo>
+  <relationshipName>AXF_REL_Compensations</relationshipName>
+  <relationshipLabel>Compensações</relationshipLabel>
+  <deleteConstraint>SetNull</deleteConstraint>
+  <required>false</required>
+  <description
+  >Ajuste neutralizado por esta compensação. A compensação carrega o valor com sinal exatamente oposto, o mesmo alvo e a mesma moeda, com identidade única de compensação (AXF-104).</description>
+</CustomField>

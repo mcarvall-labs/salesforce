@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<CustomField xmlns="http://soap.sforce.com/2006/04/metadata">
+  <fullName>AXF_SDC_TAL_Explanation__c</fullName>
+  <label>Explicação</label>
+  <type>LongTextArea</type>
+  <length>4000</length>
+  <visibleLines>5</visibleLines>
+  <description
+  >Motivo e explicação livres exigidos pela revisão do usuário. Componentes ausentes nunca assumem zero em silêncio para passar na validação (AXF-104).</description>
+</CustomField>

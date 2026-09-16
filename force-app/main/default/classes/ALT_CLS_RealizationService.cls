@@ -28,6 +28,12 @@ public with sharing class ALT_CLS_RealizationService {
     public Decimal targetVersion;
     public Decimal sourceVersion;
     public String operationKey;
+    /**
+     * @description AXF-104: obrigação efetiva revisada (B + A) resolvida sob bloqueio. Quando
+     * presente, substitui a magnitude original como limite do alvo — a liquidação nunca é
+     * limitada por uma estimativa original obsoleta. Nula preserva o comportamento AXF-25.
+     */
+    public Decimal effectiveObligation;
   }
   public class View {
     public Id targetId;
@@ -319,10 +325,12 @@ public with sharing class ALT_CLS_RealizationService {
         fact.iso == plan.AXF_FTX_TXT_CurrencyIsoCode__c,
         'CURRENCY_MISMATCH'
       );
+      Decimal targetCapacity =
+        (input.effectiveObligation == null
+          ? plan.AXF_FTX_NUM_Magnitude__c
+          : input.effectiveObligation) - new Conservation().net(plan.Id, null);
       check(
-        input.amount <=
-          plan.AXF_FTX_NUM_Magnitude__c -
-          new Conservation().net(plan.Id, null) &&
+        input.amount <= targetCapacity &&
           input.amount <= fact.amount - new Conservation().net(null, factId),
         'UNAVAILABLE_AMOUNT'
       );
@@ -547,6 +555,9 @@ public with sharing class ALT_CLS_RealizationService {
         'CONFLICT'
       );
       check(!new Conservation().reversed(allocationId), 'CONFLICT');
+      // AXF-104: efeitos dependentes sobreviventes falham atomicamente, antes de qualquer
+      // mutação. Compensar o ajuste atribuível não pode deixar N acima de E.
+      ALT_CLS_ObligationService.assertReversalAllowed(allocationId);
       AXF_OBJ_ReconciliationAllocation__c reversal = original.clone(
         false,
         false,
@@ -560,12 +571,22 @@ public with sharing class ALT_CLS_RealizationService {
       reversal.AXF_RA_PKL_ReversalReason__c = reasonCode;
       reversal.AXF_RA_TXT_ReversalNote__c = reasonNote;
       insert as user reversal;
+      // AXF-104: compensa apenas o ajuste atribuível a esta aplicação e retira a
+      // classificação/referência dependente invalidada.
+      ALT_CLS_ObligationService.compensateForReversal(
+        plan.Id,
+        original.Id,
+        reversal.Id
+      );
       bump(plan, fact);
       return reversal.Id;
     } catch (Exception failure) {
       Database.rollback(sp);
       if (failure instanceof RealizationException) {
         throw failure;
+      }
+      if (failure instanceof ALT_CLS_ObligationService.ObligationException) {
+        throw new RealizationException(failure.getMessage());
       }
       throw new RealizationException('UNAVAILABLE');
     } finally {
@@ -606,6 +627,11 @@ public with sharing class ALT_CLS_RealizationService {
     } finally {
       writing = false;
     }
+  }
+  /** @description AXF-104: aplicado líquido válido do alvo, dentro da mesma fronteira de conservação. */
+  public Decimal netApplied(Id targetId) {
+    requireAccess();
+    return new Conservation().net(targetId, null);
   }
   /** @description Fails closed if a total would require an inaccessible allocation or source. */
   public View read(Id targetId) {

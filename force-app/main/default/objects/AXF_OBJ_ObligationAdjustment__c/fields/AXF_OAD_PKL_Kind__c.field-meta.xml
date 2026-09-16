@@ -1,0 +1,25 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<CustomField xmlns="http://soap.sforce.com/2006/04/metadata">
+  <fullName>AXF_OAD_PKL_Kind__c</fullName>
+  <label>Tipo de Ajuste</label>
+  <required>true</required>
+  <type>Picklist</type>
+  <valueSet>
+    <restricted>true</restricted>
+    <valueSetDefinition>
+      <sorted>false</sorted>
+      <value>
+        <fullName>ADJUSTMENT</fullName>
+        <default>false</default>
+        <label>Ajuste</label>
+      </value>
+      <value>
+        <fullName>COMPENSATION</fullName>
+        <default>false</default>
+        <label>Compensação</label>
+      </value>
+    </valueSetDefinition>
+  </valueSet>
+  <description
+  >ADJUSTMENT aplica o delta; COMPENSATION identifica o ajuste retirado e exige valor exatamente oposto e original apontado. Uma compensação nunca é um pagamento negativo (AXF-104).</description>
+</CustomField>

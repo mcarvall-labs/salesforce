@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<CustomField xmlns="http://soap.sforce.com/2006/04/metadata">
+  <fullName>AXF_SDC_NUM_OneOffDiscount__c</fullName>
+  <label>Desconto Pontual</label>
+  <precision>16</precision>
+  <scale>2</scale>
+  <type>Number</type>
+  <required>false</required>
+  <description
+  >Componente de desconto pontual da parcela inteira. Reduz esta liquidação e não a próxima referência recorrente. Nulo até a classificação EXPLAINED (AXF-104).</description>
+</CustomField>

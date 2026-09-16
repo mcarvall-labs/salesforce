@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<CustomField xmlns="http://soap.sforce.com/2006/04/metadata">
+  <fullName>AXF_SDC_TAL_CanonicalPayload__c</fullName>
+  <label>Carga Canônica</label>
+  <type>LongTextArea</type>
+  <length>32768</length>
+  <visibleLines>5</visibleLines>
+  <description
+  >Entrada tipada completa normalizada, preservada como evidência de auditoria da decisão. Permite recompor exatamente o que foi autorizado e revisado (AXF-104).</description>
+</CustomField>

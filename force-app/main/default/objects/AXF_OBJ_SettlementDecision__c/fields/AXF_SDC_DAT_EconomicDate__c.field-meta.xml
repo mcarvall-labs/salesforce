@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<CustomField xmlns="http://soap.sforce.com/2006/04/metadata">
+  <fullName>AXF_SDC_DAT_EconomicDate__c</fullName>
+  <label>Data Econômica</label>
+  <type>Date</type>
+  <required>true</required>
+  <description
+  >Data econômica da decisão. A precedência das referências segue a sequência absoluta da parcela, nunca a data de chegada (AXF-104).</description>
+</CustomField>

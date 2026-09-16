@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<CustomField xmlns="http://soap.sforce.com/2006/04/metadata">
+  <fullName>AXF_OAD_DAT_EffectiveDate__c</fullName>
+  <label>Data Efetiva</label>
+  <type>Date</type>
+  <required>false</required>
+  <description
+  >Data econômica informada pelo usuário para o ajuste. A ordem de precedência das referências usa a sequência absoluta de parcelas, nunca a data de chegada (AXF-104).</description>
+</CustomField>

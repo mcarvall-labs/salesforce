@@ -185,6 +185,16 @@ public with sharing class AXF_CLS_FSCTriggerHandler {
             ) {
               continue;
             }
+            // Exceção estreita e declarada: a produção ou retirada de uma referência
+            // recorrente confirmada (AXF-104) avança a revisão solicitada da projeção e a
+            // versão financeira do cronograma e reposiciona o ponteiro da referência vigente,
+            // atomicamente com a decisão que a originou, e só estes três campos.
+            if (
+              ALT_CLS_ObligationService.isWritingReference() &&
+              ALT_CLS_ObligationService.REFERENCE_FIELDS.contains(field)
+            ) {
+              continue;
+            }
             record.addError(
               'Campos derivados do cronograma (identidade, estado, ponteiros, contadores e cursores) são mantidos pelo serviço autorizado e não são editáveis diretamente (AXF-103).'
             );

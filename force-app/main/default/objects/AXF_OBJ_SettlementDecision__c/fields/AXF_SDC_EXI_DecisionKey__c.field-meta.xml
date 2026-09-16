@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<CustomField xmlns="http://soap.sforce.com/2006/04/metadata">
+  <fullName>AXF_SDC_EXI_DecisionKey__c</fullName>
+  <label>Chave da Decisão</label>
+  <length>64</length>
+  <type>Text</type>
+  <unique>true</unique>
+  <externalId>true</externalId>
+  <caseSensitive>true</caseSensitive>
+  <description
+  >Identidade determinística da decisão, derivada por hash enquadrado (SHA-256) da capacidade, do titular, do escopo do ator e da chave de operação. Uma repetição equivalente devolve o resultado original antes da verificação de versão obsoleta (AXF-104).</description>
+</CustomField>

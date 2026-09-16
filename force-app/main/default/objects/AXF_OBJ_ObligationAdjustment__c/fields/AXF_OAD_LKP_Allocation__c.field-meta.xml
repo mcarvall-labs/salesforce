@@ -1,0 +1,13 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<CustomField xmlns="http://soap.sforce.com/2006/04/metadata">
+  <fullName>AXF_OAD_LKP_Allocation__c</fullName>
+  <label>Alocação de Origem</label>
+  <type>Lookup</type>
+  <referenceTo>AXF_OBJ_ReconciliationAllocation__c</referenceTo>
+  <relationshipName>AXF_REL_ObligationAdjustments</relationshipName>
+  <relationshipLabel>Ajustes de Obrigação</relationshipLabel>
+  <deleteConstraint>Restrict</deleteConstraint>
+  <required>false</required>
+  <description
+  >Aplicação de caixa que tornou o ajuste atribuível. Nulo em um ajuste individual (AMEND_OBLIGATION), que nunca é compensado apenas porque uma alocação de caixa foi estornada (AXF-104).</description>
+</CustomField>

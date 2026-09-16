@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<CustomField xmlns="http://soap.sforce.com/2006/04/metadata">
+  <fullName>AXF_SDC_TXT_PayloadHash__c</fullName>
+  <label>Hash da Carga</label>
+  <length>64</length>
+  <type>Text</type>
+  <required>false</required>
+  <description
+  >Hash normalizado da entrada tipada completa, incluindo componentes e o ajuste pretendido. Comparado na repetição: carga alterada é CONFLICT, nunca sucesso silencioso (AXF-104).</description>
+</CustomField>
