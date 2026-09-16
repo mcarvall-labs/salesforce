@@ -2528,13 +2528,11 @@
         <visibility>Visible</visibility>
     </tabSettings>
     <recordTypeVisibilities>
-        <recordType>Account.AXF_Person</recordType>
+        <recordType>PersonAccount.AXF_Person</recordType>
         <visible>true</visible>
-        <default>false</default>
     </recordTypeVisibilities>
     <recordTypeVisibilities>
         <recordType>Account.AXF_Business</recordType>
         <visible>true</visible>
-        <default>false</default>
     </recordTypeVisibilities>
 </PermissionSet>
