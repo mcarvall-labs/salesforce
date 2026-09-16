@@ -352,6 +352,14 @@ public with sharing class ALT_CLS_ClosureOrchestrator {
       }
       if (stage == 'RETAIN_EVIDENCE') {
         run.AXF_CLR_TAL_EvidenceSummary__c = evidenceSummary(run, checkpoints);
+        // The closure marks what must not be reactivated (AXF-121): written once, with the
+        // terminal state, and frozen by the terminal rule from then on.
+        run.AXF_CLR_TAL_NonReactivationMark__c = ALT_CLS_RestoreInvariant.mark(
+          run.AXF_CLR_EXI_ScopeKey__c,
+          run.AXF_CLR_TXT_CorrelationId__c,
+          run.AXF_CLR_TXT_PolicyVersion__c,
+          Datetime.now()
+        );
         run.AXF_CLR_PKL_Status__c = 'CLOSED';
         run.AXF_CLR_TXT_NextAction__c = 'NONE';
       }
