@@ -1255,37 +1255,37 @@
         <readable>true</readable>
     </fieldPermissions>
     <fieldPermissions>
-        <editable>true</editable>
+        <editable>false</editable>
         <field>AXF_OBJ_ExportRun__c.AXF_EPR_DT_ExpiresAt__c</field>
         <readable>true</readable>
     </fieldPermissions>
     <fieldPermissions>
-        <editable>true</editable>
+        <editable>false</editable>
         <field>AXF_OBJ_ExportRun__c.AXF_EPR_TXT_ContentDocument__c</field>
         <readable>true</readable>
     </fieldPermissions>
     <fieldPermissions>
-        <editable>true</editable>
+        <editable>false</editable>
         <field>AXF_OBJ_ExportRun__c.AXF_EPR_LKP_Requester__c</field>
         <readable>true</readable>
     </fieldPermissions>
     <fieldPermissions>
-        <editable>true</editable>
+        <editable>false</editable>
         <field>AXF_OBJ_ExportRun__c.AXF_EPR_NUM_Version__c</field>
         <readable>true</readable>
     </fieldPermissions>
     <fieldPermissions>
-        <editable>true</editable>
+        <editable>false</editable>
         <field>AXF_OBJ_ExportRun__c.AXF_EPR_TXT_ContentHash__c</field>
         <readable>true</readable>
     </fieldPermissions>
     <fieldPermissions>
-        <editable>true</editable>
+        <editable>false</editable>
         <field>AXF_OBJ_ExportRun__c.AXF_EPR_TXT_FileName__c</field>
         <readable>true</readable>
     </fieldPermissions>
     <fieldPermissions>
-        <editable>true</editable>
+        <editable>false</editable>
         <field>AXF_OBJ_ExportRun__c.AXF_EPR_TXT_Reason__c</field>
         <readable>true</readable>
     </fieldPermissions>
@@ -2329,7 +2329,7 @@
     <objectPermissions>
         <allowCreate>true</allowCreate>
         <allowDelete>false</allowDelete>
-        <allowEdit>true</allowEdit>
+        <allowEdit>false</allowEdit>
         <allowRead>true</allowRead>
         <modifyAllRecords>false</modifyAllRecords>
         <object>AXF_OBJ_ExportRun__c</object>

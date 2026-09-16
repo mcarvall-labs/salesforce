@@ -1,9 +1,11 @@
 /**
  * @description AXF-118 authorized data export (the export slice of AXF-9). One holder scope is
  * exported to a private, short-lived artifact: authorization is verified when the request is
- * made and again on every download, and an expired or no-longer-authorized download is revoked
- * by deleting the artifact. File name, notification and log lines carry no PII: they use only
- * the run's opaque auto-number.
+ * made and again on every download, and **every** refusal that finds a live artifact revokes it
+ * by deleting the artifact before refusing — an elapsed window, a withdrawn capability, a lost
+ * requester binding, a lost holder access, or an artifact that is missing or does not match its
+ * evidence. File name, notification and log lines carry no PII: they use only the run's opaque
+ * auto-number.
  *
  * Scope boundary: the holder's canonical financial facts (AXF_OBJ_FinancialTransaction__c),
  * bounded by EXPORT_ROW_LIMIT. Cell values are neutralized against spreadsheet formulas by the
@@ -19,8 +21,21 @@
  * thrown: an unhandled Apex exception rolls the whole transaction back, which would undo the
  * revocation it is supposed to record. Only failures that leave no side effect to preserve are
  * thrown.
+ *
+ * Isolated elevation, stated rather than implied: the class runs **without sharing** because the
+ * state machine it owns cannot run any other way. The run follows the holder's owner (G2), so an
+ * authorized requester who is not that owner holds only a read share, and the permission set
+ * deliberately grants no more than that; a sharing-enforcing write would then be refused for
+ * exactly the caller the service exists to serve. The refusal paths need the same reach: they must
+ * revoke the artifact, and record it, after the caller lost object access entirely. Nothing is
+ * decided by the elevation: every read that must respect the caller's access states `WITH USER_MODE`
+ * — the holder lookup and the run reads on the gated paths — the fact queries that build the CSV
+ * run in `USER_MODE`, the capability, requester binding, holder access and window are revalidated
+ * before any effect, and the remaining unconditional operations are the control row and the
+ * artifact this service itself wrote. The merged `ALT_CLS_SharedExpenseService` elevates for the
+ * same class of reason.
  */
-public with sharing class ALT_CLS_ExportService {
+public without sharing class ALT_CLS_ExportService {
   public static final String CP_EXPORT = 'AXF_CanExportData';
   /**
    * Short-lived download window. ASSUMPTION: no ratified source fixes a value for the export
@@ -38,6 +53,8 @@ public with sharing class ALT_CLS_ExportService {
   private static final String REASON_ACCESS_REVOKED = 'ACCESS_REVOKED';
   private static final String REASON_MISSING = 'ARTIFACT_MISSING';
   private static final String REASON_MISMATCH = 'ARTIFACT_MISMATCH';
+  /** Recorded when the artifact survived a removal attempt: REVOKED, but the copy is still there. */
+  private static final String REASON_NOT_REMOVED = 'ARTIFACT_NOT_REMOVED';
   private static final String MIME_TYPE = 'text/csv';
   private static final String FILE_NAME_PREFIX = 'axon-export-';
   private static final String FILE_NAME_SUFFIX = '.csv';
@@ -49,6 +66,12 @@ public with sharing class ALT_CLS_ExportService {
     'FROM AXF_OBJ_FinancialTransaction__c ' +
     'WHERE AXF_FTX_LKP_Account__c = :accountId ' +
     'ORDER BY AXF_FTX_DAT_PurchaseDate__c, Id';
+  /** Control-row fields, named once so both access modes of loadRun select the same ones. */
+  private static final String RUN_FIELDS =
+    'Id, Name, AXF_EPR_LKP_Account__c, AXF_EPR_LKP_Requester__c, ' +
+    'AXF_EPR_TXT_ContentDocument__c, AXF_EPR_PKL_Status__c, AXF_EPR_DT_ExpiresAt__c, ' +
+    'AXF_EPR_TXT_FileName__c, AXF_EPR_TXT_ContentHash__c, AXF_EPR_TXT_Reason__c, ' +
+    'AXF_EPR_NUM_Version__c';
 
   public class ExportException extends Exception {
     public String code;
@@ -106,29 +129,46 @@ public with sharing class ALT_CLS_ExportService {
    * that exact requester. Within the download window this is idempotent: the same run and the
    * same artifact come back. Once the window elapsed, or after a revocation, a fresh artifact
    * replaces the dead one on the same run.
+   *
+   * NFR-18 optimistic precondition, following the merged ALT_CLS_ClosureOrchestrator.load: the
+   * caller states the version it last observed for this scope, and a stale expectation is
+   * refused with CONFLICT instead of acting on a state the caller never saw. `null` is only
+   * valid while no run exists, which is the first request and the only one that mints a run; a
+   * version stated for a scope that has no run is an impossible expectation, not a first request.
    */
-  public RunView request(Id accountId) {
+  public RunView request(Id accountId, Decimal expectedVersion) {
     Account holder = authorizedHolder(accountId);
     String key = scopeKey(accountId, UserInfo.getUserId());
     Id existing = findByScopeKey(key);
     AXF_OBJ_ExportRun__c run;
     if (existing == null) {
+      if (expectedVersion != null) {
+        throw failure('CONFLICT');
+      }
       Savepoint point = Database.setSavepoint();
       try {
         // Reloaded after the insert: the auto-number, which names the file, is only readable
-        // from a query, and the artifact must never be named from an unpopulated field.
-        run = prepare(loadRun(insertRun(holder, key).Id), holder);
+        // from a query, and the artifact must never be named from an unpopulated field. The
+        // reload is privileged because the run follows the holder's owner: a requester who is
+        // not that owner only receives the share granted further below.
+        run = prepare(loadRunPrivileged(insertRun(holder, key).Id), holder);
       } catch (DmlException race) {
         Database.rollback(point);
         if (race.getDmlType(0) != StatusCode.DUPLICATE_VALUE) {
           throw race;
         }
+        // A concurrent request won the scope key. Its own transaction owns the artifact; this
+        // one reports the winner. The winner is re-read in system mode because the caller may
+        // not be able to see a row it has no access to yet, and a lost race answers with a safe
+        // code instead of leaking the platform DmlException.
         Id winner = findByScopeKey(key);
         if (winner == null) {
-          throw race;
+          winner = findByScopeKeySystemMode(key);
         }
-        // A concurrent request won the scope key: its own transaction owns the artifact.
-        return toView(loadRun(winner));
+        if (winner == null) {
+          throw failure('CONFLICT');
+        }
+        return toView(loadRunPrivileged(winner));
       } catch (Exception failure) {
         Database.rollback(point);
         throw failure;
@@ -139,7 +179,19 @@ public with sharing class ALT_CLS_ExportService {
       return toView(run);
     }
     run = loadRun(existing);
+    if (expectedVersion == null) {
+      // The run exists, so the caller must state the version it observed.
+      throw failure('INVALID_INPUT');
+    }
+    if (expectedVersion != run.AXF_EPR_NUM_Version__c) {
+      throw failure('CONFLICT');
+    }
     if (run.AXF_EPR_PKL_Status__c == STATUS_REVOKED) {
+      if (run.AXF_EPR_TXT_ContentDocument__c != null) {
+        // A revoked run that still holds a document is the recorded removal failure: retry the
+        // removal before minting a new artifact, so the old copy does not survive unrecorded.
+        revoke(run, run.AXF_EPR_TXT_Reason__c);
+      }
       return toView(prepare(run, holder));
     }
     if (isElapsed(run)) {
@@ -150,7 +202,12 @@ public with sharing class ALT_CLS_ExportService {
     return toView(run);
   }
 
-  /** Observes the run; never mints and never revokes. canDownload reports real availability. */
+  /**
+   * Observes the run; never mints and never revokes. Availability is computed from the same gates
+   * download() applies — the requester binding, the state, the window and the holder access
+   * re-read from the platform — so `canDownload`/`nextAction` never advertise a download that
+   * would be refused, and never advertise one for a scope whose authorization was withdrawn.
+   */
   public RunView read(Id runId) {
     if (runId == null) {
       throw failure('INVALID_INPUT');
@@ -163,22 +220,40 @@ public with sharing class ALT_CLS_ExportService {
    * Second authorization gate. Revalidates the capability, the exact requester binding and the
    * holder access, then the window; an expired or no-longer-authorized download is revoked by
    * deleting the artifact, so the copy this application controls does not survive the refusal.
+   *
+   * Every refusal that finds a live artifact revokes it before refusing, and is returned as a
+   * DownloadView outcome rather than thrown: AC-2 requires the unauthorized access to be revoked,
+   * and an unhandled exception would roll the revocation back. The row is read and locked in
+   * system mode because it is application-owned state — the caller may hold only a read share on
+   * it and, once the capability was withdrawn, no object access at all — so the authorization
+   * decisions below are explicit and never delegated to the query's access mode.
+   *
+   * NFR-18: expectedVersion is the version the caller observed (RunView.version). A stale or
+   * unstated expectation is refused before anything is touched, because that caller is
+   * authorized and only its view is old.
    */
-  public DownloadView download(Id runId) {
+  public DownloadView download(Id runId, Decimal expectedVersion) {
     if (runId == null) {
       throw failure('INVALID_INPUT');
     }
-    requireCapability();
-    AXF_OBJ_ExportRun__c run = lockAndLoad(runId);
+    AXF_OBJ_ExportRun__c run = lockAndLoad(runId, expectedVersion);
+    if (!hasCapability()) {
+      return refuseForbidden(run);
+    }
     if (run.AXF_EPR_LKP_Requester__c != UserInfo.getUserId()) {
-      // The artifact is bound to its exact requester; another operator is not the requester.
-      throw failure('FORBIDDEN');
+      // The artifact is bound to its exact requester; a null binding (the requester was deleted)
+      // or another operator is not that requester.
+      return refuseForbidden(run);
     }
     if (!hasHolderReadAccess(run.AXF_EPR_LKP_Account__c)) {
-      revoke(run, REASON_ACCESS_REVOKED);
-      return refused(run.AXF_EPR_TXT_Reason__c);
+      return refused(revoke(run, REASON_ACCESS_REVOKED));
     }
     if (run.AXF_EPR_PKL_Status__c == STATUS_REVOKED) {
+      if (run.AXF_EPR_TXT_ContentDocument__c != null) {
+        // A revoked run that still holds a document is the recorded removal failure: retry the
+        // removal, so a copy that survived one attempt does not survive indefinitely.
+        return refused(revoke(run, run.AXF_EPR_TXT_Reason__c));
+      }
       return refused('REVOKED');
     }
     if (
@@ -188,8 +263,7 @@ public with sharing class ALT_CLS_ExportService {
       return refused('NOT_PREPARED');
     }
     if (isElapsed(run)) {
-      revoke(run, REASON_EXPIRED);
-      return refused(run.AXF_EPR_TXT_Reason__c);
+      return refused(revoke(run, REASON_EXPIRED));
     }
     Blob data = body(run);
     if (data == null) {
@@ -209,6 +283,16 @@ public with sharing class ALT_CLS_ExportService {
     }
     log('DOWNLOADED', run.Name);
     return view;
+  }
+
+  /**
+   * A refusal over the requester's own artifact: a withdrawn capability or a lost requester
+   * binding is an unauthorized download access, so the artifact is revoked before the refusal is
+   * reported back with a safe code.
+   */
+  private DownloadView refuseForbidden(AXF_OBJ_ExportRun__c run) {
+    revoke(run, REASON_ACCESS_REVOKED);
+    return refused('FORBIDDEN');
   }
 
   // ---------------------------------------------------------------- preparation
@@ -254,12 +338,20 @@ public with sharing class ALT_CLS_ExportService {
   }
 
   /**
-   * Private artifact. The document gets NO ContentDocumentLink on purpose: the platform rejects
-   * the least-exposure visibility (SharedUsers) for a record link, leaving only org-wide
-   * visibility, and the ratified evidence pattern forbids a navigable link to a sensitive
-   * artifact ("nunca cria ContentDocumentLink navegavel", SCHEMA-DICTIONARY.md). With no link
-   * the only read path is this service, which revalidates authorization on every download;
-   * revocation then deletes the document itself.
+   * Private artifact. The service creates NO ContentDocumentLink: the platform rejects the
+   * least-exposure visibility (SharedUsers) for a record link, leaving only org-wide visibility,
+   * and the ratified evidence pattern forbids a navigable link to a sensitive artifact ("nunca
+   * cria ContentDocumentLink navegavel", SCHEMA-DICTIONARY.md). Revocation then deletes the
+   * document itself.
+   *
+   * What that guarantees, exactly: every read **through this service** revalidates authorization
+   * and the stored content hash before it serves anything, and the service opens no other path to
+   * the document. What it does NOT guarantee: that direct platform access is prevented. When the
+   * ContentVersion is written, the platform creates its own ContentDocumentLink (ShareType I) for
+   * the creating user, and Files ownership lets that user open the file without passing through
+   * this service. That residual is declared rather than defeated — the ratified FX resolution
+   * requires the caveat to be acknowledged and administered separately
+   * (review-fx-current-fit.md:66), so the service never claims to close it.
    *
    * The artifact is application-owned, so its DML runs in system mode after the caller was
    * authorized above: the project grants no Files CRUD to business users (the CSV evidence path
@@ -318,50 +410,70 @@ public with sharing class ALT_CLS_ExportService {
   // ---------------------------------------------------------------- revocation
 
   /**
+   * Test seam for the one branch a healthy org cannot produce: an artifact the platform refuses
+   * to remove. It exists so the state that branch must leave behind can be proved.
+   */
+  @TestVisible
+  private static Boolean artifactRemovalFails = false;
+
+  /**
    * Kills the artifact of a run: the document is deleted, so the only copy this application
    * controls stops existing and no link survives. A download already delivered cannot be
    * recalled, which AD-21 declares as an accepted limit rather than a promise.
+   *
+   * Never throws and never rolls back. A removal that fails must still leave a REVOKED state
+   * behind — that is the only evidence the artifact no longer counts — so the failure is recorded
+   * as the run's reason and reported as the outcome, and the document pointer is kept so a later
+   * attempt can still remove the copy that survived.
+   *
+   * @return the reason recorded on the run, which the caller reports as the download outcome.
    */
-  private void revoke(AXF_OBJ_ExportRun__c run, String reason) {
-    Savepoint point = Database.setSavepoint();
-    try {
-      if (run.AXF_EPR_TXT_ContentDocument__c != null) {
-        // No business user is granted Delete on Files: the service removes its own artifact,
-        // the same isolated policy-governed effect the closure orchestrator performs.
-        removeArtifact(run.AXF_EPR_TXT_ContentDocument__c);
+  private String revoke(AXF_OBJ_ExportRun__c run, String reason) {
+    String recorded = reason;
+    if (run.AXF_EPR_TXT_ContentDocument__c != null) {
+      if (removeArtifact(run.AXF_EPR_TXT_ContentDocument__c)) {
+        run.AXF_EPR_TXT_ContentDocument__c = null;
+      } else {
+        recorded = REASON_NOT_REMOVED;
       }
-      run.AXF_EPR_TXT_ContentDocument__c = null;
-      run.AXF_EPR_TXT_FileName__c = null;
-      run.AXF_EPR_TXT_ContentHash__c = null;
-      run.AXF_EPR_DT_ExpiresAt__c = null;
-      run.AXF_EPR_PKL_Status__c = STATUS_REVOKED;
-      run.AXF_EPR_TXT_Reason__c = reason;
-      checkpoint(run);
-    } catch (Exception failure) {
-      Database.rollback(point);
-      throw failure;
     }
-    log('REVOKED_' + reason, run.Name);
+    run.AXF_EPR_TXT_FileName__c = null;
+    run.AXF_EPR_TXT_ContentHash__c = null;
+    run.AXF_EPR_DT_ExpiresAt__c = null;
+    run.AXF_EPR_PKL_Status__c = STATUS_REVOKED;
+    run.AXF_EPR_TXT_Reason__c = recorded;
+    checkpoint(run);
+    log('REVOKED_' + recorded, run.Name);
+    return recorded;
   }
 
   /**
-   * Deletes the artifact. A document that an administrator or a Files policy already removed
-   * satisfies the goal state, so that one error is accepted; any other failure refuses the
-   * revocation rather than recording REVOKED while the artifact lives on.
+   * Deletes the artifact. No business user is granted Delete on Files: the service removes its
+   * own artifact, the same isolated policy-governed effect the closure orchestrator performs. The
+   * removal is system mode for the same reason as the reads: the artifact is application-owned, and
+   * a refusal has to remove it even for a caller whose own access to it is gone. A document that an
+   * administrator or a Files policy already removed satisfies the goal state, so that one error
+   * counts as removed; any other failure is reported to the caller, which records it instead of
+   * claiming the artifact is gone.
    */
-  private static void removeArtifact(Id documentId) {
-    Database.DeleteResult removed = Database.delete(
-      new ContentDocument(Id = documentId),
-      false
-    );
-    if (removed.isSuccess()) {
-      return;
+  private static Boolean removeArtifact(Id documentId) {
+    if (artifactRemovalFails) {
+      return false;
     }
-    for (Database.Error problem : removed.getErrors()) {
+    List<Database.DeleteResult> removed = Database.delete(
+      new List<ContentDocument>{ new ContentDocument(Id = documentId) },
+      false,
+      AccessLevel.SYSTEM_MODE
+    );
+    if (removed[0].isSuccess()) {
+      return true;
+    }
+    for (Database.Error problem : removed[0].getErrors()) {
       if (problem.getStatusCode() != StatusCode.ENTITY_IS_DELETED) {
-        throw failure('ARTIFACT_NOT_REMOVED');
+        return false;
       }
     }
+    return true;
   }
 
   // ---------------------------------------------------------------- csv
@@ -406,9 +518,13 @@ public with sharing class ALT_CLS_ExportService {
   // ---------------------------------------------------------------- authorization
 
   private void requireCapability() {
-    if (!FeatureManagement.checkPermission(CP_EXPORT)) {
+    if (!hasCapability()) {
       throw failure('FORBIDDEN');
     }
+  }
+
+  private static Boolean hasCapability() {
+    return FeatureManagement.checkPermission(CP_EXPORT);
   }
 
   /** First gate: capability, holder visibility and read access to the exact scope. */
@@ -431,10 +547,11 @@ public with sharing class ALT_CLS_ExportService {
   }
 
   /**
-   * Effective access to the scope, read from the platform. Re-evaluated on the download, so a
-   * withdrawn share revokes the artifact instead of leaving it reachable.
+   * Effective access to the scope, read from the platform. Re-evaluated on the download and in
+   * the availability `read()` reports, so a withdrawn share revokes the artifact instead of
+   * leaving it reachable, and is never advertised as downloadable.
    */
-  private Boolean hasHolderReadAccess(Id accountId) {
+  private static Boolean hasHolderReadAccess(Id accountId) {
     List<UserRecordAccess> access = [
       SELECT RecordId, HasReadAccess
       FROM UserRecordAccess
@@ -461,7 +578,10 @@ public with sharing class ALT_CLS_ExportService {
       AXF_EPR_NUM_Version__c = 1,
       OwnerId = holder.OwnerId
     );
-    Database.insert(run, AccessLevel.USER_MODE);
+    // System mode: the control row is application-owned state whose fields are read-only to
+    // users, and the owner follows the holder (G2) rather than the caller. The caller was
+    // authorized for the scope immediately above.
+    Database.insert(run, AccessLevel.SYSTEM_MODE);
     return run;
   }
 
@@ -477,40 +597,74 @@ public with sharing class ALT_CLS_ExportService {
     return rows.isEmpty() ? null : rows[0].Id;
   }
 
+  /**
+   * Same lookup under system mode, for the one case where the row cannot be visible yet: the
+   * winner of a scope-key race grants the requester its share only after its own insert.
+   */
+  private Id findByScopeKeySystemMode(String key) {
+    List<AXF_OBJ_ExportRun__c> rows = Database.queryWithBinds(
+      'SELECT Id FROM AXF_OBJ_ExportRun__c WHERE AXF_EPR_EXI_ScopeKey__c = :key LIMIT 1',
+      new Map<String, Object>{ 'key' => key },
+      AccessLevel.SYSTEM_MODE
+    );
+    return rows.isEmpty() ? null : rows[0].Id;
+  }
+
+  /** The run must be visible to the caller: ownership, or the share granted to the requester. */
   private AXF_OBJ_ExportRun__c loadRun(Id runId) {
-    List<AXF_OBJ_ExportRun__c> rows = [
-      SELECT
-        Id,
-        Name,
-        AXF_EPR_LKP_Account__c,
-        AXF_EPR_LKP_Requester__c,
-        AXF_EPR_TXT_ContentDocument__c,
-        AXF_EPR_PKL_Status__c,
-        AXF_EPR_DT_ExpiresAt__c,
-        AXF_EPR_TXT_FileName__c,
-        AXF_EPR_TXT_ContentHash__c,
-        AXF_EPR_TXT_Reason__c,
-        AXF_EPR_NUM_Version__c
-      FROM AXF_OBJ_ExportRun__c
-      WHERE Id = :runId
-      WITH USER_MODE
-      LIMIT 1
-    ];
+    return loadRun(runId, AccessLevel.USER_MODE);
+  }
+
+  /**
+   * Reads the control row in system mode. Used where the row is application-owned state the
+   * caller may not be able to see: immediately after its own insert, as the winner of a race, and
+   * on the refusal paths of download(), which must reach the run to revoke the artifact even
+   * after the capability was withdrawn. Every caller of this decides authorization with explicit
+   * checks; none of them delegates it to the query's access mode.
+   */
+  private AXF_OBJ_ExportRun__c loadRunPrivileged(Id runId) {
+    return loadRun(runId, AccessLevel.SYSTEM_MODE);
+  }
+
+  private AXF_OBJ_ExportRun__c loadRun(Id runId, AccessLevel mode) {
+    List<AXF_OBJ_ExportRun__c> rows = Database.queryWithBinds(
+      'SELECT ' +
+        RUN_FIELDS +
+        ' FROM AXF_OBJ_ExportRun__c WHERE Id = :runId LIMIT 1',
+      new Map<String, Object>{ 'runId' => runId },
+      mode
+    );
     if (rows.isEmpty()) {
       throw failure('NOT_ACCESSIBLE');
     }
     return rows[0];
   }
 
-  /** Sharing is what makes the run visible; the lock serializes concurrent downloads (NFR-18). */
-  private AXF_OBJ_ExportRun__c lockAndLoad(Id runId) {
-    AXF_OBJ_ExportRun__c run = loadRun(runId);
+  /**
+   * Locks and reloads the run for a state transition: the lock serializes concurrent downloads
+   * (NFR-18), and the re-read is what the caller's expectedVersion is compared against, so a
+   * stale expectation is refused instead of overwriting a state the caller never saw.
+   */
+  private AXF_OBJ_ExportRun__c lockAndLoad(Id runId, Decimal expectedVersion) {
+    AXF_OBJ_ExportRun__c run = loadRunPrivileged(runId);
     List<AXF_OBJ_ExportRun__c> locked = [
       SELECT Id, AXF_EPR_NUM_Version__c
       FROM AXF_OBJ_ExportRun__c
       WHERE Id = :runId
+      WITH SYSTEM_MODE
       FOR UPDATE
     ];
+    if (locked.isEmpty()) {
+      // The row vanished between the read and the lock: refuse with a safe code instead of
+      // letting the platform ListException escape.
+      throw failure('NOT_ACCESSIBLE');
+    }
+    if (expectedVersion == null) {
+      throw failure('INVALID_INPUT');
+    }
+    if (expectedVersion != locked[0].AXF_EPR_NUM_Version__c) {
+      throw failure('CONFLICT');
+    }
     run.AXF_EPR_NUM_Version__c = locked[0].AXF_EPR_NUM_Version__c;
     return run;
   }
@@ -519,25 +673,38 @@ public with sharing class ALT_CLS_ExportService {
     run.AXF_EPR_NUM_Version__c = run.AXF_EPR_NUM_Version__c == null
       ? 1
       : run.AXF_EPR_NUM_Version__c + 1;
-    Database.update(run, AccessLevel.USER_MODE);
+    // System mode for the same reason as the insert: the state machine is Apex's, and the fields
+    // it advances are read-only to users.
+    Database.update(run, AccessLevel.SYSTEM_MODE);
   }
 
-  /** The run follows the holder's owner (G2); the requester keeps access via an explicit share. */
+  /**
+   * The run follows the holder's owner (G2), so a requester who is not that owner keeps access
+   * only through this explicit share. Read level: the state machine belongs to Apex and the
+   * fields it writes are read-only to users, so an edit share would grant nothing but the
+   * ability to change fields the service owns.
+   */
   @SuppressWarnings('PMD.ApexCRUDViolation')
   private static void grantRequesterAccess(Id runId, Id ownerId) {
     Id me = UserInfo.getUserId();
     if (me == ownerId) {
       return;
     }
-    Database.insert(
+    Database.SaveResult granted = Database.insert(
       new AXF_OBJ_ExportRun__Share(
         ParentId = runId,
         UserOrGroupId = me,
-        AccessLevel = 'Edit',
+        AccessLevel = 'Read',
         RowCause = Schema.AXF_OBJ_ExportRun__Share.RowCause.Manual
       ),
-      false
+      false,
+      AccessLevel.SYSTEM_MODE
     );
+    if (!granted.isSuccess()) {
+      // Without the share the requester cannot read the run it just asked for, so the artifact
+      // would be unreachable: refuse with a safe code instead of returning an unusable run.
+      throw failure('SHARE_FAILED');
+    }
   }
 
   private static Boolean isElapsed(AXF_OBJ_ExportRun__c run) {
@@ -562,6 +729,18 @@ public with sharing class ALT_CLS_ExportService {
     };
   }
 
+  /**
+   * Observation of the notice path. The type lookup and the send are both swallowed by design, so
+   * without these two the only thing a test can see is the text builder — a wrong DeveloperName
+   * would pass green. They are set only after the platform accepted the send, following the merged
+   * ALT_CLS_SharedExpenseService seam.
+   */
+  @TestVisible
+  private static Boolean notificationSent = false;
+  /** Notification type the last attempt resolved; null when it never resolved one. */
+  @TestVisible
+  private static Id lastNotificationTypeId;
+
   private static void notifyRequester(AXF_OBJ_ExportRun__c run) {
     try {
       List<CustomNotificationType> types = [
@@ -582,6 +761,8 @@ public with sharing class ALT_CLS_ExportService {
       notification.send(
         new Set<String>{ String.valueOf(run.AXF_EPR_LKP_Requester__c) }
       );
+      lastNotificationTypeId = types[0].Id;
+      notificationSent = true;
     } catch (Exception undelivered) {
       // The artifact already exists; a lost notification never undoes it.
       log('NOTIFY_FAILED', run.Name);
@@ -619,15 +800,21 @@ public with sharing class ALT_CLS_ExportService {
     view.contentHash = run.AXF_EPR_TXT_ContentHash__c;
     view.expiresAt = run.AXF_EPR_DT_ExpiresAt__c;
     view.reason = run.AXF_EPR_TXT_Reason__c;
-    view.evidenceRef = run.AXF_EPR_TXT_ContentDocument__c == null
+    view.evidenceRef = run.AXF_EPR_TXT_ContentDocument__c == null ||
+      run.AXF_EPR_PKL_Status__c == STATUS_REVOKED
       ? null
       : String.valueOf(run.AXF_EPR_TXT_ContentDocument__c);
     view.version = run.AXF_EPR_NUM_Version__c;
+    // Availability is only reported as real when every gate download() applies still passes:
+    // the requester binding, the state, the window, and the holder access revalidated against the
+    // platform. Otherwise read() would advertise DOWNLOAD for a scope whose authorization was
+    // withdrawn, and the following download() would revoke instead of serving.
     Boolean live =
       run.AXF_EPR_LKP_Requester__c == UserInfo.getUserId() &&
       (run.AXF_EPR_PKL_Status__c == STATUS_PREPARED ||
       run.AXF_EPR_PKL_Status__c == STATUS_DOWNLOADED) &&
-      !isElapsed(run);
+      !isElapsed(run) &&
+      hasHolderReadAccess(run.AXF_EPR_LKP_Account__c);
     view.canDownload = live;
     view.nextAction = live ? 'DOWNLOAD' : 'REQUEST_AGAIN';
     return view;

@@ -1,15 +1,23 @@
 /**
  * @description AXF-118: autorizacao revalidada na solicitacao e de novo no download privado de
- * curta duracao; download expirado ou sem autorizacao e revogado (artefato excluido); nome de
- * arquivo, notificacao e logs sem PII; replay idempotente por escopo e autor; acesso negado e
- * erros sanitizados. Catches name the service exception on purpose: Assert.fail raises
- * AssertException, which a generic catch would swallow and turn into a false pass.
+ * curta duracao; **toda** recusa sobre um artefato vivo o revoga (expirado, capability retirada,
+ * solicitante perdido, acesso ao titular perdido, artefato ausente ou divergente) e por isso e
+ * devolvida como outcome, nunca lancada — uma excecao nao tratada desfaria a revogacao; nome de
+ * arquivo, notificacao e logs sem PII; replay idempotente por escopo e autor com pre-condicao de
+ * versao (NFR-18); acesso negado e erros sanitizados. Catches name the service exception on
+ * purpose: Assert.fail raises AssertException, which a generic catch would swallow and turn into
+ * a false pass.
  */
 @IsTest
 private class ALT_CLS_ExportServiceTest {
   private static final String HOLDER_NAME = 'Holder Axon Export';
   private static final String IN_SCOPE_TEXT = 'Padaria do Ze 55221';
   private static final String OUT_OF_SCOPE_TEXT = 'Farmacia Alheia 99887';
+  private static final String QUOTED_HOLDER_NAME = 'Holder Citacoes Export';
+  private static final String QUOTED_TEXT = 'Cafe "especial" 30';
+  private static final String QUOTED_FORMULA_TEXT = '=SUM("1","2")';
+  private static final String FOREIGN_HOLDER_NAME = 'Holder Fora do Escopo';
+  private static final String SHARED_HOLDER_NAME = 'Holder Compartilhado Export';
 
   private static User requester() {
     return [SELECT Id FROM User WHERE Alias = 'axf118r' LIMIT 1];
@@ -67,7 +75,8 @@ private class ALT_CLS_ExportServiceTest {
       );
     }
     insert assignments;
-    // The requester's own scope, with one in-scope fact carrying a spreadsheet formula prefix.
+    // The requester's own scope, with one in-scope fact carrying a spreadsheet formula prefix,
+    // and a second scope whose descriptions carry quote characters.
     System.runAs(requester) {
       Account holder = holder(HOLDER_NAME);
       fact(holder.Id, 'axf118-a', IN_SCOPE_TEXT, Date.newInstance(2026, 3, 10));
@@ -77,15 +86,35 @@ private class ALT_CLS_ExportServiceTest {
         '=SUM(1,2) formula livre',
         Date.newInstance(2026, 3, 11)
       );
+      Account quoted = holder(QUOTED_HOLDER_NAME);
+      fact(quoted.Id, 'axf118-q1', QUOTED_TEXT, Date.newInstance(2026, 3, 14));
+      fact(
+        quoted.Id,
+        'axf118-q2',
+        QUOTED_FORMULA_TEXT,
+        Date.newInstance(2026, 3, 15)
+      );
     }
     // A scope the requester is not authorized for: owned by the peer, Private OWD, no role rule.
+    // A second scope the peer owns, shared read-only with the requester by the test that needs it:
+    // there the requester is not the holder's owner, so the run follows the peer (G2) and the share
+    // the service writes is what keeps the run reachable. That `AccountShare` insert happens in the
+    // test method, because share DML cannot share a transaction with the permission-set DML above
+    // (MIXED_DML_OPERATION).
     System.runAs(peer) {
-      Account foreign = holder('Holder Fora do Escopo');
+      Account foreign = holder(FOREIGN_HOLDER_NAME);
       fact(
         foreign.Id,
         'axf118-c',
         OUT_OF_SCOPE_TEXT,
         Date.newInstance(2026, 3, 12)
+      );
+      Account shared = holder(SHARED_HOLDER_NAME);
+      fact(
+        shared.Id,
+        'axf118-d',
+        'Padaria compartilhada 55221',
+        Date.newInstance(2026, 3, 13)
       );
     }
   }
@@ -121,13 +150,24 @@ private class ALT_CLS_ExportServiceTest {
     );
   }
 
+  private static Id holderId(String name) {
+    return [SELECT Id FROM Account WHERE Name = :name LIMIT 1].Id;
+  }
+
   private static Id authorizedHolderId() {
-    return [SELECT Id FROM Account WHERE Name = :HOLDER_NAME LIMIT 1].Id;
+    return holderId(HOLDER_NAME);
+  }
+
+  private static Id quotedHolderId() {
+    return holderId(QUOTED_HOLDER_NAME);
   }
 
   private static Id foreignHolderId() {
-    return [SELECT Id FROM Account WHERE Name = 'Holder Fora do Escopo' LIMIT 1]
-    .Id;
+    return holderId(FOREIGN_HOLDER_NAME);
+  }
+
+  private static Id sharedHolderId() {
+    return holderId(SHARED_HOLDER_NAME);
   }
 
   /**
@@ -155,6 +195,7 @@ private class ALT_CLS_ExportServiceTest {
     return [
       SELECT
         Name,
+        OwnerId,
         AXF_EPR_PKL_Status__c,
         AXF_EPR_TXT_Reason__c,
         AXF_EPR_TXT_ContentDocument__c,
@@ -177,6 +218,54 @@ private class ALT_CLS_ExportServiceTest {
     .Id;
   }
 
+  /** The version a caller observes before it mutates, which is what the precondition expects. */
+  private static Decimal observedVersion(
+    ALT_CLS_ExportService service,
+    Id runId
+  ) {
+    return service.read(runId).version;
+  }
+
+  /**
+   * Stages a prepared run with its artifact. Only the withdrawn-capability test needs it: that
+   * state is a run whose requester holds no capability, and reaching it by assigning and then
+   * withdrawing the permission set inside one test is impossible, because the withdrawal is DML on
+   * a setup object and cannot share a transaction with the record DML the service performs
+   * (MIXED_DML_OPERATION). The state is therefore staged and the test starts from it.
+   */
+  private static Id stagedRun(Id accountId, Id requesterId, String csv) {
+    insert new ContentVersion(
+      Title = 'axon-export-staged.csv',
+      PathOnClient = 'axon-export-staged.csv',
+      VersionData = Blob.valueOf(csv)
+    );
+    AXF_OBJ_ExportRun__c run = new AXF_OBJ_ExportRun__c(
+      AXF_EPR_LKP_Account__c = accountId,
+      AXF_EPR_LKP_Requester__c = requesterId,
+      AXF_EPR_EXI_ScopeKey__c = 'axf118-staged-capability',
+      AXF_EPR_PKL_Status__c = 'PREPARED',
+      AXF_EPR_NUM_Version__c = 1,
+      AXF_EPR_TXT_FileName__c = 'axon-export-staged.csv',
+      AXF_EPR_TXT_ContentHash__c = sha256(csv),
+      AXF_EPR_TXT_ContentDocument__c = [
+        SELECT ContentDocumentId
+        FROM ContentVersion
+        WHERE Title = 'axon-export-staged.csv'
+        LIMIT 1
+      ]
+      .ContentDocumentId,
+      AXF_EPR_DT_ExpiresAt__c = Datetime.now().addMinutes(15)
+    );
+    insert run;
+    return run.Id;
+  }
+
+  private static String sha256(String value) {
+    return EncodingUtil.convertToHex(
+      Crypto.generateDigest('SHA-256', Blob.valueOf(value))
+    );
+  }
+
   // ---------------------------------------------------------------- AC-1
 
   @IsTest
@@ -184,7 +273,10 @@ private class ALT_CLS_ExportServiceTest {
     System.runAs(requester()) {
       ALT_CLS_ExportService service = new ALT_CLS_ExportService();
       Test.startTest();
-      ALT_CLS_ExportService.RunView run = service.request(authorizedHolderId());
+      ALT_CLS_ExportService.RunView run = service.request(
+        authorizedHolderId(),
+        null
+      );
       Test.stopTest();
 
       Assert.areEqual('PREPARED', run.status);
@@ -199,7 +291,8 @@ private class ALT_CLS_ExportServiceTest {
       // distribution. The single remaining link is the platform's own ownership marker
       // (ShareType I) for the user who prepared it, which is what Files always adds: the
       // artifact is therefore reachable outside the service only by that same authorized
-      // requester, and that residual is declared in docs/implementation/AXF-118.md.
+      // requester, and that residual is declared in docs/implementation/AXF-118.md — the
+      // service does not claim to defeat it.
       List<ContentDocumentLink> links = [
         SELECT LinkedEntityId, ShareType
         FROM ContentDocumentLink
@@ -228,7 +321,10 @@ private class ALT_CLS_ExportServiceTest {
         'Nenhum link publico de distribuicao.'
       );
 
-      ALT_CLS_ExportService.DownloadView download = service.download(run.runId);
+      ALT_CLS_ExportService.DownloadView download = service.download(
+        run.runId,
+        run.version
+      );
       Assert.isTrue(download.ready, download.outcome);
       Assert.areEqual('READY', download.outcome);
       Assert.areEqual(run.fileName, download.fileName);
@@ -251,7 +347,10 @@ private class ALT_CLS_ExportServiceTest {
       Assert.areEqual('DOWNLOADED', service.read(run.runId).status);
 
       // A second download inside the window revalidates again and serves the same artifact.
-      ALT_CLS_ExportService.DownloadView again = service.download(run.runId);
+      ALT_CLS_ExportService.DownloadView again = service.download(
+        run.runId,
+        observedVersion(service, run.runId)
+      );
       Assert.isTrue(again.ready, again.outcome);
       Assert.areEqual(download.contentHash, again.contentHash);
     }
@@ -261,9 +360,12 @@ private class ALT_CLS_ExportServiceTest {
   static void exportedCellsAreQuotedAndFormulaPrefixedValuesAreInert() {
     System.runAs(requester()) {
       ALT_CLS_ExportService service = new ALT_CLS_ExportService();
-      ALT_CLS_ExportService.RunView run = service.request(authorizedHolderId());
+      ALT_CLS_ExportService.RunView run = service.request(
+        authorizedHolderId(),
+        null
+      );
       String csv = EncodingUtil.base64Decode(
-          service.download(run.runId).bodyBase64
+          service.download(run.runId, run.version).bodyBase64
         )
         .toString();
       Assert.isTrue(
@@ -278,15 +380,47 @@ private class ALT_CLS_ExportServiceTest {
     }
   }
 
+  /**
+   * CSV quote escaping: no older fixture carried an embedded quote, so dropping the doubling
+   * would have left the suite green. The value is doubled inside an already-quoted cell, which is
+   * the only thing that keeps a description containing `"` from breaking the row.
+   */
+  @IsTest
+  static void cellsCarryingQuotesAreEscapedSoTheCsvStaysParsable() {
+    System.runAs(requester()) {
+      ALT_CLS_ExportService service = new ALT_CLS_ExportService();
+      ALT_CLS_ExportService.RunView run = service.request(
+        quotedHolderId(),
+        null
+      );
+      String csv = EncodingUtil.base64Decode(
+          service.download(run.runId, run.version).bodyBase64
+        )
+        .toString();
+      Assert.isTrue(csv.contains('"Cafe ""especial"" 30"'), csv);
+      Assert.isFalse(
+        csv.contains('"Cafe "especial" 30"'),
+        'Aspas internas soltas quebrariam a linha.'
+      );
+      Assert.isTrue(
+        csv.contains('"\'=SUM(""1"",""2"")"'),
+        'Neutralizacao de formula e escape de aspas valem na mesma celula.'
+      );
+      Assert.areEqual(3, csv.split('\n').size(), 'Cabecalho mais dois fatos.');
+    }
+  }
+
   @IsTest
   static void replayWithinTheWindowReusesTheSameRunAndArtifact() {
     System.runAs(requester()) {
       ALT_CLS_ExportService service = new ALT_CLS_ExportService();
       ALT_CLS_ExportService.RunView first = service.request(
-        authorizedHolderId()
+        authorizedHolderId(),
+        null
       );
       ALT_CLS_ExportService.RunView second = service.request(
-        authorizedHolderId()
+        authorizedHolderId(),
+        first.version
       );
       Assert.areEqual(
         first.runId,
@@ -305,10 +439,14 @@ private class ALT_CLS_ExportServiceTest {
   }
 
   @IsTest
-  static void anotherAuthorizedOperatorCannotDownloadSomeoneElsesArtifact() {
+  static void anotherAuthorizedOperatorCannotDownloadAndTheAttemptRevokesTheArtifact() {
     Id runId;
+    Decimal version;
     System.runAs(requester()) {
-      runId = new ALT_CLS_ExportService().request(authorizedHolderId()).runId;
+      ALT_CLS_ExportService.RunView run = new ALT_CLS_ExportService()
+        .request(authorizedHolderId(), null);
+      runId = run.runId;
+      version = run.version;
     }
     // The peer holds the same capability and can see the run through a share, but is not the
     // requester the artifact is bound to.
@@ -322,20 +460,90 @@ private class ALT_CLS_ExportServiceTest {
     );
     System.runAs(peer()) {
       Assert.areEqual(runId, findRun(requester().Id), 'O peer ve o run.');
-      try {
-        new ALT_CLS_ExportService().download(runId);
-        Assert.fail('Artefato vinculado ao solicitante exato.');
-      } catch (ALT_CLS_ExportService.ExportException denied) {
-        Assert.areEqual('FORBIDDEN', denied.code);
-      }
-      Assert.isFalse(
-        new ALT_CLS_ExportService().read(runId).canDownload,
-        'Nao e o solicitante.'
+      ALT_CLS_ExportService service = new ALT_CLS_ExportService();
+      Test.startTest();
+      ALT_CLS_ExportService.DownloadView refused = service.download(
+        runId,
+        version
       );
+      Test.stopTest();
+      // Returned, not thrown: the refusal must record its revocation and commit it (AC-2).
+      Assert.isFalse(refused.ready);
+      Assert.areEqual('FORBIDDEN', refused.outcome);
+      Assert.isNull(
+        refused.bodyBase64,
+        'Outro operador nao recebe o artefato.'
+      );
+      Assert.isFalse(service.read(runId).canDownload, 'Nao e o solicitante.');
     }
+    AXF_OBJ_ExportRun__c stored = storedRun(runId);
+    Assert.areEqual(
+      'REVOKED',
+      stored.AXF_EPR_PKL_Status__c,
+      'O acesso nao autorizado revoga o artefato (AC-2).'
+    );
+    Assert.areEqual('ACCESS_REVOKED', stored.AXF_EPR_TXT_Reason__c);
+    Assert.areEqual(
+      0,
+      [SELECT COUNT() FROM ContentDocument],
+      'O artefato privado nao sobrevive a recusa.'
+    );
+    // The artifact is gone for the requester too: a fresh request is what mints another one.
     System.runAs(requester()) {
-      Assert.isTrue(new ALT_CLS_ExportService().download(runId).ready);
+      ALT_CLS_ExportService service = new ALT_CLS_ExportService();
+      Assert.areEqual(
+        'REVOKED',
+        service.download(runId, observedVersion(service, runId)).outcome
+      );
+      ALT_CLS_ExportService.RunView again = service.request(
+        authorizedHolderId(),
+        observedVersion(service, runId)
+      );
+      Assert.areEqual(runId, again.runId, 'O mesmo escopo reusa o run.');
+      Assert.areEqual('PREPARED', again.status);
+      Assert.isTrue(service.download(runId, again.version).ready);
     }
+  }
+
+  /**
+   * The capability is withdrawn while the artifact is live. The refusal used to throw before
+   * touching the run, so the artifact survived indefinitely; now the refusal has to reach the row
+   * — which the caller can no longer even read — and revoke before refusing. The requester binding
+   * is intact, so the capability is provably the gate that refused.
+   */
+  @IsTest
+  static void aWithdrawnCapabilityRevokesTheArtifactBeforeItRefuses() {
+    Id runId = stagedRun(
+      authorizedHolderId(),
+      nobody().Id,
+      'date,direction\n2026-03-10,DEBIT'
+    );
+    System.runAs(nobody()) {
+      ALT_CLS_ExportService service = new ALT_CLS_ExportService();
+      Test.startTest();
+      ALT_CLS_ExportService.DownloadView refused = service.download(runId, 1);
+      Test.stopTest();
+      Assert.isFalse(refused.ready);
+      Assert.areEqual(
+        'FORBIDDEN',
+        refused.outcome,
+        'Sem AXF_CanExportData o download e recusado.'
+      );
+      Assert.isNull(refused.bodyBase64, 'Nada e servido sem a capability.');
+    }
+    AXF_OBJ_ExportRun__c stored = storedRun(runId);
+    Assert.areEqual(
+      'REVOKED',
+      stored.AXF_EPR_PKL_Status__c,
+      'A capability retirada revoga o artefato (AC-2).'
+    );
+    Assert.areEqual('ACCESS_REVOKED', stored.AXF_EPR_TXT_Reason__c);
+    Assert.isNull(stored.AXF_EPR_TXT_ContentDocument__c);
+    Assert.areEqual(
+      0,
+      [SELECT COUNT() FROM ContentDocument],
+      'O artefato privado nao sobrevive a recusa.'
+    );
   }
 
   @IsTest
@@ -345,7 +553,7 @@ private class ALT_CLS_ExportServiceTest {
     Id accountId = authorizedHolderId();
     System.runAs(nobody()) {
       try {
-        new ALT_CLS_ExportService().request(accountId);
+        new ALT_CLS_ExportService().request(accountId, null);
         Assert.fail('Sem AXF_CanExportData nao ha exportacao.');
       } catch (ALT_CLS_ExportService.ExportException denied) {
         Assert.areEqual('FORBIDDEN', denied.code);
@@ -359,7 +567,7 @@ private class ALT_CLS_ExportServiceTest {
     Id foreignId = foreignHolderId();
     System.runAs(requester()) {
       try {
-        new ALT_CLS_ExportService().request(foreignId);
+        new ALT_CLS_ExportService().request(foreignId, null);
         Assert.fail(
           'Escopo fora da autorizacao nao existe para o solicitante.'
         );
@@ -375,13 +583,13 @@ private class ALT_CLS_ExportServiceTest {
     System.runAs(requester()) {
       ALT_CLS_ExportService service = new ALT_CLS_ExportService();
       try {
-        service.request(null);
+        service.request(null, null);
         Assert.fail('Escopo obrigatorio.');
       } catch (ALT_CLS_ExportService.ExportException invalid) {
         Assert.areEqual('INVALID_INPUT', invalid.code);
       }
       try {
-        service.download(null);
+        service.download(null, null);
         Assert.fail('Run obrigatorio.');
       } catch (ALT_CLS_ExportService.ExportException invalid) {
         Assert.areEqual('INVALID_INPUT', invalid.code);
@@ -425,7 +633,7 @@ private class ALT_CLS_ExportServiceTest {
       insert facts;
       Test.startTest();
       try {
-        new ALT_CLS_ExportService().request(accountId);
+        new ALT_CLS_ExportService().request(accountId, null);
         Assert.fail(
           'Acima do limite o pedido bloqueia em vez de descartar linhas.'
         );
@@ -442,17 +650,85 @@ private class ALT_CLS_ExportServiceTest {
     }
   }
 
+  /**
+   * NFR-18 following the merged closure orchestrator: the version is a precondition, not a
+   * decoration. A caller acting on a version it did not observe is refused with a safe code and
+   * nothing is touched.
+   */
+  @IsTest
+  static void aStaleOrUnstatedExpectedVersionIsRefusedWithASafeCode() {
+    System.runAs(requester()) {
+      ALT_CLS_ExportService service = new ALT_CLS_ExportService();
+      ALT_CLS_ExportService.RunView run = service.request(
+        authorizedHolderId(),
+        null
+      );
+      Assert.areEqual(
+        run.version,
+        observedVersion(service, run.runId),
+        'A versao devolvida e a versao gravada.'
+      );
+
+      try {
+        service.download(run.runId, run.version - 1);
+        Assert.fail('Versao obsoleta deve conflitar.');
+      } catch (ALT_CLS_ExportService.ExportException stale) {
+        Assert.areEqual('CONFLICT', stale.code);
+      }
+      try {
+        service.download(run.runId, null);
+        Assert.fail('A versao observada e obrigatoria no download.');
+      } catch (ALT_CLS_ExportService.ExportException missing) {
+        Assert.areEqual('INVALID_INPUT', missing.code);
+      }
+      // A stale expectation must not damage the live artifact.
+      Assert.areEqual('PREPARED', storedRun(run.runId).AXF_EPR_PKL_Status__c);
+      Assert.areEqual(1, [SELECT COUNT() FROM ContentDocument]);
+
+      // The current version still downloads, and the transition advances the version.
+      Assert.isTrue(service.download(run.runId, run.version).ready);
+      Assert.areEqual(run.version + 1, observedVersion(service, run.runId));
+
+      try {
+        service.request(authorizedHolderId(), run.version);
+        Assert.fail('Versao obsoleta deve conflitar no pedido.');
+      } catch (ALT_CLS_ExportService.ExportException stale) {
+        Assert.areEqual('CONFLICT', stale.code);
+      }
+      try {
+        service.request(authorizedHolderId(), null);
+        Assert.fail('Um run existente exige a versao observada.');
+      } catch (ALT_CLS_ExportService.ExportException missing) {
+        Assert.areEqual('INVALID_INPUT', missing.code);
+      }
+      // A version stated for a scope that has no run is an impossible expectation.
+      try {
+        service.request(quotedHolderId(), 7);
+        Assert.fail('Nao ha run para essa versao.');
+      } catch (ALT_CLS_ExportService.ExportException conflict) {
+        Assert.areEqual('CONFLICT', conflict.code);
+      }
+      Assert.areEqual(1, [SELECT COUNT() FROM AXF_OBJ_ExportRun__c]);
+    }
+  }
+
   // ---------------------------------------------------------------- AC-2
 
   @IsTest
   static void expiredDownloadIsRevokedAndTheArtifactIsDeleted() {
     System.runAs(requester()) {
       ALT_CLS_ExportService service = new ALT_CLS_ExportService();
-      ALT_CLS_ExportService.RunView run = service.request(authorizedHolderId());
+      ALT_CLS_ExportService.RunView run = service.request(
+        authorizedHolderId(),
+        null
+      );
       expire(run.runId);
 
       Test.startTest();
-      ALT_CLS_ExportService.DownloadView refused = service.download(run.runId);
+      ALT_CLS_ExportService.DownloadView refused = service.download(
+        run.runId,
+        run.version
+      );
       Test.stopTest();
 
       Assert.isFalse(refused.ready);
@@ -486,11 +762,73 @@ private class ALT_CLS_ExportServiceTest {
     }
   }
 
+  /**
+   * The concrete failure the audit proved: the run's removal cannot be undone by a rollback, so
+   * a REVOKED state always exists — with the failure recorded as its reason, and the pointer kept
+   * so a later attempt can still remove the copy that survived.
+   */
+  @IsTest
+  static void revokedIsRecordedEvenWhenTheArtifactCannotBeRemoved() {
+    System.runAs(requester()) {
+      ALT_CLS_ExportService service = new ALT_CLS_ExportService();
+      ALT_CLS_ExportService.RunView run = service.request(
+        authorizedHolderId(),
+        null
+      );
+      expire(run.runId);
+      ALT_CLS_ExportService.artifactRemovalFails = true;
+      Test.startTest();
+      ALT_CLS_ExportService.DownloadView refused = service.download(
+        run.runId,
+        run.version
+      );
+      Test.stopTest();
+      ALT_CLS_ExportService.artifactRemovalFails = false;
+
+      Assert.isFalse(refused.ready);
+      Assert.areEqual('ARTIFACT_NOT_REMOVED', refused.outcome);
+      Assert.isNull(refused.bodyBase64);
+      AXF_OBJ_ExportRun__c stored = storedRun(run.runId);
+      Assert.areEqual(
+        'REVOKED',
+        stored.AXF_EPR_PKL_Status__c,
+        'A transacao nao pode desfazer o estado: REVOKED sempre existe.'
+      );
+      Assert.areEqual('ARTIFACT_NOT_REMOVED', stored.AXF_EPR_TXT_Reason__c);
+      Assert.isNotNull(
+        stored.AXF_EPR_TXT_ContentDocument__c,
+        'O ponteiro sobrevive para uma nova tentativa.'
+      );
+      Assert.isNull(stored.AXF_EPR_TXT_FileName__c);
+      Assert.isNull(stored.AXF_EPR_TXT_ContentHash__c);
+      Assert.isNull(stored.AXF_EPR_DT_ExpiresAt__c);
+      Assert.areEqual(1, [SELECT COUNT() FROM ContentDocument]);
+      ALT_CLS_ExportService.RunView observed = service.read(run.runId);
+      Assert.isFalse(
+        observed.canDownload,
+        'Um estado revogado nunca e baixavel.'
+      );
+      Assert.isNull(
+        observed.evidenceRef,
+        'Nada revogado e oferecido como evidencia.'
+      );
+
+      // The next attempt retries the removal instead of leaving the copy alive forever.
+      Assert.areEqual(
+        'ARTIFACT_NOT_REMOVED',
+        service.download(run.runId, observedVersion(service, run.runId)).outcome
+      );
+    }
+  }
+
   @IsTest
   static void readNeverRevokesButDownloadEnforcesTheWindow() {
     System.runAs(requester()) {
       ALT_CLS_ExportService service = new ALT_CLS_ExportService();
-      ALT_CLS_ExportService.RunView run = service.request(authorizedHolderId());
+      ALT_CLS_ExportService.RunView run = service.request(
+        authorizedHolderId(),
+        null
+      );
       expire(run.runId);
 
       ALT_CLS_ExportService.RunView observed = service.read(run.runId);
@@ -501,17 +839,26 @@ private class ALT_CLS_ExportServiceTest {
         'Observar nao revoga: o acesso ao download e que revoga.'
       );
 
-      Assert.areEqual('EXPIRED', service.download(run.runId).outcome);
+      Assert.areEqual(
+        'EXPIRED',
+        service.download(run.runId, observed.version).outcome
+      );
       Assert.areEqual('REVOKED', service.read(run.runId).status);
     }
   }
 
+  /**
+   * Availability is not advertised for a scope whose authorization was withdrawn: the observed
+   * run must not say DOWNLOAD when the download that follows would revoke instead of serving.
+   */
   @IsTest
-  static void withdrawnScopeAuthorizationRevokesTheDownload() {
+  static void withdrawnScopeAuthorizationIsNotAdvertisedAndRevokesTheDownload() {
     Id foreignId = foreignHolderId();
     Id runId;
     System.runAs(requester()) {
-      runId = new ALT_CLS_ExportService().request(authorizedHolderId()).runId;
+      runId = new ALT_CLS_ExportService()
+        .request(authorizedHolderId(), null)
+        .runId;
     }
     // The artifact now points at a scope the requester is not authorized for, which is what a
     // withdrawn share looks like from the service's point of view.
@@ -519,8 +866,23 @@ private class ALT_CLS_ExportServiceTest {
 
     System.runAs(requester()) {
       ALT_CLS_ExportService service = new ALT_CLS_ExportService();
+      ALT_CLS_ExportService.RunView observed = service.read(runId);
+      Assert.isFalse(
+        observed.canDownload,
+        'Escopo sem autorizacao nunca e anunciado como baixavel.'
+      );
+      Assert.areEqual('REQUEST_AGAIN', observed.nextAction);
+      Assert.areEqual(
+        'PREPARED',
+        observed.status,
+        'Observar nao revoga: o acesso ao download e que revoga.'
+      );
+
       Test.startTest();
-      ALT_CLS_ExportService.DownloadView refused = service.download(runId);
+      ALT_CLS_ExportService.DownloadView refused = service.download(
+        runId,
+        observed.version
+      );
       Test.stopTest();
 
       Assert.isFalse(refused.ready);
@@ -538,14 +900,25 @@ private class ALT_CLS_ExportServiceTest {
   static void revokedRunRefusesDownloadAndANewRequestMintsAFreshArtifact() {
     System.runAs(requester()) {
       ALT_CLS_ExportService service = new ALT_CLS_ExportService();
-      ALT_CLS_ExportService.RunView run = service.request(authorizedHolderId());
+      ALT_CLS_ExportService.RunView run = service.request(
+        authorizedHolderId(),
+        null
+      );
       String deadArtifact = run.evidenceRef;
       expire(run.runId);
-      Assert.areEqual('EXPIRED', service.download(run.runId).outcome);
-      Assert.areEqual('REVOKED', service.download(run.runId).outcome);
+      Assert.areEqual(
+        'EXPIRED',
+        service.download(run.runId, run.version).outcome
+      );
+      Decimal afterRevoke = observedVersion(service, run.runId);
+      Assert.areEqual(
+        'REVOKED',
+        service.download(run.runId, afterRevoke).outcome
+      );
 
       ALT_CLS_ExportService.RunView again = service.request(
-        authorizedHolderId()
+        authorizedHolderId(),
+        afterRevoke
       );
       Assert.areEqual(run.runId, again.runId, 'O mesmo escopo reusa o run.');
       Assert.areEqual('PREPARED', again.status);
@@ -557,7 +930,7 @@ private class ALT_CLS_ExportServiceTest {
       Assert.areNotEqual(deadArtifact, again.evidenceRef);
       Assert.isTrue(again.canDownload);
       Assert.areEqual(1, [SELECT COUNT() FROM ContentDocument]);
-      Assert.isTrue(service.download(run.runId).ready);
+      Assert.isTrue(service.download(run.runId, again.version).ready);
     }
   }
 
@@ -565,7 +938,10 @@ private class ALT_CLS_ExportServiceTest {
   static void artifactThatDoesNotMatchItsEvidenceIsRevokedInsteadOfServed() {
     System.runAs(requester()) {
       ALT_CLS_ExportService service = new ALT_CLS_ExportService();
-      ALT_CLS_ExportService.RunView run = service.request(authorizedHolderId());
+      ALT_CLS_ExportService.RunView run = service.request(
+        authorizedHolderId(),
+        null
+      );
       Id documentId = [SELECT Id FROM ContentDocument LIMIT 1].Id;
       // A later version of the same document replaces the content that was hashed.
       insert new ContentVersion(
@@ -575,7 +951,10 @@ private class ALT_CLS_ExportServiceTest {
         VersionData = Blob.valueOf('date,direction\n2019-01-01,CREDIT')
       );
 
-      ALT_CLS_ExportService.DownloadView refused = service.download(run.runId);
+      ALT_CLS_ExportService.DownloadView refused = service.download(
+        run.runId,
+        run.version
+      );
       Assert.isFalse(refused.ready);
       Assert.areEqual('ARTIFACT_MISMATCH', refused.outcome);
       Assert.isNull(refused.bodyBase64);
@@ -591,13 +970,113 @@ private class ALT_CLS_ExportServiceTest {
   static void aMissingArtifactIsReportedInsteadOfServed() {
     System.runAs(requester()) {
       ALT_CLS_ExportService service = new ALT_CLS_ExportService();
-      ALT_CLS_ExportService.RunView run = service.request(authorizedHolderId());
+      ALT_CLS_ExportService.RunView run = service.request(
+        authorizedHolderId(),
+        null
+      );
       delete new ContentDocument(Id = run.evidenceRef);
 
-      ALT_CLS_ExportService.DownloadView refused = service.download(run.runId);
+      ALT_CLS_ExportService.DownloadView refused = service.download(
+        run.runId,
+        run.version
+      );
       Assert.isFalse(refused.ready);
       Assert.areEqual('ARTIFACT_MISSING', refused.outcome);
       Assert.areEqual('REVOKED', storedRun(run.runId).AXF_EPR_PKL_Status__c);
+    }
+  }
+
+  // ---------------------------------------------------------------- share and notification seams
+
+  /**
+   * Requester ≠ holder owner. Every other fixture creates the holder inside `runAs(requester)`,
+   * so `grantRequesterAccess` returned early and the share insert — whose result was discarded —
+   * never ran. Here the run follows the peer (G2) and the requester keeps only the share the
+   * service writes.
+   */
+  @IsTest
+  static void aRequesterWhoDoesNotOwnTheHolderKeepsAccessThroughTheGrantedShare() {
+    Id sharedId = sharedHolderId();
+    // The holder belongs to the peer; the requester reaches it through an explicit read share,
+    // which is what makes this requester a non-owner of the run the service is about to write.
+    insert new AccountShare(
+      AccountId = sharedId,
+      UserOrGroupId = requester().Id,
+      AccountAccessLevel = 'Read',
+      OpportunityAccessLevel = 'None',
+      CaseAccessLevel = 'None',
+      RowCause = Schema.AccountShare.RowCause.Manual
+    );
+    Id runId;
+    Decimal version;
+    System.runAs(requester()) {
+      ALT_CLS_ExportService service = new ALT_CLS_ExportService();
+      ALT_CLS_ExportService.RunView run = service.request(sharedId, null);
+      runId = run.runId;
+      version = run.version;
+      Assert.areEqual('PREPARED', run.status);
+      Assert.isTrue(
+        service.read(runId).canDownload,
+        'Quem pediu le o proprio run pelo compartilhamento.'
+      );
+    }
+    List<AXF_OBJ_ExportRun__Share> shares = [
+      SELECT UserOrGroupId, AccessLevel, RowCause
+      FROM AXF_OBJ_ExportRun__Share
+      WHERE ParentId = :runId AND RowCause = 'Manual'
+    ];
+    Assert.areEqual(1, shares.size(), 'O compartilhamento foi gravado.');
+    Assert.areEqual(requester().Id, shares[0].UserOrGroupId);
+    Assert.areEqual(
+      'Read',
+      shares[0].AccessLevel,
+      'Somente leitura: a maquina de estados e do Apex.'
+    );
+    Assert.areEqual(
+      peer().Id,
+      storedRun(runId).OwnerId,
+      'O run segue o dono do titular (G2), nao quem pediu.'
+    );
+
+    System.runAs(requester()) {
+      ALT_CLS_ExportService service = new ALT_CLS_ExportService();
+      ALT_CLS_ExportService.DownloadView download = service.download(
+        runId,
+        version
+      );
+      Assert.isTrue(download.ready, download.outcome);
+      Assert.areEqual('DOWNLOADED', service.read(runId).status);
+    }
+  }
+
+  /**
+   * The notice path. `notifyRequester` swallows every failure and exits silently when the
+   * CustomNotificationType does not resolve, so asserting the text builder alone left a wrong
+   * DeveloperName passing green: the seam is set only after the platform accepted the send.
+   */
+  @IsTest
+  static void theReadyNoticeResolvesItsTypeAndIsActuallySent() {
+    System.runAs(requester()) {
+      ALT_CLS_ExportService.notificationSent = false;
+      ALT_CLS_ExportService.lastNotificationTypeId = null;
+      ALT_CLS_ExportService.RunView run = new ALT_CLS_ExportService()
+        .request(authorizedHolderId(), null);
+      Assert.isNotNull(run.runId);
+      Assert.isTrue(
+        ALT_CLS_ExportService.notificationSent,
+        'A notificacao de exportacao pronta foi aceita pela plataforma.'
+      );
+      Assert.areEqual(
+        [
+          SELECT Id
+          FROM CustomNotificationType
+          WHERE DeveloperName = 'AXF_ExportReady'
+          LIMIT 1
+        ]
+        .Id,
+        ALT_CLS_ExportService.lastNotificationTypeId,
+        'O tipo AXF_ExportReady resolve pelo DeveloperName.'
+      );
     }
   }
 
@@ -607,7 +1086,7 @@ private class ALT_CLS_ExportServiceTest {
   static void fileNameNotificationAndLogsCarryNoPii() {
     System.runAs(requester()) {
       ALT_CLS_ExportService.RunView run = new ALT_CLS_ExportService()
-        .request(authorizedHolderId());
+        .request(authorizedHolderId(), null);
       String opaqueName = storedRun(run.runId).Name;
 
       Assert.areEqual(
@@ -665,7 +1144,8 @@ private class ALT_CLS_ExportServiceTest {
           'REVOKED_EXPIRED',
           'REVOKED_ACCESS_REVOKED',
           'REVOKED_ARTIFACT_MISSING',
-          'REVOKED_ARTIFACT_MISMATCH'
+          'REVOKED_ARTIFACT_MISMATCH',
+          'REVOKED_ARTIFACT_NOT_REMOVED'
         }
       ) {
         String line = ALT_CLS_ExportService.logLine(code, opaqueName);
@@ -683,9 +1163,15 @@ private class ALT_CLS_ExportServiceTest {
   static void revokedExportLeavesTheScopeUntouchedAndObservable() {
     System.runAs(requester()) {
       ALT_CLS_ExportService service = new ALT_CLS_ExportService();
-      ALT_CLS_ExportService.RunView run = service.request(authorizedHolderId());
+      ALT_CLS_ExportService.RunView run = service.request(
+        authorizedHolderId(),
+        null
+      );
       expire(run.runId);
-      Assert.areEqual('EXPIRED', service.download(run.runId).outcome);
+      Assert.areEqual(
+        'EXPIRED',
+        service.download(run.runId, run.version).outcome
+      );
 
       // Only the artifact was destroyed: the holder's facts are untouched by the export.
       Assert.areEqual(
