@@ -51,10 +51,10 @@ export function testPlan(paths, readFile, declaredTests) {
   const tests = [...new Set([...testsInDelta, ...declaredTests])];
   if (hasProductionApex && tests.length === 0)
     throw new Error(
-      "Changed Apex classes/triggers have no test coverage in this delta. Add the " +
-        '"## Salesforce test classes" section to the PR description listing the Apex ' +
-        "test class name(s) that cover this change (one per bullet), or include the " +
-        "corresponding test class(es) in this PR."
+      "Changed Apex classes/triggers have no test coverage in this delta. List the " +
+        "Apex test class name(s) that cover this change in the PR description's " +
+        '"### Apex test classes to run" code block (space/comma-separated), or ' +
+        "include the corresponding test class(es) in this PR."
     );
   return {
     testLevel: tests.length ? "RunSpecifiedTests" : "RunLocalTests",
