@@ -55,8 +55,12 @@ PRs never persist metadata. Deployment reruns tests for the actual merged commit
 rather than quick-deploying a synthetic PR merge. Authenticated Org IDs are checked
 before metadata operations.
 
-Each operation publishes a short PR comment (outcome, commit, baseline, deployment ID,
-test counts, initial error) plus a 30-day evidence artifact containing:
+Each operation publishes a compact, visual PR comment — a ✅/❌/⚪ status heading, a
+small table (deployment ID, component count, tests completed/failed, commit), the
+error message when failed, and a direct link to download the evidence artifact
+(`.../actions/runs/{run}/artifacts/{id}`, opens the zip download for anyone with repo
+read access already signed in) plus a link to the full run logs — alongside a 30-day
+evidence artifact containing:
 
 - `result.json` — machine-readable outcome, org ID, and full component/test failures.
 - `result.html` — human-readable report of the same data, viewable in a browser.
