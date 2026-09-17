@@ -6,16 +6,135 @@ import { pathToFileURL } from "node:url";
 export function sourcePaths(entries) {
   const paths = new Set();
   for (const { status, file } of entries) {
-    if (status === "D")
-      throw new Error(
-        `Deletion requires a reviewed destructive deployment: ${file}`
-      );
+    // Deletions are handled separately by buildDestructiveChangesXml; they
+    // never enter the additive/modified source-dir list used for deployment.
+    if (status === "D") continue;
     if (!file.startsWith("force-app/") || /[\r\n]/.test(file))
       throw new Error("Invalid metadata path");
     const bundle = file.match(/^(force-app\/.*\/(?:aura|lwc)\/[^/]+)\//);
     paths.add(bundle ? bundle[1] : file);
   }
   return [...paths].sort();
+}
+
+// Metadata types deletable from a single top-level force-app folder, matched
+// against the path with the "force-app/main/default/<folder>/" prefix
+// stripped. The capture group is the metadata member (fullName). Deliberately
+// scoped to the metadata types this project actually uses (see force-app/main/default);
+// anything else — including lwc/aura bundles, whose member depends on whether
+// the WHOLE bundle or only some files were deleted — is left unresolved for
+// manual review rather than guessed at.
+const TOP_LEVEL_DESTRUCTIVE_TYPES = {
+  applications: ["CustomApplication", /^([^/]+)\.app-meta\.xml$/],
+  classes: ["ApexClass", /^([^/]+)\.cls(?:-meta\.xml)?$/],
+  contentassets: ["ContentAsset", /^([^/]+)\.asset-meta\.xml$/],
+  customMetadata: ["CustomMetadata", /^([^/]+)\.md-meta\.xml$/],
+  customPermissions: [
+    "CustomPermission",
+    /^([^/]+)\.customPermission-meta\.xml$/
+  ],
+  externalCredentials: [
+    "ExternalCredential",
+    /^([^/]+)\.externalCredential-meta\.xml$/
+  ],
+  flexipages: ["FlexiPage", /^([^/]+)\.flexipage-meta\.xml$/],
+  layouts: ["Layout", /^(.+)\.layout-meta\.xml$/],
+  messageChannels: [
+    "LightningMessageChannel",
+    /^([^/]+)\.messageChannel-meta\.xml$/
+  ],
+  namedCredentials: ["NamedCredential", /^([^/]+)\.namedCredential-meta\.xml$/],
+  notificationtypes: [
+    "CustomNotificationType",
+    /^([^/]+)\.notiftype-meta\.xml$/
+  ],
+  permissionsetgroups: [
+    "PermissionSetGroup",
+    /^([^/]+)\.permissionsetgroup-meta\.xml$/
+  ],
+  permissionsets: ["PermissionSet", /^([^/]+)\.permissionset-meta\.xml$/],
+  profiles: ["Profile", /^([^/]+)\.profile-meta\.xml$/],
+  roles: ["Role", /^([^/]+)\.role-meta\.xml$/],
+  sharingRules: ["SharingRules", /^([^/]+)\.sharingRules-meta\.xml$/],
+  staticresources: ["StaticResource", /^([^/]+)\.resource-meta\.xml$/],
+  tabs: ["CustomTab", /^([^/]+)\.tab-meta\.xml$/],
+  translations: ["Translations", /^([^/]+)\.translation-meta\.xml$/],
+  triggers: ["ApexTrigger", /^([^/]+)\.trigger(?:-meta\.xml)?$/]
+};
+
+// force-app/main/default/objects/<Object>/<childFolder>/<Name>.*-meta.xml
+const OBJECT_CHILD_DESTRUCTIVE_TYPES = {
+  fields: "CustomField",
+  validationRules: "ValidationRule",
+  recordTypes: "RecordType",
+  listViews: "ListView",
+  webLinks: "WebLink",
+  compactLayouts: "CompactLayout",
+  businessProcesses: "BusinessProcess",
+  fieldSets: "FieldSet",
+  sharingReasons: "SharingReason"
+};
+
+export function destructiveMember(file) {
+  const top = /^force-app\/main\/default\/([^/]+)\/(.+)$/.exec(file);
+  if (!top) return null;
+  const [, folder, rest] = top;
+  if (folder === "objects") {
+    const object = /^([^/]+)\/[^/]+\.object-meta\.xml$/.exec(rest);
+    if (object) return { type: "CustomObject", member: object[1] };
+    const child = /^([^/]+)\/([^/]+)\/([^/]+)\.[A-Za-z]+-meta\.xml$/.exec(rest);
+    if (!child) return null;
+    const [, objectName, childFolder, name] = child;
+    const type = OBJECT_CHILD_DESTRUCTIVE_TYPES[childFolder];
+    return type ? { type, member: `${objectName}.${name}` } : null;
+  }
+  const entry = TOP_LEVEL_DESTRUCTIVE_TYPES[folder];
+  if (!entry) return null;
+  const [type, pattern] = entry;
+  const match = pattern.exec(rest);
+  return match ? { type, member: match[1] } : null;
+}
+
+export function buildDestructiveChangesXml(deletedFiles) {
+  const byType = new Map();
+  const unresolved = [];
+  for (const file of deletedFiles) {
+    const resolved = destructiveMember(file);
+    if (!resolved) {
+      unresolved.push(file);
+      continue;
+    }
+    if (!byType.has(resolved.type)) byType.set(resolved.type, new Set());
+    byType.get(resolved.type).add(resolved.member);
+  }
+  const escapeXml = (v) =>
+    String(v).replace(
+      /[&<>"']/g,
+      (c) =>
+        ({
+          "&": "&amp;",
+          "<": "&lt;",
+          ">": "&gt;",
+          '"': "&quot;",
+          "'": "&apos;"
+        })[c]
+    );
+  const types = [...byType.keys()].sort();
+  const body = types
+    .map((type) => {
+      const members = [...byType.get(type)]
+        .sort()
+        .map((m) => `    <members>${escapeXml(m)}</members>`)
+        .join("\n");
+      return `  <types>\n${members}\n    <name>${type}</name>\n  </types>`;
+    })
+    .join("\n");
+  const xml =
+    `<?xml version="1.0" encoding="UTF-8"?>\n` +
+    `<Package xmlns="http://soap.sforce.com/2006/04/metadata">\n` +
+    (body ? `${body}\n` : "") +
+    `  <version>62.0</version>\n</Package>\n`;
+  return { xml, unresolved };
 }
 
 export function extractDeclaredTests(body) {
@@ -199,13 +318,33 @@ export async function run() {
       );
     command("git", ["merge-base", "--is-ancestor", baseSha, e.GITHUB_SHA]);
     report.base = baseSha;
-    report.paths = sourcePaths(changes(baseSha, e.GITHUB_SHA));
+    const entries = changes(baseSha, e.GITHUB_SHA);
+    report.paths = sourcePaths(entries);
     fs.writeFileSync(
       path.join(directory, "source-paths.txt"),
       report.paths.join("\n") + "\n"
     );
+    const deletedFiles = [
+      ...new Set(entries.filter((en) => en.status === "D").map((en) => en.file))
+    ].sort();
+    report.deletedPaths = deletedFiles;
+    if (deletedFiles.length) {
+      // Deletions never auto-deploy: generate the destructive manifest as
+      // evidence for a human to review and apply separately (see
+      // docs/SALESFORCE_DELIVERY.md). The additive/modified delta below still
+      // validates/deploys normally when present.
+      const { xml, unresolved } = buildDestructiveChangesXml(deletedFiles);
+      fs.writeFileSync(path.join(directory, "destructiveChanges.xml"), xml);
+      fs.writeFileSync(
+        path.join(directory, "package.xml"),
+        '<?xml version="1.0" encoding="UTF-8"?>\n<Package xmlns="http://soap.sforce.com/2006/04/metadata">\n  <version>62.0</version>\n</Package>\n'
+      );
+      report.destructiveUnresolved = unresolved;
+    }
     if (!report.paths.length) {
-      report.outcome = "No metadata changes";
+      report.outcome = deletedFiles.length
+        ? "Destructive changes only — manual review required"
+        : "No metadata changes";
       return;
     }
     // Package the exact validated/deployed delta as mdapi-format metadata so the
@@ -366,6 +505,9 @@ export async function run() {
       `**Test level:** ${report.testLevel || "N/A"}${report.tests?.length ? ` (${report.tests.join(", ")})` : ""}`,
       `**Deployment ID:** ${report.salesforce?.id || "None"}`,
       `**Tests completed / failed:** ${report.salesforce?.numberTestsCompleted ?? 0} / ${report.salesforce?.numberTestErrors ?? 0}`,
+      report.deletedPaths?.length
+        ? `**Deletions:** ${report.deletedPaths.length} — see destructiveChanges.xml in the evidence artifact. NOT auto-deployed; requires manual review and a separate destructive deploy.${report.destructiveUnresolved?.length ? ` ${report.destructiveUnresolved.length} deleted path(s) could not be mapped to a metadata type automatically: ${report.destructiveUnresolved.join(", ")}.` : ""}`
+        : "",
       report.error || "",
       "",
       ...details,
@@ -412,12 +554,13 @@ th{background:#f4f4f4}
 .badge{display:inline-block;padding:2px 10px;border-radius:12px;font-weight:600}
 .ok{background:#d4f7dc;color:#116329}
 .fail{background:#ffd7d5;color:#82071e}
+.warn{background:#fff1c2;color:#7a5c00}
 code{background:#f4f4f4;padding:1px 4px;border-radius:3px}
 </style>
 </head>
 <body>
 <h1>Salesforce ${escapeHtml(report.operation)}: ${escapeHtml(report.environment)}</h1>
-<p><span class="badge ${report.outcome === "Succeeded" ? "ok" : "fail"}">${escapeHtml(report.outcome)}</span></p>
+<p><span class="badge ${report.outcome === "Succeeded" ? "ok" : report.outcome.includes("manual review") ? "warn" : "fail"}">${escapeHtml(report.outcome)}</span></p>
 <ul>
 <li><strong>Commit (to):</strong> <code>${escapeHtml(report.sha)}</code></li>
 <li><strong>Base (from):</strong> <code>${escapeHtml(report.base || "Not required / not configured")}</code></li>
@@ -449,6 +592,21 @@ ${
         .join("")}</ul>`
     : ""
 }
+${
+  report.deletedPaths?.length
+    ? `<h3>Deletions (${report.deletedPaths.length}) — NOT auto-deployed</h3>` +
+      `<p>Generated <code>destructiveChanges.xml</code>/<code>package.xml</code> in this evidence artifact. Requires manual review and a separate destructive deploy.` +
+      (report.destructiveUnresolved?.length
+        ? ` ${report.destructiveUnresolved.length} path(s) could not be mapped to a metadata type automatically and need fully manual triage.`
+        : "") +
+      `</p><ul>${report.deletedPaths
+        .map(
+          (p) =>
+            `<li><code>${escapeHtml(p)}</code>${report.destructiveUnresolved?.includes(p) ? " — <em>unresolved</em>" : ""}</li>`
+        )
+        .join("")}</ul>`
+    : ""
+}
 </body>
 </html>
 `;
@@ -470,6 +628,7 @@ ${
           line("componentsTotal", report.salesforce?.numberComponentsTotal) +
           line("testsCompleted", report.salesforce?.numberTestsCompleted ?? 0) +
           line("testsFailed", report.salesforce?.numberTestErrors ?? 0) +
+          line("deletedCount", report.deletedPaths?.length ?? 0) +
           line("errorMessage", report.error)
       );
     }
