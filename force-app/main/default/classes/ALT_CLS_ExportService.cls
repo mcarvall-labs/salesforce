@@ -22,6 +22,13 @@
  * revocation it is supposed to record. Only failures that leave no side effect to preserve are
  * thrown.
  *
+ * Two state-machine properties the review demanded and this class now holds: availability is only
+ * reported for a run whose artifact still exists (a `REQUEST_AGAIN` that the next `request()`
+ * silently ignored would be a dead end), and a copy the platform refused to remove keeps its
+ * pointer — minting a new artifact over it would destroy the only reference an operator could act
+ * on. Both `request()` and `download()` take the run lock, so two concurrent requests cannot each
+ * write an artifact for the same run and orphan one of them.
+ *
  * Isolated elevation, stated rather than implied: the class runs **without sharing** because the
  * state machine it owns cannot run any other way. The run follows the holder's owner (G2), so an
  * authorized requester who is not that owner holds only a read share, and the permission set
@@ -127,8 +134,10 @@ public without sharing class ALT_CLS_ExportService {
   /**
    * Authorizes the caller for the holder scope and prepares (or replays) the export artifact of
    * that exact requester. Within the download window this is idempotent: the same run and the
-   * same artifact come back. Once the window elapsed, or after a revocation, a fresh artifact
-   * replaces the dead one on the same run.
+   * same artifact come back. Once the window elapsed, after a revocation, or once the artifact
+   * itself is gone, a fresh artifact replaces the dead one on the same run — unless a copy the
+   * platform refused to remove is still pointed at, in which case the run keeps that pointer
+   * instead of losing it.
    *
    * NFR-18 optimistic precondition, following the merged ALT_CLS_ClosureOrchestrator.load: the
    * caller states the version it last observed for this scope, and a stale expectation is
@@ -154,6 +163,20 @@ public without sharing class ALT_CLS_ExportService {
         run = prepare(loadRunPrivileged(insertRun(holder, key).Id), holder);
       } catch (DmlException race) {
         Database.rollback(point);
+        List<Schema.SObjectField> duplicated = null;
+        if (race.getDmlType(0) == StatusCode.DUPLICATE_VALUE) {
+          duplicated = race.getDmlFields(0);
+        }
+        if (
+          duplicated != null &&
+          !duplicated.isEmpty() &&
+          !namesScopeKey(duplicated)
+        ) {
+          // The platform named the fields it rejected: a duplicate that is not the scope key (the
+          // artifact title, for instance) is a real failure, not the concurrent request this
+          // branch answers, and must not be reported as a lost race.
+          throw race;
+        }
         if (race.getDmlType(0) != StatusCode.DUPLICATE_VALUE) {
           throw race;
         }
@@ -178,26 +201,36 @@ public without sharing class ALT_CLS_ExportService {
       log('PREPARED', run.Name);
       return toView(run);
     }
-    run = loadRun(existing);
-    if (expectedVersion == null) {
-      // The run exists, so the caller must state the version it observed.
-      throw failure('INVALID_INPUT');
-    }
-    if (expectedVersion != run.AXF_EPR_NUM_Version__c) {
-      throw failure('CONFLICT');
-    }
+    // Locked exactly like download(), and for the same reason: two concurrent requests must not
+    // each write an artifact for this run, because the loser's ContentVersion would be left with
+    // no reference at all. The re-read under the lock is what the caller's version is compared
+    // against (NFR-18): an unstated or stale expectation is refused before anything is written.
+    run = lockAndLoad(existing, expectedVersion);
     if (run.AXF_EPR_PKL_Status__c == STATUS_REVOKED) {
       if (run.AXF_EPR_TXT_ContentDocument__c != null) {
         // A revoked run that still holds a document is the recorded removal failure: retry the
         // removal before minting a new artifact, so the old copy does not survive unrecorded.
         revoke(run, run.AXF_EPR_TXT_Reason__c);
+        if (run.AXF_EPR_TXT_ContentDocument__c != null) {
+          // The copy survived again. Minting over it would overwrite the only reference an
+          // operator could still act on, so the run stays REVOKED with its pointer and the next
+          // request retries the removal instead of losing the copy.
+          return toView(run);
+        }
       }
-      return toView(prepare(run, holder));
+      return mint(run, holder);
     }
     if (isElapsed(run)) {
       revoke(run, REASON_EXPIRED);
-      // revoke() cleared the artifact fields in place, so prepare() writes a fresh one.
-      return toView(prepare(run, holder));
+      // revoke() cleared the artifact fields in place, so mint() writes a fresh one.
+      return mint(run, holder);
+    }
+    if (!artifactAvailable(run.AXF_EPR_TXT_ContentDocument__c)) {
+      // A prepared run whose artifact is gone can never be served: the platform copy was removed
+      // or the pointer is unusable. revoke() records why and clears the dead reference, so the
+      // REQUEST_AGAIN this run reports is actually actionable.
+      revoke(run, REASON_MISSING);
+      return mint(run, holder);
     }
     return toView(run);
   }
@@ -297,6 +330,29 @@ public without sharing class ALT_CLS_ExportService {
 
   // ---------------------------------------------------------------- preparation
 
+  /**
+   * Prepares the replacement artifact of an existing run and announces it exactly like the first
+   * preparation does: a second artifact nobody is told about would break the ready notice (D-80)
+   * for every export after the first.
+   *
+   * The savepoint sits **after** the revocation the caller already performed, so a refusal that
+   * has to undo a partial preparation (the row limit, a failed upload) cannot roll the revocation
+   * back with it: an expired or revoked artifact stays revoked even when its replacement cannot be
+   * built, which is what AC-2 asks for.
+   */
+  private RunView mint(AXF_OBJ_ExportRun__c run, Account holder) {
+    Savepoint point = Database.setSavepoint();
+    try {
+      RunView view = toView(prepare(run, holder));
+      notifyRequester(run);
+      log('PREPARED', run.Name);
+      return view;
+    } catch (Exception refusal) {
+      Database.rollback(point);
+      throw refusal;
+    }
+  }
+
   /** Writes the artifact and its control row as one unit: neither survives without the other. */
   private AXF_OBJ_ExportRun__c prepare(
     AXF_OBJ_ExportRun__c run,
@@ -383,15 +439,17 @@ public without sharing class ALT_CLS_ExportService {
    * revoking, so the caller reports the recorded reason without throwing (which would undo it).
    */
   private Blob body(AXF_OBJ_ExportRun__c run) {
-    Id documentId = run.AXF_EPR_TXT_ContentDocument__c;
-    if (documentId == null) {
+    Id artifact = documentId(run);
+    if (artifact == null) {
+      // No addressable reference: either the run never had one or the stored pointer is not a
+      // document id. revoke() clears it, so no dead reference is left claiming a copy exists.
       revoke(run, REASON_MISSING);
       return null;
     }
     List<ContentVersion> versions = [
       SELECT VersionData
       FROM ContentVersion
-      WHERE ContentDocumentId = :documentId AND IsLatest = TRUE
+      WHERE ContentDocumentId = :artifact AND IsLatest = TRUE
       WITH SYSTEM_MODE
       LIMIT 1
     ];
@@ -424,17 +482,26 @@ public without sharing class ALT_CLS_ExportService {
    * Never throws and never rolls back. A removal that fails must still leave a REVOKED state
    * behind — that is the only evidence the artifact no longer counts — so the failure is recorded
    * as the run's reason and reported as the outcome, and the document pointer is kept so a later
-   * attempt can still remove the copy that survived.
+   * attempt can still remove the copy that survived. The recorded reason follows **this** attempt:
+   * a retry that finally deleted the copy stops reporting a survivor.
    *
    * @return the reason recorded on the run, which the caller reports as the download outcome.
    */
   private String revoke(AXF_OBJ_ExportRun__c run, String reason) {
     String recorded = reason;
     if (run.AXF_EPR_TXT_ContentDocument__c != null) {
-      if (removeArtifact(run.AXF_EPR_TXT_ContentDocument__c)) {
-        run.AXF_EPR_TXT_ContentDocument__c = null;
-      } else {
+      Id artifact = documentId(run);
+      if (artifact != null && !removeArtifact(artifact)) {
+        // The copy survived **this** attempt, which is the fact an operator must be able to see,
+        // so the pointer is kept for a later attempt.
         recorded = REASON_NOT_REMOVED;
+      } else {
+        // Removed, or a pointer no query could address: either way nothing here still points at a
+        // copy. A retry that finally removed it must also stop claiming one survived.
+        run.AXF_EPR_TXT_ContentDocument__c = null;
+        if (REASON_NOT_REMOVED.equals(recorded)) {
+          recorded = STATUS_REVOKED;
+        }
       }
     }
     run.AXF_EPR_TXT_FileName__c = null;
@@ -468,12 +535,58 @@ public without sharing class ALT_CLS_ExportService {
     if (removed[0].isSuccess()) {
       return true;
     }
+    if (removed[0].getErrors().isEmpty()) {
+      // A failure the platform did not explain is not evidence that the copy is gone: fail closed
+      // rather than clear the only reference to an artifact that may still exist.
+      return false;
+    }
     for (Database.Error problem : removed[0].getErrors()) {
       if (problem.getStatusCode() != StatusCode.ENTITY_IS_DELETED) {
         return false;
       }
     }
     return true;
+  }
+
+  /**
+   * The artifact pointer as an id. The field is Text because the Metadata API rejects a lookup to
+   * ContentDocument, so a stored value that is not a document id is possible in principle; it is
+   * answered as "no addressable artifact" instead of letting a platform cast error escape the
+   * sanitized refusal path.
+   */
+  private static Id documentId(AXF_OBJ_ExportRun__c run) {
+    return documentId(run.AXF_EPR_TXT_ContentDocument__c);
+  }
+
+  private static Id documentId(String stored) {
+    if (String.isBlank(stored)) {
+      return null;
+    }
+    try {
+      return Id.valueOf(stored);
+    } catch (Exception malformed) {
+      return null;
+    }
+  }
+
+  /**
+   * Whether the artifact the run points at still exists. `read()` and `request()` use it so
+   * availability is never advertised for a run whose download would refuse with
+   * ARTIFACT_MISSING, and so the REQUEST_AGAIN they report is actionable.
+   */
+  private static Boolean artifactAvailable(String storedDocumentId) {
+    Id artifact = documentId(storedDocumentId);
+    if (artifact == null) {
+      return false;
+    }
+    return ![
+      SELECT Id
+      FROM ContentVersion
+      WHERE ContentDocumentId = :artifact AND IsLatest = TRUE
+      WITH SYSTEM_MODE
+      LIMIT 1
+    ]
+    .isEmpty();
   }
 
   // ---------------------------------------------------------------- csv
@@ -565,6 +678,20 @@ public without sharing class ALT_CLS_ExportService {
     return sha256(
       String.valueOf(accountId) + '|' + String.valueOf(requesterId)
     );
+  }
+
+  /**
+   * Whether the platform named the scope key among the fields it rejected. Compared by describe
+   * name rather than by token identity, so the answer does not depend on how the platform hands
+   * the tokens back.
+   */
+  private static Boolean namesScopeKey(List<Schema.SObjectField> fields) {
+    for (Schema.SObjectField field : fields) {
+      if (field.getDescribe().getName() == 'AXF_EPR_EXI_ScopeKey__c') {
+        return true;
+      }
+    }
+    return false;
   }
 
   // ---------------------------------------------------------------- persistence
@@ -805,16 +932,18 @@ public without sharing class ALT_CLS_ExportService {
       ? null
       : String.valueOf(run.AXF_EPR_TXT_ContentDocument__c);
     view.version = run.AXF_EPR_NUM_Version__c;
-    // Availability is only reported as real when every gate download() applies still passes:
-    // the requester binding, the state, the window, and the holder access revalidated against the
-    // platform. Otherwise read() would advertise DOWNLOAD for a scope whose authorization was
-    // withdrawn, and the following download() would revoke instead of serving.
+    // Availability is only reported as real when every gate download() applies still passes: the
+    // requester binding, the state, the window, the holder access revalidated against the platform,
+    // and the artifact itself still being there. Otherwise read() would advertise DOWNLOAD for a
+    // scope whose authorization was withdrawn or for a run whose download would revoke instead of
+    // serving, and the REQUEST_AGAIN it reports would not be actionable by request().
     Boolean live =
       run.AXF_EPR_LKP_Requester__c == UserInfo.getUserId() &&
       (run.AXF_EPR_PKL_Status__c == STATUS_PREPARED ||
       run.AXF_EPR_PKL_Status__c == STATUS_DOWNLOADED) &&
       !isElapsed(run) &&
-      hasHolderReadAccess(run.AXF_EPR_LKP_Account__c);
+      hasHolderReadAccess(run.AXF_EPR_LKP_Account__c) &&
+      artifactAvailable(run.AXF_EPR_TXT_ContentDocument__c);
     view.canDownload = live;
     view.nextAction = live ? 'DOWNLOAD' : 'REQUEST_AGAIN';
     return view;

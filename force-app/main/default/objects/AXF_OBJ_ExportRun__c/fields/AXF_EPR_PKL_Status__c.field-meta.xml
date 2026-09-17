@@ -20,5 +20,5 @@
         </valueSetDefinition>
     </valueSet>
     <description
-  >REQUESTED -> PREPARED -> DOWNLOADED (dentro da janela) | REVOKED (ao expirar ou perder autorizacao). REVOKED exclui o artefato; uma nova solicitacao cria artefato novo no mesmo escopo.</description>
+  >REQUESTED -> PREPARED -> DOWNLOADED (dentro da janela) | REVOKED (ao expirar, perder autorizacao ou perder o artefato). REVOKED exclui o artefato; uma nova solicitacao cria artefato novo no MESMO run, ou seja REVOKED -> PREPARED, exceto quando uma copia que a plataforma recusou excluir ainda esta apontada: nesse caso o run permanece REVOKED com o ponteiro ate a remocao ser concluida.</description>
 </CustomField>
