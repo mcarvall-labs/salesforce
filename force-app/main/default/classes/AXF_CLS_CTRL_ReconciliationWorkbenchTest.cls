@@ -263,9 +263,8 @@ private class AXF_CLS_CTRL_ReconciliationWorkbenchTest {
         codeOfPreview(
           JSON.serialize(
             new Map<String, Object>{
-              'accountId' =>
-                Account.SObjectType.getDescribe().getKeyPrefix() +
-                '000000000000'
+              'accountId' => Account.SObjectType.getDescribe().getKeyPrefix() +
+              '000000000000'
             }
           )
         )
@@ -322,7 +321,11 @@ private class AXF_CLS_CTRL_ReconciliationWorkbenchTest {
       Assert.isTrue(parked.unknownOutcome, 'the outcome starts unknown');
       Assert.areEqual(parked.reconciliationId, again.reconciliationId);
       Assert.isTrue(again.unknownOutcome, 'parking is idempotent');
-      Assert.areEqual('CONFLICT', blocked, 'the retry is refused while unresolved');
+      Assert.areEqual(
+        'CONFLICT',
+        blocked,
+        'the retry is refused while unresolved'
+      );
       Assert.areEqual(
         ALT_CLS_ReconciliationService.STATE_FAILED,
         resolved.state,
@@ -365,8 +368,15 @@ private class AXF_CLS_CTRL_ReconciliationWorkbenchTest {
         ALT_CLS_ReconciliationService.POLICY_VERSION,
         context.policyVersion
       );
-      Assert.isFalse(context.holders.isEmpty(), 'holders are listed for the capable user');
-      Assert.areEqual(1, sources.sources.size(), 'the source with residual is listed');
+      Assert.isFalse(
+        context.holders.isEmpty(),
+        'holders are listed for the capable user'
+      );
+      Assert.areEqual(
+        1,
+        sources.sources.size(),
+        'the source with residual is listed'
+      );
       Assert.areEqual(100.00, sources.sources[0].magnitude);
       Assert.areEqual(
         ALT_CLS_ReconciliationService.STATE_CONFIRMED,

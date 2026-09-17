@@ -1727,7 +1727,8 @@
     </fieldPermissions>
     <fieldPermissions>
         <editable>true</editable>
-        <field>AXF_OBJ_ReconciliationAllocation__c.AXF_RA_LKP_Reconciliation__c</field>
+        <field
+    >AXF_OBJ_ReconciliationAllocation__c.AXF_RA_LKP_Reconciliation__c</field>
         <readable>true</readable>
     </fieldPermissions>
     <fieldPermissions>
@@ -1737,7 +1738,8 @@
     </fieldPermissions>
     <fieldPermissions>
         <editable>true</editable>
-        <field>AXF_OBJ_Reconciliation__c.AXF_RCN_NUM_ResidualMagnitude__c</field>
+        <field
+    >AXF_OBJ_Reconciliation__c.AXF_RCN_NUM_ResidualMagnitude__c</field>
         <readable>true</readable>
     </fieldPermissions>
     <fieldPermissions>

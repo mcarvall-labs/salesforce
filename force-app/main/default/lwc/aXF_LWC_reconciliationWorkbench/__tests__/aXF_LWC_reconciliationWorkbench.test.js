@@ -144,7 +144,9 @@ describe("c-a-x-f-_-l-w-c-_reconciliation-workbench", () => {
   it("assembles lines from the service figures and confirms with one intention key", async () => {
     const element = await mount();
     await openReview(element);
-    expect(byId(element, "sourceSummary").textContent).toContain("Débito mercado");
+    expect(byId(element, "sourceSummary").textContent).toContain(
+      "Débito mercado"
+    );
     expect(numberValue(element, "sourceResidual")).toBe(100);
     expect(byId(element, "sourceResidual").textContent).toContain("(BRL)");
     expect(byId(element, "candidateState").textContent).toContain(

@@ -6,17 +6,17 @@ Contrato normativo: `_bmad-output/planning-artifacts/architecture/architecture-A
 
 ## O que foi entregue
 
-| Artefato | Papel |
-| --- | --- |
-| `force-app/main/default/objects/AXF_OBJ_Reconciliation__c/` | Raiz ratificada `RCN` (AutoNumber `RCN-{000000}`, `sharingModel Private`, `enableHistory`, `enableSharing`) com os **8** campos do contrato |
-| `.../AXF_OBJ_ReconciliationAllocation__c/fields/AXF_RA_LKP_Reconciliation__c.field-meta.xml` | Único campo novo do `RA`: Lookup para `RCN`, `deleteConstraint Restrict` (nunca Master-Detail) |
-| `force-app/main/default/classes/ALT_CLS_ReconciliationService.cls` | Comando `reconciliation.allocation.confirm.v1`, leitura autoritativa e montagem consultiva |
-| `force-app/main/default/classes/AXF_CLS_CTRL_ReconciliationWorkbench.cls` | Fronteira Apex→LWC (leitura cacheable, mutação sem cache, erro `{code, reasons}`) |
-| `force-app/main/default/lwc/aXF_LWC_reconciliationWorkbench/` | Superfície list→review→confirm com tabela fonte/alvo/disponível/alocado/residual/moeda |
-| `AXF_CT_ReconciliationWorkbench.tab-meta.xml` + `AXF_CA_AxonFinance.app-meta.xml` | Tab e registro na app Axon Finance |
-| `customPermissions/AXF_CanConfirmReconciliation` | Capability de confirmação (concedida por `AXF_PS_GestorFinanceiro`) |
-| `labels/CustomLabels.labels-meta.xml` + `translations/pt_BR.translation-meta.xml` | 80 labels `AXF_ReconciliationWorkbench_*` (en_US base + PT-BR) |
-| `ALT_CLS_ReconciliationServiceTest` / `AXF_CLS_CTRL_ReconciliationWorkbenchTest` | Matriz I/O (GF-01..05, GF-72..75, moeda, autorização, versão, plano de lock, double-submit, residual) |
+| Artefato                                                                                     | Papel                                                                                                                                       |
+| -------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------- |
+| `force-app/main/default/objects/AXF_OBJ_Reconciliation__c/`                                  | Raiz ratificada `RCN` (AutoNumber `RCN-{000000}`, `sharingModel Private`, `enableHistory`, `enableSharing`) com os **8** campos do contrato |
+| `.../AXF_OBJ_ReconciliationAllocation__c/fields/AXF_RA_LKP_Reconciliation__c.field-meta.xml` | Único campo novo do `RA`: Lookup para `RCN`, `deleteConstraint Restrict` (nunca Master-Detail)                                              |
+| `force-app/main/default/classes/ALT_CLS_ReconciliationService.cls`                           | Comando `reconciliation.allocation.confirm.v1`, leitura autoritativa e montagem consultiva                                                  |
+| `force-app/main/default/classes/AXF_CLS_CTRL_ReconciliationWorkbench.cls`                    | Fronteira Apex→LWC (leitura cacheable, mutação sem cache, erro `{code, reasons}`)                                                           |
+| `force-app/main/default/lwc/aXF_LWC_reconciliationWorkbench/`                                | Superfície list→review→confirm com tabela fonte/alvo/disponível/alocado/residual/moeda                                                      |
+| `AXF_CT_ReconciliationWorkbench.tab-meta.xml` + `AXF_CA_AxonFinance.app-meta.xml`            | Tab e registro na app Axon Finance                                                                                                          |
+| `customPermissions/AXF_CanConfirmReconciliation`                                             | Capability de confirmação (concedida por `AXF_PS_GestorFinanceiro`)                                                                         |
+| `labels/CustomLabels.labels-meta.xml` + `translations/pt_BR.translation-meta.xml`            | 80 labels `AXF_ReconciliationWorkbench_*` (en_US base + PT-BR)                                                                              |
+| `ALT_CLS_ReconciliationServiceTest` / `AXF_CLS_CTRL_ReconciliationWorkbenchTest`             | Matriz I/O (GF-01..05, GF-72..75, moeda, autorização, versão, plano de lock, double-submit, residual)                                       |
 
 ## Contratos seguidos (caminho:linha do contrato)
 
@@ -39,7 +39,7 @@ Contrato normativo: `_bmad-output/planning-artifacts/architecture/architecture-A
 5. **Residual do agregado = lado alvo** (soma dos residuais dos alvos, na moeda do alvo). O residual da fonte continua exposto por linha (`sourceResidual`): sobra de fonte é capacidade própria do fato, não obrigação em aberto deste agregado.
 6. **Bump de versão por linha** — o AXF-25 incrementa a versão de alvo/fonte uma vez por linha aplicada (lock otimista). Duas linhas sobre o mesmo fato deixam a versão em 2; cada contribuição continua contada exatamente uma vez (asserção explícita em `gf01`).
 7. **`fieldPermissions` dos campos obrigatórios** — a spec pede FLS dos 8 campos do `RCN` em `AXF_PS_GestorFinanceiro`; a plataforma recusa deploy de FLS em campo `required` ("You cannot deploy to a required field") e o próprio repositório não lista campos obrigatórios nos PS. Foram concedidos explicitamente os três campos opcionais (`DT_EffectiveAt`, `NUM_ResidualMagnitude`, `TXT_ResidualCurrency`); os cinco obrigatórios (`PKL_State`, `NUM_Version`, `EXI_ReconciliationKey`, `TXT_CorrelationId`, `TXT_PolicyVersion`) são acessíveis por construção.
-8. **`evidenceCoverage` do `ALT_CLS_EvidenceQueryService`** — a linha `RECONCILIATION`, antes `GAP_NOT_INTEGRATED`, passa a `COVERED_IMMUTABLE_SNAPSHOT` apontando o `RCN`, com flags derivadas do schema real (`actor=false`, `instant=true`, `source=true` (CorrelationId), `reason=false`, `priorState=true`). A superfície de *consulta* dedicada ainda não é exposta ali — declarado no próprio `limitNote`.
+8. **`evidenceCoverage` do `ALT_CLS_EvidenceQueryService`** — a linha `RECONCILIATION`, antes `GAP_NOT_INTEGRATED`, passa a `COVERED_IMMUTABLE_SNAPSHOT` apontando o `RCN`, com flags derivadas do schema real (`actor=false`, `instant=true`, `source=true` (CorrelationId), `reason=false`, `priorState=true`). A superfície de _consulta_ dedicada ainda não é exposta ali — declarado no próprio `limitNote`.
 
 ## Limitações conhecidas
 

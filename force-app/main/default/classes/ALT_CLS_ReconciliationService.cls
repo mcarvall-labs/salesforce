@@ -357,8 +357,7 @@ public with sharing class ALT_CLS_ReconciliationService {
     Fact fact = resolveFact(input.factKind, input.factId);
     SourceView source = sourceView(fact);
     source.residual =
-      fact.magnitude -
-      netAmounts(null, new Set<Id>{ fact.id }).fact(fact.id);
+      fact.magnitude - netAmounts(null, new Set<Id>{ fact.id }).fact(fact.id);
     view.source = source;
     view.candidates = candidates(fact);
     if (input.lines != null && !input.lines.isEmpty()) {
@@ -675,8 +674,7 @@ public with sharing class ALT_CLS_ReconciliationService {
     return factId.getSObjectType() ==
       AXF_OBJ_BankAccountTransaction__c.SObjectType
       ? KIND_BANK
-      : factId.getSObjectType() ==
-          AXF_OBJ_CreditCardTransaction__c.SObjectType
+      : factId.getSObjectType() == AXF_OBJ_CreditCardTransaction__c.SObjectType
           ? KIND_CARD
           : factId.getSObjectType() ==
               AXF_OBJ_FinancialTransaction__c.SObjectType
@@ -689,9 +687,7 @@ public with sharing class ALT_CLS_ReconciliationService {
    * external identity of the occurrence: org-wide unique, required and independent of the run that
    * proposed it. A record id is never used while that identity exists.
    */
-  private static String externalIdentity(
-    AXF_OBJ_FinancialTransaction__c row
-  ) {
+  private static String externalIdentity(AXF_OBJ_FinancialTransaction__c row) {
     return String.isBlank(row.AXF_FTX_EXI_ClientRequestId__c)
       ? String.valueOf(row.Id)
       : row.AXF_FTX_EXI_ClientRequestId__c.left(IDENTITY_MAX);
@@ -704,10 +700,7 @@ public with sharing class ALT_CLS_ReconciliationService {
     if (kind == null) {
       throw failure('INVALID_INPUT', new List<String>());
     }
-    if (
-      String.isNotBlank(declaredKind) &&
-      declaredKind.toUpperCase() != kind
-    ) {
+    if (String.isNotBlank(declaredKind) && declaredKind.toUpperCase() != kind) {
       throw failure('INVALID_INPUT', new List<String>());
     }
     Fact fact = new Fact();
@@ -742,7 +735,8 @@ public with sharing class ALT_CLS_ReconciliationService {
       fact.direction = rows[0].AXF_BAT_PKL_Direction__c;
       fact.factDate = rows[0].AXF_BAT_DAT_Date__c;
       fact.description = rows[0].AXF_BAT_TXT_Description__c;
-      fact.accountId = rows[0].AXF_BAT_MDR_BankAccount__r
+      fact.accountId = rows[0]
+        .AXF_BAT_MDR_BankAccount__r
         ?.AXF_BA_LKP_Account__c;
     } else if (kind == KIND_CARD) {
       List<AXF_OBJ_CreditCardTransaction__c> rows = [
@@ -773,8 +767,7 @@ public with sharing class ALT_CLS_ReconciliationService {
       fact.direction = rows[0].AXF_CCT_PKL_Direction__c;
       fact.factDate = rows[0].AXF_CCT_DAT_Date__c;
       fact.description = rows[0].AXF_CCT_TXT_Description__c;
-      fact.accountId = rows[0].AXF_CCT_MDR_CreditCard__r
-        ?.AXF_CC_LKP_Account__c;
+      fact.accountId = rows[0].AXF_CCT_MDR_CreditCard__r?.AXF_CC_LKP_Account__c;
     } else {
       List<AXF_OBJ_FinancialTransaction__c> rows = [
         SELECT
@@ -827,8 +820,7 @@ public with sharing class ALT_CLS_ReconciliationService {
 
   private Target resolveTarget(Id targetId) {
     if (
-      targetId.getSObjectType() !=
-      AXF_OBJ_FinancialTransaction__c.SObjectType
+      targetId.getSObjectType() != AXF_OBJ_FinancialTransaction__c.SObjectType
     ) {
       // A source fact of rank 30 declared as a target is a rank discovery that came too late:
       // the plan is never relocked out of order, and the same scope may be submitted again.
@@ -1040,8 +1032,7 @@ public with sharing class ALT_CLS_ReconciliationService {
       }
     }
     for (Target target : plan.targets.values()) {
-      Decimal available =
-        capacity(target, amounts) - amounts.target(target.id);
+      Decimal available = capacity(target, amounts) - amounts.target(target.id);
       if (plan.amountsByTarget.get(target.id) > available) {
         reasons.add('TARGET_CAPACITY_EXCEEDED');
       }
@@ -1098,7 +1089,7 @@ public with sharing class ALT_CLS_ReconciliationService {
         result.byAllocationKey.put(
           row.AXF_RA_EXI_AllocationKey__c,
           (row.AXF_RA_PKL_Kind__c == 'REVERSAL' ? -1 : 1) *
-            value(row.AXF_RA_NUM_Magnitude__c)
+          value(row.AXF_RA_NUM_Magnitude__c)
         );
       }
     }
@@ -1123,8 +1114,8 @@ public with sharing class ALT_CLS_ReconciliationService {
         result.byTarget.put(
           targetId,
           value(result.byTarget.get(targetId)) +
-            ((String) row.get('kind') == 'REVERSAL' ? -1 : 1) *
-            value((Decimal) row.get('amount'))
+          ((String) row.get('kind') == 'REVERSAL' ? -1 : 1) *
+          value((Decimal) row.get('amount'))
         );
       }
       for (AggregateResult row : [
@@ -1157,8 +1148,8 @@ public with sharing class ALT_CLS_ReconciliationService {
         result.byFact.put(
           factId,
           value(result.byFact.get(factId)) +
-            ((String) row.get('kind') == 'REVERSAL' ? -1 : 1) *
-            value((Decimal) row.get('amount'))
+          ((String) row.get('kind') == 'REVERSAL' ? -1 : 1) *
+          value((Decimal) row.get('amount'))
         );
       }
       for (AggregateResult row : [
@@ -1175,8 +1166,8 @@ public with sharing class ALT_CLS_ReconciliationService {
         result.byFact.put(
           factId,
           value(result.byFact.get(factId)) +
-            ((String) row.get('kind') == 'REVERSAL' ? -1 : 1) *
-            value((Decimal) row.get('amount'))
+          ((String) row.get('kind') == 'REVERSAL' ? -1 : 1) *
+          value((Decimal) row.get('amount'))
         );
       }
       for (AggregateResult row : [
@@ -1193,8 +1184,8 @@ public with sharing class ALT_CLS_ReconciliationService {
         result.byFact.put(
           factId,
           value(result.byFact.get(factId)) +
-            ((String) row.get('kind') == 'REVERSAL' ? -1 : 1) *
-            value((Decimal) row.get('amount'))
+          ((String) row.get('kind') == 'REVERSAL' ? -1 : 1) *
+          value((Decimal) row.get('amount'))
         );
       }
     }
@@ -1204,7 +1195,11 @@ public with sharing class ALT_CLS_ReconciliationService {
   // ------------------------------------------------------------------ write
 
   /** Grava as N linhas pelo contrato AXF-25 e fecha o agregado, tudo no mesmo Savepoint. */
-  private void write(Plan plan, AXF_OBJ_Reconciliation__c aggregate, Amounts amounts) {
+  private void write(
+    Plan plan,
+    AXF_OBJ_Reconciliation__c aggregate,
+    Amounts amounts
+  ) {
     Amounts current = amounts;
     for (Integer index = 0; index < plan.lines.size(); index++) {
       LineInput line = plan.lines[index];
@@ -1244,12 +1239,15 @@ public with sharing class ALT_CLS_ReconciliationService {
       // AXF-25 bumps the target and the fact once per applied line: the predicted version of the
       // next line is the locked version plus the lines this command already wrote before it.
       apply.targetVersion =
-        value(target.version) +
-        writtenLines(plan, index, target.id, false);
+        value(target.version) + writtenLines(plan, index, target.id, false);
       apply.sourceVersion =
         value(fact.version) + writtenLines(plan, index, fact.id, true);
       apply.operationKey =
-        OP_CONFIRM + ':' + plan.key.left(30) + ':' + String.valueOf(index);
+        OP_CONFIRM +
+        ':' +
+        plan.key.left(30) +
+        ':' +
+        String.valueOf(index);
       apply.allocationIdentity = allocationKey;
       apply.reconciliationId = aggregate.Id;
       if (target.planKind != 'ACTUAL_ONLY') {
@@ -1337,10 +1335,7 @@ public with sharing class ALT_CLS_ReconciliationService {
   }
 
   /** Fecha o agregado com o residual persistido e o estado derivado, sem editar nenhum RA. */
-  private void close(
-    Plan plan,
-    AXF_OBJ_Reconciliation__c aggregate
-  ) {
+  private void close(Plan plan, AXF_OBJ_Reconciliation__c aggregate) {
     close(plan, aggregate, false);
   }
 
@@ -1461,10 +1456,7 @@ public with sharing class ALT_CLS_ReconciliationService {
   }
 
   /** Double-submit: the durable result of the same intention is returned, never rewritten. */
-  private ConfirmResult replay(
-    Plan plan,
-    AXF_OBJ_Reconciliation__c aggregate
-  ) {
+  private ConfirmResult replay(Plan plan, AXF_OBJ_Reconciliation__c aggregate) {
     Plan durable = durablePlan(aggregate, plan);
     if (!sameSet(durable, plan)) {
       // Same intention, divergent payload: CONFLICT, and nothing is written.
@@ -1474,16 +1466,13 @@ public with sharing class ALT_CLS_ReconciliationService {
   }
 
   /** The durable line set of an aggregate, with its own facts and targets resolved. */
-  private Plan durablePlan(
-    AXF_OBJ_Reconciliation__c aggregate,
-    Plan request
-  ) {
+  private Plan durablePlan(AXF_OBJ_Reconciliation__c aggregate, Plan request) {
     Plan durable = new Plan();
     durable.correlationId = request.correlationId;
     durable.key = request.key;
-    for (AXF_OBJ_ReconciliationAllocation__c row : allocationsOf(
-      aggregate.Id
-    )) {
+    for (
+      AXF_OBJ_ReconciliationAllocation__c row : allocationsOf(aggregate.Id)
+    ) {
       LineInput line = new LineInput();
       line.factKind = row.AXF_RA_LKP_BankTransaction__c != null
         ? KIND_BANK
@@ -1494,8 +1483,7 @@ public with sharing class ALT_CLS_ReconciliationService {
       durable.lines.add(line);
       durable.allocationKeys.add(row.AXF_RA_EXI_AllocationKey__c);
       if (
-        line.targetId != null &&
-        !durable.targets.containsKey(line.targetId)
+        line.targetId != null && !durable.targets.containsKey(line.targetId)
       ) {
         Target target = resolveTarget(line.targetId);
         durable.targets.put(target.id, target);
@@ -1844,8 +1832,7 @@ public with sharing class ALT_CLS_ReconciliationService {
     List<ALT_CLS_MatchEvidence.OrderKey> keys = new List<ALT_CLS_MatchEvidence.OrderKey>();
     Map<String, CandidateView> byKey = new Map<String, CandidateView>();
     for (Target target : targets) {
-      Decimal available =
-        capacity(target, amounts) - amounts.target(target.id);
+      Decimal available = capacity(target, amounts) - amounts.target(target.id);
       CandidateView candidate = new CandidateView();
       candidate.targetId = target.id;
       candidate.label = target.label;
@@ -1952,9 +1939,7 @@ public with sharing class ALT_CLS_ReconciliationService {
    * GF-75: the sanctioned `BLOCKED` state with the outcome still unknown. The residual is the
    * marker: a resolved outcome always persists it (0 when there is no leftover).
    */
-  private static Boolean unknownOutcome(
-    AXF_OBJ_Reconciliation__c aggregate
-  ) {
+  private static Boolean unknownOutcome(AXF_OBJ_Reconciliation__c aggregate) {
     return aggregate != null &&
       STATE_BLOCKED.equals(aggregate.AXF_RCN_PKL_State__c) &&
       aggregate.AXF_RCN_NUM_ResidualMagnitude__c == null;

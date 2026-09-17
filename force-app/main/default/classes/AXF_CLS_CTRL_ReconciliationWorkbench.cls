@@ -155,9 +155,7 @@ public with sharing class AXF_CLS_CTRL_ReconciliationWorkbench {
       String code = typed.code == null ? failure.getMessage() : typed.code;
       return sanitized(code, typed.reasons);
     }
-    if (
-      failure instanceof ALT_CLS_RealizationService.RealizationException
-    ) {
+    if (failure instanceof ALT_CLS_RealizationService.RealizationException) {
       return sanitized(failure.getMessage(), new List<String>());
     }
     if (
@@ -191,10 +189,7 @@ public with sharing class AXF_CLS_CTRL_ReconciliationWorkbench {
     }
     System.debug(
       LoggingLevel.ERROR,
-      'AXF-30 UNEXPECTED: ' +
-        failure.getTypeName() +
-        ' ' +
-        failure.getMessage()
+      'AXF-30 UNEXPECTED: ' + failure.getTypeName() + ' ' + failure.getMessage()
     );
     return sanitized('UNEXPECTED', new List<String>());
   }

@@ -141,9 +141,7 @@ export default class AxfReconciliationWorkbench extends LightningElement {
     return this.view.source.residual;
   }
   get sourceCurrency() {
-    return this.view && this.view.source
-      ? this.view.source.currencyIso
-      : null;
+    return this.view && this.view.source ? this.view.source.currencyIso : null;
   }
   get selectedKindLabel() {
     return this.selected

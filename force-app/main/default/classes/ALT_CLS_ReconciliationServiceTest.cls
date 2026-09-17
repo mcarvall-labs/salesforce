@@ -193,7 +193,9 @@ private class ALT_CLS_ReconciliationServiceTest {
   }
 
   /** Runs a command that must fail and returns its typed code. */
-  private static String codeOf(ALT_CLS_ReconciliationService.ConfirmInput input) {
+  private static String codeOf(
+    ALT_CLS_ReconciliationService.ConfirmInput input
+  ) {
     try {
       new ALT_CLS_ReconciliationService().confirm(input);
       return null;
@@ -246,11 +248,22 @@ private class ALT_CLS_ReconciliationServiceTest {
         result.state,
         'a fully allocated set is CONFIRMED'
       );
-      Assert.areEqual(0.00, result.residualMagnitude, 'no leftover is persisted as zero');
+      Assert.areEqual(
+        0.00,
+        result.residualMagnitude,
+        'no leftover is persisted as zero'
+      );
       Assert.areEqual('BRL', result.residualCurrency);
-      Assert.isNotNull(result.effectiveAt, 'the effective instant is persisted');
+      Assert.isNotNull(
+        result.effectiveAt,
+        'the effective instant is persisted'
+      );
       Assert.areEqual(2, result.lines.size());
-      Assert.areEqual(100.00, result.allocatedTotal, 'consumption counted once');
+      Assert.areEqual(
+        100.00,
+        result.allocatedTotal,
+        'consumption counted once'
+      );
 
       List<AXF_OBJ_ReconciliationAllocation__c> rows = [
         SELECT
@@ -318,9 +331,16 @@ private class ALT_CLS_ReconciliationServiceTest {
             correlationId
           )
         );
-      Assert.areEqual(ALT_CLS_ReconciliationService.STATE_CONFIRMED, read.state);
+      Assert.areEqual(
+        ALT_CLS_ReconciliationService.STATE_CONFIRMED,
+        read.state
+      );
       Assert.areEqual(2, read.lines.size());
-      Assert.areEqual(0.00, read.lines[0].residual, 'the target has no residual left');
+      Assert.areEqual(
+        0.00,
+        read.lines[0].residual,
+        'the target has no residual left'
+      );
     }
   }
 
@@ -362,8 +382,16 @@ private class ALT_CLS_ReconciliationServiceTest {
       );
       Test.stopTest();
       Assert.areEqual('VALUE_CONSERVATION', code);
-      Assert.areEqual(0, countAggregates(), 'no aggregate survives a rejection');
-      Assert.areEqual(0, countAllocations(f.fact.Id), 'no line survives a rejection');
+      Assert.areEqual(
+        0,
+        countAggregates(),
+        'no aggregate survives a rejection'
+      );
+      Assert.areEqual(
+        0,
+        countAllocations(f.fact.Id),
+        'no line survives a rejection'
+      );
       Assert.areEqual(
         0.00,
         [
@@ -413,15 +441,26 @@ private class ALT_CLS_ReconciliationServiceTest {
           )
         );
       Test.stopTest();
-      Assert.areEqual(ALT_CLS_ReconciliationService.STATE_PARTIAL, result.state);
+      Assert.areEqual(
+        ALT_CLS_ReconciliationService.STATE_PARTIAL,
+        result.state
+      );
       Assert.areEqual(
         20.00,
         result.residualMagnitude,
         'the residual of the target is persisted, not derived on read'
       );
       Assert.areEqual('BRL', result.residualCurrency);
-      Assert.areEqual(0.00, result.lines[0].sourceResidual, 'the source has no residual');
-      Assert.areEqual(20.00, result.lines[0].residual, 'the target still needs 20');
+      Assert.areEqual(
+        0.00,
+        result.lines[0].sourceResidual,
+        'the source has no residual'
+      );
+      Assert.areEqual(
+        20.00,
+        result.lines[0].residual,
+        'the target still needs 20'
+      );
       Assert.areEqual(
         ALT_CLS_ReconciliationService.STATE_PARTIAL,
         result.lines[0].state
@@ -461,7 +500,11 @@ private class ALT_CLS_ReconciliationServiceTest {
       result = new ALT_CLS_ReconciliationService()
         .confirm(confirmInput(lines, 0, correlation('gf04'), 'axf30-gf04'));
       Test.stopTest();
-      Assert.areEqual(100.00, result.allocatedTotal, 'the parcels sum exactly 100');
+      Assert.areEqual(
+        100.00,
+        result.allocatedTotal,
+        'the parcels sum exactly 100'
+      );
       Assert.areEqual(
         ALT_CLS_ReconciliationService.STATE_CONFIRMED,
         result.state,
@@ -526,7 +569,8 @@ private class ALT_CLS_ReconciliationServiceTest {
       Boolean originalPresent = false;
       Boolean linked = false;
       for (AXF_OBJ_ReconciliationAllocation__c row : rows) {
-        net += (row.AXF_RA_PKL_Kind__c == 'REVERSAL' ? -1 : 1) *
+        net +=
+          (row.AXF_RA_PKL_Kind__c == 'REVERSAL' ? -1 : 1) *
           row.AXF_RA_NUM_Magnitude__c;
         originalPresent =
           originalPresent ||
@@ -538,7 +582,10 @@ private class ALT_CLS_ReconciliationServiceTest {
           row.AXF_RA_LKP_OriginalAllocation__c == applied.allocationId;
       }
       Assert.areEqual(0.00, net, 'the net contribution is zero');
-      Assert.isTrue(originalPresent, 'the confirmed line is never edited or deleted');
+      Assert.isTrue(
+        originalPresent,
+        'the confirmed line is never edited or deleted'
+      );
       Assert.isTrue(linked, 'the compensation points to the original');
       // The derived state of the target is back to what it was before the confirmation.
       ALT_CLS_ReconciliationService.WorkbenchView view = new ALT_CLS_ReconciliationService()
@@ -634,7 +681,7 @@ private class ALT_CLS_ReconciliationServiceTest {
       );
       AXF_OBJ_FinancialTransaction__c missing = new AXF_OBJ_FinancialTransaction__c(
         Id = AXF_OBJ_FinancialTransaction__c.SObjectType.getDescribe()
-          .getKeyPrefix() + '000000000000'
+            .getKeyPrefix() + '000000000000'
       );
       codeMissing = codeOf(
         confirmInput(
@@ -654,7 +701,11 @@ private class ALT_CLS_ReconciliationServiceTest {
         'an unauthorized record is indistinguishable from an inexistent one'
       );
       Assert.areEqual(0, countAggregates(), 'no partial aggregate is written');
-      Assert.areEqual(0, countAllocations(f.fact.Id), 'no partial line is written');
+      Assert.areEqual(
+        0,
+        countAllocations(f.fact.Id),
+        'no partial line is written'
+      );
     }
   }
 
@@ -713,7 +764,11 @@ private class ALT_CLS_ReconciliationServiceTest {
       code = codeOf(confirmInput(lines, 0, correlationId, 'axf30-ver'));
       Test.stopTest();
       Assert.areEqual('CONFLICT', code);
-      Assert.areEqual(1, countAggregates(), 'the durable aggregate is untouched');
+      Assert.areEqual(
+        1,
+        countAggregates(),
+        'the durable aggregate is untouched'
+      );
       Assert.areEqual(2, countAllocations(f.fact.Id), 'no line is duplicated');
     }
   }
@@ -769,7 +824,11 @@ private class ALT_CLS_ReconciliationServiceTest {
       Test.stopTest();
       Assert.areEqual('LOCK_PLAN_CHANGED', codeAsTarget);
       Assert.areEqual('LOCK_PLAN_CHANGED', codeAsFact);
-      Assert.areEqual(0, countAggregates(), 'the plan is never locked out of order');
+      Assert.areEqual(
+        0,
+        countAggregates(),
+        'the plan is never locked out of order'
+      );
       Assert.areEqual(0, countAllocations(f.fact.Id));
     }
   }
@@ -815,9 +874,17 @@ private class ALT_CLS_ReconciliationServiceTest {
       Assert.isFalse(first.replayed, 'the first command writes');
       Assert.isTrue(second.replayed, 'the replay returns the durable result');
       Assert.areEqual(first.reconciliationId, second.reconciliationId);
-      Assert.areEqual('CONFLICT', code, 'a divergent payload under the same key conflicts');
+      Assert.areEqual(
+        'CONFLICT',
+        code,
+        'a divergent payload under the same key conflicts'
+      );
       Assert.areEqual(1, countAggregates());
-      Assert.areEqual(2, countAllocations(f.fact.Id), 'no allocation was duplicated');
+      Assert.areEqual(
+        2,
+        countAllocations(f.fact.Id),
+        'no allocation was duplicated'
+      );
     }
   }
 
@@ -875,7 +942,11 @@ private class ALT_CLS_ReconciliationServiceTest {
         view.state,
         'the draft itself concludes nothing'
       );
-      Assert.areEqual(0, countAggregates(), 'no candidate is selected or confirmed');
+      Assert.areEqual(
+        0,
+        countAggregates(),
+        'no candidate is selected or confirmed'
+      );
       Assert.areEqual(0, countAllocations(f.fact.Id));
     }
   }
@@ -907,7 +978,10 @@ private class ALT_CLS_ReconciliationServiceTest {
           )
         );
       Test.stopTest();
-      Assert.areEqual(ALT_CLS_ReconciliationService.STATE_PARTIAL, result.state);
+      Assert.areEqual(
+        ALT_CLS_ReconciliationService.STATE_PARTIAL,
+        result.state
+      );
       Assert.areEqual(
         60.00,
         result.residualMagnitude,
@@ -952,7 +1026,10 @@ private class ALT_CLS_ReconciliationServiceTest {
       blockedCode = codeOf(confirmInput(lines, 1, correlationId, 'axf30-gf75'));
       // The authoritative query proves nothing was committed, so the scope may run again.
       resolved = new ALT_CLS_ReconciliationService().resolveResult(attempt);
-      Assert.areEqual(ALT_CLS_ReconciliationService.STATE_FAILED, resolved.state);
+      Assert.areEqual(
+        ALT_CLS_ReconciliationService.STATE_FAILED,
+        resolved.state
+      );
       afterResolution = new ALT_CLS_ReconciliationService()
         .confirm(
           confirmInput(
@@ -963,7 +1040,11 @@ private class ALT_CLS_ReconciliationServiceTest {
           )
         );
       Test.stopTest();
-      Assert.areEqual('CONFLICT', blockedCode, 'the retry is refused while unresolved');
+      Assert.areEqual(
+        'CONFLICT',
+        blockedCode,
+        'the retry is refused while unresolved'
+      );
       Assert.areEqual(
         ALT_CLS_ReconciliationService.STATE_CONFIRMED,
         afterResolution.state
