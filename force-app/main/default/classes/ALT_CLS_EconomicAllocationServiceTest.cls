@@ -380,26 +380,23 @@ private class ALT_CLS_EconomicAllocationServiceTest {
 
   @IsTest
   static void invalidSharesAreRejectedAtomicallyWithoutPartialPersistence() {
+    Account owner;
+    Account partner;
+    Account unauthorized;
+    AXF_OBJ_BankAccountTransaction__c fact;
     System.runAs(gestor()) {
-      Account owner = holder('Titular B', 'AXF_Person');
-      Account partner = holder('Empresa B', 'AXF_Business');
-      // Explicitly pinned to a non-Axon record type: the org default record type for a bare
-      // insert is not guaranteed to fall outside AXF_Person/AXF_Business.
-      List<RecordType> foreign = [
-        SELECT Id
-        FROM RecordType
-        WHERE
-          SobjectType = 'Account'
-          AND IsActive = TRUE
-          AND DeveloperName NOT IN ('AXF_Person', 'AXF_Business')
-        LIMIT 1
-      ];
-      Account unauthorized = new Account(Name = 'Conta comum sem tipo Axon');
-      if (!foreign.isEmpty()) {
-        unauthorized.RecordTypeId = foreign[0].Id;
-      }
-      insert unauthorized;
-      AXF_OBJ_BankAccountTransaction__c fact = bankFact(owner, 'b');
+      owner = holder('Titular B', 'AXF_Person');
+      partner = holder('Empresa B', 'AXF_Business');
+      // An Account with a record type outside the holder set cannot be built in this org: only
+      // AXF_Person and AXF_Business exist and AXF_Business is the org default, so every insert is
+      // an authorized holder. The unauthorized holder is produced through sharing instead — the
+      // account moves to an owner the gestor shares nothing with — which is the same fixture the
+      // reversal test below already relies on.
+      unauthorized = holder('Sem acesso para o gestor', 'AXF_Business');
+      fact = bankFact(owner, 'b');
+    }
+    update new Account(Id = unauthorized.Id, OwnerId = participant().Id);
+    System.runAs(gestor()) {
       ALT_CLS_EconomicAllocationService service = new ALT_CLS_EconomicAllocationService();
       Test.startTest();
       ALT_CLS_EconomicAllocationService.EconomicAllocationException failure = expectFailure(
