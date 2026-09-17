@@ -318,7 +318,9 @@ describe("c-aXF_LWC_forecastComparison", () => {
       element.shadowRoot.querySelector('[data-id="reasons"]').textContent
     ).toContain("reasonNO_AUTHORIZED_SCOPE");
     expect(element.shadowRoot.querySelector('[data-id="periods"]')).toBeNull();
-    expect(element.shadowRoot.querySelector('[data-id="empty"]')).not.toBeNull();
+    expect(
+      element.shadowRoot.querySelector('[data-id="empty"]')
+    ).not.toBeNull();
     expect(
       element.shadowRoot.querySelector('[data-id="announcer"]').textContent
     ).not.toBe("");

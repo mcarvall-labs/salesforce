@@ -461,13 +461,14 @@ describe("c-aXF_LWC_confidencePanel", () => {
     await flush();
     element.shadowRoot
       .querySelector('[data-id="scope"]')
-      .dispatchEvent(new CustomEvent("change", { detail: { value: ["001A"] } }));
+      .dispatchEvent(
+        new CustomEvent("change", { detail: { value: ["001A"] } })
+      );
     await flush();
     element.shadowRoot.querySelector('[data-id="explain"]').click();
     await flush();
     expect(
-      element.shadowRoot.querySelectorAll('[data-id="sources"] tbody tr')
-        .length
+      element.shadowRoot.querySelectorAll('[data-id="sources"] tbody tr').length
     ).toBe(3);
     expect(
       element.shadowRoot.querySelector('[data-id="announcer"]').textContent
@@ -504,8 +505,7 @@ describe("c-aXF_LWC_confidencePanel", () => {
       element.shadowRoot.querySelector('[data-id="level"]').textContent
     ).toContain("levelBlocked");
     expect(
-      element.shadowRoot.querySelectorAll('[data-id="sources"] tbody tr')
-        .length
+      element.shadowRoot.querySelectorAll('[data-id="sources"] tbody tr').length
     ).toBe(0);
     expect(
       element.shadowRoot.querySelector('[data-id="fx"]').textContent
