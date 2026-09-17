@@ -68,6 +68,9 @@ evidence artifact containing:
   submitted to Salesforce for that validation/deployment.
 - `source-paths.txt` — the resolved list of changed source-format paths.
 - `summary.md` — the same content as the GitHub Actions step summary.
+- `destructiveChanges.xml` + `package.xml` — present only when the delta deletes
+  force-app files; the ready-to-review manifest for a manual destructive deploy
+  (never applied automatically). See below.
 
 Full component and test failure detail lives only in `result.json`/`result.html`
 inside the artifact — it is intentionally not duplicated inline in the PR comment.
@@ -120,10 +123,29 @@ real ancestor of `to` before diffing, so a bad or stale base fails closed instea
 silently producing a partial delta with missing components. Deploys are serialized
 per branch.
 
-Deletions and rename deletions block the delta regardless of baseline source. They
-require an explicitly approved destructive release with impact analysis and
-recovery planning. Reverts introducing deletions follow the same restriction. Never
-silently omit deleted metadata.
+Deleted files (and rename deletions, seen as delete+add) never enter the
+add/modify delta and are never auto-deployed by either `salesforce-ci.yml` or
+`deploy-salesforce.yml` — that still requires an explicitly approved destructive
+release with impact analysis and recovery planning, applied as a separate manual
+step. To remove that toil, the pipeline auto-generates the manifest for that
+release: whenever a PR/push deletes force-app files, `salesforce-delivery.mjs`
+maps each deleted path to its Salesforce metadata type/member (`ApexClass`,
+`CustomField`, `CustomObject`, `PermissionSet`, etc. — see
+`TOP_LEVEL_DESTRUCTIVE_TYPES`/`OBJECT_CHILD_DESTRUCTIVE_TYPES` in the script) and
+writes `destructiveChanges.xml` + an empty companion `package.xml` into the
+evidence artifact. The PR/deploy comment flags this explicitly
+("⚠️ N deletion(s) detected — NOT auto-deployed"). Any change unresolvable to a
+known type — notably LWC/Aura bundle deletions, where a partial-bundle deletion
+(some files removed, component not fully deleted) can't be told apart from a full
+component removal by path alone — is listed as unresolved and needs fully manual
+triage; never guessed at. Reverts introducing deletions follow the same path.
+Never silently omit deleted metadata.
+
+If the delta has both additions/modifications and deletions, the former still
+validates/deploys normally; only the deletions are set aside. If a change is
+_only_ deletions, the operation stops with outcome "Destructive changes only —
+manual review required" (not a failure) without contacting the org, since there
+is nothing safe to auto-validate/deploy.
 
 Pending/timeout is not success: inspect the Salesforce job before retrying.
 A successful deployment with failed comment publication may be redeployed; inspect

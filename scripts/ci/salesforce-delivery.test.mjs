@@ -6,6 +6,8 @@ import {
   safeResult,
   extractDeclaredTests,
   testPlan,
+  destructiveMember,
+  buildDestructiveChangesXml,
   run
 } from "./salesforce-delivery.mjs";
 import fs from "node:fs";
@@ -29,18 +31,93 @@ test("delta deduplicates whole Lightning bundles and preserves decomposed fields
   );
 });
 
-test("deletions and renames represented as delete/add cannot silently advance baseline", () => {
-  assert.throws(
-    () =>
-      sourcePaths([
-        { status: "D", file: "force-app/main/default/classes/Old.cls" }
-      ]),
-    /destructive/
+test("sourcePaths excludes deletions (handled separately as destructive changes)", () => {
+  assert.deepEqual(
+    sourcePaths([
+      { status: "D", file: "force-app/main/default/classes/Old.cls" },
+      { status: "M", file: "force-app/main/default/classes/Kept.cls" }
+    ]),
+    ["force-app/main/default/classes/Kept.cls"]
   );
   assert.throws(
     () => sourcePaths([{ status: "M", file: "scripts/test.sh" }]),
     /Invalid/
   );
+});
+
+test("destructiveMember resolves standalone metadata types from their deleted path", () => {
+  assert.deepEqual(
+    destructiveMember("force-app/main/default/classes/Foo.cls"),
+    { type: "ApexClass", member: "Foo" }
+  );
+  assert.deepEqual(
+    destructiveMember("force-app/main/default/classes/Foo.cls-meta.xml"),
+    { type: "ApexClass", member: "Foo" }
+  );
+  assert.deepEqual(
+    destructiveMember("force-app/main/default/triggers/Bar.trigger"),
+    { type: "ApexTrigger", member: "Bar" }
+  );
+  assert.deepEqual(
+    destructiveMember(
+      "force-app/main/default/permissionsets/AXF_PS_Foo.permissionset-meta.xml"
+    ),
+    { type: "PermissionSet", member: "AXF_PS_Foo" }
+  );
+  assert.deepEqual(
+    destructiveMember(
+      "force-app/main/default/layouts/Account-Account Layout.layout-meta.xml"
+    ),
+    { type: "Layout", member: "Account-Account Layout" }
+  );
+});
+
+test("destructiveMember resolves whole objects and nested object children", () => {
+  assert.deepEqual(
+    destructiveMember(
+      "force-app/main/default/objects/Foo__c/Foo__c.object-meta.xml"
+    ),
+    { type: "CustomObject", member: "Foo__c" }
+  );
+  assert.deepEqual(
+    destructiveMember(
+      "force-app/main/default/objects/Foo__c/fields/Bar__c.field-meta.xml"
+    ),
+    { type: "CustomField", member: "Foo__c.Bar__c" }
+  );
+  assert.deepEqual(
+    destructiveMember(
+      "force-app/main/default/objects/Foo__c/validationRules/VR1.validationRule-meta.xml"
+    ),
+    { type: "ValidationRule", member: "Foo__c.VR1" }
+  );
+});
+
+test("destructiveMember leaves LWC/Aura bundles and unknown paths unresolved", () => {
+  assert.equal(
+    destructiveMember("force-app/main/default/lwc/foo/foo.js"),
+    null
+  );
+  assert.equal(destructiveMember("scripts/ci/foo.mjs"), null);
+  assert.equal(
+    destructiveMember("force-app/main/default/unknownFolder/Foo.xml"),
+    null
+  );
+});
+
+test("buildDestructiveChangesXml groups by type, sorts, escapes, and reports unresolved paths", () => {
+  const { xml, unresolved } = buildDestructiveChangesXml([
+    "force-app/main/default/classes/Zeta.cls",
+    "force-app/main/default/classes/Alpha.cls",
+    "force-app/main/default/objects/Foo__c/fields/Bar__c.field-meta.xml",
+    "force-app/main/default/lwc/foo/foo.js"
+  ]);
+  assert.deepEqual(unresolved, ["force-app/main/default/lwc/foo/foo.js"]);
+  assert.match(xml, /<name>ApexClass<\/name>/);
+  assert.match(xml, /<name>CustomField<\/name>/);
+  assert.match(xml, /<members>Alpha<\/members>\s*<members>Zeta<\/members>/);
+  assert.match(xml, /<members>Foo__c\.Bar__c<\/members>/);
+  assert.match(xml, /<version>62\.0<\/version>/);
 });
 
 test("only a successful terminal Salesforce result counts as success", () => {
