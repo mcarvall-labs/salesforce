@@ -2,6 +2,7 @@ import { createElement } from "lwc";
 import ForecastComparison from "c/aXF_LWC_forecastComparison";
 import getContext from "@salesforce/apex/AXF_CLS_CTRL_ForecastComparison.getContext";
 import compare from "@salesforce/apex/AXF_CLS_CTRL_ForecastComparison.compare";
+import { subscribe, unsubscribe } from "lightning/messageService";
 
 jest.mock(
   "@salesforce/apex/AXF_CLS_CTRL_ForecastComparison.getContext",
@@ -258,5 +259,72 @@ describe("c-aXF_LWC_forecastComparison", () => {
     expect(exclusions).toContain(
       "AXF_ForecastComparison_reasonNO_APPROVED_METHOD"
     );
+  });
+
+  it("discards the previous context on a change and revalidates it on the server", async () => {
+    // The revalidation is held open so the state between the event and the answer is observable.
+    let answer;
+    const pending = new Promise((resolve) => {
+      answer = resolve;
+    });
+    compare.mockResolvedValueOnce(result).mockReturnValueOnce(pending);
+    const { refreshApex } = require("@salesforce/apex");
+    const element = build();
+    getContext.emit(context);
+    await flush();
+    await select(element);
+    element.shadowRoot.querySelector('[data-id="compare"]').click();
+    await flush();
+    const previousNet = element.shadowRoot.querySelector(
+      '[data-period="2026-09"] [data-id="net"] lightning-formatted-number'
+    );
+    expect(previousNet.value).toBe(10);
+    expect(
+      element.shadowRoot.querySelector('[data-id="announcer"]').textContent
+    ).toContain("updated");
+
+    // The context changed: the displayed result must not survive the event, on screen or announced.
+    subscribe.mock.calls[0][2]({ changeReason: "AUTHORIZATION_REVALIDATION" });
+    await flush();
+    expect(
+      element.shadowRoot.querySelector('[data-id="confidence"]')
+    ).toBeNull();
+    expect(element.shadowRoot.querySelector('[data-id="periods"]')).toBeNull();
+    expect(element.shadowRoot.querySelector('[data-id="horizons"]')).toBeNull();
+    expect(
+      element.shadowRoot.querySelector('[data-id="announcer"]').textContent
+    ).toBe("");
+    // The reachable holder context was refreshed, not trusted, and the server was asked again.
+    expect(refreshApex).toHaveBeenCalledTimes(1);
+    expect(compare).toHaveBeenCalledTimes(2);
+
+    // The revalidated answer replaces the whole unit; the previous total is never a fallback.
+    answer({
+      ...result,
+      confidence: "BLOCKED",
+      reasons: ["NO_AUTHORIZED_SCOPE"],
+      allowedActions: [],
+      exclusions: [{ accountId: "001A", reason: "NOT_AUTHORIZED" }],
+      sources: [],
+      periods: [],
+      horizons: [],
+      overdue: []
+    });
+    await flush();
+    expect(
+      element.shadowRoot.querySelector('[data-id="confidence"]').textContent
+    ).toContain("confidenceBLOCKED");
+    expect(
+      element.shadowRoot.querySelector('[data-id="reasons"]').textContent
+    ).toContain("reasonNO_AUTHORIZED_SCOPE");
+    expect(element.shadowRoot.querySelector('[data-id="periods"]')).toBeNull();
+    expect(element.shadowRoot.querySelector('[data-id="empty"]')).not.toBeNull();
+    expect(
+      element.shadowRoot.querySelector('[data-id="announcer"]').textContent
+    ).not.toBe("");
+
+    document.body.removeChild(element);
+    await flush();
+    expect(unsubscribe).toHaveBeenCalled();
   });
 });

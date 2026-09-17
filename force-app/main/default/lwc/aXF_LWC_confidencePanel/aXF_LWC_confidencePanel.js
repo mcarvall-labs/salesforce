@@ -1,6 +1,12 @@
 import { LightningElement, api, wire } from "lwc";
 import { NavigationMixin } from "lightning/navigation";
 import { refreshApex } from "@salesforce/apex";
+import {
+  MessageContext,
+  subscribe,
+  unsubscribe
+} from "lightning/messageService";
+import CONTEXT_CHANGED from "@salesforce/messageChannel/AXF_ContextChanged__c";
 import canExplain from "@salesforce/customPermission/AXF_CanExplainConfidence";
 import getHolders from "@salesforce/apex/AXF_CLS_CTRL_ConfidencePanel.getHolders";
 import explain from "@salesforce/apex/AXF_CLS_CTRL_ConfidencePanel.explain";
@@ -94,6 +100,20 @@ export default class AxfConfidencePanel extends NavigationMixin(
   announcement = "";
   wiredResult;
   requestToken = 0;
+  subscription;
+
+  @wire(MessageContext) messageContext;
+
+  connectedCallback() {
+    this.subscription = subscribe(this.messageContext, CONTEXT_CHANGED, () =>
+      this.handleContextChanged()
+    );
+  }
+
+  disconnectedCallback() {
+    unsubscribe(this.subscription);
+    this.subscription = undefined;
+  }
 
   /** Account record page: fixes the scope to that person/company (re-applied on change). */
   @api
@@ -317,6 +337,29 @@ export default class AxfConfidencePanel extends NavigationMixin(
         ? labels.reasonFieldAccess
         : REASON_LABEL[reason] || EXCEPTION_LABEL[reason] || reason
     }));
+  }
+
+  /**
+   * AXF-124 — the context changed, or the effective access is being revalidated. The panel belongs
+   * to the previous context, so it is discarded before anything else and never kept as a fallback,
+   * an in-flight response is rejected instead of allowed to land, the accessible announcement is
+   * cleared, and the holder list is refreshed rather than trusted (it is cached by the wire, so a
+   * revoked holder would otherwise stay reachable). With a scope selected the server recomputes the
+   * whole unit through the native model; nothing is decided here.
+   */
+  handleContextChanged() {
+    this.panel = undefined;
+    this.announcement = "";
+    this.requestToken += 1;
+    if (this.wiredResult) {
+      Promise.resolve(refreshApex(this.wiredResult)).catch(() => {});
+    }
+    if (this.selected.length === 0) {
+      this.state = this.holdersLoaded ? STATE.IDLE : STATE.LOADING;
+    } else if (!this.recordId) {
+      // On a record page the refreshed holder wire reloads the panel itself.
+      this.load();
+    }
   }
 
   handleScopeChange(event) {

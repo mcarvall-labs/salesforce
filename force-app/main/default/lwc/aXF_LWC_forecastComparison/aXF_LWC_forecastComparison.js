@@ -1,5 +1,11 @@
 import { LightningElement, wire } from "lwc";
 import { refreshApex } from "@salesforce/apex";
+import {
+  MessageContext,
+  subscribe,
+  unsubscribe
+} from "lightning/messageService";
+import CONTEXT_CHANGED from "@salesforce/messageChannel/AXF_ContextChanged__c";
 import getContext from "@salesforce/apex/AXF_CLS_CTRL_ForecastComparison.getContext";
 import compare from "@salesforce/apex/AXF_CLS_CTRL_ForecastComparison.compare";
 import labels from "./labels";
@@ -82,6 +88,20 @@ export default class AxfForecastComparison extends LightningElement {
   errorMessage;
   announcement = "";
   requestToken = 0;
+  subscription;
+
+  @wire(MessageContext) messageContext;
+
+  connectedCallback() {
+    this.subscription = subscribe(this.messageContext, CONTEXT_CHANGED, () =>
+      this.handleContextChanged()
+    );
+  }
+
+  disconnectedCallback() {
+    unsubscribe(this.subscription);
+    this.subscription = undefined;
+  }
 
   @wire(getContext, { search: "" })
   wiredContext(value) {
@@ -278,6 +298,28 @@ export default class AxfForecastComparison extends LightningElement {
         source.kind === "SCHEDULE" ? labels.sourceSCHEDULE : labels.sourcePLAN,
       coverageText: source.coverageComplete ? "" : labels.incompleteCoverage
     }));
+  }
+
+  /**
+   * AXF-124 — the context changed, or the effective access is being revalidated. The displayed
+   * result belongs to the previous context, so it is discarded before anything else and never kept
+   * as a fallback, an in-flight response is rejected instead of allowed to land, the accessible
+   * announcement is cleared, and the holder context is refreshed rather than trusted (the wire
+   * caches it, so a revoked holder would otherwise stay reachable). The server then recomputes the
+   * whole unit — totals, confidence, attention and explanations — through the native model.
+   */
+  handleContextChanged() {
+    this.result = undefined;
+    this.announcement = "";
+    this.requestToken += 1;
+    if (this.wiredContextResult) {
+      Promise.resolve(refreshApex(this.wiredContextResult)).catch(() => {});
+    }
+    if (this.selected.length > 0) {
+      this.load();
+    } else {
+      this.state = STATE.IDLE;
+    }
   }
 
   handleScopeChange(event) {

@@ -3,6 +3,7 @@ import ConfidencePanel from "c/aXF_LWC_confidencePanel";
 import { parseFailure } from "../failures";
 import getHolders from "@salesforce/apex/AXF_CLS_CTRL_ConfidencePanel.getHolders";
 import explain from "@salesforce/apex/AXF_CLS_CTRL_ConfidencePanel.explain";
+import { subscribe, unsubscribe } from "lightning/messageService";
 import { __navigate } from "lightning/navigation";
 
 jest.mock(
@@ -445,5 +446,76 @@ describe("c-aXF_LWC_confidencePanel", () => {
     expect(
       element.shadowRoot.querySelector('[data-source="a07C"] th').textContent
     ).not.toContain("(");
+  });
+
+  it("discards the previous context on a change and revalidates it on the server", async () => {
+    // The revalidation is held open so the state between the event and the answer is observable.
+    let answer;
+    const pending = new Promise((resolve) => {
+      answer = resolve;
+    });
+    explain.mockResolvedValueOnce(panel).mockReturnValueOnce(pending);
+    const { refreshApex } = require("@salesforce/apex");
+    const element = build();
+    getHolders.emit(holders);
+    await flush();
+    element.shadowRoot
+      .querySelector('[data-id="scope"]')
+      .dispatchEvent(new CustomEvent("change", { detail: { value: ["001A"] } }));
+    await flush();
+    element.shadowRoot.querySelector('[data-id="explain"]').click();
+    await flush();
+    expect(
+      element.shadowRoot.querySelectorAll('[data-id="sources"] tbody tr')
+        .length
+    ).toBe(3);
+    expect(
+      element.shadowRoot.querySelector('[data-id="announcer"]').textContent
+    ).toContain("levelDegraded");
+
+    // The context changed: the derived panel must not survive the event, on screen or announced.
+    subscribe.mock.calls[0][2]({ changeReason: "AUTHORIZATION_REVALIDATION" });
+    await flush();
+    expect(element.shadowRoot.querySelector('[data-id="level"]')).toBeNull();
+    expect(element.shadowRoot.querySelector('[data-id="sources"]')).toBeNull();
+    expect(
+      element.shadowRoot.querySelector('[data-id="announcer"]').textContent
+    ).toBe("");
+    // The reachable holder cache was refreshed, not trusted, and the server was asked again.
+    expect(refreshApex).toHaveBeenCalledTimes(1);
+    expect(explain).toHaveBeenCalledTimes(2);
+    expect(explain).toHaveBeenLastCalledWith({ accountIds: ["001A"] });
+
+    // The revalidated answer replaces the whole unit; the previous one is never a fallback.
+    answer({
+      ...panel,
+      level: "BLOCKED",
+      reasons: ["NO_AUTHORIZED_SCOPE"],
+      allowedActions: [],
+      fallbacks: [],
+      currencies: [],
+      includedCount: 0,
+      excludedCount: 0,
+      exclusions: [],
+      sources: []
+    });
+    await flush();
+    expect(
+      element.shadowRoot.querySelector('[data-id="level"]').textContent
+    ).toContain("levelBlocked");
+    expect(
+      element.shadowRoot.querySelectorAll('[data-id="sources"] tbody tr')
+        .length
+    ).toBe(0);
+    expect(
+      element.shadowRoot.querySelector('[data-id="fx"]').textContent
+    ).toContain("fxUnknown");
+    expect(
+      element.shadowRoot.querySelector('[data-id="announcer"]').textContent
+    ).toContain("levelBlocked");
+
+    document.body.removeChild(element);
+    await flush();
+    expect(unsubscribe).toHaveBeenCalled();
   });
 });
