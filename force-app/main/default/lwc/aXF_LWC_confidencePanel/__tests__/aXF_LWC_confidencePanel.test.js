@@ -518,4 +518,35 @@ describe("c-aXF_LWC_confidencePanel", () => {
     await flush();
     expect(unsubscribe).toHaveBeenCalled();
   });
+
+  it("revalidates a fixed record scope through the refreshed holder wire", async () => {
+    explain.mockResolvedValue(panel);
+    const { refreshApex } = require("@salesforce/apex");
+    const element = build("001A");
+    getHolders.emit(holders);
+    await flush();
+    expect(explain).toHaveBeenCalledTimes(1);
+    expect(
+      element.shadowRoot.querySelector('[data-id="level"]')
+    ).not.toBeNull();
+
+    subscribe.mock.calls[0][2]({ changeReason: "AUTHORIZATION_REVALIDATION" });
+    await flush();
+    // The record scope is not reloaded by the handler itself, and nothing of the panel remains.
+    expect(explain).toHaveBeenCalledTimes(1);
+    expect(refreshApex).toHaveBeenCalledTimes(1);
+    expect(element.shadowRoot.querySelector('[data-id="level"]')).toBeNull();
+    expect(
+      element.shadowRoot.querySelector('[data-id="announcer"]').textContent
+    ).toBe("");
+
+    // The refreshed holder wire re-applies the record scope and asks the server again.
+    getHolders.emit(holders);
+    await flush();
+    expect(explain).toHaveBeenCalledTimes(2);
+    expect(explain).toHaveBeenLastCalledWith({ accountIds: ["001A"] });
+    expect(
+      element.shadowRoot.querySelector('[data-id="level"]')
+    ).not.toBeNull();
+  });
 });
