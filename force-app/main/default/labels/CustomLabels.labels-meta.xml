@@ -2599,4 +2599,291 @@
   ><fullName>AXF_SourceLink_codeINVALID_ECONOMIC_ROLE</fullName><language
     >en_US</language><protected>false</protected><shortDescription
     >Code invalid economic role</shortDescription><value
-    >Declare the economic role of the link — it is never inferred from the description or from the statement of the card line — and confirm again. Nothing was saved.</value></labels></CustomLabels>
+    >Declare the economic role of the link — it is never inferred from the description or from the statement of the card line — and confirm again. Nothing was saved.</value></labels><labels
+  ><fullName>AXF_ConsolidationPanel_title</fullName><language
+    >en_US</language><protected>false</protected><shortDescription
+    >Consolidated view title</shortDescription><value
+    >Consolidated view</value></labels><labels><fullName
+    >AXF_ConsolidationPanel_intro</fullName><language>en_US</language><protected
+    >false</protected><shortDescription
+    >Consolidated view intro</shortDescription><value
+    >Authorized totals derived by the server. Nothing is summed, converted or reallocated here.</value></labels><labels
+  ><fullName>AXF_ConsolidationPanel_scope</fullName><language
+    >en_US</language><protected>false</protected><shortDescription
+    >Consolidated scope label</shortDescription><value
+    >People / companies</value></labels><labels><fullName
+    >AXF_ConsolidationPanel_scopeHelp</fullName><language
+    >en_US</language><protected>false</protected><shortDescription
+    >Consolidated scope help</shortDescription><value
+    >Only people and companies you are authorized to see are listed.</value></labels><labels
+  ><fullName>AXF_ConsolidationPanel_scopeAvailable</fullName><language
+    >en_US</language><protected>false</protected><shortDescription
+    >Consolidated available options label</shortDescription><value
+    >Available</value></labels><labels><fullName
+    >AXF_ConsolidationPanel_currency</fullName><language
+    >en_US</language><protected>false</protected><shortDescription
+    >Presentation currency label</shortDescription><value
+    >Presentation currency</value></labels><labels><fullName
+    >AXF_ConsolidationPanel_currencyHelp</fullName><language
+    >en_US</language><protected>false</protected><shortDescription
+    >Presentation currency help</shortDescription><value
+    >Used only to compare the currencies. The original totals stay in their own currency.</value></labels><labels
+  ><fullName>AXF_ConsolidationPanel_consolidate</fullName><language
+    >en_US</language><protected>false</protected><shortDescription
+    >Present action label</shortDescription><value
+    >Present consolidated</value></labels><labels><fullName
+    >AXF_ConsolidationPanel_loading</fullName><language
+    >en_US</language><protected>false</protected><shortDescription
+    >Consolidated loading state</shortDescription><value
+    >Loading the consolidated view</value></labels><labels><fullName
+    >AXF_ConsolidationPanel_empty</fullName><language>en_US</language><protected
+    >false</protected><shortDescription
+    >Consolidated empty state</shortDescription><value
+    >Select at least one person or company to present the consolidated view.</value></labels><labels
+  ><fullName>AXF_ConsolidationPanel_error</fullName><language
+    >en_US</language><protected>false</protected><shortDescription
+    >Consolidated generic error</shortDescription><value
+    >The consolidated view is not available right now.</value></labels><labels
+  ><fullName>AXF_ConsolidationPanel_retry</fullName><language
+    >en_US</language><protected>false</protected><shortDescription
+    >Consolidated retry action</shortDescription><value
+    >Try again</value></labels><labels><fullName
+    >AXF_ConsolidationPanel_updated</fullName><language
+    >en_US</language><protected>false</protected><shortDescription
+    >Consolidated announcement template</shortDescription><value
+    >Consolidated view updated. Confidence: {0}.</value></labels><labels
+  ><fullName>AXF_ConsolidationPanel_confidence</fullName><language
+    >en_US</language><protected>false</protected><shortDescription
+    >Confidence heading</shortDescription><value
+    >Confidence</value></labels><labels><fullName
+    >AXF_ConsolidationPanel_confidenceFULL</fullName><language
+    >en_US</language><protected>false</protected><shortDescription
+    >Full confidence</shortDescription><value>Full</value></labels><labels
+  ><fullName>AXF_ConsolidationPanel_confidenceDEGRADED</fullName><language
+    >en_US</language><protected>false</protected><shortDescription
+    >Degraded confidence</shortDescription><value
+    >Degraded</value></labels><labels><fullName
+    >AXF_ConsolidationPanel_confidenceBLOCKED</fullName><language
+    >en_US</language><protected>false</protected><shortDescription
+    >Blocked confidence</shortDescription><value>Blocked</value></labels><labels
+  ><fullName>AXF_ConsolidationPanel_asOf</fullName><language
+    >en_US</language><protected>false</protected><shortDescription
+    >As-of label</shortDescription><value>As of</value></labels><labels
+  ><fullName>AXF_ConsolidationPanel_period</fullName><language
+    >en_US</language><protected>false</protected><shortDescription
+    >Period label</shortDescription><value>Period</value></labels><labels
+  ><fullName>AXF_ConsolidationPanel_periodOpen</fullName><language
+    >en_US</language><protected>false</protected><shortDescription
+    >Unbounded period value</shortDescription><value
+    >Every posted fact</value></labels><labels><fullName
+    >AXF_ConsolidationPanel_policy</fullName><language
+    >en_US</language><protected>false</protected><shortDescription
+    >Policy label</shortDescription><value>Policy</value></labels><labels
+  ><fullName>AXF_ConsolidationPanel_reasons</fullName><language
+    >en_US</language><protected>false</protected><shortDescription
+    >Reasons heading</shortDescription><value>Why</value></labels><labels
+  ><fullName>AXF_ConsolidationPanel_noReasons</fullName><language
+    >en_US</language><protected>false</protected><shortDescription
+    >No reasons reported</shortDescription><value
+    >Nothing reduced the confidence.</value></labels><labels><fullName
+    >AXF_ConsolidationPanel_holders</fullName><language
+    >en_US</language><protected>false</protected><shortDescription
+    >Holders heading</shortDescription><value
+    >People / companies in the consolidated view</value></labels><labels
+  ><fullName>AXF_ConsolidationPanel_holder</fullName><language
+    >en_US</language><protected>false</protected><shortDescription
+    >Holder column</shortDescription><value
+    >Person / company</value></labels><labels><fullName
+    >AXF_ConsolidationPanel_state</fullName><language>en_US</language><protected
+    >false</protected><shortDescription>Access column</shortDescription><value
+    >Access</value></labels><labels><fullName
+    >AXF_ConsolidationPanel_coverage</fullName><language
+    >en_US</language><protected>false</protected><shortDescription
+    >Coverage column</shortDescription><value>Coverage</value></labels><labels
+  ><fullName>AXF_ConsolidationPanel_holderAuthorized</fullName><language
+    >en_US</language><protected>false</protected><shortDescription
+    >Authorized holder state</shortDescription><value
+    >Authorized</value></labels><labels><fullName
+    >AXF_ConsolidationPanel_holderUnknown</fullName><language
+    >en_US</language><protected>false</protected><shortDescription
+    >Unknown holder state</shortDescription><value
+    >Not verifiable</value></labels><labels><fullName
+    >AXF_ConsolidationPanel_coverageFull</fullName><language
+    >en_US</language><protected>false</protected><shortDescription
+    >Full coverage</shortDescription><value>Full</value></labels><labels
+  ><fullName>AXF_ConsolidationPanel_coverageUnverified</fullName><language
+    >en_US</language><protected>false</protected><shortDescription
+    >Unverified coverage</shortDescription><value
+    >Unverified</value></labels><labels><fullName
+    >AXF_ConsolidationPanel_noHolders</fullName><language
+    >en_US</language><protected>false</protected><shortDescription
+    >No authorized holder</shortDescription><value
+    >No authorized person or company in the scope.</value></labels><labels
+  ><fullName>AXF_ConsolidationPanel_totals</fullName><language
+    >en_US</language><protected>false</protected><shortDescription
+    >Totals heading</shortDescription><value
+    >Totals per currency</value></labels><labels><fullName
+    >AXF_ConsolidationPanel_currencyCol</fullName><language
+    >en_US</language><protected>false</protected><shortDescription
+    >Currency column</shortDescription><value>Currency</value></labels><labels
+  ><fullName>AXF_ConsolidationPanel_inflow</fullName><language
+    >en_US</language><protected>false</protected><shortDescription
+    >Inflow column</shortDescription><value>Inflow</value></labels><labels
+  ><fullName>AXF_ConsolidationPanel_outflow</fullName><language
+    >en_US</language><protected>false</protected><shortDescription
+    >Outflow column</shortDescription><value>Outflow</value></labels><labels
+  ><fullName>AXF_ConsolidationPanel_net</fullName><language
+    >en_US</language><protected>false</protected><shortDescription
+    >Net column</shortDescription><value>Net</value></labels><labels><fullName
+    >AXF_ConsolidationPanel_facts</fullName><language>en_US</language><protected
+    >false</protected><shortDescription
+    >Posted facts column</shortDescription><value
+    >Posted facts</value></labels><labels><fullName
+    >AXF_ConsolidationPanel_holderCountCol</fullName><language
+    >en_US</language><protected>false</protected><shortDescription
+    >Holder count column</shortDescription><value
+    >People / companies</value></labels><labels><fullName
+    >AXF_ConsolidationPanel_conversion</fullName><language
+    >en_US</language><protected>false</protected><shortDescription
+    >Comparison column</shortDescription><value
+    >Comparison</value></labels><labels><fullName
+    >AXF_ConsolidationPanel_fxSAME_CURRENCY</fullName><language
+    >en_US</language><protected>false</protected><shortDescription
+    >Same currency state</shortDescription><value
+    >Already in the presentation currency</value></labels><labels><fullName
+    >AXF_ConsolidationPanel_fxESTIMATED</fullName><language
+    >en_US</language><protected>false</protected><shortDescription
+    >Estimated conversion state</shortDescription><value
+    >Converted (estimate)</value></labels><labels><fullName
+    >AXF_ConsolidationPanel_fxSTALE</fullName><language
+    >en_US</language><protected>false</protected><shortDescription
+    >Stale quote state</shortDescription><value
+    >No quote inside the validity window</value></labels><labels><fullName
+    >AXF_ConsolidationPanel_fxUNAVAILABLE</fullName><language
+    >en_US</language><protected>false</protected><shortDescription
+    >Unavailable quote state</shortDescription><value
+    >No quote available</value></labels><labels><fullName
+    >AXF_ConsolidationPanel_noTotals</fullName><language
+    >en_US</language><protected>false</protected><shortDescription
+    >No authorized total</shortDescription><value
+    >There is no authorized total to present.</value></labels><labels><fullName
+    >AXF_ConsolidationPanel_comparable</fullName><language
+    >en_US</language><protected>false</protected><shortDescription
+    >Comparable total heading</shortDescription><value
+    >Comparable total</value></labels><labels><fullName
+    >AXF_ConsolidationPanel_comparableWithheld</fullName><language
+    >en_US</language><protected>false</protected><shortDescription
+    >Withheld comparable total</shortDescription><value
+    >The comparable total is not presented: there is no usable quote for</value></labels><labels
+  ><fullName>AXF_ConsolidationPanel_noComparison</fullName><language
+    >en_US</language><protected>false</protected><shortDescription
+    >No comparison requested</shortDescription><value
+    >No presentation currency was chosen, so every total stays in its original currency.</value></labels><labels
+  ><fullName>AXF_ConsolidationPanel_exclusions</fullName><language
+    >en_US</language><protected>false</protected><shortDescription
+    >Exclusions heading</shortDescription><value
+    >Exclusions</value></labels><labels><fullName
+    >AXF_ConsolidationPanel_noExclusions</fullName><language
+    >en_US</language><protected>false</protected><shortDescription
+    >No exclusions</shortDescription><value
+    >Nothing was excluded.</value></labels><labels><fullName
+    >AXF_ConsolidationPanel_exclusionCount</fullName><language
+    >en_US</language><protected>false</protected><shortDescription
+    >Exclusion occurrence count</shortDescription><value
+    >Occurrences</value></labels><labels><fullName
+    >AXF_ConsolidationPanel_exNotAuthorized</fullName><language
+    >en_US</language><protected>false</protected><shortDescription
+    >Not authorized exclusion</shortDescription><value
+    >Not authorized</value></labels><labels><fullName
+    >AXF_ConsolidationPanel_exNotAHolder</fullName><language
+    >en_US</language><protected>false</protected><shortDescription
+    >Not a holder exclusion</shortDescription><value
+    >Not an Axon person/company</value></labels><labels><fullName
+    >AXF_ConsolidationPanel_exAllocatedOutside</fullName><language
+    >en_US</language><protected>false</protected><shortDescription
+    >Allocated outside scope exclusion</shortDescription><value
+    >Allocated outside the authorized scope</value></labels><labels><fullName
+    >AXF_ConsolidationPanel_exAllocatedUnverified</fullName><language
+    >en_US</language><protected>false</protected><shortDescription
+    >Allocated to unverified exclusion</shortDescription><value
+    >Allocated to a person/company whose coverage is unverified</value></labels><labels
+  ><fullName>AXF_ConsolidationPanel_reasonCoverageUnverified</fullName><language
+    >en_US</language><protected>false</protected><shortDescription
+    >Coverage unverified reason</shortDescription><value
+    >At least one person/company could not have its coverage verified, so its contributions are withheld.</value></labels><labels
+  ><fullName>AXF_ConsolidationPanel_reasonNoScope</fullName><language
+    >en_US</language><protected>false</protected><shortDescription
+    >No authorized scope reason</shortDescription><value
+    >There is no authorized person or company to consolidate.</value></labels><labels
+  ><fullName>AXF_ConsolidationPanel_reasonVolumeExceeded</fullName><language
+    >en_US</language><protected>false</protected><shortDescription
+    >Volume exceeded reason</shortDescription><value
+    >The scope exceeds the volume the consolidation accepts, so nothing was partially summed.</value></labels><labels
+  ><fullName>AXF_ConsolidationPanel_reasonMissingFx</fullName><language
+    >en_US</language><protected>false</protected><shortDescription
+    >Missing quote reason</shortDescription><value
+    >There is no usable quote, so the comparable total is withheld instead of assuming parity.</value></labels><labels
+  ><fullName>AXF_ConsolidationPanel_reasonAllocatedOutside</fullName><language
+    >en_US</language><protected>false</protected><shortDescription
+    >Allocated outside scope reason</shortDescription><value
+    >A confirmed allocation includes a participant outside the authorized scope.</value></labels><labels
+  ><fullName
+    >AXF_ConsolidationPanel_reasonAllocatedUnverified</fullName><language
+    >en_US</language><protected>false</protected><shortDescription
+    >Allocated to unverified reason</shortDescription><value
+    >A confirmed allocation includes a person/company whose coverage is unverified.</value></labels><labels
+  ><fullName
+    >AXF_ConsolidationPanel_reasonAllocationUnreadable</fullName><language
+    >en_US</language><protected>false</protected><shortDescription
+    >Allocation unreadable reason</shortDescription><value
+    >The economic allocation of at least one fact could not be read.</value></labels><labels
+  ><fullName
+    >AXF_ConsolidationPanel_reasonAllocationAmbiguous</fullName><language
+    >en_US</language><protected>false</protected><shortDescription
+    >Allocation ambiguous reason</shortDescription><value
+    >The economic allocation of at least one fact is ambiguous.</value></labels><labels
+  ><fullName>AXF_ConsolidationPanel_reasonAllocationInvalid</fullName><language
+    >en_US</language><protected>false</protected><shortDescription
+    >Allocation invalid reason</shortDescription><value
+    >The economic allocation of at least one fact is invalid.</value></labels><labels
+  ><fullName
+    >AXF_ConsolidationPanel_reasonAllocationIncomplete</fullName><language
+    >en_US</language><protected>false</protected><shortDescription
+    >Allocation incomplete reason</shortDescription><value
+    >The economic allocation of at least one fact is incomplete.</value></labels><labels
+  ><fullName>AXF_ConsolidationPanel_reasonUnknownStatus</fullName><language
+    >en_US</language><protected>false</protected><shortDescription
+    >Unknown status reason</shortDescription><value
+    >At least one fact has an unknown status, so it was not summed.</value></labels><labels
+  ><fullName>AXF_ConsolidationPanel_reasonUnknownDirection</fullName><language
+    >en_US</language><protected>false</protected><shortDescription
+    >Unknown direction reason</shortDescription><value
+    >At least one fact has an unknown direction, so it was not summed.</value></labels><labels
+  ><fullName>AXF_ConsolidationPanel_reasonFieldAccess</fullName><language
+    >en_US</language><protected>false</protected><shortDescription
+    >Missing field access reason</shortDescription><value
+    >You do not have access to a field the consolidation depends on.</value></labels><labels
+  ><fullName>AXF_ConsolidationPanel_codeForbidden</fullName><language
+    >en_US</language><protected>false</protected><shortDescription
+    >Forbidden failure code</shortDescription><value
+    >You are not authorized to present the consolidated view.</value></labels><labels
+  ><fullName>AXF_ConsolidationPanel_codeInvalidInput</fullName><language
+    >en_US</language><protected>false</protected><shortDescription
+    >Invalid input failure code</shortDescription><value
+    >Select at least one person or company.</value></labels><labels><fullName
+    >AXF_ConsolidationPanel_codeNotAccessible</fullName><language
+    >en_US</language><protected>false</protected><shortDescription
+    >Not accessible failure code</shortDescription><value
+    >You do not have access to this data.</value></labels><labels><fullName
+    >AXF_ConsolidationPanel_codeUnavailable</fullName><language
+    >en_US</language><protected>false</protected><shortDescription
+    >Unavailable failure code</shortDescription><value
+    >The consolidated view could not be calculated. Nothing was partially presented.</value></labels><labels
+  ><fullName>AXF_ConsolidationPanel_scopeSelected</fullName><language
+    >en_US</language><protected>false</protected><shortDescription
+    >Selected scope pane label</shortDescription><value
+    >Selected</value></labels><labels><fullName
+    >AXF_ConsolidationPanel_comparableBlocked</fullName><language
+    >en_US</language><protected>false</protected><shortDescription
+    >Comparable total not produced</shortDescription><value
+    >The comparable total was not produced: nothing was consolidated in this response.</value></labels></CustomLabels>

@@ -1522,4 +1522,166 @@
     >AXF_SourceLink_codeUNSUPPORTED_ECONOMIC_ROLE</name></customLabels><customLabels
   ><label
     >Declare o papel econômico do vínculo — ele nunca é inferido da descrição nem do extrato da linha do cartão — e confirme novamente. Nada foi gravado.</label><name
-    >AXF_SourceLink_codeINVALID_ECONOMIC_ROLE</name></customLabels></Translations>
+    >AXF_SourceLink_codeINVALID_ECONOMIC_ROLE</name></customLabels><customLabels
+  ><label>Visão consolidada</label><name
+    >AXF_ConsolidationPanel_title</name></customLabels><customLabels><label
+    >Totais autorizados calculados pelo servidor. Nada é somado, convertido ou rateado aqui.</label><name
+    >AXF_ConsolidationPanel_intro</name></customLabels><customLabels><label
+    >Pessoas / empresas</label><name
+    >AXF_ConsolidationPanel_scope</name></customLabels><customLabels><label
+    >Só pessoas e empresas que você está autorizado a ver são listadas.</label><name
+    >AXF_ConsolidationPanel_scopeHelp</name></customLabels><customLabels><label
+    >Disponíveis</label><name
+    >AXF_ConsolidationPanel_scopeAvailable</name></customLabels><customLabels
+  ><label>Moeda de apresentação</label><name
+    >AXF_ConsolidationPanel_currency</name></customLabels><customLabels><label
+    >Usada apenas para comparar as moedas. Os totais originais permanecem na própria moeda.</label><name
+    >AXF_ConsolidationPanel_currencyHelp</name></customLabels><customLabels
+  ><label>Apresentar consolidado</label><name
+    >AXF_ConsolidationPanel_consolidate</name></customLabels><customLabels
+  ><label>Carregando a visão consolidada</label><name
+    >AXF_ConsolidationPanel_loading</name></customLabels><customLabels><label
+    >Selecione ao menos uma pessoa ou empresa para apresentar o consolidado.</label><name
+    >AXF_ConsolidationPanel_empty</name></customLabels><customLabels><label
+    >A visão consolidada não está disponível agora.</label><name
+    >AXF_ConsolidationPanel_error</name></customLabels><customLabels><label
+    >Tentar novamente</label><name
+    >AXF_ConsolidationPanel_retry</name></customLabels><customLabels><label
+    >Visão consolidada atualizada. Confiança: {0}.</label><name
+    >AXF_ConsolidationPanel_updated</name></customLabels><customLabels><label
+    >Confiança</label><name
+    >AXF_ConsolidationPanel_confidence</name></customLabels><customLabels><label
+    >Completa</label><name
+    >AXF_ConsolidationPanel_confidenceFULL</name></customLabels><customLabels
+  ><label>Degradada</label><name
+    >AXF_ConsolidationPanel_confidenceDEGRADED</name></customLabels><customLabels
+  ><label>Bloqueada</label><name
+    >AXF_ConsolidationPanel_confidenceBLOCKED</name></customLabels><customLabels
+  ><label>Atualidade</label><name
+    >AXF_ConsolidationPanel_asOf</name></customLabels><customLabels><label
+    >Período</label><name
+    >AXF_ConsolidationPanel_period</name></customLabels><customLabels><label
+    >Todos os lançamentos registrados</label><name
+    >AXF_ConsolidationPanel_periodOpen</name></customLabels><customLabels><label
+    >Política</label><name
+    >AXF_ConsolidationPanel_policy</name></customLabels><customLabels><label
+    >Por quê</label><name
+    >AXF_ConsolidationPanel_reasons</name></customLabels><customLabels><label
+    >Nada reduziu a confiança.</label><name
+    >AXF_ConsolidationPanel_noReasons</name></customLabels><customLabels><label
+    >Pessoas / empresas no consolidado</label><name
+    >AXF_ConsolidationPanel_holders</name></customLabels><customLabels><label
+    >Pessoa / empresa</label><name
+    >AXF_ConsolidationPanel_holder</name></customLabels><customLabels><label
+    >Acesso</label><name
+    >AXF_ConsolidationPanel_state</name></customLabels><customLabels><label
+    >Cobertura</label><name
+    >AXF_ConsolidationPanel_coverage</name></customLabels><customLabels><label
+    >Autorizado</label><name
+    >AXF_ConsolidationPanel_holderAuthorized</name></customLabels><customLabels
+  ><label>Não verificável</label><name
+    >AXF_ConsolidationPanel_holderUnknown</name></customLabels><customLabels
+  ><label>Completa</label><name
+    >AXF_ConsolidationPanel_coverageFull</name></customLabels><customLabels
+  ><label>Não verificada</label><name
+    >AXF_ConsolidationPanel_coverageUnverified</name></customLabels><customLabels
+  ><label>Nenhuma pessoa ou empresa autorizada no escopo.</label><name
+    >AXF_ConsolidationPanel_noHolders</name></customLabels><customLabels><label
+    >Totais por moeda</label><name
+    >AXF_ConsolidationPanel_totals</name></customLabels><customLabels><label
+    >Moeda</label><name
+    >AXF_ConsolidationPanel_currencyCol</name></customLabels><customLabels
+  ><label>Entradas</label><name
+    >AXF_ConsolidationPanel_inflow</name></customLabels><customLabels><label
+    >Saídas</label><name
+    >AXF_ConsolidationPanel_outflow</name></customLabels><customLabels><label
+    >Resultado líquido</label><name
+    >AXF_ConsolidationPanel_net</name></customLabels><customLabels><label
+    >Lançamentos</label><name
+    >AXF_ConsolidationPanel_facts</name></customLabels><customLabels><label
+    >Pessoas / empresas</label><name
+    >AXF_ConsolidationPanel_holderCountCol</name></customLabels><customLabels
+  ><label>Comparação</label><name
+    >AXF_ConsolidationPanel_conversion</name></customLabels><customLabels><label
+    >Já está na moeda de apresentação</label><name
+    >AXF_ConsolidationPanel_fxSAME_CURRENCY</name></customLabels><customLabels
+  ><label>Convertida (estimativa)</label><name
+    >AXF_ConsolidationPanel_fxESTIMATED</name></customLabels><customLabels
+  ><label>Sem cotação dentro da validade</label><name
+    >AXF_ConsolidationPanel_fxSTALE</name></customLabels><customLabels><label
+    >Sem cotação disponível</label><name
+    >AXF_ConsolidationPanel_fxUNAVAILABLE</name></customLabels><customLabels
+  ><label>Não há total autorizado para apresentar.</label><name
+    >AXF_ConsolidationPanel_noTotals</name></customLabels><customLabels><label
+    >Total comparável</label><name
+    >AXF_ConsolidationPanel_comparable</name></customLabels><customLabels><label
+    >O total comparável não é apresentado: não há cotação utilizável para</label><name
+    >AXF_ConsolidationPanel_comparableWithheld</name></customLabels><customLabels
+  ><label
+    >Nenhuma moeda de apresentação foi escolhida; cada total permanece na sua moeda original.</label><name
+    >AXF_ConsolidationPanel_noComparison</name></customLabels><customLabels
+  ><label>Exclusões</label><name
+    >AXF_ConsolidationPanel_exclusions</name></customLabels><customLabels><label
+    >Nada foi excluído.</label><name
+    >AXF_ConsolidationPanel_noExclusions</name></customLabels><customLabels
+  ><label>Ocorrências</label><name
+    >AXF_ConsolidationPanel_exclusionCount</name></customLabels><customLabels
+  ><label>Não autorizado</label><name
+    >AXF_ConsolidationPanel_exNotAuthorized</name></customLabels><customLabels
+  ><label>Não é pessoa ou empresa Axon</label><name
+    >AXF_ConsolidationPanel_exNotAHolder</name></customLabels><customLabels
+  ><label>Atribuído fora do escopo autorizado</label><name
+    >AXF_ConsolidationPanel_exAllocatedOutside</name></customLabels><customLabels
+  ><label
+    >Atribuído a pessoa ou empresa com cobertura não verificada</label><name
+    >AXF_ConsolidationPanel_exAllocatedUnverified</name></customLabels><customLabels
+  ><label
+    >Não foi possível verificar a cobertura de ao menos uma pessoa ou empresa; as contribuições dela ficam retidas.</label><name
+    >AXF_ConsolidationPanel_reasonCoverageUnverified</name></customLabels><customLabels
+  ><label>Não há pessoa ou empresa autorizada para consolidar.</label><name
+    >AXF_ConsolidationPanel_reasonNoScope</name></customLabels><customLabels
+  ><label
+    >O escopo excede o volume aceito pelo consolidado; nada foi somado parcialmente.</label><name
+    >AXF_ConsolidationPanel_reasonVolumeExceeded</name></customLabels><customLabels
+  ><label
+    >Não há cotação utilizável; o total comparável fica retido em vez de assumir paridade.</label><name
+    >AXF_ConsolidationPanel_reasonMissingFx</name></customLabels><customLabels
+  ><label
+    >Um rateio confirmado inclui participante fora do escopo autorizado.</label><name
+    >AXF_ConsolidationPanel_reasonAllocatedOutside</name></customLabels><customLabels
+  ><label
+    >Um rateio confirmado inclui pessoa ou empresa com cobertura não verificada.</label><name
+    >AXF_ConsolidationPanel_reasonAllocatedUnverified</name></customLabels><customLabels
+  ><label
+    >Não foi possível ler o rateio econômico de ao menos um lançamento.</label><name
+    >AXF_ConsolidationPanel_reasonAllocationUnreadable</name></customLabels><customLabels
+  ><label>O rateio econômico de ao menos um lançamento é ambíguo.</label><name
+    >AXF_ConsolidationPanel_reasonAllocationAmbiguous</name></customLabels><customLabels
+  ><label>O rateio econômico de ao menos um lançamento é inválido.</label><name
+    >AXF_ConsolidationPanel_reasonAllocationInvalid</name></customLabels><customLabels
+  ><label
+    >O rateio econômico de ao menos um lançamento está incompleto.</label><name
+    >AXF_ConsolidationPanel_reasonAllocationIncomplete</name></customLabels><customLabels
+  ><label
+    >Ao menos um lançamento tem situação desconhecida e não foi somado.</label><name
+    >AXF_ConsolidationPanel_reasonUnknownStatus</name></customLabels><customLabels
+  ><label
+    >Ao menos um lançamento tem direção desconhecida e não foi somado.</label><name
+    >AXF_ConsolidationPanel_reasonUnknownDirection</name></customLabels><customLabels
+  ><label
+    >Você não tem acesso a um campo do qual o consolidado depende.</label><name
+    >AXF_ConsolidationPanel_reasonFieldAccess</name></customLabels><customLabels
+  ><label>Você não tem autorização para apresentar o consolidado.</label><name
+    >AXF_ConsolidationPanel_codeForbidden</name></customLabels><customLabels
+  ><label>Selecione ao menos uma pessoa ou empresa.</label><name
+    >AXF_ConsolidationPanel_codeInvalidInput</name></customLabels><customLabels
+  ><label>Você não tem acesso a estes dados.</label><name
+    >AXF_ConsolidationPanel_codeNotAccessible</name></customLabels><customLabels
+  ><label
+    >Não foi possível calcular a visão consolidada. Nada foi apresentado parcialmente.</label><name
+    >AXF_ConsolidationPanel_codeUnavailable</name></customLabels><customLabels
+  ><label>Selecionados</label><name
+    >AXF_ConsolidationPanel_scopeSelected</name></customLabels><customLabels
+  ><label
+    >O total comparável não foi produzido: nada foi consolidado nesta resposta.</label><name
+    >AXF_ConsolidationPanel_comparableBlocked</name></customLabels></Translations>

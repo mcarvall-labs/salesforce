@@ -1,0 +1,357 @@
+<template>
+  <lightning-card
+    lwc:if={canRender}
+    title={labels.title}
+    icon-name="standard:currency"
+  >
+    <div class="slds-p-horizontal_medium slds-p-bottom_medium">
+      <p class="slds-text-body_small slds-m-bottom_small">{labels.intro}</p>
+      <div class="slds-assistive-text" aria-live="polite" data-id="announcer">
+        {announcement}
+      </div>
+
+      <lightning-dual-listbox
+        data-id="scope"
+        name="scope"
+        label={labels.scope}
+        field-level-help={labels.scopeHelp}
+        source-label={labels.scopeAvailable}
+        selected-label={labels.scopeSelected}
+        options={holderOptions}
+        value={selected}
+        onchange={handleScopeChange}
+      ></lightning-dual-listbox>
+
+      <template lwc:if={hasCurrencyOptions}>
+        <lightning-combobox
+          data-id="reporting-currency"
+          class="slds-m-top_small"
+          name="reporting-currency"
+          label={labels.currency}
+          field-level-help={labels.currencyHelp}
+          options={currencyOptions}
+          value={reportingIso}
+          onchange={handleCurrencyChange}
+        ></lightning-combobox>
+      </template>
+
+      <lightning-button
+        data-id="consolidate"
+        class="slds-m-top_small"
+        variant="brand"
+        label={labels.consolidate}
+        disabled={consolidateDisabled}
+        onclick={handleConsolidate}
+      ></lightning-button>
+
+      <template lwc:if={isLoading}>
+        <div class="slds-m-top_medium" role="status">
+          <lightning-spinner
+            alternative-text={labels.loading}
+            size="small"
+          ></lightning-spinner>
+          <span class="slds-assistive-text">{labels.loading}</span>
+        </div>
+      </template>
+
+      <template lwc:if={isIdle}>
+        <p class="slds-m-top_medium slds-text-color_weak" data-id="empty">
+          {labels.empty}
+        </p>
+      </template>
+
+      <template lwc:if={isError}>
+        <div
+          class="slds-notify slds-notify_alert slds-alert_error slds-m-top_medium"
+          role="alert"
+          data-id="error"
+        >
+          <span>{errorMessage}</span>
+          <lightning-button
+            class="slds-m-left_small"
+            variant="base"
+            label={labels.retry}
+            data-id="retry"
+            onclick={handleRetry}
+          ></lightning-button>
+        </div>
+      </template>
+
+      <template lwc:if={isReady}>
+        <section
+          class="slds-m-top_medium"
+          aria-labelledby="axf-csp-confidence"
+          role="region"
+        >
+          <h2 id="axf-csp-confidence" class="slds-text-heading_small">
+            {labels.confidence}
+          </h2>
+          <p class="slds-m-top_x-small">
+            <span class={confidenceClass} data-id="confidence"
+              >{confidenceLabel}</span
+            >
+            <span
+              class="slds-m-left_small slds-text-body_small"
+              data-id="as-of"
+            >
+              {labels.asOf}:
+              <lightning-formatted-date-time
+                value={result.asOf}
+                year="numeric"
+                month="short"
+                day="2-digit"
+                hour="2-digit"
+                minute="2-digit"
+              ></lightning-formatted-date-time>
+              · {labels.policy}: {result.policyVersion}
+            </span>
+          </p>
+          <p class="slds-m-top_x-small" data-id="period">
+            {labels.period}: {labels.periodOpen}
+          </p>
+          <h3 class="slds-text-title_caps slds-m-top_small">
+            {labels.reasons}
+          </h3>
+          <template lwc:if={hasReasons}>
+            <ul class="slds-list_dotted" data-id="reasons">
+              <template for:each={reasonRows} for:item="reason">
+                <li key={reason.key}>{reason.text}</li>
+              </template>
+            </ul>
+          </template>
+          <template lwc:else>
+            <p class="slds-text-color_weak" data-id="no-reasons">
+              {labels.noReasons}
+            </p>
+          </template>
+        </section>
+
+        <section
+          class="slds-m-top_medium"
+          aria-labelledby="axf-csp-holders"
+          role="region"
+        >
+          <h2 id="axf-csp-holders" class="slds-text-heading_small">
+            {labels.holders}
+          </h2>
+          <template lwc:if={hasHolders}>
+            <div class="slds-scrollable_x" tabindex="0">
+              <table
+                class="slds-table slds-table_bordered slds-table_cell-buffer slds-m-top_x-small"
+                data-id="holders"
+              >
+                <thead>
+                  <tr class="slds-line-height_reset">
+                    <th scope="col">{labels.holder}</th>
+                    <th scope="col">{labels.state}</th>
+                    <th scope="col">{labels.coverage}</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <template for:each={holderRows} for:item="row">
+                    <tr key={row.key}>
+                      <th scope="row">{row.accountName}</th>
+                      <td>{row.stateLabel}</td>
+                      <td>{row.coverageLabel}</td>
+                    </tr>
+                  </template>
+                </tbody>
+              </table>
+            </div>
+          </template>
+          <template lwc:else>
+            <p
+              class="slds-m-top_x-small slds-text-color_weak"
+              data-id="no-holders"
+            >
+              {labels.noHolders}
+            </p>
+          </template>
+        </section>
+
+        <section
+          class="slds-m-top_medium"
+          aria-labelledby="axf-csp-totals"
+          role="region"
+        >
+          <h2 id="axf-csp-totals" class="slds-text-heading_small">
+            {labels.totals}
+          </h2>
+          <template lwc:if={hasTotals}>
+            <div class="slds-scrollable_x" tabindex="0">
+              <table
+                class="slds-table slds-table_bordered slds-table_cell-buffer slds-m-top_x-small"
+                data-id="totals"
+              >
+                <thead>
+                  <tr class="slds-line-height_reset">
+                    <th scope="col">{labels.currencyCol}</th>
+                    <th scope="col">{labels.inflow}</th>
+                    <th scope="col">{labels.outflow}</th>
+                    <th scope="col">{labels.net}</th>
+                    <th scope="col">{labels.facts}</th>
+                    <th scope="col">{labels.holderCountCol}</th>
+                    <template lwc:if={hasConversion}>
+                      <th scope="col">{labels.conversion}</th>
+                    </template>
+                  </tr>
+                </thead>
+                <tbody>
+                  <template for:each={totalRows} for:item="row">
+                    <tr key={row.key}>
+                      <th scope="row">{row.currencyIso}</th>
+                      <td>
+                        <lightning-formatted-number
+                          value={row.inflow}
+                          minimum-fraction-digits="2"
+                          maximum-fraction-digits="2"
+                        ></lightning-formatted-number>
+                      </td>
+                      <td>
+                        <lightning-formatted-number
+                          value={row.outflow}
+                          minimum-fraction-digits="2"
+                          maximum-fraction-digits="2"
+                        ></lightning-formatted-number>
+                      </td>
+                      <td>
+                        <lightning-formatted-number
+                          value={row.net}
+                          minimum-fraction-digits="2"
+                          maximum-fraction-digits="2"
+                        ></lightning-formatted-number>
+                      </td>
+                      <td>{row.factCount}</td>
+                      <td>{row.holderCount}</td>
+                      <template lwc:if={hasConversion}>
+                        <td>{row.conversionLabel}</td>
+                      </template>
+                    </tr>
+                  </template>
+                </tbody>
+              </table>
+            </div>
+          </template>
+          <template lwc:else>
+            <p
+              class="slds-m-top_x-small slds-text-color_weak"
+              data-id="no-totals"
+            >
+              {labels.noTotals}
+            </p>
+          </template>
+        </section>
+
+        <section
+          class="slds-m-top_medium"
+          aria-labelledby="axf-csp-comparable"
+          role="region"
+        >
+          <h2 id="axf-csp-comparable" class="slds-text-heading_small">
+            {labels.comparable}
+            <template lwc:if={hasComparable}>· {result.reportingIso}</template>
+          </h2>
+          <template lwc:if={hasComparable}>
+            <p
+              class="slds-m-top_x-small slds-text-body_small"
+              data-id="comparable-state"
+            >
+              {comparableStateText}
+            </p>
+            <ul
+              class="slds-list_horizontal slds-wrap slds-m-top_x-small"
+              data-id="comparable"
+            >
+              <li class="slds-m-right_medium">
+                {labels.inflow}:
+                <lightning-formatted-number
+                  value={comparable.inflow}
+                  minimum-fraction-digits="2"
+                  maximum-fraction-digits="2"
+                ></lightning-formatted-number>
+                {comparable.currencyIso}
+              </li>
+              <li class="slds-m-right_medium">
+                {labels.outflow}:
+                <lightning-formatted-number
+                  value={comparable.outflow}
+                  minimum-fraction-digits="2"
+                  maximum-fraction-digits="2"
+                ></lightning-formatted-number>
+                {comparable.currencyIso}
+              </li>
+              <li>
+                {labels.net}:
+                <lightning-formatted-number
+                  value={comparable.net}
+                  minimum-fraction-digits="2"
+                  maximum-fraction-digits="2"
+                ></lightning-formatted-number>
+                {comparable.currencyIso}
+              </li>
+            </ul>
+          </template>
+          <template lwc:elseif={missingFx}>
+            <p
+              class="slds-m-top_x-small slds-text-color_weak"
+              data-id="comparable-withheld"
+            >
+              {labels.comparableWithheld}
+              <span class="slds-m-left_xx-small">{blockedCurrencies}</span>
+            </p>
+          </template>
+          <template lwc:elseif={comparisonBlocked}>
+            <p
+              class="slds-m-top_x-small slds-text-color_weak"
+              data-id="comparable-blocked"
+            >
+              {labels.comparableBlocked}
+            </p>
+          </template>
+          <template lwc:elseif={noComparisonRequested}>
+            <p
+              class="slds-m-top_x-small slds-text-color_weak"
+              data-id="no-comparison"
+            >
+              {labels.noComparison}
+            </p>
+          </template>
+        </section>
+
+        <section
+          class="slds-m-top_medium"
+          aria-labelledby="axf-csp-exclusions"
+          role="region"
+        >
+          <h2 id="axf-csp-exclusions" class="slds-text-heading_small">
+            {labels.exclusions}
+          </h2>
+          <template lwc:if={hasExclusions}>
+            <ul class="slds-list_dotted" data-id="exclusions">
+              <template for:each={exclusionRows} for:item="row">
+                <li key={row.key} data-id="exclusion">
+                  {row.reasonLabel}
+                  <template lwc:if={row.selectionLabel}>
+                    <span class="slds-m-left_x-small"
+                      >{row.selectionLabel}</span
+                    >
+                  </template>
+                  <template lwc:if={row.multiple}>
+                    <span class="slds-m-left_x-small slds-text-body_small"
+                      >{labels.exclusionCount}: {row.count}</span
+                    >
+                  </template>
+                </li>
+              </template>
+            </ul>
+          </template>
+          <template lwc:else>
+            <p class="slds-text-color_weak" data-id="no-exclusions">
+              {labels.noExclusions}
+            </p>
+          </template>
+        </section>
+      </template>
+    </div>
+  </lightning-card>
+</template>

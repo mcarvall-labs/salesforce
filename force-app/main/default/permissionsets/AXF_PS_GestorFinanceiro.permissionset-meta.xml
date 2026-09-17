@@ -185,6 +185,10 @@
         <enabled>true</enabled>
     </classAccesses>
     <classAccesses>
+        <apexClass>AXF_CLS_CTRL_ConsolidationPanel</apexClass>
+        <enabled>true</enabled>
+    </classAccesses>
+    <classAccesses>
         <apexClass>AXF_CLS_CTRL_ContractManagement</apexClass>
         <enabled>true</enabled>
     </classAccesses>
@@ -2470,6 +2474,10 @@
     </tabSettings>
     <tabSettings>
         <tab>AXF_CT_ConfidencePanel</tab>
+        <visibility>Visible</visibility>
+    </tabSettings>
+    <tabSettings>
+        <tab>AXF_CT_ConsolidationPanel</tab>
         <visibility>Visible</visibility>
     </tabSettings>
     <tabSettings>
