@@ -1573,4 +1573,527 @@ private class ALT_CLS_ObligationServiceTest {
       );
     }
   }
+
+  // ---------------------------------------------------------------------------------------
+  // AC 10 / AC 16 — dentro do estado de escrita autorizado, cada guard de forma precisa
+  // rejeitar a entrada inválida correspondente e admitir a forma que o serviço grava nos campos
+  // que o guard inspeciona; sem a capacidade, a mesma forma válida é rejeitada
+  // ---------------------------------------------------------------------------------------
+  /** @description Identidades reais da fixture; nenhum registro de prova é persistido. */
+  private class Evidence {
+    private final Id targetId;
+    private final Id decisionId;
+    private final Id adjustmentId;
+
+    private Evidence(Id targetId, Id decisionId, Id adjustmentId) {
+      this.targetId = targetId;
+      this.decisionId = decisionId;
+      this.adjustmentId = adjustmentId;
+    }
+  }
+
+  private static Evidence settledEvidence(String suffix) {
+    Account owner = holder('AXF104 guard ' + suffix);
+    ALT_CLS_FinancialScheduleService.CreateResult schedule = estimatedSchedule(
+      owner.Id,
+      1000,
+      suffix
+    );
+    AXF_OBJ_FinancialTransaction__c target = occurrence(schedule.scheduleId, 1);
+    ALT_CLS_ObligationService.SettlementInput full = cashRequest(
+      target.Id,
+      'axf104-guard-' + suffix,
+      ALT_CLS_ObligationService.MODE_FULL,
+      950,
+      versionOf(target.Id)
+    );
+    ALT_CLS_ObligationService.SettlementResult settled = applyCash(full);
+    Assert.isNotNull(settled.decisionId, 'A fixture exige a decisão líquida');
+    Assert.isNotNull(settled.adjustmentId, 'A fixture exige o ajuste real');
+    return new Evidence(target.Id, settled.decisionId, settled.adjustmentId);
+  }
+
+  /**
+   * @description Os handlers validam antes do DML: acioná-los no estado de escrita autorizado
+   * prova o guard sem persistir evidência nenhuma, e a capacidade volta a false sempre. A mesma
+   * chamada com `writing = false` é o controle negativo da costura.
+   */
+  private static List<Database.Error> adjustmentShape(
+    AXF_OBJ_ObligationAdjustment__c record
+  ) {
+    runAdjustmentShape(
+      new List<AXF_OBJ_ObligationAdjustment__c>{ record },
+      true
+    );
+    return record.getErrors();
+  }
+
+  private static void runAdjustmentShape(
+    List<AXF_OBJ_ObligationAdjustment__c> records,
+    Boolean writing
+  ) {
+    try {
+      ALT_CLS_ObligationService.writing = writing;
+      AXF_CLS_ObligationAdjustmentHandler.handleBeforeInsert(records);
+    } finally {
+      ALT_CLS_ObligationService.writing = false;
+    }
+  }
+
+  private static List<Database.Error> decisionShape(
+    AXF_OBJ_SettlementDecision__c record
+  ) {
+    runDecisionShape(new List<AXF_OBJ_SettlementDecision__c>{ record }, true);
+    return record.getErrors();
+  }
+
+  private static void runDecisionShape(
+    List<AXF_OBJ_SettlementDecision__c> records,
+    Boolean writing
+  ) {
+    try {
+      ALT_CLS_ObligationService.writing = writing;
+      AXF_CLS_SettlementDecisionHandler.handleBeforeInsert(records);
+    } finally {
+      ALT_CLS_ObligationService.writing = false;
+    }
+  }
+
+  private static void assertRejected(
+    List<Database.Error> errors,
+    String fragment
+  ) {
+    Assert.areEqual(1, errors.size(), 'Um único guard deve rejeitar a entrada');
+    Assert.isTrue(
+      errors[0].getMessage().contains(fragment),
+      'Guard inesperado: ' + errors[0].getMessage()
+    );
+  }
+
+  private static void assertAdmitted(List<Database.Error> errors) {
+    Assert.areEqual(
+      0,
+      errors.size(),
+      'Nenhum guard pode disparar para a entrada válida'
+    );
+  }
+
+  /** @description Valor com sinal do ajuste real que uma compensação neutraliza. */
+  private static Decimal originalSignedAmount(Evidence evidence) {
+    return [
+      SELECT AXF_OAD_NUM_SignedAmount__c
+      FROM AXF_OBJ_ObligationAdjustment__c
+      WHERE Id = :evidence.adjustmentId
+      WITH SYSTEM_MODE
+    ]
+    .AXF_OAD_NUM_SignedAmount__c;
+  }
+
+  private static AXF_OBJ_ObligationAdjustment__c adjustmentShapeRecord(
+    Evidence evidence
+  ) {
+    return new AXF_OBJ_ObligationAdjustment__c(
+      AXF_OAD_EXI_AdjustmentKey__c = 'axf104-shape-adjustment',
+      AXF_OAD_LKP_FinancialTransaction__c = evidence.targetId,
+      AXF_OAD_LKP_SettlementDecision__c = evidence.decisionId,
+      AXF_OAD_NUM_SignedAmount__c = -50,
+      AXF_OAD_TXT_CurrencyIsoCode__c = 'BRL',
+      AXF_OAD_PKL_Kind__c = ALT_CLS_ObligationService.KIND_ADJUSTMENT,
+      AXF_OAD_PKL_Reason__c = 'CORRECTION'
+    );
+  }
+
+  /** @description A forma que o serviço grava numa liquidação integral explicada. */
+  private static AXF_OBJ_SettlementDecision__c decisionShapeRecord(
+    Evidence evidence
+  ) {
+    return new AXF_OBJ_SettlementDecision__c(
+      AXF_SDC_EXI_DecisionKey__c = 'axf104-shape-decision',
+      AXF_SDC_TXT_PayloadHash__c = 'axf104-shape',
+      AXF_SDC_LKP_FinancialTransaction__c = evidence.targetId,
+      AXF_SDC_PKL_Operation__c = ALT_CLS_ObligationService.OPERATION_APPLY,
+      AXF_SDC_PKL_Mode__c = ALT_CLS_ObligationService.MODE_FULL,
+      AXF_SDC_PKL_Classification__c = ALT_CLS_ObligationService.CLASSIFICATION_EXPLAINED,
+      AXF_SDC_DAT_EconomicDate__c = Date.today(),
+      AXF_SDC_LKP_Actor__c = UserInfo.getUserId(),
+      AXF_SDC_DT_CommittedAt__c = System.now(),
+      AXF_SDC_NUM_RecurringAmount__c = 1000,
+      AXF_SDC_NUM_ExceptionalCharges__c = 50,
+      AXF_SDC_NUM_OneOffDiscount__c = 25,
+      AXF_SDC_NUM_EffectiveObligation__c = 1025,
+      AXF_SDC_TXT_CoverageHash__c = 'axf104-shape-coverage',
+      AXF_SDC_NUM_CoverageCount__c = 1
+    );
+  }
+
+  @IsTest
+  static void obligationAdjustmentShapeGuardsRejectAndAdmit() {
+    System.runAs(actor()) {
+      Evidence evidence = settledEvidence('adjustment');
+      assertAdmitted(adjustmentShape(adjustmentShapeRecord(evidence)));
+
+      AXF_OBJ_ObligationAdjustment__c noAmount = adjustmentShapeRecord(
+        evidence
+      );
+      noAmount.AXF_OAD_NUM_SignedAmount__c = null;
+      assertRejected(
+        adjustmentShape(noAmount),
+        'valor com sinal é obrigatório'
+      );
+
+      AXF_OBJ_ObligationAdjustment__c zeroAmount = adjustmentShapeRecord(
+        evidence
+      );
+      zeroAmount.AXF_OAD_NUM_SignedAmount__c = 0;
+      assertRejected(
+        adjustmentShape(zeroAmount),
+        'valor com sinal é obrigatório'
+      );
+
+      AXF_OBJ_ObligationAdjustment__c noOccurrence = adjustmentShapeRecord(
+        evidence
+      );
+      noOccurrence.AXF_OAD_LKP_FinancialTransaction__c = null;
+      assertRejected(adjustmentShape(noOccurrence), 'ocorrência e à decisão');
+
+      AXF_OBJ_ObligationAdjustment__c noDecision = adjustmentShapeRecord(
+        evidence
+      );
+      noDecision.AXF_OAD_LKP_SettlementDecision__c = null;
+      assertRejected(adjustmentShape(noDecision), 'ocorrência e à decisão');
+
+      AXF_OBJ_ObligationAdjustment__c noCurrency = adjustmentShapeRecord(
+        evidence
+      );
+      noCurrency.AXF_OAD_TXT_CurrencyIsoCode__c = null;
+      assertRejected(adjustmentShape(noCurrency), 'Moeda, tipo e motivo');
+
+      AXF_OBJ_ObligationAdjustment__c noKind = adjustmentShapeRecord(evidence);
+      noKind.AXF_OAD_PKL_Kind__c = '';
+      assertRejected(adjustmentShape(noKind), 'Moeda, tipo e motivo');
+
+      AXF_OBJ_ObligationAdjustment__c noReason = adjustmentShapeRecord(
+        evidence
+      );
+      noReason.AXF_OAD_PKL_Reason__c = null;
+      assertRejected(adjustmentShape(noReason), 'Moeda, tipo e motivo');
+
+      AXF_OBJ_ObligationAdjustment__c compensation = adjustmentShapeRecord(
+        evidence
+      );
+      compensation.AXF_OAD_PKL_Kind__c = ALT_CLS_ObligationService.KIND_COMPENSATION;
+      compensation.AXF_OAD_NUM_SignedAmount__c = 50;
+      assertRejected(
+        adjustmentShape(compensation),
+        'compensação deve identificar'
+      );
+
+      AXF_OBJ_ObligationAdjustment__c linkedCompensation = adjustmentShapeRecord(
+        evidence
+      );
+      linkedCompensation.AXF_OAD_PKL_Kind__c = ALT_CLS_ObligationService.KIND_COMPENSATION;
+      // A compensação autorizada carrega o valor exatamente oposto ao do ajuste neutralizado.
+      linkedCompensation.AXF_OAD_NUM_SignedAmount__c = -originalSignedAmount(
+        evidence
+      );
+      linkedCompensation.AXF_OAD_LKP_OriginalAdjustment__c = evidence.adjustmentId;
+      assertAdmitted(adjustmentShape(linkedCompensation));
+
+      AXF_OBJ_ObligationAdjustment__c misplacedOriginal = adjustmentShapeRecord(
+        evidence
+      );
+      misplacedOriginal.AXF_OAD_LKP_OriginalAdjustment__c = evidence.adjustmentId;
+      assertRejected(
+        adjustmentShape(misplacedOriginal),
+        'Só uma compensação aponta o ajuste original'
+      );
+
+      // Controle negativo da costura: sem a capacidade autorizada o MESMO registro válido é
+      // rejeitado, e a capacidade volta a false depois do desvio de teste.
+      AXF_OBJ_ObligationAdjustment__c withoutCapability = adjustmentShapeRecord(
+        evidence
+      );
+      runAdjustmentShape(
+        new List<AXF_OBJ_ObligationAdjustment__c>{ withoutCapability },
+        false
+      );
+      assertRejected(
+        withoutCapability.getErrors(),
+        'Use o serviço de obrigação'
+      );
+      Assert.isFalse(
+        ALT_CLS_ObligationService.isWriting(),
+        'A capacidade de escrita volta a false depois do guard'
+      );
+
+      // Um registro inválido não contamina o válido da mesma chamada.
+      AXF_OBJ_ObligationAdjustment__c validBatch = adjustmentShapeRecord(
+        evidence
+      );
+      AXF_OBJ_ObligationAdjustment__c invalidBatch = adjustmentShapeRecord(
+        evidence
+      );
+      invalidBatch.AXF_OAD_NUM_SignedAmount__c = 0;
+      runAdjustmentShape(
+        new List<AXF_OBJ_ObligationAdjustment__c>{ validBatch, invalidBatch },
+        true
+      );
+      assertAdmitted(validBatch.getErrors());
+      assertRejected(invalidBatch.getErrors(), 'valor com sinal é obrigatório');
+    }
+  }
+
+  @IsTest
+  static void settlementDecisionShapeGuardsRejectAndAdmit() {
+    System.runAs(actor()) {
+      Evidence evidence = settledEvidence('decision');
+      assertAdmitted(decisionShape(decisionShapeRecord(evidence)));
+
+      AXF_OBJ_SettlementDecision__c noKey = decisionShapeRecord(evidence);
+      noKey.AXF_SDC_EXI_DecisionKey__c = null;
+      assertRejected(decisionShape(noKey), 'chave determinística');
+
+      AXF_OBJ_SettlementDecision__c noOccurrence = decisionShapeRecord(
+        evidence
+      );
+      noOccurrence.AXF_SDC_LKP_FinancialTransaction__c = null;
+      assertRejected(decisionShape(noOccurrence), 'ocorrência financeira');
+
+      AXF_OBJ_SettlementDecision__c noOperation = decisionShapeRecord(evidence);
+      noOperation.AXF_SDC_PKL_Operation__c = null;
+      assertRejected(decisionShape(noOperation), 'Operação inválida');
+
+      AXF_OBJ_SettlementDecision__c unknownOperation = decisionShapeRecord(
+        evidence
+      );
+      unknownOperation.AXF_SDC_PKL_Operation__c = 'SETTLE';
+      assertRejected(decisionShape(unknownOperation), 'Operação inválida');
+
+      AXF_OBJ_SettlementDecision__c noClassification = decisionShapeRecord(
+        evidence
+      );
+      noClassification.AXF_SDC_PKL_Classification__c = null;
+      assertRejected(decisionShape(noClassification), 'Classificação inválida');
+
+      AXF_OBJ_SettlementDecision__c unknownClassification = decisionShapeRecord(
+        evidence
+      );
+      unknownClassification.AXF_SDC_PKL_Classification__c = 'GUESSED';
+      assertRejected(
+        decisionShape(unknownClassification),
+        'Classificação inválida'
+      );
+
+      AXF_OBJ_SettlementDecision__c noEconomicDate = decisionShapeRecord(
+        evidence
+      );
+      noEconomicDate.AXF_SDC_DAT_EconomicDate__c = null;
+      assertRejected(decisionShape(noEconomicDate), 'data econômica');
+
+      AXF_OBJ_SettlementDecision__c noActor = decisionShapeRecord(evidence);
+      noActor.AXF_SDC_LKP_Actor__c = null;
+      assertRejected(decisionShape(noActor), 'ator e o instante');
+
+      AXF_OBJ_SettlementDecision__c noInstant = decisionShapeRecord(evidence);
+      noInstant.AXF_SDC_DT_CommittedAt__c = null;
+      assertRejected(decisionShape(noInstant), 'ator e o instante');
+
+      // O modo descreve a parcela inteira: só APPLY e CLASSIFY o admitem.
+      AXF_OBJ_SettlementDecision__c modeOnReversal = decisionShapeRecord(
+        evidence
+      );
+      modeOnReversal.AXF_SDC_PKL_Operation__c = ALT_CLS_ObligationService.OPERATION_REVERSE;
+      modeOnReversal.AXF_SDC_PKL_Classification__c = ALT_CLS_ObligationService.CLASSIFICATION_NOT_APPLICABLE;
+      assertRejected(decisionShape(modeOnReversal), 'modo PARTIAL/FULL');
+
+      // REVERSE insere a própria decisão sem cobertura: modo nulo e nenhuma decomposição.
+      AXF_OBJ_SettlementDecision__c reversal = decisionShapeRecord(evidence);
+      reversal.AXF_SDC_PKL_Operation__c = ALT_CLS_ObligationService.OPERATION_REVERSE;
+      reversal.AXF_SDC_PKL_Mode__c = null;
+      reversal.AXF_SDC_PKL_Classification__c = ALT_CLS_ObligationService.CLASSIFICATION_NOT_APPLICABLE;
+      reversal.AXF_SDC_NUM_RecurringAmount__c = null;
+      reversal.AXF_SDC_NUM_ExceptionalCharges__c = null;
+      reversal.AXF_SDC_NUM_OneOffDiscount__c = null;
+      reversal.AXF_SDC_TXT_CoverageHash__c = null;
+      reversal.AXF_SDC_NUM_CoverageCount__c = null;
+      assertAdmitted(decisionShape(reversal));
+
+      // AMEND_OBLIGATION é a quarta operação admitida: sem modo, sem decomposição.
+      AXF_OBJ_SettlementDecision__c amendment = decisionShapeRecord(evidence);
+      amendment.AXF_SDC_PKL_Operation__c = ALT_CLS_ObligationService.OPERATION_AMEND;
+      amendment.AXF_SDC_PKL_Mode__c = null;
+      amendment.AXF_SDC_PKL_Classification__c = ALT_CLS_ObligationService.CLASSIFICATION_NOT_APPLICABLE;
+      amendment.AXF_SDC_NUM_RecurringAmount__c = null;
+      amendment.AXF_SDC_NUM_ExceptionalCharges__c = null;
+      amendment.AXF_SDC_NUM_OneOffDiscount__c = null;
+      assertAdmitted(decisionShape(amendment));
+
+      // CLASSIFY grava a parcela inteira: modo FULL e classificação EXPLAINED.
+      AXF_OBJ_SettlementDecision__c classification = decisionShapeRecord(
+        evidence
+      );
+      classification.AXF_SDC_PKL_Operation__c = ALT_CLS_ObligationService.OPERATION_CLASSIFY;
+      assertAdmitted(decisionShape(classification));
+
+      // UNCLASSIFIED é a forma que o serviço grava quando a parcela não é explicada:
+      // componentes nulos, mas a cobertura continua registrada.
+      AXF_OBJ_SettlementDecision__c unclassified = decisionShapeRecord(
+        evidence
+      );
+      unclassified.AXF_SDC_PKL_Classification__c = ALT_CLS_ObligationService.CLASSIFICATION_UNCLASSIFIED;
+      unclassified.AXF_SDC_NUM_RecurringAmount__c = null;
+      unclassified.AXF_SDC_NUM_ExceptionalCharges__c = null;
+      unclassified.AXF_SDC_NUM_OneOffDiscount__c = null;
+      assertAdmitted(decisionShape(unclassified));
+
+      // Ausência nunca é zero presumido: componentes existem apenas numa EXPLAINED completa.
+      AXF_OBJ_SettlementDecision__c componentsOffExplained = decisionShapeRecord(
+        evidence
+      );
+      componentsOffExplained.AXF_SDC_PKL_Classification__c = ALT_CLS_ObligationService.CLASSIFICATION_UNCLASSIFIED;
+      assertRejected(
+        decisionShape(componentsOffExplained),
+        'Componentes só existem'
+      );
+
+      AXF_OBJ_SettlementDecision__c missingComponent = decisionShapeRecord(
+        evidence
+      );
+      missingComponent.AXF_SDC_NUM_OneOffDiscount__c = null;
+      assertRejected(
+        decisionShape(missingComponent),
+        'classificação completa exige explicitamente'
+      );
+
+      AXF_OBJ_SettlementDecision__c negativeComponent = decisionShapeRecord(
+        evidence
+      );
+      negativeComponent.AXF_SDC_NUM_OneOffDiscount__c = -25;
+      assertRejected(decisionShape(negativeComponent), 'não negativos');
+
+      // Zero explícito não é ausência: a decomposição zerada e coerente é admitida.
+      AXF_OBJ_SettlementDecision__c explicitZeros = decisionShapeRecord(
+        evidence
+      );
+      explicitZeros.AXF_SDC_NUM_RecurringAmount__c = 0;
+      explicitZeros.AXF_SDC_NUM_ExceptionalCharges__c = 0;
+      explicitZeros.AXF_SDC_NUM_OneOffDiscount__c = 0;
+      explicitZeros.AXF_SDC_NUM_EffectiveObligation__c = 0;
+      assertAdmitted(decisionShape(explicitZeros));
+
+      AXF_OBJ_SettlementDecision__c contradictory = decisionShapeRecord(
+        evidence
+      );
+      contradictory.AXF_SDC_NUM_EffectiveObligation__c = 1000;
+      assertRejected(decisionShape(contradictory), 'igual à obrigação efetiva');
+
+      AXF_OBJ_SettlementDecision__c noEffective = decisionShapeRecord(evidence);
+      noEffective.AXF_SDC_NUM_EffectiveObligation__c = null;
+      assertRejected(decisionShape(noEffective), 'igual à obrigação efetiva');
+
+      AXF_OBJ_SettlementDecision__c noCoverageHash = decisionShapeRecord(
+        evidence
+      );
+      noCoverageHash.AXF_SDC_TXT_CoverageHash__c = null;
+      assertRejected(decisionShape(noCoverageHash), 'cobertura exata');
+
+      AXF_OBJ_SettlementDecision__c noCoverageCount = decisionShapeRecord(
+        evidence
+      );
+      noCoverageCount.AXF_SDC_NUM_CoverageCount__c = null;
+      assertRejected(decisionShape(noCoverageCount), 'cobertura exata');
+
+      // Controle negativo da costura: sem a capacidade, a MESMA forma válida é rejeitada.
+      AXF_OBJ_SettlementDecision__c withoutCapability = decisionShapeRecord(
+        evidence
+      );
+      runDecisionShape(
+        new List<AXF_OBJ_SettlementDecision__c>{ withoutCapability },
+        false
+      );
+      assertRejected(
+        withoutCapability.getErrors(),
+        'Use o serviço de obrigação'
+      );
+      Assert.isFalse(
+        ALT_CLS_ObligationService.isWriting(),
+        'A capacidade de escrita volta a false depois do guard'
+      );
+
+      // Um registro inválido não contamina o válido da mesma chamada.
+      AXF_OBJ_SettlementDecision__c validBatch = decisionShapeRecord(evidence);
+      AXF_OBJ_SettlementDecision__c invalidBatch = decisionShapeRecord(
+        evidence
+      );
+      invalidBatch.AXF_SDC_PKL_Classification__c = 'GUESSED';
+      runDecisionShape(
+        new List<AXF_OBJ_SettlementDecision__c>{ validBatch, invalidBatch },
+        true
+      );
+      assertAdmitted(validBatch.getErrors());
+      assertRejected(invalidBatch.getErrors(), 'Classificação inválida');
+    }
+  }
+
+  @IsTest
+  static void evidenceUpdateAdmitsResultCompletionAndUnchangedValues() {
+    System.runAs(actor()) {
+      Evidence evidence = settledEvidence('completion');
+      AXF_OBJ_SettlementDecision__c persisted = [
+        SELECT AXF_SDC_TAL_ResultJson__c, AXF_SDC_TAL_Explanation__c
+        FROM AXF_OBJ_SettlementDecision__c
+        WHERE Id = :evidence.decisionId
+        WITH SYSTEM_MODE
+      ];
+      Assert.isNotNull(
+        persisted.AXF_SDC_TAL_ResultJson__c,
+        'O serviço completa o recibo no próprio comando'
+      );
+
+      // Completar o resultado é a única reescrita admitida, mesmo com valor novo: sem a isenção
+      // do campo de conclusão o próprio comando leria a conclusão como correção.
+      Database.SaveResult completion = Database.update(
+        new AXF_OBJ_SettlementDecision__c(
+          Id = evidence.decisionId,
+          AXF_SDC_TAL_ResultJson__c = JSON.serialize(
+            new Map<String, Object>{ 'axf104' => 'completion' }
+          )
+        ),
+        false,
+        AccessLevel.SYSTEM_MODE
+      );
+      Assert.isTrue(
+        completion.isSuccess(),
+        'Completar o resultado do próprio comando é admitido'
+      );
+
+      // Reenviar o valor vigente não é correção e não pode ser lido como reescrita.
+      Database.SaveResult unchanged = Database.update(
+        new AXF_OBJ_SettlementDecision__c(
+          Id = evidence.decisionId,
+          AXF_SDC_TAL_Explanation__c = persisted.AXF_SDC_TAL_Explanation__c
+        ),
+        false,
+        AccessLevel.SYSTEM_MODE
+      );
+      Assert.isTrue(
+        unchanged.isSuccess(),
+        'Valor inalterado não é reescrita do recibo'
+      );
+
+      // Um componente introduzido depois da liquidação é correção, não cobertura.
+      Database.SaveResult introduced = Database.update(
+        new AXF_OBJ_SettlementDecision__c(
+          Id = evidence.decisionId,
+          AXF_SDC_NUM_OneOffDiscount__c = 10
+        ),
+        false,
+        AccessLevel.SYSTEM_MODE
+      );
+      Assert.isFalse(
+        introduced.isSuccess(),
+        'Componente introduzido depois da liquidação é reescrita'
+      );
+    }
+  }
 }
