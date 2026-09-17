@@ -20,6 +20,9 @@ public with sharing class ALT_CLS_ObligationService {
   }
 
   /** Capacidade de escrita das evidências AXF-104; lida pelo guard de FTX. */
+  // @TestVisible só amplia o acesso nos testes: em produção o serviço continua sendo o único que
+  // liga a capacidade, e nenhum caminho de execução lê ou escreve este campo de fora.
+  @TestVisible
   private static Boolean writing = false;
   /** Capacidade estreita que permite mover os campos de referência da raiz do cronograma. */
   private static Boolean referenceWriting = false;
