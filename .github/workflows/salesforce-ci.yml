@@ -77,6 +77,7 @@ jobs:
       componentsTotal: ${{ steps.operation.outputs.componentsTotal }}
       testsCompleted: ${{ steps.operation.outputs.testsCompleted }}
       testsFailed: ${{ steps.operation.outputs.testsFailed }}
+      deletedCount: ${{ steps.operation.outputs.deletedCount }}
       errorMessage: ${{ steps.operation.outputs.errorMessage }}
     environment: ${{ github.base_ref == 'main' && 'PROD-VALIDATION' || (github.base_ref == 'uat' && 'UAT-VALIDATION' || 'DEV-VALIDATION') }}
     permissions:
@@ -134,6 +135,7 @@ jobs:
           COMPONENTS_TOTAL: ${{ needs.salesforce-validation.outputs.componentsTotal }}
           TESTS_COMPLETED: ${{ needs.salesforce-validation.outputs.testsCompleted }}
           TESTS_FAILED: ${{ needs.salesforce-validation.outputs.testsFailed }}
+          DELETED_COUNT: ${{ needs.salesforce-validation.outputs.deletedCount }}
           ERROR_MESSAGE: ${{ needs.salesforce-validation.outputs.errorMessage }}
         with:
           script: |
@@ -147,6 +149,7 @@ jobs:
             const passed = process.env.VALIDATION_RESULT === 'success';
             const icon = skipped ? '⚪' : passed ? '✅' : '❌';
             const status = skipped ? 'Skipped' : passed ? 'Passed' : 'Failed';
+            const deletedCount = Number(process.env.DELETED_COUNT || 0);
             let body = `### ${icon} Salesforce validation — ${target}: **${status}**\n\n`;
             if (skipped) {
               body += `No \`force-app\` metadata changes in this PR — nothing to validate.\n`;
@@ -161,6 +164,9 @@ jobs:
                 `| Commit | \`${process.env.VALIDATED_SHA.slice(0, 7)}\` |`
               ].join('\n') + '\n';
               if (process.env.ERROR_MESSAGE) body += `\n> ${process.env.ERROR_MESSAGE}\n`;
+            }
+            if (deletedCount > 0) {
+              body += `\n⚠️ **${deletedCount} deletion(s) detected — NOT auto-deployed.** \`destructiveChanges.xml\`/\`package.xml\` generated in the evidence artifact; requires manual review and a separate destructive deploy.\n`;
             }
             body += `\n${artifactUrl ? `[⬇️ Download evidence](${artifactUrl})` : '_No evidence artifact uploaded._'} · [Run logs](${runUrl})\n`;
             body += `\nOpen \`result.html\` in the evidence zip for the full report. Validation uses dry-run: no metadata is persisted.`;
