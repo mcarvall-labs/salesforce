@@ -530,14 +530,7 @@ private class ALT_CLS_ConsolidationServiceTest {
     System.runAs(byAlias('axf122p')) {
       revoked = holder('Empresa Revogada', false);
       revokedBank = bank(revoked.Id, 'r');
-      insert bat(
-        revokedBank.Id,
-        'r',
-        700,
-        'DEBIT',
-        'POSTED',
-        Date.today()
-      );
+      insert bat(revokedBank.Id, 'r', 700, 'DEBIT', 'POSTED', Date.today());
       link = new AccountTeamMember(
         AccountId = revoked.Id,
         UserId = byAlias('axf122g').Id,
@@ -580,21 +573,26 @@ private class ALT_CLS_ConsolidationServiceTest {
     }
     Test.stopTest();
 
-    // Uma resposta deriva KPIs, confiança e explicações juntos, do escopo corrente.
+    // Uma resposta deriva KPIs, confianca e explicacoes juntos, do escopo corrente. Aritmetica do
+    // fixture: A = banco BRL 300 + 999 (antigo) - saida, 1000 entrada, mais cartao USD 80;
+    // B = banco BRL 200; revogado = banco BRL 700.
     Assert.areEqual(
       ALT_CLS_ConsolidationService.CONFIDENCE_FULL,
       wide.confidence
     );
     Assert.areEqual(2, wide.holders.size());
     Assert.isTrue(wide.exclusions.isEmpty());
+    Assert.isTrue(wide.reasons.isEmpty());
     Assert.areEqual(1499, total(wide, 'BRL').outflow);
     Assert.areEqual(1000, total(wide, 'BRL').inflow);
     Assert.areEqual(2, total(wide, 'BRL').holderCount);
 
-    // Contexto anterior não permanece: nem contribuição, nem total, nem titular.
+    // Contexto anterior nao permanece: nem contribuicao, nem total, nem titular.
     Assert.areEqual(200, total(narrow, 'BRL').outflow);
+    Assert.areEqual(0, total(narrow, 'BRL').inflow);
     Assert.areEqual(1, total(narrow, 'BRL').holderCount);
     Assert.areEqual(1, narrow.contributions.size());
+    Assert.areEqual(f.businessB.Id, narrow.holders[0].accountId);
     Assert.isNull(contribution(narrow, f.personA.Id, f.bankA.Id));
     Assert.isNull(contribution(narrow, f.personA.Id, f.cardA.Id));
     Assert.isFalse(
@@ -602,36 +600,40 @@ private class ALT_CLS_ConsolidationServiceTest {
       'nada do contexto anterior permanece alcancavel'
     );
 
-    // Acesso parcial: a contribuicao e retida e a confianca/explicacao mudam no mesmo resultado.
+    // Antes da revogacao, mesma lista: a contribuicao com acesso parcial e retida e a
+    // confianca/explicacao ja mudam no mesmo resultado.
     Assert.areEqual(
       ALT_CLS_ConsolidationService.CONFIDENCE_DEGRADED,
       shared.confidence
     );
     Assert.isTrue(shared.reasons.contains('COVERAGE_UNVERIFIED'));
     Assert.areEqual(200, total(shared, 'BRL').outflow);
+    Assert.areEqual(1, shared.contributions.size());
     Assert.isNull(contribution(shared, revoked.Id, revokedBank.Id));
-    Assert.isFalse(JSON.serialize(shared).contains('700'));
     Assert.isFalse(
       hasExclusion(shared, revoked.Id, 'NOT_AUTHORIZED'),
       'antes da revogacao o titular ainda era alcancavel'
     );
 
-    // Revogacao efetiva: a contribuicao some, o titular deixa de ser confirmado e o total
-    // anterior nao e reapresentado como se fosse o atual.
-    Assert.isNull(contribution(revalidated, revoked.Id, revokedBank.Id));
-    Assert.isTrue(
-      hasExclusion(revalidated, revoked.Id, 'NOT_AUTHORIZED'),
-      'a proxima resposta revalida e remove a contribuicao sem acesso legitimo'
+    // Depois da revogacao, mesma lista: a proxima resposta revalida o acesso pelo modelo nativo,
+    // remove a contribuicao sem acesso legitimo e nao reapresenta o total anterior como atual.
+    Assert.areEqual(1, revalidated.exclusions.size());
+    Assert.isTrue(hasExclusion(revalidated, revoked.Id, 'NOT_AUTHORIZED'));
+    Assert.isFalse(revalidated.reasons.contains('COVERAGE_UNVERIFIED'));
+    Assert.areEqual(
+      ALT_CLS_ConsolidationService.CONFIDENCE_FULL,
+      revalidated.confidence
     );
     Assert.areEqual(1, revalidated.holders.size());
     Assert.areEqual(f.businessB.Id, revalidated.holders[0].accountId);
+    Assert.isNull(contribution(revalidated, revoked.Id, revokedBank.Id));
+    Assert.areEqual(1, revalidated.contributions.size());
     Assert.areEqual(
       200,
       total(revalidated, 'BRL').outflow,
       'o total anterior nao volta como fallback'
     );
-    Assert.isFalse(JSON.serialize(revalidated).contains('Revogada'));
-    Assert.isFalse(JSON.serialize(revalidated).contains('700'));
+    Assert.areEqual(0, total(revalidated, 'BRL').inflow);
 
     // Voltar ao primeiro contexto deriva a mesma unidade de novo, do zero.
     System.runAs(byAlias('axf122g')) {

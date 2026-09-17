@@ -261,7 +261,7 @@ describe("c-aXF_LWC_forecastComparison", () => {
     );
   });
 
-  it("discards the previous context on a change and revalidates it on the server", async () => {
+  it("discards the previous context on a change and revalidates the comparison on the server", async () => {
     // The revalidation is held open so the state between the event and the answer is observable.
     let answer;
     const pending = new Promise((resolve) => {
@@ -294,9 +294,19 @@ describe("c-aXF_LWC_forecastComparison", () => {
     expect(
       element.shadowRoot.querySelector('[data-id="announcer"]').textContent
     ).toBe("");
-    // The reachable holder context was refreshed, not trusted, and the server was asked again.
-    expect(refreshApex).toHaveBeenCalledTimes(1);
+    // The cached holder context is emptied and refreshed, not trusted, and the server was asked again.
+    expect(
+      element.shadowRoot.querySelector('[data-id="scope"]').options.length
+    ).toBe(0);
+    expect(refreshApex.mock.calls[0][0].data).toEqual(context);
     expect(compare).toHaveBeenCalledTimes(2);
+
+    // The refreshed wire answers with the reduced, still authorized set.
+    getContext.emit({ ...context, holders: [] });
+    await flush();
+    expect(
+      element.shadowRoot.querySelector('[data-id="scope"]').options.length
+    ).toBe(0);
 
     // The revalidated answer replaces the whole unit; the previous total is never a fallback.
     answer({
@@ -328,5 +338,118 @@ describe("c-aXF_LWC_forecastComparison", () => {
     document.body.removeChild(element);
     await flush();
     expect(unsubscribe).toHaveBeenCalled();
+  });
+
+  it("rejects a comparison that started before the context changed", async () => {
+    // The answer issued before the event is held open and only lands afterwards.
+    let before;
+    const inFlight = new Promise((resolve) => {
+      before = resolve;
+    });
+    let after;
+    const revalidated = new Promise((resolve) => {
+      after = resolve;
+    });
+    compare.mockReturnValueOnce(inFlight).mockReturnValueOnce(revalidated);
+    const element = build();
+    getContext.emit(context);
+    await flush();
+    await select(element);
+    element.shadowRoot.querySelector('[data-id="compare"]').click();
+    await flush();
+    expect(compare).toHaveBeenCalledTimes(1);
+
+    subscribe.mock.calls[0][2]({ changeReason: "AUTHORIZATION_REVALIDATION" });
+    await flush();
+    expect(compare).toHaveBeenCalledTimes(2);
+
+    // The stale answer may not become the totals of the new context.
+    before(result);
+    await flush();
+    expect(
+      element.shadowRoot.querySelector('[data-id="confidence"]')
+    ).toBeNull();
+    expect(element.shadowRoot.querySelector('[data-id="periods"]')).toBeNull();
+    expect(
+      element.shadowRoot.querySelector('[data-id="announcer"]').textContent
+    ).toBe("");
+
+    // The revalidated answer is the one that renders.
+    after({
+      ...result,
+      confidence: "BLOCKED",
+      reasons: ["NO_AUTHORIZED_SCOPE"],
+      allowedActions: [],
+      periods: [],
+      horizons: [],
+      overdue: []
+    });
+    await flush();
+    expect(
+      element.shadowRoot.querySelector('[data-id="confidence"]').textContent
+    ).toContain("confidenceBLOCKED");
+    expect(
+      element.shadowRoot.querySelector('[data-id="reasons"]').textContent
+    ).toContain("reasonNO_AUTHORIZED_SCOPE");
+  });
+
+  it("rejects a comparison still in flight when the scope is cleared", async () => {
+    // With the scope cleared the event issues no comparison: only the bumped token can reject the
+    // answer already in flight.
+    let before;
+    const inFlight = new Promise((resolve) => {
+      before = resolve;
+    });
+    compare.mockReturnValueOnce(inFlight);
+    const element = build();
+    getContext.emit(context);
+    await flush();
+    await select(element);
+    element.shadowRoot.querySelector('[data-id="compare"]').click();
+    await flush();
+    expect(compare).toHaveBeenCalledTimes(1);
+
+    element.shadowRoot
+      .querySelector('[data-id="scope"]')
+      .dispatchEvent(new CustomEvent("change", { detail: { value: [] } }));
+    await flush();
+    subscribe.mock.calls[0][2]({ changeReason: "AUTHORIZATION_REVALIDATION" });
+    await flush();
+    expect(compare).toHaveBeenCalledTimes(1);
+    expect(element.shadowRoot.querySelector('[data-id="idle"]')).not.toBeNull();
+
+    before(result);
+    await flush();
+    expect(
+      element.shadowRoot.querySelector('[data-id="confidence"]')
+    ).toBeNull();
+    expect(element.shadowRoot.querySelector('[data-id="periods"]')).toBeNull();
+    expect(element.shadowRoot.querySelector('[data-id="idle"]')).not.toBeNull();
+    expect(
+      element.shadowRoot.querySelector('[data-id="announcer"]').textContent
+    ).toBe("");
+  });
+
+  it("clears a previous context error surface when the event arrives with no scope", async () => {
+    compare.mockRejectedValueOnce({ body: { message: "FORBIDDEN" } });
+    const element = build();
+    getContext.emit(context);
+    await flush();
+    await select(element);
+    element.shadowRoot.querySelector('[data-id="compare"]').click();
+    await flush();
+    expect(
+      element.shadowRoot.querySelector('[data-id="error"]')
+    ).not.toBeNull();
+
+    // No scope: nothing is derived, and no surface of the previous context may remain.
+    element.shadowRoot
+      .querySelector('[data-id="scope"]')
+      .dispatchEvent(new CustomEvent("change", { detail: { value: [] } }));
+    await flush();
+    subscribe.mock.calls[0][2]({ changeReason: "AUTHORIZATION_REVALIDATION" });
+    await flush();
+    expect(element.shadowRoot.querySelector('[data-id="error"]')).toBeNull();
+    expect(element.shadowRoot.querySelector('[data-id="idle"]')).not.toBeNull();
   });
 });

@@ -304,14 +304,19 @@ export default class AxfForecastComparison extends LightningElement {
    * AXF-124 — the context changed, or the effective access is being revalidated. The displayed
    * result belongs to the previous context, so it is discarded before anything else and never kept
    * as a fallback, an in-flight response is rejected instead of allowed to land, the accessible
-   * announcement is cleared, and the holder context is refreshed rather than trusted (the wire
-   * caches it, so a revoked holder would otherwise stay reachable). The server then recomputes the
-   * whole unit — totals, confidence, attention and explanations — through the native model.
+   * announcement is cleared, and the holder context is emptied and refreshed rather than trusted
+   * (the wire caches it, so a revoked holder would otherwise stay reachable). The server then
+   * recomputes the whole unit — totals, confidence, attention and explanations — through the native
+   * model.
    */
   handleContextChanged() {
     this.result = undefined;
     this.announcement = "";
+    // Only a selected scope makes load() bump the token; with the scope empty nothing else would
+    // reject an answer already in flight, so the token is bumped here for both arms.
     this.requestToken += 1;
+    this.state = STATE.LOADING;
+    this.holderOptions = [];
     if (this.wiredContextResult) {
       Promise.resolve(refreshApex(this.wiredContextResult)).catch(() => {});
     }

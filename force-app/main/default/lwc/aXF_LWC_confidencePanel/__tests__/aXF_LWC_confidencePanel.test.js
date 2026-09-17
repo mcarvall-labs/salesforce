@@ -483,7 +483,7 @@ describe("c-aXF_LWC_confidencePanel", () => {
       element.shadowRoot.querySelector('[data-id="announcer"]').textContent
     ).toBe("");
     // The reachable holder cache was refreshed, not trusted, and the server was asked again.
-    expect(refreshApex).toHaveBeenCalledTimes(1);
+    expect(refreshApex.mock.calls[0][0].data).toEqual(holders);
     expect(explain).toHaveBeenCalledTimes(2);
     expect(explain).toHaveBeenLastCalledWith({ accountIds: ["001A"] });
 
@@ -539,6 +539,10 @@ describe("c-aXF_LWC_confidencePanel", () => {
     expect(
       element.shadowRoot.querySelector('[data-id="announcer"]').textContent
     ).toBe("");
+    // Nothing was left on screen in the meantime: the panel is loading, not blank.
+    expect(
+      element.shadowRoot.querySelector("lightning-spinner")
+    ).not.toBeNull();
 
     // The refreshed holder wire re-applies the record scope and asks the server again.
     getHolders.emit(holders);
@@ -547,6 +551,183 @@ describe("c-aXF_LWC_confidencePanel", () => {
     expect(explain).toHaveBeenLastCalledWith({ accountIds: ["001A"] });
     expect(
       element.shadowRoot.querySelector('[data-id="level"]')
+    ).not.toBeNull();
+  });
+
+  it("empties the cached holder list and shows only what the refreshed wire returns", async () => {
+    explain.mockResolvedValue(panel);
+    const element = build();
+    getHolders.emit(holders);
+    await flush();
+    expect(
+      element.shadowRoot.querySelector('[data-id="scope"]').options.length
+    ).toBe(2);
+
+    subscribe.mock.calls[0][2]({ changeReason: "AUTHORIZATION_REVALIDATION" });
+    await flush();
+    // The revoked holder is not reachable while the revalidation is in flight.
+    expect(
+      element.shadowRoot.querySelector('[data-id="scope"]').options.length
+    ).toBe(0);
+
+    // The refreshed wire answers with the reduced, still authorized set.
+    getHolders.emit([holders[0]]);
+    await flush();
+    const options =
+      element.shadowRoot.querySelector('[data-id="scope"]').options;
+    expect(options.length).toBe(1);
+    expect(options[0].value).toBe("001A");
+  });
+
+  it("rejects a response that started before the context changed", async () => {
+    // The answer issued before the event is held open and only lands afterwards.
+    let before;
+    const inFlight = new Promise((resolve) => {
+      before = resolve;
+    });
+    let after;
+    const revalidated = new Promise((resolve) => {
+      after = resolve;
+    });
+    explain.mockReturnValueOnce(inFlight).mockReturnValueOnce(revalidated);
+    const element = build();
+    getHolders.emit(holders);
+    await flush();
+    element.shadowRoot
+      .querySelector('[data-id="scope"]')
+      .dispatchEvent(
+        new CustomEvent("change", { detail: { value: ["001A"] } })
+      );
+    await flush();
+    element.shadowRoot.querySelector('[data-id="explain"]').click();
+    await flush();
+    expect(explain).toHaveBeenCalledTimes(1);
+
+    subscribe.mock.calls[0][2]({ changeReason: "AUTHORIZATION_REVALIDATION" });
+    await flush();
+    expect(explain).toHaveBeenCalledTimes(2);
+
+    // The stale answer may not become the panel of the new context.
+    before(panel);
+    await flush();
+    expect(element.shadowRoot.querySelector('[data-id="level"]')).toBeNull();
+    expect(element.shadowRoot.querySelector('[data-id="sources"]')).toBeNull();
+    expect(
+      element.shadowRoot.querySelector('[data-id="announcer"]').textContent
+    ).toBe("");
+
+    // The revalidated answer is the one that renders.
+    after({
+      ...panel,
+      level: "BLOCKED",
+      reasons: ["NO_AUTHORIZED_SCOPE"],
+      allowedActions: [],
+      sources: [],
+      exclusions: [],
+      currencies: []
+    });
+    await flush();
+    expect(
+      element.shadowRoot.querySelector('[data-id="level"]').textContent
+    ).toContain("levelBlocked");
+  });
+
+  it("rejects an in-flight answer on a record page, where the event does not reload", async () => {
+    // The only case where the event itself must reject the answer: no new load is issued, so
+    // nothing else bumps the token.
+    let before;
+    const inFlight = new Promise((resolve) => {
+      before = resolve;
+    });
+    explain.mockReturnValueOnce(inFlight).mockResolvedValueOnce(panel);
+    const element = build("001A");
+    getHolders.emit(holders);
+    await flush();
+    expect(explain).toHaveBeenCalledTimes(1);
+
+    subscribe.mock.calls[0][2]({ changeReason: "AUTHORIZATION_REVALIDATION" });
+    await flush();
+    expect(explain).toHaveBeenCalledTimes(1);
+
+    before(panel);
+    await flush();
+    expect(element.shadowRoot.querySelector('[data-id="level"]')).toBeNull();
+    expect(element.shadowRoot.querySelector('[data-id="sources"]')).toBeNull();
+    expect(
+      element.shadowRoot.querySelector('[data-id="announcer"]').textContent
+    ).toBe("");
+
+    // The refreshed wire reloads the same record scope and renders the fresh answer.
+    getHolders.emit(holders);
+    await flush();
+    expect(explain).toHaveBeenCalledTimes(2);
+    expect(
+      element.shadowRoot.querySelector('[data-id="level"]')
+    ).not.toBeNull();
+  });
+
+  it("discards the displayed panel as soon as the scope changes", async () => {
+    explain.mockResolvedValue(panel);
+    const element = build();
+    getHolders.emit(holders);
+    await flush();
+    element.shadowRoot
+      .querySelector('[data-id="scope"]')
+      .dispatchEvent(
+        new CustomEvent("change", { detail: { value: ["001A"] } })
+      );
+    await flush();
+    element.shadowRoot.querySelector('[data-id="explain"]').click();
+    await flush();
+    expect(
+      element.shadowRoot.querySelectorAll('[data-id="sources"] tbody tr').length
+    ).toBe(3);
+
+    // The scope now is another set: the previous panel is not left on screen as if current.
+    element.shadowRoot
+      .querySelector('[data-id="scope"]')
+      .dispatchEvent(
+        new CustomEvent("change", { detail: { value: ["001B"] } })
+      );
+    await flush();
+    expect(element.shadowRoot.querySelector('[data-id="level"]')).toBeNull();
+    expect(element.shadowRoot.querySelector('[data-id="sources"]')).toBeNull();
+    expect(
+      element.shadowRoot.querySelector('[data-id="announcer"]').textContent
+    ).toBe("");
+    // Nothing was derived for the new scope yet: the panel is empty, not stale.
+    expect(
+      element.shadowRoot.querySelector('[data-id="empty"]')
+    ).not.toBeNull();
+  });
+
+  it("clears a previous context error surface when the event arrives with no scope", async () => {
+    explain.mockRejectedValueOnce({ body: { message: "NOT_ACCESSIBLE" } });
+    const element = build();
+    getHolders.emit(holders);
+    await flush();
+    element.shadowRoot
+      .querySelector('[data-id="scope"]')
+      .dispatchEvent(
+        new CustomEvent("change", { detail: { value: ["001A"] } })
+      );
+    await flush();
+    element.shadowRoot.querySelector('[data-id="explain"]').click();
+    await flush();
+    expect(
+      element.shadowRoot.querySelector('[data-id="error"]')
+    ).not.toBeNull();
+
+    // No scope: nothing is derived, and no surface of the previous context may remain.
+    element.shadowRoot
+      .querySelector('[data-id="scope"]')
+      .dispatchEvent(new CustomEvent("change", { detail: { value: [] } }));
+    await flush();
+    subscribe.mock.calls[0][2]({ changeReason: "AUTHORIZATION_REVALIDATION" });
+    await flush();
+    expect(element.shadowRoot.querySelector('[data-id="error"]')).toBeNull();
+    expect(
+      element.shadowRoot.querySelector('[data-id="empty"]')
     ).not.toBeNull();
   });
 });
