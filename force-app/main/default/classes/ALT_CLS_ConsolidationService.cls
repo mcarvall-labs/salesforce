@@ -45,7 +45,14 @@
  *   inflow/outflow are converted on the sides the contract fixes for them (BUY for an asset inflow,
  *   SELL for a liability/expense outflow). A pair without a usable fresh quote produces **no number
  *   at all** and withholds the comparable indicator with `MISSING_MATERIAL_FX` — parity is never
- *   assumed, and no total disappears because every original stays in the result.
+ *   assumed, and no total disappears because every original stays in the result. That comparison is
+ *   an estimate anchored on the quote's own instant (`rateEffectiveAtInflow`/`…Outflow`), never a
+ *   historical revaluation: a figure dated by the fact belongs to the frozen snapshot of AXF-24,
+ *   which this calculation neither reads, re-derives nor overwrites.
+ * - The quote read is the one exception to `USER_MODE` in this class: `ExchangeRate` is shared
+ *   reference data whose fields are not granted to every capability holder, and the ratified
+ *   indicative layer reads it under sharing exactly like this. Same posture as AXF-140, whose open
+ *   decision about it (P6.2) is inherited rather than re-taken.
  * - Any unexpected platform failure surfaces as `UNAVAILABLE`, never as a raw exception.
  *
  * Known limitation (deferred): joint holders (`AXF_OBJ_AccountHolder__c`) are not split here;
@@ -141,14 +148,19 @@ public with sharing class ALT_CLS_ConsolidationService {
     public Integer factCount = 0;
     public Integer holderCount = 0;
     /**
-     * AXF-123: the same total in the requested reporting currency. Null state means no comparison
-     * was requested; `ESTIMATED` carries the numbers, `STALE`/`UNAVAILABLE` carry none of them.
+     * AXF-123: the same total in the requested reporting currency. Null means no comparison was
+     * requested for this result; `SAME_CURRENCY` means the comparison was requested and this total
+     * already is in the reporting currency, so nothing had to be converted; `ESTIMATED` carries the
+     * numbers; `STALE`/`UNAVAILABLE` carry none of them and name the currency that blocks the
+     * comparable indicator.
      */
     public String conversionState;
     public Decimal rateInflow; // BUY quote applied to the inflow (empty side: null)
     public Decimal rateOutflow; // SELL quote applied to the outflow (empty side: null)
     public String rateProvider;
-    public Datetime rateEffectiveAt;
+    /** The instant of each applied quote, so both converted sides stay auditable on their own. */
+    public Datetime rateEffectiveAtInflow;
+    public Datetime rateEffectiveAtOutflow;
     public Decimal reportingInflow;
     public Decimal reportingOutflow;
     public Decimal reportingNet;
@@ -167,7 +179,11 @@ public with sharing class ALT_CLS_ConsolidationService {
     public List<Total> totals = new List<Total>();
     /** AXF-123: currency the comparison was requested in (null when none was requested). */
     public String reportingIso;
-    /** AXF-123: the one comparable indicator, or null when a currency has no usable quote. */
+    /**
+     * AXF-123: the one comparable indicator, or null when a currency has no usable quote. It carries
+     * no conversion state of its own — it is already expressed in the reporting currency, and the
+     * per-currency states, rates and quote instants live in `totals`.
+     */
     public Total comparableTotal;
   }
 
@@ -472,7 +488,9 @@ public with sharing class ALT_CLS_ConsolidationService {
    * A currency whose needed quote is missing, non-positive or older than the window yields **no
    * number** (`STALE`/`UNAVAILABLE`), and the comparable indicator is then withheld entirely with
    * `MISSING_MATERIAL_FX`: assuming parity, or summing only the currencies that happened to have a
-   * quote, would present a total that is not the consolidated position.
+   * quote, would present a total that is not the consolidated position. Each currency is rounded on
+   * its own displayed scale before the sum, so the indicator is exactly the sum of the estimated
+   * parts a reader sees — never a differently rounded second total.
    */
   private static void applyComparison(
     Result result,
@@ -487,8 +505,10 @@ public with sharing class ALT_CLS_ConsolidationService {
     result.reportingIso = reporting;
     Set<String> foreign = new Set<String>();
     for (String iso : totals.keySet()) {
-      if (iso != null && !iso.equalsIgnoreCase(reporting)) {
-        foreign.add(iso);
+      // The stored ISO is what the fact carries; the reference row is matched on the normalized
+      // form, exactly as the indicative layer normalizes before it compares (AXF-92).
+      if (iso != null && !iso.trim().toUpperCase().equals(reporting)) {
+        foreign.add(iso.trim().toUpperCase());
       }
     }
     Map<String, Quote> quotes = foreign.isEmpty()
@@ -502,14 +522,16 @@ public with sharing class ALT_CLS_ConsolidationService {
     currencies.sort();
     for (String iso : currencies) {
       Total total = totals.get(iso);
-      if (iso != null && iso.equalsIgnoreCase(reporting)) {
+      if (iso != null && iso.trim().toUpperCase().equals(reporting)) {
+        total.conversionState = ALT_CLS_IndicativeEquivalenceService.STATE_SAME_CURRENCY;
         comparable.inflow += total.inflow;
         comparable.outflow += total.outflow;
         comparable.factCount += total.factCount;
         comparableHolders.addAll(holdersByCurrency.get(iso));
         continue;
       }
-      convert(total, quotes.get(iso + '|BUY'), quotes.get(iso + '|SELL'));
+      String normalized = iso == null ? null : iso.trim().toUpperCase();
+      convert(total, quotes.get(normalized + '|BUY'), quotes.get(normalized + '|SELL'));
       if (total.conversionState != ALT_CLS_IndicativeEquivalenceService.STATE_ESTIMATED) {
         complete = false;
         continue;
@@ -549,14 +571,16 @@ public with sharing class ALT_CLS_ConsolidationService {
     total.reportingNet = inflow - outflow;
     if (inflowNeeded) {
       total.rateInflow = buy.rate;
+      total.rateEffectiveAtInflow = buy.effectiveAt;
     }
     if (outflowNeeded) {
       total.rateOutflow = sell.rate;
+      total.rateEffectiveAtOutflow = sell.effectiveAt;
     }
-    Quote applied = inflowNeeded ? buy : (outflowNeeded ? sell : null);
+    // A currency with no contributing side converts to zero without a quote, so no provider is named.
+    Quote applied = inflowNeeded ? buy : sell;
     if (applied != null) {
       total.rateProvider = applied.provider;
-      total.rateEffectiveAt = applied.effectiveAt;
     }
     total.conversionState = ALT_CLS_IndicativeEquivalenceService.STATE_ESTIMATED;
   }
@@ -591,7 +615,7 @@ public with sharing class ALT_CLS_ConsolidationService {
       ORDER BY AXF_EXR_DT_EffectiveDateTime__c DESC, Id ASC
     ]) {
       String key =
-        row.AXF_EXR_TXT_BaseCurrency__c +
+        row.AXF_EXR_TXT_BaseCurrency__c.trim().toUpperCase() +
         '|' +
         row.AXF_EXR_PKL_Side__c;
       if (result.containsKey(key)) {

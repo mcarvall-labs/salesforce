@@ -100,7 +100,8 @@ private class ALT_CLS_ConsolidationFxTest {
     Decimal rate,
     Datetime effectiveAt,
     String side,
-    String key
+    String key,
+    String provider
   ) {
     System.runAs(new User(Id = UserInfo.getUserId())) {
       insert new AXF_OBJ_ExchangeRate__c(
@@ -108,11 +109,22 @@ private class ALT_CLS_ConsolidationFxTest {
         AXF_EXR_TXT_QuoteCurrency__c = quoteIso,
         AXF_EXR_NUM_Rate__c = rate,
         AXF_EXR_PKL_Side__c = side,
-        AXF_EXR_TXT_Provider__c = PROVIDER,
+        AXF_EXR_TXT_Provider__c = provider,
         AXF_EXR_DT_EffectiveDateTime__c = effectiveAt,
         AXF_EXR_EXI_RateKey__c = 'axf123-' + key
       );
     }
+  }
+
+  private static void quote(
+    String baseIso,
+    String quoteIso,
+    Decimal rate,
+    Datetime effectiveAt,
+    String side,
+    String key
+  ) {
+    quote(baseIso, quoteIso, rate, effectiveAt, side, key, PROVIDER);
   }
 
   /** A 50/50 counter-entry of one fact, written inside the service write window of AXF-126. */
@@ -135,18 +147,25 @@ private class ALT_CLS_ConsolidationFxTest {
     );
     insert allocationSet;
     List<AXF_OBJ_EconomicAllocation__c> parcels = new List<AXF_OBJ_EconomicAllocation__c>();
-    Decimal percent = 100 / accountIds.size();
-    for (Id accountId : accountIds) {
+    // The remainder of an uneven split goes to the last parcel, so the shares always total 100%.
+    Decimal percent = (100.0 / accountIds.size()).setScale(2);
+    Decimal shared = 0;
+    for (Integer i = 0; i < accountIds.size(); i++) {
+      Decimal share = i == accountIds.size() - 1
+        ? 100 - shared
+        : percent;
+      shared += share;
       parcels.add(
         new AXF_OBJ_EconomicAllocation__c(
           AXF_EA_MDR_AllocationSet__c = allocationSet.Id,
-          AXF_EA_LKP_Account__c = accountId,
-          AXF_EA_NUM_Percent__c = percent,
+          AXF_EA_LKP_Account__c = accountIds[i],
+          AXF_EA_NUM_Percent__c = share,
           AXF_EA_NUM_Magnitude__c =
-            allocationSet.AXF_EAS_NUM_FactMagnitude__c * percent / 100,
+            allocationSet.AXF_EAS_NUM_FactMagnitude__c * share / 100,
           AXF_EA_PKL_RedactionPolicy__c = 'OWN_SHARE_ONLY',
           AXF_EA_TXT_CurrencyIsoCode__c = allocationSet.AXF_EAS_TXT_CurrencyIsoCode__c,
-          AXF_EA_EXI_AllocationKey__c = 'axf123-share-' + accountId
+          AXF_EA_EXI_AllocationKey__c =
+            'axf123-share-' + fact.Id + '-' + accountIds[i]
         )
       );
     }
@@ -372,9 +391,10 @@ private class ALT_CLS_ConsolidationFxTest {
         bat(bankUsdA.Id, 'USD', 20, 'CREDIT', 'usd-in'),
         bat(bankUsdA.Id, 'USD', 80, 'DEBIT', 'usd-out')
       };
-      Datetime now = System.now();
-      quote('USD', 'BRL', 5.0033, now, 'BUY', 'usd-buy');
-      quote('USD', 'BRL', 5.1067, now, 'SELL', 'usd-sell');
+      Datetime buyAt = System.now().addMinutes(-30);
+      Datetime sellAt = System.now().addMinutes(-10);
+      quote('USD', 'BRL', 5.0033, buyAt, 'BUY', 'usd-buy');
+      quote('USD', 'BRL', 5.1067, sellAt, 'SELL', 'usd-sell');
       Test.startTest();
       ALT_CLS_ConsolidationService.Result plain = new ALT_CLS_ConsolidationService()
         .consolidate(scope(new List<Id>{ holderA.Id, holderB.Id }, null));
@@ -400,14 +420,29 @@ private class ALT_CLS_ConsolidationFxTest {
       Assert.areEqual(5.0033, usd.rateInflow, 'lado de compra para a entrada');
       Assert.areEqual(5.1067, usd.rateOutflow, 'lado de venda para a saida');
       Assert.areEqual(PROVIDER, usd.rateProvider);
-      Assert.areEqual(now, usd.rateEffectiveAt);
+      Assert.areEqual(
+        buyAt,
+        usd.rateEffectiveAtInflow,
+        'cada lado guarda a vigencia da propria cotacao'
+      );
+      Assert.areEqual(sellAt, usd.rateEffectiveAtOutflow);
       Assert.areEqual(100.07, usd.reportingInflow, '20 x 5,0033 arredondado HALF_UP');
       Assert.areEqual(408.54, usd.reportingOutflow, '80 x 5,1067 arredondado HALF_UP');
       Assert.areEqual(-308.47, usd.reportingNet);
 
       ALT_CLS_ConsolidationService.Total brl = total(compared, 'BRL');
       Assert.areEqual(900, brl.net, 'a moeda de reporte nao e convertida');
-      Assert.isNull(brl.conversionState);
+      Assert.areEqual(
+        ALT_CLS_IndicativeEquivalenceService.STATE_SAME_CURRENCY,
+        brl.conversionState
+      );
+
+      Assert.areEqual(
+        ALT_CLS_ConsolidationService.CONFIDENCE_FULL,
+        compared.confidence,
+        'converter com cotacao utilizavel nao baixa a confianca'
+      );
+      Assert.isTrue(compared.reasons.isEmpty(), compared.reasons.toString());
 
       ALT_CLS_ConsolidationService.Total comparable = compared.comparableTotal;
       Assert.areEqual('BRL', comparable.currencyIso);
@@ -419,6 +454,100 @@ private class ALT_CLS_ConsolidationFxTest {
         2,
         comparable.holderCount,
         'o mesmo titular em duas moedas conta uma vez'
+      );
+      Assert.isNull(
+        comparable.conversionState,
+        'o indicador ja esta na moeda de reporte; o estado vive em cada total'
+      );
+    }
+  }
+
+  /** Only the side that contributes needs a quote: an inflow-only currency stays comparable. */
+  @IsTest
+  static void aCurrencyThatOnlyReceivedNeedsNoSellQuote() {
+    System.runAs(byAlias('axf123g')) {
+      Account holderA = holder('Titular A');
+      AXF_OBJ_BankAccount__c bankBrl = bank(holderA.Id, 'BRL', 'a');
+      AXF_OBJ_BankAccount__c bankUsd = bank(holderA.Id, 'USD', 'u');
+      insert new List<AXF_OBJ_BankAccountTransaction__c>{
+        bat(bankBrl.Id, 'BRL', 1000, 'CREDIT', 'brl-in'),
+        bat(bankUsd.Id, 'USD', 20, 'CREDIT', 'usd-in')
+      };
+      quote('USD', 'BRL', 5.00, System.now(), 'BUY', 'usd-buy-only');
+      Test.startTest();
+      ALT_CLS_ConsolidationService.Result result = new ALT_CLS_ConsolidationService()
+        .consolidate(scope(new List<Id>{ holderA.Id }, 'BRL'));
+      Test.stopTest();
+      ALT_CLS_ConsolidationService.Total usd = total(result, 'USD');
+      Assert.areEqual(
+        ALT_CLS_IndicativeEquivalenceService.STATE_ESTIMATED,
+        usd.conversionState,
+        'sem saida nao e preciso cotacao de venda'
+      );
+      Assert.areEqual(100, usd.reportingInflow);
+      Assert.areEqual(0, usd.reportingOutflow);
+      Assert.isNull(usd.rateOutflow);
+      Assert.isNull(usd.rateEffectiveAtOutflow);
+      ALT_CLS_ConsolidationService.Total comparable = result.comparableTotal;
+      Assert.isNotNull(comparable, 'o indicador comparavel existe');
+      Assert.areEqual(1100, comparable.inflow);
+      Assert.areEqual(0, comparable.outflow);
+      Assert.areEqual(1100, comparable.net);
+      Assert.areEqual(2, comparable.factCount);
+    }
+  }
+
+  /**
+   * The read applies the ratified provider and its window: a newer row from another provider and a
+   * row older than the searched range are both outside the evidence, so neither can be applied.
+   */
+  @IsTest
+  static void onlyTheRatifiedProviderInsideTheWindowIsApplied() {
+    System.runAs(byAlias('axf123g')) {
+      Account holderA = holder('Titular A');
+      AXF_OBJ_BankAccount__c bankUsd = bank(holderA.Id, 'USD', 'u');
+      AXF_OBJ_BankAccount__c bankEur = bank(holderA.Id, 'EUR', 'e');
+      insert new List<AXF_OBJ_BankAccountTransaction__c>{
+        // The stored ISO is written as the source delivered it; the reference row is matched on its
+        // normalized form, exactly as the indicative layer normalizes before comparing (AXF-92).
+        bat(bankUsd.Id, 'usd', 80, 'DEBIT', 'usd-out'),
+        bat(bankEur.Id, 'EUR', 10, 'DEBIT', 'eur-out')
+      };
+      quote('USD', 'BRL', 5.10, System.now().addDays(-2), 'SELL', 'usd-bcb');
+      quote(
+        'USD',
+        'BRL',
+        9.99,
+        System.now().addMinutes(-30),
+        'SELL',
+        'usd-other',
+        'OTHER_FEED'
+      );
+      quote('EUR', 'BRL', 6.20, System.now().addDays(-20), 'SELL', 'eur-old');
+      Test.startTest();
+      ALT_CLS_ConsolidationService.Result result = new ALT_CLS_ConsolidationService()
+        .consolidate(scope(new List<Id>{ holderA.Id }, 'BRL'));
+      Test.stopTest();
+      ALT_CLS_ConsolidationService.Total usd = total(result, 'usd');
+      Assert.areEqual('usd', usd.currencyIso, 'a moeda original nao e reescrita');
+      Assert.areEqual(PROVIDER, usd.rateProvider);
+      Assert.areEqual(
+        5.10,
+        usd.rateOutflow,
+        'cotacao mais nova de outro provedor nao entra'
+      );
+      Assert.areEqual(408.00, usd.reportingOutflow);
+      ALT_CLS_ConsolidationService.Total eur = total(result, 'EUR');
+      Assert.areEqual(
+        ALT_CLS_IndicativeEquivalenceService.STATE_UNAVAILABLE,
+        eur.conversionState,
+        'linha fora da janela pesquisada nem e lida'
+      );
+      Assert.isNull(eur.reportingOutflow);
+      Assert.isNull(result.comparableTotal, 'uma moeda sem cotacao retem o indicador');
+      Assert.isTrue(
+        result.reasons.contains('MISSING_MATERIAL_FX'),
+        result.reasons.toString()
       );
     }
   }
