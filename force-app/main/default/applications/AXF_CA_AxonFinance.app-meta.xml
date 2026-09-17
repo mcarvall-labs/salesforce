@@ -19,6 +19,7 @@
     <tabs>AXF_CT_ConfidencePanel</tabs>
     <tabs>AXF_Holders</tabs>
     <tabs>AXF_CT_ForecastComparison</tabs>
+    <tabs>AXF_CT_ConsolidationPanel</tabs>
     <tabs>AXF_CT_ArchiveExplorer</tabs>
     <tabs>AXF_ReportCurrency</tabs>
     <tabs>AXF_CT_BillingComposer</tabs>
