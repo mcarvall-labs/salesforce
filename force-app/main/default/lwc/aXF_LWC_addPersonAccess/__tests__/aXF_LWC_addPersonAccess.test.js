@@ -495,4 +495,62 @@ describe("c-aXF_LWC_addPersonAccess", () => {
     await settle();
     expect(startProvisioning).toHaveBeenCalledTimes(2);
   });
+
+  it("shows a human-readable step name instead of the raw checkpoint enum", async () => {
+    const el = build(true, 3);
+    await flush();
+    await confirm(el, startedResult());
+
+    getStatus.mockResolvedValue(runningResult()); // currentStep: CREATE_OR_LINK_USER
+    await tick(POLL_MS);
+    await tick(STALL_MS);
+
+    expect(el.shadowRoot.textContent).not.toMatch(/CREATE_OR_LINK_USER/);
+    expect(el.shadowRoot.textContent).toMatch(
+      /Criando ou vinculando o usuário|Creating or linking the user/
+    );
+  });
+
+  it("explains what Resume and Leave each do once a resume is offered", async () => {
+    const el = build(true, 3);
+    await flush();
+    await confirm(el, startedResult());
+
+    getStatus.mockResolvedValue(runningResult());
+    await tick(POLL_MS);
+    await tick(STALL_MS);
+
+    expect(el.shadowRoot.textContent).toMatch(
+      /confere se já terminou|checks whether it already finished/
+    );
+    expect(el.shadowRoot.textContent).toMatch(
+      /nada é duplicado|nothing is duplicated/
+    );
+  });
+
+  it("lets another person be added right after a completed provisioning", async () => {
+    const el = build(true, 3);
+    await flush();
+    await confirm(el, startedResult());
+
+    getStatus.mockResolvedValue({
+      provisioningId: "a0Tx",
+      outcome: null,
+      status: "SUCCEEDED",
+      currentStep: "DONE",
+      message: "Acesso concluído.",
+      linkedUserId: "005xLinked"
+    });
+    await tick(POLL_MS);
+
+    const addAnother = btn(el, /Adicionar outra pessoa|Add another person/);
+    expect(addAnother).toBeDefined();
+    addAnother.click();
+    await flush();
+
+    expect(
+      el.shadowRoot.querySelector("lightning-record-picker")
+    ).not.toBeNull();
+    expect(el.shadowRoot.textContent).toMatch(/1 (de|of) 4/);
+  });
 });

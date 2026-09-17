@@ -170,6 +170,19 @@ export default class AxfLwcAddPersonAccess extends LightningElement {
   get linkedUserId() {
     return this.status ? this.status.linkedUserId : null;
   }
+  // Raw checkpoint enums (e.g. "ASSIGN_ROLE") are internal identifiers, not
+  // user-facing text; show the matching human label and fall back to the raw
+  // value only if a new step is ever added without one.
+  get statusStepText() {
+    const step = this.status && this.status.currentStep;
+    return (step && L.stepNames[step]) || step;
+  }
+  // Both the stalled and the retryable-failure views offer "Resume" next to a
+  // "Leave"/"back to form" button; without an explanation the two look
+  // interchangeable, so both are hinted whenever a resume is actually offered.
+  get showResumeLeaveHint() {
+    return this.canRetry;
+  }
   get summaryName() {
     return this.form.name;
   }

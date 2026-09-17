@@ -36,12 +36,24 @@ const PT = {
   statusUnavailable:
     "Não foi possível consultar o andamento agora. O provisionamento pode continuar no servidor; retome para verificar.",
   leave: "Sair e continuar depois",
+  leaveHint:
+    "O provisionamento pode continuar no servidor. Ao voltar, retome pelo mesmo cadastro — nada é duplicado.",
+  resumeHint: "Retoma agora e confere se já terminou.",
   backToForm: "Voltar ao formulário",
-  close: "Fechar",
+  close: "Adicionar outra pessoa",
   linkedUser: "Usuário vinculado",
   statusStep: "Etapa",
   statusState: "Situação",
-  stepOf: "Etapa {0} de {1}"
+  stepOf: "Etapa {0} de {1}",
+  stepNames: {
+    CREATE_OR_LINK_PERSON: "Confirmando a pessoa",
+    CREATE_OR_LINK_USER: "Criando ou vinculando o usuário",
+    ASSIGN_ROLE: "Atribuindo o papel",
+    ASSIGN_PSG: "Atribuindo as permissões de acesso",
+    SET_OWNER_SYNC: "Sincronizando o responsável",
+    ACTIVATE: "Ativando o usuário",
+    DONE: "Concluído"
+  }
 };
 
 const EN = {
@@ -80,12 +92,24 @@ const EN = {
   statusUnavailable:
     "Could not read the progress now. Provisioning may still be running on the server; resume to check.",
   leave: "Leave and continue later",
+  leaveHint:
+    "Provisioning may keep running on the server. Coming back, resume the same request — nothing is duplicated.",
+  resumeHint: "Resumes now and checks whether it already finished.",
   backToForm: "Back to the form",
-  close: "Close",
+  close: "Add another person",
   linkedUser: "Linked user",
   statusStep: "Step",
   statusState: "State",
-  stepOf: "Step {0} of {1}"
+  stepOf: "Step {0} of {1}",
+  stepNames: {
+    CREATE_OR_LINK_PERSON: "Confirming the person",
+    CREATE_OR_LINK_USER: "Creating or linking the user",
+    ASSIGN_ROLE: "Assigning the role",
+    ASSIGN_PSG: "Assigning access permissions",
+    SET_OWNER_SYNC: "Syncing the responsible owner",
+    ACTIVATE: "Activating the user",
+    DONE: "Done"
+  }
 };
 
 const L = String(LANG || "")
