@@ -46,6 +46,15 @@ jest.mock(
   () => ({ default: jest.fn() }),
   { virtual: true }
 );
+// sfdx-lwc-jest stubs every un-mocked @salesforce/label import with its own
+// resource path (e.g. "c.AXF_AddPersonAccess_next"); see labelPath() below.
+// This one drives the step-of-4 interpolation, so it gets a real templated
+// value instead.
+jest.mock(
+  "@salesforce/label/c.AXF_AddPersonAccess_stepOf",
+  () => ({ default: "Step {0} of {1}" }),
+  { virtual: true }
+);
 
 function build(config = true, licensesFree = 3) {
   const el = createElement("c-a-x-f_-l-w-c_add-person-access", { is: Cmp });
@@ -77,9 +86,14 @@ const tick = async (ms) => {
   jest.advanceTimersByTime(ms);
   await settle();
 };
-const btn = (el, re) =>
-  [...el.shadowRoot.querySelectorAll("lightning-button")].find((b) =>
-    re.test(b.label)
+// Custom Label imports resolve in Jest to their own resource path
+// (e.g. "c.AXF_AddPersonAccess_next"), not the real translated text; that
+// resource path is how these tests verify the right label is wired in.
+const LABEL_PREFIX = "c.AXF_AddPersonAccess_";
+const labelPath = (key) => `${LABEL_PREFIX}${key}`;
+const btn = (el, key) =>
+  [...el.shadowRoot.querySelectorAll("lightning-button")].find(
+    (b) => b.label === labelPath(key)
   );
 
 const startedResult = () => ({
@@ -105,15 +119,15 @@ async function advanceToReview(el) {
     .querySelector("lightning-record-picker")
     .dispatchEvent(new CustomEvent("change", { detail: { recordId: "001x" } }));
   await flush();
-  btn(el, /Próximo|Next/).click();
+  btn(el, "next").click();
   await flush();
   const email = el.shadowRoot.querySelector("[data-field='email']");
   email.value = "x@example.com";
   email.dispatchEvent(new CustomEvent("change"));
   await flush();
-  btn(el, /Próximo|Next/).click();
+  btn(el, "next").click();
   await flush();
-  btn(el, /Próximo|Next/).click();
+  btn(el, "next").click();
   await flush();
 }
 
@@ -121,7 +135,7 @@ async function advanceToReview(el) {
 async function confirm(el, response) {
   startProvisioning.mockResolvedValue(response);
   await advanceToReview(el);
-  btn(el, /Confirmar|Confirm/).click();
+  btn(el, "confirm").click();
   await settle();
 }
 
@@ -142,7 +156,7 @@ describe("c-aXF_LWC_addPersonAccess", () => {
     expect(
       el.shadowRoot.querySelector("lightning-progress-indicator")
     ).toBeNull();
-    expect(el.shadowRoot.textContent).toMatch(/autoriza|authorized/i);
+    expect(el.shadowRoot.textContent).toContain(labelPath("forbidden"));
   });
 
   it("renders the wizard for an authorized configurator", async () => {
@@ -154,7 +168,7 @@ describe("c-aXF_LWC_addPersonAccess", () => {
     expect(
       el.shadowRoot.querySelector("lightning-record-picker")
     ).not.toBeNull();
-    expect(btn(el, /Voltar|Back/).disabled).toBe(true);
+    expect(btn(el, "back").disabled).toBe(true);
   });
 
   it("blocks CREATE when no Salesforce license is free", async () => {
@@ -167,13 +181,13 @@ describe("c-aXF_LWC_addPersonAccess", () => {
         new CustomEvent("change", { detail: { recordId: "001x" } })
       );
     await flush();
-    btn(el, /Próximo|Next/).click();
+    btn(el, "next").click();
     await flush();
 
-    expect(el.shadowRoot.querySelector("[role='alert']").textContent).toMatch(
-      /licença|license/i
+    expect(el.shadowRoot.querySelector("[role='alert']").textContent).toContain(
+      labelPath("licenseWarn")
     );
-    expect(btn(el, /Próximo|Next/).disabled).toBe(true);
+    expect(btn(el, "next").disabled).toBe(true);
   });
 
   it("calls start and begins polling on confirm", async () => {
@@ -193,18 +207,18 @@ describe("c-aXF_LWC_addPersonAccess", () => {
         new CustomEvent("change", { detail: { recordId: "001x" } })
       );
     await flush();
-    btn(el, /Próximo|Next/).click();
+    btn(el, "next").click();
     await flush();
     // step 1: email
     const email = el.shadowRoot.querySelector("[data-field='email']");
     email.value = "x@example.com";
     email.dispatchEvent(new CustomEvent("change"));
     await flush();
-    btn(el, /Próximo|Next/).click();
+    btn(el, "next").click();
     await flush(); // step 2 scope
-    btn(el, /Próximo|Next/).click();
+    btn(el, "next").click();
     await flush(); // step 3 review
-    btn(el, /Confirmar|Confirm/).click();
+    btn(el, "confirm").click();
     await flush();
     await flush();
 
@@ -223,7 +237,7 @@ describe("c-aXF_LWC_addPersonAccess", () => {
     expect(heading).not.toBeNull();
     expect(heading.getAttribute("tabindex")).toBe("-1");
     expect(heading.textContent.trim().length).toBeGreaterThan(0);
-    expect(el.shadowRoot.textContent).toMatch(/1 (de|of) 4/);
+    expect(el.shadowRoot.textContent).toMatch(/Step 1 of 4/);
 
     // advancing updates the heading + the announcement
     el.shadowRoot
@@ -232,9 +246,9 @@ describe("c-aXF_LWC_addPersonAccess", () => {
         new CustomEvent("change", { detail: { recordId: "001x" } })
       );
     await flush();
-    btn(el, /Próximo|Next/).click();
+    btn(el, "next").click();
     await flush();
-    expect(el.shadowRoot.textContent).toMatch(/2 (de|of) 4/);
+    expect(el.shadowRoot.textContent).toMatch(/Step 2 of 4/);
   });
 
   it("shows human-readable labels on the review step", async () => {
@@ -246,21 +260,21 @@ describe("c-aXF_LWC_addPersonAccess", () => {
         new CustomEvent("change", { detail: { recordId: "001x" } })
       );
     await flush();
-    btn(el, /Próximo|Next/).click();
+    btn(el, "next").click();
     await flush();
     const email = el.shadowRoot.querySelector("[data-field='email']");
     email.value = "x@example.com";
     email.dispatchEvent(new CustomEvent("change"));
     await flush();
-    btn(el, /Próximo|Next/).click();
+    btn(el, "next").click();
     await flush();
-    btn(el, /Próximo|Next/).click();
+    btn(el, "next").click();
     await flush();
 
     const review = el.shadowRoot.querySelector("dl").textContent;
     expect(review).not.toMatch(/CREATE|OWN_DATA/);
-    expect(review).toMatch(/Criar novo usuário|Create a new user/);
-    expect(review).toMatch(/Participante|Participant/);
+    expect(review).toContain(labelPath("modeCreate"));
+    expect(review).toContain(labelPath("scopeOwn"));
   });
 
   // ---- AXF-107 ----
@@ -282,12 +296,10 @@ describe("c-aXF_LWC_addPersonAccess", () => {
     await tick(POLL_MS);
 
     expect(el.shadowRoot.querySelector("lightning-spinner")).toBeNull();
-    expect(el.shadowRoot.textContent).toMatch(
-      /Acesso concluído|Access granted/
-    );
+    expect(el.shadowRoot.textContent).toContain(labelPath("done"));
     // the confirmed linkage is displayed, not only a success sentence
     expect(el.shadowRoot.textContent).toContain("005xLinked");
-    expect(el.shadowRoot.textContent).toMatch(/Usuário vinculado|Linked user/);
+    expect(el.shadowRoot.textContent).toContain(labelPath("linkedUser"));
 
     // polling stopped: no further status fetch after a terminal outcome
     getStatus.mockClear();
@@ -309,8 +321,8 @@ describe("c-aXF_LWC_addPersonAccess", () => {
     expect(el.shadowRoot.querySelector("lightning-spinner")).toBeNull();
     expect(el.shadowRoot.querySelector("[role='alert']")).not.toBeNull();
     // a terminal outcome offers no resume, only the way back to the form
-    expect(btn(el, /Retomar|Resume/)).toBeUndefined();
-    expect(btn(el, /Voltar ao formulário|Back to the form/)).toBeDefined();
+    expect(btn(el, "retry")).toBeUndefined();
+    expect(btn(el, "backToForm")).toBeDefined();
 
     await tick(30000);
     expect(getStatus).not.toHaveBeenCalled();
@@ -330,8 +342,8 @@ describe("c-aXF_LWC_addPersonAccess", () => {
     await tick(STALL_MS);
 
     expect(el.shadowRoot.querySelector("lightning-spinner")).toBeNull();
-    expect(el.shadowRoot.textContent).toMatch(/continuar|continue/i);
-    expect(btn(el, /Retomar|Resume/)).toBeDefined();
+    expect(el.shadowRoot.textContent).toContain(labelPath("stalled"));
+    expect(btn(el, "retry")).toBeDefined();
     // the unknown outcome is not reported as a failure
     expect(el.shadowRoot.querySelector("[role='alert']")).toBeNull();
 
@@ -354,8 +366,9 @@ describe("c-aXF_LWC_addPersonAccess", () => {
 
     expect(getStatus).toHaveBeenCalledTimes(3);
     expect(el.shadowRoot.querySelector("lightning-spinner")).toBeNull();
-    expect(el.shadowRoot.textContent).toMatch(/indispon|unavailable/i);
-    expect(btn(el, /Retomar|Resume/)).toBeDefined();
+    // the server-provided error detail is real text, not a label
+    expect(el.shadowRoot.textContent).toMatch(/indispon/i);
+    expect(btn(el, "retry")).toBeDefined();
     // the UI limit never claims the server job failed nor provisions again
     expect(startProvisioning).toHaveBeenCalledTimes(1);
 
@@ -382,7 +395,7 @@ describe("c-aXF_LWC_addPersonAccess", () => {
       currentStep: "CREATE_OR_LINK_USER",
       message: "Provisionamento retomado da etapa pendente."
     });
-    btn(el, /Retomar|Resume/).click();
+    btn(el, "retry").click();
     await settle();
 
     expect(resumeProvisioning).toHaveBeenCalledTimes(1);
@@ -402,7 +415,7 @@ describe("c-aXF_LWC_addPersonAccess", () => {
       message: "Acesso concluído.",
       linkedUserId: "005xLinked"
     });
-    btn(el, /Retomar|Resume/).click();
+    btn(el, "retry").click();
     await settle();
 
     expect(el.shadowRoot.querySelector("lightning-spinner")).toBeNull();
@@ -426,7 +439,7 @@ describe("c-aXF_LWC_addPersonAccess", () => {
     await tick(POLL_MS);
     expect(el.shadowRoot.querySelector("lightning-spinner")).toBeNull();
     expect(el.shadowRoot.querySelector("[role='alert']")).not.toBeNull();
-    expect(btn(el, /Retomar|Resume/)).toBeDefined();
+    expect(btn(el, "retry")).toBeDefined();
 
     resumeProvisioning.mockResolvedValue({
       provisioningId: "a0Tx",
@@ -435,11 +448,11 @@ describe("c-aXF_LWC_addPersonAccess", () => {
       currentStep: "CREATE_OR_LINK_USER",
       message: "Esse usuario ja esta vinculado a outra pessoa."
     });
-    btn(el, /Retomar|Resume/).click();
+    btn(el, "retry").click();
     await settle();
 
-    expect(btn(el, /Retomar|Resume/)).toBeUndefined();
-    expect(btn(el, /Voltar ao formulário|Back to the form/)).toBeDefined();
+    expect(btn(el, "retry")).toBeUndefined();
+    expect(btn(el, "backToForm")).toBeDefined();
     getStatus.mockClear();
     await tick(30000);
     expect(getStatus).not.toHaveBeenCalled();
@@ -469,13 +482,11 @@ describe("c-aXF_LWC_addPersonAccess", () => {
     getStatus.mockResolvedValue(runningResult());
     await tick(POLL_MS);
 
-    btn(el, /Sair e continuar depois|Leave and continue later/).click();
+    btn(el, "leave").click();
     await flush();
 
     expect(el.shadowRoot.querySelector("lightning-spinner")).toBeNull();
-    expect(el.shadowRoot.textContent).not.toMatch(
-      /Acesso concluído|Access granted/
-    );
+    expect(el.shadowRoot.textContent).not.toContain(labelPath("done"));
     // back on the form, so the entry point can resume the same request
     expect(
       el.shadowRoot.querySelector("lightning-progress-indicator")
@@ -491,7 +502,7 @@ describe("c-aXF_LWC_addPersonAccess", () => {
       currentStep: "CREATE_OR_LINK_USER",
       message: "Provisionamento retomado da etapa pendente."
     });
-    btn(el, /Confirmar|Confirm/).click();
+    btn(el, "confirm").click();
     await settle();
     expect(startProvisioning).toHaveBeenCalledTimes(2);
   });
@@ -506,8 +517,8 @@ describe("c-aXF_LWC_addPersonAccess", () => {
     await tick(STALL_MS);
 
     expect(el.shadowRoot.textContent).not.toMatch(/CREATE_OR_LINK_USER/);
-    expect(el.shadowRoot.textContent).toMatch(
-      /Criando ou vinculando o usuário|Creating or linking the user/
+    expect(el.shadowRoot.textContent).toContain(
+      labelPath("stepNameCreateOrLinkUser")
     );
   });
 
@@ -520,12 +531,8 @@ describe("c-aXF_LWC_addPersonAccess", () => {
     await tick(POLL_MS);
     await tick(STALL_MS);
 
-    expect(el.shadowRoot.textContent).toMatch(
-      /confere se já terminou|checks whether it already finished/
-    );
-    expect(el.shadowRoot.textContent).toMatch(
-      /nada é duplicado|nothing is duplicated/
-    );
+    expect(el.shadowRoot.textContent).toContain(labelPath("resumeHint"));
+    expect(el.shadowRoot.textContent).toContain(labelPath("leaveHint"));
   });
 
   it("lets another person be added right after a completed provisioning", async () => {
@@ -543,7 +550,7 @@ describe("c-aXF_LWC_addPersonAccess", () => {
     });
     await tick(POLL_MS);
 
-    const addAnother = btn(el, /Adicionar outra pessoa|Add another person/);
+    const addAnother = btn(el, "close");
     expect(addAnother).toBeDefined();
     addAnother.click();
     await flush();
@@ -551,6 +558,6 @@ describe("c-aXF_LWC_addPersonAccess", () => {
     expect(
       el.shadowRoot.querySelector("lightning-record-picker")
     ).not.toBeNull();
-    expect(el.shadowRoot.textContent).toMatch(/1 (de|of) 4/);
+    expect(el.shadowRoot.textContent).toMatch(/Step 1 of 4/);
   });
 });

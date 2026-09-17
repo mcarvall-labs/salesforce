@@ -2484,4 +2484,182 @@
     >AXF_ReconciliationReversal_doneSourceUnknown</fullName><language
     >en_US</language><protected>false</protected><shortDescription
     >Done source unknown</shortDescription><value
-    >source remaining not verifiable with your access</value></labels></CustomLabels>
+    >source remaining not verifiable with your access</value></labels><labels
+  ><fullName>AXF_AddPersonAccess_title</fullName><language
+    >en_US</language><protected>false</protected><shortDescription
+    >AddPersonAccess title</shortDescription><value
+    >Add a person and grant Axon access</value></labels><labels><fullName
+    >AXF_AddPersonAccess_subtitle</fullName><language>en_US</language><protected
+    >false</protected><shortDescription
+    >AddPersonAccess subtitle</shortDescription><value
+    >Creates or links a Salesforce user to a person and applies the access level. Never changes a password or an existing user's profile.</value></labels><labels
+  ><fullName>AXF_AddPersonAccess_forbidden</fullName><language
+    >en_US</language><protected>false</protected><shortDescription
+    >AddPersonAccess forbidden</shortDescription><value
+    >You are not authorized to grant Axon access.</value></labels><labels
+  ><fullName>AXF_AddPersonAccess_stepPerson</fullName><language
+    >en_US</language><protected>false</protected><shortDescription
+    >AddPersonAccess stepPerson</shortDescription><value
+    >Person</value></labels><labels><fullName
+    >AXF_AddPersonAccess_stepUser</fullName><language>en_US</language><protected
+    >false</protected><shortDescription
+    >AddPersonAccess stepUser</shortDescription><value
+    >User</value></labels><labels><fullName
+    >AXF_AddPersonAccess_stepScope</fullName><language
+    >en_US</language><protected>false</protected><shortDescription
+    >AddPersonAccess stepScope</shortDescription><value
+    >Access</value></labels><labels><fullName
+    >AXF_AddPersonAccess_stepReview</fullName><language
+    >en_US</language><protected>false</protected><shortDescription
+    >AddPersonAccess stepReview</shortDescription><value
+    >Review</value></labels><labels><fullName
+    >AXF_AddPersonAccess_personLabel</fullName><language
+    >en_US</language><protected>false</protected><shortDescription
+    >AddPersonAccess personLabel</shortDescription><value
+    >Person (Person Account)</value></labels><labels><fullName
+    >AXF_AddPersonAccess_nameLabel</fullName><language
+    >en_US</language><protected>false</protected><shortDescription
+    >AddPersonAccess nameLabel</shortDescription><value
+    >Name</value></labels><labels><fullName
+    >AXF_AddPersonAccess_emailLabel</fullName><language
+    >en_US</language><protected>false</protected><shortDescription
+    >AddPersonAccess emailLabel</shortDescription><value
+    >Email</value></labels><labels><fullName
+    >AXF_AddPersonAccess_modeLabel</fullName><language
+    >en_US</language><protected>false</protected><shortDescription
+    >AddPersonAccess modeLabel</shortDescription><value
+    >Salesforce user</value></labels><labels><fullName
+    >AXF_AddPersonAccess_modeCreate</fullName><language
+    >en_US</language><protected>false</protected><shortDescription
+    >AddPersonAccess modeCreate</shortDescription><value
+    >Create a new user</value></labels><labels><fullName
+    >AXF_AddPersonAccess_modeLink</fullName><language>en_US</language><protected
+    >false</protected><shortDescription
+    >AddPersonAccess modeLink</shortDescription><value
+    >Link an existing user</value></labels><labels><fullName
+    >AXF_AddPersonAccess_searchUser</fullName><language
+    >en_US</language><protected>false</protected><shortDescription
+    >AddPersonAccess searchUser</shortDescription><value
+    >Search a user by name, username or email</value></labels><labels><fullName
+    >AXF_AddPersonAccess_scopeLabel</fullName><language
+    >en_US</language><protected>false</protected><shortDescription
+    >AddPersonAccess scopeLabel</shortDescription><value
+    >Access level</value></labels><labels><fullName
+    >AXF_AddPersonAccess_scopeOwn</fullName><language>en_US</language><protected
+    >false</protected><shortDescription
+    >AddPersonAccess scopeOwn</shortDescription><value
+    >Only their own data and businesses they are responsible for (Participant)</value></labels><labels
+  ><fullName>AXF_AddPersonAccess_scopeAll</fullName><language
+    >en_US</language><protected>false</protected><shortDescription
+    >AddPersonAccess scopeAll</shortDescription><value
+    >All Axon data (Financial Manager)</value></labels><labels><fullName
+    >AXF_AddPersonAccess_licenseWarn</fullName><language
+    >en_US</language><protected>false</protected><shortDescription
+    >AddPersonAccess licenseWarn</shortDescription><value
+    >No Salesforce license is available to create a user.</value></labels><labels
+  ><fullName>AXF_AddPersonAccess_back</fullName><language
+    >en_US</language><protected>false</protected><shortDescription
+    >AddPersonAccess back</shortDescription><value>Back</value></labels><labels
+  ><fullName>AXF_AddPersonAccess_next</fullName><language
+    >en_US</language><protected>false</protected><shortDescription
+    >AddPersonAccess next</shortDescription><value>Next</value></labels><labels
+  ><fullName>AXF_AddPersonAccess_confirm</fullName><language
+    >en_US</language><protected>false</protected><shortDescription
+    >AddPersonAccess confirm</shortDescription><value
+    >Confirm</value></labels><labels><fullName
+    >AXF_AddPersonAccess_starting</fullName><language>en_US</language><protected
+    >false</protected><shortDescription
+    >AddPersonAccess starting</shortDescription><value
+    >Starting…</value></labels><labels><fullName
+    >AXF_AddPersonAccess_running</fullName><language>en_US</language><protected
+    >false</protected><shortDescription
+    >AddPersonAccess running</shortDescription><value
+    >Provisioning… follow the progress.</value></labels><labels><fullName
+    >AXF_AddPersonAccess_done</fullName><language>en_US</language><protected
+    >false</protected><shortDescription
+    >AddPersonAccess done</shortDescription><value
+    >Access granted.</value></labels><labels><fullName
+    >AXF_AddPersonAccess_failed</fullName><language>en_US</language><protected
+    >false</protected><shortDescription
+    >AddPersonAccess failed</shortDescription><value
+    >Could not finish. Read the message and resume.</value></labels><labels
+  ><fullName>AXF_AddPersonAccess_retry</fullName><language
+    >en_US</language><protected>false</protected><shortDescription
+    >AddPersonAccess retry</shortDescription><value
+    >Resume</value></labels><labels><fullName
+    >AXF_AddPersonAccess_stalled</fullName><language>en_US</language><protected
+    >false</protected><shortDescription
+    >AddPersonAccess stalled</shortDescription><value
+    >No progress for a while. Provisioning may still be running on the server; resume to continue.</value></labels><labels
+  ><fullName>AXF_AddPersonAccess_watchLimit</fullName><language
+    >en_US</language><protected>false</protected><shortDescription
+    >AddPersonAccess watchLimit</shortDescription><value
+    >Automatic tracking reached its wait limit. Provisioning may still be running on the server; resume to check.</value></labels><labels
+  ><fullName>AXF_AddPersonAccess_statusUnavailable</fullName><language
+    >en_US</language><protected>false</protected><shortDescription
+    >AddPersonAccess statusUnavailable</shortDescription><value
+    >Could not read the progress now. Provisioning may still be running on the server; resume to check.</value></labels><labels
+  ><fullName>AXF_AddPersonAccess_leave</fullName><language
+    >en_US</language><protected>false</protected><shortDescription
+    >AddPersonAccess leave</shortDescription><value
+    >Leave and continue later</value></labels><labels><fullName
+    >AXF_AddPersonAccess_leaveHint</fullName><language
+    >en_US</language><protected>false</protected><shortDescription
+    >AddPersonAccess leaveHint</shortDescription><value
+    >Provisioning may keep running on the server. Coming back, resume the same request — nothing is duplicated.</value></labels><labels
+  ><fullName>AXF_AddPersonAccess_resumeHint</fullName><language
+    >en_US</language><protected>false</protected><shortDescription
+    >AddPersonAccess resumeHint</shortDescription><value
+    >Resumes now and checks whether it already finished.</value></labels><labels
+  ><fullName>AXF_AddPersonAccess_backToForm</fullName><language
+    >en_US</language><protected>false</protected><shortDescription
+    >AddPersonAccess backToForm</shortDescription><value
+    >Back to the form</value></labels><labels><fullName
+    >AXF_AddPersonAccess_close</fullName><language>en_US</language><protected
+    >false</protected><shortDescription
+    >AddPersonAccess close</shortDescription><value
+    >Add another person</value></labels><labels><fullName
+    >AXF_AddPersonAccess_linkedUser</fullName><language
+    >en_US</language><protected>false</protected><shortDescription
+    >AddPersonAccess linkedUser</shortDescription><value
+    >Linked user</value></labels><labels><fullName
+    >AXF_AddPersonAccess_statusStep</fullName><language
+    >en_US</language><protected>false</protected><shortDescription
+    >AddPersonAccess statusStep</shortDescription><value
+    >Step</value></labels><labels><fullName
+    >AXF_AddPersonAccess_statusState</fullName><language
+    >en_US</language><protected>false</protected><shortDescription
+    >AddPersonAccess statusState</shortDescription><value
+    >State</value></labels><labels><fullName
+    >AXF_AddPersonAccess_stepOf</fullName><language>en_US</language><protected
+    >false</protected><shortDescription
+    >AddPersonAccess stepOf</shortDescription><value
+    >Step {0} of {1}</value></labels><labels><fullName
+    >AXF_AddPersonAccess_stepNameCreateOrLinkPerson</fullName><language
+    >en_US</language><protected>false</protected><shortDescription
+    >AddPersonAccess stepName CREATE_OR_LINK_PERSON</shortDescription><value
+    >Confirming the person</value></labels><labels><fullName
+    >AXF_AddPersonAccess_stepNameCreateOrLinkUser</fullName><language
+    >en_US</language><protected>false</protected><shortDescription
+    >AddPersonAccess stepName CREATE_OR_LINK_USER</shortDescription><value
+    >Creating or linking the user</value></labels><labels><fullName
+    >AXF_AddPersonAccess_stepNameAssignRole</fullName><language
+    >en_US</language><protected>false</protected><shortDescription
+    >AddPersonAccess stepName ASSIGN_ROLE</shortDescription><value
+    >Assigning the role</value></labels><labels><fullName
+    >AXF_AddPersonAccess_stepNameAssignPsg</fullName><language
+    >en_US</language><protected>false</protected><shortDescription
+    >AddPersonAccess stepName ASSIGN_PSG</shortDescription><value
+    >Assigning access permissions</value></labels><labels><fullName
+    >AXF_AddPersonAccess_stepNameSetOwnerSync</fullName><language
+    >en_US</language><protected>false</protected><shortDescription
+    >AddPersonAccess stepName SET_OWNER_SYNC</shortDescription><value
+    >Syncing the responsible owner</value></labels><labels><fullName
+    >AXF_AddPersonAccess_stepNameActivate</fullName><language
+    >en_US</language><protected>false</protected><shortDescription
+    >AddPersonAccess stepName ACTIVATE</shortDescription><value
+    >Activating the user</value></labels><labels><fullName
+    >AXF_AddPersonAccess_stepNameDone</fullName><language
+    >en_US</language><protected>false</protected><shortDescription
+    >AddPersonAccess stepName DONE</shortDescription><value
+    >Done</value></labels></CustomLabels>
