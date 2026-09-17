@@ -583,8 +583,17 @@ export default class AxfSourceDiscovery extends LightningElement {
     let incomplete = 0;
     let hardFailure = 0;
     let failureCause = "";
+    // Only connections that have not already succeeded are (re)run: an already SUCCEEDED
+    // connection has nothing left to discover, and re-running it hits the resume cursor at
+    // a page past its own last totalPages, fetches zero rows and can flip a healthy run to
+    // a false "did not complete" — for every other connection, on every click (AXF-106 bug).
+    const toDiscover = this.connections.filter((c) => c.discovered !== true);
+    if (toDiscover.length === 0) {
+      this.running = false;
+      return;
+    }
     // One connection per Apex transaction — a callout is never issued after a DML.
-    for (const c of this.connections) {
+    for (const c of toDiscover) {
       try {
         // eslint-disable-next-line no-await-in-loop
         const r = await startDiscovery({ connectionId: c.connectionId });

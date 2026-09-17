@@ -565,8 +565,7 @@ public inherited sharing class ALT_CLS_CsvFormatParser {
     }
   }
 
-  @TestVisible
-  private static String neutralizeFormula(String value) {
+  public static String neutralizeFormula(String value) {
     if (String.isBlank(value)) {
       return value;
     }
