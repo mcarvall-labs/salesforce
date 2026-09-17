@@ -336,7 +336,7 @@ describe("c-aXF_LWC_closureRun", () => {
     expect(
       element.shadowRoot.querySelector('[data-id="external-action"]')
         .textContent
-    ).toBe(actionLabel("REVOKE_IN_PLUGGY"));
+    ).toBe("c.AXF_ClosureRun_actionREVOKE_IN_PLUGGY");
     // The step at the provider is never the run's own next action.
     expect(
       element.shadowRoot.querySelector('[data-id="next-action"]').textContent
@@ -362,5 +362,41 @@ describe("c-aXF_LWC_closureRun", () => {
       element.shadowRoot.querySelector('[data-id="external-action"]')
         .textContent
     ).toBe("—");
+  });
+
+  it("never announces a closed installation while the run is still blocked", async () => {
+    listRuns.mockResolvedValue([blocked]);
+    // A run stopped at PURGE already carries the unconfirmed external revocation, but the
+    // local closure is not complete: no provider step is offered yet.
+    read.mockResolvedValueOnce({
+      ...blocked,
+      lastCompletedStage: "STOP_COLLECTION",
+      blockReason: "ARCHIVE_UNVERIFIED",
+      nextAction: "VERIFY_ARCHIVE",
+      externalRevocation: "NOT_CONFIRMED",
+      externalRevocationAction: null
+    });
+    const element = build();
+    await flush();
+    [...element.shadowRoot.querySelectorAll("lightning-button")]
+      .find((button) => button.dataset.id === "clr1")
+      .click();
+    await flush();
+
+    expect(element.shadowRoot.querySelector('[data-id="closed"]')).toBeNull();
+    expect(
+      element.shadowRoot.querySelector('[data-id="external-pending"]')
+    ).toBeNull();
+    expect(
+      element.shadowRoot.querySelector('[data-id="external-action"]')
+        .textContent
+    ).toBe("—");
+    // The blocked run keeps its own single next step.
+    expect(
+      element.shadowRoot.querySelector('[data-id="next-action"]').textContent
+    ).toBe(actionLabel("VERIFY_ARCHIVE"));
+    expect(
+      element.shadowRoot.querySelector('[data-id="blocked"]')
+    ).not.toBeNull();
   });
 });

@@ -439,8 +439,11 @@ public with sharing class ALT_CLS_ClosureOrchestrator {
     String revocation = run.AXF_CLR_PKL_ExternalRevocation__c;
     view.externalRevocation = revocation;
     // Separately from the run's own next action: a pending external revocation is the
-    // operator's own step at the provider, never a step of this closure.
-    view.externalRevocationAction = revocation == 'NOT_CONFIRMED'
+    // operator's own step at the provider, never a step of this closure. It is only offered
+    // once the local closure is complete: a blocked run still has its own step to take, and
+    // presenting "Axon closed" then would be a false statement about the installation.
+    view.externalRevocationAction =
+      run.AXF_CLR_PKL_Status__c == 'CLOSED' && revocation == 'NOT_CONFIRMED'
       ? EXTERNAL_REVOKE_ACTION
       : null;
     view.legalHold = run.AXF_CLR_BOL_LegalHold__c;
@@ -778,34 +781,42 @@ public with sharing class ALT_CLS_ClosureOrchestrator {
    * the pending mandatory backup (AD-18). `BLOCKED:HOT_REMOVAL_NOT_AUTHORIZED` is the opposite:
    * a verified copy the policy keeps hot, which does not impede a governed purge. With no archive
    * attempt there is no copy to confirm and the retention policy of each domain governs alone.
+   *
+   * Verification is per source family (BAT/CCT/FTX, the families the purge pseudonymizes): a
+   * confirmed copy of one family says nothing about the content of another, so each family with
+   * an archive attempt must own a confirmed copy before anything is erased.
    */
   private StageOutcome archiveSafeguard(Account holder) {
     Id accountId = holder.Id;
-    Boolean verifiedCopy = false;
-    Boolean recoveryGateOpen = false;
-    Boolean unverifiedAttempt = false;
+    Set<String> attemptedFamilies = new Set<String>();
+    Set<String> verifiedFamilies = new Set<String>();
+    Set<String> recoveryGateFamilies = new Set<String>();
     for (AXF_OBJ_ArchiveRun__c run : [
-      SELECT AXF_ARR_TXT_HotRemoval__c
+      SELECT AXF_ARR_PKL_SourceFamily__c, AXF_ARR_TXT_HotRemoval__c
       FROM AXF_OBJ_ArchiveRun__c
       WHERE AXF_ARR_LKP_Account__c = :accountId
       WITH USER_MODE
+      ORDER BY AXF_ARR_DTM_LastCheckpointAt__c DESC
       LIMIT 200
     ]) {
+      String family = run.AXF_ARR_PKL_SourceFamily__c;
       String gate = run.AXF_ARR_TXT_HotRemoval__c;
+      attemptedFamilies.add(family);
       if (gate == ARCHIVE_VERIFIED_RETAINED) {
-        verifiedCopy = true;
+        verifiedFamilies.add(family);
       } else if (gate == ARCHIVE_RECOVERY_GATE_OPEN) {
-        recoveryGateOpen = true;
-      } else {
-        // A null gate means verification never closed the run (scanning, writing or failed).
-        unverifiedAttempt = true;
+        recoveryGateFamilies.add(family);
       }
+      // Any other gate (as a null one) means verification never closed the run: scanning,
+      // writing or failed. Such a family has no confirmed copy until another run confirms one.
     }
-    if (recoveryGateOpen) {
+    if (!recoveryGateFamilies.isEmpty()) {
       return blockedStage('BACKUP_PENDING', 'AWAIT_BACKUP_CONFIRMATION');
     }
-    if (unverifiedAttempt && !verifiedCopy) {
-      return blockedStage('ARCHIVE_UNVERIFIED', 'VERIFY_ARCHIVE');
+    for (String family : attemptedFamilies) {
+      if (!verifiedFamilies.contains(family)) {
+        return blockedStage('ARCHIVE_UNVERIFIED', 'VERIFY_ARCHIVE');
+      }
     }
     return null;
   }

@@ -881,7 +881,7 @@ private class ALT_CLS_ClosureOrchestratorTest {
       );
       insert fact;
       // Arquivamento iniciado e nunca verificado: nenhuma copia recuperavel confirmada.
-      AXF_OBJ_ArchiveRun__c archive = archiveRun(scope.holder.Id, 'g', null);
+      AXF_OBJ_ArchiveRun__c archive = archiveRun(scope.holder.Id, 'g', 'BAT', null);
       ALT_CLS_RetentionPolicy.policyFixtures = descriptionPolicy();
       ALT_CLS_ClosureOrchestrator service = new ALT_CLS_ClosureOrchestrator();
       ALT_CLS_ClosureOrchestrator.RunView run = service.request(
@@ -1075,17 +1075,66 @@ private class ALT_CLS_ClosureOrchestratorTest {
     }
   }
 
+  /**
+   * AXF-120 AC-1: a copia recuperavel confirmada e por familia de origem. Um arquivo verificado
+   * de uma familia nunca autoriza apagar o conteudo de outra, cujo arquivamento nunca fechou.
+   */
+  @IsTest
+  static void verifiedFamilyNeverAuthorizesAnotherFamilysDeletion() {
+    System.runAs(admin()) {
+      Scope scope = makeScope('k');
+      scope.plan.AXF_FTX_TXT_Description__c = 'Aluguel sala 40 - Ana';
+      update scope.plan;
+      // Copia confirmada e mantida quente apenas na familia BAT.
+      archiveRun(scope.holder.Id, 'k-bat', 'BAT', 'BLOCKED:HOT_REMOVAL_NOT_AUTHORIZED');
+      // Arquivamento de CCT iniciado e nunca verificado: nenhuma copia recuperavel confirmada.
+      archiveRun(scope.holder.Id, 'k-cct', 'CCT', null);
+      ALT_CLS_RetentionPolicy.policyFixtures = descriptionPolicy();
+      ALT_CLS_ClosureOrchestrator service = new ALT_CLS_ClosureOrchestrator();
+      ALT_CLS_ClosureOrchestrator.RunView run = service.request(
+        scope.holder.Id,
+        false
+      );
+      run = service.attachExportEvidence(run.runId, 'evidence-k', run.version);
+      // A policy de retencao ja venceu: sem o impedimento a exclusao aconteceria.
+      Test.setCreatedDate(run.runId, Datetime.now().addDays(-3));
+      Test.startTest();
+      run = service.advance(run.runId, run.version);
+      Test.stopTest();
+
+      Assert.areEqual('BLOCKED', run.status, run.blockReason);
+      Assert.areEqual(
+        'ARCHIVE_UNVERIFIED',
+        run.blockReason,
+        'A copia confirmada da BAT nao autoriza apagar o conteudo da CCT.'
+      );
+      Assert.areEqual('VERIFY_ARCHIVE', run.nextAction);
+      Assert.areEqual(
+        'Aluguel sala 40 - Ana',
+        [
+          SELECT AXF_FTX_TXT_Description__c
+          FROM AXF_OBJ_FinancialTransaction__c
+          WHERE Id = :scope.plan.Id
+        ]
+        .AXF_FTX_TXT_Description__c,
+        'Exclusao bloqueada preserva o conteudo.'
+      );
+      assertAccessWithdrawn(scope);
+    }
+  }
+
   /** Checkpoint de arquivamento do titular; escrita somente via o seam do servico (AXF-95). */
   private static AXF_OBJ_ArchiveRun__c archiveRun(
     Id accountId,
     String key,
+    String family,
     String gate
   ) {
     ALT_CLS_ArchiveRunService.writing = true;
     try {
       AXF_OBJ_ArchiveRun__c run = new AXF_OBJ_ArchiveRun__c(
         AXF_ARR_EXI_RunKey__c = 'axf120-' + key,
-        AXF_ARR_PKL_SourceFamily__c = 'BAT',
+        AXF_ARR_PKL_SourceFamily__c = family,
         AXF_ARR_LKP_Account__c = accountId,
         AXF_ARR_PKL_Phase__c = 'SCANNING',
         AXF_ARR_TXT_PolicyVersion__c = 'archive-policy@1.0.0',
@@ -1174,6 +1223,13 @@ private class ALT_CLS_ClosureOrchestratorTest {
       ]
       .AXF_CON_PKL_CollectionState__c,
       'Coleta pausada nao reinicia pela pendencia.'
+    );
+    // AXF_PluggyIntegrationConfig__c is a hierarchy custom setting that only an authority with
+    // Customize Application can query, and no permission set of this repository grants it to the
+    // closure operator. The class's own test seam stubs that unrelated global switch so the
+    // eligibility verdict for this scope is still evaluated for real, by the operator's session.
+    AXF_CLS_PluggySettings.overrideForTests = new AXF_PluggyIntegrationConfig__c(
+      AXF_PIC_BOL_CollectionGloballyPaused__c = false
     );
     Assert.isFalse(
       new AXF_CLS_PluggyCollectionControlService()
