@@ -14,7 +14,6 @@
     <members>ALT_CLS_InvestmentCapacity</members>
     <members>ALT_CLS_ManualSync</members>
     <members>ALT_CLS_PriceFinancing</members>
-    <members>ALT_CLS_SacFinancing</members>
     <members>AXF_CLS_BankAccountBalanceController</members>
     <members>AXF_CLS_BankAccountStatementController</members>
     <members>AXF_CLS_CTRL_AccountLookup</members>
@@ -47,16 +46,11 @@
     <members>AXF_CLS_PluggyCreditCardSyncQueueable</members>
     <members>AXF_CLS_PluggyInvSync_Service</members>
     <members>AXF_CLS_PluggyItemSyncQueueable</members>
-    <members>AXF_CLS_PluggyItemSyncScheduler</members>
     <members>AXF_CLS_PluggyLoanSync_Service</members>
     <members>AXF_CLS_PluggyRetryScheduler</members>
     <members>AXF_CLS_PluggyTxSync_Service</members>
     <members>AXF_CLS_SVC_CashFlowBalance</members>
     <members>AXF_CLS_SVC_CashFlowSettlement</members>
-    <members>AXF_CLS_TH_AccountCardNaming</members>
-    <members>AXF_CLS_TH_BankInstitution</members>
-    <members>AXF_CLS_TH_CashFlow</members>
-    <members>AXF_CLS_TH_Reconciliation</members>
     <members>AXF_TH_CreditCardInvoice</members>
     <members>ZZZ_TestNameField</members>
     <name>ApexClass</name>
