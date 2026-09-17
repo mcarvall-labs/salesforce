@@ -725,6 +725,11 @@
     </fieldPermissions>
     <fieldPermissions>
         <editable>true</editable>
+        <field>AXF_OBJ_ClosureRun__c.AXF_CLR_TAL_NonReactivationMark__c</field>
+        <readable>true</readable>
+    </fieldPermissions>
+    <fieldPermissions>
+        <editable>true</editable>
         <field>AXF_OBJ_ClosureRun__c.AXF_CLR_TXT_BlockReason__c</field>
         <readable>true</readable>
     </fieldPermissions>

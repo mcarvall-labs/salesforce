@@ -287,8 +287,7 @@ public with sharing class ALT_CLS_ClosureOrchestrator {
     Integer start = STAGES.indexOf(run.AXF_CLR_PKL_Stage__c) + 1;
     if (start >= STAGES.size()) {
       // Every stage is already complete (e.g. terminal state lost): close, never spin.
-      run.AXF_CLR_PKL_Status__c = 'CLOSED';
-      run.AXF_CLR_TXT_NextAction__c = 'NONE';
+      markClosed(run);
     }
     // One unit of work: either the checkpoints are persisted with the effects or nothing is.
     Savepoint whole = Database.setSavepoint();
@@ -352,8 +351,7 @@ public with sharing class ALT_CLS_ClosureOrchestrator {
       }
       if (stage == 'RETAIN_EVIDENCE') {
         run.AXF_CLR_TAL_EvidenceSummary__c = evidenceSummary(run, checkpoints);
-        run.AXF_CLR_PKL_Status__c = 'CLOSED';
-        run.AXF_CLR_TXT_NextAction__c = 'NONE';
+        markClosed(run);
       }
     }
     run.AXF_CLR_TAL_Checkpoints__c = serializeCheckpoints(checkpoints);
@@ -366,6 +364,28 @@ public with sharing class ALT_CLS_ClosureOrchestrator {
       throw lost;
     }
     return read(run.Id);
+  }
+
+  /**
+   * Terminal transition, in one place so that no path reaches `CLOSED` without its proof: the
+   * closure marks what must not be reactivated (AXF-121) in the very update that freezes it, and
+   * the terminal rule of the run keeps the mark immutable from then on.
+   */
+  private static void markClosed(AXF_OBJ_ClosureRun__c run) {
+    // One instant for the whole terminal transition: the run's completion time and the proof's
+    // `closedAt` are the same reading, so the record and its evidence cannot disagree.
+    Datetime closedAt = run.AXF_CLR_DT_LastCompletedAt__c == null
+      ? Datetime.now()
+      : run.AXF_CLR_DT_LastCompletedAt__c;
+    run.AXF_CLR_DT_LastCompletedAt__c = closedAt;
+    run.AXF_CLR_TAL_NonReactivationMark__c = ALT_CLS_RestoreInvariant.mark(
+      run.AXF_CLR_EXI_ScopeKey__c,
+      run.AXF_CLR_TXT_CorrelationId__c,
+      run.AXF_CLR_TXT_PolicyVersion__c,
+      closedAt
+    );
+    run.AXF_CLR_PKL_Status__c = 'CLOSED';
+    run.AXF_CLR_TXT_NextAction__c = 'NONE';
   }
 
   public RunView read(Id runId) {
@@ -927,6 +947,7 @@ public with sharing class ALT_CLS_ClosureOrchestrator {
       SELECT
         Id,
         AXF_CLR_LKP_Account__c,
+        AXF_CLR_EXI_ScopeKey__c,
         AXF_CLR_PKL_Status__c,
         AXF_CLR_PKL_Stage__c,
         AXF_CLR_NUM_Attempt__c,
