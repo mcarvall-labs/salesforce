@@ -1456,4 +1456,94 @@
   ><label>remanescente da fonte (efeitos visíveis)</label><name
     >AXF_ReconciliationReversal_doneSourceRemaining</name></customLabels><customLabels
   ><label>remanescente da fonte não verificável com o seu acesso</label><name
-    >AXF_ReconciliationReversal_doneSourceUnknown</name></customLabels></Translations>
+    >AXF_ReconciliationReversal_doneSourceUnknown</name></customLabels><customLabels
+  ><label>Adicionar pessoa e dar acesso ao Axon</label><name
+    >AXF_AddPersonAccess_title</name></customLabels><customLabels><label
+    >Cria ou vincula um usuário Salesforce a uma pessoa e aplica o nível de acesso. Não muda senha nem perfil de usuário existente.</label><name
+    >AXF_AddPersonAccess_subtitle</name></customLabels><customLabels><label
+    >Você não tem autorização para conceder acesso ao Axon.</label><name
+    >AXF_AddPersonAccess_forbidden</name></customLabels><customLabels><label
+    >Pessoa</label><name
+    >AXF_AddPersonAccess_stepPerson</name></customLabels><customLabels><label
+    >Usuário</label><name
+    >AXF_AddPersonAccess_stepUser</name></customLabels><customLabels><label
+    >Acesso</label><name
+    >AXF_AddPersonAccess_stepScope</name></customLabels><customLabels><label
+    >Revisar</label><name
+    >AXF_AddPersonAccess_stepReview</name></customLabels><customLabels><label
+    >Pessoa (Person Account)</label><name
+    >AXF_AddPersonAccess_personLabel</name></customLabels><customLabels><label
+    >Nome</label><name
+    >AXF_AddPersonAccess_nameLabel</name></customLabels><customLabels><label
+    >E-mail</label><name
+    >AXF_AddPersonAccess_emailLabel</name></customLabels><customLabels><label
+    >Usuário Salesforce</label><name
+    >AXF_AddPersonAccess_modeLabel</name></customLabels><customLabels><label
+    >Criar novo usuário</label><name
+    >AXF_AddPersonAccess_modeCreate</name></customLabels><customLabels><label
+    >Vincular usuário existente</label><name
+    >AXF_AddPersonAccess_modeLink</name></customLabels><customLabels><label
+    >Buscar usuário por nome, login ou e-mail</label><name
+    >AXF_AddPersonAccess_searchUser</name></customLabels><customLabels><label
+    >Nível de acesso</label><name
+    >AXF_AddPersonAccess_scopeLabel</name></customLabels><customLabels><label
+    >Só os próprios dados e empresas sob responsabilidade (Participante)</label><name
+    >AXF_AddPersonAccess_scopeOwn</name></customLabels><customLabels><label
+    >Todos os dados do Axon (Gestor Financeiro)</label><name
+    >AXF_AddPersonAccess_scopeAll</name></customLabels><customLabels><label
+    >Não há licença Salesforce disponível para criar um usuário.</label><name
+    >AXF_AddPersonAccess_licenseWarn</name></customLabels><customLabels><label
+    >Voltar</label><name
+    >AXF_AddPersonAccess_back</name></customLabels><customLabels><label
+    >Próximo</label><name
+    >AXF_AddPersonAccess_next</name></customLabels><customLabels><label
+    >Confirmar</label><name
+    >AXF_AddPersonAccess_confirm</name></customLabels><customLabels><label
+    >Iniciando…</label><name
+    >AXF_AddPersonAccess_starting</name></customLabels><customLabels><label
+    >Provisionando… acompanhe o andamento.</label><name
+    >AXF_AddPersonAccess_running</name></customLabels><customLabels><label
+    >Acesso concluído.</label><name
+    >AXF_AddPersonAccess_done</name></customLabels><customLabels><label
+    >Não foi possível concluir. Veja a mensagem e retome.</label><name
+    >AXF_AddPersonAccess_failed</name></customLabels><customLabels><label
+    >Retomar</label><name
+    >AXF_AddPersonAccess_retry</name></customLabels><customLabels><label
+    >Sem progresso por um tempo. O provisionamento pode continuar no servidor; retome para continuar.</label><name
+    >AXF_AddPersonAccess_stalled</name></customLabels><customLabels><label
+    >O acompanhamento automático atingiu o limite de espera. O provisionamento pode continuar no servidor; retome para verificar.</label><name
+    >AXF_AddPersonAccess_watchLimit</name></customLabels><customLabels><label
+    >Não foi possível consultar o andamento agora. O provisionamento pode continuar no servidor; retome para verificar.</label><name
+    >AXF_AddPersonAccess_statusUnavailable</name></customLabels><customLabels
+  ><label>Sair e continuar depois</label><name
+    >AXF_AddPersonAccess_leave</name></customLabels><customLabels><label
+    >O provisionamento pode continuar no servidor. Ao voltar, retome pelo mesmo cadastro — nada é duplicado.</label><name
+    >AXF_AddPersonAccess_leaveHint</name></customLabels><customLabels><label
+    >Retoma agora e confere se já terminou.</label><name
+    >AXF_AddPersonAccess_resumeHint</name></customLabels><customLabels><label
+    >Voltar ao formulário</label><name
+    >AXF_AddPersonAccess_backToForm</name></customLabels><customLabels><label
+    >Adicionar outra pessoa</label><name
+    >AXF_AddPersonAccess_close</name></customLabels><customLabels><label
+    >Usuário vinculado</label><name
+    >AXF_AddPersonAccess_linkedUser</name></customLabels><customLabels><label
+    >Etapa</label><name
+    >AXF_AddPersonAccess_statusStep</name></customLabels><customLabels><label
+    >Situação</label><name
+    >AXF_AddPersonAccess_statusState</name></customLabels><customLabels><label
+    >Etapa {0} de {1}</label><name
+    >AXF_AddPersonAccess_stepOf</name></customLabels><customLabels><label
+    >Confirmando a pessoa</label><name
+    >AXF_AddPersonAccess_stepNameCreateOrLinkPerson</name></customLabels><customLabels
+  ><label>Criando ou vinculando o usuário</label><name
+    >AXF_AddPersonAccess_stepNameCreateOrLinkUser</name></customLabels><customLabels
+  ><label>Atribuindo o papel</label><name
+    >AXF_AddPersonAccess_stepNameAssignRole</name></customLabels><customLabels
+  ><label>Atribuindo as permissões de acesso</label><name
+    >AXF_AddPersonAccess_stepNameAssignPsg</name></customLabels><customLabels
+  ><label>Sincronizando o responsável</label><name
+    >AXF_AddPersonAccess_stepNameSetOwnerSync</name></customLabels><customLabels
+  ><label>Ativando o usuário</label><name
+    >AXF_AddPersonAccess_stepNameActivate</name></customLabels><customLabels
+  ><label>Concluído</label><name
+    >AXF_AddPersonAccess_stepNameDone</name></customLabels></Translations>
