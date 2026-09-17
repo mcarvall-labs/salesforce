@@ -431,7 +431,8 @@ public with sharing class ALT_CLS_ReconciliationService {
       throw failure;
     } catch (ALT_CLS_RealizationService.RealizationException failure) {
       Database.rollback(point);
-      throw mapRealization(failure);
+      // Safety net: the per-line writer already maps its own rejection with the line index.
+      throw mapRealization(failure, -1);
     } catch (Exception failure) {
       Database.rollback(point);
       throw failure('UNEXPECTED', new List<String>());
@@ -470,13 +471,8 @@ public with sharing class ALT_CLS_ReconciliationService {
         grantProposerAccess(aggregate.Id, aggregate.OwnerId);
         return viewOf(aggregate);
       }
-      if (aggregate.AXF_RCN_PKL_State__c == STATE_FAILED) {
-        // Nothing was committed and the outcome is already known: parking it again is refused.
-        throw failure('CONFLICT', new List<String>());
-      }
-      if (!unknownOutcome(aggregate)) {
-        throw failure('CONFLICT', new List<String>());
-      }
+      // An existing outcome is reported as it is and never overwritten: parking is idempotent and a
+      // resolved aggregate keeps its durable state.
       return viewOf(aggregate);
     } catch (ReconciliationException failure) {
       Database.rollback(point);
@@ -688,6 +684,19 @@ public with sharing class ALT_CLS_ReconciliationService {
               : null;
   }
 
+  /**
+   * Durable external identity of a financial transaction. The client request id is the canonical
+   * external identity of the occurrence: org-wide unique, required and independent of the run that
+   * proposed it. A record id is never used while that identity exists.
+   */
+  private static String externalIdentity(
+    AXF_OBJ_FinancialTransaction__c row
+  ) {
+    return String.isBlank(row.AXF_FTX_EXI_ClientRequestId__c)
+      ? String.valueOf(row.Id)
+      : row.AXF_FTX_EXI_ClientRequestId__c.left(IDENTITY_MAX);
+  }
+
   // ------------------------------------------------------------------ records
 
   private Fact resolveFact(String declaredKind, Id factId) {
@@ -778,6 +787,7 @@ public with sharing class ALT_CLS_ReconciliationService {
           AXF_FTX_PKL_PlanKind__c,
           AXF_FTX_DAT_PurchaseDate__c,
           AXF_FTX_TXT_Description__c,
+          AXF_FTX_EXI_ClientRequestId__c,
           AXF_FTX_LKP_Account__c
         FROM AXF_OBJ_FinancialTransaction__c
         WHERE Id = :factId
@@ -792,9 +802,7 @@ public with sharing class ALT_CLS_ReconciliationService {
         throw failure('LOCK_PLAN_CHANGED', new List<String>());
       }
       fact.label = rows[0].Name;
-      // Manual occurrences share plan hashes across rows and gain hashes over time; the record
-      // itself is the only identity that is both unique and stable (same rule as the EAS service).
-      fact.identity = 'FTX:' + rows[0].Id;
+      fact.identity = externalIdentity(rows[0]);
       fact.magnitude = rows[0].AXF_FTX_NUM_Magnitude__c;
       fact.version = value(rows[0].AXF_FTX_NUM_Version__c);
       fact.currencyIso = rows[0].AXF_FTX_TXT_CurrencyIsoCode__c;
@@ -818,6 +826,14 @@ public with sharing class ALT_CLS_ReconciliationService {
   }
 
   private Target resolveTarget(Id targetId) {
+    if (
+      targetId.getSObjectType() !=
+      AXF_OBJ_FinancialTransaction__c.SObjectType
+    ) {
+      // A source fact of rank 30 declared as a target is a rank discovery that came too late:
+      // the plan is never relocked out of order, and the same scope may be submitted again.
+      throw failure('LOCK_PLAN_CHANGED', new List<String>());
+    }
     List<AXF_OBJ_FinancialTransaction__c> rows = [
       SELECT
         Id,
@@ -828,7 +844,7 @@ public with sharing class ALT_CLS_ReconciliationService {
         AXF_FTX_TXT_CurrencyIsoCode__c,
         AXF_FTX_PKL_Direction__c,
         AXF_FTX_PKL_PlanKind__c,
-        AXF_FTX_EXI_PlanIdentityHash__c,
+        AXF_FTX_EXI_ClientRequestId__c,
         AXF_FTX_DAT_DueDate__c,
         AXF_FTX_TXT_Description__c,
         AXF_FTX_LKP_Account__c
@@ -848,9 +864,7 @@ public with sharing class ALT_CLS_ReconciliationService {
     target.id = rows[0].Id;
     target.label = rows[0].Name;
     target.description = rows[0].AXF_FTX_TXT_Description__c;
-    target.identity = String.isBlank(rows[0].AXF_FTX_EXI_PlanIdentityHash__c)
-      ? 'FTX:' + rows[0].Id
-      : rows[0].AXF_FTX_EXI_PlanIdentityHash__c.left(IDENTITY_MAX);
+    target.identity = externalIdentity(rows[0]);
     target.accountId = rows[0].AXF_FTX_LKP_Account__c;
     target.magnitude = rows[0].AXF_FTX_NUM_Magnitude__c;
     target.obligation = rows[0].AXF_FTX_NUM_CurrentBasis__c;
@@ -938,7 +952,6 @@ public with sharing class ALT_CLS_ReconciliationService {
         FROM AXF_OBJ_BankAccountTransaction__c
         WHERE Id IN :bank
         WITH USER_MODE
-        ORDER BY Id
         FOR UPDATE
       ];
       if (rows.size() != bank.size()) {
@@ -951,7 +964,6 @@ public with sharing class ALT_CLS_ReconciliationService {
         FROM AXF_OBJ_CreditCardTransaction__c
         WHERE Id IN :card
         WITH USER_MODE
-        ORDER BY Id
         FOR UPDATE
       ];
       if (rows.size() != card.size()) {
@@ -974,7 +986,6 @@ public with sharing class ALT_CLS_ReconciliationService {
       FROM AXF_OBJ_FinancialTransaction__c
       WHERE Id IN :ids
       WITH USER_MODE
-      ORDER BY Id
       FOR UPDATE
     ];
     if (rows.size() != ids.size()) {
@@ -1067,7 +1078,9 @@ public with sharing class ALT_CLS_ReconciliationService {
       factIds.add(fact.id);
     }
     Amounts result = netAmounts(targetIds, factIds);
-    if (!plan.allocationKeys.isEmpty()) {
+    // A bind must be a plain variable: the field expression never reaches the query directly.
+    List<String> allocationKeys = plan.allocationKeys;
+    if (!allocationKeys.isEmpty()) {
       for (AXF_OBJ_ReconciliationAllocation__c row : [
         SELECT
           Id,
@@ -1078,7 +1091,7 @@ public with sharing class ALT_CLS_ReconciliationService {
           AXF_RA_LKP_FinancialTransaction__c,
           AXF_RA_LKP_Reconciliation__c
         FROM AXF_OBJ_ReconciliationAllocation__c
-        WHERE AXF_RA_EXI_AllocationKey__c IN :plan.allocationKeys
+        WHERE AXF_RA_EXI_AllocationKey__c IN :allocationKeys
         WITH SYSTEM_MODE
       ]) {
         plan.committed.put(row.Id, row);
@@ -1206,7 +1219,10 @@ public with sharing class ALT_CLS_ReconciliationService {
           committed.AXF_RA_NUM_Magnitude__c != line.amount ||
           committed.AXF_RA_LKP_Reconciliation__c != aggregate.Id
         ) {
-          throw failure('CONFLICT', new List<String>());
+          throw failure(
+            'CONFLICT',
+            new List<String>{ 'LINE:' + index, 'ALREADY_COMMITTED' }
+          );
         }
         continue;
       }
@@ -1243,7 +1259,7 @@ public with sharing class ALT_CLS_ReconciliationService {
       try {
         new ALT_CLS_RealizationService().apply(apply);
       } catch (ALT_CLS_RealizationService.RealizationException failed) {
-        throw mapRealization(failed);
+        throw mapRealization(failed, index);
       }
       current.byTarget.put(
         target.id,
@@ -1301,17 +1317,23 @@ public with sharing class ALT_CLS_ReconciliationService {
     return fact;
   }
 
+  /**
+   * Maps a rejection of the AXF-25 line writer. The line index travels as a reason so the caller
+   * can point the draft at the offending line without any internal detail being exposed.
+   */
   private ReconciliationException mapRealization(
-    ALT_CLS_RealizationService.RealizationException failed
+    ALT_CLS_RealizationService.RealizationException failed,
+    Integer index
   ) {
     String code = failed.getMessage();
+    List<String> reasons = new List<String>{ 'LINE:' + index };
     if (code == 'UNAVAILABLE_AMOUNT') {
-      return failure('VALUE_CONSERVATION', new List<String>());
+      return failure('VALUE_CONSERVATION', reasons);
     }
     if (code == 'UNAVAILABLE' || code == 'INVALID_ROLE') {
-      return failure('NOT_ACCESSIBLE', new List<String>());
+      return failure('NOT_ACCESSIBLE', reasons);
     }
-    return failure(code, new List<String>());
+    return failure(code, reasons);
   }
 
   /** Fecha o agregado com o residual persistido e o estado derivado, sem editar nenhum RA. */
@@ -1331,24 +1353,23 @@ public with sharing class ALT_CLS_ReconciliationService {
       aggregate.Id
     );
     Amounts net = netAmounts(plan.targets.keySet(), factIds(plan));
-    Decimal sourceResidual = 0;
     Decimal targetResidual = 0;
     Boolean blocked = false;
-    String currency = null;
+    String residualIso = null;
     for (AXF_OBJ_ReconciliationAllocation__c row : lines) {
-      currency = row.AXF_RA_TXT_CurrencyIsoCode__c;
+      residualIso = row.AXF_RA_TXT_CurrencyIsoCode__c;
       if (row.AXF_RA_PKL_FxState__c != 'READY') {
         // Material evidence is missing: the aggregate is BLOCKED, never concluded.
         blocked = true;
       }
     }
-    for (Fact fact : plan.facts) {
-      sourceResidual += fact.magnitude - net.fact(fact.id);
-    }
+    // The persisted residual is the outstanding side of the set (the target side, in the target
+    // currency). The source residual is reported per line: an unused remainder of a source fact is
+    // its own capacity, not an outstanding obligation of this aggregate.
     for (Target target : plan.targets.values()) {
       targetResidual += capacity(target, net) - net.target(target.id);
     }
-    Decimal residual = sourceResidual + targetResidual;
+    Decimal residual = targetResidual;
     // BLOCKED by missing evidence still persists the computed residual: the only case with a null
     // residual is the unknown-outcome park of GF-75.
     String nextState = blocked
@@ -1357,13 +1378,13 @@ public with sharing class ALT_CLS_ReconciliationService {
     if (
       aggregate.AXF_RCN_PKL_State__c == nextState &&
       aggregate.AXF_RCN_NUM_ResidualMagnitude__c == residual &&
-      aggregate.AXF_RCN_TXT_ResidualCurrency__c == currency
+      aggregate.AXF_RCN_TXT_ResidualCurrency__c == residualIso
     ) {
       // Nothing changed: the aggregate is not rewritten and its version does not move.
       return returnView ? viewOf(aggregate) : null;
     }
     aggregate.AXF_RCN_NUM_ResidualMagnitude__c = residual;
-    aggregate.AXF_RCN_TXT_ResidualCurrency__c = currency;
+    aggregate.AXF_RCN_TXT_ResidualCurrency__c = residualIso;
     aggregate.AXF_RCN_DT_EffectiveAt__c = Datetime.now();
     aggregate.AXF_RCN_PKL_State__c = nextState;
     aggregate.AXF_RCN_NUM_Version__c =
@@ -1420,6 +1441,25 @@ public with sharing class ALT_CLS_ReconciliationService {
 
   // ------------------------------------------------------------------ replay and read
 
+  /**
+   * @description Authoritative read of the aggregate of one intention: the durable state, the
+   * residual and the lines the service computed. Read-only and non-enumerating: an intention that
+   * does not exist answers exactly like one the caller cannot reach.
+   */
+  public WorkbenchView read(AttemptInput input) {
+    requireAccess();
+    if (input == null) {
+      throw failure('INVALID_INPUT', new List<String>());
+    }
+    requireUuid(input.correlationId);
+    Plan plan = plan(input.lines, input.correlationId);
+    AXF_OBJ_Reconciliation__c aggregate = aggregateByKey(plan.key);
+    if (aggregate == null) {
+      throw failure('NOT_ACCESSIBLE', new List<String>());
+    }
+    return read(aggregate, durablePlan(aggregate, plan));
+  }
+
   /** Double-submit: the durable result of the same intention is returned, never rewritten. */
   private ConfirmResult replay(
     Plan plan,
@@ -1428,7 +1468,7 @@ public with sharing class ALT_CLS_ReconciliationService {
     Plan durable = durablePlan(aggregate, plan);
     if (!sameSet(durable, plan)) {
       // Same intention, divergent payload: CONFLICT, and nothing is written.
-      throw failure('CONFLICT', new List<String>());
+      throw failure('CONFLICT', new List<String>{ 'DIVERGENT_SET' });
     }
     return result(read(aggregate, durable), true);
   }
@@ -1751,6 +1791,8 @@ public with sharing class ALT_CLS_ReconciliationService {
     if (fact.accountId == null) {
       return result;
     }
+    // A bind is always a plain variable, never a field expression.
+    Id holderId = fact.accountId;
     List<Target> targets = new List<Target>();
     for (AXF_OBJ_FinancialTransaction__c row : [
       SELECT
@@ -1762,13 +1804,13 @@ public with sharing class ALT_CLS_ReconciliationService {
         AXF_FTX_TXT_CurrencyIsoCode__c,
         AXF_FTX_PKL_Direction__c,
         AXF_FTX_PKL_PlanKind__c,
-        AXF_FTX_EXI_PlanIdentityHash__c,
+        AXF_FTX_EXI_ClientRequestId__c,
         AXF_FTX_DAT_DueDate__c,
         AXF_FTX_TXT_Description__c,
         AXF_FTX_LKP_Account__c
       FROM AXF_OBJ_FinancialTransaction__c
       WHERE
-        AXF_FTX_LKP_Account__c = :fact.accountId
+        AXF_FTX_LKP_Account__c = :holderId
         AND AXF_FTX_PKL_PlanKind__c != 'CASH_FACT'
       WITH USER_MODE
       ORDER BY Id
@@ -1781,9 +1823,7 @@ public with sharing class ALT_CLS_ReconciliationService {
       target.id = row.Id;
       target.label = row.Name;
       target.description = row.AXF_FTX_TXT_Description__c;
-      target.identity = String.isBlank(row.AXF_FTX_EXI_PlanIdentityHash__c)
-        ? 'FTX:' + row.Id
-        : row.AXF_FTX_EXI_PlanIdentityHash__c.left(IDENTITY_MAX);
+      target.identity = externalIdentity(row);
       target.accountId = row.AXF_FTX_LKP_Account__c;
       target.magnitude = row.AXF_FTX_NUM_Magnitude__c;
       target.obligation = row.AXF_FTX_NUM_CurrentBasis__c;
@@ -1836,8 +1876,9 @@ public with sharing class ALT_CLS_ReconciliationService {
         candidate.reasons.add('NO_CAPACITY');
       } else {
         candidate.linkable = true;
-        if (available < sourceAvailable) {
-          // AXF-140 §3: the candidate still needs more than the source can settle.
+        if (sourceAvailable < available) {
+          // AXF-140 §3: after the source's available amount is applied the candidate still needs
+          // more, so it is PARTIAL and the remainder is reported as it is.
           candidate.state = STATE_PARTIAL;
           candidate.residual = available - sourceAvailable;
           candidate.reasons.add('PARTIAL');
@@ -1928,7 +1969,7 @@ public with sharing class ALT_CLS_ReconciliationService {
       expectedVersion != value(aggregate.AXF_RCN_NUM_Version__c)
     ) {
       // Stale version: the whole command is rejected and the draft stays reviewable.
-      throw failure('CONFLICT', new List<String>());
+      throw failure('CONFLICT', new List<String>{ 'STALE_VERSION' });
     }
   }
 

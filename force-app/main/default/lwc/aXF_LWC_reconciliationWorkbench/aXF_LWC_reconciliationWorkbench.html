@@ -1,0 +1,423 @@
+<template>
+  <lightning-card title={labels.title} icon-name="standard:account">
+    <div class="slds-p-horizontal_medium slds-p-bottom_medium">
+      <p class="slds-text-body_small slds-m-bottom_small">{labels.intro}</p>
+      <template lwc:if={cannotConfirm}>
+        <div class="slds-box slds-theme_shade" role="status" data-id="noCapability">
+          {labels.noCapability}
+        </div>
+      </template>
+      <template lwc:if={error}>
+        <div
+          class="slds-notify slds-notify_alert slds-theme_alert-texture slds-theme_error slds-m-bottom_small"
+          role="alert"
+          data-id="error"
+        >
+          <span>{error}</span>
+        </div>
+        <template lwc:if={showResolve}>
+          <lightning-button
+            class="slds-m-bottom_small"
+            label={resolveLabel}
+            onclick={handleResolve}
+            disabled={busy}
+            data-id="resolve"
+          ></lightning-button>
+        </template>
+      </template>
+      <template lwc:if={canConfirm}>
+        <template lwc:if={isList}>
+          <div class="slds-grid slds-gutters slds-wrap">
+            <div class="slds-col slds-size_1-of-1 slds-medium-size_5-of-12">
+              <lightning-combobox
+                label={labels.holder}
+                placeholder={labels.holderPlaceholder}
+                options={holderOptions}
+                value={holderId}
+                onchange={handleHolder}
+                data-id="holder"
+              ></lightning-combobox>
+            </div>
+            <div class="slds-col slds-align-bottom">
+              <lightning-button
+                variant="brand"
+                label={labels.load}
+                onclick={handleLoad}
+                disabled={loadDisabled}
+                data-id="load"
+              ></lightning-button>
+            </div>
+          </div>
+          <template lwc:if={busy}>
+            <p class="slds-m-top_small" role="status">{labels.loading}</p>
+          </template>
+          <template lwc:if={showEmpty}>
+            <div
+              class="slds-box slds-theme_shade slds-m-top_small"
+              role="status"
+              data-id="empty"
+            >
+              {labels.empty}
+            </div>
+          </template>
+          <template lwc:if={sourceRows}>
+            <table
+              class="slds-table slds-table_cell-buffer slds-table_bordered slds-m-top_small"
+              data-id="sources"
+            >
+              <thead>
+                <tr class="slds-line-height_reset">
+                  <th scope="col">{labels.colDate}</th>
+                  <th scope="col">{labels.colKind}</th>
+                  <th scope="col">{labels.colDescription}</th>
+                  <th scope="col">{labels.colAmount}</th>
+                  <th scope="col">{labels.colResidual}</th>
+                  <th scope="col">{labels.colCurrency}</th>
+                  <th scope="col">{labels.colAction}</th>
+                </tr>
+              </thead>
+              <tbody>
+                <template for:each={sourceRows} for:item="row">
+                  <tr key={row.key} class="slds-hint-parent">
+                    <td>
+                      <lightning-formatted-date-time
+                        value={row.factDate}
+                      ></lightning-formatted-date-time>
+                    </td>
+                    <td>{row.kindLabel}</td>
+                    <td>{row.description}</td>
+                    <td>
+                      <lightning-formatted-number
+                        value={row.magnitude}
+                        format-style="currency"
+                        currency-code={row.currencyIso}
+                      ></lightning-formatted-number>
+                    </td>
+                    <td>
+                      <lightning-formatted-number
+                        value={row.residual}
+                        format-style="currency"
+                        currency-code={row.currencyIso}
+                      ></lightning-formatted-number>
+                    </td>
+                    <td>{row.currencyIso}</td>
+                    <td>
+                      <lightning-button
+                        label={labels.select}
+                        data-index={row.index}
+                        onclick={handleSelect}
+                        disabled={busy}
+                      ></lightning-button>
+                    </td>
+                  </tr>
+                </template>
+              </tbody>
+            </table>
+          </template>
+        </template>
+
+        <template lwc:if={isReview}>
+          <p class="slds-text-body_small slds-m-bottom_small">
+            {labels.review}
+          </p>
+          <dl class="slds-dl_horizontal slds-m-bottom_small">
+            <dt class="slds-dl_horizontal__label">{labels.source}</dt>
+            <dd class="slds-dl_horizontal__detail" data-id="sourceSummary">
+              {selected.description} · {selectedKindLabel} ·
+              <lightning-formatted-number
+                value={selected.magnitude}
+                format-style="currency"
+                currency-code={selected.currencyIso}
+              ></lightning-formatted-number>
+            </dd>
+            <dt class="slds-dl_horizontal__label">{labels.sourceResidual}</dt>
+            <dd class="slds-dl_horizontal__detail" data-id="sourceResidual">
+              <lightning-formatted-number
+                value={sourceResidual}
+                format-style="currency"
+                currency-code={sourceCurrency}
+              ></lightning-formatted-number>
+              ({sourceCurrency})
+            </dd>
+          </dl>
+          <p class="slds-text-body_small slds-m-bottom_small">
+            {labels.candidatesIntro}
+          </p>
+          <table
+            class="slds-table slds-table_cell-buffer slds-table_bordered"
+            data-id="candidates"
+          >
+            <thead>
+              <tr class="slds-line-height_reset">
+                <th scope="col">{labels.colTarget}</th>
+                <th scope="col">{labels.colDueDate}</th>
+                <th scope="col">{labels.colAmount}</th>
+                <th scope="col">{labels.colAvailable}</th>
+                <th scope="col">{labels.colResidual}</th>
+                <th scope="col">{labels.colCurrency}</th>
+                <th scope="col">{labels.colState}</th>
+                <th scope="col">{labels.colAction}</th>
+              </tr>
+            </thead>
+            <tbody>
+              <template for:each={candidateRows} for:item="row">
+                <tr key={row.key} class="slds-hint-parent">
+                  <td>
+                    {row.description}
+                    <template lwc:if={row.showLowEvidence}>
+                      <span class="slds-m-left_x-small" data-id="lowEvidence">
+                        {labels.lowEvidence}
+                      </span>
+                    </template>
+                  </td>
+                  <td>
+                    <lightning-formatted-date-time
+                      value={row.dueDate}
+                    ></lightning-formatted-date-time>
+                  </td>
+                  <td>
+                    <lightning-formatted-number
+                      value={row.magnitude}
+                      format-style="currency"
+                      currency-code={row.currencyIso}
+                    ></lightning-formatted-number>
+                  </td>
+                  <td data-id="candidateAvailable">
+                    <lightning-formatted-number
+                      value={row.available}
+                      format-style="currency"
+                      currency-code={row.currencyIso}
+                    ></lightning-formatted-number>
+                  </td>
+                  <td>
+                    <lightning-formatted-number
+                      value={row.residual}
+                      format-style="currency"
+                      currency-code={row.currencyIso}
+                    ></lightning-formatted-number>
+                  </td>
+                  <td>{row.currencyIso}</td>
+                  <td data-id="candidateState">
+                    {row.stateLabel}
+                    <template for:each={row.reasonLabels} for:item="reason">
+                      <span key={reason.key} class="slds-m-left_x-small"
+                        >· {reason.text}</span
+                      >
+                    </template>
+                  </td>
+                  <td>
+                    <lightning-input
+                      type="number"
+                      variant="label-hidden"
+                      label={labels.colLineAmount}
+                      value={row.amount}
+                      data-target={row.targetId}
+                      data-id="amount"
+                      onchange={handleAmount}
+                      disabled={row.addDisabled}
+                    ></lightning-input>
+                    <lightning-button
+                      label={labels.addLine}
+                      data-target={row.targetId}
+                      data-id="add"
+                      onclick={handleAdd}
+                      disabled={row.addDisabled}
+                    ></lightning-button>
+                  </td>
+                </tr>
+              </template>
+            </tbody>
+          </table>
+
+          <p class="slds-text-heading_small slds-m-top_medium">
+            {labels.lines}
+          </p>
+          <p class="slds-text-body_small slds-m-bottom_small">
+            {labels.linesIntro}
+          </p>
+          <template lwc:if={hasLines}>
+            <table
+              class="slds-table slds-table_cell-buffer slds-table_bordered"
+              data-id="lines"
+            >
+              <thead>
+                <tr class="slds-line-height_reset">
+                  <th scope="col">{labels.colSource}</th>
+                  <th scope="col">{labels.colTarget}</th>
+                  <th scope="col">{labels.colLineAmount}</th>
+                  <th scope="col">{labels.colAvailable}</th>
+                  <th scope="col">{labels.colAllocated}</th>
+                  <th scope="col">{labels.colResidual}</th>
+                  <th scope="col">{labels.colCurrency}</th>
+                  <th scope="col">{labels.colState}</th>
+                  <th scope="col">{labels.colAction}</th>
+                </tr>
+              </thead>
+              <tbody>
+                <template for:each={lineRows} for:item="row">
+                  <tr key={row.key} class="slds-hint-parent">
+                    <td>{row.factLabel}</td>
+                    <td>{row.targetLabel}</td>
+                    <td>
+                      <lightning-formatted-number
+                        value={row.amount}
+                        format-style="currency"
+                        currency-code={row.currencyIso}
+                      ></lightning-formatted-number>
+                    </td>
+                    <td data-id="lineAvailable">
+                      <lightning-formatted-number
+                        value={row.available}
+                        format-style="currency"
+                        currency-code={row.currencyIso}
+                      ></lightning-formatted-number>
+                    </td>
+                    <td data-id="lineAllocated">
+                      <lightning-formatted-number
+                        value={row.allocated}
+                        format-style="currency"
+                        currency-code={row.currencyIso}
+                      ></lightning-formatted-number>
+                    </td>
+                    <td data-id="lineResidual">
+                      <lightning-formatted-number
+                        value={row.residual}
+                        format-style="currency"
+                        currency-code={row.currencyIso}
+                      ></lightning-formatted-number>
+                    </td>
+                    <td data-id="lineCurrency">{row.currencyIso}</td>
+                    <td data-id="lineState">
+                      {row.stateLabel}
+                      <template for:each={row.reasonLabels} for:item="reason">
+                        <span key={reason.key} class="slds-m-left_x-small"
+                          >· {reason.text}</span
+                        >
+                      </template>
+                    </td>
+                    <td>
+                      <lightning-button
+                        label={labels.removeLine}
+                        data-index={row.index}
+                        onclick={handleRemove}
+                        disabled={busy}
+                      ></lightning-button>
+                    </td>
+                  </tr>
+                </template>
+              </tbody>
+            </table>
+          </template>
+          <template lwc:else>
+            <div class="slds-box slds-theme_shade" role="status" data-id="noLines">
+              {labels.noLines}
+            </div>
+          </template>
+          <div class="slds-m-top_medium">
+            <lightning-button
+              label={labels.back}
+              onclick={handleBack}
+              disabled={busy}
+              data-id="back"
+            ></lightning-button>
+            <lightning-button
+              class="slds-m-left_small"
+              variant="brand"
+              label={confirmLabel}
+              onclick={handleConfirm}
+              disabled={reviewDisabled}
+              data-id="confirm"
+            ></lightning-button>
+          </div>
+        </template>
+
+        <template lwc:if={isDone}>
+          <div class="slds-box slds-theme_success" role="status" data-id="done">
+            <p class="slds-text-heading_small">{labels.done}</p>
+            <template lwc:if={result.replayed}>
+              <p data-id="replayed">{labels.doneReplayed}</p>
+            </template>
+            <template lwc:if={resultUnknown}>
+              <p data-id="unknown">{labels.doneUnknown}</p>
+            </template>
+            <p data-id="aggregate">
+              {labels.doneAggregate}: {resultAggregate}
+            </p>
+            <p data-id="state">
+              {labels.doneState}: {resultStateLabel}
+            </p>
+            <p data-id="residual">
+              {labels.doneResidual}:
+              <template lwc:if={hasResultResidual}>
+                <lightning-formatted-number
+                  value={result.residualMagnitude}
+                  format-style="currency"
+                  currency-code={resultCurrency}
+                ></lightning-formatted-number>
+                ({resultCurrency})
+              </template>
+              <template lwc:else> {labels.doneUnknown} </template>
+            </p>
+            <p data-id="allocated">
+              {labels.doneAllocated}:
+              <lightning-formatted-number
+                value={result.allocatedTotal}
+                format-style="decimal"
+              ></lightning-formatted-number>
+            </p>
+          </div>
+          <template lwc:if={resultRows}>
+            <table
+              class="slds-table slds-table_cell-buffer slds-table_bordered slds-m-top_small"
+              data-id="result"
+            >
+              <thead>
+                <tr class="slds-line-height_reset">
+                  <th scope="col">{labels.colSource}</th>
+                  <th scope="col">{labels.colTarget}</th>
+                  <th scope="col">{labels.colLineAmount}</th>
+                  <th scope="col">{labels.colResidual}</th>
+                  <th scope="col">{labels.colCurrency}</th>
+                  <th scope="col">{labels.colState}</th>
+                </tr>
+              </thead>
+              <tbody>
+                <template for:each={resultRows} for:item="row">
+                  <tr key={row.key} class="slds-hint-parent">
+                    <td>{row.factLabel}</td>
+                    <td>{row.targetLabel}</td>
+                    <td>
+                      <lightning-formatted-number
+                        value={row.amount}
+                        format-style="currency"
+                        currency-code={row.currencyIso}
+                      ></lightning-formatted-number>
+                    </td>
+                    <td data-id="resultResidual">
+                      <lightning-formatted-number
+                        value={row.residual}
+                        format-style="currency"
+                        currency-code={row.currencyIso}
+                      ></lightning-formatted-number>
+                    </td>
+                    <td>{row.currencyIso}</td>
+                    <td data-id="resultState">{row.stateLabel}</td>
+                  </tr>
+                </template>
+              </tbody>
+            </table>
+          </template>
+          <lightning-button
+            class="slds-m-top_small"
+            label={labels.newReconciliation}
+            onclick={handleNew}
+            data-id="new"
+          ></lightning-button>
+        </template>
+        <p class="slds-text-body_small slds-text-color_weak slds-m-top_medium">
+          {labels.policy}: {policyVersion}
+        </p>
+      </template>
+    </div>
+  </lightning-card>
+</template>

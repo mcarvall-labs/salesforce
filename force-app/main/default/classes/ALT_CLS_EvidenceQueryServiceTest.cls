@@ -242,9 +242,9 @@ private class ALT_CLS_EvidenceQueryServiceTest {
       byKey.get('FX_CHARGE').coverage
     );
     Assert.areEqual(
-      ALT_CLS_EvidenceQueryService.GAP_NOT_INTEGRATED,
+      ALT_CLS_EvidenceQueryService.COVERED_IMMUTABLE,
       byKey.get('RECONCILIATION').coverage,
-      'Reconciliacao ainda nao integrada: GAP honesto, sem auditoria ficticia.'
+      'A raiz RCN (AXF-30) e a evidencia da conciliacao: cobertura imutavel, sem auditoria ficticia.'
     );
     Assert.areEqual(
       ALT_CLS_EvidenceQueryService.GAP_NOT_INTEGRATED,

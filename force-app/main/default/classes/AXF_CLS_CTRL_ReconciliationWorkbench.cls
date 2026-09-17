@@ -117,9 +117,13 @@ public with sharing class AXF_CLS_CTRL_ReconciliationWorkbench {
     try {
       return JSON.deserializeStrict(request, shape);
     } catch (Exception failure) {
-      throw new ALT_CLS_ReconciliationService.ReconciliationException(
+      // The typed exception carries its code in the field, never only in the message: the
+      // sanitized envelope the client reads is built from the field.
+      ALT_CLS_ReconciliationService.ReconciliationException problem = new ALT_CLS_ReconciliationService.ReconciliationException(
         'INVALID_INPUT'
       );
+      problem.code = 'INVALID_INPUT';
+      throw problem;
     }
   }
 
@@ -148,7 +152,8 @@ public with sharing class AXF_CLS_CTRL_ReconciliationWorkbench {
       failure instanceof ALT_CLS_ReconciliationService.ReconciliationException
     ) {
       ALT_CLS_ReconciliationService.ReconciliationException typed = (ALT_CLS_ReconciliationService.ReconciliationException) failure;
-      return sanitized(typed.code, typed.reasons);
+      String code = typed.code == null ? failure.getMessage() : typed.code;
+      return sanitized(code, typed.reasons);
     }
     if (
       failure instanceof ALT_CLS_RealizationService.RealizationException

@@ -26,5 +26,6 @@
     <tabs>AXF_CT_SharedExpenses</tabs>
     <tabs>AXF_CT_SourceLink</tabs>
     <tabs>AXF_CT_ReconciliationReversal</tabs>
+    <tabs>AXF_CT_ReconciliationWorkbench</tabs>
     <uiType>Lightning</uiType>
 </CustomApplication>
