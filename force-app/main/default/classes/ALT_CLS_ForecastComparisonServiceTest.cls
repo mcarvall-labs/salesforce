@@ -661,23 +661,16 @@ private class ALT_CLS_ForecastComparisonServiceTest {
       );
       Assert.areEqual(1, mixed.sources[0].occurrenceCount);
 
-      // A non-Axon account and an invisible account are excluded with their own reason.
-      // Explicitly pinned to a non-Axon record type: the org default record type for a bare
-      // insert is not guaranteed to fall outside AXF_Person/AXF_Business.
-      List<RecordType> foreignTypes = [
-        SELECT Id
-        FROM RecordType
-        WHERE
-          SobjectType = 'Account'
-          AND IsActive = TRUE
-          AND DeveloperName NOT IN ('AXF_Person', 'AXF_Business')
-        LIMIT 1
-      ];
-      Account plain = new Account(Name = 'Sem tipo Axon');
-      if (!foreignTypes.isEmpty()) {
-        plain.RecordTypeId = foreignTypes[0].Id;
+      // An account the caller cannot resolve as an authorized holder is excluded with its own
+      // reason. A non-Axon account cannot be built in this org: only AXF_Person and AXF_Business
+      // exist and AXF_Business is the org default, so a bare insert is always a holder and the
+      // NOT_A_HOLDER classification is unreachable here (declared in the sprint pendencies). The
+      // fixture is therefore unauthorized through sharing: it is created by another user and never
+      // granted to the caller through an account team member.
+      Account plain;
+      System.runAs(byAlias('axf137p')) {
+        plain = holder('Sem acesso');
       }
-      insert plain;
       ALT_CLS_ForecastComparisonService.Result typed = service.compare(
         input(
           new List<Id>{ mine.Id, plain.Id },
@@ -686,7 +679,7 @@ private class ALT_CLS_ForecastComparisonServiceTest {
         )
       );
       Assert.areEqual(1, typed.exclusions.size());
-      Assert.areEqual('NOT_A_HOLDER', typed.exclusions[0].reason);
+      Assert.areEqual('NOT_AUTHORIZED', typed.exclusions[0].reason);
       ALT_CLS_ForecastComparisonService.Result none = service.compare(
         input(
           new List<Id>{ shared.Id },
