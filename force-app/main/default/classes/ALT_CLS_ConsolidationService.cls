@@ -531,8 +531,15 @@ public with sharing class ALT_CLS_ConsolidationService {
         continue;
       }
       String normalized = iso == null ? null : iso.trim().toUpperCase();
-      convert(total, quotes.get(normalized + '|BUY'), quotes.get(normalized + '|SELL'));
-      if (total.conversionState != ALT_CLS_IndicativeEquivalenceService.STATE_ESTIMATED) {
+      convert(
+        total,
+        quotes.get(normalized + '|BUY'),
+        quotes.get(normalized + '|SELL')
+      );
+      if (
+        total.conversionState !=
+        ALT_CLS_IndicativeEquivalenceService.STATE_ESTIMATED
+      ) {
         complete = false;
         continue;
       }
@@ -645,7 +652,8 @@ public with sharing class ALT_CLS_ConsolidationService {
   private static String stateOf(Quote quote) {
     // Present but outside the validity window -> stale; absent or non-positive -> unavailable.
     // Neither one is ever converted, and neither one falls back to an older quote.
-    return quote == null || quote.rate == null
+    return quote == null ||
+      quote.rate == null
       ? ALT_CLS_IndicativeEquivalenceService.STATE_UNAVAILABLE
       : ALT_CLS_IndicativeEquivalenceService.STATE_STALE;
   }

@@ -151,21 +151,22 @@ private class ALT_CLS_ConsolidationFxTest {
     Decimal percent = (100.0 / accountIds.size()).setScale(2);
     Decimal shared = 0;
     for (Integer i = 0; i < accountIds.size(); i++) {
-      Decimal share = i == accountIds.size() - 1
-        ? 100 - shared
-        : percent;
+      Decimal share = i == accountIds.size() - 1 ? 100 - shared : percent;
       shared += share;
       parcels.add(
         new AXF_OBJ_EconomicAllocation__c(
           AXF_EA_MDR_AllocationSet__c = allocationSet.Id,
           AXF_EA_LKP_Account__c = accountIds[i],
           AXF_EA_NUM_Percent__c = share,
-          AXF_EA_NUM_Magnitude__c =
-            allocationSet.AXF_EAS_NUM_FactMagnitude__c * share / 100,
+          AXF_EA_NUM_Magnitude__c = allocationSet.AXF_EAS_NUM_FactMagnitude__c *
+            share /
+            100,
           AXF_EA_PKL_RedactionPolicy__c = 'OWN_SHARE_ONLY',
           AXF_EA_TXT_CurrencyIsoCode__c = allocationSet.AXF_EAS_TXT_CurrencyIsoCode__c,
-          AXF_EA_EXI_AllocationKey__c =
-            'axf123-share-' + fact.Id + '-' + accountIds[i]
+          AXF_EA_EXI_AllocationKey__c = 'axf123-share-' +
+            fact.Id +
+            '-' +
+            accountIds[i]
         )
       );
     }
@@ -193,9 +194,7 @@ private class ALT_CLS_ConsolidationFxTest {
     Id accountId,
     Id sourceId
   ) {
-    for (
-      ALT_CLS_ConsolidationService.Contribution c : result.contributions
-    ) {
+    for (ALT_CLS_ConsolidationService.Contribution c : result.contributions) {
       if (c.accountId == accountId && c.sourceId == sourceId) {
         return c;
       }
@@ -276,7 +275,11 @@ private class ALT_CLS_ConsolidationFxTest {
         bankA.Id
       );
       Assert.areEqual('ALLOCATION', holderShare.attribution);
-      Assert.areEqual('BRL', holderShare.currencyIso, 'moeda original preservada');
+      Assert.areEqual(
+        'BRL',
+        holderShare.currencyIso,
+        'moeda original preservada'
+      );
       Assert.areEqual(150, holderShare.outflow);
       Assert.areEqual('BANK', holderShare.sourceKind);
       Assert.areEqual('Banco a ****a', holderShare.sourceLabel);
@@ -306,7 +309,12 @@ private class ALT_CLS_ConsolidationFxTest {
         'draft'
       );
       insert fact;
-      allocation(fact, holderA.Id, 'DRAFT', new List<Id>{ holderA.Id, holderB.Id });
+      allocation(
+        fact,
+        holderA.Id,
+        'DRAFT',
+        new List<Id>{ holderA.Id, holderB.Id }
+      );
       Test.startTest();
       ALT_CLS_ConsolidationService.Result draft = new ALT_CLS_ConsolidationService()
         .consolidate(scope(new List<Id>{ holderA.Id, holderB.Id }, null));
@@ -339,10 +347,12 @@ private class ALT_CLS_ConsolidationFxTest {
         'outside'
       );
       insert fact;
-      allocation(fact, holderA.Id, 'CONFIRMED', new List<Id>{
+      allocation(
+        fact,
         holderA.Id,
-        holderB.Id
-      });
+        'CONFIRMED',
+        new List<Id>{ holderA.Id, holderB.Id }
+      );
       Test.startTest();
       ALT_CLS_ConsolidationService.Result result = new ALT_CLS_ConsolidationService()
         .consolidate(scope(new List<Id>{ holderA.Id }, null));
@@ -406,7 +416,11 @@ private class ALT_CLS_ConsolidationFxTest {
       Assert.isNull(plain.reportingIso);
       Assert.isNull(plain.comparableTotal);
       Assert.isNull(total(plain, 'USD').conversionState);
-      Assert.areEqual(80, total(plain, 'USD').outflow, 'sem conversao nem paridade');
+      Assert.areEqual(
+        80,
+        total(plain, 'USD').outflow,
+        'sem conversao nem paridade'
+      );
       Assert.isNull(total(plain, 'USD').reportingOutflow);
 
       // The currency totals are the originals: only the comparison is added.
@@ -426,8 +440,16 @@ private class ALT_CLS_ConsolidationFxTest {
         'cada lado guarda a vigencia da propria cotacao'
       );
       Assert.areEqual(sellAt, usd.rateEffectiveAtOutflow);
-      Assert.areEqual(100.07, usd.reportingInflow, '20 x 5,0033 arredondado HALF_UP');
-      Assert.areEqual(408.54, usd.reportingOutflow, '80 x 5,1067 arredondado HALF_UP');
+      Assert.areEqual(
+        100.07,
+        usd.reportingInflow,
+        '20 x 5,0033 arredondado HALF_UP'
+      );
+      Assert.areEqual(
+        408.54,
+        usd.reportingOutflow,
+        '80 x 5,1067 arredondado HALF_UP'
+      );
       Assert.areEqual(-308.47, usd.reportingNet);
 
       ALT_CLS_ConsolidationService.Total brl = total(compared, 'BRL');
@@ -529,7 +551,11 @@ private class ALT_CLS_ConsolidationFxTest {
         .consolidate(scope(new List<Id>{ holderA.Id }, 'BRL'));
       Test.stopTest();
       ALT_CLS_ConsolidationService.Total usd = total(result, 'usd');
-      Assert.areEqual('usd', usd.currencyIso, 'a moeda original nao e reescrita');
+      Assert.areEqual(
+        'usd',
+        usd.currencyIso,
+        'a moeda original nao e reescrita'
+      );
       Assert.areEqual(PROVIDER, usd.rateProvider);
       Assert.areEqual(
         5.10,
@@ -544,7 +570,10 @@ private class ALT_CLS_ConsolidationFxTest {
         'linha fora da janela pesquisada nem e lida'
       );
       Assert.isNull(eur.reportingOutflow);
-      Assert.isNull(result.comparableTotal, 'uma moeda sem cotacao retem o indicador');
+      Assert.isNull(
+        result.comparableTotal,
+        'uma moeda sem cotacao retem o indicador'
+      );
       Assert.isTrue(
         result.reasons.contains('MISSING_MATERIAL_FX'),
         result.reasons.toString()
@@ -585,7 +614,11 @@ private class ALT_CLS_ConsolidationFxTest {
         ALT_CLS_ConsolidationService.CONFIDENCE_DEGRADED,
         result.confidence
       );
-      Assert.areEqual(700, total(result, 'BRL').net, 'o total original continua');
+      Assert.areEqual(
+        700,
+        total(result, 'BRL').net,
+        'o total original continua'
+      );
     }
   }
 
@@ -600,14 +633,7 @@ private class ALT_CLS_ConsolidationFxTest {
         bat(bankBrl.Id, 'BRL', 1000, 'CREDIT', 'brl-in'),
         bat(bankUsd.Id, 'USD', 80, 'DEBIT', 'usd-out')
       };
-      quote(
-        'USD',
-        'BRL',
-        5.10,
-        System.now().addDays(-10),
-        'SELL',
-        'usd-stale'
-      );
+      quote('USD', 'BRL', 5.10, System.now().addDays(-10), 'SELL', 'usd-stale');
       Test.startTest();
       ALT_CLS_ConsolidationService.Result result = new ALT_CLS_ConsolidationService()
         .consolidate(scope(new List<Id>{ holderA.Id }, 'BRL'));
@@ -633,22 +659,8 @@ private class ALT_CLS_ConsolidationFxTest {
       Account holderA = holder('Titular A');
       AXF_OBJ_BankAccount__c bankUsd = bank(holderA.Id, 'USD', 'u');
       insert bat(bankUsd.Id, 'USD', 80, 'DEBIT', 'usd-out');
-      quote(
-        'USD',
-        'BRL',
-        5.10,
-        System.now().addDays(-2),
-        'SELL',
-        'usd-old'
-      );
-      quote(
-        'USD',
-        'BRL',
-        0,
-        System.now().addMinutes(-30),
-        'SELL',
-        'usd-zero'
-      );
+      quote('USD', 'BRL', 5.10, System.now().addDays(-2), 'SELL', 'usd-old');
+      quote('USD', 'BRL', 0, System.now().addMinutes(-30), 'SELL', 'usd-zero');
       Test.startTest();
       ALT_CLS_ConsolidationService.Result result = new ALT_CLS_ConsolidationService()
         .consolidate(scope(new List<Id>{ holderA.Id }, 'BRL'));

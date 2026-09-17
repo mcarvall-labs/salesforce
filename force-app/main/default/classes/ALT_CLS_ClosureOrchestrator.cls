@@ -462,8 +462,8 @@ public with sharing class ALT_CLS_ClosureOrchestrator {
     // operator's own step at the provider, never a step of this closure. It is only offered
     // once the local closure is complete: a blocked run still has its own step to take, and
     // presenting "Axon closed" then would be a false statement about the installation.
-    view.externalRevocationAction =
-      run.AXF_CLR_PKL_Status__c == 'CLOSED' && revocation == 'NOT_CONFIRMED'
+    view.externalRevocationAction = run.AXF_CLR_PKL_Status__c == 'CLOSED' &&
+      revocation == 'NOT_CONFIRMED'
       ? EXTERNAL_REVOKE_ACTION
       : null;
     view.legalHold = run.AXF_CLR_BOL_LegalHold__c;

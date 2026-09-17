@@ -881,7 +881,12 @@ private class ALT_CLS_ClosureOrchestratorTest {
       );
       insert fact;
       // Arquivamento iniciado e nunca verificado: nenhuma copia recuperavel confirmada.
-      AXF_OBJ_ArchiveRun__c archive = archiveRun(scope.holder.Id, 'g', 'BAT', null);
+      AXF_OBJ_ArchiveRun__c archive = archiveRun(
+        scope.holder.Id,
+        'g',
+        'BAT',
+        null
+      );
       ALT_CLS_RetentionPolicy.policyFixtures = descriptionPolicy();
       ALT_CLS_ClosureOrchestrator service = new ALT_CLS_ClosureOrchestrator();
       ALT_CLS_ClosureOrchestrator.RunView run = service.request(
@@ -1086,7 +1091,12 @@ private class ALT_CLS_ClosureOrchestratorTest {
       scope.plan.AXF_FTX_TXT_Description__c = 'Aluguel sala 40 - Ana';
       update scope.plan;
       // Copia confirmada e mantida quente apenas na familia BAT.
-      archiveRun(scope.holder.Id, 'k-bat', 'BAT', 'BLOCKED:HOT_REMOVAL_NOT_AUTHORIZED');
+      archiveRun(
+        scope.holder.Id,
+        'k-bat',
+        'BAT',
+        'BLOCKED:HOT_REMOVAL_NOT_AUTHORIZED'
+      );
       // Arquivamento de CCT iniciado e nunca verificado: nenhuma copia recuperavel confirmada.
       archiveRun(scope.holder.Id, 'k-cct', 'CCT', null);
       ALT_CLS_RetentionPolicy.policyFixtures = descriptionPolicy();

@@ -52,7 +52,10 @@ private class ALT_CLS_RestoreInvariantTest {
     User capableOnly = admin.clone(false, false, false, false);
     capableOnly.Alias = 'axf121c';
     capableOnly.LastName = 'Capability Only';
-    capableOnly.Username = 'axf121c.' + System.now().getTime() + '@example.invalid';
+    capableOnly.Username =
+      'axf121c.' +
+      System.now().getTime() +
+      '@example.invalid';
     insert capableOnly;
     List<PermissionSetAssignment> assignments = new List<PermissionSetAssignment>();
     for (PermissionSet permission : [
@@ -295,9 +298,7 @@ private class ALT_CLS_RestoreInvariantTest {
       );
 
       AXF_OBJ_ClosureRun__c sealed = [
-        SELECT
-          AXF_CLR_TAL_NonReactivationMark__c,
-          AXF_CLR_DT_LastCompletedAt__c
+        SELECT AXF_CLR_TAL_NonReactivationMark__c, AXF_CLR_DT_LastCompletedAt__c
         FROM AXF_OBJ_ClosureRun__c
         WHERE Id = :run.runId
       ];
