@@ -344,6 +344,45 @@ describe("c-aXF_LWC_sourceDiscovery", () => {
     expect(startDiscovery).toHaveBeenCalledWith({ connectionId: "c2" });
   });
 
+  it("wizard mode: 'Descobrir agora' skips connections already SUCCEEDED (AXF-145)", async () => {
+    startDiscovery.mockResolvedValue({
+      state: "SUCCEEDED",
+      complete: true,
+      accountsFound: 1,
+      cardsFound: 1,
+      released: 1
+    });
+    const el = buildWizard();
+    getConnections.emit([
+      {
+        connectionId: "c1",
+        institution: "Banco A",
+        itemIdHint: "…1",
+        consentState: "ACTIVE",
+        runState: "SUCCEEDED",
+        accountsFound: 1,
+        cardsFound: 1,
+        discovered: true
+      },
+      {
+        connectionId: "c2",
+        institution: "Banco B (nova)",
+        itemIdHint: "…2",
+        consentState: "ACTIVE"
+      }
+    ]);
+    await flush();
+
+    button(el, /Descobrir agora/).click();
+    await flush();
+    await flush();
+    await flush();
+
+    expect(startDiscovery).not.toHaveBeenCalledWith({ connectionId: "c1" });
+    expect(startDiscovery).toHaveBeenCalledWith({ connectionId: "c2" });
+    expect(startDiscovery).toHaveBeenCalledTimes(1);
+  });
+
   it("wizard mode: reports what the connection references did to the sources", async () => {
     startDiscovery.mockResolvedValue({
       state: "SUCCEEDED",
