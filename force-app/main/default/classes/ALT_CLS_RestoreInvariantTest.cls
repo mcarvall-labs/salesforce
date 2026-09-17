@@ -22,6 +22,11 @@ private class ALT_CLS_RestoreInvariantTest {
     return [SELECT Id FROM User WHERE Alias = 'axf121n' LIMIT 1];
   }
 
+  /** Holds the closure capability and nothing else: no record visibility at all. */
+  private static User capable() {
+    return [SELECT Id FROM User WHERE Alias = 'axf121c' LIMIT 1];
+  }
+
   @TestSetup
   static void setup() {
     Id profileId = [SELECT Id FROM Profile WHERE Name = 'Standard User' LIMIT 1]
@@ -42,6 +47,13 @@ private class ALT_CLS_RestoreInvariantTest {
     nobody.LastName = 'No Capability';
     nobody.Username = 'axf121n.' + System.now().getTime() + '@example.invalid';
     insert new List<User>{ admin, nobody };
+    // A third operator holds the closure capability and nothing else, so the invariant can be
+    // proven to answer without relying on the caller's record visibility.
+    User capableOnly = admin.clone(false, false, false, false);
+    capableOnly.Alias = 'axf121c';
+    capableOnly.LastName = 'Capability Only';
+    capableOnly.Username = 'axf121c.' + System.now().getTime() + '@example.invalid';
+    insert capableOnly;
     List<PermissionSetAssignment> assignments = new List<PermissionSetAssignment>();
     for (PermissionSet permission : [
       SELECT Id
@@ -85,6 +97,25 @@ private class ALT_CLS_RestoreInvariantTest {
       )
     );
     insert assignments;
+    PermissionSet closeOnly = new PermissionSet(
+      Name = 'AXF121TestCloseOnly',
+      Label = 'AXF121 closure capability only'
+    );
+    insert closeOnly;
+    insert new SetupEntityAccess(
+      ParentId = closeOnly.Id,
+      SetupEntityId = [
+        SELECT Id
+        FROM CustomPermission
+        WHERE DeveloperName = 'AXF_CanCloseInstallation'
+        LIMIT 1
+      ]
+      .Id
+    );
+    insert new PermissionSetAssignment(
+      AssigneeId = capableOnly.Id,
+      PermissionSetId = closeOnly.Id
+    );
     grantCollaborationObjectIfInstalled(admin.Id);
     System.runAs(new User(Id = UserInfo.getUserId())) {
       insert new AXF_ReportCurrencyPref__c(
@@ -228,6 +259,28 @@ private class ALT_CLS_RestoreInvariantTest {
     return ((ALT_CLS_ClosureOrchestrator.ClosureException) failure).code;
   }
 
+  /** Every refusal is checked on the verdict itself, not only on its reason. */
+  private static void assertRefused(
+    String expectedReason,
+    ALT_CLS_RestoreInvariant.Assessment verdict
+  ) {
+    Assert.areEqual('NOT_REACTIVATED', verdict.verdict, expectedReason);
+    Assert.isFalse(
+      verdict.reactivationAllowed,
+      'Refusal is the only safe answer: ' + expectedReason
+    );
+    Assert.areEqual(expectedReason, verdict.reason);
+  }
+
+  /**
+   * Re-signs a reduced proof with the class's own digest, which is what a caller able to rewrite
+   * the mark would do: the guard must still refuse it.
+   */
+  private static String resign(Map<String, Object> proof) {
+    proof.put('fingerprint', ALT_CLS_RestoreInvariant.fingerprint(proof));
+    return JSON.serialize(proof);
+  }
+
   @IsTest
   static void markIsContentFreeAndTamperEvident() {
     System.runAs(admin()) {
@@ -241,12 +294,14 @@ private class ALT_CLS_RestoreInvariantTest {
         run.blockReason + ' ' + ALT_CLS_ClosureOrchestrator.lastStageFailure
       );
 
-      String mark = [
-        SELECT AXF_CLR_TAL_NonReactivationMark__c
+      AXF_OBJ_ClosureRun__c sealed = [
+        SELECT
+          AXF_CLR_TAL_NonReactivationMark__c,
+          AXF_CLR_DT_LastCompletedAt__c
         FROM AXF_OBJ_ClosureRun__c
         WHERE Id = :run.runId
-      ]
-      .AXF_CLR_TAL_NonReactivationMark__c;
+      ];
+      String mark = sealed.AXF_CLR_TAL_NonReactivationMark__c;
       Assert.isNotNull(mark, 'The closure marks what must not be reactivated.');
       Map<String, Object> proof = (Map<String, Object>) JSON.deserializeUntyped(
         mark
@@ -265,6 +320,13 @@ private class ALT_CLS_RestoreInvariantTest {
       );
       Assert.areEqual(String.valueOf(scope.holder.Id), proof.get('scopeKey'));
       Assert.areEqual(run.correlationId, proof.get('correlationId'));
+      Assert.areEqual(
+        sealed.AXF_CLR_DT_LastCompletedAt__c.formatGmt(
+          'yyyy-MM-dd\'T\'HH:mm:ss\'Z\''
+        ),
+        proof.get('closedAt'),
+        'The proof carries the instant the closure reached its terminal state.'
+      );
       for (
         String secret : new List<String>{ PRIVATE_HOLDER, PRIVATE_DESCRIPTION }
       ) {
@@ -439,17 +501,17 @@ private class ALT_CLS_RestoreInvariantTest {
       // A closure that reached CLOSED before this story shipped has no mark: refuse.
       AXF_OBJ_ClosureRun__c unmarked = base.clone(false, true, false, false);
       unmarked.AXF_CLR_TAL_NonReactivationMark__c = null;
-      Assert.areEqual(
+      assertRefused(
         'MARK_MISSING',
-        ALT_CLS_RestoreInvariant.assessOne(scopeKey, unmarked).reason
+        ALT_CLS_RestoreInvariant.assessOne(scopeKey, unmarked)
       );
 
       // A mark that belongs to another scope is a spliced proof: refuse.
       AXF_OBJ_ClosureRun__c spliced = base.clone(false, true, false, false);
       spliced.AXF_CLR_TAL_NonReactivationMark__c = valid;
-      Assert.areEqual(
+      assertRefused(
         'MARK_MISMATCH',
-        ALT_CLS_RestoreInvariant.assessOne('001000000000121AAA', spliced).reason
+        ALT_CLS_RestoreInvariant.assessOne('001000000000121AAA', spliced)
       );
 
       // A proof carrying a key outside the allowlist could smuggle private content: refuse.
@@ -461,9 +523,23 @@ private class ALT_CLS_RestoreInvariantTest {
           'description' => PRIVATE_DESCRIPTION
         }
       );
-      Assert.areEqual(
+      assertRefused(
         'MARK_MISMATCH',
-        ALT_CLS_RestoreInvariant.assessOne(scopeKey, smuggled).reason
+        ALT_CLS_RestoreInvariant.assessOne(scopeKey, smuggled)
+      );
+
+      // A proof that dropped lifecycle keys and had its digest recomputed over what is left is
+      // missing evidence, not proof: refuse.
+      AXF_OBJ_ClosureRun__c truncated = base.clone(false, true, false, false);
+      truncated.AXF_CLR_TAL_NonReactivationMark__c = resign(
+        new Map<String, Object>{
+          'schemaVersion' => 'axf-non-reactivation@1.0.0',
+          'scopeKey' => scopeKey
+        }
+      );
+      assertRefused(
+        'MARK_MISMATCH',
+        ALT_CLS_RestoreInvariant.assessOne(scopeKey, truncated)
       );
 
       // A proof whose digest no longer matches its own fields was altered: refuse.
@@ -472,9 +548,9 @@ private class ALT_CLS_RestoreInvariantTest {
         'closure-correlation-e',
         'closure-correlation-x'
       );
-      Assert.areEqual(
+      assertRefused(
         'MARK_MISMATCH',
-        ALT_CLS_RestoreInvariant.assessOne(scopeKey, altered).reason
+        ALT_CLS_RestoreInvariant.assessOne(scopeKey, altered)
       );
 
       // The intact proof of this very scope is the only case that preserves the lifecycle.
@@ -490,12 +566,36 @@ private class ALT_CLS_RestoreInvariantTest {
     }
   }
 
+  /**
+   * The invariant is a protection duty, not a record-visibility question: an operator who holds the
+   * closure capability but cannot see the closure run at all is still answered with the refusal.
+   * With a user-mode read this caller would be told the scope was never closed.
+   */
+  @IsTest
+  static void capabilityWithoutRecordVisibilityStillRefuses() {
+    Scope scope;
+    System.runAs(admin()) {
+      scope = makeScope('g');
+      closeScope(scope);
+    }
+    System.runAs(capable()) {
+      Test.startTest();
+      List<ALT_CLS_RestoreInvariant.Assessment> verdicts = new ALT_CLS_RestoreInvariant()
+        .assess(new List<Id>{ scope.holder.Id });
+      Test.stopTest();
+      assertRefused('CLOSED_SCOPE', verdicts[0]);
+    }
+  }
+
   @IsTest
   static void accessAndInputAreRefused() {
     Scope scope;
     System.runAs(admin()) {
       scope = makeScope('f');
-      Test.startTest();
+    }
+    // One test-context pair for the whole method: startTest cannot be restarted after stopTest.
+    Test.startTest();
+    System.runAs(admin()) {
       try {
         new ALT_CLS_RestoreInvariant().assess(null);
         Assert.fail('A safety gate never answers a null restore.');
@@ -509,17 +609,22 @@ private class ALT_CLS_RestoreInvariantTest {
       } catch (ALT_CLS_ClosureOrchestrator.ClosureException expected) {
         Assert.areEqual('INVALID_INPUT', closureCode(expected));
       }
-      Test.stopTest();
+      try {
+        new ALT_CLS_RestoreInvariant()
+          .assess(new List<Id>{ '500000000000121AAA' });
+        Assert.fail('A scope is a holder account, not any restored row.');
+      } catch (ALT_CLS_ClosureOrchestrator.ClosureException expected) {
+        Assert.areEqual('INVALID_INPUT', closureCode(expected));
+      }
     }
     System.runAs(nobody()) {
-      Test.startTest();
       try {
         new ALT_CLS_RestoreInvariant().assess(new List<Id>{ scope.holder.Id });
         Assert.fail('Without the closure capability there is no invariant.');
       } catch (ALT_CLS_ClosureOrchestrator.ClosureException expected) {
         Assert.areEqual('FORBIDDEN', closureCode(expected));
       }
-      Test.stopTest();
     }
+    Test.stopTest();
   }
 }

@@ -15,7 +15,7 @@
  * Basis: FR-49; AD-13 (native evidence), AD-18 (proven recovery), AD-20 (closure lifecycle),
  * AD-21 (authorization), AD-24 (unknown result is not retryable), AD-29 (binding contracts).
  */
-public with sharing class ALT_CLS_RestoreInvariant {
+public without sharing class ALT_CLS_RestoreInvariant {
   /**
    * Result of asking the invariant whether a restored scope may be reactivated. Refusal is the
    * default: only a scope with no closure lifecycle at all allows reactivation.
@@ -96,7 +96,9 @@ public with sharing class ALT_CLS_RestoreInvariant {
     }
     Set<String> scopeKeys = new Set<String>();
     for (Id holder : holders) {
-      if (holder == null) {
+      // A scope is a holder account: anything else can never be a closure scope, and answering
+      // "allowed" for an id the invariant cannot reason about would be a fail-open.
+      if (holder == null || holder.getSobjectType() != Account.SObjectType) {
         throw failure('INVALID_INPUT');
       }
       scopeKeys.add(String.valueOf(holder));
@@ -104,10 +106,13 @@ public with sharing class ALT_CLS_RestoreInvariant {
     Map<String, AXF_OBJ_ClosureRun__c> runs = new Map<String, AXF_OBJ_ClosureRun__c>();
     if (!scopeKeys.isEmpty()) {
       // The invariant is a protection duty, not a record-visibility question: reading the lifecycle
-      // in system mode is deliberate, so that a caller who cannot see a closure is never answered
-      // "allowed" — an authorization gap must not turn into a resurrection. The entry point
-      // requires the closure capability, only content-free fields are read, and the caller only
-      // ever learns about scopes it already named.
+      // must not depend on the caller's record visibility, so that a caller who cannot see a
+      // closure is never answered "allowed" — an authorization gap must not turn into a
+      // resurrection. Record visibility is governed by the class's sharing keyword, which is why
+      // this privileged guard is `without sharing` (the same shape as the other ALT_CLS_* guards);
+      // `WITH SYSTEM_MODE` adds object/FLS exemption for the same reason. The entry point requires
+      // the closure capability, only content-free fields are read, and the caller only ever learns
+      // about scopes it already named.
       for (AXF_OBJ_ClosureRun__c run : [
         SELECT
           Id,
@@ -187,14 +192,20 @@ public with sharing class ALT_CLS_RestoreInvariant {
   }
 
   /**
-   * A proof is trusted only when it carries nothing outside the allowlist, describes this scope and
-   * still matches its own digest. Anything else is a tampered or spliced mark: refuse.
+   * A proof is trusted only when it carries nothing outside the allowlist, nothing missing from
+   * it, describes this scope and still matches its own digest. Anything else is a tampered,
+   * truncated or spliced mark: refuse. Presence is checked as well as the digest, because the
+   * fingerprint is computed over whatever the mark happens to hold — a mark reduced to a subset of
+   * the allowlist would otherwise match its own recomputed digest while dropping lifecycle proof.
    */
   private static Boolean isIntact(Map<String, Object> proof, String scopeKey) {
     for (String key : proof.keySet()) {
       if (!MARK_KEYS.contains(key)) {
         return false;
       }
+    }
+    if (!proof.keySet().containsAll(MARK_KEYS)) {
+      return false;
     }
     if (!MARK_SCHEMA.equals(proof.get('schemaVersion'))) {
       return false;
@@ -209,6 +220,11 @@ public with sharing class ALT_CLS_RestoreInvariant {
     return ((String) stored).equals(fingerprint(proof));
   }
 
+  /**
+   * Digest of everything the proof holds apart from the fingerprint itself. Visible to tests so a
+   * re-signed proof can be built without restating the canonical form outside this class.
+   */
+  @TestVisible
   private static String fingerprint(Map<String, Object> proof) {
     return EncodingUtil.convertToHex(
       Crypto.generateDigest('SHA-256', Blob.valueOf(canonical(proof)))
