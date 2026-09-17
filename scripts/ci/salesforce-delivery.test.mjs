@@ -8,6 +8,7 @@ import {
   testPlan,
   destructiveMember,
   buildDestructiveChangesXml,
+  destructiveManifestArgs,
   run
 } from "./salesforce-delivery.mjs";
 import fs from "node:fs";
@@ -118,6 +119,34 @@ test("buildDestructiveChangesXml groups by type, sorts, escapes, and reports unr
   assert.match(xml, /<members>Alpha<\/members>\s*<members>Zeta<\/members>/);
   assert.match(xml, /<members>Foo__c\.Bar__c<\/members>/);
   assert.match(xml, /<version>62\.0<\/version>/);
+});
+
+test("destructiveManifestArgs only applies manifests that exist and have <types> content", () => {
+  const files = {
+    "manifest/destructiveChangesPre.xml":
+      "<Package><version>62.0</version></Package>",
+    "manifest/destructiveChangesPost.xml":
+      "<Package><types><members>Foo</members><name>ApexClass</name></types><version>62.0</version></Package>"
+  };
+  const exists = (p) => p in files;
+  const readFile = (p) => files[p];
+  assert.deepEqual(destructiveManifestArgs(exists, readFile), {
+    args: ["--post-destructive-changes", "manifest/destructiveChangesPost.xml"],
+    applied: ["manifest/destructiveChangesPost.xml"]
+  });
+});
+
+test("destructiveManifestArgs is a no-op when no manifest file exists", () => {
+  assert.deepEqual(
+    destructiveManifestArgs(
+      () => false,
+      () => ""
+    ),
+    {
+      args: [],
+      applied: []
+    }
+  );
 });
 
 test("only a successful terminal Salesforce result counts as success", () => {
