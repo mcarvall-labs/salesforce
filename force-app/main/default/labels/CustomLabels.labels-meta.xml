@@ -813,6 +813,18 @@
   ><fullName>AXF_ClosureRun_actionNONE</fullName><language
     >en_US</language><protected>false</protected><shortDescription
     >Action</shortDescription><value>Nothing else to do.</value></labels><labels
+  ><fullName>AXF_ClosureRun_actionVERIFY_ARCHIVE</fullName><language
+    >en_US</language><protected>false</protected><shortDescription
+    >Action</shortDescription><value
+    >Finish verifying the archive copy before any deletion.</value></labels><labels
+  ><fullName>AXF_ClosureRun_actionAWAIT_BACKUP_CONFIRMATION</fullName><language
+    >en_US</language><protected>false</protected><shortDescription
+    >Action</shortDescription><value
+    >The deletion waits for the mandatory backup/recovery confirmation.</value></labels><labels
+  ><fullName>AXF_ClosureRun_actionREVOKE_IN_PLUGGY</fullName><language
+    >en_US</language><protected>false</protected><shortDescription
+    >Action</shortDescription><value
+    >Revoke this installation's consent in Pluggy; Axon never does it for you.</value></labels><labels
   ><fullName>AXF_ClosureRun_noAccess</fullName><language
     >en_US</language><protected>false</protected><shortDescription
     >No access</shortDescription><value
@@ -920,7 +932,15 @@
   ><fullName>AXF_ClosureRun_reasonSTAGE_FAILED</fullName><language
     >en_US</language><protected>false</protected><shortDescription
     >Reason</shortDescription><value>Stage failed</value></labels><labels
-  ><fullName>AXF_ClosureRun_externalNOT_APPLICABLE</fullName><language
+  ><fullName>AXF_ClosureRun_reasonARCHIVE_UNVERIFIED</fullName><language
+    >en_US</language><protected>false</protected><shortDescription
+    >Reason</shortDescription><value
+    >Archive without a confirmed recoverable copy</value></labels><labels
+  ><fullName>AXF_ClosureRun_reasonBACKUP_PENDING</fullName><language
+    >en_US</language><protected>false</protected><shortDescription
+    >Reason</shortDescription><value
+    >Mandatory backup still pending</value></labels><labels><fullName
+    >AXF_ClosureRun_externalNOT_APPLICABLE</fullName><language
     >en_US</language><protected>false</protected><shortDescription
     >External</shortDescription><value>Not applicable</value></labels><labels
   ><fullName>AXF_ClosureRun_externalNOT_CONFIRMED</fullName><language
@@ -930,6 +950,14 @@
     >AXF_ClosureRun_externalCONFIRMED</fullName><language
     >en_US</language><protected>false</protected><shortDescription
     >External</shortDescription><value>Confirmed</value></labels><labels
+  ><fullName>AXF_ClosureRun_externalGuidance</fullName><language
+    >en_US</language><protected>false</protected><shortDescription
+    >External guidance</shortDescription><value
+    >External revocation (next step)</value></labels><labels><fullName
+    >AXF_ClosureRun_externalPendingBanner</fullName><language
+    >en_US</language><protected>false</protected><shortDescription
+    >External pending</shortDescription><value
+    >Axon closed for this holder. External revocation at Pluggy is not confirmed and is shown separately: revoke it in the provider. Collection stays stopped.</value></labels><labels
   ><fullName>AXF_EconomicAllocation_title</fullName><language
     >en_US</language><protected>false</protected><shortDescription
     >Title</shortDescription><value>Economic allocation</value></labels><labels

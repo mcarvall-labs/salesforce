@@ -116,6 +116,13 @@ export default class ClosureRun extends LightningElement {
       statusLabel: statusLabel(this.run.status),
       reasonLabel: reasonLabel(this.run.blockReason),
       externalLabel: externalLabel(this.run.externalRevocation),
+      // Shown apart from the run's own next action: this step happens at the provider. The
+      // server emits it only for a closed run whose revocation the provider has not confirmed,
+      // so a blocked run never announces "Axon closed" while its own stage is still pending.
+      externalActionLabel: this.run.externalRevocationAction
+        ? actionLabel(this.run.externalRevocationAction)
+        : "—",
+      externalRevocationPending: Boolean(this.run.externalRevocationAction),
       actionLabel: actionLabel(this.run.nextAction),
       canReleaseHold: this.run.legalHold === true && !this.run.closed,
       checkpoints: (this.run.checkpoints || []).map((checkpoint, index) => ({

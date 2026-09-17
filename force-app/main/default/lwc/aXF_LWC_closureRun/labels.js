@@ -13,6 +13,8 @@ import attempt from "@salesforce/label/c.AXF_ClosureRun_attempt";
 import blockReason from "@salesforce/label/c.AXF_ClosureRun_blockReason";
 import nextAction from "@salesforce/label/c.AXF_ClosureRun_nextAction";
 import externalRevocation from "@salesforce/label/c.AXF_ClosureRun_externalRevocation";
+import externalGuidance from "@salesforce/label/c.AXF_ClosureRun_externalGuidance";
+import externalPendingBanner from "@salesforce/label/c.AXF_ClosureRun_externalPendingBanner";
 import open from "@salesforce/label/c.AXF_ClosureRun_open";
 import back from "@salesforce/label/c.AXF_ClosureRun_back";
 import resume from "@salesforce/label/c.AXF_ClosureRun_resume";
@@ -48,6 +50,9 @@ import actionRECONCILE from "@salesforce/label/c.AXF_ClosureRun_actionRECONCILE"
 import actionRELEASE_LEGAL_HOLD from "@salesforce/label/c.AXF_ClosureRun_actionRELEASE_LEGAL_HOLD";
 import actionRESOLVE_DEPENDENCIES from "@salesforce/label/c.AXF_ClosureRun_actionRESOLVE_DEPENDENCIES";
 import actionNONE from "@salesforce/label/c.AXF_ClosureRun_actionNONE";
+import actionVERIFY_ARCHIVE from "@salesforce/label/c.AXF_ClosureRun_actionVERIFY_ARCHIVE";
+import actionAWAIT_BACKUP_CONFIRMATION from "@salesforce/label/c.AXF_ClosureRun_actionAWAIT_BACKUP_CONFIRMATION";
+import actionREVOKE_IN_PLUGGY from "@salesforce/label/c.AXF_ClosureRun_actionREVOKE_IN_PLUGGY";
 import noAccess from "@salesforce/label/c.AXF_ClosureRun_noAccess";
 import confirmResumeTitle from "@salesforce/label/c.AXF_ClosureRun_confirmResumeTitle";
 import confirmResumeBody from "@salesforce/label/c.AXF_ClosureRun_confirmResumeBody";
@@ -79,6 +84,8 @@ import reasonCOLLECTION_NOT_PAUSABLE from "@salesforce/label/c.AXF_ClosureRun_re
 import reasonPURGE_INCOMPLETE from "@salesforce/label/c.AXF_ClosureRun_reasonPURGE_INCOMPLETE";
 import reasonRESULT_UNKNOWN from "@salesforce/label/c.AXF_ClosureRun_reasonRESULT_UNKNOWN";
 import reasonSTAGE_FAILED from "@salesforce/label/c.AXF_ClosureRun_reasonSTAGE_FAILED";
+import reasonARCHIVE_UNVERIFIED from "@salesforce/label/c.AXF_ClosureRun_reasonARCHIVE_UNVERIFIED";
+import reasonBACKUP_PENDING from "@salesforce/label/c.AXF_ClosureRun_reasonBACKUP_PENDING";
 import externalNOT_APPLICABLE from "@salesforce/label/c.AXF_ClosureRun_externalNOT_APPLICABLE";
 import externalNOT_CONFIRMED from "@salesforce/label/c.AXF_ClosureRun_externalNOT_CONFIRMED";
 import externalCONFIRMED from "@salesforce/label/c.AXF_ClosureRun_externalCONFIRMED";
@@ -98,6 +105,8 @@ export default {
   blockReason,
   nextAction,
   externalRevocation,
+  externalGuidance,
+  externalPendingBanner,
   open,
   back,
   resume,
@@ -133,6 +142,9 @@ export default {
   actionRELEASE_LEGAL_HOLD,
   actionRESOLVE_DEPENDENCIES,
   actionNONE,
+  actionVERIFY_ARCHIVE,
+  actionAWAIT_BACKUP_CONFIRMATION,
+  actionREVOKE_IN_PLUGGY,
   noAccess,
   confirmResumeTitle,
   confirmResumeBody,
@@ -164,6 +176,8 @@ export default {
   reasonPURGE_INCOMPLETE,
   reasonRESULT_UNKNOWN,
   reasonSTAGE_FAILED,
+  reasonARCHIVE_UNVERIFIED,
+  reasonBACKUP_PENDING,
   externalNOT_APPLICABLE,
   externalNOT_CONFIRMED,
   externalCONFIRMED
