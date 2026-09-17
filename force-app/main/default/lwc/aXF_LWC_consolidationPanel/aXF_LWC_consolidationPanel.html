@@ -16,7 +16,7 @@
         label={labels.scope}
         field-level-help={labels.scopeHelp}
         source-label={labels.scopeAvailable}
-        selected-label={labels.scope}
+        selected-label={labels.scopeSelected}
         options={holderOptions}
         value={selected}
         onchange={handleScopeChange}
@@ -107,23 +107,7 @@
             </span>
           </p>
           <p class="slds-m-top_x-small" data-id="period">
-            {labels.period}:
-            <template lwc:if={hasPeriod}>
-              <lightning-formatted-date-time
-                value={result.fromDate}
-                year="numeric"
-                month="short"
-                day="2-digit"
-              ></lightning-formatted-date-time>
-              –
-              <lightning-formatted-date-time
-                value={result.toDate}
-                year="numeric"
-                month="short"
-                day="2-digit"
-              ></lightning-formatted-date-time>
-            </template>
-            <template lwc:else>{labels.periodOpen}</template>
+            {labels.period}: {labels.periodOpen}
           </p>
           <h3 class="slds-text-title_caps slds-m-top_small">
             {labels.reasons}
@@ -151,7 +135,7 @@
             {labels.holders}
           </h2>
           <template lwc:if={hasHolders}>
-            <div class="slds-scrollable_x">
+            <div class="slds-scrollable_x" tabindex="0">
               <table
                 class="slds-table slds-table_bordered slds-table_cell-buffer slds-m-top_x-small"
                 data-id="holders"
@@ -194,7 +178,7 @@
             {labels.totals}
           </h2>
           <template lwc:if={hasTotals}>
-            <div class="slds-scrollable_x">
+            <div class="slds-scrollable_x" tabindex="0">
               <table
                 class="slds-table slds-table_bordered slds-table_cell-buffer slds-m-top_x-small"
                 data-id="totals"
@@ -207,7 +191,9 @@
                     <th scope="col">{labels.net}</th>
                     <th scope="col">{labels.facts}</th>
                     <th scope="col">{labels.holderCountCol}</th>
-                    <th scope="col">{labels.conversion}</th>
+                    <template lwc:if={hasConversion}>
+                      <th scope="col">{labels.conversion}</th>
+                    </template>
                   </tr>
                 </thead>
                 <tbody>
@@ -237,7 +223,9 @@
                       </td>
                       <td>{row.factCount}</td>
                       <td>{row.holderCount}</td>
-                      <td>{row.conversionLabel}</td>
+                      <template lwc:if={hasConversion}>
+                        <td>{row.conversionLabel}</td>
+                      </template>
                     </tr>
                   </template>
                 </tbody>
@@ -303,7 +291,7 @@
               </li>
             </ul>
           </template>
-          <template lwc:elseif={comparisonWithheld}>
+          <template lwc:elseif={missingFx}>
             <p
               class="slds-m-top_x-small slds-text-color_weak"
               data-id="comparable-withheld"
@@ -312,7 +300,15 @@
               <span class="slds-m-left_xx-small">{blockedCurrencies}</span>
             </p>
           </template>
-          <template lwc:else>
+          <template lwc:elseif={comparisonBlocked}>
+            <p
+              class="slds-m-top_x-small slds-text-color_weak"
+              data-id="comparable-blocked"
+            >
+              {labels.comparableBlocked}
+            </p>
+          </template>
+          <template lwc:elseif={noComparisonRequested}>
             <p
               class="slds-m-top_x-small slds-text-color_weak"
               data-id="no-comparison"
@@ -335,9 +331,16 @@
               <template for:each={exclusionRows} for:item="row">
                 <li key={row.key} data-id="exclusion">
                   {row.reasonLabel}
-                  <span class="slds-m-left_x-small slds-text-body_small"
-                    >{labels.exclusionCount}: {row.count}</span
-                  >
+                  <template lwc:if={row.selectionLabel}>
+                    <span class="slds-m-left_x-small"
+                      >{row.selectionLabel}</span
+                    >
+                  </template>
+                  <template lwc:if={row.multiple}>
+                    <span class="slds-m-left_x-small slds-text-body_small"
+                      >{labels.exclusionCount}: {row.count}</span
+                    >
+                  </template>
                 </li>
               </template>
             </ul>

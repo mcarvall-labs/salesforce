@@ -3,6 +3,7 @@ import intro from "@salesforce/label/c.AXF_ConsolidationPanel_intro";
 import scope from "@salesforce/label/c.AXF_ConsolidationPanel_scope";
 import scopeHelp from "@salesforce/label/c.AXF_ConsolidationPanel_scopeHelp";
 import scopeAvailable from "@salesforce/label/c.AXF_ConsolidationPanel_scopeAvailable";
+import scopeSelected from "@salesforce/label/c.AXF_ConsolidationPanel_scopeSelected";
 import currency from "@salesforce/label/c.AXF_ConsolidationPanel_currency";
 import currencyHelp from "@salesforce/label/c.AXF_ConsolidationPanel_currencyHelp";
 import consolidate from "@salesforce/label/c.AXF_ConsolidationPanel_consolidate";
@@ -46,6 +47,7 @@ import noTotals from "@salesforce/label/c.AXF_ConsolidationPanel_noTotals";
 import comparable from "@salesforce/label/c.AXF_ConsolidationPanel_comparable";
 import comparableWithheld from "@salesforce/label/c.AXF_ConsolidationPanel_comparableWithheld";
 import noComparison from "@salesforce/label/c.AXF_ConsolidationPanel_noComparison";
+import comparableBlocked from "@salesforce/label/c.AXF_ConsolidationPanel_comparableBlocked";
 import exclusions from "@salesforce/label/c.AXF_ConsolidationPanel_exclusions";
 import noExclusions from "@salesforce/label/c.AXF_ConsolidationPanel_noExclusions";
 import exclusionCount from "@salesforce/label/c.AXF_ConsolidationPanel_exclusionCount";
@@ -77,6 +79,7 @@ export default {
   scope,
   scopeHelp,
   scopeAvailable,
+  scopeSelected,
   currency,
   currencyHelp,
   consolidate,
@@ -120,6 +123,7 @@ export default {
   comparable,
   comparableWithheld,
   noComparison,
+  comparableBlocked,
   exclusions,
   noExclusions,
   exclusionCount,

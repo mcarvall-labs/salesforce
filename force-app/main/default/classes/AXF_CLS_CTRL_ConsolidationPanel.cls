@@ -12,8 +12,6 @@ public with sharing class AXF_CLS_CTRL_ConsolidationPanel {
     @AuraEnabled
     public Boolean canConsolidate;
     @AuraEnabled
-    public String policyVersion;
-    @AuraEnabled
     public List<ALT_CLS_AxonHolder.HolderView> holders;
     @AuraEnabled
     public List<AXF_CLS_ReportCurrencyService.CurrencyOption> currencies;
@@ -26,13 +24,24 @@ public with sharing class AXF_CLS_CTRL_ConsolidationPanel {
     try {
       Context result = new Context();
       result.canConsolidate = FeatureManagement.checkPermission(CP_CONSOLIDATE);
-      result.policyVersion = ALT_CLS_ConsolidationService.POLICY_VERSION;
       result.holders = result.canConsolidate
         ? new ALT_CLS_AxonHolder().listHolders(null)
         : new List<ALT_CLS_AxonHolder.HolderView>();
-      AXF_CLS_ReportCurrencyService currencies = new AXF_CLS_ReportCurrencyService();
-      result.currencies = currencies.activeCurrencies();
-      result.defaultReportingIso = currencies.effectivePreference();
+      result.currencies = new List<AXF_CLS_ReportCurrencyService.CurrencyOption>();
+      try {
+        // The presentation-currency catalogue is its own grant (AXF-87 read through
+        // AXF_PS_ReportCurrency). A holder of the consolidation capability who does not have it still
+        // gets the consolidated view — every total in its own currency, and the surface says in words
+        // that no presentation currency was chosen — instead of losing the whole panel to it.
+        AXF_CLS_ReportCurrencyService currencies = new AXF_CLS_ReportCurrencyService();
+        result.currencies = currencies.activeCurrencies();
+        result.defaultReportingIso = currencies.effectivePreference();
+      } catch (System.QueryException notGranted) {
+        System.debug(
+          LoggingLevel.INFO,
+          'Presentation currency not granted: ' + notGranted
+        );
+      }
       return result;
     } catch (Exception failure) {
       throw safe(failure);

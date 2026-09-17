@@ -107,6 +107,10 @@ export default class AxfConsolidationPanel extends LightningElement {
     this.wiredContextResult = value;
     const { data, error } = value;
     if (error) {
+      // The context itself is unreadable: no holder list is trusted, and the retry refreshes this
+      // wire instead of deriving against the context that failed.
+      this.context = undefined;
+      this.holderOptions = [];
       this.state = STATE.ERROR;
       this.errorMessage = parseFailure(error);
       return;
@@ -164,10 +168,6 @@ export default class AxfConsolidationPanel extends LightningElement {
       : "inverse";
     return "slds-badge slds-badge_" + variant;
   }
-  /** The server echoes the requested range; an unbounded scope is stated, never left blank. */
-  get hasPeriod() {
-    return !!(this.result && this.result.fromDate);
-  }
   get hasReasons() {
     return this.isReady && this.result.reasons.length > 0;
   }
@@ -201,6 +201,13 @@ export default class AxfConsolidationPanel extends LightningElement {
   get hasTotals() {
     return this.isReady && this.result.totals.length > 0;
   }
+  /** A comparison column exists only when the server compared something. */
+  get hasConversion() {
+    return (
+      this.hasTotals &&
+      this.result.totals.some((total) => !!total.conversionState)
+    );
+  }
   get totalRows() {
     if (!this.result) {
       return [];
@@ -213,24 +220,39 @@ export default class AxfConsolidationPanel extends LightningElement {
       net: total.net,
       factCount: total.factCount,
       holderCount: total.holderCount,
-      // Blank when no comparison was requested: the absence is stated once, in that section.
-      conversionLabel: CONVERSION_LABEL[total.conversionState] || ""
+      conversionLabel:
+        CONVERSION_LABEL[total.conversionState] || total.conversionState
     }));
   }
 
   get hasExclusions() {
     return this.isReady && this.result.exclusions.length > 0;
   }
-  /** The count stays written out; a collapsed or hover-only disclosure is never used. */
+  /**
+   * The exclusion names the selection it belongs to: the service echoes the id the caller supplied,
+   * and a name exists only while the holder is still listed, so an id is shown when it is not. The
+   * count is stated only when it says something — a single excluded selection is not a count.
+   */
   get exclusionRows() {
     if (!this.result) {
       return [];
     }
-    return this.result.exclusions.map((exclusion, index) => ({
-      key: index,
-      count: exclusion.count,
-      reasonLabel: EXCLUSION_LABEL[exclusion.reason] || exclusion.reason
-    }));
+    return this.result.exclusions.map((exclusion, index) => {
+      const listed = this.holderOptions.find(
+        (option) => option.value === exclusion.accountId
+      );
+      return {
+        key: index,
+        reasonLabel: EXCLUSION_LABEL[exclusion.reason] || exclusion.reason,
+        selectionLabel: exclusion.accountId
+          ? listed
+            ? listed.label
+            : exclusion.accountId
+          : "",
+        multiple: exclusion.count > 1,
+        count: exclusion.count
+      };
+    });
   }
 
   get hasComparable() {
@@ -260,24 +282,44 @@ export default class AxfConsolidationPanel extends LightningElement {
       .map((row) => row.currencyIso)
       .join(", ");
   }
-  get comparisonWithheld() {
+  /**
+   * AXF-123's own withholding: the reason the service reports when a currency has no usable quote.
+   * Nothing else may be blamed on the exchange rate.
+   */
+  get missingFx() {
     return (
-      this.isReady && !this.result.comparableTotal && !!this.result.reportingIso
+      this.isReady &&
+      !this.result.comparableTotal &&
+      this.result.reasons.indexOf("MISSING_MATERIAL_FX") >= 0
     );
+  }
+  /**
+   * A comparison that was requested and produced no indicator for another reason: the service
+   * returns before it compares when the scope is blocked, so the absence is stated as its own fact
+   * instead of being reported as "no currency was chosen".
+   */
+  get comparisonBlocked() {
+    return (
+      this.isReady &&
+      !this.result.comparableTotal &&
+      !this.missingFx &&
+      !!this.reportingIso
+    );
+  }
+  get noComparisonRequested() {
+    return this.isReady && !this.result.comparableTotal && !this.reportingIso;
   }
 
   /**
    * AXF-124 — the context changed, or the effective access is being revalidated. The displayed
    * consolidated view belongs to the previous context, so it is discarded before anything else and
-   * never kept as a fallback, an in-flight response is rejected instead of allowed to land, the
-   * accessible announcement is cleared, and the holder list is emptied and refreshed rather than
-   * trusted (the wire caches it, so a revoked holder would otherwise stay reachable). With a scope
-   * selected the server derives the whole unit again through the native model.
+   * never kept as a fallback: `discard()` is what rejects an answer already in flight and clears the
+   * accessible announcement. The holder list is emptied and refreshed rather than trusted (the wire
+   * caches it, so a revoked holder would otherwise stay reachable). With a scope selected the server
+   * derives the whole unit again through the native model; nothing is decided here.
    */
   handleContextChanged() {
-    this.result = undefined;
-    this.announcement = "";
-    this.requestToken += 1;
+    this.discard();
     this.state = STATE.LOADING;
     this.holderOptions = [];
     if (this.wiredContextResult) {
@@ -292,17 +334,22 @@ export default class AxfConsolidationPanel extends LightningElement {
 
   handleScopeChange(event) {
     this.selected = event.detail.value || [];
-    if (this.result) {
-      // A displayed view belongs to the previous scope: never leave it on screen as if current.
-      this.discard();
-    }
+    // Unconditionally, and not only when something is displayed: a derivation already in flight for
+    // the previous scope must not land after the scope changed.
+    this.discard();
   }
 
   handleCurrencyChange(event) {
     this.reportingIso = event.detail.value;
-    if (this.result) {
-      // The comparable indicator belongs to the previous currency; it is derived again.
-      this.load();
+    // A displayed view, a failure and a derivation in flight all belong to the previous currency.
+    if (
+      this.result ||
+      this.state === STATE.LOADING ||
+      this.state === STATE.ERROR
+    ) {
+      if (this.selected.length > 0) {
+        this.load();
+      }
     }
   }
 
@@ -324,6 +371,8 @@ export default class AxfConsolidationPanel extends LightningElement {
   discard() {
     this.result = undefined;
     this.announcement = "";
+    // A derivation already issued belongs to the input that has just changed.
+    this.requestToken += 1;
     this.state = STATE.IDLE;
   }
 

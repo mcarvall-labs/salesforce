@@ -211,13 +211,25 @@ describe("c-aXF_LWC_consolidationPanel", () => {
       element.shadowRoot.querySelectorAll('[data-id="reasons"] li').length
     ).toBe(1);
 
-    // Exclusions: the count stays written out.
+    // Exclusions: the reason, the selection it belongs to and the count when it says something.
     const exclusions = element.shadowRoot.querySelectorAll(
       '[data-id="exclusions"] li'
     );
     expect(exclusions.length).toBe(1);
-    expect(exclusions[0].textContent).toContain("2");
     expect(exclusions[0].textContent).toContain("exNotAuthorized");
+    expect(exclusions[0].textContent).toContain("001Z");
+    expect(exclusions[0].textContent).toContain("2");
+
+    // The comparison column exists because the server compared something.
+    expect(
+      element.shadowRoot.querySelector('[data-id="totals"] thead').textContent
+    ).toContain("conversion");
+    // A scrollable table stays reachable from the keyboard.
+    element.shadowRoot
+      .querySelectorAll(".slds-scrollable_x")
+      .forEach((wrapper) => {
+        expect(wrapper.getAttribute("tabindex")).toBe("0");
+      });
 
     // Structural accessibility: every section is a labelled region pointing at its own heading.
     const regions = element.shadowRoot.querySelectorAll(
@@ -285,6 +297,31 @@ describe("c-aXF_LWC_consolidationPanel", () => {
     expect(numbers[0].value).toBe(900);
     expect(numbers[1].value).toBe(200);
     expect(numbers[3].value).toBe(20);
+
+    // A quote outside its validity window blocks the indicator the same way and is named the same
+    // way: the reader is never told only that something could not be converted.
+    element.shadowRoot
+      .querySelector('[data-id="scope"]')
+      .dispatchEvent(
+        new CustomEvent("change", { detail: { value: ["001A"] } })
+      );
+    await flush();
+    consolidate.mockResolvedValueOnce({
+      ...withheld,
+      totals: [
+        withheld.totals[0],
+        { ...withheld.totals[1], conversionState: "STALE" }
+      ]
+    });
+    element.shadowRoot.querySelector('[data-id="consolidate"]').click();
+    await flush();
+    const stale = element.shadowRoot.querySelector(
+      '[data-id="comparable-withheld"]'
+    );
+    expect(stale.textContent).toContain("USD");
+    expect(
+      element.shadowRoot.querySelector('[data-id="totals"] tbody').textContent
+    ).toContain("fxSTALE");
   });
 
   it("renders a blocked result with its reasons and states that there is no authorized total", async () => {
@@ -320,10 +357,105 @@ describe("c-aXF_LWC_consolidationPanel", () => {
     expect(
       element.shadowRoot.querySelector('[data-id="no-exclusions"]').textContent
     ).toContain("noExclusions");
-    // No presentation currency was requested, so no comparison is claimed.
+    // The reader chose BRL, so the absence of a comparable total is not reported as "no currency
+    // was chosen": nothing was consolidated at all.
+    expect(
+      element.shadowRoot.querySelector('[data-id="comparable-blocked"]')
+        .textContent
+    ).toContain("comparableBlocked");
+    expect(
+      element.shadowRoot.querySelector('[data-id="no-comparison"]')
+    ).toBeNull();
+  });
+
+  it("renders nothing for a user without the capability", async () => {
+    const element = build();
+    getContext.emit({ ...context, canConsolidate: false, holders: [] });
+    await flush();
+    expect(element.shadowRoot.querySelector('[data-id="scope"]')).toBeNull();
+    expect(
+      element.shadowRoot.querySelector('[data-id="consolidate"]')
+    ).toBeNull();
+    expect(element.shadowRoot.querySelector('[data-id="error"]')).toBeNull();
+    expect(consolidate).not.toHaveBeenCalled();
+  });
+
+  it("never leaks a field name when the field access is missing", async () => {
+    consolidate.mockResolvedValue({
+      ...result,
+      confidence: "BLOCKED",
+      reasons: ["FIELD_ACCESS:AXF_BAT_NUM_Magnitude__c"],
+      holders: [],
+      totals: [],
+      exclusions: [],
+      comparableTotal: null,
+      reportingIso: null
+    });
+    const element = build();
+    getContext.emit(context);
+    await flush();
+    await derive(element);
+
+    const reasons = element.shadowRoot.querySelector('[data-id="reasons"]');
+    expect(reasons.textContent).toContain("reasonFieldAccess");
+    expect(reasons.textContent).not.toContain("AXF_BAT_NUM_Magnitude__c");
+  });
+
+  it("states an exact comparable total when no conversion was needed", async () => {
+    consolidate.mockResolvedValue({
+      ...result,
+      totals: result.totals.map((row) => ({
+        ...row,
+        conversionState: "SAME_CURRENCY"
+      })),
+      comparableTotal: { ...result.comparableTotal }
+    });
+    const element = build();
+    getContext.emit(context);
+    await flush();
+    await derive(element);
+
+    expect(
+      element.shadowRoot.querySelector('[data-id="comparable-state"]')
+        .textContent
+    ).toContain("fxSAME_CURRENCY");
+    expect(
+      element.shadowRoot.querySelectorAll(
+        '[data-id="totals"] lightning-formatted-number'
+      ).length
+    ).toBe(6);
+  });
+
+  it("states that no comparison was requested and leaves the column out", async () => {
+    consolidate.mockResolvedValue({
+      ...result,
+      totals: result.totals.map((row) => ({
+        ...row,
+        conversionState: null
+      })),
+      comparableTotal: null,
+      reportingIso: null,
+      reasons: []
+    });
+    const element = build();
+    getContext.emit(context);
+    await flush();
+    // No presentation currency is chosen on this surface.
+    element.shadowRoot
+      .querySelector('[data-id="reporting-currency"]')
+      .dispatchEvent(new CustomEvent("change", { detail: { value: "" } }));
+    await flush();
+    await derive(element);
+
     expect(
       element.shadowRoot.querySelector('[data-id="no-comparison"]').textContent
     ).toContain("noComparison");
+    expect(
+      element.shadowRoot.querySelector('[data-id="comparable-blocked"]')
+    ).toBeNull();
+    expect(
+      element.shadowRoot.querySelector('[data-id="totals"] thead').textContent
+    ).not.toContain("conversion");
   });
 
   it("renders a sanitized error with retry, for the derivation and for the context wire", async () => {
@@ -452,6 +584,35 @@ describe("c-aXF_LWC_consolidationPanel", () => {
     ).toContain("confidenceDEGRADED");
   });
 
+  it("rejects an answer still in flight when the context changes with no scope", async () => {
+    let resolveFirst;
+    consolidate.mockReturnValueOnce(
+      new Promise((resolve) => {
+        resolveFirst = resolve;
+      })
+    );
+    const element = build();
+    getContext.emit(context);
+    await flush();
+    await derive(element, ["001A"]);
+
+    // The scope is cleared while an answer is in flight, and the context then changes: this arm
+    // issues no server call of its own, so only the invalidation of the handler can reject it.
+    element.shadowRoot
+      .querySelector('[data-id="scope"]')
+      .dispatchEvent(new CustomEvent("change", { detail: { value: [] } }));
+    await flush();
+    subscribe.mock.calls[0][2]();
+    await flush();
+    resolveFirst(result);
+    await flush();
+
+    expect(
+      element.shadowRoot.querySelector('[data-id="empty"]')
+    ).not.toBeNull();
+    expect(element.shadowRoot.querySelector('[data-id="totals"]')).toBeNull();
+  });
+
   it("discards the displayed view as soon as the scope changes", async () => {
     consolidate.mockResolvedValue(result);
     const element = build();
@@ -477,6 +638,35 @@ describe("c-aXF_LWC_consolidationPanel", () => {
     expect(
       element.shadowRoot.querySelector('[data-id="announcer"]').textContent
     ).toBe("");
+  });
+
+  it("rejects an answer still in flight when the scope changes", async () => {
+    let resolveFirst;
+    consolidate.mockReturnValueOnce(
+      new Promise((resolve) => {
+        resolveFirst = resolve;
+      })
+    );
+    const element = build();
+    getContext.emit(context);
+    await flush();
+    await derive(element, ["001A"]);
+
+    // The scope moves on while the derivation is in flight: the answer belongs to the scope that
+    // was asked for, so it must not be presented for the new one.
+    element.shadowRoot
+      .querySelector('[data-id="scope"]')
+      .dispatchEvent(
+        new CustomEvent("change", { detail: { value: ["001B"] } })
+      );
+    await flush();
+    resolveFirst(result);
+    await flush();
+
+    expect(element.shadowRoot.querySelector('[data-id="totals"]')).toBeNull();
+    expect(
+      element.shadowRoot.querySelector('[data-id="empty"]')
+    ).not.toBeNull();
   });
 
   it("derives the view again when the presentation currency changes", async () => {

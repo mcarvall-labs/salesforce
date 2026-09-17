@@ -2878,4 +2878,12 @@
     >AXF_ConsolidationPanel_codeUnavailable</fullName><language
     >en_US</language><protected>false</protected><shortDescription
     >Unavailable failure code</shortDescription><value
-    >The consolidated view could not be calculated. Nothing was partially presented.</value></labels></CustomLabels>
+    >The consolidated view could not be calculated. Nothing was partially presented.</value></labels><labels
+  ><fullName>AXF_ConsolidationPanel_scopeSelected</fullName><language
+    >en_US</language><protected>false</protected><shortDescription
+    >Selected scope pane label</shortDescription><value
+    >Selected</value></labels><labels><fullName
+    >AXF_ConsolidationPanel_comparableBlocked</fullName><language
+    >en_US</language><protected>false</protected><shortDescription
+    >Comparable total not produced</shortDescription><value
+    >The comparable total was not produced: nothing was consolidated in this response.</value></labels></CustomLabels>

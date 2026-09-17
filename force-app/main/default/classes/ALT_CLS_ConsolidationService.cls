@@ -54,6 +54,9 @@
  *   indicative layer reads it under sharing exactly like this. Same posture as AXF-140, whose open
  *   decision about it (P6.2) is inherited rather than re-taken.
  * - Any unexpected platform failure surfaces as `UNAVAILABLE`, never as a raw exception.
+ * - The result DTO members carry `@AuraEnabled` because the consolidated view is presented by a
+ *   Lightning component (AXF-125): an inner class returned through `@AuraEnabled` only serializes
+ *   annotated properties. Annotation only — no rule, figure or lifecycle changed.
  *
  * Known limitation (deferred): joint holders (`AXF_OBJ_AccountHolder__c`) are not split here;
  * a source contributes to its primary holder unless a confirmed allocation says otherwise.
@@ -111,41 +114,68 @@ public with sharing class ALT_CLS_ConsolidationService {
   }
 
   public class HolderScope {
+    @AuraEnabled
     public Id accountId;
+    @AuraEnabled
     public String accountName;
+    @AuraEnabled
     public String state; // AUTHORIZED | UNKNOWN
+    @AuraEnabled
     public String coverage; // FULL | UNVERIFIED
   }
 
   public class Exclusion {
+    @AuraEnabled
     public Id accountId; // only echoed for ids the caller supplied
+    @AuraEnabled
     public String reason; // NOT_AUTHORIZED | NOT_A_HOLDER | ALLOCATED_OUTSIDE_SCOPE | ALLOCATED_TO_UNVERIFIED_HOLDER
+    @AuraEnabled
     public Integer count = 1;
   }
 
   public class Contribution {
+    @AuraEnabled
     public Id accountId;
+    @AuraEnabled
     public String accountName;
+    @AuraEnabled
     public String attribution; // HOLDER | ALLOCATION | MIXED
+    @AuraEnabled
     public String sourceKind; // BANK | CARD
+    @AuraEnabled
     public Id sourceId;
+    @AuraEnabled
     public String sourceLabel;
+    @AuraEnabled
     public String currencyIso;
+    @AuraEnabled
     public Decimal inflow = 0;
+    @AuraEnabled
     public Decimal outflow = 0;
+    @AuraEnabled
     public Decimal net = 0;
+    @AuraEnabled
     public Integer factCount = 0;
+    @AuraEnabled
     public Integer pendingCount = 0;
+    @AuraEnabled
     public Date effectiveFrom;
+    @AuraEnabled
     public Date effectiveTo;
   }
 
   public class Total {
+    @AuraEnabled
     public String currencyIso;
+    @AuraEnabled
     public Decimal inflow = 0;
+    @AuraEnabled
     public Decimal outflow = 0;
+    @AuraEnabled
     public Decimal net = 0;
+    @AuraEnabled
     public Integer factCount = 0;
+    @AuraEnabled
     public Integer holderCount = 0;
     /**
      * AXF-123: the same total in the requested reporting currency. Null means no comparison was
@@ -154,36 +184,57 @@ public with sharing class ALT_CLS_ConsolidationService {
      * numbers; `STALE`/`UNAVAILABLE` carry none of them and name the currency that blocks the
      * comparable indicator.
      */
+    @AuraEnabled
     public String conversionState;
+    @AuraEnabled
     public Decimal rateInflow; // BUY quote applied to the inflow (empty side: null)
+    @AuraEnabled
     public Decimal rateOutflow; // SELL quote applied to the outflow (empty side: null)
+    @AuraEnabled
     public String rateProvider;
     /** The instant of each applied quote, so both converted sides stay auditable on their own. */
+    @AuraEnabled
     public Datetime rateEffectiveAtInflow;
+    @AuraEnabled
     public Datetime rateEffectiveAtOutflow;
+    @AuraEnabled
     public Decimal reportingInflow;
+    @AuraEnabled
     public Decimal reportingOutflow;
+    @AuraEnabled
     public Decimal reportingNet;
   }
 
   public class Result {
+    @AuraEnabled
     public String policyVersion = POLICY_VERSION;
+    @AuraEnabled
     public Datetime asOf;
+    @AuraEnabled
     public Date fromDate;
+    @AuraEnabled
     public Date toDate;
+    @AuraEnabled
     public String confidence;
+    @AuraEnabled
     public List<String> reasons = new List<String>();
+    @AuraEnabled
     public List<HolderScope> holders = new List<HolderScope>();
+    @AuraEnabled
     public List<Exclusion> exclusions = new List<Exclusion>();
+    @AuraEnabled
     public List<Contribution> contributions = new List<Contribution>();
+    @AuraEnabled
     public List<Total> totals = new List<Total>();
     /** AXF-123: currency the comparison was requested in (null when none was requested). */
+    @AuraEnabled
     public String reportingIso;
     /**
      * AXF-123: the one comparable indicator, or null when a currency has no usable quote. It carries
      * no conversion state of its own — it is already expressed in the reporting currency, and the
      * per-currency states, rates and quote instants live in `totals`.
      */
+    @AuraEnabled
     public Total comparableTotal;
   }
 
@@ -531,8 +582,15 @@ public with sharing class ALT_CLS_ConsolidationService {
         continue;
       }
       String normalized = iso == null ? null : iso.trim().toUpperCase();
-      convert(total, quotes.get(normalized + '|BUY'), quotes.get(normalized + '|SELL'));
-      if (total.conversionState != ALT_CLS_IndicativeEquivalenceService.STATE_ESTIMATED) {
+      convert(
+        total,
+        quotes.get(normalized + '|BUY'),
+        quotes.get(normalized + '|SELL')
+      );
+      if (
+        total.conversionState !=
+        ALT_CLS_IndicativeEquivalenceService.STATE_ESTIMATED
+      ) {
         complete = false;
         continue;
       }
@@ -645,7 +703,8 @@ public with sharing class ALT_CLS_ConsolidationService {
   private static String stateOf(Quote quote) {
     // Present but outside the validity window -> stale; absent or non-positive -> unavailable.
     // Neither one is ever converted, and neither one falls back to an older quote.
-    return quote == null || quote.rate == null
+    return quote == null ||
+      quote.rate == null
       ? ALT_CLS_IndicativeEquivalenceService.STATE_UNAVAILABLE
       : ALT_CLS_IndicativeEquivalenceService.STATE_STALE;
   }
