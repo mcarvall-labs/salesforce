@@ -515,6 +515,140 @@ private class ALT_CLS_ConsolidationServiceTest {
     }
   }
 
+  /**
+   * AXF-124: mudança de contexto e revogação. Cada resposta deriva o consolidado de novo, como uma
+   * unidade — KPIs, confiança e explicações vêm do mesmo escopo efetivo autorizado —, nada do
+   * escopo anterior sobrevive nela, e um titular cujo acesso deixou de ser legítimo tem a
+   * contribuição removida em vez de o total anterior voltar como se ainda fosse atual.
+   */
+  @IsTest
+  static void contextChangeAndRevocationRecomputeTheWholeUnitWithoutKeepingThePreviousTotal() {
+    noAllocations();
+    Account revoked;
+    AXF_OBJ_BankAccount__c revokedBank;
+    AccountTeamMember link;
+    System.runAs(byAlias('axf122p')) {
+      revoked = holder('Empresa Revogada', false);
+      revokedBank = bank(revoked.Id, 'r');
+      insert bat(revokedBank.Id, 'r', 700, 'DEBIT', 'POSTED', Date.today());
+      link = new AccountTeamMember(
+        AccountId = revoked.Id,
+        UserId = byAlias('axf122g').Id,
+        TeamMemberRole = ALT_CLS_AxonCompanyResponsible.validTeamRole(),
+        AccountAccessLevel = 'Read',
+        OpportunityAccessLevel = 'None',
+        CaseAccessLevel = 'None'
+      );
+      insert link;
+    }
+    Fixture f;
+    ALT_CLS_ConsolidationService service = new ALT_CLS_ConsolidationService();
+    ALT_CLS_ConsolidationService.Result wide;
+    ALT_CLS_ConsolidationService.Result narrow;
+    ALT_CLS_ConsolidationService.Result shared;
+    ALT_CLS_ConsolidationService.Result revalidated;
+    Test.startTest();
+    System.runAs(byAlias('axf122g')) {
+      f = fixture();
+      wide = service.consolidate(
+        scope(new List<Id>{ f.personA.Id, f.businessB.Id }, null, null)
+      );
+      // O contexto mudou: o conjunto de pessoas/empresas autorizadas encolheu.
+      narrow = service.consolidate(
+        scope(new List<Id>{ f.businessB.Id }, null, null)
+      );
+      // Contribuição com acesso parcial, não legítimo: retida, nunca somada.
+      shared = service.consolidate(
+        scope(new List<Id>{ f.businessB.Id, revoked.Id }, null, null)
+      );
+    }
+    System.runAs(byAlias('axf122p')) {
+      delete link;
+    }
+    System.runAs(byAlias('axf122g')) {
+      // A próxima resposta revalida o acesso efetivo pelo modelo nativo (sharing + USER_MODE).
+      revalidated = service.consolidate(
+        scope(new List<Id>{ f.businessB.Id, revoked.Id }, null, null)
+      );
+    }
+    Test.stopTest();
+
+    // Uma resposta deriva KPIs, confianca e explicacoes juntos, do escopo corrente. Aritmetica do
+    // fixture: A = banco BRL 300 + 999 (antigo) - saida, 1000 entrada, mais cartao USD 80;
+    // B = banco BRL 200; revogado = banco BRL 700.
+    Assert.areEqual(
+      ALT_CLS_ConsolidationService.CONFIDENCE_FULL,
+      wide.confidence
+    );
+    Assert.areEqual(2, wide.holders.size());
+    Assert.isTrue(wide.exclusions.isEmpty());
+    Assert.isTrue(wide.reasons.isEmpty());
+    Assert.areEqual(1499, total(wide, 'BRL').outflow);
+    Assert.areEqual(1000, total(wide, 'BRL').inflow);
+    Assert.areEqual(2, total(wide, 'BRL').holderCount);
+
+    // Contexto anterior nao permanece: nem contribuicao, nem total, nem titular.
+    Assert.areEqual(200, total(narrow, 'BRL').outflow);
+    Assert.areEqual(0, total(narrow, 'BRL').inflow);
+    Assert.areEqual(1, total(narrow, 'BRL').holderCount);
+    Assert.areEqual(1, narrow.contributions.size());
+    Assert.areEqual(f.businessB.Id, narrow.holders[0].accountId);
+    Assert.isNull(contribution(narrow, f.personA.Id, f.bankA.Id));
+    Assert.isNull(contribution(narrow, f.personA.Id, f.cardA.Id));
+    Assert.isFalse(
+      JSON.serialize(narrow).contains(f.personA.Id),
+      'nada do contexto anterior permanece alcancavel'
+    );
+
+    // Antes da revogacao, mesma lista: a contribuicao com acesso parcial e retida e a
+    // confianca/explicacao ja mudam no mesmo resultado.
+    Assert.areEqual(
+      ALT_CLS_ConsolidationService.CONFIDENCE_DEGRADED,
+      shared.confidence
+    );
+    Assert.isTrue(shared.reasons.contains('COVERAGE_UNVERIFIED'));
+    Assert.areEqual(200, total(shared, 'BRL').outflow);
+    Assert.areEqual(1, shared.contributions.size());
+    Assert.isNull(contribution(shared, revoked.Id, revokedBank.Id));
+    Assert.isFalse(
+      hasExclusion(shared, revoked.Id, 'NOT_AUTHORIZED'),
+      'antes da revogacao o titular ainda era alcancavel'
+    );
+
+    // Depois da revogacao, mesma lista: a proxima resposta revalida o acesso pelo modelo nativo,
+    // remove a contribuicao sem acesso legitimo e nao reapresenta o total anterior como atual.
+    Assert.areEqual(1, revalidated.exclusions.size());
+    Assert.isTrue(hasExclusion(revalidated, revoked.Id, 'NOT_AUTHORIZED'));
+    Assert.isFalse(revalidated.reasons.contains('COVERAGE_UNVERIFIED'));
+    Assert.areEqual(
+      ALT_CLS_ConsolidationService.CONFIDENCE_FULL,
+      revalidated.confidence
+    );
+    Assert.areEqual(1, revalidated.holders.size());
+    Assert.areEqual(f.businessB.Id, revalidated.holders[0].accountId);
+    Assert.isNull(contribution(revalidated, revoked.Id, revokedBank.Id));
+    Assert.areEqual(1, revalidated.contributions.size());
+    Assert.areEqual(
+      200,
+      total(revalidated, 'BRL').outflow,
+      'o total anterior nao volta como fallback'
+    );
+    Assert.areEqual(0, total(revalidated, 'BRL').inflow);
+
+    // Voltar ao primeiro contexto deriva a mesma unidade de novo, do zero.
+    System.runAs(byAlias('axf122g')) {
+      ALT_CLS_ConsolidationService.Result again = service.consolidate(
+        scope(new List<Id>{ f.personA.Id, f.businessB.Id }, null, null)
+      );
+      Assert.areEqual(
+        ALT_CLS_ConsolidationService.CONFIDENCE_FULL,
+        again.confidence
+      );
+      Assert.areEqual(1499, total(again, 'BRL').outflow);
+      Assert.areEqual(1000, total(again, 'BRL').inflow);
+    }
+  }
+
   @IsTest
   static void confirmedAllocationSharesFollowAttribution() {
     System.runAs(byAlias('axf122g')) {
