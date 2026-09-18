@@ -1,0 +1,6 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<CustomField xmlns="http://soap.sforce.com/2006/04/metadata"><fullName
+  >AXF_ITR_DT_ReversedAt__c</fullName><label>Reversed at</label><type
+  >DateTime</type><description
+  >Set only on a new REVERSED compensation row (AXF_ITR_LKP_OriginalTransfer__c populated); the
+  CONFIRMED row it points to is never edited.</description></CustomField>

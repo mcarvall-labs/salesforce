@@ -1,0 +1,8 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<CustomField xmlns="http://soap.sforce.com/2006/04/metadata"><fullName
+  >AXF_ITR_LKP_DebitTransaction__c</fullName><label>Debit leg</label><required
+  >true</required><deleteConstraint>Restrict</deleteConstraint><referenceTo
+  >AXF_OBJ_BankAccountTransaction__c</referenceTo><relationshipLabel
+  >Internal transfers (debit leg)</relationshipLabel><relationshipName
+  >DebitInternalTransfers</relationshipName><type>Lookup</type><description
+  >Outgoing bank fact (AXF-32). Never merged with the credit leg; both remain independent facts.</description></CustomField>

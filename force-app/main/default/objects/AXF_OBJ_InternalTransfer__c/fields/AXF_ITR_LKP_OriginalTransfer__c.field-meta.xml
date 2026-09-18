@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<CustomField xmlns="http://soap.sforce.com/2006/04/metadata"><fullName
+  >AXF_ITR_LKP_OriginalTransfer__c</fullName><label
+  >Original transfer</label><deleteConstraint
+  >SetNull</deleteConstraint><referenceTo
+  >AXF_OBJ_InternalTransfer__c</referenceTo><relationshipLabel
+  >Reversal compensations</relationshipLabel><relationshipName
+  >Reversals</relationshipName><type>Lookup</type><description
+  >Populated only on a REVERSED compensation row; points to the CONFIRMED row it reverses,
+  which is never edited (same pattern as AXF_RA_LKP_OriginalAllocation__c, AXF-32 ratification
+  section 3).</description></CustomField>

@@ -1546,4 +1546,57 @@
   ><label>Ativando o usuário</label><name
     >AXF_AddPersonAccess_stepNameActivate</name></customLabels><customLabels
   ><label>Concluído</label><name
-    >AXF_AddPersonAccess_stepNameDone</name></customLabels></Translations>
+    >AXF_AddPersonAccess_stepNameDone</name></customLabels><customLabels><label
+    >Confirmar uma transferência interna</label><name
+    >AXF_InternalTransfer_title</name></customLabels><customLabels><label
+    >Revise um par sugerido e confirme somente se as duas pernas estiverem corretas. Nenhuma
+    transação bancária é editada ou fundida: confirmar apenas vincula as duas pernas para que o
+    consolidado neutralize o principal uma única vez.</label><name
+    >AXF_InternalTransfer_intro</name></customLabels><customLabels><label
+    >Você não tem autorização para confirmar transferências internas.</label><name
+    >AXF_InternalTransfer_noCapability</name></customLabels><customLabels><label
+    >Carregando sugestões...</label><name
+    >AXF_InternalTransfer_loading</name></customLabels><customLabels><label
+    >Nenhuma sugestão de transferência pendente.</label><name
+    >AXF_InternalTransfer_empty</name></customLabels><customLabels><label
+    >Perna de débito</label><name
+    >AXF_InternalTransfer_colDebit</name></customLabels><customLabels><label
+    >Perna de crédito</label><name
+    >AXF_InternalTransfer_colCredit</name></customLabels><customLabels><label
+    >Valor</label><name
+    >AXF_InternalTransfer_colAmount</name></customLabels><customLabels><label
+    >Data</label><name
+    >AXF_InternalTransfer_colDate</name></customLabels><customLabels><label
+    >Confirmar par</label><name
+    >AXF_InternalTransfer_confirm</name></customLabels><customLabels><label
+    >Confirmando...</label><name
+    >AXF_InternalTransfer_confirming</name></customLabels><customLabels><label
+    >Tarifas continuam despesas e diferenças cambiais permanecem rastreáveis; apenas o
+    principal exibido abaixo é neutralizado.</label><name
+    >AXF_InternalTransfer_feesNote</name></customLabels><customLabels><label
+    >Confirmado. O principal foi neutralizado no consolidado.</label><name
+    >AXF_InternalTransfer_doneConfirmed</name></customLabels><customLabels
+  ><label
+    >Uma perna ficou incompatível ou inacessível. Nada foi neutralizado; isso permanece
+    revisável.</label><name
+    >AXF_InternalTransfer_doneUnilateral</name></customLabels><customLabels
+  ><label>Já registrado; exibindo o resultado anterior.</label><name
+    >AXF_InternalTransfer_doneReplayed</name></customLabels><customLabels><label
+    >Atualizar</label><name
+    >AXF_InternalTransfer_refresh</name></customLabels><customLabels><label
+    >Algo deu errado. Tente novamente.</label><name
+    >AXF_InternalTransfer_error</name></customLabels><customLabels><label
+    >Você não tem autorização para fazer isso.</label><name
+    >AXF_InternalTransfer_codeUNAVAILABLE</name></customLabels><customLabels
+  ><label>Este registro não está acessível.</label><name
+    >AXF_InternalTransfer_codeNOT_ACCESSIBLE</name></customLabels><customLabels
+  ><label>Não foi possível entender a solicitação.</label><name
+    >AXF_InternalTransfer_codeINVALID_INPUT</name></customLabels><customLabels
+  ><label>A solicitação é inválida.</label><name
+    >AXF_InternalTransfer_codeINVALID</name></customLabels><customLabels><label
+    >Isso mudou desde que foi carregado. Atualize e tente novamente.</label><name
+    >AXF_InternalTransfer_codeCONFLICT</name></customLabels><customLabels><label
+    >Esta transferência já foi decidida.</label><name
+    >AXF_InternalTransfer_codeALREADY_DECIDED</name></customLabels><customLabels
+  ><label>Esta ação não se aplica a esta transferência.</label><name
+    >AXF_InternalTransfer_codeINVALID_TARGET</name></customLabels></Translations>

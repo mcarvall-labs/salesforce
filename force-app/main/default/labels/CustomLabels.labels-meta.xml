@@ -2662,4 +2662,94 @@
     >AXF_AddPersonAccess_stepNameDone</fullName><language
     >en_US</language><protected>false</protected><shortDescription
     >AddPersonAccess stepName DONE</shortDescription><value
-    >Done</value></labels></CustomLabels>
+    >Done</value></labels><labels><fullName
+    >AXF_InternalTransfer_title</fullName><language>en_US</language><protected
+    >false</protected><shortDescription>Title</shortDescription><value
+    >Confirm an internal transfer</value></labels><labels><fullName
+    >AXF_InternalTransfer_intro</fullName><language>en_US</language><protected
+    >false</protected><shortDescription>Intro</shortDescription><value
+    >Review a suggested pair and confirm it only if both legs are correct. Neither bank fact is
+    edited or merged: confirming only links the two legs so the consolidated view neutralizes the
+    principal once.</value></labels><labels><fullName
+    >AXF_InternalTransfer_noCapability</fullName><language
+    >en_US</language><protected>false</protected><shortDescription
+    >No capability</shortDescription><value
+    >You are not authorized to confirm internal transfers.</value></labels><labels
+  ><fullName>AXF_InternalTransfer_loading</fullName><language
+    >en_US</language><protected>false</protected><shortDescription
+    >Loading</shortDescription><value
+    >Loading suggestions...</value></labels><labels><fullName
+    >AXF_InternalTransfer_empty</fullName><language>en_US</language><protected
+    >false</protected><shortDescription>Empty</shortDescription><value
+    >No pending transfer suggestions.</value></labels><labels><fullName
+    >AXF_InternalTransfer_colDebit</fullName><language
+    >en_US</language><protected>false</protected><shortDescription
+    >Column debit leg</shortDescription><value>Debit leg</value></labels><labels
+  ><fullName>AXF_InternalTransfer_colCredit</fullName><language
+    >en_US</language><protected>false</protected><shortDescription
+    >Column credit leg</shortDescription><value
+    >Credit leg</value></labels><labels><fullName
+    >AXF_InternalTransfer_colAmount</fullName><language
+    >en_US</language><protected>false</protected><shortDescription
+    >Column amount</shortDescription><value>Amount</value></labels><labels
+  ><fullName>AXF_InternalTransfer_colDate</fullName><language
+    >en_US</language><protected>false</protected><shortDescription
+    >Column date</shortDescription><value>Date</value></labels><labels><fullName
+    >AXF_InternalTransfer_confirm</fullName><language>en_US</language><protected
+    >false</protected><shortDescription>Confirm button</shortDescription><value
+    >Confirm pair</value></labels><labels><fullName
+    >AXF_InternalTransfer_confirming</fullName><language
+    >en_US</language><protected>false</protected><shortDescription
+    >Confirming</shortDescription><value>Confirming...</value></labels><labels
+  ><fullName>AXF_InternalTransfer_feesNote</fullName><language
+    >en_US</language><protected>false</protected><shortDescription
+    >Fees and FX stay separate</shortDescription><value
+    >Fees stay expenses and FX differences stay traceable; only the principal shown below is
+    neutralized.</value></labels><labels><fullName
+    >AXF_InternalTransfer_doneConfirmed</fullName><language
+    >en_US</language><protected>false</protected><shortDescription
+    >Done confirmed</shortDescription><value
+    >Confirmed. The principal is neutralized in the consolidated view.</value></labels><labels
+  ><fullName>AXF_InternalTransfer_doneUnilateral</fullName><language
+    >en_US</language><protected>false</protected><shortDescription
+    >Done unilateral</shortDescription><value
+    >A leg became incompatible or inaccessible. Nothing was neutralized; this stays
+    reviewable.</value></labels><labels><fullName
+    >AXF_InternalTransfer_doneReplayed</fullName><language
+    >en_US</language><protected>false</protected><shortDescription
+    >Done replayed</shortDescription><value
+    >Already recorded; showing the prior result.</value></labels><labels
+  ><fullName>AXF_InternalTransfer_refresh</fullName><language
+    >en_US</language><protected>false</protected><shortDescription
+    >Refresh</shortDescription><value>Refresh</value></labels><labels><fullName
+    >AXF_InternalTransfer_error</fullName><language>en_US</language><protected
+    >false</protected><shortDescription>Generic error</shortDescription><value
+    >Something went wrong. Try again.</value></labels><labels><fullName
+    >AXF_InternalTransfer_codeUNAVAILABLE</fullName><language
+    >en_US</language><protected>false</protected><shortDescription
+    >Code UNAVAILABLE</shortDescription><value
+    >You are not authorized to do this.</value></labels><labels><fullName
+    >AXF_InternalTransfer_codeNOT_ACCESSIBLE</fullName><language
+    >en_US</language><protected>false</protected><shortDescription
+    >Code NOT_ACCESSIBLE</shortDescription><value
+    >This record is not accessible.</value></labels><labels><fullName
+    >AXF_InternalTransfer_codeINVALID_INPUT</fullName><language
+    >en_US</language><protected>false</protected><shortDescription
+    >Code INVALID_INPUT</shortDescription><value
+    >The request could not be understood.</value></labels><labels><fullName
+    >AXF_InternalTransfer_codeINVALID</fullName><language
+    >en_US</language><protected>false</protected><shortDescription
+    >Code INVALID</shortDescription><value
+    >The request is invalid.</value></labels><labels><fullName
+    >AXF_InternalTransfer_codeCONFLICT</fullName><language
+    >en_US</language><protected>false</protected><shortDescription
+    >Code CONFLICT</shortDescription><value
+    >This changed since it was loaded. Refresh and try again.</value></labels><labels
+  ><fullName>AXF_InternalTransfer_codeALREADY_DECIDED</fullName><language
+    >en_US</language><protected>false</protected><shortDescription
+    >Code ALREADY_DECIDED</shortDescription><value
+    >This transfer was already decided.</value></labels><labels><fullName
+    >AXF_InternalTransfer_codeINVALID_TARGET</fullName><language
+    >en_US</language><protected>false</protected><shortDescription
+    >Code INVALID_TARGET</shortDescription><value
+    >This action does not apply to this transfer.</value></labels></CustomLabels>
