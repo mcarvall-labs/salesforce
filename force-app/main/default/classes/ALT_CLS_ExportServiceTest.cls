@@ -119,6 +119,66 @@ private class ALT_CLS_ExportServiceTest {
     }
   }
 
+  /** AXF-118: a bank account under the holder, for AXF_OBJ_BankAccountTransaction__c fixtures. */
+  private static Id bankAccount(Id accountId) {
+    AXF_OBJ_BankAccount__c account = new AXF_OBJ_BankAccount__c(
+      AXF_BA_LKP_Account__c = accountId,
+      AXF_BA_PKL_AvailabilityState__c = 'AVAILABLE'
+    );
+    insert account;
+    return account.Id;
+  }
+
+  /** AXF-118: a credit card under the holder, for AXF_OBJ_CreditCardTransaction__c fixtures. */
+  private static Id creditCard(Id accountId) {
+    AXF_OBJ_CreditCard__c card = new AXF_OBJ_CreditCard__c(
+      AXF_CC_LKP_Account__c = accountId,
+      AXF_CC_PKL_AvailabilityState__c = 'AVAILABLE'
+    );
+    insert card;
+    return card.Id;
+  }
+
+  private static void bankFact(
+    Id bankAccountId,
+    String key,
+    String description,
+    Date onDate
+  ) {
+    insert new AXF_OBJ_BankAccountTransaction__c(
+      AXF_BAT_MDR_BankAccount__c = bankAccountId,
+      AXF_BAT_DAT_Date__c = onDate,
+      AXF_BAT_NUM_Magnitude__c = 50.25,
+      AXF_BAT_PKL_Direction__c = 'DEBIT',
+      AXF_BAT_PKL_Source__c = 'MANUAL',
+      AXF_BAT_PKL_Status__c = 'POSTED',
+      AXF_BAT_TXT_CurrencyIsoCode__c = 'BRL',
+      AXF_BAT_NUM_Version__c = 0,
+      AXF_BAT_EXI_SourceKey__c = key,
+      AXF_BAT_TXT_Description__c = description
+    );
+  }
+
+  private static void cardFact(
+    Id creditCardId,
+    String key,
+    String description,
+    Date onDate
+  ) {
+    insert new AXF_OBJ_CreditCardTransaction__c(
+      AXF_CCT_MDR_CreditCard__c = creditCardId,
+      AXF_CCT_DAT_Date__c = onDate,
+      AXF_CCT_NUM_Magnitude__c = 75.1,
+      AXF_CCT_PKL_Direction__c = 'DEBIT',
+      AXF_CCT_PKL_Source__c = 'MANUAL',
+      AXF_CCT_PKL_Status__c = 'POSTED',
+      AXF_CCT_TXT_CurrencyIsoCode__c = 'BRL',
+      AXF_CCT_NUM_Version__c = 0,
+      AXF_CCT_EXI_SourceKey__c = key,
+      AXF_CCT_TXT_Description__c = description
+    );
+  }
+
   private static Account holder(String name) {
     Account holder = new Account(
       Name = name,
@@ -202,7 +262,8 @@ private class ALT_CLS_ExportServiceTest {
         AXF_EPR_TXT_FileName__c,
         AXF_EPR_TXT_ContentHash__c,
         AXF_EPR_DT_ExpiresAt__c,
-        AXF_EPR_NUM_Version__c
+        AXF_EPR_NUM_Version__c,
+        AXF_EPR_TXT_Cursor__c
       FROM AXF_OBJ_ExportRun__c
       WHERE Id = :runId
     ];
@@ -330,9 +391,14 @@ private class ALT_CLS_ExportServiceTest {
       Assert.areEqual(run.fileName, download.fileName);
       Assert.areEqual(run.contentHash, download.contentHash);
       String csv = EncodingUtil.base64Decode(download.bodyBase64).toString();
+      // The sync path always tags its section, even with a single source (AXF-118 review fix):
+      // the same shape the batch path always produced, so the same scope hashes the same way
+      // regardless of which path prepared it.
       Assert.isTrue(
-        csv.startsWith('date,direction,amount,currency,status,description'),
-        'Cabecalho estavel.'
+        csv.startsWith(
+          '# FTX\ndate,direction,amount,currency,status,description'
+        ),
+        'Marcador de secao seguido do cabecalho estavel.'
       );
       Assert.isTrue(csv.contains(IN_SCOPE_TEXT), 'Somente o escopo pedido.');
       Assert.isFalse(
@@ -340,9 +406,9 @@ private class ALT_CLS_ExportServiceTest {
         'Nenhum dado fora do escopo solicitado.'
       );
       Assert.areEqual(
-        3,
+        4,
         csv.split('\n').size(),
-        'Cabecalho mais uma linha por fato do titular.'
+        'Marcador, cabecalho, mais uma linha por fato do titular.'
       );
       Assert.areEqual('DOWNLOADED', service.read(run.runId).status);
 
@@ -406,7 +472,11 @@ private class ALT_CLS_ExportServiceTest {
         csv.contains('"\'=SUM(""1"",""2"")"'),
         'Neutralizacao de formula e escape de aspas valem na mesma celula.'
       );
-      Assert.areEqual(3, csv.split('\n').size(), 'Cabecalho mais dois fatos.');
+      Assert.areEqual(
+        4,
+        csv.split('\n').size(),
+        'Marcador, cabecalho, mais dois fatos.'
+      );
     }
   }
 
@@ -603,50 +673,77 @@ private class ALT_CLS_ExportServiceTest {
     }
   }
 
+  /**
+   * AXF-118 (P14-4, ratificado 19/09/2026): o bloqueio EXPORT_TOO_LARGE foi substituido por lote
+   * retomavel. Este teste substitui o antigo `exportBeyondTheDeclaredRowLimitBlocksInsteadOfTruncating`,
+   * que afirmava exatamente o comportamento que a ratificacao revogou (bloquear em vez de dividir
+   * em lotes); a cobertura equivalente — nada e perdido nem truncado acima do limite — passa a
+   * ser "todas as linhas aparecem, exatamente uma vez, no artefato final preparado pelo lote".
+   */
   @IsTest
-  static void exportBeyondTheDeclaredRowLimitBlocksInsteadOfTruncating() {
+  static void exportAboveTheRowLimitRunsAsAResumableBatchAndPrepares() {
+    Id accountId;
+    Id runId;
+    Integer totalFacts;
     System.runAs(requester()) {
-      Id accountId = authorizedHolderId();
+      accountId = authorizedHolderId();
+      // Apex test execution only supports a single Database.executeBatch chunk for a Batchable
+      // driven by a custom Iterable (max scope 2000): a fixture that actually crosses the real
+      // 5000-row EXPORT_ROW_LIMIT cannot also fit in one chunk. exportRowLimitOverride crosses a
+      // small stand-in limit instead, with a fixture sized to match — same "above the limit"
+      // behavior, provably inside one chunk (see ALT_CLS_ExportService.exportRowLimit()).
+      Integer testLimit = 3;
+      ALT_CLS_ExportService.exportRowLimitOverride = testLimit;
       Integer missing =
-        ALT_CLS_ExportService.EXPORT_ROW_LIMIT -
+        testLimit -
         [
           SELECT COUNT()
           FROM AXF_OBJ_FinancialTransaction__c
           WHERE AXF_FTX_LKP_Account__c = :accountId
         ] +
         1;
-      List<AXF_OBJ_FinancialTransaction__c> facts = new List<AXF_OBJ_FinancialTransaction__c>();
-      for (Integer i = 0; i < missing; i++) {
-        facts.add(
-          new AXF_OBJ_FinancialTransaction__c(
-            AXF_FTX_LKP_Account__c = accountId,
-            AXF_FTX_NUM_Magnitude__c = 1,
-            AXF_FTX_PKL_Direction__c = 'DEBIT',
-            AXF_FTX_TXT_CurrencyIsoCode__c = 'BRL',
-            AXF_FTX_DAT_PurchaseDate__c = Date.newInstance(2026, 1, 1),
-            AXF_FTX_PKL_Status__c = 'PLANNED',
-            AXF_FTX_NUM_Version__c = 0,
-            AXF_FTX_EXI_ClientRequestId__c = 'axf118-limit-' + i
-          )
-        );
-      }
-      insert facts;
+      insert bulkFacts(accountId, 'axf118-batch-', missing);
+      totalFacts = factCount(accountId);
+      ALT_CLS_ExportService.batchScopeOverride = totalFacts + 1;
+
       Test.startTest();
-      try {
-        new ALT_CLS_ExportService().request(accountId, null);
-        Assert.fail(
-          'Acima do limite o pedido bloqueia em vez de descartar linhas.'
-        );
-      } catch (ALT_CLS_ExportService.ExportException blocked) {
-        Assert.areEqual('EXPORT_TOO_LARGE', blocked.code);
-      }
-      Test.stopTest();
+      ALT_CLS_ExportService.RunView run = new ALT_CLS_ExportService()
+        .request(accountId, null);
+      runId = run.runId;
       Assert.areEqual(
-        0,
-        [SELECT COUNT() FROM ContentDocument],
-        'Nada e gravado quando o pedido bloqueia.'
+        'RUNNING',
+        run.status,
+        'Acima do limite o run entra em lote em vez de bloquear.'
       );
-      Assert.areEqual(0, [SELECT COUNT() FROM AXF_OBJ_ExportRun__c]);
+      Assert.isFalse(run.canDownload);
+      Assert.areEqual('PROCESSING', run.nextAction);
+      // The batch job is only enqueued, not yet executed: stopTest() below runs it to completion.
+      Test.stopTest();
+
+      ALT_CLS_ExportService.RunView observed = new ALT_CLS_ExportService()
+        .read(runId);
+      Assert.areEqual(
+        'PREPARED',
+        observed.status,
+        'O lote concluiu e preparou o artefato.'
+      );
+      Assert.isTrue(observed.canDownload);
+      Assert.isNotNull(observed.contentHash);
+
+      ALT_CLS_ExportService.DownloadView download = new ALT_CLS_ExportService()
+        .download(runId, observed.version);
+      Assert.isTrue(download.ready, download.outcome);
+      String csv = EncodingUtil.base64Decode(download.bodyBase64).toString();
+      // The batch path always tags its section, even with a single source (see
+      // ALT_CLS_ExportRunBatchTest.batchDrainsAllThreeSourcesInOrderAndPreparesTheRun): one line
+      // for "# FTX", one for the column header, then one per fact.
+      Assert.areEqual(
+        totalFacts + 2,
+        csv.split('\n').size(),
+        'Marcador de secao, cabecalho, mais uma linha por fato, sem perder nem duplicar nenhuma.'
+      );
+      ALT_CLS_ExportService.batchScopeOverride = null;
+      ALT_CLS_ExportService.exportRowLimitOverride = null;
     }
   }
 
@@ -677,53 +774,83 @@ private class ALT_CLS_ExportServiceTest {
         'O fixture alcanca o limite exato.'
       );
       Assert.areEqual('PREPARED', run.status);
-      Assert.isTrue(run.canDownload, 'No limite exato a exportacao ainda e preparada.');
+      Assert.isTrue(
+        run.canDownload,
+        'No limite exato a exportacao ainda e preparada.'
+      );
       Assert.isNotNull(run.contentHash);
       Assert.areEqual(1, [SELECT COUNT() FROM ContentDocument]);
     }
   }
 
   /**
-   * A refusal that cannot build the replacement must not roll the revocation back with it: the
-   * expired artifact stays deleted and the run stays REVOKED, which is what AC-2 asks for. The
-   * savepoint mint() takes sits after the revocation for exactly this case.
+   * AXF-118 (P14-4): replaces `anExpiredRunStaysRevokedWhenTheReplacementIsTooLarge`. The old
+   * assertion was that an oversized replacement failed and left the prior EXPIRED revocation
+   * untouched; now an oversized replacement succeeds via the resumable batch, so the equivalent
+   * guarantee is that the expired artifact was still revoked (deleted) before the new one started,
+   * and the run moves cleanly REVOKED -> RUNNING -> PREPARED with the full new scope, never stuck
+   * and never serving the dead artifact.
    */
   @IsTest
-  static void anExpiredRunStaysRevokedWhenTheReplacementIsTooLarge() {
+  static void anExpiredRunAboveTheLimitResumesAsABatchInsteadOfStayingBlocked() {
     System.runAs(requester()) {
       Id accountId = authorizedHolderId();
       ALT_CLS_ExportService service = new ALT_CLS_ExportService();
       ALT_CLS_ExportService.RunView run = service.request(accountId, null);
+      String deadArtifact = run.evidenceRef;
       expire(run.runId);
+      // See exportAboveTheRowLimitRunsAsAResumableBatchAndPrepares: a fixture that actually
+      // crosses the real EXPORT_ROW_LIMIT cannot fit in the single executeBatch chunk Apex test
+      // execution allows for a custom-Iterable Batchable, so this crosses a small stand-in limit.
+      Integer testLimit = 3;
+      ALT_CLS_ExportService.exportRowLimitOverride = testLimit;
       List<AXF_OBJ_FinancialTransaction__c> overTheLimit = bulkFacts(
         accountId,
         'axf118-over-limit-',
-        ALT_CLS_ExportService.EXPORT_ROW_LIMIT + 1 - factCount(accountId)
+        testLimit + 1 - factCount(accountId)
       );
       insert overTheLimit;
+      Integer totalFacts = factCount(accountId);
+      ALT_CLS_ExportService.batchScopeOverride = totalFacts + 1;
 
       Test.startTest();
-      try {
-        service.request(accountId, observedVersion(service, run.runId));
-        Assert.fail('Acima do limite o pedido bloqueia.');
-      } catch (ALT_CLS_ExportService.ExportException blocked) {
-        Assert.areEqual('EXPORT_TOO_LARGE', blocked.code);
-      }
+      ALT_CLS_ExportService.RunView again = service.request(
+        accountId,
+        observedVersion(service, run.runId)
+      );
+      Assert.areEqual(
+        'RUNNING',
+        again.status,
+        'O substituto grande entra em lote em vez de bloquear.'
+      );
       Test.stopTest();
 
       AXF_OBJ_ExportRun__c stored = storedRun(run.runId);
       Assert.areEqual(
-        'REVOKED',
+        'PREPARED',
         stored.AXF_EPR_PKL_Status__c,
-        'A recusa do substituto nao pode desfazer a revogacao do artefato vencido.'
+        'O lote concluiu o substituto do artefato vencido.'
       );
-      Assert.areEqual('EXPIRED', stored.AXF_EPR_TXT_Reason__c);
-      Assert.isNull(stored.AXF_EPR_TXT_ContentDocument__c);
+      Assert.areNotEqual(
+        deadArtifact,
+        stored.AXF_EPR_TXT_ContentDocument__c,
+        'O artefato vencido nao e reaproveitado.'
+      );
       Assert.areEqual(
-        0,
+        1,
         [SELECT COUNT() FROM ContentDocument],
-        'O artefato vencido continua excluido depois da recusa.'
+        'O artefato vencido foi excluido antes do lote comecar; sobra so o novo.'
       );
+      String csv = EncodingUtil.base64Decode(
+          service.download(run.runId, observedVersion(service, run.runId))
+            .bodyBase64
+        )
+        .toString();
+      // Batch output always tags its section, even with one source (see
+      // ALT_CLS_ExportRunBatchTest.batchDrainsAllThreeSourcesInOrderAndPreparesTheRun).
+      Assert.areEqual(totalFacts + 2, csv.split('\n').size());
+      ALT_CLS_ExportService.batchScopeOverride = null;
+      ALT_CLS_ExportService.exportRowLimitOverride = null;
     }
   }
 
@@ -737,7 +864,9 @@ private class ALT_CLS_ExportServiceTest {
   static void theControlPlaneIsReadOnlyForTheAuthorizedOperator() {
     Id runId;
     System.runAs(requester()) {
-      runId = new ALT_CLS_ExportService().request(authorizedHolderId(), null).runId;
+      runId = new ALT_CLS_ExportService()
+        .request(authorizedHolderId(), null)
+        .runId;
     }
 
     List<ObjectPermissions> grants = [
@@ -771,9 +900,10 @@ private class ALT_CLS_ExportServiceTest {
         AND SobjectType = 'AXF_OBJ_ExportRun__c'
     ];
     Assert.areEqual(
-      7,
+      11,
       fields.size(),
-      'Os sete campos de controle estao no permission set.'
+      'Os onze campos de controle (incl. cursor/watermark/completeThrough/attempt do AXF-118) ' +
+      'estao no permission set.'
     );
     for (FieldPermissions field : fields) {
       Assert.isTrue(field.PermissionsRead, field.Field);
@@ -781,18 +911,19 @@ private class ALT_CLS_ExportServiceTest {
     }
 
     // Behavioural half: the declarative grant is not the only thing standing between the operator
-    // and the control row, so the refusal is proved by DML rather than inferred from the metadata.
+    // and the control row, so the refusal is proved as a real DML attempt rather than inferred
+    // from the metadata alone. Under runAs() in this org, Database.update's own FLS enforcement is
+    // unreliable across Apex API versions (see AXON_DEV Apex test quirks); isUpdateable() is the
+    // schema-level check the codebase already uses for exactly this (AXF_CLS_AccessConfigEffectiveTest).
     System.runAs(requester()) {
       Assert.isFalse(
-        Database.update(
-            new AXF_OBJ_ExportRun__c(
-              Id = runId,
-              AXF_EPR_TXT_Reason__c = 'FORGED'
-            ),
-            false
-          )
-          .isSuccess(),
+        Schema.SObjectType.AXF_OBJ_ExportRun__c.isUpdateable(),
         'Um operador autorizado nao reescreve o controle.'
+      );
+      Database.update(
+        new AXF_OBJ_ExportRun__c(Id = runId, AXF_EPR_TXT_Reason__c = 'FORGED'),
+        false,
+        AccessLevel.USER_MODE
       );
     }
     Assert.isNull(
@@ -1564,6 +1695,266 @@ private class ALT_CLS_ExportServiceTest {
       Assert.isTrue(
         observed.version > run.version,
         'A revogacao avanca a versao (NFR-18).'
+      );
+    }
+  }
+
+  // ---------------------------------------------------------------- AXF-118 expansion
+
+  /**
+   * P14-4: o escopo passa a incluir fatos de banco e cartao, cada um com suas proprias colunas
+   * nativas, lado a lado — sem inventar vinculo/lookup novo entre os tres objetos. Abaixo do
+   * limite o caminho continua sincrono.
+   */
+  @IsTest
+  static void combinedThreeSourceExportBelowLimitIncludesEachSourcesNativeColumns() {
+    System.runAs(requester()) {
+      Id accountId = authorizedHolderId();
+      Id bankAccountId = bankAccount(accountId);
+      Id creditCardId = creditCard(accountId);
+      bankFact(
+        bankAccountId,
+        'axf118-bat-1',
+        'Debito bancario 123',
+        Date.newInstance(2026, 4, 1)
+      );
+      cardFact(
+        creditCardId,
+        'axf118-cct-1',
+        'Compra cartao 456',
+        Date.newInstance(2026, 4, 2)
+      );
+
+      ALT_CLS_ExportService service = new ALT_CLS_ExportService();
+      Test.startTest();
+      ALT_CLS_ExportService.RunView run = service.request(accountId, null);
+      Test.stopTest();
+
+      Assert.areEqual(
+        'PREPARED',
+        run.status,
+        'Continua sincrono abaixo do limite.'
+      );
+      String csv = EncodingUtil.base64Decode(
+          service.download(run.runId, run.version).bodyBase64
+        )
+        .toString();
+      Assert.isTrue(
+        csv.contains('# FTX'),
+        'Com mais de uma fonte, cada secao carrega seu marcador.'
+      );
+      Assert.isTrue(csv.contains('# BAT'));
+      Assert.isTrue(csv.contains('# CCT'));
+      Assert.isTrue(
+        csv.contains(
+          'date,direction,amount,currency,status,description,bankAccount'
+        ),
+        'BAT exporta suas proprias colunas nativas.'
+      );
+      Assert.isTrue(
+        csv.contains(
+          'date,direction,amount,currency,status,description,creditCard,merchant'
+        ),
+        'CCT exporta suas proprias colunas nativas.'
+      );
+      Assert.isTrue(csv.contains('Debito bancario 123'));
+      Assert.isTrue(csv.contains('Compra cartao 456'));
+      Assert.isTrue(csv.contains(IN_SCOPE_TEXT), 'FTX continua presente.');
+    }
+  }
+
+  /**
+   * RUNNING run with no artifact yet, staged directly: the fixture a resumable batch starts
+   * from. The scope key must be the real one request() computes (accountId|requesterId, hashed),
+   * not an arbitrary string: findByScopeKey() is how request() locates this run to resume it.
+   */
+  private static Id stagedRunningRun(Id accountId, Id requesterId) {
+    AXF_OBJ_ExportRun__c run = new AXF_OBJ_ExportRun__c(
+      AXF_EPR_LKP_Account__c = accountId,
+      AXF_EPR_LKP_Requester__c = requesterId,
+      AXF_EPR_EXI_ScopeKey__c = ALT_CLS_ExportService.scopeKey(
+        accountId,
+        requesterId
+      ),
+      AXF_EPR_PKL_Status__c = 'RUNNING',
+      AXF_EPR_NUM_Version__c = 1,
+      AXF_EPR_NUM_Attempt__c = 1
+    );
+    insert run;
+    return run.Id;
+  }
+
+  /**
+   * P14-4/NFR-19: uma falha no meio de um chunk do lote nao pode perder o cursor nem o conteudo ja
+   * persistido por um chunk anterior. O primeiro chunk e gravado atraves da API publica do
+   * servico (uso legitimo, nao um atalho de teste); o segundo e forcado a falhar.
+   */
+  @IsTest
+  static void aChunkFailureLeavesThePartialRunResumableWithoutLosingProgress() {
+    System.runAs(requester()) {
+      Id accountId = authorizedHolderId();
+      List<AXF_OBJ_FinancialTransaction__c> ordered = ALT_CLS_ExportService.queryFtxPage(
+        accountId,
+        null,
+        10000
+      );
+      Assert.isTrue(
+        ordered.size() >= 2,
+        'O fixture do titular tem ao menos dois fatos.'
+      );
+      Id runId = stagedRunningRun(accountId, requester().Id);
+      List<SObject> firstChunk = new List<SObject>();
+      for (Integer i = 0; i < ordered.size() - 1; i++) {
+        firstChunk.add(ordered[i]);
+      }
+      // Legitimate first chunk: persists content and advances the cursor through the public API.
+      ALT_CLS_ExportService.batchAppendChunk(runId, firstChunk);
+      AXF_OBJ_ExportRun__c afterFirstChunk = storedRun(runId);
+      Id firstChunkDocument = Id.valueOf(
+        afterFirstChunk.AXF_EPR_TXT_ContentDocument__c
+      );
+      String cursorAfterFirstChunk = afterFirstChunk.AXF_EPR_TXT_Cursor__c;
+      Assert.isNotNull(cursorAfterFirstChunk);
+
+      // The one remaining row is the only thing left for the batch to process; force it to fail.
+      ALT_CLS_ExportService.forceNextChunkFailure = true;
+      Test.startTest();
+      Database.executeBatch(
+        new ALT_CLS_ExportRunBatch(runId),
+        ALT_CLS_ExportService.BATCH_CHUNK_SIZE
+      );
+      Test.stopTest();
+      ALT_CLS_ExportService.forceNextChunkFailure = false;
+
+      AXF_OBJ_ExportRun__c afterFailure = storedRun(runId);
+      Assert.areEqual(
+        'PARTIAL',
+        afterFailure.AXF_EPR_PKL_Status__c,
+        'O chunk falhou; o run fica PARTIAL, retomavel.'
+      );
+      Assert.isNotNull(
+        afterFailure.AXF_EPR_TXT_Reason__c,
+        'O motivo da falha e registrado.'
+      );
+      Assert.areEqual(
+        cursorAfterFirstChunk,
+        afterFailure.AXF_EPR_TXT_Cursor__c,
+        'O cursor do chunk anterior sobrevive a falha do proximo.'
+      );
+      Assert.areEqual(
+        firstChunkDocument,
+        Id.valueOf(afterFailure.AXF_EPR_TXT_ContentDocument__c),
+        'O artefato do chunk anterior sobrevive a falha do proximo.'
+      );
+      Assert.areEqual(
+        1,
+        [
+          SELECT COUNT()
+          FROM ContentVersion
+          WHERE ContentDocumentId = :firstChunkDocument
+        ],
+        'A falha nao gravou uma versao nova sobre o conteudo ja persistido.'
+      );
+    }
+  }
+
+  /**
+   * P14-4/NFR-19: retomar um run PARTIAL (cujo cursor ja avancou por um chunk anterior) completa o
+   * artefato sem duplicar as linhas daquele chunk anterior nem perder as restantes.
+   */
+  @IsTest
+  static void resumingAPartialRunCompletesWithoutDuplicatingAlreadyPersistedRows() {
+    System.runAs(requester()) {
+      Id accountId = authorizedHolderId();
+      // The run is staged straight into RUNNING/PARTIAL below, never through request(), so this
+      // never has to cross EXPORT_ROW_LIMIT — only enough rows to split into "first half already
+      // persisted" and "second half the resumed batch still owes" (see batchScopeOverride below:
+      // Apex test execution only supports a single executeBatch chunk for a custom-Iterable
+      // Batchable, so the resumed batch's remaining rows must fit in one chunk).
+      Integer missing =
+        8 -
+        [
+          SELECT COUNT()
+          FROM AXF_OBJ_FinancialTransaction__c
+          WHERE AXF_FTX_LKP_Account__c = :accountId
+        ];
+      insert bulkFacts(accountId, 'axf118-resume-', missing);
+      Integer totalFacts = factCount(accountId);
+      List<AXF_OBJ_FinancialTransaction__c> ordered = ALT_CLS_ExportService.queryFtxPage(
+        accountId,
+        null,
+        10000
+      );
+      Id runId = stagedRunningRun(accountId, requester().Id);
+      // Persist roughly the first half through the legitimate chunk API, exactly as a real batch
+      // job would have checkpointed it, then mark the run PARTIAL as if a later chunk had aborted.
+      List<SObject> firstHalf = new List<SObject>();
+      for (Integer i = 0; i < ordered.size() / 2; i++) {
+        firstHalf.add(ordered[i]);
+      }
+      ALT_CLS_ExportService.batchAppendChunk(runId, firstHalf);
+      Database.update(
+        new AXF_OBJ_ExportRun__c(
+          Id = runId,
+          AXF_EPR_PKL_Status__c = 'PARTIAL',
+          AXF_EPR_TXT_Reason__c = 'CHUNK_FAILED:Simulated'
+        ),
+        AccessLevel.SYSTEM_MODE
+      );
+
+      ALT_CLS_ExportService service = new ALT_CLS_ExportService();
+      Decimal beforeVersion = storedRun(runId).AXF_EPR_NUM_Version__c;
+      // Same single-chunk constraint as the batch-enqueue test: the resumed batch must drain the
+      // remaining rows in one executeBatch chunk.
+      ALT_CLS_ExportService.batchScopeOverride = totalFacts + 1;
+      Test.startTest();
+      ALT_CLS_ExportService.RunView resumed = service.request(
+        accountId,
+        beforeVersion
+      );
+      Assert.areEqual(
+        'RUNNING',
+        resumed.status,
+        'A retomada reativa o lote a partir do cursor.'
+      );
+      Test.stopTest();
+      ALT_CLS_ExportService.batchScopeOverride = null;
+
+      AXF_OBJ_ExportRun__c completed = storedRun(runId);
+      Assert.areEqual(
+        'PREPARED',
+        completed.AXF_EPR_PKL_Status__c,
+        'A retomada concluiu o lote.'
+      );
+      String csv = EncodingUtil.base64Decode(
+          service.download(runId, completed.AXF_EPR_NUM_Version__c).bodyBase64
+        )
+        .toString();
+      // Batch output always tags its section, even with one source (see
+      // ALT_CLS_ExportRunBatchTest.batchDrainsAllThreeSourcesInOrderAndPreparesTheRun); the tag
+      // is written once, by the first chunk, never repeated by the chunk that resumes it.
+      Assert.areEqual(
+        totalFacts + 2,
+        csv.split('\n').size(),
+        'Marcador, cabecalho, mais uma linha por fato: a metade ja persistida nao foi duplicada.'
+      );
+    }
+  }
+
+  /** P14-3: a janela de download vem de AXF_CMT_RetentionPolicy.Export (15 minutos), nao de uma
+   * constante hardcoded. */
+  @IsTest
+  static void downloadWindowComesFromTheRetentionPolicyCustomMetadata() {
+    System.runAs(requester()) {
+      Datetime before = Datetime.now();
+      ALT_CLS_ExportService.RunView run = new ALT_CLS_ExportService()
+        .request(authorizedHolderId(), null);
+      Assert.isNotNull(run.expiresAt);
+      Long minutes = (run.expiresAt.getTime() - before.getTime()) / 60000;
+      Assert.isTrue(
+        minutes >= 14 && minutes <= 16,
+        'AXF_CMT_RetentionPolicy.Export.AXF_RPT_NUM_WindowMinutes__c = 15: ' +
+        minutes
       );
     }
   }

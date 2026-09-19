@@ -7,14 +7,25 @@
  * evidence. File name, notification and log lines carry no PII: they use only the run's opaque
  * auto-number.
  *
- * Scope boundary: the holder's canonical financial facts (AXF_OBJ_FinancialTransaction__c),
- * bounded by EXPORT_ROW_LIMIT. Cell values are neutralized against spreadsheet formulas by the
- * single project neutralizer (AD-25), the same one the CSV import uses.
+ * Scope (AXF-118 expansion, ratified 19/09/2026): the holder's canonical financial facts
+ * (AXF_OBJ_FinancialTransaction__c), bank facts (AXF_OBJ_BankAccountTransaction__c) and card
+ * facts (AXF_OBJ_CreditCardTransaction__c), each exported with its own native columns side by
+ * side — no lookup or unifying schema is invented between the three objects. Cell values are
+ * neutralized against spreadsheet formulas by the single project neutralizer (AD-25), the same
+ * one the CSV import uses.
  *
- * No ratified document fixes the physical export/download mechanism, the export scope, the
- * artifact retention or the download window (AXF-9:107 forbids inventing schema or deadlines).
- * The choices taken here are declared as assumptions in docs/implementation/AXF-118.md. The
- * download is never a public link: a ContentDistribution has no caller identity, so it could
+ * Below EXPORT_ROW_LIMIT (summed across the three sources) the request stays fully synchronous,
+ * unchanged in spirit from the original AXF-118 cut. Above it, the run is handed to
+ * {@link ALT_CLS_ExportRunBatch}, a resumable `Database.Batchable`: the run moves to RUNNING, a
+ * chunk failure moves it to PARTIAL without losing the persisted cursor or duplicating rows
+ * already written, and the next `request()` resumes it instead of restarting.
+ *
+ * The download window (15 minutes) is read from `AXF_CMT_RetentionPolicy__mdt` by
+ * `DeveloperName = 'Export'` (`AXF_RPT_NUM_WindowMinutes__c`) rather than a hardcoded constant; a
+ * missing or disabled policy record is a sanitized explicit failure, never a silently invented
+ * default.
+ *
+ * The download is never a public link: a ContentDistribution has no caller identity, so it could
  * not revalidate authorization, which both acceptance criteria require.
  *
  * A refusal that must commit a revocation is returned as a DownloadView outcome rather than
@@ -44,18 +55,39 @@
  */
 public without sharing class ALT_CLS_ExportService {
   public static final String CP_EXPORT = 'AXF_CanExportData';
-  /**
-   * Short-lived download window. ASSUMPTION: no ratified source fixes a value for the export
-   * artifact, and the G7-3 retention table has no export domain, so this is declared rather
-   * than derived.
-   */
-  public static final Integer DOWNLOAD_WINDOW_MINUTES = 15;
-  /** Rows in one artifact. Above it the request blocks instead of discarding rows silently. */
+  /** DeveloperName of the AXF_CMT_RetentionPolicy__mdt record this domain reads (AXF-118). */
+  private static final String RETENTION_POLICY_NAME = 'Export';
+  /** Rows in one artifact, summed across the three sources. Above it, the run batches (AXF-118). */
   public static final Integer EXPORT_ROW_LIMIT = 5000;
+  /**
+   * Test-only override of the effective row limit (AXF-118). Apex test execution only supports a
+   * single Database.executeBatch chunk (max scope 2000) for a Batchable driven by a custom
+   * Iterable, so a test that must cross the real 5000-row EXPORT_ROW_LIMIT cannot also stay
+   * inside one chunk. Tests that exercise the batch path instead cross this override with a
+   * fixture small enough to fit in one chunk; production always enforces EXPORT_ROW_LIMIT.
+   */
+  @TestVisible
+  private static Integer exportRowLimitOverride;
+  /** Batch Apex scope size for the resumable path; small enough to keep each chunk's content
+   * rewrite (read-modify-write of the whole artifact so far) comfortably inside one execute(). */
+  public static final Integer BATCH_CHUNK_SIZE = 2000;
+  /**
+   * Test-only override of the scope passed to Database.executeBatch (AXF-118). Apex test
+   * execution only supports a single chunk for a Batchable driven by a custom Iterable — a
+   * second chunk means a second, disallowed executeBatch. Production always uses
+   * BATCH_CHUNK_SIZE; a test that must cross EXPORT_ROW_LIMIT sets this to its own fixture size
+   * so the whole run fits in one chunk.
+   */
+  @TestVisible
+  private static Integer batchScopeOverride;
   private static final String STATUS_REQUESTED = 'REQUESTED';
   private static final String STATUS_PREPARED = 'PREPARED';
   private static final String STATUS_DOWNLOADED = 'DOWNLOADED';
   private static final String STATUS_REVOKED = 'REVOKED';
+  /** Resumable batch is actively processing this run (AXF-118). */
+  private static final String STATUS_RUNNING = 'RUNNING';
+  /** A batch chunk failed: the cursor and any content already persisted survive; resumable. */
+  private static final String STATUS_PARTIAL = 'PARTIAL';
   private static final String REASON_EXPIRED = 'EXPIRED';
   private static final String REASON_ACCESS_REVOKED = 'ACCESS_REVOKED';
   private static final String REASON_MISSING = 'ARTIFACT_MISSING';
@@ -66,19 +98,49 @@ public without sharing class ALT_CLS_ExportService {
   private static final String FILE_NAME_PREFIX = 'axon-export-';
   private static final String FILE_NAME_SUFFIX = '.csv';
   private static final String CSV_HEADER = 'date,direction,amount,currency,status,description';
-  /** Reproducible order, so the same scope always hashes to the same artifact. */
+  private static final String BAT_HEADER = 'date,direction,amount,currency,status,description,bankAccount';
+  private static final String CCT_HEADER = 'date,direction,amount,currency,status,description,creditCard,merchant';
+  /** Source tags used by the resumable cursor and the multi-section file layout (AXF-118). */
+  @TestVisible
+  private static final String SOURCE_FTX = 'FTX';
+  @TestVisible
+  private static final String SOURCE_BAT = 'BAT';
+  @TestVisible
+  private static final String SOURCE_CCT = 'CCT';
+  /**
+   * Reproducible order within the sync path, so the same scope always hashes to the same
+   * artifact while it stays below the row limit. The resumable batch path orders each source by
+   * Id (keyset pagination) rather than by date+Id, so the same scope can hash differently
+   * depending on whether it crossed EXPORT_ROW_LIMIT — that cross-path guarantee does not hold
+   * today; fixing the batch path to match this ordering is out of scope for this change.
+   */
   private static final String FACT_QUERY =
     'SELECT AXF_FTX_DAT_PurchaseDate__c, AXF_FTX_PKL_Direction__c, AXF_FTX_NUM_Magnitude__c, ' +
     'AXF_FTX_TXT_CurrencyIsoCode__c, AXF_FTX_PKL_Status__c, AXF_FTX_TXT_Description__c ' +
     'FROM AXF_OBJ_FinancialTransaction__c ' +
     'WHERE AXF_FTX_LKP_Account__c = :accountId ' +
     'ORDER BY AXF_FTX_DAT_PurchaseDate__c, Id';
+  private static final String BAT_QUERY =
+    'SELECT AXF_BAT_DAT_Date__c, AXF_BAT_PKL_Direction__c, AXF_BAT_NUM_Magnitude__c, ' +
+    'AXF_BAT_TXT_CurrencyIsoCode__c, AXF_BAT_PKL_Status__c, AXF_BAT_TXT_Description__c, ' +
+    'AXF_BAT_MDR_BankAccount__r.AXF_BA_TXT_NumberMasked__c ' +
+    'FROM AXF_OBJ_BankAccountTransaction__c ' +
+    'WHERE AXF_BAT_MDR_BankAccount__r.AXF_BA_LKP_Account__c = :accountId ' +
+    'ORDER BY AXF_BAT_DAT_Date__c, Id';
+  private static final String CCT_QUERY =
+    'SELECT AXF_CCT_DAT_Date__c, AXF_CCT_PKL_Direction__c, AXF_CCT_NUM_Magnitude__c, ' +
+    'AXF_CCT_TXT_CurrencyIsoCode__c, AXF_CCT_PKL_Status__c, AXF_CCT_TXT_Description__c, ' +
+    'AXF_CCT_MDR_CreditCard__r.AXF_CC_TXT_LastFourMasked__c, AXF_CCT_TXT_MerchantName__c ' +
+    'FROM AXF_OBJ_CreditCardTransaction__c ' +
+    'WHERE AXF_CCT_MDR_CreditCard__r.AXF_CC_LKP_Account__c = :accountId ' +
+    'ORDER BY AXF_CCT_DAT_Date__c, Id';
   /** Control-row fields, named once so both access modes of loadRun select the same ones. */
   private static final String RUN_FIELDS =
     'Id, Name, AXF_EPR_LKP_Account__c, AXF_EPR_LKP_Requester__c, ' +
     'AXF_EPR_TXT_ContentDocument__c, AXF_EPR_PKL_Status__c, AXF_EPR_DT_ExpiresAt__c, ' +
     'AXF_EPR_TXT_FileName__c, AXF_EPR_TXT_ContentHash__c, AXF_EPR_TXT_Reason__c, ' +
-    'AXF_EPR_NUM_Version__c';
+    'AXF_EPR_NUM_Version__c, AXF_EPR_TXT_Cursor__c, AXF_EPR_DT_Watermark__c, ' +
+    'AXF_EPR_DT_CompleteThrough__c, AXF_EPR_NUM_Attempt__c';
 
   public class ExportException extends Exception {
     public String code;
@@ -139,6 +201,11 @@ public without sharing class ALT_CLS_ExportService {
    * platform refused to remove is still pointed at, in which case the run keeps that pointer
    * instead of losing it.
    *
+   * Above EXPORT_ROW_LIMIT (AXF-118): the run moves to RUNNING and a resumable batch is enqueued.
+   * A `request()` observed while RUNNING simply reports the current status (no mutation, no
+   * second batch enqueued). A `request()` observed while PARTIAL (a chunk failed) resumes the
+   * batch from the persisted cursor instead of restarting the export.
+   *
    * NFR-18 optimistic precondition, following the merged ALT_CLS_ClosureOrchestrator.load: the
    * caller states the version it last observed for this scope, and a stale expectation is
    * refused with CONFLICT instead of acting on a state the caller never saw. `null` is only
@@ -197,8 +264,12 @@ public without sharing class ALT_CLS_ExportService {
         throw failure;
       }
       grantRequesterAccess(run.Id, holder.OwnerId);
-      notifyRequester(run);
-      log('PREPARED', run.Name);
+      if (run.AXF_EPR_PKL_Status__c == STATUS_PREPARED) {
+        notifyRequester(run);
+        log('PREPARED', run.Name);
+      } else {
+        log('RUNNING', run.Name);
+      }
       return toView(run);
     }
     // Locked exactly like download(), and for the same reason: two concurrent requests must not
@@ -206,6 +277,14 @@ public without sharing class ALT_CLS_ExportService {
     // no reference at all. The re-read under the lock is what the caller's version is compared
     // against (NFR-18): an unstated or stale expectation is refused before anything is written.
     run = lockAndLoad(existing, expectedVersion);
+    if (run.AXF_EPR_PKL_Status__c == STATUS_RUNNING) {
+      // A batch is already active for this run: report status, never enqueue a second one.
+      return toView(run);
+    }
+    if (run.AXF_EPR_PKL_Status__c == STATUS_PARTIAL) {
+      // A chunk failed: resume from the persisted cursor instead of restarting the export.
+      return toView(resumeBatch(run));
+    }
     if (run.AXF_EPR_PKL_Status__c == STATUS_REVOKED) {
       if (run.AXF_EPR_TXT_ContentDocument__c != null) {
         // A revoked run that still holds a document is the recorded removal failure: retry the
@@ -264,6 +343,10 @@ public without sharing class ALT_CLS_ExportService {
    * NFR-18: expectedVersion is the version the caller observed (RunView.version). A stale or
    * unstated expectation is refused before anything is touched, because that caller is
    * authorized and only its view is old.
+   *
+   * A run that is RUNNING or PARTIAL (AXF-118 resumable batch) has no artifact yet: it falls
+   * through to the same NOT_PREPARED refusal a REQUESTED run already produced before this
+   * expansion, so no new gate had to be added here.
    */
   public DownloadView download(Id runId, Decimal expectedVersion) {
     if (runId == null) {
@@ -333,48 +416,69 @@ public without sharing class ALT_CLS_ExportService {
   /**
    * Prepares the replacement artifact of an existing run and announces it exactly like the first
    * preparation does: a second artifact nobody is told about would break the ready notice (D-80)
-   * for every export after the first.
+   * for every export after the first. Above the row limit, `prepare()` moves the run to RUNNING
+   * instead, and no notice is sent until the batch's `finish()` actually prepares it.
    *
    * The savepoint sits **after** the revocation the caller already performed, so a refusal that
-   * has to undo a partial preparation (the row limit, a failed upload) cannot roll the revocation
-   * back with it: an expired or revoked artifact stays revoked even when its replacement cannot be
-   * built, which is what AC-2 asks for.
+   * has to undo a partial preparation (a failed upload) cannot roll the revocation back with it:
+   * an expired or revoked artifact stays revoked even when its replacement cannot be built, which
+   * is what AC-2 asks for.
    */
   private RunView mint(AXF_OBJ_ExportRun__c run, Account holder) {
     Savepoint point = Database.setSavepoint();
     try {
-      RunView view = toView(prepare(run, holder));
-      notifyRequester(run);
-      log('PREPARED', run.Name);
-      return view;
+      run = prepare(run, holder);
     } catch (Exception refusal) {
       Database.rollback(point);
       throw refusal;
     }
+    // Outside the rollback scope, same as request()'s equivalent branch: once prepare() (or the
+    // resumable batch it may have enqueued) has committed, a notify/log failure must never trigger
+    // a rollback that reverts committed state an already-launched async job depends on.
+    RunView view = toView(run);
+    if (run.AXF_EPR_PKL_Status__c == STATUS_PREPARED) {
+      notifyRequester(run);
+      log('PREPARED', run.Name);
+    } else {
+      log('RUNNING', run.Name);
+    }
+    return view;
   }
 
-  /** Writes the artifact and its control row as one unit: neither survives without the other. */
+  /**
+   * Writes the artifact and its control row as one unit below the row limit; at or above it,
+   * moves the run to RUNNING and hands it to the resumable batch (AXF-118) instead of throwing
+   * EXPORT_TOO_LARGE — the block that used to stop the request here is now a batch continuation.
+   */
   private AXF_OBJ_ExportRun__c prepare(
     AXF_OBJ_ExportRun__c run,
     Account holder
   ) {
     Id accountId = holder.Id;
-    Integer rows = [
-      SELECT COUNT()
-      FROM AXF_OBJ_FinancialTransaction__c
-      WHERE AXF_FTX_LKP_Account__c = :accountId
-      WITH USER_MODE
-    ];
-    if (rows > EXPORT_ROW_LIMIT) {
-      // Refusing beats truncating invisibly (NFR-19); the run stays resumable, nothing is lost.
-      throw failure('EXPORT_TOO_LARGE');
+    Integer rows = countAllSources(accountId);
+    if (rows > exportRowLimit()) {
+      // Fail fast on a misconfigured retention policy before the batch is enqueued: the same
+      // validation batchFinish() applies at the end, checked here too so a bad policy is not
+      // discovered only after every source has already been fully drained across many chunks.
+      downloadWindowMinutes();
+      return startResumableBatch(run);
     }
-    List<AXF_OBJ_FinancialTransaction__c> facts = Database.queryWithBinds(
+    List<AXF_OBJ_FinancialTransaction__c> ftx = Database.queryWithBinds(
       FACT_QUERY,
       new Map<String, Object>{ 'accountId' => accountId },
       AccessLevel.USER_MODE
     );
-    String csv = csv(facts);
+    List<AXF_OBJ_BankAccountTransaction__c> bat = Database.queryWithBinds(
+      BAT_QUERY,
+      new Map<String, Object>{ 'accountId' => accountId },
+      AccessLevel.USER_MODE
+    );
+    List<AXF_OBJ_CreditCardTransaction__c> cct = Database.queryWithBinds(
+      CCT_QUERY,
+      new Map<String, Object>{ 'accountId' => accountId },
+      AccessLevel.USER_MODE
+    );
+    String csv = assembleCsv(ftx, bat, cct);
     Savepoint point = Database.setSavepoint();
     try {
       String fileName = FILE_NAME_PREFIX + run.Name + FILE_NAME_SUFFIX;
@@ -382,15 +486,40 @@ public without sharing class ALT_CLS_ExportService {
       run.AXF_EPR_TXT_ContentHash__c = sha256(csv);
       run.AXF_EPR_TXT_ContentDocument__c = store(fileName, csv);
       run.AXF_EPR_DT_ExpiresAt__c = Datetime.now()
-        .addMinutes(DOWNLOAD_WINDOW_MINUTES);
+        .addMinutes(downloadWindowMinutes());
       run.AXF_EPR_PKL_Status__c = STATUS_PREPARED;
       run.AXF_EPR_TXT_Reason__c = null;
+      run.AXF_EPR_TXT_Cursor__c = null;
+      run.AXF_EPR_DT_CompleteThrough__c = Datetime.now();
       checkpoint(run);
     } catch (Exception failure) {
       Database.rollback(point);
       throw failure;
     }
     return run;
+  }
+
+  /** Total rows across the three sources (AXF-118), the sync/batch threshold decision. */
+  private static Integer countAllSources(Id accountId) {
+    Integer ftxCount = [
+      SELECT COUNT()
+      FROM AXF_OBJ_FinancialTransaction__c
+      WHERE AXF_FTX_LKP_Account__c = :accountId
+      WITH USER_MODE
+    ];
+    Integer batCount = [
+      SELECT COUNT()
+      FROM AXF_OBJ_BankAccountTransaction__c
+      WHERE AXF_BAT_MDR_BankAccount__r.AXF_BA_LKP_Account__c = :accountId
+      WITH USER_MODE
+    ];
+    Integer cctCount = [
+      SELECT COUNT()
+      FROM AXF_OBJ_CreditCardTransaction__c
+      WHERE AXF_CCT_MDR_CreditCard__r.AXF_CC_LKP_Account__c = :accountId
+      WITH USER_MODE
+    ];
+    return ftxCount + batCount + cctCount;
   }
 
   /**
@@ -580,19 +709,51 @@ public without sharing class ALT_CLS_ExportService {
       return false;
     }
     return ![
-      SELECT Id
-      FROM ContentVersion
-      WHERE ContentDocumentId = :artifact AND IsLatest = TRUE
-      WITH SYSTEM_MODE
-      LIMIT 1
-    ]
-    .isEmpty();
+        SELECT Id
+        FROM ContentVersion
+        WHERE ContentDocumentId = :artifact AND IsLatest = TRUE
+        WITH SYSTEM_MODE
+        LIMIT 1
+      ]
+      .isEmpty();
   }
 
-  // ---------------------------------------------------------------- csv
+  // ---------------------------------------------------------------- csv (sync path)
 
-  /** Header plus one always-quoted line per fact, in a deterministic order. */
-  private static String csv(List<AXF_OBJ_FinancialTransaction__c> facts) {
+  /**
+   * Assembles the full export file out of the three independent sources (AXF-118): each keeps its
+   * own native columns and its own header, one section per source that actually has rows for the
+   * scope, in a fixed FTX/BAT/CCT order. A source with zero rows contributes no section at all.
+   * Every section — even the only one present — carries its `# SOURCE` marker, matching the shape
+   * the resumable batch path always produces (AXF-118 review fix): the same data must not produce
+   * a differently-shaped CSV depending on which path prepared it. When every source is empty, the
+   * header alone is returned, exactly as the original single-source csv() always did.
+   */
+  @TestVisible
+  private static String assembleCsv(
+    List<AXF_OBJ_FinancialTransaction__c> ftx,
+    List<AXF_OBJ_BankAccountTransaction__c> bat,
+    List<AXF_OBJ_CreditCardTransaction__c> cct
+  ) {
+    List<String> tagged = new List<String>();
+    if (!ftx.isEmpty()) {
+      tagged.add('# ' + SOURCE_FTX + '\n' + ftxSection(ftx));
+    }
+    if (!bat.isEmpty()) {
+      tagged.add('# ' + SOURCE_BAT + '\n' + batSection(bat));
+    }
+    if (!cct.isEmpty()) {
+      tagged.add('# ' + SOURCE_CCT + '\n' + cctSection(cct));
+    }
+    if (tagged.isEmpty()) {
+      return CSV_HEADER;
+    }
+    return String.join(tagged, '\n\n');
+  }
+
+  private static String ftxSection(
+    List<AXF_OBJ_FinancialTransaction__c> facts
+  ) {
     List<String> lines = new List<String>{ CSV_HEADER };
     for (AXF_OBJ_FinancialTransaction__c fact : facts) {
       lines.add(
@@ -616,6 +777,61 @@ public without sharing class ALT_CLS_ExportService {
     return String.join(lines, '\n');
   }
 
+  private static String batSection(
+    List<AXF_OBJ_BankAccountTransaction__c> facts
+  ) {
+    List<String> lines = new List<String>{ BAT_HEADER };
+    for (AXF_OBJ_BankAccountTransaction__c fact : facts) {
+      lines.add(
+        String.join(
+          new List<String>{
+            cell(String.valueOf(fact.AXF_BAT_DAT_Date__c)),
+            cell(fact.AXF_BAT_PKL_Direction__c),
+            cell(
+              fact.AXF_BAT_NUM_Magnitude__c == null
+                ? null
+                : fact.AXF_BAT_NUM_Magnitude__c.toPlainString()
+            ),
+            cell(fact.AXF_BAT_TXT_CurrencyIsoCode__c),
+            cell(fact.AXF_BAT_PKL_Status__c),
+            cell(fact.AXF_BAT_TXT_Description__c),
+            cell(fact.AXF_BAT_MDR_BankAccount__r?.AXF_BA_TXT_NumberMasked__c)
+          },
+          ','
+        )
+      );
+    }
+    return String.join(lines, '\n');
+  }
+
+  private static String cctSection(
+    List<AXF_OBJ_CreditCardTransaction__c> facts
+  ) {
+    List<String> lines = new List<String>{ CCT_HEADER };
+    for (AXF_OBJ_CreditCardTransaction__c fact : facts) {
+      lines.add(
+        String.join(
+          new List<String>{
+            cell(String.valueOf(fact.AXF_CCT_DAT_Date__c)),
+            cell(fact.AXF_CCT_PKL_Direction__c),
+            cell(
+              fact.AXF_CCT_NUM_Magnitude__c == null
+                ? null
+                : fact.AXF_CCT_NUM_Magnitude__c.toPlainString()
+            ),
+            cell(fact.AXF_CCT_TXT_CurrencyIsoCode__c),
+            cell(fact.AXF_CCT_PKL_Status__c),
+            cell(fact.AXF_CCT_TXT_Description__c),
+            cell(fact.AXF_CCT_MDR_CreditCard__r?.AXF_CC_TXT_LastFourMasked__c),
+            cell(fact.AXF_CCT_TXT_MerchantName__c)
+          },
+          ','
+        )
+      );
+    }
+    return String.join(lines, '\n');
+  }
+
   /**
    * Quoted unconditionally, with the leading formula prefix neutralized by the single shared
    * policy AD-25 requires so import and export cannot disagree on active content.
@@ -626,6 +842,439 @@ public without sharing class ALT_CLS_ExportService {
       return '""';
     }
     return '"' + safe.replace('"', '""') + '"';
+  }
+
+  // ---------------------------------------------------------------- resumable batch (AXF-118)
+
+  /**
+   * Moves a fresh run to RUNNING and hands it to the resumable batch. The cursor starts empty
+   * (nothing processed yet); Attempt starts at 1.
+   */
+  private AXF_OBJ_ExportRun__c startResumableBatch(AXF_OBJ_ExportRun__c run) {
+    Savepoint point = Database.setSavepoint();
+    try {
+      run.AXF_EPR_PKL_Status__c = STATUS_RUNNING;
+      run.AXF_EPR_TXT_Reason__c = null;
+      run.AXF_EPR_TXT_Cursor__c = null;
+      run.AXF_EPR_DT_Watermark__c = Datetime.now();
+      run.AXF_EPR_DT_CompleteThrough__c = null;
+      run.AXF_EPR_NUM_Attempt__c = 1;
+      checkpoint(run);
+    } catch (Exception failure) {
+      Database.rollback(point);
+      throw failure;
+    }
+    Database.executeBatch(new ALT_CLS_ExportRunBatch(run.Id), batchScope());
+    return run;
+  }
+
+  /**
+   * Resumes a PARTIAL run: the persisted cursor is left untouched (the new batch job re-reads it
+   * from the run at its own start()), only the state and attempt counter move.
+   */
+  private AXF_OBJ_ExportRun__c resumeBatch(AXF_OBJ_ExportRun__c run) {
+    Savepoint point = Database.setSavepoint();
+    try {
+      run.AXF_EPR_PKL_Status__c = STATUS_RUNNING;
+      run.AXF_EPR_TXT_Reason__c = null;
+      run.AXF_EPR_NUM_Attempt__c = (run.AXF_EPR_NUM_Attempt__c == null
+        ? 1
+        : run.AXF_EPR_NUM_Attempt__c + 1);
+      checkpoint(run);
+    } catch (Exception failure) {
+      Database.rollback(point);
+      throw failure;
+    }
+    Database.executeBatch(new ALT_CLS_ExportRunBatch(run.Id), batchScope());
+    log('RUNNING', run.Name);
+    return run;
+  }
+
+  /** BATCH_CHUNK_SIZE in production; a test-set override while running under Test.isRunningTest(). */
+  private static Integer batchScope() {
+    return (Test.isRunningTest() && batchScopeOverride != null)
+      ? batchScopeOverride
+      : BATCH_CHUNK_SIZE;
+  }
+
+  /** EXPORT_ROW_LIMIT in production; a test-set override while running under Test.isRunningTest(). */
+  private static Integer exportRowLimit() {
+    return (Test.isRunningTest() && exportRowLimitOverride != null)
+      ? exportRowLimitOverride
+      : EXPORT_ROW_LIMIT;
+  }
+
+  /**
+   * Batch-facing entry points below. Called only by {@link ALT_CLS_ExportRunBatch}, which runs in
+   * its own transaction per chunk; every one of them is self-contained (loads what it needs,
+   * commits or rolls back its own effect) so the batch class stays a thin driver.
+   */
+
+  /** Minimal run projection the batch needs, read in system mode (application-owned state). */
+  public static AXF_OBJ_ExportRun__c batchLoadRun(Id runId) {
+    List<AXF_OBJ_ExportRun__c> rows = Database.queryWithBinds(
+      'SELECT ' +
+        RUN_FIELDS +
+        ' FROM AXF_OBJ_ExportRun__c WHERE Id = :runId LIMIT 1',
+      new Map<String, Object>{ 'runId' => runId },
+      AccessLevel.SYSTEM_MODE
+    );
+    if (rows.isEmpty()) {
+      throw failure('NOT_ACCESSIBLE');
+    }
+    return rows[0];
+  }
+
+  /** Resume point for the batch's source iterator: the account and the persisted cursor. */
+  public class BatchCursor {
+    public Id accountId;
+    public Map<String, String> lastIdBySource;
+  }
+
+  public static BatchCursor batchCursor(Id runId) {
+    AXF_OBJ_ExportRun__c run = batchLoadRun(runId);
+    BatchCursor result = new BatchCursor();
+    result.accountId = run.AXF_EPR_LKP_Account__c;
+    result.lastIdBySource = parseCursor(run.AXF_EPR_TXT_Cursor__c);
+    return result;
+  }
+
+  /** One page of a source, ordered and filtered strictly after `afterId` (keyset pagination). */
+  public static List<AXF_OBJ_FinancialTransaction__c> queryFtxPage(
+    Id accountId,
+    Id afterId,
+    Integer pageSize
+  ) {
+    String clause = afterId == null ? '' : ' AND Id > :afterId';
+    return Database.queryWithBinds(
+      'SELECT AXF_FTX_DAT_PurchaseDate__c, AXF_FTX_PKL_Direction__c, AXF_FTX_NUM_Magnitude__c, ' +
+        'AXF_FTX_TXT_CurrencyIsoCode__c, AXF_FTX_PKL_Status__c, AXF_FTX_TXT_Description__c ' +
+        'FROM AXF_OBJ_FinancialTransaction__c ' +
+        'WHERE AXF_FTX_LKP_Account__c = :accountId' +
+        clause +
+        ' ORDER BY Id LIMIT :pageSize',
+      new Map<String, Object>{
+        'accountId' => accountId,
+        'afterId' => afterId,
+        'pageSize' => pageSize
+      },
+      AccessLevel.USER_MODE
+    );
+  }
+
+  public static List<AXF_OBJ_BankAccountTransaction__c> queryBatPage(
+    Id accountId,
+    Id afterId,
+    Integer pageSize
+  ) {
+    String clause = afterId == null ? '' : ' AND Id > :afterId';
+    return Database.queryWithBinds(
+      'SELECT AXF_BAT_DAT_Date__c, AXF_BAT_PKL_Direction__c, AXF_BAT_NUM_Magnitude__c, ' +
+        'AXF_BAT_TXT_CurrencyIsoCode__c, AXF_BAT_PKL_Status__c, AXF_BAT_TXT_Description__c, ' +
+        'AXF_BAT_MDR_BankAccount__r.AXF_BA_TXT_NumberMasked__c ' +
+        'FROM AXF_OBJ_BankAccountTransaction__c ' +
+        'WHERE AXF_BAT_MDR_BankAccount__r.AXF_BA_LKP_Account__c = :accountId' +
+        clause +
+        ' ORDER BY Id LIMIT :pageSize',
+      new Map<String, Object>{
+        'accountId' => accountId,
+        'afterId' => afterId,
+        'pageSize' => pageSize
+      },
+      AccessLevel.USER_MODE
+    );
+  }
+
+  public static List<AXF_OBJ_CreditCardTransaction__c> queryCctPage(
+    Id accountId,
+    Id afterId,
+    Integer pageSize
+  ) {
+    String clause = afterId == null ? '' : ' AND Id > :afterId';
+    return Database.queryWithBinds(
+      'SELECT AXF_CCT_DAT_Date__c, AXF_CCT_PKL_Direction__c, AXF_CCT_NUM_Magnitude__c, ' +
+        'AXF_CCT_TXT_CurrencyIsoCode__c, AXF_CCT_PKL_Status__c, AXF_CCT_TXT_Description__c, ' +
+        'AXF_CCT_MDR_CreditCard__r.AXF_CC_TXT_LastFourMasked__c, AXF_CCT_TXT_MerchantName__c ' +
+        'FROM AXF_OBJ_CreditCardTransaction__c ' +
+        'WHERE AXF_CCT_MDR_CreditCard__r.AXF_CC_LKP_Account__c = :accountId' +
+        clause +
+        ' ORDER BY Id LIMIT :pageSize',
+      new Map<String, Object>{
+        'accountId' => accountId,
+        'afterId' => afterId,
+        'pageSize' => pageSize
+      },
+      AccessLevel.USER_MODE
+    );
+  }
+
+  /** `SOURCE:lastId` pairs, semicolon-separated; a source absent from the map was never reached. */
+  @TestVisible
+  private static Map<String, String> parseCursor(String raw) {
+    Map<String, String> result = new Map<String, String>();
+    if (String.isBlank(raw)) {
+      return result;
+    }
+    for (String part : raw.split(';')) {
+      List<String> kv = part.split(':', 2);
+      if (kv.size() == 2 && String.isNotBlank(kv[0])) {
+        result.put(kv[0], kv[1]);
+      }
+    }
+    return result;
+  }
+
+  @TestVisible
+  private static String serializeCursor(Map<String, String> lastIdBySource) {
+    List<String> parts = new List<String>();
+    for (
+      String source : new List<String>{ SOURCE_FTX, SOURCE_BAT, SOURCE_CCT }
+    ) {
+      if (lastIdBySource.containsKey(source)) {
+        parts.add(source + ':' + lastIdBySource.get(source));
+      }
+    }
+    return parts.isEmpty() ? null : String.join(parts, ';');
+  }
+
+  /**
+   * Persists one chunk: the artifact content already written so far is read back, the new rows
+   * (grouped by source, a chunk may straddle two adjacent sources since the iterator's page size
+   * need not align with the batch scope size) are appended — with a section header only the first
+   * time a source appears, tracked by the cursor map itself — and the whole thing is written as a
+   * new ContentVersion together with the advanced cursor, in one savepoint-guarded unit: either
+   * both persist, or neither does, so a mid-chunk failure can never lose the cursor or duplicate a
+   * row already durably written.
+   */
+  /**
+   * Test seam: forces exactly the next chunk to fail, so a test can prove the cursor and any
+   * content already checkpointed by a prior chunk survive the failure untouched, and that a
+   * resumed run neither loses nor duplicates rows.
+   */
+  @TestVisible
+  private static Boolean forceNextChunkFailure = false;
+
+  public static void batchAppendChunk(Id runId, List<SObject> scope) {
+    if (forceNextChunkFailure) {
+      forceNextChunkFailure = false;
+      throw new ExportException('FORCED_TEST_FAILURE');
+    }
+    AXF_OBJ_ExportRun__c run = batchLoadRun(runId);
+    Map<String, String> cursor = parseCursor(run.AXF_EPR_TXT_Cursor__c);
+    List<AXF_OBJ_FinancialTransaction__c> ftx = new List<AXF_OBJ_FinancialTransaction__c>();
+    List<AXF_OBJ_BankAccountTransaction__c> bat = new List<AXF_OBJ_BankAccountTransaction__c>();
+    List<AXF_OBJ_CreditCardTransaction__c> cct = new List<AXF_OBJ_CreditCardTransaction__c>();
+    for (SObject record : scope) {
+      if (record instanceof AXF_OBJ_FinancialTransaction__c) {
+        ftx.add((AXF_OBJ_FinancialTransaction__c) record);
+      } else if (record instanceof AXF_OBJ_BankAccountTransaction__c) {
+        bat.add((AXF_OBJ_BankAccountTransaction__c) record);
+      } else if (record instanceof AXF_OBJ_CreditCardTransaction__c) {
+        cct.add((AXF_OBJ_CreditCardTransaction__c) record);
+      }
+    }
+    String addition = '';
+    if (!ftx.isEmpty()) {
+      addition += chunkSection(SOURCE_FTX, ftxSection(ftx), cursor);
+      cursor.put(SOURCE_FTX, String.valueOf(ftx[ftx.size() - 1].Id));
+    }
+    if (!bat.isEmpty()) {
+      addition += chunkSection(SOURCE_BAT, batSection(bat), cursor);
+      cursor.put(SOURCE_BAT, String.valueOf(bat[bat.size() - 1].Id));
+    }
+    if (!cct.isEmpty()) {
+      addition += chunkSection(SOURCE_CCT, cctSection(cct), cursor);
+      cursor.put(SOURCE_CCT, String.valueOf(cct[cct.size() - 1].Id));
+    }
+    if (String.isBlank(addition)) {
+      return;
+    }
+    Savepoint point = Database.setSavepoint();
+    try {
+      String existingContent = run.AXF_EPR_TXT_ContentDocument__c == null
+        ? ''
+        : currentContent(run.AXF_EPR_TXT_ContentDocument__c);
+      String newContent = existingContent.length() == 0
+        ? addition.replaceFirst('^\n+', '')
+        : existingContent + addition;
+      if (run.AXF_EPR_TXT_ContentDocument__c == null) {
+        String fileName = FILE_NAME_PREFIX + run.Name + FILE_NAME_SUFFIX;
+        run.AXF_EPR_TXT_FileName__c = fileName;
+        run.AXF_EPR_TXT_ContentDocument__c = store(fileName, newContent);
+      } else {
+        appendVersion(run.AXF_EPR_TXT_FileName__c, documentId(run), newContent);
+      }
+      run.AXF_EPR_TXT_Cursor__c = serializeCursor(cursor);
+      run.AXF_EPR_DT_Watermark__c = Datetime.now();
+      run.AXF_EPR_DT_CompleteThrough__c = Datetime.now();
+      checkpoint(run);
+    } catch (Exception failure) {
+      Database.rollback(point);
+      throw failure;
+    }
+  }
+
+  /**
+   * A section's marker and column header, only the first time its source appears (tracked by
+   * whether the cursor map already has an entry for it); every later chunk of the same source
+   * appends only its rows, on a new line after whatever was written last.
+   */
+  private static String chunkSection(
+    String source,
+    String sectionCsv,
+    Map<String, String> cursor
+  ) {
+    String rows = rowsOnly(sectionCsv);
+    if (cursor.containsKey(source)) {
+      return '\n' + rows;
+    }
+    return '\n\n# ' + source + '\n' + sectionHeaderLine(source) + '\n' + rows;
+  }
+
+  /** Strips the header line a section() builder always includes; the batch owns header timing. */
+  private static String rowsOnly(String sectionCsv) {
+    Integer firstBreak = sectionCsv.indexOf('\n');
+    return firstBreak < 0 ? '' : sectionCsv.substring(firstBreak + 1);
+  }
+
+  /**
+   * The batch always writes the section's own header immediately after its `# SOURCE` marker, so
+   * `chunkSection` needs it back; rebuilt here rather than threading it through every call site.
+   */
+  private static String sectionHeaderLine(String source) {
+    if (source == SOURCE_FTX) {
+      return CSV_HEADER;
+    }
+    if (source == SOURCE_BAT) {
+      return BAT_HEADER;
+    }
+    return CCT_HEADER;
+  }
+
+  private static String currentContent(String storedDocumentId) {
+    Id artifact = documentId(storedDocumentId);
+    if (artifact == null) {
+      return '';
+    }
+    List<ContentVersion> versions = [
+      SELECT VersionData
+      FROM ContentVersion
+      WHERE ContentDocumentId = :artifact AND IsLatest = TRUE
+      WITH SYSTEM_MODE
+      LIMIT 1
+    ];
+    if (versions.isEmpty() || versions[0].VersionData == null) {
+      return '';
+    }
+    return versions[0].VersionData.toString();
+  }
+
+  private static void appendVersion(
+    String fileName,
+    Id documentId,
+    String content
+  ) {
+    ContentVersion version = new ContentVersion(
+      ContentDocumentId = documentId,
+      Title = fileName,
+      PathOnClient = fileName,
+      VersionData = Blob.valueOf(content)
+    );
+    Database.insert(version, AccessLevel.SYSTEM_MODE);
+  }
+
+  /** Called from the batch's finish(): the run completed every source without a chunk failure. */
+  public static void batchFinish(Id runId) {
+    AXF_OBJ_ExportRun__c run = batchLoadRun(runId);
+    Savepoint point = Database.setSavepoint();
+    try {
+      String content = currentContent(run.AXF_EPR_TXT_ContentDocument__c);
+      if (String.isBlank(content)) {
+        // Every source was empty: the batch was launched (rows counted above the limit) but a
+        // concurrent deletion could still leave nothing to persist; fall back to the same empty
+        // header the sync path would have produced, so the artifact is never left undefined.
+        content = CSV_HEADER;
+        String fileName = FILE_NAME_PREFIX + run.Name + FILE_NAME_SUFFIX;
+        run.AXF_EPR_TXT_FileName__c = fileName;
+        run.AXF_EPR_TXT_ContentDocument__c = store(fileName, content);
+      }
+      run.AXF_EPR_TXT_ContentHash__c = sha256(content);
+      run.AXF_EPR_DT_ExpiresAt__c = Datetime.now()
+        .addMinutes(downloadWindowMinutes());
+      run.AXF_EPR_PKL_Status__c = STATUS_PREPARED;
+      run.AXF_EPR_TXT_Reason__c = null;
+      run.AXF_EPR_DT_CompleteThrough__c = Datetime.now();
+      checkpoint(run);
+    } catch (Exception failure) {
+      Database.rollback(point);
+      throw failure;
+    }
+    // Outside the savepoint's try/catch on purpose: PREPARED is already durably committed above.
+    // A notify/log failure here must never propagate to ALT_CLS_ExportRunBatch.finish()'s catch,
+    // which would call batchFail() and revert this already-complete, hashed run back to PARTIAL.
+    try {
+      notifyRequester(run);
+      log('PREPARED', run.Name);
+    } catch (Exception postCommitFailure) {
+      System.debug(
+        LoggingLevel.ERROR,
+        'AXF-118 export run ' +
+          run.Name +
+          ' committed PREPARED but notify/log failed: ' +
+          postCommitFailure.getMessage()
+      );
+    }
+  }
+
+  /**
+   * Called from the batch's execute()/finish() catch blocks: never throws. The cursor and any
+   * content already checkpointed by a prior chunk are untouched — only the status and reason move
+   * — so a later `request()` resumes exactly where the last successful chunk left off.
+   */
+  public static void batchFail(Id runId, String reasonCode) {
+    try {
+      AXF_OBJ_ExportRun__c run = batchLoadRun(runId);
+      run.AXF_EPR_PKL_Status__c = STATUS_PARTIAL;
+      run.AXF_EPR_TXT_Reason__c = reasonCode;
+      checkpoint(run);
+      log('PARTIAL_' + reasonCode, run.Name);
+    } catch (Exception ignored) {
+      System.debug(
+        LoggingLevel.ERROR,
+        'AXF-118 export run ' +
+          runId +
+          ' could not record failure: ' +
+          reasonCode
+      );
+    }
+  }
+
+  // ---------------------------------------------------------------- retention policy (AXF-118)
+
+  /**
+   * Short-lived download window, read from AXF_CMT_RetentionPolicy__mdt('Export') instead of a
+   * hardcoded constant. A missing, disabled or incompletely configured record is a sanitized
+   * explicit failure: never a silently invented default.
+   */
+  private static Integer downloadWindowMinutes() {
+    List<AXF_CMT_RetentionPolicy__mdt> policies = [
+      SELECT AXF_RPT_BOL_Enabled__c, AXF_RPT_NUM_WindowMinutes__c
+      FROM AXF_CMT_RetentionPolicy__mdt
+      WHERE DeveloperName = :RETENTION_POLICY_NAME
+      LIMIT 1
+    ];
+    if (
+      policies.isEmpty() ||
+      policies[0].AXF_RPT_BOL_Enabled__c != true ||
+      policies[0].AXF_RPT_NUM_WindowMinutes__c == null ||
+      policies[0].AXF_RPT_NUM_WindowMinutes__c <= 0
+    ) {
+      // A configured-but-nonpositive window would silently produce an immediate/past expiry
+      // instead of the explicit-failure guarantee this domain promises: treated the same as a
+      // missing or disabled record, never a silently invented default.
+      throw failure('EXPORT_POLICY_MISSING');
+    }
+    return policies[0].AXF_RPT_NUM_WindowMinutes__c.intValue();
   }
 
   // ---------------------------------------------------------------- authorization
@@ -674,6 +1323,7 @@ public without sharing class ALT_CLS_ExportService {
     return !access.isEmpty() && access[0].HasReadAccess == true;
   }
 
+  @TestVisible
   private static String scopeKey(Id accountId, Id requesterId) {
     return sha256(
       String.valueOf(accountId) + '|' + String.valueOf(requesterId)
@@ -932,6 +1582,16 @@ public without sharing class ALT_CLS_ExportService {
       ? null
       : String.valueOf(run.AXF_EPR_TXT_ContentDocument__c);
     view.version = run.AXF_EPR_NUM_Version__c;
+    if (
+      run.AXF_EPR_PKL_Status__c == STATUS_RUNNING ||
+      run.AXF_EPR_PKL_Status__c == STATUS_PARTIAL
+    ) {
+      // A resumable batch is in flight or paused on a recoverable failure: never advertise a
+      // download, and never REQUEST_AGAIN (which would restart instead of letting it resume).
+      view.canDownload = false;
+      view.nextAction = 'PROCESSING';
+      return view;
+    }
     // Availability is only reported as real when every gate download() applies still passes: the
     // requester binding, the state, the window, the holder access revalidated against the platform,
     // and the artifact itself still being there. Otherwise read() would advertise DOWNLOAD for a

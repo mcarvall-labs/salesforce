@@ -17,8 +17,12 @@
         >Baixado</label></value>
             <value><fullName>REVOKED</fullName><default>false</default><label
         >Revogado</label></value>
+            <value><fullName>RUNNING</fullName><default>false</default><label
+        >Em execucao (lote)</label></value>
+            <value><fullName>PARTIAL</fullName><default>false</default><label
+        >Parcial (retomavel)</label></value>
         </valueSetDefinition>
     </valueSet>
     <description
-  >REQUESTED -> PREPARED -> DOWNLOADED (dentro da janela) | REVOKED (ao expirar, perder autorizacao ou perder o artefato). REVOKED exclui o artefato; uma nova solicitacao cria artefato novo no MESMO run, ou seja REVOKED -> PREPARED, exceto quando uma copia que a plataforma recusou excluir ainda esta apontada: nesse caso o run permanece REVOKED com o ponteiro ate a remocao ser concluida.</description>
+  >REQUESTED -> PREPARED -> DOWNLOADED (dentro da janela) | REVOKED (ao expirar, perder autorizacao ou perder o artefato). REVOKED exclui o artefato; uma nova solicitacao cria artefato novo no MESMO run, ou seja REVOKED -> PREPARED, exceto quando uma copia que a plataforma recusou excluir ainda esta apontada: nesse caso o run permanece REVOKED com o ponteiro ate a remocao ser concluida. Acima do limite sincrono (AXF-118): REQUESTED -> RUNNING (lote Database.Batchable ativo) -> PREPARED ao concluir, ou -> PARTIAL se um chunk falhar (retomavel: uma nova solicitacao volta PARTIAL -> RUNNING a partir do cursor persistido, sem perder nem duplicar linhas).</description>
 </CustomField>

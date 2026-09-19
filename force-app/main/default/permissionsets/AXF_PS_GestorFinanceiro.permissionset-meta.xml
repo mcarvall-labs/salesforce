@@ -105,6 +105,10 @@
         <enabled>true</enabled>
     </classAccesses>
     <classAccesses>
+        <apexClass>ALT_CLS_ExportRunBatch</apexClass>
+        <enabled>true</enabled>
+    </classAccesses>
+    <classAccesses>
         <apexClass>ALT_CLS_ExportService</apexClass>
         <enabled>true</enabled>
     </classAccesses>
@@ -210,6 +214,10 @@
     </classAccesses>
     <classAccesses>
         <apexClass>AXF_CLS_CTRL_EconomicAllocation</apexClass>
+        <enabled>true</enabled>
+    </classAccesses>
+    <classAccesses>
+        <apexClass>AXF_CLS_CTRL_Export</apexClass>
         <enabled>true</enabled>
     </classAccesses>
     <classAccesses>
@@ -1312,6 +1320,26 @@
     <fieldPermissions>
         <editable>false</editable>
         <field>AXF_OBJ_ExportRun__c.AXF_EPR_TXT_Reason__c</field>
+        <readable>true</readable>
+    </fieldPermissions>
+    <fieldPermissions>
+        <editable>false</editable>
+        <field>AXF_OBJ_ExportRun__c.AXF_EPR_TXT_Cursor__c</field>
+        <readable>true</readable>
+    </fieldPermissions>
+    <fieldPermissions>
+        <editable>false</editable>
+        <field>AXF_OBJ_ExportRun__c.AXF_EPR_DT_Watermark__c</field>
+        <readable>true</readable>
+    </fieldPermissions>
+    <fieldPermissions>
+        <editable>false</editable>
+        <field>AXF_OBJ_ExportRun__c.AXF_EPR_DT_CompleteThrough__c</field>
+        <readable>true</readable>
+    </fieldPermissions>
+    <fieldPermissions>
+        <editable>false</editable>
+        <field>AXF_OBJ_ExportRun__c.AXF_EPR_NUM_Attempt__c</field>
         <readable>true</readable>
     </fieldPermissions>
     <fieldPermissions>
