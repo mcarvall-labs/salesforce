@@ -1851,4 +1851,75 @@
   ><fullName>AXF_InternalTransfer_codeINVALID_TARGET</fullName><language
     >en_US</language><protected>false</protected><shortDescription
     >Code INVALID_TARGET</shortDescription><value
-    >This action does not apply to this transfer.</value></labels></CustomLabels>
+    >This action does not apply to this transfer.</value></labels><labels
+  ><fullName>AXF_Export_title</fullName><language>en_US</language><protected
+    >false</protected><shortDescription>Title</shortDescription><value
+    >Authorized export</value></labels><labels><fullName
+    >AXF_Export_intro</fullName><language>en_US</language><protected
+    >false</protected><shortDescription>Intro</shortDescription><value
+    >Request an export of this holder's data. The file covers your authorized scope only, and the
+    download link expires shortly after it is ready.</value></labels><labels
+  ><fullName>AXF_Export_noCapability</fullName><language
+    >en_US</language><protected>false</protected><shortDescription
+    >No capability</shortDescription><value
+    >You are not authorized to export data.</value></labels><labels><fullName
+    >AXF_Export_loading</fullName><language>en_US</language><protected
+    >false</protected><shortDescription>Loading</shortDescription><value
+    >Working...</value></labels><labels><fullName
+    >AXF_Export_request</fullName><language>en_US</language><protected
+    >false</protected><shortDescription>Request button</shortDescription><value
+    >Request export</value></labels><labels><fullName
+    >AXF_Export_refresh</fullName><language>en_US</language><protected
+    >false</protected><shortDescription>Refresh button</shortDescription><value
+    >Refresh status</value></labels><labels><fullName
+    >AXF_Export_download</fullName><language>en_US</language><protected
+    >false</protected><shortDescription>Download button</shortDescription><value
+    >Download</value></labels><labels><fullName
+    >AXF_Export_statusLabel</fullName><language>en_US</language><protected
+    >false</protected><shortDescription>Status label</shortDescription><value
+    >Status:</value></labels><labels><fullName
+    >AXF_Export_statusREQUESTED</fullName><language>en_US</language><protected
+    >false</protected><shortDescription
+    >Status REQUESTED</shortDescription><value>Requested</value></labels><labels
+  ><fullName>AXF_Export_statusPREPARED</fullName><language
+    >en_US</language><protected>false</protected><shortDescription
+    >Status PREPARED</shortDescription><value
+    >Ready to download</value></labels><labels><fullName
+    >AXF_Export_statusDOWNLOADED</fullName><language>en_US</language><protected
+    >false</protected><shortDescription
+    >Status DOWNLOADED</shortDescription><value
+    >Downloaded</value></labels><labels><fullName
+    >AXF_Export_statusREVOKED</fullName><language>en_US</language><protected
+    >false</protected><shortDescription>Status REVOKED</shortDescription><value
+    >Revoked</value></labels><labels><fullName
+    >AXF_Export_statusRUNNING</fullName><language>en_US</language><protected
+    >false</protected><shortDescription>Status RUNNING</shortDescription><value
+    >Processing...</value></labels><labels><fullName
+    >AXF_Export_statusPARTIAL</fullName><language>en_US</language><protected
+    >false</protected><shortDescription>Status PARTIAL</shortDescription><value
+    >Paused; retry to resume</value></labels><labels><fullName
+    >AXF_Export_error</fullName><language>en_US</language><protected
+    >false</protected><shortDescription>Generic error</shortDescription><value
+    >Something went wrong. Try again.</value></labels><labels><fullName
+    >AXF_Export_codeFORBIDDEN</fullName><language>en_US</language><protected
+    >false</protected><shortDescription>Code FORBIDDEN</shortDescription><value
+    >You are not authorized to do this.</value></labels><labels><fullName
+    >AXF_Export_codeNOT_ACCESSIBLE</fullName><language
+    >en_US</language><protected>false</protected><shortDescription
+    >Code NOT_ACCESSIBLE</shortDescription><value
+    >This record is not accessible.</value></labels><labels><fullName
+    >AXF_Export_codeINVALID_INPUT</fullName><language>en_US</language><protected
+    >false</protected><shortDescription
+    >Code INVALID_INPUT</shortDescription><value
+    >The request could not be understood.</value></labels><labels><fullName
+    >AXF_Export_codeCONFLICT</fullName><language>en_US</language><protected
+    >false</protected><shortDescription>Code CONFLICT</shortDescription><value
+    >This changed since it was loaded. Refresh and try again.</value></labels><labels
+  ><fullName>AXF_Export_codeEXPORT_POLICY_MISSING</fullName><language
+    >en_US</language><protected>false</protected><shortDescription
+    >Code EXPORT_POLICY_MISSING</shortDescription><value
+    >Export is not configured. Contact an administrator.</value></labels><labels
+  ><fullName>AXF_Export_codeSHARE_FAILED</fullName><language
+    >en_US</language><protected>false</protected><shortDescription
+    >Code SHARE_FAILED</shortDescription><value
+    >The request could not be completed. Try again.</value></labels></CustomLabels>

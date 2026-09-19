@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<CustomField xmlns="http://soap.sforce.com/2006/04/metadata"><fullName
+  >AXF_RPT_NUM_WindowMinutes__c</fullName><precision>18</precision><scale
+  >0</scale><required>false</required><description
+  >Optional short-lived window in minutes (e.g. a download link/artifact validity), distinct from
+  AXF_RPT_NUM_RetentionDays__c's day-granularity purge semantics (AXF-118). When present it
+  expresses a minute-granularity window instead of a day-granularity retention; when absent this
+  domain policy has no such window and only the day-based retention applies.</description><fieldManageability
+  >DeveloperControlled</fieldManageability><label>Window Minutes</label><type
+  >Number</type></CustomField>
