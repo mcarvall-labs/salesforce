@@ -1,0 +1,23 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<CustomObject xmlns="http://soap.sforce.com/2006/04/metadata">
+    <deploymentStatus>Deployed</deploymentStatus>
+    <description
+  >Raiz do agregado de conciliacao N:N (AXF-30; contrato ratificado 17/09/2026). Agrupa N linhas de AXF_OBJ_ReconciliationAllocation__c (RA) confirmadas atomicamente em uma unica transacao pelo comando reconciliation.allocation.confirm.v1. Identidade reconciliation-v1 gravada em AXF_RCN_EXI_ReconciliationKey__c; residual explicito persistido (0 quando CONFIRMED sem sobra); PARTIAL e BLOCKED sao estados do proprio agregado (SettlementTarget nao existe no alvo). RESULT_UNKNOWN reusa BLOCKED com residual nulo, sem nono valor de picklist. OWD Private, owner-sync a partir do Account titular do primeiro fato; sem Delete. O vinculo do RA e Lookup (Restrict), nunca Master-Detail: o RA mantem identidade e lifecycle proprios e a reversao aponta para o RA original.</description>
+    <enableActivities>false</enableActivities>
+    <enableBulkApi>true</enableBulkApi>
+    <enableFeeds>false</enableFeeds>
+    <enableHistory>true</enableHistory>
+    <enableReports>true</enableReports>
+    <enableSearch>false</enableSearch>
+    <enableSharing>true</enableSharing>
+    <enableStreamingApi>true</enableStreamingApi>
+    <label>Conciliacao</label>
+    <nameField>
+        <displayFormat>RCN-{000000}</displayFormat>
+        <label>Numero da Conciliacao</label>
+        <type>AutoNumber</type>
+    </nameField>
+    <pluralLabel>Conciliacoes</pluralLabel>
+    <sharingModel>Private</sharingModel>
+    <visibility>Public</visibility>
+</CustomObject>

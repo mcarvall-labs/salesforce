@@ -473,6 +473,15 @@
     >AXF_ClosureRun_actionRESOLVE_DEPENDENCIES</name></customLabels><customLabels
   ><label>Nada mais a fazer.</label><name
     >AXF_ClosureRun_actionNONE</name></customLabels><customLabels><label
+    >Conclua a verificação da cópia arquivada antes de qualquer exclusão.</label><name
+    >AXF_ClosureRun_actionVERIFY_ARCHIVE</name></customLabels><customLabels
+  ><label
+    >A exclusão aguarda a confirmação do backup/recuperação obrigatório.</label><name
+    >AXF_ClosureRun_actionAWAIT_BACKUP_CONFIRMATION</name></customLabels><customLabels
+  ><label
+    >Revogue o consentimento desta instalação na Pluggy; o Axon nunca faz isso por você.</label><name
+    >AXF_ClosureRun_actionREVOKE_IN_PLUGGY</name></customLabels><customLabels
+  ><label
     >Você não tem a permissão de encerramento desta instalação.</label><name
     >AXF_ClosureRun_noAccess</name></customLabels><customLabels><label
     >Retomar o encerramento?</label><name
@@ -536,13 +545,21 @@
     >AXF_ClosureRun_reasonRESULT_UNKNOWN</name></customLabels><customLabels
   ><label>Etapa falhou</label><name
     >AXF_ClosureRun_reasonSTAGE_FAILED</name></customLabels><customLabels><label
-    >Não se aplica</label><name
+    >Arquivo sem cópia recuperável confirmada</label><name
+    >AXF_ClosureRun_reasonARCHIVE_UNVERIFIED</name></customLabels><customLabels
+  ><label>Backup obrigatório ainda pendente</label><name
+    >AXF_ClosureRun_reasonBACKUP_PENDING</name></customLabels><customLabels
+  ><label>Não se aplica</label><name
     >AXF_ClosureRun_externalNOT_APPLICABLE</name></customLabels><customLabels
   ><label>Não confirmada no provedor</label><name
     >AXF_ClosureRun_externalNOT_CONFIRMED</name></customLabels><customLabels
   ><label>Confirmada</label><name
     >AXF_ClosureRun_externalCONFIRMED</name></customLabels><customLabels><label
-    >Rateio econômico</label><name
+    >Revogação externa (próximo passo)</label><name
+    >AXF_ClosureRun_externalGuidance</name></customLabels><customLabels><label
+    >Axon encerrado para este titular. A revogação externa na Pluggy não está confirmada e é exibida separadamente: revogue no provedor. A coleta permanece interrompida.</label><name
+    >AXF_ClosureRun_externalPendingBanner</name></customLabels><customLabels
+  ><label>Rateio econômico</label><name
     >AXF_EconomicAllocation_title</name></customLabels><customLabels><label
     >Distribua este fato economicamente entre pessoas/empresas autorizadas. A propriedade da conta permanece separada da atribuição; a confirmação exige exatamente 100%.</label><name
     >AXF_EconomicAllocation_intro</name></customLabels><customLabels><label
@@ -1505,4 +1522,474 @@
     >AXF_SourceLink_codeUNSUPPORTED_ECONOMIC_ROLE</name></customLabels><customLabels
   ><label
     >Declare o papel econômico do vínculo — ele nunca é inferido da descrição nem do extrato da linha do cartão — e confirme novamente. Nada foi gravado.</label><name
-    >AXF_SourceLink_codeINVALID_ECONOMIC_ROLE</name></customLabels></Translations>
+    >AXF_SourceLink_codeINVALID_ECONOMIC_ROLE</name></customLabels><customLabels
+  ><label>Visão consolidada</label><name
+    >AXF_ConsolidationPanel_title</name></customLabels><customLabels><label
+    >Totais autorizados calculados pelo servidor. Nada é somado, convertido ou rateado aqui.</label><name
+    >AXF_ConsolidationPanel_intro</name></customLabels><customLabels><label
+    >Pessoas / empresas</label><name
+    >AXF_ConsolidationPanel_scope</name></customLabels><customLabels><label
+    >Só pessoas e empresas que você está autorizado a ver são listadas.</label><name
+    >AXF_ConsolidationPanel_scopeHelp</name></customLabels><customLabels><label
+    >Disponíveis</label><name
+    >AXF_ConsolidationPanel_scopeAvailable</name></customLabels><customLabels
+  ><label>Moeda de apresentação</label><name
+    >AXF_ConsolidationPanel_currency</name></customLabels><customLabels><label
+    >Usada apenas para comparar as moedas. Os totais originais permanecem na própria moeda.</label><name
+    >AXF_ConsolidationPanel_currencyHelp</name></customLabels><customLabels
+  ><label>Apresentar consolidado</label><name
+    >AXF_ConsolidationPanel_consolidate</name></customLabels><customLabels
+  ><label>Carregando a visão consolidada</label><name
+    >AXF_ConsolidationPanel_loading</name></customLabels><customLabels><label
+    >Selecione ao menos uma pessoa ou empresa para apresentar o consolidado.</label><name
+    >AXF_ConsolidationPanel_empty</name></customLabels><customLabels><label
+    >A visão consolidada não está disponível agora.</label><name
+    >AXF_ConsolidationPanel_error</name></customLabels><customLabels><label
+    >Tentar novamente</label><name
+    >AXF_ConsolidationPanel_retry</name></customLabels><customLabels><label
+    >Visão consolidada atualizada. Confiança: {0}.</label><name
+    >AXF_ConsolidationPanel_updated</name></customLabels><customLabels><label
+    >Confiança</label><name
+    >AXF_ConsolidationPanel_confidence</name></customLabels><customLabels><label
+    >Completa</label><name
+    >AXF_ConsolidationPanel_confidenceFULL</name></customLabels><customLabels
+  ><label>Degradada</label><name
+    >AXF_ConsolidationPanel_confidenceDEGRADED</name></customLabels><customLabels
+  ><label>Bloqueada</label><name
+    >AXF_ConsolidationPanel_confidenceBLOCKED</name></customLabels><customLabels
+  ><label>Atualidade</label><name
+    >AXF_ConsolidationPanel_asOf</name></customLabels><customLabels><label
+    >Período</label><name
+    >AXF_ConsolidationPanel_period</name></customLabels><customLabels><label
+    >Todos os lançamentos registrados</label><name
+    >AXF_ConsolidationPanel_periodOpen</name></customLabels><customLabels><label
+    >Política</label><name
+    >AXF_ConsolidationPanel_policy</name></customLabels><customLabels><label
+    >Por quê</label><name
+    >AXF_ConsolidationPanel_reasons</name></customLabels><customLabels><label
+    >Nada reduziu a confiança.</label><name
+    >AXF_ConsolidationPanel_noReasons</name></customLabels><customLabels><label
+    >Pessoas / empresas no consolidado</label><name
+    >AXF_ConsolidationPanel_holders</name></customLabels><customLabels><label
+    >Pessoa / empresa</label><name
+    >AXF_ConsolidationPanel_holder</name></customLabels><customLabels><label
+    >Acesso</label><name
+    >AXF_ConsolidationPanel_state</name></customLabels><customLabels><label
+    >Cobertura</label><name
+    >AXF_ConsolidationPanel_coverage</name></customLabels><customLabels><label
+    >Autorizado</label><name
+    >AXF_ConsolidationPanel_holderAuthorized</name></customLabels><customLabels
+  ><label>Não verificável</label><name
+    >AXF_ConsolidationPanel_holderUnknown</name></customLabels><customLabels
+  ><label>Completa</label><name
+    >AXF_ConsolidationPanel_coverageFull</name></customLabels><customLabels
+  ><label>Não verificada</label><name
+    >AXF_ConsolidationPanel_coverageUnverified</name></customLabels><customLabels
+  ><label>Nenhuma pessoa ou empresa autorizada no escopo.</label><name
+    >AXF_ConsolidationPanel_noHolders</name></customLabels><customLabels><label
+    >Totais por moeda</label><name
+    >AXF_ConsolidationPanel_totals</name></customLabels><customLabels><label
+    >Moeda</label><name
+    >AXF_ConsolidationPanel_currencyCol</name></customLabels><customLabels
+  ><label>Entradas</label><name
+    >AXF_ConsolidationPanel_inflow</name></customLabels><customLabels><label
+    >Saídas</label><name
+    >AXF_ConsolidationPanel_outflow</name></customLabels><customLabels><label
+    >Resultado líquido</label><name
+    >AXF_ConsolidationPanel_net</name></customLabels><customLabels><label
+    >Lançamentos</label><name
+    >AXF_ConsolidationPanel_facts</name></customLabels><customLabels><label
+    >Pessoas / empresas</label><name
+    >AXF_ConsolidationPanel_holderCountCol</name></customLabels><customLabels
+  ><label>Comparação</label><name
+    >AXF_ConsolidationPanel_conversion</name></customLabels><customLabels><label
+    >Já está na moeda de apresentação</label><name
+    >AXF_ConsolidationPanel_fxSAME_CURRENCY</name></customLabels><customLabels
+  ><label>Convertida (estimativa)</label><name
+    >AXF_ConsolidationPanel_fxESTIMATED</name></customLabels><customLabels
+  ><label>Sem cotação dentro da validade</label><name
+    >AXF_ConsolidationPanel_fxSTALE</name></customLabels><customLabels><label
+    >Sem cotação disponível</label><name
+    >AXF_ConsolidationPanel_fxUNAVAILABLE</name></customLabels><customLabels
+  ><label>Não há total autorizado para apresentar.</label><name
+    >AXF_ConsolidationPanel_noTotals</name></customLabels><customLabels><label
+    >Total comparável</label><name
+    >AXF_ConsolidationPanel_comparable</name></customLabels><customLabels><label
+    >O total comparável não é apresentado: não há cotação utilizável para</label><name
+    >AXF_ConsolidationPanel_comparableWithheld</name></customLabels><customLabels
+  ><label
+    >Nenhuma moeda de apresentação foi escolhida; cada total permanece na sua moeda original.</label><name
+    >AXF_ConsolidationPanel_noComparison</name></customLabels><customLabels
+  ><label>Exclusões</label><name
+    >AXF_ConsolidationPanel_exclusions</name></customLabels><customLabels><label
+    >Nada foi excluído.</label><name
+    >AXF_ConsolidationPanel_noExclusions</name></customLabels><customLabels
+  ><label>Ocorrências</label><name
+    >AXF_ConsolidationPanel_exclusionCount</name></customLabels><customLabels
+  ><label>Não autorizado</label><name
+    >AXF_ConsolidationPanel_exNotAuthorized</name></customLabels><customLabels
+  ><label>Não é pessoa ou empresa Axon</label><name
+    >AXF_ConsolidationPanel_exNotAHolder</name></customLabels><customLabels
+  ><label>Atribuído fora do escopo autorizado</label><name
+    >AXF_ConsolidationPanel_exAllocatedOutside</name></customLabels><customLabels
+  ><label
+    >Atribuído a pessoa ou empresa com cobertura não verificada</label><name
+    >AXF_ConsolidationPanel_exAllocatedUnverified</name></customLabels><customLabels
+  ><label
+    >Não foi possível verificar a cobertura de ao menos uma pessoa ou empresa; as contribuições dela ficam retidas.</label><name
+    >AXF_ConsolidationPanel_reasonCoverageUnverified</name></customLabels><customLabels
+  ><label>Não há pessoa ou empresa autorizada para consolidar.</label><name
+    >AXF_ConsolidationPanel_reasonNoScope</name></customLabels><customLabels
+  ><label
+    >O escopo excede o volume aceito pelo consolidado; nada foi somado parcialmente.</label><name
+    >AXF_ConsolidationPanel_reasonVolumeExceeded</name></customLabels><customLabels
+  ><label
+    >Não há cotação utilizável; o total comparável fica retido em vez de assumir paridade.</label><name
+    >AXF_ConsolidationPanel_reasonMissingFx</name></customLabels><customLabels
+  ><label
+    >Um rateio confirmado inclui participante fora do escopo autorizado.</label><name
+    >AXF_ConsolidationPanel_reasonAllocatedOutside</name></customLabels><customLabels
+  ><label
+    >Um rateio confirmado inclui pessoa ou empresa com cobertura não verificada.</label><name
+    >AXF_ConsolidationPanel_reasonAllocatedUnverified</name></customLabels><customLabels
+  ><label
+    >Não foi possível ler o rateio econômico de ao menos um lançamento.</label><name
+    >AXF_ConsolidationPanel_reasonAllocationUnreadable</name></customLabels><customLabels
+  ><label>O rateio econômico de ao menos um lançamento é ambíguo.</label><name
+    >AXF_ConsolidationPanel_reasonAllocationAmbiguous</name></customLabels><customLabels
+  ><label>O rateio econômico de ao menos um lançamento é inválido.</label><name
+    >AXF_ConsolidationPanel_reasonAllocationInvalid</name></customLabels><customLabels
+  ><label
+    >O rateio econômico de ao menos um lançamento está incompleto.</label><name
+    >AXF_ConsolidationPanel_reasonAllocationIncomplete</name></customLabels><customLabels
+  ><label
+    >Ao menos um lançamento tem situação desconhecida e não foi somado.</label><name
+    >AXF_ConsolidationPanel_reasonUnknownStatus</name></customLabels><customLabels
+  ><label
+    >Ao menos um lançamento tem direção desconhecida e não foi somado.</label><name
+    >AXF_ConsolidationPanel_reasonUnknownDirection</name></customLabels><customLabels
+  ><label
+    >Você não tem acesso a um campo do qual o consolidado depende.</label><name
+    >AXF_ConsolidationPanel_reasonFieldAccess</name></customLabels><customLabels
+  ><label>Você não tem autorização para apresentar o consolidado.</label><name
+    >AXF_ConsolidationPanel_codeForbidden</name></customLabels><customLabels
+  ><label>Selecione ao menos uma pessoa ou empresa.</label><name
+    >AXF_ConsolidationPanel_codeInvalidInput</name></customLabels><customLabels
+  ><label>Você não tem acesso a estes dados.</label><name
+    >AXF_ConsolidationPanel_codeNotAccessible</name></customLabels><customLabels
+  ><label
+    >Não foi possível calcular a visão consolidada. Nada foi apresentado parcialmente.</label><name
+    >AXF_ConsolidationPanel_codeUnavailable</name></customLabels><customLabels
+  ><label>Selecionados</label><name
+    >AXF_ConsolidationPanel_scopeSelected</name></customLabels><customLabels
+  ><label
+    >O total comparável não foi produzido: nada foi consolidado nesta resposta.</label><name
+    >AXF_ConsolidationPanel_comparableBlocked</name></customLabels><customLabels
+  ><label>Conciliar N:N</label><name
+    >AXF_ReconciliationWorkbench_title</name></customLabels><customLabels><label
+    >Monte fontes e alvos, revise cada linha calculada pelo servico e confirme o conjunto atomicamente. O servico nunca soma, converte nem conclui nada no lugar do cliente.</label><name
+    >AXF_ReconciliationWorkbench_intro</name></customLabels><customLabels><label
+    >Voce nao tem a capacidade de confirmar uma conciliacao.</label><name
+    >AXF_ReconciliationWorkbench_noCapability</name></customLabels><customLabels
+  ><label>Titular</label><name
+    >AXF_ReconciliationWorkbench_holder</name></customLabels><customLabels
+  ><label>Selecione um titular</label><name
+    >AXF_ReconciliationWorkbench_holderPlaceholder</name></customLabels><customLabels
+  ><label>Carregar fontes</label><name
+    >AXF_ReconciliationWorkbench_load</name></customLabels><customLabels><label
+    >Carregando...</label><name
+    >AXF_ReconciliationWorkbench_loading</name></customLabels><customLabels
+  ><label
+    >Nenhum fato de origem com residual em aberto foi encontrado para este titular.</label><name
+    >AXF_ReconciliationWorkbench_empty</name></customLabels><customLabels><label
+    >Data</label><name
+    >AXF_ReconciliationWorkbench_colDate</name></customLabels><customLabels
+  ><label>Tipo de fonte</label><name
+    >AXF_ReconciliationWorkbench_colKind</name></customLabels><customLabels
+  ><label>Descricao</label><name
+    >AXF_ReconciliationWorkbench_colDescription</name></customLabels><customLabels
+  ><label>Valor</label><name
+    >AXF_ReconciliationWorkbench_colAmount</name></customLabels><customLabels
+  ><label>Residual</label><name
+    >AXF_ReconciliationWorkbench_colResidual</name></customLabels><customLabels
+  ><label>Moeda</label><name
+    >AXF_ReconciliationWorkbench_colCurrency</name></customLabels><customLabels
+  ><label>Acao</label><name
+    >AXF_ReconciliationWorkbench_colAction</name></customLabels><customLabels
+  ><label>Alvo</label><name
+    >AXF_ReconciliationWorkbench_colTarget</name></customLabels><customLabels
+  ><label>Vencimento</label><name
+    >AXF_ReconciliationWorkbench_colDueDate</name></customLabels><customLabels
+  ><label>Disponivel</label><name
+    >AXF_ReconciliationWorkbench_colAvailable</name></customLabels><customLabels
+  ><label>Estado</label><name
+    >AXF_ReconciliationWorkbench_colState</name></customLabels><customLabels
+  ><label>Fonte</label><name
+    >AXF_ReconciliationWorkbench_colSource</name></customLabels><customLabels
+  ><label>Alocado</label><name
+    >AXF_ReconciliationWorkbench_colAllocated</name></customLabels><customLabels
+  ><label>Valor a alocar</label><name
+    >AXF_ReconciliationWorkbench_colLineAmount</name></customLabels><customLabels
+  ><label>Montar</label><name
+    >AXF_ReconciliationWorkbench_select</name></customLabels><customLabels
+  ><label>Adicionar linha</label><name
+    >AXF_ReconciliationWorkbench_addLine</name></customLabels><customLabels
+  ><label>Remover</label><name
+    >AXF_ReconciliationWorkbench_removeLine</name></customLabels><customLabels
+  ><label>Fonte</label><name
+    >AXF_ReconciliationWorkbench_source</name></customLabels><customLabels
+  ><label>Residual da fonte</label><name
+    >AXF_ReconciliationWorkbench_sourceResidual</name></customLabels><customLabels
+  ><label>Candidatos</label><name
+    >AXF_ReconciliationWorkbench_candidates</name></customLabels><customLabels
+  ><label
+    >Candidatos sao consultivos: cada um traz evidencia independente, a ordem e apenas de apresentacao e nada e selecionado, pontuado ou confirmado automaticamente.</label><name
+    >AXF_ReconciliationWorkbench_candidatesIntro</name></customLabels><customLabels
+  ><label>Linhas desta conciliacao</label><name
+    >AXF_ReconciliationWorkbench_lines</name></customLabels><customLabels><label
+    >Cada figura abaixo vem do servico, que tambem e o unico capaz de concluir o conjunto.</label><name
+    >AXF_ReconciliationWorkbench_linesIntro</name></customLabels><customLabels
+  ><label>Nenhuma linha foi montada ainda.</label><name
+    >AXF_ReconciliationWorkbench_noLines</name></customLabels><customLabels
+  ><label>Voltar</label><name
+    >AXF_ReconciliationWorkbench_back</name></customLabels><customLabels><label
+    >Revise o conjunto montado. A confirmacao e tudo ou nada: uma rejeicao mantem o rascunho inteiro sem efeito.</label><name
+    >AXF_ReconciliationWorkbench_review</name></customLabels><customLabels
+  ><label>Confirmar conciliacao</label><name
+    >AXF_ReconciliationWorkbench_confirm</name></customLabels><customLabels
+  ><label>Confirmando...</label><name
+    >AXF_ReconciliationWorkbench_confirming</name></customLabels><customLabels
+  ><label>Conciliacao registrada</label><name
+    >AXF_ReconciliationWorkbench_done</name></customLabels><customLabels><label
+    >Esta intencao ja tinha sido confirmada; o resultado duravel foi devolvido novamente.</label><name
+    >AXF_ReconciliationWorkbench_doneReplayed</name></customLabels><customLabels
+  ><label>Conciliacao</label><name
+    >AXF_ReconciliationWorkbench_doneAggregate</name></customLabels><customLabels
+  ><label>Estado</label><name
+    >AXF_ReconciliationWorkbench_doneState</name></customLabels><customLabels
+  ><label>Residual explicito</label><name
+    >AXF_ReconciliationWorkbench_doneResidual</name></customLabels><customLabels
+  ><label>Total alocado</label><name
+    >AXF_ReconciliationWorkbench_doneAllocated</name></customLabels><customLabels
+  ><label>desconhecido</label><name
+    >AXF_ReconciliationWorkbench_doneUnknown</name></customLabels><customLabels
+  ><label>Verificar o resultado</label><name
+    >AXF_ReconciliationWorkbench_resolve</name></customLabels><customLabels
+  ><label>Verificando...</label><name
+    >AXF_ReconciliationWorkbench_resolving</name></customLabels><customLabels
+  ><label>Nova conciliacao</label><name
+    >AXF_ReconciliationWorkbench_newReconciliation</name></customLabels><customLabels
+  ><label>Confirmado</label><name
+    >AXF_ReconciliationWorkbench_stateCONFIRMED</name></customLabels><customLabels
+  ><label>Parcial</label><name
+    >AXF_ReconciliationWorkbench_statePARTIAL</name></customLabels><customLabels
+  ><label>Bloqueado</label><name
+    >AXF_ReconciliationWorkbench_stateBLOCKED</name></customLabels><customLabels
+  ><label>Falhou</label><name
+    >AXF_ReconciliationWorkbench_stateFAILED</name></customLabels><customLabels
+  ><label>Consultivo</label><name
+    >AXF_ReconciliationWorkbench_stateCONSULTATIVE</name></customLabels><customLabels
+  ><label>Confirmando</label><name
+    >AXF_ReconciliationWorkbench_stateCONFIRMING</name></customLabels><customLabels
+  ><label>Rascunho</label><name
+    >AXF_ReconciliationWorkbench_stateDRAFT</name></customLabels><customLabels
+  ><label>Banco</label><name
+    >AXF_ReconciliationWorkbench_kindBANK</name></customLabels><customLabels
+  ><label>Cartao de credito</label><name
+    >AXF_ReconciliationWorkbench_kindCARD</name></customLabels><customLabels
+  ><label>Caixa</label><name
+    >AXF_ReconciliationWorkbench_kindMANUAL</name></customLabels><customLabels
+  ><label>ja alocado</label><name
+    >AXF_ReconciliationWorkbench_reasonALREADY_ALLOCATED</name></customLabels><customLabels
+  ><label>moeda difere da fonte</label><name
+    >AXF_ReconciliationWorkbench_reasonCURRENCY_MISMATCH</name></customLabels><customLabels
+  ><label>direcao difere da fonte</label><name
+    >AXF_ReconciliationWorkbench_reasonDIRECTION_MISMATCH</name></customLabels><customLabels
+  ><label>excede o valor disponivel</label><name
+    >AXF_ReconciliationWorkbench_reasonVALUE_CONSERVATION</name></customLabels><customLabels
+  ><label>alvo ainda tem residual</label><name
+    >AXF_ReconciliationWorkbench_reasonPARTIAL</name></customLabels><customLabels
+  ><label>sem valor disponivel</label><name
+    >AXF_ReconciliationWorkbench_reasonNO_CAPACITY</name></customLabels><customLabels
+  ><label>falta evidencia de reconhecimento</label><name
+    >AXF_ReconciliationWorkbench_reasonMISSING_MATERIAL_FX</name></customLabels><customLabels
+  ><label>identidade exata</label><name
+    >AXF_ReconciliationWorkbench_evidenceExact</name></customLabels><customLabels
+  ><label>consultivo</label><name
+    >AXF_ReconciliationWorkbench_evidenceConsultative</name></customLabels><customLabels
+  ><label>evidencia baixa</label><name
+    >AXF_ReconciliationWorkbench_lowEvidence</name></customLabels><customLabels
+  ><label>Politica</label><name
+    >AXF_ReconciliationWorkbench_policy</name></customLabels><customLabels
+  ><label>A operacao nao pode ser concluida.</label><name
+    >AXF_ReconciliationWorkbench_error</name></customLabels><customLabels><label
+    >Voce nao tem a capacidade de confirmar uma conciliacao.</label><name
+    >AXF_ReconciliationWorkbench_codeUNAVAILABLE</name></customLabels><customLabels
+  ><label>A conciliacao nao esta disponivel para o seu acesso.</label><name
+    >AXF_ReconciliationWorkbench_codeNOT_ACCESSIBLE</name></customLabels><customLabels
+  ><label>A solicitacao nao e valida.</label><name
+    >AXF_ReconciliationWorkbench_codeINVALID_INPUT</name></customLabels><customLabels
+  ><label>O conjunto excede o valor disponivel; nada foi gravado.</label><name
+    >AXF_ReconciliationWorkbench_codeVALUE_CONSERVATION</name></customLabels><customLabels
+  ><label
+    >As moedas divergem e nao existe evidencia material de cambio.</label><name
+    >AXF_ReconciliationWorkbench_codeCURRENCY_MISMATCH</name></customLabels><customLabels
+  ><label>O estado mudou ou o conteudo divergiu; nada foi gravado.</label><name
+    >AXF_ReconciliationWorkbench_codeCONFLICT</name></customLabels><customLabels
+  ><label
+    >Nova evidencia mudou o plano de lock; reenvie o mesmo conjunto.</label><name
+    >AXF_ReconciliationWorkbench_codeLOCK_PLAN_CHANGED</name></customLabels><customLabels
+  ><label
+    >Os registros estao bloqueados por outra operacao; tente novamente em instantes.</label><name
+    >AXF_ReconciliationWorkbench_codeLOCKED</name></customLabels><customLabels
+  ><label>O comando foi rejeitado; nada foi gravado.</label><name
+    >AXF_ReconciliationWorkbench_codeREJECTED</name></customLabels><customLabels
+  ><label>A operacao nao pode ser concluida.</label><name
+    >AXF_ReconciliationWorkbench_codeUNEXPECTED</name></customLabels><customLabels
+  ><label>O fato de origem nao pode ser conciliado.</label><name
+    >AXF_ReconciliationWorkbench_codeFACT_NOT_RECONCILABLE</name></customLabels><customLabels
+  ><label>A preferencia de moeda de apresentacao e obrigatoria.</label><name
+    >AXF_ReconciliationWorkbench_codeREPORTING_CURRENCY_REQUIRED</name></customLabels><customLabels
+  ><label>Adicionar pessoa e dar acesso ao Axon</label><name
+    >AXF_AddPersonAccess_title</name></customLabels><customLabels><label
+    >Cria ou vincula um usuário Salesforce a uma pessoa e aplica o nível de acesso. Não muda senha nem perfil de usuário existente.</label><name
+    >AXF_AddPersonAccess_subtitle</name></customLabels><customLabels><label
+    >Você não tem autorização para conceder acesso ao Axon.</label><name
+    >AXF_AddPersonAccess_forbidden</name></customLabels><customLabels><label
+    >Pessoa</label><name
+    >AXF_AddPersonAccess_stepPerson</name></customLabels><customLabels><label
+    >Usuário</label><name
+    >AXF_AddPersonAccess_stepUser</name></customLabels><customLabels><label
+    >Acesso</label><name
+    >AXF_AddPersonAccess_stepScope</name></customLabels><customLabels><label
+    >Revisar</label><name
+    >AXF_AddPersonAccess_stepReview</name></customLabels><customLabels><label
+    >Pessoa (Person Account)</label><name
+    >AXF_AddPersonAccess_personLabel</name></customLabels><customLabels><label
+    >Nome</label><name
+    >AXF_AddPersonAccess_nameLabel</name></customLabels><customLabels><label
+    >E-mail</label><name
+    >AXF_AddPersonAccess_emailLabel</name></customLabels><customLabels><label
+    >Usuário Salesforce</label><name
+    >AXF_AddPersonAccess_modeLabel</name></customLabels><customLabels><label
+    >Criar novo usuário</label><name
+    >AXF_AddPersonAccess_modeCreate</name></customLabels><customLabels><label
+    >Vincular usuário existente</label><name
+    >AXF_AddPersonAccess_modeLink</name></customLabels><customLabels><label
+    >Buscar usuário por nome, login ou e-mail</label><name
+    >AXF_AddPersonAccess_searchUser</name></customLabels><customLabels><label
+    >Nível de acesso</label><name
+    >AXF_AddPersonAccess_scopeLabel</name></customLabels><customLabels><label
+    >Só os próprios dados e empresas sob responsabilidade (Participante)</label><name
+    >AXF_AddPersonAccess_scopeOwn</name></customLabels><customLabels><label
+    >Todos os dados do Axon (Gestor Financeiro)</label><name
+    >AXF_AddPersonAccess_scopeAll</name></customLabels><customLabels><label
+    >Não há licença Salesforce disponível para criar um usuário.</label><name
+    >AXF_AddPersonAccess_licenseWarn</name></customLabels><customLabels><label
+    >Voltar</label><name
+    >AXF_AddPersonAccess_back</name></customLabels><customLabels><label
+    >Próximo</label><name
+    >AXF_AddPersonAccess_next</name></customLabels><customLabels><label
+    >Confirmar</label><name
+    >AXF_AddPersonAccess_confirm</name></customLabels><customLabels><label
+    >Iniciando…</label><name
+    >AXF_AddPersonAccess_starting</name></customLabels><customLabels><label
+    >Provisionando… acompanhe o andamento.</label><name
+    >AXF_AddPersonAccess_running</name></customLabels><customLabels><label
+    >Acesso concluído.</label><name
+    >AXF_AddPersonAccess_done</name></customLabels><customLabels><label
+    >Não foi possível concluir. Veja a mensagem e retome.</label><name
+    >AXF_AddPersonAccess_failed</name></customLabels><customLabels><label
+    >Retomar</label><name
+    >AXF_AddPersonAccess_retry</name></customLabels><customLabels><label
+    >Sem progresso por um tempo. O provisionamento pode continuar no servidor; retome para continuar.</label><name
+    >AXF_AddPersonAccess_stalled</name></customLabels><customLabels><label
+    >O acompanhamento automático atingiu o limite de espera. O provisionamento pode continuar no servidor; retome para verificar.</label><name
+    >AXF_AddPersonAccess_watchLimit</name></customLabels><customLabels><label
+    >Não foi possível consultar o andamento agora. O provisionamento pode continuar no servidor; retome para verificar.</label><name
+    >AXF_AddPersonAccess_statusUnavailable</name></customLabels><customLabels
+  ><label>Sair e continuar depois</label><name
+    >AXF_AddPersonAccess_leave</name></customLabels><customLabels><label
+    >O provisionamento pode continuar no servidor. Ao voltar, retome pelo mesmo cadastro — nada é duplicado.</label><name
+    >AXF_AddPersonAccess_leaveHint</name></customLabels><customLabels><label
+    >Retoma agora e confere se já terminou.</label><name
+    >AXF_AddPersonAccess_resumeHint</name></customLabels><customLabels><label
+    >Voltar ao formulário</label><name
+    >AXF_AddPersonAccess_backToForm</name></customLabels><customLabels><label
+    >Adicionar outra pessoa</label><name
+    >AXF_AddPersonAccess_close</name></customLabels><customLabels><label
+    >Usuário vinculado</label><name
+    >AXF_AddPersonAccess_linkedUser</name></customLabels><customLabels><label
+    >Etapa</label><name
+    >AXF_AddPersonAccess_statusStep</name></customLabels><customLabels><label
+    >Situação</label><name
+    >AXF_AddPersonAccess_statusState</name></customLabels><customLabels><label
+    >Etapa {0} de {1}</label><name
+    >AXF_AddPersonAccess_stepOf</name></customLabels><customLabels><label
+    >Confirmando a pessoa</label><name
+    >AXF_AddPersonAccess_stepNameCreateOrLinkPerson</name></customLabels><customLabels
+  ><label>Criando ou vinculando o usuário</label><name
+    >AXF_AddPersonAccess_stepNameCreateOrLinkUser</name></customLabels><customLabels
+  ><label>Atribuindo o papel</label><name
+    >AXF_AddPersonAccess_stepNameAssignRole</name></customLabels><customLabels
+  ><label>Atribuindo as permissões de acesso</label><name
+    >AXF_AddPersonAccess_stepNameAssignPsg</name></customLabels><customLabels
+  ><label>Sincronizando o responsável</label><name
+    >AXF_AddPersonAccess_stepNameSetOwnerSync</name></customLabels><customLabels
+  ><label>Ativando o usuário</label><name
+    >AXF_AddPersonAccess_stepNameActivate</name></customLabels><customLabels
+  ><label>Concluído</label><name
+    >AXF_AddPersonAccess_stepNameDone</name></customLabels><customLabels><label
+    >Confirmar uma transferência interna</label><name
+    >AXF_InternalTransfer_title</name></customLabels><customLabels><label
+    >Revise um par sugerido e confirme somente se as duas pernas estiverem corretas. Nenhuma
+    transação bancária é editada ou fundida: confirmar apenas vincula as duas pernas para que o
+    consolidado neutralize o principal uma única vez.</label><name
+    >AXF_InternalTransfer_intro</name></customLabels><customLabels><label
+    >Você não tem autorização para confirmar transferências internas.</label><name
+    >AXF_InternalTransfer_noCapability</name></customLabels><customLabels><label
+    >Carregando sugestões...</label><name
+    >AXF_InternalTransfer_loading</name></customLabels><customLabels><label
+    >Nenhuma sugestão de transferência pendente.</label><name
+    >AXF_InternalTransfer_empty</name></customLabels><customLabels><label
+    >Perna de débito</label><name
+    >AXF_InternalTransfer_colDebit</name></customLabels><customLabels><label
+    >Perna de crédito</label><name
+    >AXF_InternalTransfer_colCredit</name></customLabels><customLabels><label
+    >Valor</label><name
+    >AXF_InternalTransfer_colAmount</name></customLabels><customLabels><label
+    >Data</label><name
+    >AXF_InternalTransfer_colDate</name></customLabels><customLabels><label
+    >Confirmar par</label><name
+    >AXF_InternalTransfer_confirm</name></customLabels><customLabels><label
+    >Confirmando...</label><name
+    >AXF_InternalTransfer_confirming</name></customLabels><customLabels><label
+    >Tarifas continuam despesas e diferenças cambiais permanecem rastreáveis; apenas o
+    principal exibido abaixo é neutralizado.</label><name
+    >AXF_InternalTransfer_feesNote</name></customLabels><customLabels><label
+    >Confirmado. O principal foi neutralizado no consolidado.</label><name
+    >AXF_InternalTransfer_doneConfirmed</name></customLabels><customLabels
+  ><label
+    >Uma perna ficou incompatível ou inacessível. Nada foi neutralizado; isso permanece
+    revisável.</label><name
+    >AXF_InternalTransfer_doneUnilateral</name></customLabels><customLabels
+  ><label>Já registrado; exibindo o resultado anterior.</label><name
+    >AXF_InternalTransfer_doneReplayed</name></customLabels><customLabels><label
+    >Atualizar</label><name
+    >AXF_InternalTransfer_refresh</name></customLabels><customLabels><label
+    >Algo deu errado. Tente novamente.</label><name
+    >AXF_InternalTransfer_error</name></customLabels><customLabels><label
+    >Você não tem autorização para fazer isso.</label><name
+    >AXF_InternalTransfer_codeUNAVAILABLE</name></customLabels><customLabels
+  ><label>Este registro não está acessível.</label><name
+    >AXF_InternalTransfer_codeNOT_ACCESSIBLE</name></customLabels><customLabels
+  ><label>Não foi possível entender a solicitação.</label><name
+    >AXF_InternalTransfer_codeINVALID_INPUT</name></customLabels><customLabels
+  ><label>A solicitação é inválida.</label><name
+    >AXF_InternalTransfer_codeINVALID</name></customLabels><customLabels><label
+    >Isso mudou desde que foi carregado. Atualize e tente novamente.</label><name
+    >AXF_InternalTransfer_codeCONFLICT</name></customLabels><customLabels><label
+    >Esta transferência já foi decidida.</label><name
+    >AXF_InternalTransfer_codeALREADY_DECIDED</name></customLabels><customLabels
+  ><label>Esta ação não se aplica a esta transferência.</label><name
+    >AXF_InternalTransfer_codeINVALID_TARGET</name></customLabels></Translations>

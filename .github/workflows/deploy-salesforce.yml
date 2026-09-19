@@ -19,7 +19,13 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 150
     outputs:
-      summary: ${{ steps.operation.outputs.summary }}
+      deploymentId: ${{ steps.operation.outputs.deploymentId }}
+      componentsTotal: ${{ steps.operation.outputs.componentsTotal }}
+      testsCompleted: ${{ steps.operation.outputs.testsCompleted }}
+      testsFailed: ${{ steps.operation.outputs.testsFailed }}
+      deletedCount: ${{ steps.operation.outputs.deletedCount }}
+      versionedDestructiveApplied: ${{ steps.operation.outputs.versionedDestructiveApplied }}
+      errorMessage: ${{ steps.operation.outputs.errorMessage }}
     environment: ${{ github.ref_name == 'main' && 'PROD' || (github.ref_name == 'uat' && 'UAT' || 'DEV') }}
     steps:
       - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
@@ -40,7 +46,6 @@ jobs:
           TARGET_BRANCH: ${{ github.ref_name }}
           SALESFORCE_AUTH_URL: ${{ secrets.SALESFORCE_AUTH_URL || secrets.SALESFORCE_DEV_AUTH_URL || secrets.SALESFORCE_PROD_AUTH_URL }}
           EXPECTED_ORG_ID: ${{ vars.SALESFORCE_ORG_ID }}
-          INITIAL_BASE_SHA: ${{ vars.SALESFORCE_BASE_SHA }}
           EVIDENCE_DIR: ${{ runner.temp }}/salesforce-evidence
         run: node scripts/ci/salesforce-delivery.mjs
       - name: Upload deployment evidence
@@ -65,17 +70,44 @@ jobs:
       - uses: actions/github-script@60a0d83039c74a4aee543508d2ffcb1c3799cdea9 # v7.0.1
         env:
           DEPLOY_RESULT: ${{ needs.deploy.result }}
-          SF_SUMMARY: ${{ needs.deploy.outputs.summary }}
+          DEPLOYMENT_ID: ${{ needs.deploy.outputs.deploymentId }}
+          COMPONENTS_TOTAL: ${{ needs.deploy.outputs.componentsTotal }}
+          TESTS_COMPLETED: ${{ needs.deploy.outputs.testsCompleted }}
+          TESTS_FAILED: ${{ needs.deploy.outputs.testsFailed }}
+          DELETED_COUNT: ${{ needs.deploy.outputs.deletedCount }}
+          VERSIONED_DESTRUCTIVE_APPLIED: ${{ needs.deploy.outputs.versionedDestructiveApplied }}
+          ERROR_MESSAGE: ${{ needs.deploy.outputs.errorMessage }}
         with:
           script: |
             const runUrl = `${context.serverUrl}/${context.repo.owner}/${context.repo.repo}/actions/runs/${context.runId}`;
             const {data: prs} = await github.rest.repos.listPullRequestsAssociatedWithCommit({...context.repo, commit_sha: context.sha});
             const {data} = await github.rest.actions.listWorkflowRunArtifacts({...context.repo, run_id: context.runId});
+            const artifact = data.artifacts[0];
+            const artifactUrl = artifact ? `${runUrl}/artifacts/${artifact.id}` : null;
             const environment = context.ref === 'refs/heads/main' ? 'AXON_PROD' : (context.ref === 'refs/heads/uat' ? 'AXON_UAT' : 'AXON_DEV');
-            const artifactLinks = data.artifacts.length
-              ? data.artifacts.map(a => `- [${a.name}](${runUrl})`).join('\n')
-              : '_No evidence artifact uploaded._';
+            const deletedCount = Number(process.env.DELETED_COUNT || 0);
+            const versionedApplied = process.env.VERSIONED_DESTRUCTIVE_APPLIED === 'true';
+            const passed = process.env.DEPLOY_RESULT === 'success';
+            const icon = passed ? '✅' : '❌';
+            const status = passed ? 'Passed' : 'Failed';
+            let body = `### ${icon} Salesforce deployment — ${environment}: **${status}**\n\n`;
+            body += [
+              '| | |',
+              '|---|---|',
+              `| Deployment ID | ${process.env.DEPLOYMENT_ID ? '`' + process.env.DEPLOYMENT_ID + '`' : 'None'} |`,
+              `| Components | ${process.env.COMPONENTS_TOTAL || '—'} |`,
+              `| Tests | ${process.env.TESTS_COMPLETED || 0} completed / ${process.env.TESTS_FAILED || 0} failed |`,
+              `| Commit | \`${context.sha.slice(0, 7)}\` |`
+            ].join('\n') + '\n';
+            if (process.env.ERROR_MESSAGE) body += `\n> ${process.env.ERROR_MESSAGE}\n`;
+            if (deletedCount > 0) {
+              body += `\n⚠️ **${deletedCount} deletion(s) detected — NOT auto-deployed.** \`destructiveChanges.xml\`/\`package.xml\` generated in the evidence artifact; requires manual review and a separate destructive deploy.\n`;
+            }
+            if (versionedApplied) {
+              body += `\n🔥 **Versioned destructive manifest (\`manifest/destructiveChanges{Pre,Post}.xml\`) was applied this run** — this actually deployed a real deletion. See result.html for exactly what.\n`;
+            }
+            body += `\n${artifactUrl ? `[⬇️ Download evidence](${artifactUrl})` : '_No evidence artifact uploaded._'} · [Run logs](${runUrl})\n`;
+            body += `\nOpen \`result.html\` in the evidence zip for the full report.`;
             for (const pr of prs.filter(p => p.merged_at && p.merge_commit_sha === context.sha)) {
-              await github.rest.issues.createComment({...context.repo, issue_number: pr.number,
-                body: `## Salesforce deployment: ${environment}\n\n**Job result:** ${process.env.DEPLOY_RESULT}\n**Commit:** \`${context.sha}\`\n\n${process.env.SF_SUMMARY || 'Deployment did not produce a report.'}\n\n[Deployment summary and logs](${runUrl})\n\n### Evidence\n${artifactLinks}`});
+              await github.rest.issues.createComment({...context.repo, issue_number: pr.number, body});
             }

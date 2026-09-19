@@ -77,6 +77,36 @@ private class AXF_CLS_AccessConfigEffectiveTest {
     return u;
   }
 
+  // Isolated from whatever Axon Permission Set Groups the org's real admin
+  // users may carry for their own UI access (AXF-77): a fresh admin with no
+  // PSG assignment is the only way to assert the profile itself grants
+  // nothing, independent of the shared org's live configuration state.
+  private static User buildPlainAdmin() {
+    Id profileId = [
+      SELECT Id
+      FROM Profile
+      WHERE Name = 'System Administrator'
+      LIMIT 1
+    ]
+    .Id;
+    String uniq = 'axf7admin' + Crypto.getRandomInteger();
+    User u = new User(
+      ProfileId = profileId,
+      LastName = 'PlainAdmin',
+      Email = uniq + '@example.com',
+      Username = uniq + '@example.com.invalid',
+      Alias = uniq.left(8),
+      TimeZoneSidKey = 'America/Sao_Paulo',
+      LocaleSidKey = 'pt_BR',
+      EmailEncodingKey = 'UTF-8',
+      LanguageLocaleKey = 'pt_BR'
+    );
+    System.runAs(new User(Id = UserInfo.getUserId())) {
+      insert u;
+    }
+    return u;
+  }
+
   private static void calculateGroups() {
     for (PermissionSetGroup psg : [
       SELECT Id, Status
@@ -187,18 +217,24 @@ private class AXF_CLS_AccessConfigEffectiveTest {
 
   @IsTest
   static void systemAdministratorIsNotAConfiguradorByDefault() {
-    // O usuario que roda o teste e System Administrator (ViewAllData/ModifyAllData).
+    // A freshly created System Administrator, not the user running the test:
+    // that real org user may carry AXF_PSG_GestorFinanceiro for their own
+    // Axon UI access (AXF-77), which would make this assertion depend on the
+    // shared org's live state instead of the profile itself.
+    User plainAdmin = buildPlainAdmin();
     Test.startTest();
-    System.assertEquals(
-      false,
-      FeatureManagement.checkPermission('AXF_CanConfigure'),
-      'ser System Administrator nao concede AXF_CanConfigure (sem autoelevacao)'
-    );
-    System.assertEquals(
-      false,
-      AXF_CLS_CTRL_AccessLevelConfig.canConfigure(),
-      'admin sem a Custom Permission nao e configurador'
-    );
+    System.runAs(plainAdmin) {
+      System.assertEquals(
+        false,
+        FeatureManagement.checkPermission('AXF_CanConfigure'),
+        'ser System Administrator nao concede AXF_CanConfigure (sem autoelevacao)'
+      );
+      System.assertEquals(
+        false,
+        AXF_CLS_CTRL_AccessLevelConfig.canConfigure(),
+        'admin sem a Custom Permission nao e configurador'
+      );
+    }
     Test.stopTest();
   }
 

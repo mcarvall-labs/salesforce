@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<CustomField xmlns="http://soap.sforce.com/2006/04/metadata">
+  <fullName>AXF_OAD_NUM_SignedAmount__c</fullName>
+  <label>Valor com Sinal</label>
+  <precision>16</precision>
+  <scale>2</scale>
+  <type>Number</type>
+  <required>true</required>
+  <description
+  >Delta com sinal aplicado à obrigação efetiva. Nunca zero: um delta zero é um recebimento sem ajuste. Positivo eleva a obrigação (encargo, revisão para cima) e negativo a reduz (desconto, revisão para baixo). Não é caixa e não altera a disponibilidade da fonte (AXF-104).</description>
+</CustomField>

@@ -1,0 +1,13 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<CustomField xmlns="http://soap.sforce.com/2006/04/metadata">
+  <fullName>AXF_SDC_LKP_OriginalDecision__c</fullName>
+  <label>Decisão Original</label>
+  <type>Lookup</type>
+  <referenceTo>AXF_OBJ_SettlementDecision__c</referenceTo>
+  <relationshipName>AXF_REL_SuccessorDecisions</relationshipName>
+  <relationshipLabel>Decisões Sucessoras</relationshipLabel>
+  <deleteConstraint>SetNull</deleteConstraint>
+  <required>false</required>
+  <description
+  >Decisão compensada ou corrigida. Uma correção posterior cria evidência sucessora sem alterar caixa; sem predecessor explícito, duas classificações concorrentes são CONFLICT (AXF-104).</description>
+</CustomField>

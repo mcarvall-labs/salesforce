@@ -1,0 +1,6 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<CustomField xmlns="http://soap.sforce.com/2006/04/metadata"><fullName
+  >AXF_ITR_TXT_OperationKey__c</fullName><label>Operation key</label><length
+  >80</length><type>Text</type><unique>false</unique><description
+  >Human operationKey of the last confirm (on this row) or reverse (on a REVERSED row) command
+  applied, for idempotent replay detection (AXF-32).</description></CustomField>

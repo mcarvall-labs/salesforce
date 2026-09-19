@@ -1,0 +1,13 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<CustomField xmlns="http://soap.sforce.com/2006/04/metadata">
+  <fullName>AXF_OAD_LKP_FinancialTransaction__c</fullName>
+  <label>Ocorrência Financeira</label>
+  <type>Lookup</type>
+  <referenceTo>AXF_OBJ_FinancialTransaction__c</referenceTo>
+  <relationshipName>AXF_REL_ObligationAdjustments</relationshipName>
+  <relationshipLabel>Ajustes de Obrigação</relationshipLabel>
+  <deleteConstraint>Restrict</deleteConstraint>
+  <required>true</required>
+  <description
+  >Obrigação ajustada: prevista (PLANNED) ou factual (ACTUAL_ONLY). O ajuste nunca substitui a previsão original nem a magnitude factual imutável (AXF-104).</description>
+</CustomField>

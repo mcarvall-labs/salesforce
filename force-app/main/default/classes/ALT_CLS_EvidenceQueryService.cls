@@ -157,15 +157,15 @@ public with sharing class ALT_CLS_EvidenceQueryService {
       row(
         EVT_RECONCILIATION,
         'Reconciliacao / reversao',
-        GAP_NOT_INTEGRATED,
+        COVERED_IMMUTABLE,
         'AXF_OBJ_Reconciliation__c',
         'reconciliation',
-        'Objeto append-only ainda nao integrado em develop; consulta indisponivel (G7-2).',
+        'Raiz RCN + N linhas RA imutaveis confirmadas atomicamente (AXF-30); correcao por alocacao compensatoria (AXF-141). Sem ator e sem campo de motivo no schema ratificado; a consulta dedicada ainda nao e exposta nesta superficie.',
         false,
+        true,
+        true,
         false,
-        false,
-        false,
-        false
+        true
       )
     );
     rows.add(

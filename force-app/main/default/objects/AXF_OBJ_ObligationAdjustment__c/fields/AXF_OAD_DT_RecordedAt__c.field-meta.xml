@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<CustomField xmlns="http://soap.sforce.com/2006/04/metadata">
+  <fullName>AXF_OAD_DT_RecordedAt__c</fullName>
+  <label>Registrado Em</label>
+  <type>DateTime</type>
+  <required>false</required>
+  <description
+  >Instante de gravação do ajuste. É evidência de auditoria e nunca decide precedência entre classificações concorrentes (AXF-104).</description>
+</CustomField>

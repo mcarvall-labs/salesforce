@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<CustomField xmlns="http://soap.sforce.com/2006/04/metadata">
+  <fullName>AXF_OAD_TXT_CurrencyIsoCode__c</fullName>
+  <label>Moeda</label>
+  <length>3</length>
+  <type>Text</type>
+  <required>true</required>
+  <description
+  >Moeda original do ajuste. Precisa ser idêntica à moeda da obrigação e da fonte: nenhuma paridade implícita é aceita (AXF-104).</description>
+</CustomField>

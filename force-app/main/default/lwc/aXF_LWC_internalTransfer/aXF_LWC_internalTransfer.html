@@ -1,0 +1,109 @@
+<template>
+  <lightning-card title={labels.title} icon-name="standard:currency_input">
+    <div class="slds-p-horizontal_medium slds-p-bottom_medium">
+      <p class="slds-text-body_small slds-m-bottom_small">{labels.intro}</p>
+      <p class="slds-text-body_small slds-text-color_weak slds-m-bottom_small">
+        {labels.feesNote}
+      </p>
+      <template lwc:if={cannotConfirm}>
+        <div class="slds-box slds-theme_shade" role="status">
+          {labels.noCapability}
+        </div>
+      </template>
+      <template lwc:if={error}>
+        <div
+          class="slds-notify slds-notify_alert slds-theme_alert-texture slds-theme_error slds-m-bottom_small"
+          role="alert"
+        >
+          <span>{error}</span>
+        </div>
+      </template>
+      <template lwc:if={canConfirm}>
+        <lightning-button
+          label={labels.refresh}
+          onclick={handleRefresh}
+          disabled={busy}
+          data-id="refresh"
+        ></lightning-button>
+        <template lwc:if={busy}>
+          <p class="slds-m-top_small" role="status">{labels.loading}</p>
+        </template>
+        <template lwc:if={showEmpty}>
+          <div
+            class="slds-box slds-theme_shade slds-m-top_small"
+            role="status"
+            data-id="empty"
+          >
+            {labels.empty}
+          </div>
+        </template>
+        <template for:each={rows} for:item="row">
+          <div
+            key={row.key}
+            class="slds-box slds-m-top_small"
+            data-id="row"
+            data-index={row.index}
+          >
+            <div class="slds-grid slds-gutters slds-wrap">
+              <div class="slds-col slds-size_1-of-1 slds-medium-size_5-of-12">
+                <p class="slds-text-title_caps">{labels.colDebit}</p>
+                <p>{row.debit.description} · {row.debit.accountName}</p>
+                <p>
+                  <lightning-formatted-number
+                    value={row.debit.amount}
+                    format-style="currency"
+                    currency-code={row.debit.currencyIso}
+                  ></lightning-formatted-number>
+                  ·
+                  <lightning-formatted-date-time
+                    value={row.debit.onDate}
+                  ></lightning-formatted-date-time>
+                </p>
+              </div>
+              <div class="slds-col slds-size_1-of-1 slds-medium-size_5-of-12">
+                <p class="slds-text-title_caps">{labels.colCredit}</p>
+                <p>{row.credit.description} · {row.credit.accountName}</p>
+                <p>
+                  <lightning-formatted-number
+                    value={row.credit.amount}
+                    format-style="currency"
+                    currency-code={row.credit.currencyIso}
+                  ></lightning-formatted-number>
+                  ·
+                  <lightning-formatted-date-time
+                    value={row.credit.onDate}
+                  ></lightning-formatted-date-time>
+                </p>
+              </div>
+              <div
+                class="slds-col slds-size_1-of-1 slds-medium-size_2-of-12 slds-align-bottom"
+              >
+                <template lwc:if={row.done}>
+                  <p data-id="result">{row.resultLabel}</p>
+                </template>
+                <template lwc:else>
+                  <lightning-button
+                    variant="brand"
+                    label={row.confirmLabel}
+                    data-index={row.index}
+                    onclick={handleConfirm}
+                    disabled={row.busy}
+                    data-id="confirm"
+                  ></lightning-button>
+                </template>
+              </div>
+            </div>
+            <template lwc:if={row.rowError}>
+              <p
+                class="slds-text-color_error slds-m-top_x-small"
+                data-id="rowError"
+              >
+                {row.rowError}
+              </p>
+            </template>
+          </div>
+        </template>
+      </template>
+    </div>
+  </lightning-card>
+</template>

@@ -23,6 +23,7 @@ public with sharing class ALT_CLS_ReviewQueueService {
     public Id accountId;
     public Id bankAccountId;
     public Id creditCardId;
+    public Id internalTransferId;
     public Decimal priorAmount;
     public Date priorDate;
     public String priorDescription;
@@ -66,6 +67,7 @@ public with sharing class ALT_CLS_ReviewQueueService {
     public Id accountId;
     public Id bankAccountId;
     public Id creditCardId;
+    public Id internalTransferId;
     public Decimal priorAmount;
     public Date priorDate;
     public String priorDescription;
@@ -184,6 +186,7 @@ public with sharing class ALT_CLS_ReviewQueueService {
       AXF_RVI_LKP_Account__c = input.accountId,
       AXF_RVI_LKP_BankAccount__c = input.bankAccountId,
       AXF_RVI_LKP_CreditCard__c = input.creditCardId,
+      AXF_RVI_LKP_InternalTransfer__c = input.internalTransferId,
       AXF_RVI_NUM_PriorAmount__c = input.priorAmount,
       AXF_RVI_DAT_PriorDate__c = input.priorDate,
       AXF_RVI_TXT_PriorDescription__c = input.priorDescription,
@@ -393,12 +396,13 @@ public with sharing class ALT_CLS_ReviewQueueService {
   private static String selectQuery() {
     List<String> names = new List<String>{ 'Id', 'Name' };
     for (
-      String name : AXF_OBJ_ReviewItem__c.SObjectType.getDescribe(
+      Schema.SObjectField field : AXF_OBJ_ReviewItem__c.SObjectType.getDescribe(
           SObjectDescribeOptions.DEFERRED
         )
         .fields.getMap()
-        .keySet()
+        .values()
     ) {
+      String name = field.getDescribe().getName();
       if (name.toLowerCase().startsWith('axf_rvi_'))
         names.add(name);
     }
@@ -582,6 +586,7 @@ public with sharing class ALT_CLS_ReviewQueueService {
     v.accountId = r.AXF_RVI_LKP_Account__c;
     v.bankAccountId = r.AXF_RVI_LKP_BankAccount__c;
     v.creditCardId = r.AXF_RVI_LKP_CreditCard__c;
+    v.internalTransferId = r.AXF_RVI_LKP_InternalTransfer__c;
     v.priorAmount = r.AXF_RVI_NUM_PriorAmount__c;
     v.priorDate = r.AXF_RVI_DAT_PriorDate__c;
     v.priorDescription = r.AXF_RVI_TXT_PriorDescription__c;

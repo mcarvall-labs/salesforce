@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<CustomField xmlns="http://soap.sforce.com/2006/04/metadata">
+    <fullName>AXF_RCN_TXT_PolicyVersion__c</fullName>
+    <label>Versao da Politica</label>
+    <type>Text</type>
+    <length>64</length>
+    <required>true</required>
+    <description
+  >Policy congelada no momento da confirmacao (AXF-MATCHING@1.0.0). Nenhuma tolerancia, peso ou conclusao automatica e introduzida por esta versao.</description>
+</CustomField>

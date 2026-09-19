@@ -1,16 +1,19 @@
-import labels from "./labels";
+import codeForbiddenLabel from "@salesforce/label/c.AXF_ConfidencePanel_codeForbidden";
+import codeInvalidInputLabel from "@salesforce/label/c.AXF_ConfidencePanel_codeInvalidInput";
+import codeNotAccessibleLabel from "@salesforce/label/c.AXF_ConfidencePanel_codeNotAccessible";
+import errorLabel from "@salesforce/label/c.AXF_ConfidencePanel_error";
 
 const CODE_LABEL = {
-  FORBIDDEN: labels.codeForbidden,
-  INVALID_INPUT: labels.codeInvalidInput,
-  NOT_ACCESSIBLE: labels.codeNotAccessible,
-  UNEXPECTED: labels.error
+  FORBIDDEN: codeForbiddenLabel,
+  INVALID_INPUT: codeInvalidInputLabel,
+  NOT_ACCESSIBLE: codeNotAccessibleLabel,
+  UNEXPECTED: errorLabel
 };
 
 /** Server failures arrive as a sanitized {code}; anything else is the generic message. */
 export function parseFailure(error) {
   const raw = error && error.body && error.body.message;
-  return CODE_LABEL[raw] || labels.error;
+  return CODE_LABEL[raw] || errorLabel;
 }
 
 export function format(template, ...args) {

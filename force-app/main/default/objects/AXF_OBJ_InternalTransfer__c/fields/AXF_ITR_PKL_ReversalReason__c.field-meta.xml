@@ -1,0 +1,17 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<CustomField xmlns="http://soap.sforce.com/2006/04/metadata"><fullName
+  >AXF_ITR_PKL_ReversalReason__c</fullName><label>Reversal reason</label><type
+  >Picklist</type><valueSet><restricted>true</restricted><valueSetDefinition
+    ><sorted>false</sorted><value><fullName>USER_ERROR</fullName><default
+        >false</default><label>USER_ERROR</label></value><value><fullName
+        >DUPLICATE_LINK</fullName><default>false</default><label
+        >DUPLICATE_LINK</label></value><value><fullName
+        >WRONG_TARGET</fullName><default>false</default><label
+        >WRONG_TARGET</label></value><value><fullName
+        >SOURCE_CHANGED</fullName><default>false</default><label
+        >SOURCE_CHANGED</label></value><value><fullName>OTHER</fullName><default
+        >false</default><label
+        >OTHER</label></value></valueSetDefinition></valueSet><description
+  >Only populated on a REVERSED compensation row. Same reason vocabulary as
+  ALT_CLS_ReconciliationReversalService.REASONS (AXF-141), reused rather than inventing a new
+  one.</description></CustomField>
