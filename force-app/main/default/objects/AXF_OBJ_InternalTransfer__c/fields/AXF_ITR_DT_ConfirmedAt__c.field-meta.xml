@@ -1,0 +1,6 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<CustomField xmlns="http://soap.sforce.com/2006/04/metadata"><fullName
+  >AXF_ITR_DT_ConfirmedAt__c</fullName><label>Confirmed at</label><type
+  >DateTime</type><description
+  >Set once, when this row transitions CANDIDATE to CONFIRMED. Never set on a REVERSED
+  compensation row.</description></CustomField>

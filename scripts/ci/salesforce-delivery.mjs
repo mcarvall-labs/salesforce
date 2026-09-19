@@ -6,16 +6,161 @@ import { pathToFileURL } from "node:url";
 export function sourcePaths(entries) {
   const paths = new Set();
   for (const { status, file } of entries) {
-    if (status === "D")
-      throw new Error(
-        `Deletion requires a reviewed destructive deployment: ${file}`
-      );
+    // Deletions are handled separately by buildDestructiveChangesXml; they
+    // never enter the additive/modified source-dir list used for deployment.
+    if (status === "D") continue;
     if (!file.startsWith("force-app/") || /[\r\n]/.test(file))
       throw new Error("Invalid metadata path");
     const bundle = file.match(/^(force-app\/.*\/(?:aura|lwc)\/[^/]+)\//);
     paths.add(bundle ? bundle[1] : file);
   }
   return [...paths].sort();
+}
+
+// Metadata types deletable from a single top-level force-app folder, matched
+// against the path with the "force-app/main/default/<folder>/" prefix
+// stripped. The capture group is the metadata member (fullName). Deliberately
+// scoped to the metadata types this project actually uses (see force-app/main/default);
+// anything else — including lwc/aura bundles, whose member depends on whether
+// the WHOLE bundle or only some files were deleted — is left unresolved for
+// manual review rather than guessed at.
+const TOP_LEVEL_DESTRUCTIVE_TYPES = {
+  applications: ["CustomApplication", /^([^/]+)\.app-meta\.xml$/],
+  classes: ["ApexClass", /^([^/]+)\.cls(?:-meta\.xml)?$/],
+  contentassets: ["ContentAsset", /^([^/]+)\.asset-meta\.xml$/],
+  customMetadata: ["CustomMetadata", /^([^/]+)\.md-meta\.xml$/],
+  customPermissions: [
+    "CustomPermission",
+    /^([^/]+)\.customPermission-meta\.xml$/
+  ],
+  externalCredentials: [
+    "ExternalCredential",
+    /^([^/]+)\.externalCredential-meta\.xml$/
+  ],
+  flexipages: ["FlexiPage", /^([^/]+)\.flexipage-meta\.xml$/],
+  layouts: ["Layout", /^(.+)\.layout-meta\.xml$/],
+  messageChannels: [
+    "LightningMessageChannel",
+    /^([^/]+)\.messageChannel-meta\.xml$/
+  ],
+  namedCredentials: ["NamedCredential", /^([^/]+)\.namedCredential-meta\.xml$/],
+  notificationtypes: [
+    "CustomNotificationType",
+    /^([^/]+)\.notiftype-meta\.xml$/
+  ],
+  permissionsetgroups: [
+    "PermissionSetGroup",
+    /^([^/]+)\.permissionsetgroup-meta\.xml$/
+  ],
+  permissionsets: ["PermissionSet", /^([^/]+)\.permissionset-meta\.xml$/],
+  profiles: ["Profile", /^([^/]+)\.profile-meta\.xml$/],
+  roles: ["Role", /^([^/]+)\.role-meta\.xml$/],
+  sharingRules: ["SharingRules", /^([^/]+)\.sharingRules-meta\.xml$/],
+  staticresources: ["StaticResource", /^([^/]+)\.resource-meta\.xml$/],
+  tabs: ["CustomTab", /^([^/]+)\.tab-meta\.xml$/],
+  translations: ["Translations", /^([^/]+)\.translation-meta\.xml$/],
+  triggers: ["ApexTrigger", /^([^/]+)\.trigger(?:-meta\.xml)?$/]
+};
+
+// force-app/main/default/objects/<Object>/<childFolder>/<Name>.*-meta.xml
+const OBJECT_CHILD_DESTRUCTIVE_TYPES = {
+  fields: "CustomField",
+  validationRules: "ValidationRule",
+  recordTypes: "RecordType",
+  listViews: "ListView",
+  webLinks: "WebLink",
+  compactLayouts: "CompactLayout",
+  businessProcesses: "BusinessProcess",
+  fieldSets: "FieldSet",
+  sharingReasons: "SharingReason"
+};
+
+export function destructiveMember(file) {
+  const top = /^force-app\/main\/default\/([^/]+)\/(.+)$/.exec(file);
+  if (!top) return null;
+  const [, folder, rest] = top;
+  if (folder === "objects") {
+    const object = /^([^/]+)\/[^/]+\.object-meta\.xml$/.exec(rest);
+    if (object) return { type: "CustomObject", member: object[1] };
+    const child = /^([^/]+)\/([^/]+)\/([^/]+)\.[A-Za-z]+-meta\.xml$/.exec(rest);
+    if (!child) return null;
+    const [, objectName, childFolder, name] = child;
+    const type = OBJECT_CHILD_DESTRUCTIVE_TYPES[childFolder];
+    return type ? { type, member: `${objectName}.${name}` } : null;
+  }
+  const entry = TOP_LEVEL_DESTRUCTIVE_TYPES[folder];
+  if (!entry) return null;
+  const [type, pattern] = entry;
+  const match = pattern.exec(rest);
+  return match ? { type, member: match[1] } : null;
+}
+
+export function buildDestructiveChangesXml(deletedFiles) {
+  const byType = new Map();
+  const unresolved = [];
+  for (const file of deletedFiles) {
+    const resolved = destructiveMember(file);
+    if (!resolved) {
+      unresolved.push(file);
+      continue;
+    }
+    if (!byType.has(resolved.type)) byType.set(resolved.type, new Set());
+    byType.get(resolved.type).add(resolved.member);
+  }
+  const escapeXml = (v) =>
+    String(v).replace(
+      /[&<>"']/g,
+      (c) =>
+        ({
+          "&": "&amp;",
+          "<": "&lt;",
+          ">": "&gt;",
+          '"': "&quot;",
+          "'": "&apos;"
+        })[c]
+    );
+  const types = [...byType.keys()].sort();
+  const body = types
+    .map((type) => {
+      const members = [...byType.get(type)]
+        .sort()
+        .map((m) => `    <members>${escapeXml(m)}</members>`)
+        .join("\n");
+      return `  <types>\n${members}\n    <name>${type}</name>\n  </types>`;
+    })
+    .join("\n");
+  const xml =
+    `<?xml version="1.0" encoding="UTF-8"?>\n` +
+    `<Package xmlns="http://soap.sforce.com/2006/04/metadata">\n` +
+    (body ? `${body}\n` : "") +
+    `  <version>62.0</version>\n</Package>\n`;
+  return { xml, unresolved };
+}
+
+// Versioned, PR-reviewed destructive manifests. Unlike the auto-generated
+// destructiveChanges.xml (evidence only, never applied), a manifest checked
+// in at one of these paths IS passed straight to `sf project deploy start`
+// and gets applied for real on every environment it reaches as the file
+// flows through the normal develop -> uat -> main promotion. Committing (and
+// merging via PR review) the file IS the "explicitly approved destructive
+// release" the fail-closed default otherwise requires manually, off-pipeline.
+// Empty by default (no <types> entries) so its mere presence is a no-op;
+// remove or empty it again once the intended deletion has been applied.
+export const DESTRUCTIVE_MANIFEST_PATHS = [
+  ["--pre-destructive-changes", "manifest/destructiveChangesPre.xml"],
+  ["--post-destructive-changes", "manifest/destructiveChangesPost.xml"]
+];
+
+export function destructiveManifestArgs(exists, readFile) {
+  const args = [];
+  const applied = [];
+  for (const [flag, file] of DESTRUCTIVE_MANIFEST_PATHS) {
+    if (!exists(file)) continue;
+    if (!/<types>/.test(readFile(file))) continue;
+    args.push(flag, file);
+    applied.push(file);
+  }
+  return { args, applied };
 }
 
 export function extractDeclaredTests(body) {
@@ -199,36 +344,73 @@ export async function run() {
       );
     command("git", ["merge-base", "--is-ancestor", baseSha, e.GITHUB_SHA]);
     report.base = baseSha;
-    report.paths = sourcePaths(changes(baseSha, e.GITHUB_SHA));
+    const entries = changes(baseSha, e.GITHUB_SHA);
+    report.paths = sourcePaths(entries);
     fs.writeFileSync(
       path.join(directory, "source-paths.txt"),
       report.paths.join("\n") + "\n"
     );
-    if (!report.paths.length) {
-      report.outcome = "No metadata changes";
+    const deletedFiles = [
+      ...new Set(entries.filter((en) => en.status === "D").map((en) => en.file))
+    ].sort();
+    report.deletedPaths = deletedFiles;
+    if (deletedFiles.length) {
+      // Deletions never auto-deploy: generate the destructive manifest as
+      // evidence for a human to review and apply separately (see
+      // docs/SALESFORCE_DELIVERY.md). The additive/modified delta below still
+      // validates/deploys normally when present.
+      const { xml, unresolved } = buildDestructiveChangesXml(deletedFiles);
+      fs.writeFileSync(path.join(directory, "destructiveChanges.xml"), xml);
+      fs.writeFileSync(
+        path.join(directory, "package.xml"),
+        '<?xml version="1.0" encoding="UTF-8"?>\n<Package xmlns="http://soap.sforce.com/2006/04/metadata">\n  <version>62.0</version>\n</Package>\n'
+      );
+      report.destructiveUnresolved = unresolved;
+    }
+    // A versioned manifest (manifest/destructiveChanges{Pre,Post}.xml, checked
+    // into the repo and reviewed via PR) is genuinely applied, unlike the
+    // evidence-only destructiveChanges.xml above — so its mere presence must
+    // still trigger a deploy even when this specific commit's own force-app
+    // diff is empty (e.g. the PR that adds the manifest only touches manifest/).
+    const manifest = destructiveManifestArgs(
+      (p) => fs.existsSync(p),
+      (p) => fs.readFileSync(p, "utf8")
+    );
+    report.versionedDestructiveManifests = manifest.applied;
+    if (!report.paths.length && !manifest.applied.length) {
+      report.outcome = deletedFiles.length
+        ? "Destructive changes only — manual review required"
+        : "No metadata changes";
       return;
     }
     // Package the exact validated/deployed delta as mdapi-format metadata so the
-    // evidence artifact carries the same content submitted to Salesforce.
-    const packageDir = path.join(
-      e.RUNNER_TEMP,
-      `delta-package-${e.GITHUB_RUN_ID}-${e.GITHUB_RUN_ATTEMPT || 1}`
-    );
-    command("sf", [
-      "project",
-      "convert",
-      "source",
-      "--output-dir",
-      packageDir,
-      ...report.paths.flatMap((p) => ["--source-dir", p])
-    ]);
-    const zip = spawnSync(
-      "zip",
-      ["-r", path.join(directory, "delta-package.zip"), "."],
-      { cwd: packageDir, encoding: "utf8" }
-    );
-    if (zip.error || zip.status !== 0)
-      throw new Error("Failed to package the delta metadata zip");
+    // evidence artifact carries the same content submitted to Salesforce. Also
+    // reused below as the --manifest package.xml when a versioned destructive
+    // manifest is applied (sf requires --manifest, not --source-dir/
+    // --metadata-dir, alongside --pre/post-destructive-changes). Skipped for a
+    // pure versioned-manifest deploy (nothing additive to package).
+    let packageDir;
+    if (report.paths.length) {
+      packageDir = path.join(
+        e.RUNNER_TEMP,
+        `delta-package-${e.GITHUB_RUN_ID}-${e.GITHUB_RUN_ATTEMPT || 1}`
+      );
+      command("sf", [
+        "project",
+        "convert",
+        "source",
+        "--output-dir",
+        packageDir,
+        ...report.paths.flatMap((p) => ["--source-dir", p])
+      ]);
+      const zip = spawnSync(
+        "zip",
+        ["-r", path.join(directory, "delta-package.zip"), "."],
+        { cwd: packageDir, encoding: "utf8" }
+      );
+      if (zip.error || zip.status !== 0)
+        throw new Error("Failed to package the delta metadata zip");
+    }
     if (
       !e.SALESFORCE_AUTH_URL ||
       !/^00D[a-zA-Z0-9]{12}(?:[a-zA-Z0-9]{3})?$/.test(e.EXPECTED_ORG_ID || "")
@@ -291,7 +473,36 @@ export async function run() {
     // unintended side-effects before the merge is confirmed.
     if (e.OPERATION === "validate" && e.TARGET_ENV !== "DEV")
       args.push("--dry-run");
-    for (const file of report.paths) args.push("--source-dir", file);
+    if (manifest.applied.length) {
+      // `sf project deploy start` rejects --source-dir/--metadata-dir combined
+      // with --pre/post-destructive-changes: it requires --manifest. Reuse the
+      // package.xml already produced above for the additive delta (--manifest
+      // resolves file paths from the project's own source dirs, not from
+      // wherever that file happens to sit, so this works even though the file
+      // lives in a converted mdapi temp dir); for a pure-destructive deploy,
+      // write a fresh empty one. --ignore-warnings so deleting a component
+      // that doesn't exist in this environment (expected wherever the target
+      // metadata was never deployed, e.g. DEV/UAT) doesn't fail the deploy.
+      let manifestPath;
+      if (packageDir) {
+        manifestPath = path.join(packageDir, "package.xml");
+      } else {
+        const emptyDir = path.join(
+          e.RUNNER_TEMP,
+          `empty-package-${e.GITHUB_RUN_ID}-${e.GITHUB_RUN_ATTEMPT || 1}`
+        );
+        fs.mkdirSync(emptyDir, { recursive: true });
+        manifestPath = path.join(emptyDir, "package.xml");
+        fs.writeFileSync(
+          manifestPath,
+          '<?xml version="1.0" encoding="UTF-8"?>\n<Package xmlns="http://soap.sforce.com/2006/04/metadata">\n  <version>62.0</version>\n</Package>\n'
+        );
+      }
+      args.push("--manifest", manifestPath, "--ignore-warnings");
+    } else if (report.paths.length) {
+      for (const file of report.paths) args.push("--source-dir", file);
+    }
+    args.push(...manifest.args);
     let result = spawnSync("sf", args, {
       encoding: "utf8",
       maxBuffer: 40 * 1024 * 1024
@@ -366,6 +577,12 @@ export async function run() {
       `**Test level:** ${report.testLevel || "N/A"}${report.tests?.length ? ` (${report.tests.join(", ")})` : ""}`,
       `**Deployment ID:** ${report.salesforce?.id || "None"}`,
       `**Tests completed / failed:** ${report.salesforce?.numberTestsCompleted ?? 0} / ${report.salesforce?.numberTestErrors ?? 0}`,
+      report.deletedPaths?.length
+        ? `**Deletions:** ${report.deletedPaths.length} — see destructiveChanges.xml in the evidence artifact. NOT auto-deployed; requires manual review and a separate destructive deploy.${report.destructiveUnresolved?.length ? ` ${report.destructiveUnresolved.length} deleted path(s) could not be mapped to a metadata type automatically: ${report.destructiveUnresolved.join(", ")}.` : ""}`
+        : "",
+      report.versionedDestructiveManifests?.length
+        ? `**Versioned destructive manifest APPLIED:** ${report.versionedDestructiveManifests.join(", ")} — this was actually deployed (or dry-run validated), not just evidence.`
+        : "",
       report.error || "",
       "",
       ...details,
@@ -412,12 +629,13 @@ th{background:#f4f4f4}
 .badge{display:inline-block;padding:2px 10px;border-radius:12px;font-weight:600}
 .ok{background:#d4f7dc;color:#116329}
 .fail{background:#ffd7d5;color:#82071e}
+.warn{background:#fff1c2;color:#7a5c00}
 code{background:#f4f4f4;padding:1px 4px;border-radius:3px}
 </style>
 </head>
 <body>
 <h1>Salesforce ${escapeHtml(report.operation)}: ${escapeHtml(report.environment)}</h1>
-<p><span class="badge ${report.outcome === "Succeeded" ? "ok" : "fail"}">${escapeHtml(report.outcome)}</span></p>
+<p><span class="badge ${report.outcome === "Succeeded" ? "ok" : report.outcome.includes("manual review") ? "warn" : "fail"}">${escapeHtml(report.outcome)}</span></p>
 <ul>
 <li><strong>Commit (to):</strong> <code>${escapeHtml(report.sha)}</code></li>
 <li><strong>Base (from):</strong> <code>${escapeHtml(report.base || "Not required / not configured")}</code></li>
@@ -425,6 +643,7 @@ code{background:#f4f4f4;padding:1px 4px;border-radius:3px}
 <li><strong>Test level:</strong> ${escapeHtml(report.testLevel || "N/A")}${report.tests?.length ? ` (${escapeHtml(report.tests.join(", "))})` : ""}</li>
 <li><strong>Deployment ID:</strong> ${escapeHtml(report.salesforce?.id || "None")}</li>
 <li><strong>Tests completed / failed:</strong> ${report.salesforce?.numberTestsCompleted ?? 0} / ${report.salesforce?.numberTestErrors ?? 0}</li>
+${report.versionedDestructiveManifests?.length ? `<li><strong>Versioned destructive manifest APPLIED:</strong> ${escapeHtml(report.versionedDestructiveManifests.join(", "))} — this was actually deployed (or dry-run validated), not just evidence.</li>` : ""}
 ${report.error ? `<li><strong>Error:</strong> ${escapeHtml(report.error)}</li>` : ""}
 </ul>
 ${table(
@@ -449,6 +668,21 @@ ${
         .join("")}</ul>`
     : ""
 }
+${
+  report.deletedPaths?.length
+    ? `<h3>Deletions (${report.deletedPaths.length}) — NOT auto-deployed</h3>` +
+      `<p>Generated <code>destructiveChanges.xml</code>/<code>package.xml</code> in this evidence artifact. Requires manual review and a separate destructive deploy.` +
+      (report.destructiveUnresolved?.length
+        ? ` ${report.destructiveUnresolved.length} path(s) could not be mapped to a metadata type automatically and need fully manual triage.`
+        : "") +
+      `</p><ul>${report.deletedPaths
+        .map(
+          (p) =>
+            `<li><code>${escapeHtml(p)}</code>${report.destructiveUnresolved?.includes(p) ? " — <em>unresolved</em>" : ""}</li>`
+        )
+        .join("")}</ul>`
+    : ""
+}
 </body>
 </html>
 `;
@@ -470,6 +704,11 @@ ${
           line("componentsTotal", report.salesforce?.numberComponentsTotal) +
           line("testsCompleted", report.salesforce?.numberTestsCompleted ?? 0) +
           line("testsFailed", report.salesforce?.numberTestErrors ?? 0) +
+          line("deletedCount", report.deletedPaths?.length ?? 0) +
+          line(
+            "versionedDestructiveApplied",
+            (report.versionedDestructiveManifests?.length ?? 0) > 0
+          ) +
           line("errorMessage", report.error)
       );
     }

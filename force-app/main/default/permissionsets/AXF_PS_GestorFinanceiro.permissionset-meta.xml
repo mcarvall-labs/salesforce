@@ -117,6 +117,10 @@
         <enabled>true</enabled>
     </classAccesses>
     <classAccesses>
+        <apexClass>ALT_CLS_InternalTransferService</apexClass>
+        <enabled>true</enabled>
+    </classAccesses>
+    <classAccesses>
         <apexClass>ALT_CLS_ReconciliationReversalService</apexClass>
         <enabled>true</enabled>
     </classAccesses>
@@ -230,6 +234,10 @@
     </classAccesses>
     <classAccesses>
         <apexClass>AXF_CLS_CTRL_PluggySync</apexClass>
+        <enabled>true</enabled>
+    </classAccesses>
+    <classAccesses>
+        <apexClass>AXF_CLS_CTRL_InternalTransfer</apexClass>
         <enabled>true</enabled>
     </classAccesses>
     <classAccesses>
@@ -347,6 +355,10 @@
     <customPermissions>
         <enabled>true</enabled>
         <name>AXF_CanObserveTransactions</name>
+    </customPermissions>
+    <customPermissions>
+        <enabled>true</enabled>
+        <name>AXF_CanConfirmTransfer</name>
     </customPermissions>
     <customPermissions>
         <enabled>true</enabled>
@@ -2086,6 +2098,47 @@
         <field>AccountContactRelation.AXF_ACR_PKL_AxonRole__c</field>
         <readable>true</readable>
     </fieldPermissions>
+    <fieldPermissions>
+        <editable>true</editable>
+        <field>AXF_OBJ_InternalTransfer__c.AXF_ITR_EXI_NeutralityKey__c</field>
+        <readable>true</readable>
+    </fieldPermissions>
+    <fieldPermissions>
+        <editable>true</editable>
+        <field>AXF_OBJ_InternalTransfer__c.AXF_ITR_DT_ConfirmedAt__c</field>
+        <readable>true</readable>
+    </fieldPermissions>
+    <fieldPermissions>
+        <editable>true</editable>
+        <field>AXF_OBJ_InternalTransfer__c.AXF_ITR_DT_ReversedAt__c</field>
+        <readable>true</readable>
+    </fieldPermissions>
+    <fieldPermissions>
+        <editable>true</editable>
+        <field
+    >AXF_OBJ_InternalTransfer__c.AXF_ITR_LKP_OriginalTransfer__c</field>
+        <readable>true</readable>
+    </fieldPermissions>
+    <fieldPermissions>
+        <editable>true</editable>
+        <field>AXF_OBJ_InternalTransfer__c.AXF_ITR_TXT_OperationKey__c</field>
+        <readable>true</readable>
+    </fieldPermissions>
+    <fieldPermissions>
+        <editable>true</editable>
+        <field>AXF_OBJ_InternalTransfer__c.AXF_ITR_TXT_PayloadHash__c</field>
+        <readable>true</readable>
+    </fieldPermissions>
+    <fieldPermissions>
+        <editable>true</editable>
+        <field>AXF_OBJ_InternalTransfer__c.AXF_ITR_PKL_ReversalReason__c</field>
+        <readable>true</readable>
+    </fieldPermissions>
+    <fieldPermissions>
+        <editable>true</editable>
+        <field>AXF_OBJ_InternalTransfer__c.AXF_ITR_TXT_ReversalNote__c</field>
+        <readable>true</readable>
+    </fieldPermissions>
     <hasActivationRequired>false</hasActivationRequired>
     <label>Axon - Gestor Financeiro (componente)</label>
     <objectPermissions>
@@ -2485,6 +2538,16 @@
         <allowRead>true</allowRead>
         <modifyAllRecords>false</modifyAllRecords>
         <object>Contact</object>
+        <viewAllFields>false</viewAllFields>
+        <viewAllRecords>false</viewAllRecords>
+    </objectPermissions>
+    <objectPermissions>
+        <allowCreate>true</allowCreate>
+        <allowDelete>false</allowDelete>
+        <allowEdit>true</allowEdit>
+        <allowRead>true</allowRead>
+        <modifyAllRecords>false</modifyAllRecords>
+        <object>AXF_OBJ_InternalTransfer__c</object>
         <viewAllFields>false</viewAllFields>
         <viewAllRecords>false</viewAllRecords>
     </objectPermissions>
