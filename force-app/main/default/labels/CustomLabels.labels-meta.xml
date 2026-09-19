@@ -1551,15 +1551,143 @@
     >en_US</language><protected>false</protected><shortDescription
     >Comparable total not produced</shortDescription><value
     >The comparable total was not produced: nothing was consolidated in this response.</value></labels><labels
-  ><fullName>AXF_AddPersonAccess_subtitle</fullName><language
+  ><fullName>AXF_ReconciliationWorkbench_holderPlaceholder</fullName><language
     >en_US</language><protected>false</protected><shortDescription
-    >AddPersonAccess subtitle</shortDescription><value
-    >Creates or links a Salesforce user to a person and applies the access level. Never changes a password or an existing user's profile.</value></labels><labels
-  ><fullName>AXF_AddPersonAccess_stepUser</fullName><language
+    >Holder placeholder</shortDescription><value
+    >Pick a holder</value></labels><labels><fullName
+    >AXF_ReconciliationWorkbench_load</fullName><language
     >en_US</language><protected>false</protected><shortDescription
-    >AddPersonAccess stepUser</shortDescription><value
-    >User</value></labels><labels><fullName
-    >AXF_AddPersonAccess_stepScope</fullName><language
+    >Load</shortDescription><value>Load sources</value></labels><labels
+  ><fullName>AXF_ReconciliationWorkbench_colKind</fullName><language
+    >en_US</language><protected>false</protected><shortDescription
+    >Column kind</shortDescription><value>Source type</value></labels><labels
+  ><fullName>AXF_ReconciliationWorkbench_colAmount</fullName><language
+    >en_US</language><protected>false</protected><shortDescription
+    >Column amount</shortDescription><value>Amount</value></labels><labels
+  ><fullName>AXF_ReconciliationWorkbench_select</fullName><language
+    >en_US</language><protected>false</protected><shortDescription
+    >Select</shortDescription><value>Assemble</value></labels><labels><fullName
+    >AXF_ReconciliationWorkbench_addLine</fullName><language
+    >en_US</language><protected>false</protected><shortDescription
+    >Add line</shortDescription><value>Add line</value></labels><labels
+  ><fullName>AXF_ReconciliationWorkbench_sourceResidual</fullName><language
+    >en_US</language><protected>false</protected><shortDescription
+    >Source residual</shortDescription><value
+    >Source residual</value></labels><labels><fullName
+    >AXF_ReconciliationWorkbench_candidates</fullName><language
+    >en_US</language><protected>false</protected><shortDescription
+    >Candidates</shortDescription><value>Candidates</value></labels><labels
+  ><fullName>AXF_ReconciliationWorkbench_linesIntro</fullName><language
+    >en_US</language><protected>false</protected><shortDescription
+    >Lines intro</shortDescription><value
+    >Every figure below comes from the service, which is also the only party able to conclude the set.</value></labels><labels
+  ><fullName>AXF_ReconciliationWorkbench_back</fullName><language
+    >en_US</language><protected>false</protected><shortDescription
+    >Back</shortDescription><value>Back</value></labels><labels><fullName
+    >AXF_ReconciliationWorkbench_review</fullName><language
+    >en_US</language><protected>false</protected><shortDescription
+    >Review</shortDescription><value
+    >Review the assembled set. Confirmation is all-or-nothing: a rejection keeps the whole draft unapplied.</value></labels><labels
+  ><fullName>AXF_ReconciliationWorkbench_confirming</fullName><language
+    >en_US</language><protected>false</protected><shortDescription
+    >Confirming</shortDescription><value>Confirming...</value></labels><labels
+  ><fullName>AXF_ReconciliationWorkbench_doneReplayed</fullName><language
+    >en_US</language><protected>false</protected><shortDescription
+    >Done replayed</shortDescription><value
+    >This intention had already been confirmed; the durable result was returned again.</value></labels><labels
+  ><fullName>AXF_ReconciliationWorkbench_doneState</fullName><language
+    >en_US</language><protected>false</protected><shortDescription
+    >Done state</shortDescription><value>State</value></labels><labels><fullName
+    >AXF_ReconciliationWorkbench_doneResidual</fullName><language
+    >en_US</language><protected>false</protected><shortDescription
+    >Done residual</shortDescription><value
+    >Explicit residual</value></labels><labels><fullName
+    >AXF_ReconciliationWorkbench_doneAllocated</fullName><language
+    >en_US</language><protected>false</protected><shortDescription
+    >Done allocated</shortDescription><value
+    >Allocated total</value></labels><labels><fullName
+    >AXF_ReconciliationWorkbench_doneUnknown</fullName><language
+    >en_US</language><protected>false</protected><shortDescription
+    >Unknown</shortDescription><value>unknown</value></labels><labels><fullName
+    >AXF_ReconciliationWorkbench_resolve</fullName><language
+    >en_US</language><protected>false</protected><shortDescription
+    >Resolve</shortDescription><value>Check the result</value></labels><labels
+  ><fullName>AXF_ReconciliationWorkbench_stateCONFIRMED</fullName><language
+    >en_US</language><protected>false</protected><shortDescription
+    >State confirmed</shortDescription><value>Confirmed</value></labels><labels
+  ><fullName>AXF_ReconciliationWorkbench_stateCONFIRMING</fullName><language
+    >en_US</language><protected>false</protected><shortDescription
+    >State confirming</shortDescription><value
+    >Confirming</value></labels><labels><fullName
+    >AXF_ReconciliationWorkbench_stateDRAFT</fullName><language
+    >en_US</language><protected>false</protected><shortDescription
+    >State draft</shortDescription><value>Draft</value></labels><labels
+  ><fullName>AXF_ReconciliationWorkbench_kindCARD</fullName><language
+    >en_US</language><protected>false</protected><shortDescription
+    >Kind card</shortDescription><value>Credit card</value></labels><labels
+  ><fullName
+    >AXF_ReconciliationWorkbench_reasonALREADY_ALLOCATED</fullName><language
+    >en_US</language><protected>false</protected><shortDescription
+    >Reason already allocated</shortDescription><value
+    >already allocated</value></labels><labels><fullName
+    >AXF_ReconciliationWorkbench_reasonCURRENCY_MISMATCH</fullName><language
+    >en_US</language><protected>false</protected><shortDescription
+    >Reason currency mismatch</shortDescription><value
+    >currency differs from the source</value></labels><labels><fullName
+    >AXF_ReconciliationWorkbench_reasonDIRECTION_MISMATCH</fullName><language
+    >en_US</language><protected>false</protected><shortDescription
+    >Reason direction mismatch</shortDescription><value
+    >direction differs from the source</value></labels><labels><fullName
+    >AXF_ReconciliationWorkbench_reasonVALUE_CONSERVATION</fullName><language
+    >en_US</language><protected>false</protected><shortDescription
+    >Reason value conservation</shortDescription><value
+    >exceeds the available amount</value></labels><labels><fullName
+    >AXF_ReconciliationWorkbench_reasonPARTIAL</fullName><language
+    >en_US</language><protected>false</protected><shortDescription
+    >Reason partial</shortDescription><value
+    >target still has a residual</value></labels><labels><fullName
+    >AXF_ReconciliationWorkbench_reasonNO_CAPACITY</fullName><language
+    >en_US</language><protected>false</protected><shortDescription
+    >Reason no capacity</shortDescription><value
+    >no available amount</value></labels><labels><fullName
+    >AXF_ReconciliationWorkbench_reasonMISSING_MATERIAL_FX</fullName><language
+    >en_US</language><protected>false</protected><shortDescription
+    >Reason missing material fx</shortDescription><value
+    >recognition evidence missing</value></labels><labels><fullName
+    >AXF_ReconciliationWorkbench_evidenceExact</fullName><language
+    >en_US</language><protected>false</protected><shortDescription
+    >Evidence exact</shortDescription><value
+    >exact identity</value></labels><labels><fullName
+    >AXF_ReconciliationWorkbench_evidenceConsultative</fullName><language
+    >en_US</language><protected>false</protected><shortDescription
+    >Evidence consultative</shortDescription><value
+    >consultative</value></labels><labels><fullName
+    >AXF_ReconciliationWorkbench_lowEvidence</fullName><language
+    >en_US</language><protected>false</protected><shortDescription
+    >Low evidence</shortDescription><value>low evidence</value></labels><labels
+  ><fullName>AXF_ReconciliationWorkbench_error</fullName><language
+    >en_US</language><protected>false</protected><shortDescription
+    >Error</shortDescription><value
+    >The operation could not be completed.</value></labels><labels><fullName
+    >AXF_ReconciliationWorkbench_codeUNAVAILABLE</fullName><language
+    >en_US</language><protected>false</protected><shortDescription
+    >Code unavailable</shortDescription><value
+    >You do not have the capability to confirm a reconciliation.</value></labels><labels
+  ><fullName
+    >AXF_ReconciliationWorkbench_codeVALUE_CONSERVATION</fullName><language
+    >en_US</language><protected>false</protected><shortDescription
+    >Code value conservation</shortDescription><value
+    >The set exceeds the available amount; nothing was written.</value></labels><labels
+  ><fullName
+    >AXF_ReconciliationWorkbench_codeFACT_NOT_RECONCILABLE</fullName><language
+    >en_US</language><protected>false</protected><shortDescription
+    >Code fact not reconcilable</shortDescription><value
+    >The source fact cannot be reconciled.</value></labels><labels><fullName
+    >AXF_ReconciliationWorkbench_codeREPORTING_CURRENCY_REQUIRED</fullName><language
+    >en_US</language><protected>false</protected><shortDescription
+    >Code reporting currency required</shortDescription><value
+    >The reporting currency preference is required.</value></labels><labels
+  ><fullName>AXF_AddPersonAccess_stepScope</fullName><language
     >en_US</language><protected>false</protected><shortDescription
     >AddPersonAccess stepScope</shortDescription><value
     >Access</value></labels><labels><fullName
@@ -1603,16 +1731,8 @@
     >false</protected><shortDescription
     >AddPersonAccess scopeOwn</shortDescription><value
     >Only their own data and businesses they are responsible for (Participant)</value></labels><labels
-  ><fullName>AXF_AddPersonAccess_licenseWarn</fullName><language
+  ><fullName>AXF_AddPersonAccess_running</fullName><language
     >en_US</language><protected>false</protected><shortDescription
-    >AddPersonAccess licenseWarn</shortDescription><value
-    >No Salesforce license is available to create a user.</value></labels><labels
-  ><fullName>AXF_AddPersonAccess_starting</fullName><language
-    >en_US</language><protected>false</protected><shortDescription
-    >AddPersonAccess starting</shortDescription><value
-    >Starting…</value></labels><labels><fullName
-    >AXF_AddPersonAccess_running</fullName><language>en_US</language><protected
-    >false</protected><shortDescription
     >AddPersonAccess running</shortDescription><value
     >Provisioning… follow the progress.</value></labels><labels><fullName
     >AXF_AddPersonAccess_done</fullName><language>en_US</language><protected
@@ -1623,19 +1743,7 @@
     >false</protected><shortDescription
     >AddPersonAccess failed</shortDescription><value
     >Could not finish. Read the message and resume.</value></labels><labels
-  ><fullName>AXF_AddPersonAccess_stalled</fullName><language
-    >en_US</language><protected>false</protected><shortDescription
-    >AddPersonAccess stalled</shortDescription><value
-    >No progress for a while. Provisioning may still be running on the server; resume to continue.</value></labels><labels
-  ><fullName>AXF_AddPersonAccess_leaveHint</fullName><language
-    >en_US</language><protected>false</protected><shortDescription
-    >AddPersonAccess leaveHint</shortDescription><value
-    >Provisioning may keep running on the server. Coming back, resume the same request — nothing is duplicated.</value></labels><labels
-  ><fullName>AXF_AddPersonAccess_close</fullName><language
-    >en_US</language><protected>false</protected><shortDescription
-    >AddPersonAccess close</shortDescription><value
-    >Add another person</value></labels><labels><fullName
-    >AXF_AddPersonAccess_linkedUser</fullName><language
+  ><fullName>AXF_AddPersonAccess_linkedUser</fullName><language
     >en_US</language><protected>false</protected><shortDescription
     >AddPersonAccess linkedUser</shortDescription><value
     >Linked user</value></labels><labels><fullName
@@ -1691,55 +1799,34 @@
     >en_US</language><protected>false</protected><shortDescription
     >No capability</shortDescription><value
     >You are not authorized to confirm internal transfers.</value></labels><labels
-  ><fullName>AXF_InternalTransfer_loading</fullName><language
+  ><fullName>AXF_InternalTransfer_empty</fullName><language
     >en_US</language><protected>false</protected><shortDescription
-    >Loading</shortDescription><value
-    >Loading suggestions...</value></labels><labels><fullName
-    >AXF_InternalTransfer_empty</fullName><language>en_US</language><protected
-    >false</protected><shortDescription>Empty</shortDescription><value
+    >Empty</shortDescription><value
     >No pending transfer suggestions.</value></labels><labels><fullName
     >AXF_InternalTransfer_colDebit</fullName><language
     >en_US</language><protected>false</protected><shortDescription
     >Column debit leg</shortDescription><value>Debit leg</value></labels><labels
-  ><fullName>AXF_InternalTransfer_colCredit</fullName><language
-    >en_US</language><protected>false</protected><shortDescription
-    >Column credit leg</shortDescription><value
-    >Credit leg</value></labels><labels><fullName
-    >AXF_InternalTransfer_colAmount</fullName><language
+  ><fullName>AXF_InternalTransfer_colAmount</fullName><language
     >en_US</language><protected>false</protected><shortDescription
     >Column amount</shortDescription><value>Amount</value></labels><labels
-  ><fullName>AXF_InternalTransfer_colDate</fullName><language
+  ><fullName>AXF_InternalTransfer_confirm</fullName><language
     >en_US</language><protected>false</protected><shortDescription
-    >Column date</shortDescription><value>Date</value></labels><labels><fullName
-    >AXF_InternalTransfer_confirm</fullName><language>en_US</language><protected
-    >false</protected><shortDescription>Confirm button</shortDescription><value
+    >Confirm button</shortDescription><value
     >Confirm pair</value></labels><labels><fullName
     >AXF_InternalTransfer_confirming</fullName><language
     >en_US</language><protected>false</protected><shortDescription
     >Confirming</shortDescription><value>Confirming...</value></labels><labels
-  ><fullName>AXF_InternalTransfer_feesNote</fullName><language
-    >en_US</language><protected>false</protected><shortDescription
-    >Fees and FX stay separate</shortDescription><value
-    >Fees stay expenses and FX differences stay traceable; only the principal shown below is
-    neutralized.</value></labels><labels><fullName
-    >AXF_InternalTransfer_doneConfirmed</fullName><language
+  ><fullName>AXF_InternalTransfer_doneConfirmed</fullName><language
     >en_US</language><protected>false</protected><shortDescription
     >Done confirmed</shortDescription><value
     >Confirmed. The principal is neutralized in the consolidated view.</value></labels><labels
-  ><fullName>AXF_InternalTransfer_doneUnilateral</fullName><language
-    >en_US</language><protected>false</protected><shortDescription
-    >Done unilateral</shortDescription><value
-    >A leg became incompatible or inaccessible. Nothing was neutralized; this stays
-    reviewable.</value></labels><labels><fullName
-    >AXF_InternalTransfer_doneReplayed</fullName><language
+  ><fullName>AXF_InternalTransfer_doneReplayed</fullName><language
     >en_US</language><protected>false</protected><shortDescription
     >Done replayed</shortDescription><value
     >Already recorded; showing the prior result.</value></labels><labels
-  ><fullName>AXF_InternalTransfer_refresh</fullName><language
+  ><fullName>AXF_InternalTransfer_error</fullName><language
     >en_US</language><protected>false</protected><shortDescription
-    >Refresh</shortDescription><value>Refresh</value></labels><labels><fullName
-    >AXF_InternalTransfer_error</fullName><language>en_US</language><protected
-    >false</protected><shortDescription>Generic error</shortDescription><value
+    >Generic error</shortDescription><value
     >Something went wrong. Try again.</value></labels><labels><fullName
     >AXF_InternalTransfer_codeUNAVAILABLE</fullName><language
     >en_US</language><protected>false</protected><shortDescription
@@ -1761,11 +1848,7 @@
     >en_US</language><protected>false</protected><shortDescription
     >Code CONFLICT</shortDescription><value
     >This changed since it was loaded. Refresh and try again.</value></labels><labels
-  ><fullName>AXF_InternalTransfer_codeALREADY_DECIDED</fullName><language
-    >en_US</language><protected>false</protected><shortDescription
-    >Code ALREADY_DECIDED</shortDescription><value
-    >This transfer was already decided.</value></labels><labels><fullName
-    >AXF_InternalTransfer_codeINVALID_TARGET</fullName><language
+  ><fullName>AXF_InternalTransfer_codeINVALID_TARGET</fullName><language
     >en_US</language><protected>false</protected><shortDescription
     >Code INVALID_TARGET</shortDescription><value
     >This action does not apply to this transfer.</value></labels></CustomLabels>

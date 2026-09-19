@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<CustomField xmlns="http://soap.sforce.com/2006/04/metadata">
+    <fullName>AXF_RCN_NUM_Version__c</fullName>
+    <label>Versao</label>
+    <type>Number</type>
+    <precision>18</precision>
+    <scale>0</scale>
+    <required>true</required>
+    <defaultValue>0</defaultValue>
+    <description
+  >Versao otimista do envelope de command (G6): SELECT ... FOR UPDATE, compara expectedVersion e incrementa uma unica vez por command material.</description>
+</CustomField>

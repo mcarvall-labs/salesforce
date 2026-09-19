@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<CustomField xmlns="http://soap.sforce.com/2006/04/metadata">
+    <fullName>AXF_RCN_TXT_CorrelationId__c</fullName>
+    <label>Correlacao</label>
+    <type>Text</type>
+    <length>36</length>
+    <required>true</required>
+    <description
+  >UUID v4 por intencao humana, reutilizado no retry. Faz parte da identidade reconciliation-v1: um CorrelationId diferente significa outra intencao, nunca um replay.</description>
+</CustomField>

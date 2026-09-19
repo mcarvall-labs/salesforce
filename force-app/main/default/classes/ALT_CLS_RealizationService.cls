@@ -34,6 +34,17 @@ public with sharing class ALT_CLS_RealizationService {
     public String economicRole;
     public String operationKey;
     /**
+     * @description AXF-30: identidade canônica da aplicação (`alloc-v2`) quando o agregado N:N
+     * é quem a possui. A linha passa a ter identidade independente da proposta/run; o chamador
+     * que não declara nenhuma mantém a identidade por chave de operação, replayável como antes.
+     */
+    public String allocationIdentity;
+    /**
+     * @description AXF-30: agregado de conciliação (RCN) a que a alocação pertence. Nulo
+     * preserva o comportamento AXF-25 (alocação sem raiz de conciliação).
+     */
+    public Id reconciliationId;
+    /**
      * @description AXF-104: obrigação efetiva revisada (B + A) resolvida sob bloqueio. Quando
      * presente, substitui a magnitude original como limite do alvo — a liquidação nunca é
      * limitada por uma estimativa original obsoleta. Nula preserva o comportamento AXF-25.
@@ -236,7 +247,11 @@ public with sharing class ALT_CLS_RealizationService {
       input.sourceKind != 'CASH' || input.fundingId == null,
       'INVALID_SOURCE'
     );
-    String operation = hash(new List<Object>{ 'AXF25', input.operationKey });
+    // AXF-30: the aggregate that owns the canonical identity of the line supplies it; otherwise the
+    // identity stays the framed operation key of AXF-25.
+    String operation = String.isNotBlank(input.allocationIdentity)
+      ? input.allocationIdentity
+      : hash(new List<Object>{ 'AXF25', input.operationKey });
     List<Object> applicationPayload = new List<Object>{
       'APPLICATION',
       input.targetId,
@@ -257,6 +272,14 @@ public with sharing class ALT_CLS_RealizationService {
     // declaration, so it never becomes a third fingerprint that turns a replay into a CONFLICT.
     if (String.isNotBlank(input.economicRole)) {
       applicationPayload.add(input.economicRole);
+    }
+    // AXF-30: the canonical identity and the aggregate it belongs to are part of the payload, so a
+    // divergent request under the same identity conflicts instead of replaying.
+    if (String.isNotBlank(input.allocationIdentity)) {
+      applicationPayload.add(input.allocationIdentity);
+    }
+    if (input.reconciliationId != null) {
+      applicationPayload.add(input.reconciliationId);
     }
     String payload = hash(applicationPayload);
     Savepoint sp = Database.setSavepoint();
@@ -360,7 +383,8 @@ public with sharing class ALT_CLS_RealizationService {
         AXF_RA_TXT_PayloadHash__c = payload,
         AXF_RA_PKL_Kind__c = 'APPLICATION',
         AXF_RA_PKL_FxState__c = 'PENDING_FX',
-        AXF_RA_TXT_ReportingIso__c = preference.AXF_RCP_TXT_IsoCode__c
+        AXF_RA_TXT_ReportingIso__c = preference.AXF_RCP_TXT_IsoCode__c,
+        AXF_RA_LKP_Reconciliation__c = input.reconciliationId
       );
       row.put(
         'AXF_RA_LKP_' +

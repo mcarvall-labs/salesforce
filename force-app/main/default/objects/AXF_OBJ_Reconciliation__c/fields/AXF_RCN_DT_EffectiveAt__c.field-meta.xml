@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<CustomField xmlns="http://soap.sforce.com/2006/04/metadata">
+    <fullName>AXF_RCN_DT_EffectiveAt__c</fullName>
+    <label>Instante Efetivo</label>
+    <type>DateTime</type>
+    <required>false</required>
+    <description
+  >Instante efetivo da confirmacao. Nulo enquanto o agregado nao tem efeito material confirmado (rascunho, park de resultado desconhecido ou falha antes de CONFIRMED).</description>
+</CustomField>
