@@ -23,6 +23,8 @@ jobs:
       componentsTotal: ${{ steps.operation.outputs.componentsTotal }}
       testsCompleted: ${{ steps.operation.outputs.testsCompleted }}
       testsFailed: ${{ steps.operation.outputs.testsFailed }}
+      deletedCount: ${{ steps.operation.outputs.deletedCount }}
+      versionedDestructiveApplied: ${{ steps.operation.outputs.versionedDestructiveApplied }}
       errorMessage: ${{ steps.operation.outputs.errorMessage }}
     environment: ${{ github.ref_name == 'main' && 'PROD' || (github.ref_name == 'uat' && 'UAT' || 'DEV') }}
     steps:
@@ -72,6 +74,8 @@ jobs:
           COMPONENTS_TOTAL: ${{ needs.deploy.outputs.componentsTotal }}
           TESTS_COMPLETED: ${{ needs.deploy.outputs.testsCompleted }}
           TESTS_FAILED: ${{ needs.deploy.outputs.testsFailed }}
+          DELETED_COUNT: ${{ needs.deploy.outputs.deletedCount }}
+          VERSIONED_DESTRUCTIVE_APPLIED: ${{ needs.deploy.outputs.versionedDestructiveApplied }}
           ERROR_MESSAGE: ${{ needs.deploy.outputs.errorMessage }}
         with:
           script: |
@@ -81,6 +85,8 @@ jobs:
             const artifact = data.artifacts[0];
             const artifactUrl = artifact ? `${runUrl}/artifacts/${artifact.id}` : null;
             const environment = context.ref === 'refs/heads/main' ? 'AXON_PROD' : (context.ref === 'refs/heads/uat' ? 'AXON_UAT' : 'AXON_DEV');
+            const deletedCount = Number(process.env.DELETED_COUNT || 0);
+            const versionedApplied = process.env.VERSIONED_DESTRUCTIVE_APPLIED === 'true';
             const passed = process.env.DEPLOY_RESULT === 'success';
             const icon = passed ? '✅' : '❌';
             const status = passed ? 'Passed' : 'Failed';
@@ -94,6 +100,12 @@ jobs:
               `| Commit | \`${context.sha.slice(0, 7)}\` |`
             ].join('\n') + '\n';
             if (process.env.ERROR_MESSAGE) body += `\n> ${process.env.ERROR_MESSAGE}\n`;
+            if (deletedCount > 0) {
+              body += `\n⚠️ **${deletedCount} deletion(s) detected — NOT auto-deployed.** \`destructiveChanges.xml\`/\`package.xml\` generated in the evidence artifact; requires manual review and a separate destructive deploy.\n`;
+            }
+            if (versionedApplied) {
+              body += `\n🔥 **Versioned destructive manifest (\`manifest/destructiveChanges{Pre,Post}.xml\`) was applied this run** — this actually deployed a real deletion. See result.html for exactly what.\n`;
+            }
             body += `\n${artifactUrl ? `[⬇️ Download evidence](${artifactUrl})` : '_No evidence artifact uploaded._'} · [Run logs](${runUrl})\n`;
             body += `\nOpen \`result.html\` in the evidence zip for the full report.`;
             for (const pr of prs.filter(p => p.merged_at && p.merge_commit_sha === context.sha)) {
