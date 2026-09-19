@@ -384,10 +384,14 @@ export async function run() {
       return;
     }
     // Package the exact validated/deployed delta as mdapi-format metadata so the
-    // evidence artifact carries the same content submitted to Salesforce. Skipped
-    // for a pure versioned-manifest deploy (nothing additive to package).
+    // evidence artifact carries the same content submitted to Salesforce. Also
+    // reused below as the --manifest package.xml when a versioned destructive
+    // manifest is applied (sf requires --manifest, not --source-dir/
+    // --metadata-dir, alongside --pre/post-destructive-changes). Skipped for a
+    // pure versioned-manifest deploy (nothing additive to package).
+    let packageDir;
     if (report.paths.length) {
-      const packageDir = path.join(
+      packageDir = path.join(
         e.RUNNER_TEMP,
         `delta-package-${e.GITHUB_RUN_ID}-${e.GITHUB_RUN_ATTEMPT || 1}`
       );
@@ -469,22 +473,34 @@ export async function run() {
     // unintended side-effects before the merge is confirmed.
     if (e.OPERATION === "validate" && e.TARGET_ENV !== "DEV")
       args.push("--dry-run");
-    if (report.paths.length) {
+    if (manifest.applied.length) {
+      // `sf project deploy start` rejects --source-dir/--metadata-dir combined
+      // with --pre/post-destructive-changes: it requires --manifest. Reuse the
+      // package.xml already produced above for the additive delta (--manifest
+      // resolves file paths from the project's own source dirs, not from
+      // wherever that file happens to sit, so this works even though the file
+      // lives in a converted mdapi temp dir); for a pure-destructive deploy,
+      // write a fresh empty one. --ignore-warnings so deleting a component
+      // that doesn't exist in this environment (expected wherever the target
+      // metadata was never deployed, e.g. DEV/UAT) doesn't fail the deploy.
+      let manifestPath;
+      if (packageDir) {
+        manifestPath = path.join(packageDir, "package.xml");
+      } else {
+        const emptyDir = path.join(
+          e.RUNNER_TEMP,
+          `empty-package-${e.GITHUB_RUN_ID}-${e.GITHUB_RUN_ATTEMPT || 1}`
+        );
+        fs.mkdirSync(emptyDir, { recursive: true });
+        manifestPath = path.join(emptyDir, "package.xml");
+        fs.writeFileSync(
+          manifestPath,
+          '<?xml version="1.0" encoding="UTF-8"?>\n<Package xmlns="http://soap.sforce.com/2006/04/metadata">\n  <version>62.0</version>\n</Package>\n'
+        );
+      }
+      args.push("--manifest", manifestPath, "--ignore-warnings");
+    } else if (report.paths.length) {
       for (const file of report.paths) args.push("--source-dir", file);
-    } else {
-      // Pure versioned-manifest deploy: nothing additive, only a pre/post
-      // destructive change to apply. `sf project deploy start` still needs a
-      // deploy target, so point it at an empty converted package.
-      const emptyDir = path.join(
-        e.RUNNER_TEMP,
-        `empty-package-${e.GITHUB_RUN_ID}-${e.GITHUB_RUN_ATTEMPT || 1}`
-      );
-      fs.mkdirSync(emptyDir, { recursive: true });
-      fs.writeFileSync(
-        path.join(emptyDir, "package.xml"),
-        '<?xml version="1.0" encoding="UTF-8"?>\n<Package xmlns="http://soap.sforce.com/2006/04/metadata">\n  <version>62.0</version>\n</Package>\n'
-      );
-      args.push("--metadata-dir", emptyDir);
     }
     args.push(...manifest.args);
     let result = spawnSync("sf", args, {

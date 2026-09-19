@@ -172,9 +172,19 @@ anything here; this is deploying deletions for real.
 A checked-in manifest's presence alone is enough to trigger a deploy, even
 for a commit whose own `force-app` diff is empty — e.g. the PR that adds
 `manifest/destructiveChangesPost.xml` only touches `manifest/`, but its
-deploy to DEV still runs and applies it (`sf project deploy start
---metadata-dir <empty package>` when there's nothing additive to pair it
-with). It isn't silently skipped as "no metadata changes."
+deploy to DEV still runs and applies it. It isn't silently skipped as "no
+metadata changes."
+
+`sf project deploy start --pre/post-destructive-changes` rejects
+`--source-dir`/`--metadata-dir`; it requires `--manifest <package.xml>`
+instead (file paths resolve from the project's own source dirs regardless of
+where that package.xml physically sits, so the mdapi-converted one already
+built for `delta-package.zip` is reused as-is; a fresh empty one is written
+for a pure-destructive deploy with no additive delta). `--ignore-warnings` is
+always added alongside it, so deleting a component that doesn't exist in the
+target environment — expected wherever that legacy metadata was never
+deployed, e.g. DEV/UAT — doesn't fail the whole run; Salesforce only reports
+it as a warning, not an error.
 
 Pending/timeout is not success: inspect the Salesforce job before retrying.
 A successful deployment with failed comment publication may be redeployed; inspect
