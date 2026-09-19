@@ -1992,4 +1992,46 @@
     >Esta transferência já foi decidida.</label><name
     >AXF_InternalTransfer_codeALREADY_DECIDED</name></customLabels><customLabels
   ><label>Esta ação não se aplica a esta transferência.</label><name
-    >AXF_InternalTransfer_codeINVALID_TARGET</name></customLabels></Translations>
+    >AXF_InternalTransfer_codeINVALID_TARGET</name></customLabels><customLabels
+  ><label>Exportação autorizada</label><name
+    >AXF_Export_title</name></customLabels><customLabels><label
+    >Solicite uma exportação dos dados deste titular. O arquivo cobre somente o seu escopo
+    autorizado, e o link de download expira pouco depois de ficar pronto.</label><name
+    >AXF_Export_intro</name></customLabels><customLabels><label
+    >Você não tem autorização para exportar dados.</label><name
+    >AXF_Export_noCapability</name></customLabels><customLabels><label
+    >Processando...</label><name
+    >AXF_Export_loading</name></customLabels><customLabels><label
+    >Solicitar exportação</label><name
+    >AXF_Export_request</name></customLabels><customLabels><label
+    >Atualizar status</label><name
+    >AXF_Export_refresh</name></customLabels><customLabels><label
+    >Baixar</label><name>AXF_Export_download</name></customLabels><customLabels
+  ><label>Status:</label><name
+    >AXF_Export_statusLabel</name></customLabels><customLabels><label
+    >Solicitado</label><name
+    >AXF_Export_statusREQUESTED</name></customLabels><customLabels><label
+    >Pronto para baixar</label><name
+    >AXF_Export_statusPREPARED</name></customLabels><customLabels><label
+    >Baixado</label><name
+    >AXF_Export_statusDOWNLOADED</name></customLabels><customLabels><label
+    >Revogado</label><name
+    >AXF_Export_statusREVOKED</name></customLabels><customLabels><label
+    >Processando...</label><name
+    >AXF_Export_statusRUNNING</name></customLabels><customLabels><label
+    >Pausado; tente novamente para retomar</label><name
+    >AXF_Export_statusPARTIAL</name></customLabels><customLabels><label
+    >Algo deu errado. Tente novamente.</label><name
+    >AXF_Export_error</name></customLabels><customLabels><label
+    >Você não tem autorização para fazer isso.</label><name
+    >AXF_Export_codeFORBIDDEN</name></customLabels><customLabels><label
+    >Este registro não está acessível.</label><name
+    >AXF_Export_codeNOT_ACCESSIBLE</name></customLabels><customLabels><label
+    >Não foi possível entender a solicitação.</label><name
+    >AXF_Export_codeINVALID_INPUT</name></customLabels><customLabels><label
+    >Isso mudou desde que foi carregado. Atualize e tente novamente.</label><name
+    >AXF_Export_codeCONFLICT</name></customLabels><customLabels><label
+    >A exportação não está configurada. Contate um administrador.</label><name
+    >AXF_Export_codeEXPORT_POLICY_MISSING</name></customLabels><customLabels
+  ><label>Não foi possível concluir a solicitação. Tente novamente.</label><name
+    >AXF_Export_codeSHARE_FAILED</name></customLabels></Translations>

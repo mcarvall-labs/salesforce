@@ -565,6 +565,10 @@ public inherited sharing class ALT_CLS_CsvFormatParser {
     }
   }
 
+  /**
+   * The project's single active-content policy: AD-25 requires one exporter rule, so import and
+   * export share this neutralizer instead of each keeping its own prefix list.
+   */
   public static String neutralizeFormula(String value) {
     if (String.isBlank(value)) {
       return value;

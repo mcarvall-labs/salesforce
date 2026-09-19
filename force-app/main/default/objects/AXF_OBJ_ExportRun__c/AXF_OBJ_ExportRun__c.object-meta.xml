@@ -1,0 +1,23 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<CustomObject xmlns="http://soap.sforce.com/2006/04/metadata">
+    <deploymentStatus>Deployed</deploymentStatus>
+    <description
+  >Pedido de exportacao autorizada de um titular (AXF-118, fatia de exportacao de AXF-9). Guarda o escopo, o autor, o arquivo privado, o nome sem PII, o hash de conteudo e a janela curta de download; a autorizacao e verificada na solicitacao e de novo em cada download, e um download expirado ou sem autorizacao e revogado (o artefato e excluido). OWD Private; sem Delete para usuario de negocio.</description>
+    <enableActivities>false</enableActivities>
+    <enableBulkApi>true</enableBulkApi>
+    <enableFeeds>false</enableFeeds>
+    <enableHistory>true</enableHistory>
+    <enableReports>false</enableReports>
+    <enableSearch>false</enableSearch>
+    <enableSharing>true</enableSharing>
+    <enableStreamingApi>true</enableStreamingApi>
+    <label>Exportacao Autorizada</label>
+    <nameField>
+        <displayFormat>EPR-{000000}</displayFormat>
+        <label>Numero da Exportacao</label>
+        <type>AutoNumber</type>
+    </nameField>
+    <pluralLabel>Exportacoes Autorizadas</pluralLabel>
+    <sharingModel>Private</sharingModel>
+    <visibility>Public</visibility>
+</CustomObject>

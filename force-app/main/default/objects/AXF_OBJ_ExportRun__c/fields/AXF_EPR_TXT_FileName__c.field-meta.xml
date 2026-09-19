@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<CustomField xmlns="http://soap.sforce.com/2006/04/metadata">
+    <fullName>AXF_EPR_TXT_FileName__c</fullName>
+    <label>Nome do Arquivo</label>
+    <type>Text</type>
+    <length>120</length>
+    <required>false</required>
+    <description
+  >Nome do arquivo derivado apenas do numero opaco do run (ex.: axon-export-EPR-000001.csv); nunca nome, documento ou e-mail.</description>
+</CustomField>

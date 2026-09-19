@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<CustomField xmlns="http://soap.sforce.com/2006/04/metadata">
+    <fullName>AXF_EPR_DT_ExpiresAt__c</fullName>
+    <label>Expira em</label>
+    <type>DateTime</type>
+    <required>false</required>
+    <trackHistory>true</trackHistory>
+    <description
+  >Fim da janela de download (UTC). Nenhuma fonte ratificada fixa este prazo; o valor e uma premissa declarada em docs/implementation/AXF-118.md.</description>
+</CustomField>

@@ -1,0 +1,63 @@
+<template>
+  <lightning-card title={labels.title} icon-name="standard:report">
+    <div class="slds-p-horizontal_medium slds-p-bottom_medium">
+      <p class="slds-text-body_small slds-m-bottom_small">{labels.intro}</p>
+      <template lwc:if={cannotExport}>
+        <div
+          class="slds-box slds-theme_shade"
+          role="status"
+          data-id="noCapability"
+        >
+          {labels.noCapability}
+        </div>
+      </template>
+      <template lwc:if={error}>
+        <div
+          class="slds-notify slds-notify_alert slds-theme_alert-texture slds-theme_error slds-m-bottom_small"
+          role="alert"
+          data-id="error"
+        >
+          <span>{error}</span>
+        </div>
+      </template>
+      <template lwc:if={canExport}>
+        <lightning-button
+          label={labels.request}
+          onclick={handleRequest}
+          disabled={busy}
+          data-id="request"
+        ></lightning-button>
+        <lightning-button
+          label={labels.refresh}
+          onclick={handleRefresh}
+          disabled={refreshDisabled}
+          class="slds-m-left_x-small"
+          data-id="refresh"
+        ></lightning-button>
+        <template lwc:if={busy}>
+          <p class="slds-m-top_small" role="status">{labels.loading}</p>
+        </template>
+        <template lwc:if={run}>
+          <div class="slds-box slds-m-top_small" data-id="status">
+            <p>
+              <strong>{labels.statusLabel}</strong>
+              <span data-id="statusText">{statusText}</span>
+            </p>
+            <template lwc:if={run.fileName}>
+              <p data-id="fileName">{run.fileName}</p>
+            </template>
+            <template lwc:if={canDownload}>
+              <lightning-button
+                variant="brand"
+                label={labels.download}
+                onclick={handleDownload}
+                disabled={busy}
+                data-id="download"
+              ></lightning-button>
+            </template>
+          </div>
+        </template>
+      </template>
+    </div>
+  </lightning-card>
+</template>
