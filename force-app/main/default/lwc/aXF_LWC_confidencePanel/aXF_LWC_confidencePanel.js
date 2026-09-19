@@ -1,6 +1,12 @@
 import { LightningElement, api, wire } from "lwc";
 import { NavigationMixin } from "lightning/navigation";
 import { refreshApex } from "@salesforce/apex";
+import {
+  MessageContext,
+  subscribe,
+  unsubscribe
+} from "lightning/messageService";
+import CONTEXT_CHANGED from "@salesforce/messageChannel/AXF_ContextChanged__c";
 import canExplain from "@salesforce/customPermission/AXF_CanExplainConfidence";
 import getHolders from "@salesforce/apex/AXF_CLS_CTRL_ConfidencePanel.getHolders";
 import explain from "@salesforce/apex/AXF_CLS_CTRL_ConfidencePanel.explain";
@@ -71,6 +77,12 @@ import exConnectionNotReadable from "@salesforce/label/c.AXF_ConfidencePanel_exC
 import exFutureSuccess from "@salesforce/label/c.AXF_ConfidencePanel_exFutureSuccess";
 import exImportDateMissing from "@salesforce/label/c.AXF_ConfidencePanel_exImportDateMissing";
 import codeNotAccessible from "@salesforce/label/c.AXF_ConfidencePanel_codeNotAccessible";
+import authority from "@salesforce/label/c.AXF_ConfidencePanel_authority";
+import coverage from "@salesforce/label/c.AXF_ConfidencePanel_coverage";
+import coverageUnknown from "@salesforce/label/c.AXF_ConfidencePanel_coverageUnknown";
+import fallbacks from "@salesforce/label/c.AXF_ConfidencePanel_fallbacks";
+import noFallbacks from "@salesforce/label/c.AXF_ConfidencePanel_noFallbacks";
+import fallbackFreshnessLimitDefault from "@salesforce/label/c.AXF_ConfidencePanel_fallbackFreshnessLimitDefault";
 
 const labels = {
   title,
@@ -139,7 +151,13 @@ const labels = {
   exConnectionNotReadable,
   exFutureSuccess,
   exImportDateMissing,
-  codeNotAccessible
+  codeNotAccessible,
+  authority,
+  coverage,
+  coverageUnknown,
+  fallbacks,
+  noFallbacks,
+  fallbackFreshnessLimitDefault
 };
 import { parseFailure, format } from "./failures";
 
@@ -210,6 +228,12 @@ const ACTION_LABEL = {
   REVIEW_SOURCE_HEALTH: labels.actionReviewHealth
 };
 
+/** Fallbacks the server reports as applied; the UI never applies one on its own. */
+const FALLBACK_LABEL = {
+  FRESHNESS_LIMIT_DEFAULT: labels.fallbackFreshnessLimitDefault,
+  IMPORT_DATE_MISSING: labels.exImportDateMissing
+};
+
 export default class AxfConfidencePanel extends NavigationMixin(
   LightningElement
 ) {
@@ -224,6 +248,20 @@ export default class AxfConfidencePanel extends NavigationMixin(
   announcement = "";
   wiredResult;
   requestToken = 0;
+  subscription;
+
+  @wire(MessageContext) messageContext;
+
+  connectedCallback() {
+    this.subscription = subscribe(this.messageContext, CONTEXT_CHANGED, () =>
+      this.handleContextChanged()
+    );
+  }
+
+  disconnectedCallback() {
+    unsubscribe(this.subscription);
+    this.subscription = undefined;
+  }
 
   /** Account record page: fixes the scope to that person/company (re-applied on change). */
   @api
@@ -306,8 +344,54 @@ export default class AxfConfidencePanel extends NavigationMixin(
   get hasHolders() {
     return this.holderOptions.length > 0;
   }
-  get isBlocked() {
-    return this.panel && this.panel.level === "BLOCKED";
+  /** The canonical policy that declares the states and actions; never derived here. */
+  get gatePolicyText() {
+    return (this.panel && this.panel.gatePolicy) || "";
+  }
+  /** Coverage counts may be absent from an older response; never render "undefined". */
+  get coverageText() {
+    if (!this.panel) {
+      return "";
+    }
+    if (
+      typeof this.panel.includedCount !== "number" ||
+      typeof this.panel.excludedCount !== "number"
+    ) {
+      return labels.coverageUnknown;
+    }
+    return (
+      this.panel.includedCount +
+      " " +
+      labels.included +
+      " · " +
+      this.panel.excludedCount +
+      " " +
+      labels.excluded
+    );
+  }
+  get hasFallbacks() {
+    return this.fallbacks.length > 0;
+  }
+  /**
+   * "No fallback was needed" is asserted only for a derived result whose fallback list the server
+   * actually returned: a blocked panel derives nothing, and an older response may omit the field.
+   */
+  get showsNoFallbacks() {
+    return (
+      !!this.panel &&
+      this.panel.level !== "BLOCKED" &&
+      Array.isArray(this.panel.fallbacks) &&
+      this.panel.fallbacks.length === 0
+    );
+  }
+  get fallbacks() {
+    if (!this.panel) {
+      return [];
+    }
+    return (this.panel.fallbacks || []).map((code) => ({
+      key: code,
+      text: FALLBACK_LABEL[code] || code
+    }));
   }
 
   get sources() {
@@ -388,7 +472,10 @@ export default class AxfConfidencePanel extends NavigationMixin(
       text: ACTION_LABEL[code] || code
     }));
   }
-  get blockedReasons() {
+  get hasReasons() {
+    return !!(this.panel && this.panel.reasons.length > 0);
+  }
+  get gateReasons() {
     if (!this.panel) {
       return [];
     }
@@ -400,8 +487,40 @@ export default class AxfConfidencePanel extends NavigationMixin(
     }));
   }
 
+  /**
+   * AXF-124 — the context changed, or the effective access is being revalidated. The panel belongs
+   * to the previous context, so it is discarded before anything else and never kept as a fallback,
+   * an in-flight response is rejected instead of allowed to land, the accessible announcement is
+   * cleared, and the holder list is emptied and refreshed rather than trusted (the wire caches it,
+   * so a revoked holder would otherwise stay reachable). With a scope selected the server recomputes
+   * the whole unit through the native model; nothing is decided here.
+   */
+  handleContextChanged() {
+    this.panel = undefined;
+    this.announcement = "";
+    this.requestToken += 1;
+    this.state = STATE.LOADING;
+    this.holderOptions = [];
+    if (this.wiredResult) {
+      Promise.resolve(refreshApex(this.wiredResult)).catch(() => {});
+    }
+    // With a scope the panel is loaded again here; on a record page the refreshed holder wire
+    // reloads it itself, so it is not asked for twice.
+    if (this.selected.length === 0) {
+      this.state = this.holdersLoaded ? STATE.IDLE : STATE.LOADING;
+    } else if (!this.recordId) {
+      this.load();
+    }
+  }
+
   handleScopeChange(event) {
     this.selected = event.detail.value || [];
+    if (this.panel) {
+      // A displayed panel belongs to the previous scope: never leave it on screen as if current.
+      this.panel = undefined;
+      this.announcement = "";
+      this.state = STATE.IDLE;
+    }
   }
 
   handleExplain() {

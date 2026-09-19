@@ -1,0 +1,13 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<CustomField xmlns="http://soap.sforce.com/2006/04/metadata">
+  <fullName>AXF_OAD_LKP_Actor__c</fullName>
+  <label>Ator</label>
+  <type>Lookup</type>
+  <referenceTo>User</referenceTo>
+  <relationshipName>AXF_REL_ObligationAdjustments</relationshipName>
+  <relationshipLabel>Ajustes de Obrigação</relationshipLabel>
+  <deleteConstraint>SetNull</deleteConstraint>
+  <required>false</required>
+  <description
+  >Usuário autorizado que revisou e confirmou o ajuste. Compõe a identidade de operação e a evidência de auditoria (AXF-104).</description>
+</CustomField>

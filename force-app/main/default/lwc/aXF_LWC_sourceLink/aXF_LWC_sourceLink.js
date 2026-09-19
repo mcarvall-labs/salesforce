@@ -130,6 +130,22 @@ import evxDESCRIPTION_CONTAINS_CANDIDATE from "@salesforce/label/c.AXF_SourceLin
 import evxDESCRIPTION_CONTAINED_IN_CANDIDATE from "@salesforce/label/c.AXF_SourceLink_evxDESCRIPTION_CONTAINED_IN_CANDIDATE";
 import evxCATEGORY_CONTAINS_CANDIDATE from "@salesforce/label/c.AXF_SourceLink_evxCATEGORY_CONTAINS_CANDIDATE";
 import evxCATEGORY_CONTAINED_IN_CANDIDATE from "@salesforce/label/c.AXF_SourceLink_evxCATEGORY_CONTAINED_IN_CANDIDATE";
+import codeMISSING_MATERIAL_FX from "@salesforce/label/c.AXF_SourceLink_codeMISSING_MATERIAL_FX";
+import evBlocked from "@salesforce/label/c.AXF_SourceLink_evBlocked";
+import evPartial from "@salesforce/label/c.AXF_SourceLink_evPartial";
+import factResidualAfter from "@salesforce/label/c.AXF_SourceLink_factResidualAfter";
+import convEstimatedLine from "@salesforce/label/c.AXF_SourceLink_convEstimatedLine";
+import convStaleLine from "@salesforce/label/c.AXF_SourceLink_convStaleLine";
+import convUnavailableLine from "@salesforce/label/c.AXF_SourceLink_convUnavailableLine";
+import economicRole from "@salesforce/label/c.AXF_SourceLink_economicRole";
+import roleHelp from "@salesforce/label/c.AXF_SourceLink_roleHelp";
+import roleAPPLICATION from "@salesforce/label/c.AXF_SourceLink_roleAPPLICATION";
+import roleINVOICE_PAYMENT from "@salesforce/label/c.AXF_SourceLink_roleINVOICE_PAYMENT";
+import roleTRANSFER from "@salesforce/label/c.AXF_SourceLink_roleTRANSFER";
+import roleREFUND from "@salesforce/label/c.AXF_SourceLink_roleREFUND";
+import sourceRemainder from "@salesforce/label/c.AXF_SourceLink_sourceRemainder";
+import codeUNSUPPORTED_ECONOMIC_ROLE from "@salesforce/label/c.AXF_SourceLink_codeUNSUPPORTED_ECONOMIC_ROLE";
+import codeINVALID_ECONOMIC_ROLE from "@salesforce/label/c.AXF_SourceLink_codeINVALID_ECONOMIC_ROLE";
 
 const labels = {
   title,
@@ -258,9 +274,25 @@ const labels = {
   evxDESCRIPTION_CONTAINS_CANDIDATE,
   evxDESCRIPTION_CONTAINED_IN_CANDIDATE,
   evxCATEGORY_CONTAINS_CANDIDATE,
-  evxCATEGORY_CONTAINED_IN_CANDIDATE
+  evxCATEGORY_CONTAINED_IN_CANDIDATE,
+  codeMISSING_MATERIAL_FX,
+  evBlocked,
+  evPartial,
+  factResidualAfter,
+  convEstimatedLine,
+  convStaleLine,
+  convUnavailableLine,
+  economicRole,
+  roleHelp,
+  roleAPPLICATION,
+  roleINVOICE_PAYMENT,
+  roleTRANSFER,
+  roleREFUND,
+  sourceRemainder,
+  codeUNSUPPORTED_ECONOMIC_ROLE,
+  codeINVALID_ECONOMIC_ROLE
 };
-import { parseFailure, format, newOperationKey } from "./failures";
+import { parseFailure, reasonLabel, format, newOperationKey } from "./failures";
 
 const STEP = {
   SOURCE: "SOURCE",
@@ -281,6 +313,14 @@ const SORT_OPTIONS = [
   { label: labels.evSortPOLICY, value: "POLICY" },
   { label: labels.evSortDUE_DATE, value: "DUE_DATE" }
 ];
+/**
+ * AXF-135: the economic role of the link is declared here. There is no default and no classifier —
+ * the statement association of a card line (BillReference) and the descriptions are facts of the
+ * source, not a role. Only the application role is routable in this branch, so only it is offered:
+ * a choice the server refuses without writing is not presented as a choice. The other role names
+ * remain the service's vocabulary (and keep their labels) for the slice that adds their capability.
+ */
+const ROLE_OPTIONS = [{ label: labels.roleAPPLICATION, value: "APPLICATION" }];
 function signed(delta) {
   const n = Number(delta);
   return n > 0 ? `+${n}` : `${n}`;
@@ -323,6 +363,51 @@ const ORIGIN_LABEL = {
   CSV: labels.originCSV,
   MANUAL: labels.originMANUAL
 };
+/**
+ * AXF-140: the state comes from the server; the component renders it and derives nothing. Every
+ * state this service emits is mapped, so no raw server token can reach the user.
+ */
+const STATE_LABEL = {
+  CONSULTATIVE: labels.evConsultative,
+  PARTIAL: labels.evPartial,
+  BLOCKED: labels.evBlocked
+};
+/** AXF-140: the conversion evidence is rendered as sent — an omitted amount stays omitted. */
+function conversionLine(c) {
+  if (!c.conversion) {
+    return "";
+  }
+  const pair = `${c.conversion.originalIso}/${c.conversion.reportingIso}`;
+  if (c.conversion.state === "ESTIMATED") {
+    return `${labels.convEstimatedLine} ${c.conversion.convertedAmount} ${c.conversion.reportingIso} · 1 ${c.conversion.originalIso} = ${c.conversion.rate} ${c.conversion.reportingIso} (${c.conversion.provider})`;
+  }
+  if (c.conversion.state === "STALE") {
+    // The quote is a fact; a converted amount is not, so none is shown.
+    return `${labels.convStaleLine} ${pair} · 1 ${c.conversion.originalIso} = ${c.conversion.rate} ${c.conversion.reportingIso} (${c.conversion.provider})`;
+  }
+  return `${labels.convUnavailableLine} ${pair}`;
+}
+/** AXF-140: the remaining residual is shown whenever it exists, including a non-zero one. */
+function residualAfterLine(c) {
+  if (c.residualAfter === null || c.residualAfter === undefined) {
+    return "";
+  }
+  return `${labels.factResidualAfter} ${c.residualAfter} ${c.currencyIso}`;
+}
+/**
+ * AXF-135: what the chosen obligation cannot absorb stays on the source — the multi-target need,
+ * which this flow never splits and never meets by increasing the obligation.
+ */
+function sourceRemainderLine(c) {
+  if (
+    c.sourceResidualAfter === null ||
+    c.sourceResidualAfter === undefined ||
+    Number(c.sourceResidualAfter) <= 0
+  ) {
+    return "";
+  }
+  return `${labels.sourceRemainder} ${c.sourceResidualAfter} ${c.currencyIso}`;
+}
 function dedupe(current, incoming, field) {
   const keyOf = (c) => {
     if (field !== "key") {
@@ -381,6 +466,8 @@ export default class AxfSourceLink extends LightningElement {
   noForecast = false;
   amount;
   recognitionDate;
+  economicRole;
+  roleOptions = ROLE_OPTIONS;
   reviewed = false;
   operationKey;
   result;
@@ -474,6 +561,13 @@ export default class AxfSourceLink extends LightningElement {
       index: i,
       statusLabel: STATUS_LABEL[c.status] || c.status,
       isVirtual: !c.persisted,
+      stateLabel: STATE_LABEL[c.state] || c.state,
+      // AXF-140: the server states why a row is blocked or pending; the reason is what the user has
+      // to correct, so it is rendered beside the state badge instead of staying server-side.
+      reasonText: (c.reasons || []).map(reasonLabel).join(" · "),
+      conversionLine: conversionLine(c),
+      residualAfterLine: residualAfterLine(c),
+      sourceRemainderLine: sourceRemainderLine(c),
       evidenceChips: (c.evidence || []).map(evidenceChip)
     }));
     if (this.sortMode === "DUE_DATE") {
@@ -555,6 +649,7 @@ export default class AxfSourceLink extends LightningElement {
     return (
       this.busy ||
       (this.changed && !this.reviewed) ||
+      !this.economicRole ||
       !validAmount(this.amount) ||
       !this.recognitionDate
     );
@@ -742,12 +837,18 @@ export default class AxfSourceLink extends LightningElement {
   startReview() {
     this.amount = this.suggestedAmount;
     this.recognitionDate = this.suggestedDate;
+    // AXF-135: no role is defaulted for a new draft; the user declares it in the review.
+    this.economicRole = undefined;
     this.reviewed = false;
     this.error = undefined;
     // One key per draft (source + target choice): a retry of the same draft replays,
     // a different choice never collides with an earlier key.
     this.operationKey = newOperationKey();
     this.step = STEP.REVIEW;
+  }
+  handleRole(event) {
+    this.economicRole = event.detail.value;
+    this.reviewed = false;
   }
   handleAmount(event) {
     this.amount = event.target.value === "" ? null : Number(event.target.value);
@@ -783,6 +884,7 @@ export default class AxfSourceLink extends LightningElement {
           targetVersion: this.target ? this.target.version : null,
           amount: this.amount,
           recognitionDate: this.recognitionDate,
+          economicRole: this.economicRole,
           changesReviewed: this.changed ? this.reviewed : false,
           operationKey: this.operationKey
         })

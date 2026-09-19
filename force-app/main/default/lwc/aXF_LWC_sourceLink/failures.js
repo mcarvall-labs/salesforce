@@ -20,6 +20,9 @@ import codeCONFLICTLabel from "@salesforce/label/c.AXF_SourceLink_codeCONFLICT";
 import codeUNAVAILABLE_AMOUNTLabel from "@salesforce/label/c.AXF_SourceLink_codeUNAVAILABLE_AMOUNT";
 import codeREPORTING_CURRENCY_REQUIREDLabel from "@salesforce/label/c.AXF_SourceLink_codeREPORTING_CURRENCY_REQUIRED";
 import codeMATERIALIZATION_REQUIREDLabel from "@salesforce/label/c.AXF_SourceLink_codeMATERIALIZATION_REQUIRED";
+import codeMISSING_MATERIAL_FXLabel from "@salesforce/label/c.AXF_SourceLink_codeMISSING_MATERIAL_FX";
+import codeINVALID_ECONOMIC_ROLELabel from "@salesforce/label/c.AXF_SourceLink_codeINVALID_ECONOMIC_ROLE";
+import codeUNSUPPORTED_ECONOMIC_ROLELabel from "@salesforce/label/c.AXF_SourceLink_codeUNSUPPORTED_ECONOMIC_ROLE";
 import errorLabel from "@salesforce/label/c.AXF_SourceLink_error";
 
 const CODE_LABEL = {
@@ -39,18 +42,29 @@ const CODE_LABEL = {
   TARGET_REALIZED: codeTARGET_REALIZEDLabel,
   FUNDING_MISMATCH: codeFUNDING_MISMATCHLabel,
   CURRENCY_MISMATCH: codeCURRENCY_MISMATCHLabel,
+  MISSING_MATERIAL_FX: codeMISSING_MATERIAL_FXLabel,
   ALREADY_LINKED: codeALREADY_LINKEDLabel,
   REVIEW_REQUIRED: codeREVIEW_REQUIREDLabel,
   CONFLICT: codeCONFLICTLabel,
   UNAVAILABLE_AMOUNT: codeUNAVAILABLE_AMOUNTLabel,
   REPORTING_CURRENCY_REQUIRED: codeREPORTING_CURRENCY_REQUIREDLabel,
-  MATERIALIZATION_REQUIRED: codeMATERIALIZATION_REQUIREDLabel
+  MATERIALIZATION_REQUIRED: codeMATERIALIZATION_REQUIREDLabel,
+  INVALID_ECONOMIC_ROLE: codeINVALID_ECONOMIC_ROLELabel,
+  UNSUPPORTED_ECONOMIC_ROLE: codeUNSUPPORTED_ECONOMIC_ROLELabel
 };
 
 /** Server failures arrive as a sanitized {code}; anything else is the generic message. */
 export function parseFailure(error) {
   const raw = error && error.body && error.body.message;
   return CODE_LABEL[raw] || errorLabel;
+}
+
+/**
+ * AXF-140: a candidate reason is the same sanitized server code, so it resolves through the same
+ * map; a code this component does not know is shown as the code itself rather than dropped.
+ */
+export function reasonLabel(code) {
+  return CODE_LABEL[code] || code;
 }
 
 export function format(template, ...args) {

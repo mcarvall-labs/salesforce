@@ -1,0 +1,23 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<CustomObject xmlns="http://soap.sforce.com/2006/04/metadata">
+  <deploymentStatus>Deployed</deploymentStatus>
+  <description
+  >Decisão de liquidação tipada e imutável (AXF-104). É simultaneamente a operação com tipagem explícita e o recibo de repetição: consolida modo, classificação da parcela inteira, componentes, cobertura das contribuições, versões de base e obrigação efetiva. Uma linha nunca é visível como meia decisão. Sem Delete e sem exposição nativa de lista/relatório até a paridade de compartilhamento.</description>
+  <enableActivities>false</enableActivities>
+  <enableBulkApi>true</enableBulkApi>
+  <enableFeeds>false</enableFeeds>
+  <enableHistory>false</enableHistory>
+  <enableReports>false</enableReports>
+  <enableSearch>false</enableSearch>
+  <enableSharing>true</enableSharing>
+  <enableStreamingApi>true</enableStreamingApi>
+  <label>Decisão de Liquidação</label>
+  <nameField>
+    <displayFormat>SDC-{000000}</displayFormat>
+    <label>Número da Decisão</label>
+    <type>AutoNumber</type>
+  </nameField>
+  <pluralLabel>Decisões de Liquidação</pluralLabel>
+  <sharingModel>Private</sharingModel>
+  <visibility>Public</visibility>
+</CustomObject>

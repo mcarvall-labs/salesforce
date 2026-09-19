@@ -1,0 +1,8 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<CustomField xmlns="http://soap.sforce.com/2006/04/metadata"><fullName
+  >AXF_ITR_TXT_PayloadHash__c</fullName><label
+  >Operation payload hash</label><length>64</length><type>Text</type><unique
+  >false</unique><description
+  >AXF_CLS_IdentityFraming.key(...) fingerprint of the last confirm/reverse command payload;
+  compared on replay of the same AXF_ITR_TXT_OperationKey__c to detect a divergent request
+  (CONFLICT), same convention as AXF_RA_TXT_PayloadHash__c.</description></CustomField>

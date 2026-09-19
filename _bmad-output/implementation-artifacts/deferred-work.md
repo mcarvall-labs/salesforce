@@ -8,7 +8,8 @@
 - **Guard write window is public** — `ALT_CLS_EconomicAllocationGuard.beginWrite()/endWrite()` are public because the service and the guard test both need them; consider a `@TestVisible` seam plus a service-only entry.
 - **Participante read path** — `OWN_SHARE_ONLY` visibility for participants is described but has no consumer; the LWC only renders for record access + `AXF_CanAllocate`.
 - **Fact edits after confirmation** — `ALT_CLS_RealizationGuard.originals` only freezes facts referenced by realization allocations; a confirmed economic allocation does not freeze the fact, so drift is only detected on the next confirm (`FACT_CHANGED`).
-- **Unused field** — `AXF_EAS_LKP_AttributedAccount__c` is deployed but never written; remove or wire to the attribution story.
+- **Attributed account is in use, but never backfilled** — AXF-127 now writes `AXF_EAS_LKP_AttributedAccount__c` on the `DRAFT → CONFIRMED` transition and clears it when the set is discarded, so "remove" is off the table; the remaining gap is history: sets confirmed under AXF-126 keep a permanently null projection, because the guard freezes the field after confirmation and no service path can repair it (backfill script vs. accepted hole — needs a decision).
+- **Non-owner proposer cannot persist its access** — `ALT_CLS_EconomicAllocationService.grantProposerAccess()` writes the Manual share with `allOrNone=false`, so its rejection is silent; a user who does not own the holder account (and therefore not the set) cannot read the set it just created nor write its own access share (`INSUFFICIENT_ACCESS_ON_CROSS_REFERENCE_ENTITY`), and `propose()` then fails inserting the parcel. Measured while looking for a non-owner fixture for AXF-127/G3.
 
 ## AXF-122 — Consolidated totals (code review 2026-09-15, PR #111)
 

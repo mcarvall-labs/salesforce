@@ -78,6 +78,15 @@
               <span>{labels.closedBanner}</span>
             </div>
           </template>
+          <template lwc:if={detail.externalRevocationPending}>
+            <div
+              class="slds-notify slds-notify_alert slds-alert_warning"
+              role="status"
+              data-id="external-pending"
+            >
+              <span>{labels.externalPendingBanner}</span>
+            </div>
+          </template>
           <template lwc:if={isUnknown}>
             <div
               class="slds-notify slds-notify_alert slds-alert_warning"
@@ -140,6 +149,12 @@
                 {labels.externalRevocation}
               </dt>
               <dd class="slds-dl_horizontal__detail">{detail.externalLabel}</dd>
+              <dt class="slds-dl_horizontal__label">
+                {labels.externalGuidance}
+              </dt>
+              <dd class="slds-dl_horizontal__detail" data-id="external-action">
+                {detail.externalActionLabel}
+              </dd>
               <dt class="slds-dl_horizontal__label">{labels.legalHold}</dt>
               <dd class="slds-dl_horizontal__detail" data-id="legal-hold-state">
                 <template lwc:if={detail.legalHold}

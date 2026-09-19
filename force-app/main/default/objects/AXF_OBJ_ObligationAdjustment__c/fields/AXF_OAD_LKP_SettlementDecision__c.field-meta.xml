@@ -1,0 +1,13 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<CustomField xmlns="http://soap.sforce.com/2006/04/metadata">
+  <fullName>AXF_OAD_LKP_SettlementDecision__c</fullName>
+  <label>Decisão de Liquidação</label>
+  <type>Lookup</type>
+  <referenceTo>AXF_OBJ_SettlementDecision__c</referenceTo>
+  <relationshipName>AXF_REL_ObligationAdjustments</relationshipName>
+  <relationshipLabel>Ajustes de Obrigação</relationshipLabel>
+  <deleteConstraint>Restrict</deleteConstraint>
+  <required>true</required>
+  <description
+  >Decisão tipada que originou o ajuste. O recebimento é a prova de replay, de classificação e de cobertura; o ajuste é a evidência não monetária atribuível àquela decisão (AXF-104).</description>
+</CustomField>

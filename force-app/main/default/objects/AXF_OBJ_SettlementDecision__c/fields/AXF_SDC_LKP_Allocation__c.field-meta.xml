@@ -1,0 +1,13 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<CustomField xmlns="http://soap.sforce.com/2006/04/metadata">
+  <fullName>AXF_SDC_LKP_Allocation__c</fullName>
+  <label>Alocação</label>
+  <type>Lookup</type>
+  <referenceTo>AXF_OBJ_ReconciliationAllocation__c</referenceTo>
+  <relationshipName>AXF_REL_SettlementDecisions</relationshipName>
+  <relationshipLabel>Decisões de Liquidação</relationshipLabel>
+  <deleteConstraint>Restrict</deleteConstraint>
+  <required>false</required>
+  <description
+  >Aplicação de caixa desta decisão. Nulo em CLASSIFY e AMEND_OBLIGATION, que não movimentam caixa. Permite também a inserção atômica raiz-primeiro, antes da criação da alocação (AXF-104).</description>
+</CustomField>

@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<CustomField xmlns="http://soap.sforce.com/2006/04/metadata">
+  <fullName>AXF_SDC_NUM_CoverageCount__c</fullName>
+  <label>Contribuições Cobertas</label>
+  <precision>18</precision>
+  <scale>0</scale>
+  <type>Number</type>
+  <required>false</required>
+  <description
+  >Quantidade de alocações originais ativas cobertas pela classificação completa. Junto com o hash de cobertura torna a validade verificável sem armazenar uma lista ilimitada de identificadores no recibo (AXF-104).</description>
+</CustomField>

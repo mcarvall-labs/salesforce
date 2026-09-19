@@ -3,6 +3,7 @@ import ConfidencePanel from "c/aXF_LWC_confidencePanel";
 import { parseFailure } from "../failures";
 import getHolders from "@salesforce/apex/AXF_CLS_CTRL_ConfidencePanel.getHolders";
 import explain from "@salesforce/apex/AXF_CLS_CTRL_ConfidencePanel.explain";
+import { subscribe, unsubscribe } from "lightning/messageService";
 import { __navigate } from "lightning/navigation";
 
 jest.mock(
@@ -59,10 +60,12 @@ const holders = [
 
 const panel = {
   policyVersion: "confidence-panel@1.0.0",
+  gatePolicy: "AXF-FORECASTING@1.0.0",
   asOf: "2026-09-14T12:00:00.000Z",
   level: "DEGRADED",
   reasons: ["STALE_SOURCE", "FRESHNESS_EXCEEDED"],
   allowedActions: ["OPEN_SOURCE", "REVIEW_SOURCE_HEALTH"],
+  fallbacks: ["FRESHNESS_LIMIT_DEFAULT"],
   currencies: ["BRL", "USD"],
   includedCount: 2,
   excludedCount: 1,
@@ -225,8 +228,7 @@ describe("c-aXF_LWC_confidencePanel", () => {
       element.shadowRoot.querySelector('[data-id="level"]').className
     ).toContain("slds-badge_error");
     expect(
-      element.shadowRoot.querySelectorAll('[data-id="blocked-reasons"] li')
-        .length
+      element.shadowRoot.querySelectorAll('[data-id="gate-reasons"] li').length
     ).toBe(2);
     expect(
       element.shadowRoot.querySelectorAll('[data-id="actions"] li').length
@@ -276,6 +278,159 @@ describe("c-aXF_LWC_confidencePanel", () => {
     expect(refreshApex).toHaveBeenCalled();
   });
 
+  it("renders the canonical state, its declaring policy, coverage and fallbacks without recomputing the gate", async () => {
+    // Reachable DEGRADED payload whose included rows all look current: what degrades the panel is
+    // the excluded holder, so a client deriving the state from the rows would show INFORMATIVE.
+    explain.mockResolvedValue({
+      ...panel,
+      level: "DEGRADED",
+      reasons: ["HOLDER_NOT_AUTHORIZED"],
+      fallbacks: [],
+      includedCount: 3,
+      excludedCount: 0,
+      sources: [
+        { ...panel.sources[0], factCount: 0 },
+        {
+          ...panel.sources[1],
+          freshness: "CURRENT",
+          lastSuccessAt: "2026-09-14T11:00:00.000Z",
+          factCount: 5,
+          exceptions: []
+        },
+        {
+          ...panel.sources[2],
+          included: true,
+          exclusionReason: undefined,
+          freshness: "CURRENT",
+          lastSuccessAt: "2026-09-14T11:30:00.000Z",
+          factCount: 3,
+          navigable: true
+        }
+      ]
+    });
+    const element = build("001A");
+    getHolders.emit(holders);
+    await flush();
+    const level = element.shadowRoot.querySelector('[data-id="level"]');
+    expect(level.textContent).toContain("levelDegraded");
+    expect(level.className).toContain("slds-badge_warning");
+    // Every rendered row is current, and the state is still the server's degraded one.
+    const rows = element.shadowRoot.querySelectorAll("[data-freshness]");
+    expect(rows.length).toBe(3);
+    rows.forEach((row) => expect(row.dataset.freshness).toBe("CURRENT"));
+    expect(
+      element.shadowRoot.querySelector('[data-id="policy"]').textContent
+    ).toContain("AXF-FORECASTING@1.0.0");
+    // The matching policy declares other states and never enters this panel.
+    expect(
+      element.shadowRoot.querySelector('[data-id="policy"]').textContent
+    ).not.toContain("AXF-MATCHING");
+    const coverage = element.shadowRoot.querySelector(
+      '[data-id="coverage"]'
+    ).textContent;
+    expect(coverage).toMatch(/3 \S*_included · 0 \S*_excluded/);
+    expect(
+      element.shadowRoot.querySelectorAll('[data-id="gate-reasons"] li').length
+    ).toBe(1);
+    expect(
+      element.shadowRoot.querySelector('[data-id="fallbacks"]')
+    ).toBeNull();
+    expect(
+      element.shadowRoot.querySelector('[data-id="no-fallbacks"]').textContent
+    ).toContain("noFallbacks");
+  });
+
+  it("shows the gate reason of the server state and names the fallback applied", async () => {
+    explain.mockResolvedValue(panel);
+    const element = build("001A");
+    getHolders.emit(holders);
+    await flush();
+    expect(
+      element.shadowRoot.querySelectorAll('[data-id="gate-reasons"] li').length
+    ).toBe(2);
+    const fallbacks = element.shadowRoot.querySelectorAll(
+      '[data-id="fallbacks"] li'
+    );
+    expect(fallbacks.length).toBe(1);
+    expect(fallbacks[0].textContent).toContain("fallbackFreshnessLimitDefault");
+  });
+
+  it("names the IMPORT_DATE_MISSING fallback and exception instead of the internal code", async () => {
+    // Reachable payload: one manual source without its own freshness limit whose hand-keyed facts
+    // carry no import timestamp, so both fallbacks and the row exception are reported together.
+    explain.mockResolvedValue({
+      ...panel,
+      level: "DEGRADED",
+      reasons: ["IMPORT_DATE_MISSING"],
+      fallbacks: ["FRESHNESS_LIMIT_DEFAULT", "IMPORT_DATE_MISSING"],
+      exclusions: [],
+      includedCount: 1,
+      excludedCount: 0,
+      currencies: ["BRL"],
+      sources: [
+        {
+          ...panel.sources[0],
+          origin: "MANUAL",
+          freshness: "CURRENT",
+          lastSuccessAt: "2026-09-14T11:00:00.000Z",
+          factCount: 4,
+          exceptions: ["IMPORT_DATE_MISSING"]
+        }
+      ]
+    });
+    const element = build("001A");
+    getHolders.emit(holders);
+    await flush();
+    const fallbacks = element.shadowRoot.querySelectorAll(
+      '[data-id="fallbacks"] li'
+    );
+    expect(fallbacks.length).toBe(2);
+    expect(fallbacks[0].textContent).toContain("fallbackFreshnessLimitDefault");
+    expect(fallbacks[1].textContent).toContain("exImportDateMissing");
+    expect(fallbacks[1].textContent).not.toContain("IMPORT_DATE_MISSING");
+    const exception = element.shadowRoot.querySelector(
+      '[data-id="exceptions"] li'
+    );
+    expect(exception.textContent).toContain("exImportDateMissing");
+    expect(exception.textContent).not.toContain("IMPORT_DATE_MISSING");
+  });
+
+  it("asserts no derivation it cannot know: no fallback claim on a blocked or older payload", async () => {
+    explain.mockResolvedValue({
+      ...panel,
+      level: "BLOCKED",
+      reasons: ["NO_READABLE_SOURCE"],
+      allowedActions: [],
+      sources: [],
+      exclusions: [],
+      currencies: [],
+      fallbacks: [],
+      includedCount: undefined,
+      excludedCount: undefined
+    });
+    const blocked = build("001A");
+    getHolders.emit(holders);
+    await flush();
+    // No result was derived, so "no fallback was needed" may not be asserted.
+    expect(
+      blocked.shadowRoot.querySelector('[data-id="no-fallbacks"]')
+    ).toBeNull();
+    const coverage = blocked.shadowRoot.querySelector(
+      '[data-id="coverage"]'
+    ).textContent;
+    expect(coverage).toContain("coverageUnknown");
+    expect(coverage).not.toContain("undefined");
+
+    // An older response that omits the fallback list asserts nothing either.
+    explain.mockResolvedValue({ ...panel, fallbacks: undefined });
+    const older = build("001A");
+    getHolders.emit(holders);
+    await flush();
+    expect(
+      older.shadowRoot.querySelector('[data-id="no-fallbacks"]')
+    ).toBeNull();
+  });
+
   it("shows unknown FX and hides the currency when the server has none", async () => {
     explain.mockResolvedValueOnce({
       ...panel,
@@ -291,5 +446,288 @@ describe("c-aXF_LWC_confidencePanel", () => {
     expect(
       element.shadowRoot.querySelector('[data-source="a07C"] th').textContent
     ).not.toContain("(");
+  });
+
+  it("discards the previous context on a change and revalidates it on the server", async () => {
+    // The revalidation is held open so the state between the event and the answer is observable.
+    let answer;
+    const pending = new Promise((resolve) => {
+      answer = resolve;
+    });
+    explain.mockResolvedValueOnce(panel).mockReturnValueOnce(pending);
+    const { refreshApex } = require("@salesforce/apex");
+    const element = build();
+    getHolders.emit(holders);
+    await flush();
+    element.shadowRoot
+      .querySelector('[data-id="scope"]')
+      .dispatchEvent(
+        new CustomEvent("change", { detail: { value: ["001A"] } })
+      );
+    await flush();
+    element.shadowRoot.querySelector('[data-id="explain"]').click();
+    await flush();
+    expect(
+      element.shadowRoot.querySelectorAll('[data-id="sources"] tbody tr').length
+    ).toBe(3);
+    expect(
+      element.shadowRoot.querySelector('[data-id="announcer"]').textContent
+    ).toContain("levelDegraded");
+
+    // The context changed: the derived panel must not survive the event, on screen or announced.
+    subscribe.mock.calls[0][2]({ changeReason: "AUTHORIZATION_REVALIDATION" });
+    await flush();
+    expect(element.shadowRoot.querySelector('[data-id="level"]')).toBeNull();
+    expect(element.shadowRoot.querySelector('[data-id="sources"]')).toBeNull();
+    expect(
+      element.shadowRoot.querySelector('[data-id="announcer"]').textContent
+    ).toBe("");
+    // The reachable holder cache was refreshed, not trusted, and the server was asked again.
+    expect(refreshApex.mock.calls[0][0].data).toEqual(holders);
+    expect(explain).toHaveBeenCalledTimes(2);
+    expect(explain).toHaveBeenLastCalledWith({ accountIds: ["001A"] });
+
+    // The revalidated answer replaces the whole unit; the previous one is never a fallback.
+    answer({
+      ...panel,
+      level: "BLOCKED",
+      reasons: ["NO_AUTHORIZED_SCOPE"],
+      allowedActions: [],
+      fallbacks: [],
+      currencies: [],
+      includedCount: 0,
+      excludedCount: 0,
+      exclusions: [],
+      sources: []
+    });
+    await flush();
+    expect(
+      element.shadowRoot.querySelector('[data-id="level"]').textContent
+    ).toContain("levelBlocked");
+    expect(
+      element.shadowRoot.querySelectorAll('[data-id="sources"] tbody tr').length
+    ).toBe(0);
+    expect(
+      element.shadowRoot.querySelector('[data-id="fx"]').textContent
+    ).toContain("fxUnknown");
+    expect(
+      element.shadowRoot.querySelector('[data-id="announcer"]').textContent
+    ).toContain("levelBlocked");
+
+    document.body.removeChild(element);
+    await flush();
+    expect(unsubscribe).toHaveBeenCalled();
+  });
+
+  it("revalidates a fixed record scope through the refreshed holder wire", async () => {
+    explain.mockResolvedValue(panel);
+    const { refreshApex } = require("@salesforce/apex");
+    const element = build("001A");
+    getHolders.emit(holders);
+    await flush();
+    expect(explain).toHaveBeenCalledTimes(1);
+    expect(
+      element.shadowRoot.querySelector('[data-id="level"]')
+    ).not.toBeNull();
+
+    subscribe.mock.calls[0][2]({ changeReason: "AUTHORIZATION_REVALIDATION" });
+    await flush();
+    // The record scope is not reloaded by the handler itself, and nothing of the panel remains.
+    expect(explain).toHaveBeenCalledTimes(1);
+    expect(refreshApex).toHaveBeenCalledTimes(1);
+    expect(element.shadowRoot.querySelector('[data-id="level"]')).toBeNull();
+    expect(
+      element.shadowRoot.querySelector('[data-id="announcer"]').textContent
+    ).toBe("");
+    // Nothing was left on screen in the meantime: the panel is loading, not blank.
+    expect(
+      element.shadowRoot.querySelector("lightning-spinner")
+    ).not.toBeNull();
+
+    // The refreshed holder wire re-applies the record scope and asks the server again.
+    getHolders.emit(holders);
+    await flush();
+    expect(explain).toHaveBeenCalledTimes(2);
+    expect(explain).toHaveBeenLastCalledWith({ accountIds: ["001A"] });
+    expect(
+      element.shadowRoot.querySelector('[data-id="level"]')
+    ).not.toBeNull();
+  });
+
+  it("empties the cached holder list and shows only what the refreshed wire returns", async () => {
+    explain.mockResolvedValue(panel);
+    const element = build();
+    getHolders.emit(holders);
+    await flush();
+    expect(
+      element.shadowRoot.querySelector('[data-id="scope"]').options.length
+    ).toBe(2);
+
+    subscribe.mock.calls[0][2]({ changeReason: "AUTHORIZATION_REVALIDATION" });
+    await flush();
+    // The revoked holder is not reachable while the revalidation is in flight.
+    expect(
+      element.shadowRoot.querySelector('[data-id="scope"]').options.length
+    ).toBe(0);
+
+    // The refreshed wire answers with the reduced, still authorized set.
+    getHolders.emit([holders[0]]);
+    await flush();
+    const options =
+      element.shadowRoot.querySelector('[data-id="scope"]').options;
+    expect(options.length).toBe(1);
+    expect(options[0].value).toBe("001A");
+  });
+
+  it("rejects a response that started before the context changed", async () => {
+    // The answer issued before the event is held open and only lands afterwards.
+    let before;
+    const inFlight = new Promise((resolve) => {
+      before = resolve;
+    });
+    let after;
+    const revalidated = new Promise((resolve) => {
+      after = resolve;
+    });
+    explain.mockReturnValueOnce(inFlight).mockReturnValueOnce(revalidated);
+    const element = build();
+    getHolders.emit(holders);
+    await flush();
+    element.shadowRoot
+      .querySelector('[data-id="scope"]')
+      .dispatchEvent(
+        new CustomEvent("change", { detail: { value: ["001A"] } })
+      );
+    await flush();
+    element.shadowRoot.querySelector('[data-id="explain"]').click();
+    await flush();
+    expect(explain).toHaveBeenCalledTimes(1);
+
+    subscribe.mock.calls[0][2]({ changeReason: "AUTHORIZATION_REVALIDATION" });
+    await flush();
+    expect(explain).toHaveBeenCalledTimes(2);
+
+    // The stale answer may not become the panel of the new context.
+    before(panel);
+    await flush();
+    expect(element.shadowRoot.querySelector('[data-id="level"]')).toBeNull();
+    expect(element.shadowRoot.querySelector('[data-id="sources"]')).toBeNull();
+    expect(
+      element.shadowRoot.querySelector('[data-id="announcer"]').textContent
+    ).toBe("");
+
+    // The revalidated answer is the one that renders.
+    after({
+      ...panel,
+      level: "BLOCKED",
+      reasons: ["NO_AUTHORIZED_SCOPE"],
+      allowedActions: [],
+      sources: [],
+      exclusions: [],
+      currencies: []
+    });
+    await flush();
+    expect(
+      element.shadowRoot.querySelector('[data-id="level"]').textContent
+    ).toContain("levelBlocked");
+  });
+
+  it("rejects an in-flight answer on a record page, where the event does not reload", async () => {
+    // The only case where the event itself must reject the answer: no new load is issued, so
+    // nothing else bumps the token.
+    let before;
+    const inFlight = new Promise((resolve) => {
+      before = resolve;
+    });
+    explain.mockReturnValueOnce(inFlight).mockResolvedValueOnce(panel);
+    const element = build("001A");
+    getHolders.emit(holders);
+    await flush();
+    expect(explain).toHaveBeenCalledTimes(1);
+
+    subscribe.mock.calls[0][2]({ changeReason: "AUTHORIZATION_REVALIDATION" });
+    await flush();
+    expect(explain).toHaveBeenCalledTimes(1);
+
+    before(panel);
+    await flush();
+    expect(element.shadowRoot.querySelector('[data-id="level"]')).toBeNull();
+    expect(element.shadowRoot.querySelector('[data-id="sources"]')).toBeNull();
+    expect(
+      element.shadowRoot.querySelector('[data-id="announcer"]').textContent
+    ).toBe("");
+
+    // The refreshed wire reloads the same record scope and renders the fresh answer.
+    getHolders.emit(holders);
+    await flush();
+    expect(explain).toHaveBeenCalledTimes(2);
+    expect(
+      element.shadowRoot.querySelector('[data-id="level"]')
+    ).not.toBeNull();
+  });
+
+  it("discards the displayed panel as soon as the scope changes", async () => {
+    explain.mockResolvedValue(panel);
+    const element = build();
+    getHolders.emit(holders);
+    await flush();
+    element.shadowRoot
+      .querySelector('[data-id="scope"]')
+      .dispatchEvent(
+        new CustomEvent("change", { detail: { value: ["001A"] } })
+      );
+    await flush();
+    element.shadowRoot.querySelector('[data-id="explain"]').click();
+    await flush();
+    expect(
+      element.shadowRoot.querySelectorAll('[data-id="sources"] tbody tr').length
+    ).toBe(3);
+
+    // The scope now is another set: the previous panel is not left on screen as if current.
+    element.shadowRoot
+      .querySelector('[data-id="scope"]')
+      .dispatchEvent(
+        new CustomEvent("change", { detail: { value: ["001B"] } })
+      );
+    await flush();
+    expect(element.shadowRoot.querySelector('[data-id="level"]')).toBeNull();
+    expect(element.shadowRoot.querySelector('[data-id="sources"]')).toBeNull();
+    expect(
+      element.shadowRoot.querySelector('[data-id="announcer"]').textContent
+    ).toBe("");
+    // Nothing was derived for the new scope yet: the panel is empty, not stale.
+    expect(
+      element.shadowRoot.querySelector('[data-id="empty"]')
+    ).not.toBeNull();
+  });
+
+  it("clears a previous context error surface when the event arrives with no scope", async () => {
+    explain.mockRejectedValueOnce({ body: { message: "NOT_ACCESSIBLE" } });
+    const element = build();
+    getHolders.emit(holders);
+    await flush();
+    element.shadowRoot
+      .querySelector('[data-id="scope"]')
+      .dispatchEvent(
+        new CustomEvent("change", { detail: { value: ["001A"] } })
+      );
+    await flush();
+    element.shadowRoot.querySelector('[data-id="explain"]').click();
+    await flush();
+    expect(
+      element.shadowRoot.querySelector('[data-id="error"]')
+    ).not.toBeNull();
+
+    // No scope: nothing is derived, and no surface of the previous context may remain.
+    element.shadowRoot
+      .querySelector('[data-id="scope"]')
+      .dispatchEvent(new CustomEvent("change", { detail: { value: [] } }));
+    await flush();
+    subscribe.mock.calls[0][2]({ changeReason: "AUTHORIZATION_REVALIDATION" });
+    await flush();
+    expect(element.shadowRoot.querySelector('[data-id="error"]')).toBeNull();
+    expect(
+      element.shadowRoot.querySelector('[data-id="empty"]')
+    ).not.toBeNull();
   });
 });

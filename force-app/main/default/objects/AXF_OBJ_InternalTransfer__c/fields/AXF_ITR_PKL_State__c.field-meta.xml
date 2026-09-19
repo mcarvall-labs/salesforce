@@ -1,0 +1,17 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<CustomField xmlns="http://soap.sforce.com/2006/04/metadata"><fullName
+  >AXF_ITR_PKL_State__c</fullName><label>State</label><required
+  >true</required><type>Picklist</type><valueSet><restricted
+    >true</restricted><valueSetDefinition><sorted>false</sorted><value><fullName
+        >CANDIDATE</fullName><default>true</default><label
+        >CANDIDATE</label></value><value><fullName>UNILATERAL</fullName><default
+        >false</default><label>UNILATERAL</label></value><value><fullName
+        >CONFIRMED</fullName><default>false</default><label
+        >CONFIRMED</label></value><value><fullName>REVERSED</fullName><default
+        >false</default><label
+        >REVERSED</label></value></valueSetDefinition></valueSet><description
+  >CANDIDATE = suggested, not yet confirmed. UNILATERAL = a leg is missing, incompatible or only
+  partly authorized at confirmation time; the principal is never neutralized. CONFIRMED = pair
+  confirmed, principal neutralized. REVERSED = only ever set on a new compensating record created
+  by reverse(); the CONFIRMED record it points to (AXF_ITR_LKP_OriginalTransfer__c) is never
+  edited (AXF-32).</description></CustomField>

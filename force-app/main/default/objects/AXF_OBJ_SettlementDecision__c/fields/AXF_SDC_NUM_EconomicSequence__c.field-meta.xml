@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<CustomField xmlns="http://soap.sforce.com/2006/04/metadata">
+  <fullName>AXF_SDC_NUM_EconomicSequence__c</fullName>
+  <label>Sequência Econômica</label>
+  <precision>5</precision>
+  <scale>0</scale>
+  <type>Number</type>
+  <required>false</required>
+  <description
+  >Sequência absoluta da parcela econômica liquidada, quando apoiada por cronograma. Determina a ordem determinística documentada das confirmações, revisões e estornos — nunca o horário de processamento (AXF-104).</description>
+</CustomField>

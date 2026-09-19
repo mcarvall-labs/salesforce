@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<CustomField xmlns="http://soap.sforce.com/2006/04/metadata">
+  <fullName>AXF_SDC_NUM_TargetVersion__c</fullName>
+  <label>Versão do Alvo</label>
+  <precision>18</precision>
+  <scale>0</scale>
+  <type>Number</type>
+  <required>false</required>
+  <description
+  >Versão da ocorrência esperada e verificada sob bloqueio. Uma revisão obsoleta é rejeitada em vez de aplicada a um conjunto diferente (AXF-104).</description>
+</CustomField>

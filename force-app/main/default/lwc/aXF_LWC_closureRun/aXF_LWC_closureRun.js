@@ -58,6 +58,9 @@ import actionRECONCILE from "@salesforce/label/c.AXF_ClosureRun_actionRECONCILE"
 import actionRELEASE_LEGAL_HOLD from "@salesforce/label/c.AXF_ClosureRun_actionRELEASE_LEGAL_HOLD";
 import actionRESOLVE_DEPENDENCIES from "@salesforce/label/c.AXF_ClosureRun_actionRESOLVE_DEPENDENCIES";
 import actionNONE from "@salesforce/label/c.AXF_ClosureRun_actionNONE";
+import actionVERIFY_ARCHIVE from "@salesforce/label/c.AXF_ClosureRun_actionVERIFY_ARCHIVE";
+import actionAWAIT_BACKUP_CONFIRMATION from "@salesforce/label/c.AXF_ClosureRun_actionAWAIT_BACKUP_CONFIRMATION";
+import actionREVOKE_IN_PLUGGY from "@salesforce/label/c.AXF_ClosureRun_actionREVOKE_IN_PLUGGY";
 import noAccess from "@salesforce/label/c.AXF_ClosureRun_noAccess";
 import confirmResumeTitle from "@salesforce/label/c.AXF_ClosureRun_confirmResumeTitle";
 import confirmResumeBody from "@salesforce/label/c.AXF_ClosureRun_confirmResumeBody";
@@ -89,9 +92,13 @@ import reasonCOLLECTION_NOT_PAUSABLE from "@salesforce/label/c.AXF_ClosureRun_re
 import reasonPURGE_INCOMPLETE from "@salesforce/label/c.AXF_ClosureRun_reasonPURGE_INCOMPLETE";
 import reasonRESULT_UNKNOWN from "@salesforce/label/c.AXF_ClosureRun_reasonRESULT_UNKNOWN";
 import reasonSTAGE_FAILED from "@salesforce/label/c.AXF_ClosureRun_reasonSTAGE_FAILED";
+import reasonARCHIVE_UNVERIFIED from "@salesforce/label/c.AXF_ClosureRun_reasonARCHIVE_UNVERIFIED";
+import reasonBACKUP_PENDING from "@salesforce/label/c.AXF_ClosureRun_reasonBACKUP_PENDING";
 import externalNOT_APPLICABLE from "@salesforce/label/c.AXF_ClosureRun_externalNOT_APPLICABLE";
 import externalNOT_CONFIRMED from "@salesforce/label/c.AXF_ClosureRun_externalNOT_CONFIRMED";
 import externalCONFIRMED from "@salesforce/label/c.AXF_ClosureRun_externalCONFIRMED";
+import externalGuidance from "@salesforce/label/c.AXF_ClosureRun_externalGuidance";
+import externalPendingBanner from "@salesforce/label/c.AXF_ClosureRun_externalPendingBanner";
 
 const labels = {
   title,
@@ -144,6 +151,9 @@ const labels = {
   actionRELEASE_LEGAL_HOLD,
   actionRESOLVE_DEPENDENCIES,
   actionNONE,
+  actionVERIFY_ARCHIVE,
+  actionAWAIT_BACKUP_CONFIRMATION,
+  actionREVOKE_IN_PLUGGY,
   noAccess,
   confirmResumeTitle,
   confirmResumeBody,
@@ -175,9 +185,13 @@ const labels = {
   reasonPURGE_INCOMPLETE,
   reasonRESULT_UNKNOWN,
   reasonSTAGE_FAILED,
+  reasonARCHIVE_UNVERIFIED,
+  reasonBACKUP_PENDING,
   externalNOT_APPLICABLE,
   externalNOT_CONFIRMED,
-  externalCONFIRMED
+  externalCONFIRMED,
+  externalGuidance,
+  externalPendingBanner
 };
 
 const CODE_LABELS = {
@@ -286,6 +300,13 @@ export default class ClosureRun extends LightningElement {
       statusLabel: statusLabel(this.run.status),
       reasonLabel: reasonLabel(this.run.blockReason),
       externalLabel: externalLabel(this.run.externalRevocation),
+      // Shown apart from the run's own next action: this step happens at the provider. The
+      // server emits it only for a closed run whose revocation the provider has not confirmed,
+      // so a blocked run never announces "Axon closed" while its own stage is still pending.
+      externalActionLabel: this.run.externalRevocationAction
+        ? actionLabel(this.run.externalRevocationAction)
+        : "—",
+      externalRevocationPending: Boolean(this.run.externalRevocationAction),
       actionLabel: actionLabel(this.run.nextAction),
       canReleaseHold: this.run.legalHold === true && !this.run.closed,
       checkpoints: (this.run.checkpoints || []).map((checkpoint, index) => ({

@@ -7,15 +7,40 @@
  * The source fact is never copied or altered; only its optimistic version is bumped by AXF-25.
  * AXF-139: every candidate carries independent observable evidence (ALT_CLS_MatchEvidence,
  * AXF-MATCHING@1.0.0), stays CONSULTATIVE, and is ordered by the policy's presentation order.
+ * AXF-140: a candidate in another currency is shown with its original amount, available amount,
+ * currency, indicative conversion and remaining residual as separate facts; it stays BLOCKED and
+ * unlinkable because confirmation requires exact currency arithmetic, and confirmation of a pair
+ * without material exchange-rate evidence is refused with MISSING_MATERIAL_FX. A linkable candidate
+ * whose residual stays non-zero after the source's available amount is applied is PARTIAL (policy
+ * §3). No tolerance, weight, default rate or conclusion policy is introduced: the residual is
+ * reported as it is.
+ * AXF-135: the caller declares the economic role of the link and the service never classifies it —
+ * `AXF_CCT_TXT_BillReference__c` is only the statement a card line belongs to and never makes a link
+ * an invoice payment. The declared role travels in the canonical payload (AXF-25), and a role this
+ * slice cannot route (invoice payment, transfer, refund) is refused before any write, so an invoice
+ * payment can never create a second consumption expense. The whole available amount of the source is
+ * applied to the chosen obligation — an outflow to an expense, an inflow to a revenue, as the source
+ * already carries — and what that obligation cannot absorb stays on the source as an explicit
+ * multi-target need (AXF-30); the obligation is never increased to absorb it.
  */
 public with sharing class ALT_CLS_SourceLinkService {
   public static final String POLICY_VERSION = 'AXF-SOURCE-LINK@1.0.0';
   public static final String CP_LINK = 'AXF_CanLinkSource';
   public static final String KIND_BANK = 'BANK';
   public static final String KIND_CARD = 'CARD';
+  /**
+   * AXF-135: economic roles of a link. The role is always declared by the caller and never derived
+   * from a description, a provider category or the statement association of a card line. Only
+   * `APPLICATION` — the fact settles the obligation of the target, or becomes the realized entry
+   * itself — has a supported capability in this slice.
+   */
+  public static final String ROLE_APPLICATION = 'APPLICATION';
+  public static final String ROLE_INVOICE_PAYMENT = 'INVOICE_PAYMENT';
+  public static final String ROLE_TRANSFER = 'TRANSFER';
+  public static final String ROLE_REFUND = 'REFUND';
   public static final Integer DEFAULT_PAGE = 25;
   public static final Integer MAX_PAGE = 50;
-  /** Rows scanned per candidate query before in-memory exclusion of realized/cancelled targets. */
+  /** Rows scanned per candidate scan window before in-memory exclusion of realized/cancelled targets. */
   public static final Integer MAX_SCAN = 200;
   public static final Integer MAX_SCHEDULES = 12;
   public static final Integer MAX_VIRTUAL = 60;
@@ -30,6 +55,16 @@ public with sharing class ALT_CLS_SourceLinkService {
   private static final Set<String> DIRECTIONS = new Set<String>{
     'DEBIT',
     'CREDIT'
+  };
+  private static final Set<String> ECONOMIC_ROLES = new Set<String>{
+    ROLE_APPLICATION,
+    ROLE_INVOICE_PAYMENT,
+    ROLE_TRANSFER,
+    ROLE_REFUND
+  };
+  /** Roles with a supported capability here; every other declared role is refused without a write. */
+  private static final Set<String> ROUTABLE_ROLES = new Set<String>{
+    ROLE_APPLICATION
   };
   private static final Set<String> SOURCES = new Set<String>{
     'PLUGGY',
@@ -115,6 +150,26 @@ public with sharing class ALT_CLS_SourceLinkService {
     public String state = ALT_CLS_MatchEvidence.STATE_CONSULTATIVE;
     @AuraEnabled
     public List<ALT_CLS_MatchEvidence.EvidenceView> evidence = new List<ALT_CLS_MatchEvidence.EvidenceView>();
+    /**
+     * AXF-140: residual left on this candidate once the source's available amount is applied to it.
+     * `residual` above is the candidate's own available amount; this is what remains after the
+     * allocation. Filled for every same-currency candidate, persisted and virtual alike, so a null
+     * has one meaning only: the currencies differ and the remainder is unknown, never zero. Reported
+     * as computed — no approved tolerance may turn a non-zero residual into zero.
+     */
+    @AuraEnabled
+    public Decimal residualAfter;
+    /**
+     * AXF-135: available amount left on the source once this candidate's obligation is settled.
+     * Distinct from `residualAfter`, which is what the obligation still needs: when the source is
+     * larger than the obligation this stays non-zero and is the amount this flow does not split —
+     * the multi-target need (AXF-30). The obligation is never grown to absorb it.
+     */
+    @AuraEnabled
+    public Decimal sourceResidualAfter;
+    /** AXF-140: indicative conversion evidence, present only when the currencies differ. */
+    @AuraEnabled
+    public ConversionView conversion;
     @AuraEnabled
     public Boolean tied = false;
     @AuraEnabled
@@ -122,6 +177,33 @@ public with sharing class ALT_CLS_SourceLinkService {
     public Id fundingId;
     public Id holderId;
     public transient String signature;
+  }
+
+  /**
+   * AXF-140: the conversion evidence of a candidate whose currency differs from the source's.
+   * Display-only and derived from the approved indicative layer (AXF-92): no rate is ever invented,
+   * the original amount and currency are never altered, and a quote that is stale, superseded by a
+   * non-positive rate or absent leaves the converted amount empty instead of zero.
+   */
+  public class ConversionView {
+    /** AXF-92 vocabulary: ESTIMATED | STALE | UNAVAILABLE (no usable rate at all). */
+    @AuraEnabled
+    public String state;
+    @AuraEnabled
+    public Decimal originalAmount;
+    @AuraEnabled
+    public String originalIso;
+    /** Currency the candidate is compared against: the source fact's own currency. */
+    @AuraEnabled
+    public String reportingIso;
+    @AuraEnabled
+    public Decimal rate;
+    @AuraEnabled
+    public String provider;
+    @AuraEnabled
+    public Datetime effectiveAt;
+    @AuraEnabled
+    public Decimal convertedAmount;
   }
 
   public class SourceQuery {
@@ -167,6 +249,11 @@ public with sharing class ALT_CLS_SourceLinkService {
     public String policyVersion = POLICY_VERSION;
     @AuraEnabled
     public String matchingPolicy = ALT_CLS_MatchEvidence.MATCHING_POLICY;
+    /**
+     * Policy §3: the page itself stays the consultative baseline — it only offers candidates for
+     * inspection and comparison and concludes nothing; the per-candidate state carries PARTIAL or
+     * BLOCKED for each row.
+     */
     @AuraEnabled
     public String state = ALT_CLS_MatchEvidence.STATE_CONSULTATIVE;
     @AuraEnabled
@@ -209,6 +296,11 @@ public with sharing class ALT_CLS_SourceLinkService {
     public Date recognitionDate;
     /** Explicit review acknowledgement, required whenever amount/date differ from the suggestion. */
     public Boolean changesReviewed;
+    /**
+     * AXF-135: economic role declared by the caller — required, and never defaulted, inferred or
+     * classified by the service. It is preserved in the canonical payload of the realization.
+     */
+    public String economicRole;
     public String operationKey;
   }
 
@@ -724,18 +816,191 @@ public with sharing class ALT_CLS_SourceLinkService {
       result.items.add((CandidateView) keys[i].payload);
     }
     result.hasMore = keys.size() > skip + result.pageSize;
+    resolveConversions(result.source, result.items);
     result.suggestedAmount = result.source.eligible
       ? result.source.residual
       : null;
     return result;
   }
 
-  private static ALT_CLS_MatchEvidence.Side side(SourceView source) {
+  /**
+   * AXF-140: resolves the indicative conversion evidence of the candidates shown on the page. One
+   * read per request for every currency involved, never one per row; the original amount and its
+   * currency are never altered and no rate is invented.
+   */
+  private void resolveConversions(
+    SourceView source,
+    List<CandidateView> items
+  ) {
+    Set<String> isos = new Set<String>();
+    for (CandidateView c : items) {
+      if (c.currencyIso != null && c.currencyIso != source.currencyIso) {
+        isos.add(c.currencyIso);
+      }
+    }
+    if (isos.isEmpty()) {
+      return;
+    }
+    Map<String, AXF_OBJ_ExchangeRate__c> quotes = indicativeQuotes(
+      source.currencyIso,
+      isos,
+      quoteSide(source.direction)
+    );
+    for (CandidateView c : items) {
+      if (c.currencyIso == null || c.currencyIso == source.currencyIso) {
+        continue;
+      }
+      c.conversion = convert(
+        quotes.get(c.currencyIso),
+        c.currencyIso,
+        source.currencyIso,
+        c.amount
+      );
+      if (
+        c.conversion.state !=
+        ALT_CLS_IndicativeEquivalenceService.STATE_ESTIMATED
+      ) {
+        // Without a usable quote the pair has no material FX evidence: confirmation is blocked.
+        c.reasons.add('MISSING_MATERIAL_FX');
+      }
+    }
+  }
+
+  /** Material FX evidence for one pair, or null when the pair has none: a fresh usable quote. */
+  private static ConversionView materialRate(
+    String originalIso,
+    String reportingIso,
+    String side
+  ) {
+    Map<String, AXF_OBJ_ExchangeRate__c> quotes = indicativeQuotes(
+      reportingIso,
+      new Set<String>{ originalIso },
+      side
+    );
+    ConversionView view = convert(
+      quotes.get(originalIso),
+      originalIso,
+      reportingIso,
+      null
+    );
+    return view.state == ALT_CLS_IndicativeEquivalenceService.STATE_ESTIMATED
+      ? view
+      : null;
+  }
+
+  /**
+   * AXF-140: the rate side of the approved FX layer, derived exactly as ALT_CLS_RealizationService
+   * derives it for the same purpose (recognize()): an outflow is converted at the SELL quote and an
+   * inflow at the BUY quote, from the direction the source fact already carries. No side is invented
+   * here and none is defaulted; the direction is validated before this is reached.
+   */
+  private static String quoteSide(String direction) {
+    return direction == 'DEBIT' ? 'SELL' : 'BUY';
+  }
+
+  /**
+   * Fresh usable quote → ESTIMATED; only an older one → STALE; no usable rate at all → UNAVAILABLE
+   * (never zero). A newest quote whose rate is not positive leaves the pair unusable: no older,
+   * superseded quote and no invented parity stands in for it.
+   */
+  private static ConversionView convert(
+    AXF_OBJ_ExchangeRate__c quote,
+    String originalIso,
+    String reportingIso,
+    Decimal amount
+  ) {
+    ConversionView view = new ConversionView();
+    view.originalIso = originalIso;
+    // The original amount is a fact of the candidate: it travels whatever the quote state is.
+    view.originalAmount = amount;
+    view.reportingIso = reportingIso;
+    if (
+      quote == null ||
+      quote.AXF_EXR_NUM_Rate__c == null ||
+      quote.AXF_EXR_NUM_Rate__c <= 0
+    ) {
+      view.state = ALT_CLS_IndicativeEquivalenceService.STATE_UNAVAILABLE;
+      return view;
+    }
+    view.rate = quote.AXF_EXR_NUM_Rate__c;
+    view.provider = quote.AXF_EXR_TXT_Provider__c;
+    view.effectiveAt = quote.AXF_EXR_DT_EffectiveDateTime__c;
+    if (
+      quote.AXF_EXR_DT_EffectiveDateTime__c <
+      System.now()
+        .addDays(-ALT_CLS_IndicativeEquivalenceService.QUOTE_MAX_AGE_DAYS)
+    ) {
+      view.state = ALT_CLS_IndicativeEquivalenceService.STATE_STALE;
+      return view;
+    }
+    view.state = ALT_CLS_IndicativeEquivalenceService.STATE_ESTIMATED;
+    view.convertedAmount = amount == null
+      ? null
+      : (amount * view.rate)
+          .setScale(
+            ALT_CLS_IndicativeEquivalenceService.DISPLAY_SCALE,
+            System.RoundingMode.HALF_UP
+          );
+    return view;
+  }
+
+  /**
+   * Newest indicative quote per base currency for one reporting currency, in a single read: the
+   * approved provider, the approved rate side (AXF-59/24) and a deterministic order. The newest row
+   * of the pair decides, even when its rate is not usable — an older, superseded quote is never
+   * substituted for it, and a tie on the effective instant is broken by record identity.
+   */
+  private static Map<String, AXF_OBJ_ExchangeRate__c> indicativeQuotes(
+    String reportingIso,
+    Set<String> originalIsos,
+    String side
+  ) {
+    // The reference quote is read exactly as the approved indicative layer does (AXF-92): under
+    // sharing, not under field-level security, because the quote is shared reference data and its
+    // fields are not granted to every capability holder.
+    String provider = ALT_CLS_IndicativeEquivalenceService.PROVIDER_BCB_PTAX;
+    Datetime oldest = System.now()
+      .addDays(-ALT_CLS_IndicativeEquivalenceService.QUOTE_MAX_AGE_DAYS * 2);
+    Map<String, AXF_OBJ_ExchangeRate__c> result = new Map<String, AXF_OBJ_ExchangeRate__c>();
+    for (AXF_OBJ_ExchangeRate__c row : [
+      SELECT
+        AXF_EXR_TXT_BaseCurrency__c,
+        AXF_EXR_NUM_Rate__c,
+        AXF_EXR_TXT_Provider__c,
+        AXF_EXR_DT_EffectiveDateTime__c
+      FROM AXF_OBJ_ExchangeRate__c
+      WHERE
+        AXF_EXR_TXT_BaseCurrency__c IN :originalIsos
+        AND AXF_EXR_TXT_QuoteCurrency__c = :reportingIso
+        AND AXF_EXR_TXT_Provider__c = :provider
+        AND AXF_EXR_PKL_Side__c = :side
+        AND AXF_EXR_DT_EffectiveDateTime__c >= :oldest
+      ORDER BY AXF_EXR_DT_EffectiveDateTime__c DESC, Id ASC
+    ]) {
+      // Newest first, record identity as the deterministic tie-break: the first row of each base
+      // currency is its latest quote.
+      if (!result.containsKey(row.AXF_EXR_TXT_BaseCurrency__c)) {
+        result.put(row.AXF_EXR_TXT_BaseCurrency__c, row);
+      }
+    }
+    return result;
+  }
+
+  /**
+   * AXF-140 (AC-3): withholding is an authorization fact, never the presence of a value. The fact is
+   * read through the authorized-holder gate, so its external identity is a displayed fact — the
+   * policy's first presentation criterion; a side whose holder is not authorized carries it
+   * withheld. The raw provider key still never travels as a field (`SourceView.sourceKey` is
+   * transient): the identity travels only as the evidence fact, and only when nothing is withheld.
+   */
+  private ALT_CLS_MatchEvidence.Side side(SourceView source) {
     ALT_CLS_MatchEvidence.Side result = new ALT_CLS_MatchEvidence.Side();
     // The fact's own identity: origin + provider key. Forecasts carry no external identity in v1.
     result.externalIdentity = source.sourceKey == null
       ? null
       : source.origin + ':' + source.sourceKey;
+    result.externalIdentityRedacted = !authorizedAccounts()
+      .contains(source.accountId);
     result.sourceIdentity = source.fundingId;
     result.holderId = source.accountId;
     result.currencyIso = source.currencyIso;
@@ -747,8 +1012,11 @@ public with sharing class ALT_CLS_SourceLinkService {
     return result;
   }
 
-  private static ALT_CLS_MatchEvidence.Side side(CandidateView candidate) {
+  /** The same authorization fact on the candidate side: absent identity stays UNKNOWN there too. */
+  private ALT_CLS_MatchEvidence.Side side(CandidateView candidate) {
     ALT_CLS_MatchEvidence.Side result = new ALT_CLS_MatchEvidence.Side();
+    result.externalIdentityRedacted = !authorizedAccounts()
+      .contains(candidate.holderId);
     result.sourceIdentity = candidate.fundingId;
     result.holderId = candidate.holderId;
     result.currencyIso = candidate.currencyIso;
@@ -772,19 +1040,37 @@ public with sharing class ALT_CLS_SourceLinkService {
       : 'AXF_FTX_LKP_BankAccount__c';
   }
 
+  /** One candidate scan window; the sentinel row past MAX_SCAN is dropped and reported, never hidden. */
+  private static List<AXF_OBJ_FinancialTransaction__c> scan(
+    String soql,
+    Map<String, Object> binds,
+    CandidatePage page
+  ) {
+    List<AXF_OBJ_FinancialTransaction__c> rows = (List<AXF_OBJ_FinancialTransaction__c>) Database.queryWithBinds(
+      soql,
+      binds,
+      AccessLevel.USER_MODE
+    );
+    if (rows.size() > MAX_SCAN) {
+      page.scanTruncated = true;
+      rows.remove(rows.size() - 1);
+    }
+    return rows;
+  }
+
   private List<CandidateView> persistedCandidates(
     SourceView source,
     String term,
     CandidatePage page
   ) {
-    String soql =
+    String base =
       'SELECT Id, AXF_FTX_NUM_Magnitude__c, AXF_FTX_TXT_CurrencyIsoCode__c, AXF_FTX_PKL_Direction__c,' +
       ' AXF_FTX_DAT_DueDate__c, AXF_FTX_DAT_PurchaseDate__c, AXF_FTX_TXT_Description__c, AXF_FTX_TXT_UserCategory__c,' +
       ' AXF_FTX_PKL_Status__c, AXF_FTX_NUM_Version__c, AXF_FTX_PKL_ScheduleState__c, AXF_FTX_LKP_Schedule__c,' +
       ' AXF_FTX_NUM_Sequence__c, AXF_FTX_LKP_BankAccount__c, AXF_FTX_LKP_CreditCard__c, AXF_FTX_LKP_Account__c' +
       ' FROM AXF_OBJ_FinancialTransaction__c' +
       ' WHERE AXF_FTX_LKP_Account__c = :accountId AND AXF_FTX_PKL_PlanKind__c = \'PLANNED\'' +
-      ' AND AXF_FTX_TXT_CurrencyIsoCode__c = :iso AND AXF_FTX_PKL_Direction__c = :direction' +
+      ' AND AXF_FTX_PKL_Direction__c = :direction' +
       ' AND (AXF_FTX_PKL_ScheduleState__c = NULL OR AXF_FTX_PKL_ScheduleState__c != \'CANCELLED\')' +
       ' AND (' +
       fundingField(source.sourceKind) +
@@ -795,25 +1081,39 @@ public with sharing class ALT_CLS_SourceLinkService {
       ' = NULL' +
       (String.isBlank(term)
         ? ''
-        : ' AND AXF_FTX_TXT_Description__c LIKE :pattern') +
+        : ' AND AXF_FTX_TXT_Description__c LIKE :pattern');
+    String tail =
       ' ORDER BY AXF_FTX_DAT_DueDate__c ASC NULLS LAST, AXF_FTX_DAT_PurchaseDate__c ASC, AXF_FTX_NUM_Magnitude__c ASC, Id ASC' +
       ' LIMIT :scan';
-    List<AXF_OBJ_FinancialTransaction__c> rows = (List<AXF_OBJ_FinancialTransaction__c>) Database.queryWithBinds(
-      soql,
-      new Map<String, Object>{
-        'accountId' => source.accountId,
-        'iso' => source.currencyIso,
-        'direction' => source.direction,
-        'fundingId' => source.fundingId,
-        'pattern' => String.isBlank(term) ? null : pattern(term),
-        'scan' => MAX_SCAN + 1
-      },
-      AccessLevel.USER_MODE
+    Map<String, Object> binds = new Map<String, Object>{
+      'accountId' => source.accountId,
+      'direction' => source.direction,
+      'fundingId' => source.fundingId,
+      'pattern' => String.isBlank(term) ? null : pattern(term),
+      'scan' => MAX_SCAN + 1
+    };
+    // AXF-140: a candidate in another currency is BLOCKED and never selectable, so it must not
+    // consume the window that decides which linkable forecasts are seen at all. The two groups are
+    // scanned with a window of their own — same currency first, everything else second — and both
+    // go through the same in-memory exclusion below; a truncation in either one is reported.
+    Map<String, Object> linkableBinds = new Map<String, Object>(binds);
+    linkableBinds.put('iso', source.currencyIso);
+    List<AXF_OBJ_FinancialTransaction__c> rows = scan(
+      base + ' AND AXF_FTX_TXT_CurrencyIsoCode__c = :iso' + tail,
+      linkableBinds,
+      page
     );
-    if (rows.size() > MAX_SCAN) {
-      page.scanTruncated = true;
-      rows.remove(rows.size() - 1);
-    }
+    Map<String, Object> blockedBinds = new Map<String, Object>(binds);
+    blockedBinds.put('iso', source.currencyIso);
+    rows.addAll(
+      scan(
+        base +
+          ' AND (AXF_FTX_TXT_CurrencyIsoCode__c = NULL OR AXF_FTX_TXT_CurrencyIsoCode__c != :iso)' +
+          tail,
+        blockedBinds,
+        page
+      )
+    );
     Map<Id, Decimal> nets = new Map<Id, Decimal>();
     Set<Id> unverified = new Set<Id>();
     netByTarget(
@@ -855,7 +1155,27 @@ public with sharing class ALT_CLS_SourceLinkService {
       c.version = row.AXF_FTX_NUM_Version__c == null
         ? 0
         : row.AXF_FTX_NUM_Version__c;
-      c.linkable = true;
+      if (c.currencyIso != source.currencyIso) {
+        // AXF-140: a candidate in another currency is shown with its own original, available and
+        // currency, but completion requires exact currency arithmetic (policy §3) and material FX
+        // evidence (policy §2): it stays BLOCKED and is never selectable, so no draft is offered
+        // for an allocation that cannot be confirmed. The residual is left unknown, never zero.
+        c.state = ALT_CLS_MatchEvidence.STATE_BLOCKED;
+        c.reasons.add('CURRENCY_MISMATCH');
+      } else {
+        // Policy §3: a non-zero remainder stays explicit — no approved tolerance exists to zero it —
+        // and it leaves the candidate PARTIAL, where the user may still add or edit draft
+        // allocations. A candidate the source extinguishes exactly stays CONSULTATIVE.
+        c.residualAfter = residual - Math.min(source.residual, residual);
+        // AXF-135: the same amount seen from the source: what this obligation cannot absorb is a
+        // multi-target need and is never met by increasing the obligation.
+        c.sourceResidualAfter =
+          source.residual - Math.min(source.residual, residual);
+        c.linkable = true;
+        if (c.residualAfter > 0) {
+          c.state = ALT_CLS_MatchEvidence.STATE_PARTIAL;
+        }
+      }
       c.fundingId = (Id) row.get(fundingField(source.sourceKind));
       c.holderId = row.AXF_FTX_LKP_Account__c; // observed, not copied from the source
       result.add(c);
@@ -962,6 +1282,17 @@ public with sharing class ALT_CLS_SourceLinkService {
         c.persisted = false;
         c.amount = line.amount;
         c.residual = line.amount;
+        // AXF-140: the same remainder fact as a persisted candidate, so the cell never renders
+        // nothing for a projected line and null keeps its single meaning — another currency, where
+        // the remainder is unknown and never zero.
+        c.residualAfter = line.amount == null
+          ? null
+          : line.amount - Math.min(source.residual, line.amount);
+        // AXF-135: the source side of the same remainder, so a projected occurrence states what is
+        // left for another target too (unknown, never zero, when the currencies differ).
+        c.sourceResidualAfter = line.amount == null
+          ? null
+          : source.residual - Math.min(source.residual, line.amount);
         c.currencyIso = source.currencyIso;
         c.direction = source.direction;
         c.dueDate = line.effectiveDueDate == null
@@ -969,6 +1300,8 @@ public with sharing class ALT_CLS_SourceLinkService {
           : line.effectiveDueDate;
         c.description = schedule.Name;
         c.status = line.estimated == true ? 'ESTIMATED' : 'PLANNED';
+        // Not linkable before materialization, so it stays CONSULTATIVE: PARTIAL (policy §5) allows
+        // editing draft allocations, and no draft can be constructed for a projected occurrence.
         c.linkable = false;
         c.holderId = schedule.AXF_FSC_LKP_Account__c;
         c.reasons.add('MATERIALIZATION_REQUIRED');
@@ -999,21 +1332,53 @@ public with sharing class ALT_CLS_SourceLinkService {
       new List<Object>{ 'AXF25', input.operationKey }
     );
     List<AXF_OBJ_ReconciliationAllocation__c> previous = [
-      SELECT Id
+      SELECT Id, AXF_RA_LKP_BankTransaction__c, AXF_RA_LKP_CardTransaction__c
       FROM AXF_OBJ_ReconciliationAllocation__c
       WHERE AXF_RA_EXI_AllocationKey__c = :operation
       WITH USER_MODE
       LIMIT 1
     ];
     if (!previous.isEmpty()) {
-      // Replay skips eligibility (the link may have exhausted the source); AXF-25 compares
-      // the payload hash and answers CONFLICT on any divergence.
+      // AXF-135: an operation that was already applied is resolved before the role is judged, so a
+      // retry that declares no role — a cached client — reproduces the recorded result instead of
+      // being refused on a field it never sent. Replay skips eligibility (the link may have
+      // exhausted the source); AXF-25 still compares the payload hash and answers CONFLICT on any
+      // divergence whenever the retry does declare a role.
       result.replayed = true;
       result.createdActualOnly = input.targetId == null;
-      result.allocationId = realize(input, source);
+      if (String.isNotBlank(input.economicRole)) {
+        result.allocationId = realize(input, source);
+      } else {
+        result.allocationId = previous[0].Id;
+      }
       finish(result);
+      if (String.isBlank(input.economicRole)) {
+        // The role of the recorded operation is not part of this retry, so it cannot take part in
+        // the comparison: the retry is checked against what the recorded allocation holds.
+        Id recordedSource = previous[0].AXF_RA_LKP_BankTransaction__c != null
+          ? previous[0].AXF_RA_LKP_BankTransaction__c
+          : previous[0].AXF_RA_LKP_CardTransaction__c;
+        check(
+          input.sourceId == recordedSource &&
+            input.amount == result.amount &&
+            (input.targetId == null ||
+            input.targetId == result.targetId),
+          'CONFLICT'
+        );
+      }
       return result;
     }
+    // AXF-135: the role is declared, never defaulted. A role this slice cannot route is refused
+    // here, before any read of a candidate and before any write, so no invoice payment, transfer or
+    // refund can ever become an allocation or a second consumption expense.
+    check(
+      input.economicRole != null && ECONOMIC_ROLES.contains(input.economicRole),
+      'INVALID_ECONOMIC_ROLE'
+    );
+    check(
+      ROUTABLE_ROLES.contains(input.economicRole),
+      'UNSUPPORTED_ECONOMIC_ROLE'
+    );
     if (!source.eligible) {
       throw new SourceLinkException(source.reasons[0]);
     }
@@ -1082,6 +1447,18 @@ public with sharing class ALT_CLS_SourceLinkService {
     check(row.AXF_FTX_LKP_Account__c == source.accountId, 'UNAVAILABLE');
     check(row.AXF_FTX_PKL_PlanKind__c == 'PLANNED', 'INVALID_TARGET');
     check(row.AXF_FTX_PKL_ScheduleState__c != 'CANCELLED', 'TARGET_CANCELLED');
+    if (row.AXF_FTX_TXT_CurrencyIsoCode__c != source.currencyIso) {
+      // AXF-140: material FX evidence is checked first, so a pair with no usable quote is refused
+      // with the missing rate the user has to correct instead of a bare currency mismatch.
+      check(
+        materialRate(
+          row.AXF_FTX_TXT_CurrencyIsoCode__c,
+          source.currencyIso,
+          quoteSide(source.direction)
+        ) != null,
+        'MISSING_MATERIAL_FX'
+      );
+    }
     check(
       row.AXF_FTX_TXT_CurrencyIsoCode__c == source.currencyIso,
       'CURRENCY_MISMATCH'
@@ -1120,6 +1497,8 @@ public with sharing class ALT_CLS_SourceLinkService {
     request.targetVersion = input.targetVersion;
     request.sourceVersion = input.sourceVersion;
     request.operationKey = input.operationKey;
+    // AXF-135: the declared role travels into the canonical payload of the realization.
+    request.economicRole = input.economicRole;
     if (input.targetId == null) {
       // ACTUAL_ONLY: the plan is born from the fact itself (holder, currency, direction).
       request.accountId = source.accountId;

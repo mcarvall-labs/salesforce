@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<CustomField xmlns="http://soap.sforce.com/2006/04/metadata">
+  <fullName>AXF_SDC_TXT_CoverageHash__c</fullName>
+  <label>Hash de Cobertura</label>
+  <length>64</length>
+  <type>Text</type>
+  <required>false</required>
+  <description
+  >Hash das alocações originais ativas ordenadas canonicamente, com valores e moeda imutáveis, a versão da base e a obrigação efetiva. Um ponteiro único para a última alocação não é prova de cobertura: o servidor consulta todas as contribuições sob o bloqueio do titular (AXF-104).</description>
+</CustomField>

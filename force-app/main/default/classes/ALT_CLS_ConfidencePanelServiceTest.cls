@@ -305,6 +305,87 @@ private class ALT_CLS_ConfidencePanelServiceTest {
   }
 
   @IsTest
+  static void canonicalPolicyStatesAndFallbacksComeFromThePolicy() {
+    System.runAs(byAlias('axf143g')) {
+      Datetime now = Datetime.newInstance(2026, 9, 14, 12, 0, 0);
+      ALT_CLS_ConfidencePanelService.nowOverride = now;
+      ALT_CLS_ConfidencePanelService service = new ALT_CLS_ConfidencePanelService();
+      Account withOwnLimit = holder('Ana Limite Proprio');
+      AXF_OBJ_PluggyConnection__c fresh = connection(
+        'canon',
+        now.addHours(-1),
+        'ACTIVE',
+        'ACTIVE'
+      );
+      bank(withOwnLimit.Id, 'o', fresh.Id, 'AVAILABLE', 24);
+      Account withDefaultLimit = holder('Ana Limite Padrao');
+      AXF_OBJ_BankAccount__c defaulted = bank(
+        withDefaultLimit.Id,
+        'd',
+        null,
+        'AVAILABLE',
+        null
+      );
+      // Own limit on the included source, no limit on the excluded one: only the first may
+      // report a fallback, because only it contributes to the derivation.
+      Account withExcluded = holder('Ana Limite Excluido');
+      bank(withExcluded.Id, 'e', fresh.Id, 'AVAILABLE', 24);
+      bank(withExcluded.Id, 'x', null, 'CUSTODY', null);
+      Test.startTest();
+      ALT_CLS_ConfidencePanelService.Panel informative = service.explain(
+        new List<Id>{ withOwnLimit.Id }
+      );
+      ALT_CLS_ConfidencePanelService.Panel degraded = service.explain(
+        new List<Id>{ withDefaultLimit.Id }
+      );
+      ALT_CLS_ConfidencePanelService.Panel mixed = service.explain(
+        new List<Id>{ withExcluded.Id }
+      );
+      Test.stopTest();
+
+      Assert.areEqual(
+        ALT_CLS_ForecastComparisonService.CONFIDENCE_INFORMATIVE,
+        informative.level,
+        'estado canonico da policy, nao um score paralelo'
+      );
+      Assert.areEqual(
+        ALT_CLS_ForecastComparisonService.CONFIDENCE_DEGRADED,
+        degraded.level
+      );
+      Assert.areEqual(
+        ALT_CLS_ForecastComparisonService.POLICY_VERSION,
+        informative.gatePolicy,
+        'a policy canonica que declara os estados e as acoes'
+      );
+      Assert.isFalse(
+        informative.gatePolicy.contains(ALT_CLS_MatchEvidence.MATCHING_POLICY),
+        'a policy de matching declara outros estados e nao entra aqui'
+      );
+      Assert.isTrue(
+        informative.fallbacks.isEmpty(),
+        'limite proprio da conta: nenhum fallback aplicado'
+      );
+      Assert.areEqual(
+        new List<String>{ 'FRESHNESS_LIMIT_DEFAULT' },
+        degraded.fallbacks,
+        'sem limite proprio, o padrao da politica e declarado'
+      );
+      Assert.areEqual(
+        48,
+        source(degraded, defaulted.Id).freshnessLimitHours,
+        'padrao da politica'
+      );
+      Assert.isTrue(
+        mixed.fallbacks.isEmpty(),
+        'fonte excluida usa o padrao mas nao deriva nada: nenhum fallback'
+      );
+      Assert.areEqual(1, mixed.includedCount);
+      Assert.areEqual(1, mixed.excludedCount);
+      Assert.areEqual('DEGRADED', mixed.level);
+    }
+  }
+
+  @IsTest
   static void manualSourcesUseLastImportAndUnknownIsDistinctFromZero() {
     System.runAs(byAlias('axf143g')) {
       Datetime now = Datetime.newInstance(2026, 9, 14, 12, 0, 0);
@@ -667,6 +748,10 @@ private class ALT_CLS_ConfidencePanelServiceTest {
         'sem data de importacao usa a criacao'
       );
       Assert.isTrue(keyedView.exceptions.contains('IMPORT_DATE_MISSING'));
+      Assert.isTrue(
+        panel.fallbacks.contains('IMPORT_DATE_MISSING'),
+        'fallback aplicado e declarado no painel'
+      );
       Assert.isFalse(keyedView.exceptions.contains('NO_SUCCESS_RECORDED'));
       Assert.areEqual(
         'STALE',
@@ -728,6 +813,10 @@ private class ALT_CLS_ConfidencePanelServiceTest {
       Assert.areEqual('BLOCKED', blocked.level);
       Assert.isTrue(blocked.reasons.contains('SOURCE_EXCLUDED'));
       Assert.isTrue(blocked.reasons.contains('NO_READABLE_SOURCE'));
+      Assert.isTrue(
+        blocked.fallbacks.isEmpty(),
+        'painel bloqueado nao deriva resultado: nenhum fallback declarado'
+      );
     }
     System.runAs(byAlias('axf143f')) {
       ALT_CLS_ConfidencePanelService.Panel gaps = new ALT_CLS_ConfidencePanelService()

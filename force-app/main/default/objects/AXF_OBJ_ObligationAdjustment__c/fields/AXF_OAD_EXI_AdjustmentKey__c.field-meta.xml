@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<CustomField xmlns="http://soap.sforce.com/2006/04/metadata">
+  <fullName>AXF_OAD_EXI_AdjustmentKey__c</fullName>
+  <label>Chave do Ajuste</label>
+  <length>64</length>
+  <type>Text</type>
+  <unique>true</unique>
+  <externalId>true</externalId>
+  <caseSensitive>true</caseSensitive>
+  <description
+  >Identidade determinística do ajuste, derivada por hash enquadrado (SHA-256) da capacidade, do titular, do ator e da chave de operação. Torna a repetição equivalente idempotente e a carga alterada um conflito (AXF-104).</description>
+</CustomField>
