@@ -132,6 +132,115 @@ private class AXF_CLS_CTRL_ExportTest {
   }
 
   /**
+   * ExportException thrown through read()/download() must also reach the client sanitized as
+   * {code}: not just request()'s catch (already covered by invalidInputIsSanitized), so the two
+   * other pass-through catches are exercised independently.
+   */
+  @IsTest
+  static void exportExceptionThroughReadAndDownloadIsSanitized() {
+    System.runAs(requester()) {
+      try {
+        AXF_CLS_CTRL_Export.read(null);
+        Assert.fail('runId nulo e recusado pelo servico.');
+      } catch (AuraHandledException sanitized) {
+        Assert.areEqual('INVALID_INPUT', sanitized.getMessage());
+      }
+      try {
+        AXF_CLS_CTRL_Export.download(null, null);
+        Assert.fail('runId nulo e recusado pelo servico.');
+      } catch (AuraHandledException sanitized) {
+        Assert.areEqual('INVALID_INPUT', sanitized.getMessage());
+      }
+    }
+  }
+
+  /**
+   * A user holding AXF_CanExportData through a permission set that grants no object permission on
+   * AXF_OBJ_ExportRun__c reaches the platform's own access-denial when read() queries the control
+   * row under USER_MODE — a real System.QueryException (not an
+   * ALT_CLS_ExportService.ExportException) — which must still reach the client only as the
+   * sanitized NOT_ACCESSIBLE code, never as a raw platform exception. This exercises the other
+   * branch of safe() with a genuine access-denied scenario rather than a synthetic exception
+   * injection. (download() does not query under USER_MODE — it locks the row in system mode and
+   * refuses non-requesters as a returned FORBIDDEN outcome, not a thrown exception, which is
+   * already covered by downloadThroughTheControllerStillRevalidatesTheExactRequester.)
+   */
+  @IsTest
+  static void queryExceptionFromMissingObjectAccessIsSanitizedAsNotAccessible() {
+    Id capabilityOnlyPermissionSetId = capabilityOnlyPermissionSet();
+    User capabilityOnlyUser = capabilityOnlyUser();
+    insert new PermissionSetAssignment(
+      AssigneeId = capabilityOnlyUser.Id,
+      PermissionSetId = capabilityOnlyPermissionSetId
+    );
+    Id runId;
+    System.runAs(requester()) {
+      ALT_CLS_ExportService.RunView run = AXF_CLS_CTRL_Export.request(
+        holderId(),
+        null
+      );
+      runId = run.runId;
+    }
+    System.runAs(capabilityOnlyUser) {
+      Assert.isTrue(
+        FeatureManagement.checkPermission('AXF_CanExportData'),
+        'A permissao customizada foi concedida isoladamente, sem CRUD do objeto.'
+      );
+      try {
+        AXF_CLS_CTRL_Export.read(runId);
+        Assert.fail(
+          'Sem CRUD em AXF_OBJ_ExportRun__c a consulta USER_MODE deve falhar.'
+        );
+      } catch (AuraHandledException sanitized) {
+        Assert.areEqual(
+          'NOT_ACCESSIBLE',
+          sanitized.getMessage(),
+          'Falha de acesso da plataforma, nunca a excecao crua.'
+        );
+      }
+    }
+  }
+
+  /** PermissionSet granting only the custom permission, no object/field permissions at all. */
+  private static Id capabilityOnlyPermissionSet() {
+    PermissionSet permissionSet = new PermissionSet(
+      Name = 'AXF_TestExportCapabilityOnly118',
+      Label = 'AXF Test Export Capability Only (AXF-118)'
+    );
+    insert permissionSet;
+    Id customPermissionId = [
+      SELECT Id
+      FROM CustomPermission
+      WHERE DeveloperName = 'AXF_CanExportData'
+      LIMIT 1
+    ]
+    .Id;
+    insert new SetupEntityAccess(
+      ParentId = permissionSet.Id,
+      SetupEntityId = customPermissionId
+    );
+    return permissionSet.Id;
+  }
+
+  private static User capabilityOnlyUser() {
+    Id profileId = [SELECT Id FROM Profile WHERE Name = 'Standard User' LIMIT 1]
+    .Id;
+    User user = new User(
+      Alias = 'axf118no',
+      Email = 'axf118nocrud@example.invalid',
+      EmailEncodingKey = 'UTF-8',
+      LastName = 'Export Capability Only',
+      LanguageLocaleKey = 'pt_BR',
+      LocaleSidKey = 'pt_BR',
+      TimeZoneSidKey = 'America/Sao_Paulo',
+      ProfileId = profileId,
+      Username = 'axf118nocrud.' + System.now().getTime() + '@example.invalid'
+    );
+    insert user;
+    return user;
+  }
+
+  /**
    * The controller adds no surface that bypasses the server-side revalidation
    * ALT_CLS_ExportService already performs on every download: another operator, even one holding
    * the capability, is refused and the artifact is revoked exactly like the direct-service test
