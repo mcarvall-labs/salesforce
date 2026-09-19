@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<CustomField xmlns="http://soap.sforce.com/2006/04/metadata">
+    <fullName>AXF_RVI_LKP_InternalTransfer__c</fullName>
+    <label>Transferencia Interna</label>
+    <deleteConstraint>SetNull</deleteConstraint>
+    <referenceTo>AXF_OBJ_InternalTransfer__c</referenceTo>
+    <relationshipLabel>Itens de Revisao</relationshipLabel>
+    <relationshipName>ReviewItems</relationshipName>
+    <type>Lookup</type>
+    <description
+  >Populado apenas quando AXF_RVI_PKL_Type__c = TRANSFER_SUGGESTION; referencia o AXF_OBJ_InternalTransfer__c candidato (AXF-32).</description>
+</CustomField>
