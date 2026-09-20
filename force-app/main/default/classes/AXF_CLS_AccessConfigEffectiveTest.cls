@@ -107,15 +107,20 @@ private class AXF_CLS_AccessConfigEffectiveTest {
     return u;
   }
 
+  // Always recalculates, never conditionally: a deploy that touches a member permission set
+  // in the same transaction as this test (e.g. a large multi-story promotion) can leave
+  // PermissionSetGroup.Status reading 'Updated' from before that change while the real
+  // recalculation triggered by it is still pending -- the same describe/query-engine
+  // staleness class of issue already hit for a newly created custom field (AXF-142).
+  // Test.calculatePermissionSetGroup is a no-op safety margin when already current, so
+  // calling it unconditionally removes the race instead of trusting a possibly-stale read.
   private static void calculateGroups() {
     for (PermissionSetGroup psg : [
-      SELECT Id, Status
+      SELECT Id
       FROM PermissionSetGroup
       WHERE DeveloperName IN :new Set<String>{ GESTOR_PSG, PART_PSG }
     ]) {
-      if (psg.Status != 'Updated') {
-        Test.calculatePermissionSetGroup(psg.Id);
-      }
+      Test.calculatePermissionSetGroup(psg.Id);
     }
   }
 
