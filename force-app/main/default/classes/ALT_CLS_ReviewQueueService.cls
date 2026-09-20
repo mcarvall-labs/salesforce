@@ -393,20 +393,47 @@ public with sharing class ALT_CLS_ReviewQueueService {
     return rows;
   }
 
+  // Static field list instead of a runtime Schema describe: a describe-based dynamic SOQL
+  // built in the same transaction that just created a new AXF_RVI_* field can observe the
+  // field in the describe map yet have the query executor reject it as unrecognized (a
+  // platform describe/query-engine cache inconsistency reproduced during the AXF-142 UAT
+  // promotion validate). A static, compile-time-checked list has no such window.
+  private static final List<String> FIELDS = new List<String>{
+    'Id',
+    'Name',
+    'AXF_RVI_DAT_PriorDate__c',
+    'AXF_RVI_DAT_ProposedDate__c',
+    'AXF_RVI_DT_ObservedAt__c',
+    'AXF_RVI_DT_ResolvedAt__c',
+    'AXF_RVI_EXI_ReviewKey__c',
+    'AXF_RVI_LKP_Account__c',
+    'AXF_RVI_LKP_BankAccountTransaction__c',
+    'AXF_RVI_LKP_BankAccount__c',
+    'AXF_RVI_LKP_CreditCardTransaction__c',
+    'AXF_RVI_LKP_CreditCard__c',
+    'AXF_RVI_LKP_FinancialTransaction__c',
+    'AXF_RVI_LKP_InternalTransfer__c',
+    'AXF_RVI_LKP_ResolvedByUser__c',
+    'AXF_RVI_NUM_PriorAmount__c',
+    'AXF_RVI_NUM_PriorMatchConfidence__c',
+    'AXF_RVI_NUM_ProposedAmount__c',
+    'AXF_RVI_NUM_Version__c',
+    'AXF_RVI_PKL_State__c',
+    'AXF_RVI_PKL_Type__c',
+    'AXF_RVI_TAL_ResolutionNote__c',
+    'AXF_RVI_TXT_EvidenceRef__c',
+    'AXF_RVI_TXT_PriorCurrency__c',
+    'AXF_RVI_TXT_PriorDescription__c',
+    'AXF_RVI_TXT_PriorDirection__c',
+    'AXF_RVI_TXT_PriorStatus__c',
+    'AXF_RVI_TXT_ProposedCurrency__c',
+    'AXF_RVI_TXT_ProposedDescription__c',
+    'AXF_RVI_TXT_ProposedDirection__c',
+    'AXF_RVI_TXT_ProposedStatus__c'
+  };
+
   private static String selectQuery() {
-    List<String> names = new List<String>{ 'Id', 'Name' };
-    for (
-      Schema.SObjectField field : AXF_OBJ_ReviewItem__c.SObjectType.getDescribe(
-          SObjectDescribeOptions.DEFERRED
-        )
-        .fields.getMap()
-        .values()
-    ) {
-      String name = field.getDescribe().getName();
-      if (name.toLowerCase().startsWith('axf_rvi_'))
-        names.add(name);
-    }
-    return 'SELECT ' + String.join(names, ',') + ' FROM AXF_OBJ_ReviewItem__c';
+    return 'SELECT ' + String.join(FIELDS, ',') + ' FROM AXF_OBJ_ReviewItem__c';
   }
 
   private static final List<String> REFERENCES = new List<String>{
@@ -548,13 +575,7 @@ public with sharing class ALT_CLS_ReviewQueueService {
     AXF_OBJ_ReviewItem__c a,
     AXF_OBJ_ReviewItem__c b
   ) {
-    for (
-      String field : AXF_OBJ_ReviewItem__c.SObjectType.getDescribe(
-          SObjectDescribeOptions.DEFERRED
-        )
-        .fields.getMap()
-        .keySet()
-    ) {
+    for (String field : FIELDS) {
       String name = field.toLowerCase();
       if (
         !name.startsWith('axf_rvi_') ||
