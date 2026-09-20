@@ -1,0 +1,7 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<CustomPermission xmlns="http://soap.sforce.com/2006/04/metadata">
+    <isLicensed>false</isLicensed>
+    <label>AXF - Pode Confirmar Conciliacao N:N</label>
+    <description
+  >Montar e confirmar uma conciliacao N:N pelo comando reconciliation.allocation.confirm.v1 (AXF-30), gravando RCN + N RA atomicamente. Concedida por AXF_PS_GestorFinanceiro; exige AXF_CanRealize. Nao concede acesso a registros.</description>
+</CustomPermission>

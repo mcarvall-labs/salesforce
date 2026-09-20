@@ -10,3 +10,13 @@ Implementation-relevant clauses, as applied by `ALT_CLS_MatchEvidence` (AXF-139)
 4. **Ties and incomplete evidence stay explicit** and select no winner; all candidates remain `CONSULTATIVE`.
 5. **Text folding** (v1.0.0 implementation detail): lower case, whitespace, punctuation and Latin diacritics only; `CONTAINS` requires both normalized texts to have at least 3 characters. No fuzzy similarity.
 6. **Change control**: any tolerance, weight, fuzzy feature or automatic selection needs a new policy version, calibration evidence and updated fixtures.
+
+Applied by AXF-140 (`ALT_CLS_SourceLinkService`):
+
+7. **No approved tolerance, weight or conclusion policy exists in v1.0.0**, so a non-zero remainder is
+   reported as it is (`residualAfter`) and is never zeroed, settled or concluded automatically.
+8. **Different currencies need material FX evidence** (§2). The candidate is shown with its original
+   amount, available amount, currency, indicative conversion (AXF-92 vocabulary) and remainder kept
+   apart; it stays `BLOCKED` and unlinkable because completion requires exact currency arithmetic
+   (§3). A pair without a usable quote refuses confirmation with `MISSING_MATERIAL_FX` — the reason
+   the user has to correct.

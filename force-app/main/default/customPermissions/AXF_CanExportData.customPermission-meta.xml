@@ -1,0 +1,6 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<CustomPermission xmlns="http://soap.sforce.com/2006/04/metadata">
+    <description
+  >Request and download an authorized export of one holder scope (AXF-118). Authorization is revalidated on the request and again on every download; holder access and the exact requester binding are enforced server-side. Grants no Delete.</description>
+    <label>Export authorized holder data</label>
+</CustomPermission>

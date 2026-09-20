@@ -1,0 +1,13 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<CustomField xmlns="http://soap.sforce.com/2006/04/metadata">
+  <fullName>AXF_SDC_LKP_Schedule__c</fullName>
+  <label>Cronograma</label>
+  <type>Lookup</type>
+  <referenceTo>AXF_OBJ_FinancialSchedule__c</referenceTo>
+  <relationshipName>AXF_REL_SettlementDecisions</relationshipName>
+  <relationshipLabel>Decisões de Liquidação</relationshipLabel>
+  <deleteConstraint>Restrict</deleteConstraint>
+  <required>false</required>
+  <description
+  >Cronograma cuja referência recorrente a decisão produz ou retira. Apenas cronogramas estimados consomem referências recorrentes (AXF-104).</description>
+</CustomField>

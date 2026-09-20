@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<CustomField xmlns="http://soap.sforce.com/2006/04/metadata">
+  <fullName>AXF_SDC_NUM_BasisAmount__c</fullName>
+  <label>Base Vigente</label>
+  <precision>16</precision>
+  <scale>2</scale>
+  <type>Number</type>
+  <required>false</required>
+  <description
+  >Base autoritativa B resolvida pelo AXF-103 e congelada antes do primeiro uso financeiro. Preserva a previsão original separadamente; um valor estimado obsoleto nunca limita a liquidação (AXF-104).</description>
+</CustomField>

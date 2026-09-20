@@ -1,0 +1,23 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<CustomObject xmlns="http://soap.sforce.com/2006/04/metadata">
+  <deploymentStatus>Deployed</deploymentStatus>
+  <description
+  >Ajuste de obrigação com sinal e sem caixa (AXF-104). Separa a diferença entre o valor previsto e o valor liquidado das alocações de caixa: um ajuste afeta apenas a obrigação efetiva, nunca a disponibilidade da fonte nem os totais realizados. Evidência imutável: a retirada é uma compensação que aponta o ajuste neutralizado, nunca um ajuste negativo. Sem Delete e sem exposição nativa de lista/relatório até a paridade de compartilhamento.</description>
+  <enableActivities>false</enableActivities>
+  <enableBulkApi>true</enableBulkApi>
+  <enableFeeds>false</enableFeeds>
+  <enableHistory>false</enableHistory>
+  <enableReports>false</enableReports>
+  <enableSearch>false</enableSearch>
+  <enableSharing>true</enableSharing>
+  <enableStreamingApi>true</enableStreamingApi>
+  <label>Ajuste de Obrigação</label>
+  <nameField>
+    <displayFormat>OAD-{000000}</displayFormat>
+    <label>Número do Ajuste</label>
+    <type>AutoNumber</type>
+  </nameField>
+  <pluralLabel>Ajustes de Obrigação</pluralLabel>
+  <sharingModel>Private</sharingModel>
+  <visibility>Public</visibility>
+</CustomObject>

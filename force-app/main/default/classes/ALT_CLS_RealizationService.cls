@@ -27,7 +27,42 @@ public with sharing class ALT_CLS_RealizationService {
     public Date recognitionDate;
     public Decimal targetVersion;
     public Decimal sourceVersion;
+    /**
+     * AXF-135: economic role declared by the caller. It is preserved, never inferred here, and a
+     * caller that declares none keeps the pre-AXF-135 payload fingerprint replayable.
+     */
+    public String economicRole;
     public String operationKey;
+    /**
+     * @description AXF-30: identidade canônica da aplicação (`alloc-v2`) quando o agregado N:N
+     * é quem a possui. A linha passa a ter identidade independente da proposta/run; o chamador
+     * que não declara nenhuma mantém a identidade por chave de operação, replayável como antes.
+     */
+    public String allocationIdentity;
+    /**
+     * @description AXF-30: agregado de conciliação (RCN) a que a alocação pertence. Nulo
+     * preserva o comportamento AXF-25 (alocação sem raiz de conciliação).
+     */
+    public Id reconciliationId;
+    /**
+     * @description AXF-104: obrigação efetiva revisada (B + A) resolvida sob bloqueio. Quando
+     * presente, substitui a magnitude original como limite do alvo — a liquidação nunca é
+     * limitada por uma estimativa original obsoleta. Nula preserva o comportamento AXF-25.
+     */
+    public Decimal effectiveObligation;
+    /**
+     * @description AXF-142: quando esta linha é uma redistribuição, aponta para a allocation
+     * `APPLICATION` original que ela substitui (mesmo campo já usado pela reversão AXF-141,
+     * reaproveitado com outro sentido). Nula preserva o comportamento AXF-25/AXF-30.
+     */
+    public Id originalAllocationId;
+    /**
+     * @description AXF-142: why a redistribution line exists (same restricted set as AXF-141's
+     * reversal reasons). Persisted on the row via the reason/note pair already carried by every
+     * compensation; null preserves the AXF-25/AXF-30 confirmation behavior (empty on those rows).
+     */
+    public String reasonCode;
+    public String reasonNote;
   }
   public class View {
     public Id targetId;
@@ -225,23 +260,54 @@ public with sharing class ALT_CLS_RealizationService {
       input.sourceKind != 'CASH' || input.fundingId == null,
       'INVALID_SOURCE'
     );
-    String operation = hash(new List<Object>{ 'AXF25', input.operationKey });
-    String payload = hash(
-      new List<Object>{
-        'APPLICATION',
-        input.targetId,
-        input.accountId,
-        input.sourceId,
-        input.sourceKind,
-        input.fundingId,
-        input.amount,
-        input.currencyIso,
-        input.direction,
-        input.recognitionDate,
-        input.targetVersion,
-        input.sourceVersion
-      }
-    );
+    // AXF-30: the aggregate that owns the canonical identity of the line supplies it; otherwise the
+    // identity stays the framed operation key of AXF-25.
+    String operation = String.isNotBlank(input.allocationIdentity)
+      ? input.allocationIdentity
+      : hash(new List<Object>{ 'AXF25', input.operationKey });
+    List<Object> applicationPayload = new List<Object>{
+      'APPLICATION',
+      input.targetId,
+      input.accountId,
+      input.sourceId,
+      input.sourceKind,
+      input.fundingId,
+      input.amount,
+      input.currencyIso,
+      input.direction,
+      input.recognitionDate,
+      input.targetVersion,
+      input.sourceVersion
+    };
+    // AXF-135: a declared economic role is part of the canonical payload, so the same key with
+    // another role conflicts instead of replaying. A caller that declares no role keeps the
+    // pre-AXF-135 fingerprint unchanged and stays replayable; a blank declaration is no
+    // declaration, so it never becomes a third fingerprint that turns a replay into a CONFLICT.
+    if (String.isNotBlank(input.economicRole)) {
+      applicationPayload.add(input.economicRole);
+    }
+    // AXF-30: the canonical identity and the aggregate it belongs to are part of the payload, so a
+    // divergent request under the same identity conflicts instead of replaying.
+    if (String.isNotBlank(input.allocationIdentity)) {
+      applicationPayload.add(input.allocationIdentity);
+    }
+    if (input.reconciliationId != null) {
+      applicationPayload.add(input.reconciliationId);
+    }
+    // AXF-142: the original allocation a redistribution substitutes is part of the payload, so a
+    // divergent request under the same identity conflicts instead of replaying.
+    if (input.originalAllocationId != null) {
+      applicationPayload.add(input.originalAllocationId);
+    }
+    // AXF-142: the redistribution's declared reason is part of the payload, so a divergent
+    // request under the same identity conflicts instead of silently replaying another reason.
+    if (String.isNotBlank(input.reasonCode)) {
+      applicationPayload.add(input.reasonCode);
+    }
+    if (input.reasonNote != null) {
+      applicationPayload.add(input.reasonNote);
+    }
+    String payload = hash(applicationPayload);
     Savepoint sp = Database.setSavepoint();
     try {
       writing = true;
@@ -319,10 +385,12 @@ public with sharing class ALT_CLS_RealizationService {
         fact.iso == plan.AXF_FTX_TXT_CurrencyIsoCode__c,
         'CURRENCY_MISMATCH'
       );
+      Decimal targetCapacity =
+        (input.effectiveObligation == null
+          ? plan.AXF_FTX_NUM_Magnitude__c
+          : input.effectiveObligation) - new Conservation().net(plan.Id, null);
       check(
-        input.amount <=
-          plan.AXF_FTX_NUM_Magnitude__c -
-          new Conservation().net(plan.Id, null) &&
+        input.amount <= targetCapacity &&
           input.amount <= fact.amount - new Conservation().net(null, factId),
         'UNAVAILABLE_AMOUNT'
       );
@@ -341,7 +409,11 @@ public with sharing class ALT_CLS_RealizationService {
         AXF_RA_TXT_PayloadHash__c = payload,
         AXF_RA_PKL_Kind__c = 'APPLICATION',
         AXF_RA_PKL_FxState__c = 'PENDING_FX',
-        AXF_RA_TXT_ReportingIso__c = preference.AXF_RCP_TXT_IsoCode__c
+        AXF_RA_TXT_ReportingIso__c = preference.AXF_RCP_TXT_IsoCode__c,
+        AXF_RA_LKP_Reconciliation__c = input.reconciliationId,
+        AXF_RA_LKP_OriginalAllocation__c = input.originalAllocationId,
+        AXF_RA_PKL_ReversalReason__c = input.reasonCode,
+        AXF_RA_TXT_ReversalNote__c = input.reasonNote
       );
       row.put(
         'AXF_RA_LKP_' +
@@ -547,6 +619,9 @@ public with sharing class ALT_CLS_RealizationService {
         'CONFLICT'
       );
       check(!new Conservation().reversed(allocationId), 'CONFLICT');
+      // AXF-104: efeitos dependentes sobreviventes falham atomicamente, antes de qualquer
+      // mutação. Compensar o ajuste atribuível não pode deixar N acima de E.
+      ALT_CLS_ObligationService.assertReversalAllowed(allocationId);
       AXF_OBJ_ReconciliationAllocation__c reversal = original.clone(
         false,
         false,
@@ -560,12 +635,22 @@ public with sharing class ALT_CLS_RealizationService {
       reversal.AXF_RA_PKL_ReversalReason__c = reasonCode;
       reversal.AXF_RA_TXT_ReversalNote__c = reasonNote;
       insert as user reversal;
+      // AXF-104: compensa apenas o ajuste atribuível a esta aplicação e retira a
+      // classificação/referência dependente invalidada.
+      ALT_CLS_ObligationService.compensateForReversal(
+        plan.Id,
+        original.Id,
+        reversal.Id
+      );
       bump(plan, fact);
       return reversal.Id;
     } catch (Exception failure) {
       Database.rollback(sp);
       if (failure instanceof RealizationException) {
         throw failure;
+      }
+      if (failure instanceof ALT_CLS_ObligationService.ObligationException) {
+        throw new RealizationException(failure.getMessage());
       }
       throw new RealizationException('UNAVAILABLE');
     } finally {
@@ -606,6 +691,11 @@ public with sharing class ALT_CLS_RealizationService {
     } finally {
       writing = false;
     }
+  }
+  /** @description AXF-104: aplicado líquido válido do alvo, dentro da mesma fronteira de conservação. */
+  public Decimal netApplied(Id targetId) {
+    requireAccess();
+    return new Conservation().net(targetId, null);
   }
   /** @description Fails closed if a total would require an inaccessible allocation or source. */
   public View read(Id targetId) {

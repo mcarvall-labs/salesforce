@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<CustomField xmlns="http://soap.sforce.com/2006/04/metadata">
+    <fullName>AXF_EPR_TXT_Reason__c</fullName>
+    <label>Motivo</label>
+    <type>Text</type>
+    <length>80</length>
+    <required>false</required>
+    <trackHistory>true</trackHistory>
+    <description
+  >Codigo seguro da revogacao, sempre um dos que o servico grava: EXPIRED, ACCESS_REVOKED, ARTIFACT_MISSING, ARTIFACT_MISMATCH, ARTIFACT_NOT_REMOVED (a copia sobreviveu a tentativa de remocao e o ponteiro foi mantido) ou REVOKED (a copia saiu numa nova tentativa). Nunca PII.</description>
+</CustomField>

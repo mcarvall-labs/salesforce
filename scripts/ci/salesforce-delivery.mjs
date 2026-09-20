@@ -137,6 +137,32 @@ export function buildDestructiveChangesXml(deletedFiles) {
   return { xml, unresolved };
 }
 
+// Versioned, PR-reviewed destructive manifests. Unlike the auto-generated
+// destructiveChanges.xml (evidence only, never applied), a manifest checked
+// in at one of these paths IS passed straight to `sf project deploy start`
+// and gets applied for real on every environment it reaches as the file
+// flows through the normal develop -> uat -> main promotion. Committing (and
+// merging via PR review) the file IS the "explicitly approved destructive
+// release" the fail-closed default otherwise requires manually, off-pipeline.
+// Empty by default (no <types> entries) so its mere presence is a no-op;
+// remove or empty it again once the intended deletion has been applied.
+export const DESTRUCTIVE_MANIFEST_PATHS = [
+  ["--pre-destructive-changes", "manifest/destructiveChangesPre.xml"],
+  ["--post-destructive-changes", "manifest/destructiveChangesPost.xml"]
+];
+
+export function destructiveManifestArgs(exists, readFile) {
+  const args = [];
+  const applied = [];
+  for (const [flag, file] of DESTRUCTIVE_MANIFEST_PATHS) {
+    if (!exists(file)) continue;
+    if (!/<types>/.test(readFile(file))) continue;
+    args.push(flag, file);
+    applied.push(file);
+  }
+  return { args, applied };
+}
+
 export function extractDeclaredTests(body) {
   const heading = /^#{1,6}\s*apex test classes to run\s*$/im.exec(body || "");
   if (!heading) return [];
@@ -341,33 +367,50 @@ export async function run() {
       );
       report.destructiveUnresolved = unresolved;
     }
-    if (!report.paths.length) {
+    // A versioned manifest (manifest/destructiveChanges{Pre,Post}.xml, checked
+    // into the repo and reviewed via PR) is genuinely applied, unlike the
+    // evidence-only destructiveChanges.xml above — so its mere presence must
+    // still trigger a deploy even when this specific commit's own force-app
+    // diff is empty (e.g. the PR that adds the manifest only touches manifest/).
+    const manifest = destructiveManifestArgs(
+      (p) => fs.existsSync(p),
+      (p) => fs.readFileSync(p, "utf8")
+    );
+    report.versionedDestructiveManifests = manifest.applied;
+    if (!report.paths.length && !manifest.applied.length) {
       report.outcome = deletedFiles.length
         ? "Destructive changes only — manual review required"
         : "No metadata changes";
       return;
     }
     // Package the exact validated/deployed delta as mdapi-format metadata so the
-    // evidence artifact carries the same content submitted to Salesforce.
-    const packageDir = path.join(
-      e.RUNNER_TEMP,
-      `delta-package-${e.GITHUB_RUN_ID}-${e.GITHUB_RUN_ATTEMPT || 1}`
-    );
-    command("sf", [
-      "project",
-      "convert",
-      "source",
-      "--output-dir",
-      packageDir,
-      ...report.paths.flatMap((p) => ["--source-dir", p])
-    ]);
-    const zip = spawnSync(
-      "zip",
-      ["-r", path.join(directory, "delta-package.zip"), "."],
-      { cwd: packageDir, encoding: "utf8" }
-    );
-    if (zip.error || zip.status !== 0)
-      throw new Error("Failed to package the delta metadata zip");
+    // evidence artifact carries the same content submitted to Salesforce. Also
+    // reused below as the --manifest package.xml when a versioned destructive
+    // manifest is applied (sf requires --manifest, not --source-dir/
+    // --metadata-dir, alongside --pre/post-destructive-changes). Skipped for a
+    // pure versioned-manifest deploy (nothing additive to package).
+    let packageDir;
+    if (report.paths.length) {
+      packageDir = path.join(
+        e.RUNNER_TEMP,
+        `delta-package-${e.GITHUB_RUN_ID}-${e.GITHUB_RUN_ATTEMPT || 1}`
+      );
+      command("sf", [
+        "project",
+        "convert",
+        "source",
+        "--output-dir",
+        packageDir,
+        ...report.paths.flatMap((p) => ["--source-dir", p])
+      ]);
+      const zip = spawnSync(
+        "zip",
+        ["-r", path.join(directory, "delta-package.zip"), "."],
+        { cwd: packageDir, encoding: "utf8" }
+      );
+      if (zip.error || zip.status !== 0)
+        throw new Error("Failed to package the delta metadata zip");
+    }
     if (
       !e.SALESFORCE_AUTH_URL ||
       !/^00D[a-zA-Z0-9]{12}(?:[a-zA-Z0-9]{3})?$/.test(e.EXPECTED_ORG_ID || "")
@@ -430,7 +473,36 @@ export async function run() {
     // unintended side-effects before the merge is confirmed.
     if (e.OPERATION === "validate" && e.TARGET_ENV !== "DEV")
       args.push("--dry-run");
-    for (const file of report.paths) args.push("--source-dir", file);
+    if (manifest.applied.length) {
+      // `sf project deploy start` rejects --source-dir/--metadata-dir combined
+      // with --pre/post-destructive-changes: it requires --manifest. Reuse the
+      // package.xml already produced above for the additive delta (--manifest
+      // resolves file paths from the project's own source dirs, not from
+      // wherever that file happens to sit, so this works even though the file
+      // lives in a converted mdapi temp dir); for a pure-destructive deploy,
+      // write a fresh empty one. --ignore-warnings so deleting a component
+      // that doesn't exist in this environment (expected wherever the target
+      // metadata was never deployed, e.g. DEV/UAT) doesn't fail the deploy.
+      let manifestPath;
+      if (packageDir) {
+        manifestPath = path.join(packageDir, "package.xml");
+      } else {
+        const emptyDir = path.join(
+          e.RUNNER_TEMP,
+          `empty-package-${e.GITHUB_RUN_ID}-${e.GITHUB_RUN_ATTEMPT || 1}`
+        );
+        fs.mkdirSync(emptyDir, { recursive: true });
+        manifestPath = path.join(emptyDir, "package.xml");
+        fs.writeFileSync(
+          manifestPath,
+          '<?xml version="1.0" encoding="UTF-8"?>\n<Package xmlns="http://soap.sforce.com/2006/04/metadata">\n  <version>62.0</version>\n</Package>\n'
+        );
+      }
+      args.push("--manifest", manifestPath, "--ignore-warnings");
+    } else if (report.paths.length) {
+      for (const file of report.paths) args.push("--source-dir", file);
+    }
+    args.push(...manifest.args);
     let result = spawnSync("sf", args, {
       encoding: "utf8",
       maxBuffer: 40 * 1024 * 1024
@@ -508,6 +580,9 @@ export async function run() {
       report.deletedPaths?.length
         ? `**Deletions:** ${report.deletedPaths.length} — see destructiveChanges.xml in the evidence artifact. NOT auto-deployed; requires manual review and a separate destructive deploy.${report.destructiveUnresolved?.length ? ` ${report.destructiveUnresolved.length} deleted path(s) could not be mapped to a metadata type automatically: ${report.destructiveUnresolved.join(", ")}.` : ""}`
         : "",
+      report.versionedDestructiveManifests?.length
+        ? `**Versioned destructive manifest APPLIED:** ${report.versionedDestructiveManifests.join(", ")} — this was actually deployed (or dry-run validated), not just evidence.`
+        : "",
       report.error || "",
       "",
       ...details,
@@ -568,6 +643,7 @@ code{background:#f4f4f4;padding:1px 4px;border-radius:3px}
 <li><strong>Test level:</strong> ${escapeHtml(report.testLevel || "N/A")}${report.tests?.length ? ` (${escapeHtml(report.tests.join(", "))})` : ""}</li>
 <li><strong>Deployment ID:</strong> ${escapeHtml(report.salesforce?.id || "None")}</li>
 <li><strong>Tests completed / failed:</strong> ${report.salesforce?.numberTestsCompleted ?? 0} / ${report.salesforce?.numberTestErrors ?? 0}</li>
+${report.versionedDestructiveManifests?.length ? `<li><strong>Versioned destructive manifest APPLIED:</strong> ${escapeHtml(report.versionedDestructiveManifests.join(", "))} — this was actually deployed (or dry-run validated), not just evidence.</li>` : ""}
 ${report.error ? `<li><strong>Error:</strong> ${escapeHtml(report.error)}</li>` : ""}
 </ul>
 ${table(
@@ -629,6 +705,10 @@ ${
           line("testsCompleted", report.salesforce?.numberTestsCompleted ?? 0) +
           line("testsFailed", report.salesforce?.numberTestErrors ?? 0) +
           line("deletedCount", report.deletedPaths?.length ?? 0) +
+          line(
+            "versionedDestructiveApplied",
+            (report.versionedDestructiveManifests?.length ?? 0) > 0
+          ) +
           line("errorMessage", report.error)
       );
     }

@@ -147,6 +147,45 @@ _only_ deletions, the operation stops with outcome "Destructive changes only —
 manual review required" (not a failure) without contacting the org, since there
 is nothing safe to auto-validate/deploy.
 
+### Versioned destructive manifests (actually applied)
+
+`manifest/destructiveChangesPre.xml` and `manifest/destructiveChangesPost.xml`
+(see `manifest/README.md`) are a different, opt-in mechanism from the
+auto-generated evidence above: when either has `<types>` entries, they are
+passed straight to `sf project deploy start --pre-destructive-changes` /
+`--post-destructive-changes` — genuinely applied, on every validate (dry-run)
+and deploy, in every environment the file reaches as it's promoted
+`develop` → `uat` → `main`. Committing a non-empty manifest via a reviewed PR
+_is_ the explicitly approved destructive release; there's no separate
+off-pipeline step for that case. Empty it again in a follow-up commit once
+applied where intended, or it keeps re-submitting the same request on every
+future deploy. Managed package (`namespace__`-prefixed) components can't be
+removed this way — Salesforce rejects it.
+
+Use this specifically for a one-time reconciliation of metadata that predates
+the current git history (e.g. an org has components no branch ever tracked) —
+not as the default path for ordinary feature-driven deletions, which the
+auto-generated `destructiveChanges.xml` already covers with a lighter-weight,
+off-pipeline manual step. Verify org identity and impact before adding
+anything here; this is deploying deletions for real.
+
+A checked-in manifest's presence alone is enough to trigger a deploy, even
+for a commit whose own `force-app` diff is empty — e.g. the PR that adds
+`manifest/destructiveChangesPost.xml` only touches `manifest/`, but its
+deploy to DEV still runs and applies it. It isn't silently skipped as "no
+metadata changes."
+
+`sf project deploy start --pre/post-destructive-changes` rejects
+`--source-dir`/`--metadata-dir`; it requires `--manifest <package.xml>`
+instead (file paths resolve from the project's own source dirs regardless of
+where that package.xml physically sits, so the mdapi-converted one already
+built for `delta-package.zip` is reused as-is; a fresh empty one is written
+for a pure-destructive deploy with no additive delta). `--ignore-warnings` is
+always added alongside it, so deleting a component that doesn't exist in the
+target environment — expected wherever that legacy metadata was never
+deployed, e.g. DEV/UAT — doesn't fail the whole run; Salesforce only reports
+it as a warning, not an error.
+
 Pending/timeout is not success: inspect the Salesforce job before retrying.
 A successful deployment with failed comment publication may be redeployed; inspect
 post-deploy effects first. Do not overlap manual deploys.

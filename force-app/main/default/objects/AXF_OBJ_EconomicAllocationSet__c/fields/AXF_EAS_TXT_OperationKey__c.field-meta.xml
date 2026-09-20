@@ -6,5 +6,5 @@
     <length>64</length>
     <required>false</required>
     <description
-  >Chave de idempotencia da ultima operacao aplicada (propose/confirm); replay devolve o resultado anterior, payload divergente conflita (G6).</description>
+  >Chave de idempotencia da ultima operacao aplicada (propose/confirm/reverse); replay devolve o resultado anterior, payload divergente conflita (G6).</description>
 </CustomField>

@@ -317,7 +317,7 @@
                     </td>
                     <td data-id="evidenceCell">
                       <lightning-badge
-                        label={labels.evConsultative}
+                        label={row.stateLabel}
                         class="slds-m-right_xx-small"
                       ></lightning-badge>
                       <template lwc:if={row.tied}>
@@ -331,6 +331,14 @@
                           label={labels.evLowEvidence}
                           class="slds-theme_warning slds-m-right_xx-small"
                         ></lightning-badge>
+                      </template>
+                      <template lwc:if={row.reasonText}>
+                        <p
+                          class="slds-text-body_small slds-m-top_xx-small"
+                          data-id="candidateReasons"
+                        >
+                          {row.reasonText}
+                        </p>
                       </template>
                       <ul class="slds-list_horizontal slds-wrap">
                         <template for:each={row.evidenceChips} for:item="chip">
@@ -346,6 +354,30 @@
                           </li>
                         </template>
                       </ul>
+                      <template lwc:if={row.conversionLine}>
+                        <p
+                          class="slds-text-body_small slds-m-top_xx-small"
+                          data-id="conversion"
+                        >
+                          {row.conversionLine}
+                        </p>
+                      </template>
+                      <template lwc:if={row.residualAfterLine}>
+                        <p
+                          class="slds-text-body_small slds-m-top_xx-small"
+                          data-id="residualAfter"
+                        >
+                          {row.residualAfterLine}
+                        </p>
+                      </template>
+                      <template lwc:if={row.sourceRemainderLine}>
+                        <p
+                          class="slds-text-body_small slds-m-top_xx-small"
+                          data-id="sourceRemainder"
+                        >
+                          {row.sourceRemainderLine}
+                        </p>
+                      </template>
                     </td>
                     <td>
                       <template lwc:if={row.linkable}>
@@ -421,6 +453,17 @@
             </dd>
           </dl>
           <div class="slds-grid slds-gutters slds-wrap">
+            <div class="slds-col slds-size_1-of-1 slds-medium-size_4-of-12">
+              <lightning-combobox
+                label={labels.economicRole}
+                field-level-help={labels.roleHelp}
+                options={roleOptions}
+                value={economicRole}
+                onchange={handleRole}
+                data-id="economicRole"
+                required
+              ></lightning-combobox>
+            </div>
             <div class="slds-col slds-size_1-of-1 slds-medium-size_4-of-12">
               <lightning-input
                 type="number"

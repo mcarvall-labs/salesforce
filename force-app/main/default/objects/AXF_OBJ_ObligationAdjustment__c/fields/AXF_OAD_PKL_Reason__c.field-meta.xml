@@ -1,0 +1,45 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<CustomField xmlns="http://soap.sforce.com/2006/04/metadata">
+  <fullName>AXF_OAD_PKL_Reason__c</fullName>
+  <label>Motivo do Ajuste</label>
+  <required>true</required>
+  <type>Picklist</type>
+  <valueSet>
+    <restricted>true</restricted>
+    <valueSetDefinition>
+      <sorted>false</sorted>
+      <value>
+        <fullName>ESTIMATE_REVISION</fullName>
+        <default>false</default>
+        <label>Revisão de Estimativa</label>
+      </value>
+      <value>
+        <fullName>CONTRACTUAL_RECURRING</fullName>
+        <default>false</default>
+        <label>Recorrente Contratual</label>
+      </value>
+      <value>
+        <fullName>EXCEPTIONAL_CHARGE</fullName>
+        <default>false</default>
+        <label>Encargo Excepcional</label>
+      </value>
+      <value>
+        <fullName>ONE_OFF_DISCOUNT</fullName>
+        <default>false</default>
+        <label>Desconto Pontual</label>
+      </value>
+      <value>
+        <fullName>CORRECTION</fullName>
+        <default>false</default>
+        <label>Correção</label>
+      </value>
+      <value>
+        <fullName>UNCLASSIFIED</fullName>
+        <default>false</default>
+        <label>Não Classificado</label>
+      </value>
+    </valueSetDefinition>
+  </valueSet>
+  <description
+  >Motivo classifica a evidência do ajuste, nunca uma transação financeira independente. Diferenças desconhecidas usam UNCLASSIFIED até revisão explícita; nenhum motivo é inferido pela variação positiva ou negativa (AXF-104).</description>
+</CustomField>

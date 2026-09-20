@@ -3,7 +3,9 @@
   <fullName>AXF_RA_PKL_ReversalReason__c</fullName>
   <label>Reversal reason</label>
   <description
-  >AXF-141: why a compensating REVERSAL allocation was created. Immutable, set only by the realization service; empty on APPLICATION effects.</description>
+  >AXF-141: why a compensating REVERSAL allocation was created. AXF-142 reuses the same restricted
+  set to record why a redistribution APPLICATION allocation exists. Immutable, set only by the
+  realization service; empty on every other APPLICATION effect (AXF-25/AXF-30 confirmation).</description>
   <type>Picklist</type>
   <valueSet>
     <restricted>true</restricted>

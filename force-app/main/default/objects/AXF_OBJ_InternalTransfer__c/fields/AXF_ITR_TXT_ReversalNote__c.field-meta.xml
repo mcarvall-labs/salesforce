@@ -1,0 +1,6 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<CustomField xmlns="http://soap.sforce.com/2006/04/metadata"><fullName
+  >AXF_ITR_TXT_ReversalNote__c</fullName><label>Reversal note</label><length
+  >255</length><type>Text</type><description
+  >Optional free-text note travelling with the reversal reason; only populated on a REVERSED
+  compensation row (same convention as AXF_RA_TXT_ReversalNote__c).</description></CustomField>

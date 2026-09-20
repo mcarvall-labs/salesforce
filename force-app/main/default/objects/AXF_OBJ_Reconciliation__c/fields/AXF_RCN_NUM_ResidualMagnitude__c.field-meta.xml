@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<CustomField xmlns="http://soap.sforce.com/2006/04/metadata">
+    <fullName>AXF_RCN_NUM_ResidualMagnitude__c</fullName>
+    <label>Residual</label>
+    <type>Number</type>
+    <precision>18</precision>
+    <scale>8</scale>
+    <required>false</required>
+    <description
+  >Residual persistido do agregado, nunca derivado so na leitura: 0 quando CONFIRMED sem sobra; soma dos residuos de fonte e alvo quando PARTIAL; nulo somente quando o resultado do commit e desconhecido (RESULT_UNKNOWN).</description>
+</CustomField>

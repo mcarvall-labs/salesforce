@@ -1,0 +1,13 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<CustomObject xmlns="http://soap.sforce.com/2006/04/metadata"><deploymentStatus
+  >Deployed</deploymentStatus><description
+  >Confirmed link between the two legs (debit/credit) of one internal transfer between bank
+  accounts of the same holder. Both AXF_OBJ_BankAccountTransaction__c legs stay independent,
+  immutable facts; only the link is created here. Service-owner root (AXF-32): no raw share to
+  the end user, read only via a redacted DTO after validating access to both legs.</description><enableHistory
+  >true</enableHistory><enableReports>true</enableReports><label
+  >Internal transfer</label><nameField><displayFormat
+    >ITR-{000000}</displayFormat><label>Transfer number</label><type
+    >AutoNumber</type></nameField><pluralLabel
+  >Internal transfers</pluralLabel><sharingModel
+  >Private</sharingModel><visibility>Public</visibility></CustomObject>

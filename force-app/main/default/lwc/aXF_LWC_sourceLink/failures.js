@@ -1,34 +1,70 @@
-import labels from "./labels";
+import codeUNAVAILABLELabel from "@salesforce/label/c.AXF_SourceLink_codeUNAVAILABLE";
+import codeNOT_ACCESSIBLELabel from "@salesforce/label/c.AXF_SourceLink_codeNOT_ACCESSIBLE";
+import codeINVALID_INPUTLabel from "@salesforce/label/c.AXF_SourceLink_codeINVALID_INPUT";
+import codeINVALIDLabel from "@salesforce/label/c.AXF_SourceLink_codeINVALID";
+import codeINVALID_SOURCELabel from "@salesforce/label/c.AXF_SourceLink_codeINVALID_SOURCE";
+import codeINVALID_SOURCE_DATALabel from "@salesforce/label/c.AXF_SourceLink_codeINVALID_SOURCE_DATA";
+import codeNOT_POSTEDLabel from "@salesforce/label/c.AXF_SourceLink_codeNOT_POSTED";
+import codeFUNDING_NOT_AVAILABLELabel from "@salesforce/label/c.AXF_SourceLink_codeFUNDING_NOT_AVAILABLE";
+import codeREVIEW_OPENLabel from "@salesforce/label/c.AXF_SourceLink_codeREVIEW_OPEN";
+import codeSOURCE_EXHAUSTEDLabel from "@salesforce/label/c.AXF_SourceLink_codeSOURCE_EXHAUSTED";
+import codeALLOCATIONS_UNVERIFIEDLabel from "@salesforce/label/c.AXF_SourceLink_codeALLOCATIONS_UNVERIFIED";
+import codeINVALID_TARGETLabel from "@salesforce/label/c.AXF_SourceLink_codeINVALID_TARGET";
+import codeTARGET_CANCELLEDLabel from "@salesforce/label/c.AXF_SourceLink_codeTARGET_CANCELLED";
+import codeTARGET_REALIZEDLabel from "@salesforce/label/c.AXF_SourceLink_codeTARGET_REALIZED";
+import codeFUNDING_MISMATCHLabel from "@salesforce/label/c.AXF_SourceLink_codeFUNDING_MISMATCH";
+import codeCURRENCY_MISMATCHLabel from "@salesforce/label/c.AXF_SourceLink_codeCURRENCY_MISMATCH";
+import codeALREADY_LINKEDLabel from "@salesforce/label/c.AXF_SourceLink_codeALREADY_LINKED";
+import codeREVIEW_REQUIREDLabel from "@salesforce/label/c.AXF_SourceLink_codeREVIEW_REQUIRED";
+import codeCONFLICTLabel from "@salesforce/label/c.AXF_SourceLink_codeCONFLICT";
+import codeUNAVAILABLE_AMOUNTLabel from "@salesforce/label/c.AXF_SourceLink_codeUNAVAILABLE_AMOUNT";
+import codeREPORTING_CURRENCY_REQUIREDLabel from "@salesforce/label/c.AXF_SourceLink_codeREPORTING_CURRENCY_REQUIRED";
+import codeMATERIALIZATION_REQUIREDLabel from "@salesforce/label/c.AXF_SourceLink_codeMATERIALIZATION_REQUIRED";
+import codeMISSING_MATERIAL_FXLabel from "@salesforce/label/c.AXF_SourceLink_codeMISSING_MATERIAL_FX";
+import codeINVALID_ECONOMIC_ROLELabel from "@salesforce/label/c.AXF_SourceLink_codeINVALID_ECONOMIC_ROLE";
+import codeUNSUPPORTED_ECONOMIC_ROLELabel from "@salesforce/label/c.AXF_SourceLink_codeUNSUPPORTED_ECONOMIC_ROLE";
+import errorLabel from "@salesforce/label/c.AXF_SourceLink_error";
 
 const CODE_LABEL = {
-  UNAVAILABLE: labels.codeUNAVAILABLE,
-  NOT_ACCESSIBLE: labels.codeNOT_ACCESSIBLE,
-  INVALID_INPUT: labels.codeINVALID_INPUT,
-  INVALID: labels.codeINVALID,
-  INVALID_SOURCE: labels.codeINVALID_SOURCE,
-  INVALID_SOURCE_DATA: labels.codeINVALID_SOURCE_DATA,
-  NOT_POSTED: labels.codeNOT_POSTED,
-  FUNDING_NOT_AVAILABLE: labels.codeFUNDING_NOT_AVAILABLE,
-  REVIEW_OPEN: labels.codeREVIEW_OPEN,
-  SOURCE_EXHAUSTED: labels.codeSOURCE_EXHAUSTED,
-  ALLOCATIONS_UNVERIFIED: labels.codeALLOCATIONS_UNVERIFIED,
-  INVALID_TARGET: labels.codeINVALID_TARGET,
-  TARGET_CANCELLED: labels.codeTARGET_CANCELLED,
-  TARGET_REALIZED: labels.codeTARGET_REALIZED,
-  FUNDING_MISMATCH: labels.codeFUNDING_MISMATCH,
-  CURRENCY_MISMATCH: labels.codeCURRENCY_MISMATCH,
-  ALREADY_LINKED: labels.codeALREADY_LINKED,
-  REVIEW_REQUIRED: labels.codeREVIEW_REQUIRED,
-  CONFLICT: labels.codeCONFLICT,
-  UNAVAILABLE_AMOUNT: labels.codeUNAVAILABLE_AMOUNT,
-  REPORTING_CURRENCY_REQUIRED: labels.codeREPORTING_CURRENCY_REQUIRED,
-  MATERIALIZATION_REQUIRED: labels.codeMATERIALIZATION_REQUIRED
+  UNAVAILABLE: codeUNAVAILABLELabel,
+  NOT_ACCESSIBLE: codeNOT_ACCESSIBLELabel,
+  INVALID_INPUT: codeINVALID_INPUTLabel,
+  INVALID: codeINVALIDLabel,
+  INVALID_SOURCE: codeINVALID_SOURCELabel,
+  INVALID_SOURCE_DATA: codeINVALID_SOURCE_DATALabel,
+  NOT_POSTED: codeNOT_POSTEDLabel,
+  FUNDING_NOT_AVAILABLE: codeFUNDING_NOT_AVAILABLELabel,
+  REVIEW_OPEN: codeREVIEW_OPENLabel,
+  SOURCE_EXHAUSTED: codeSOURCE_EXHAUSTEDLabel,
+  ALLOCATIONS_UNVERIFIED: codeALLOCATIONS_UNVERIFIEDLabel,
+  INVALID_TARGET: codeINVALID_TARGETLabel,
+  TARGET_CANCELLED: codeTARGET_CANCELLEDLabel,
+  TARGET_REALIZED: codeTARGET_REALIZEDLabel,
+  FUNDING_MISMATCH: codeFUNDING_MISMATCHLabel,
+  CURRENCY_MISMATCH: codeCURRENCY_MISMATCHLabel,
+  MISSING_MATERIAL_FX: codeMISSING_MATERIAL_FXLabel,
+  ALREADY_LINKED: codeALREADY_LINKEDLabel,
+  REVIEW_REQUIRED: codeREVIEW_REQUIREDLabel,
+  CONFLICT: codeCONFLICTLabel,
+  UNAVAILABLE_AMOUNT: codeUNAVAILABLE_AMOUNTLabel,
+  REPORTING_CURRENCY_REQUIRED: codeREPORTING_CURRENCY_REQUIREDLabel,
+  MATERIALIZATION_REQUIRED: codeMATERIALIZATION_REQUIREDLabel,
+  INVALID_ECONOMIC_ROLE: codeINVALID_ECONOMIC_ROLELabel,
+  UNSUPPORTED_ECONOMIC_ROLE: codeUNSUPPORTED_ECONOMIC_ROLELabel
 };
 
 /** Server failures arrive as a sanitized {code}; anything else is the generic message. */
 export function parseFailure(error) {
   const raw = error && error.body && error.body.message;
-  return CODE_LABEL[raw] || labels.error;
+  return CODE_LABEL[raw] || errorLabel;
+}
+
+/**
+ * AXF-140: a candidate reason is the same sanitized server code, so it resolves through the same
+ * map; a code this component does not know is shown as the code itself rather than dropped.
+ */
+export function reasonLabel(code) {
+  return CODE_LABEL[code] || code;
 }
 
 export function format(template, ...args) {

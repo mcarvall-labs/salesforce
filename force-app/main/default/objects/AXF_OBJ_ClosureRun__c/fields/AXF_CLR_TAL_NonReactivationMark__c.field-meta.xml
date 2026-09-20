@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<CustomField xmlns="http://soap.sforce.com/2006/04/metadata">
+    <fullName>AXF_CLR_TAL_NonReactivationMark__c</fullName>
+    <label>Marca de Nao-Reativacao</label>
+    <type>LongTextArea</type>
+    <length>32768</length>
+    <visibleLines>4</visibleLines>
+    <required>false</required>
+    <description
+  >Marca de nao-reativacao gravada uma unica vez, junto com o estado terminal: prova minima do lifecycle (escopo, correlacao, policy e instante de fechamento) com impressao digital sobre esses proprios campos. Nao contem conteudo privado e nenhum restore pode reativar o escopo a partir dela (AXF-121; FR-49, AD-13, AD-18, AD-20, AD-24).</description>
+</CustomField>

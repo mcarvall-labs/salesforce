@@ -135,7 +135,21 @@ public without sharing class ALT_CLS_RealizationGuard {
         }
         if (
           field.endsWith('_NUM_Version__c') &&
-          ALT_CLS_RealizationService.isWriting()
+          (ALT_CLS_RealizationService.isWriting() ||
+          ALT_CLS_ObligationService.isWriting())
+        ) {
+          continue;
+        }
+        // AXF-104: a base revisada congela no primeiro uso financeiro e uma correção
+        // individual revisa a base congelada. A previsão original (Magnitude) permanece
+        // imutável e continua preservada separadamente; só a base corrente pode congelar.
+        if (
+          ALT_CLS_ObligationService.isWriting() &&
+          new Set<String>{
+              'AXF_FTX_BOL_BasisFrozen__c',
+              'AXF_FTX_NUM_CurrentBasis__c'
+            }
+            .contains(field)
         ) {
           continue;
         }
