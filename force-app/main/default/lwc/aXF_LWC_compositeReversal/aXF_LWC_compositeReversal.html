@@ -1,0 +1,254 @@
+<template>
+  <lightning-card
+    title="Axon - Reversao composta e redistribuicao"
+    icon-name="standard:record_delete"
+  >
+    <div class="slds-p-horizontal_medium slds-p-bottom_medium">
+      <p class="slds-text-body_small slds-m-bottom_small">
+        Reverte atomicamente todas as alocacoes de uma conciliacao composta e
+        permite redistribuir com novas identidades.
+      </p>
+      <template lwc:if={cannotReverse}>
+        <div class="slds-box slds-theme_shade" role="status">
+          Voce nao tem permissao para reverter conciliacoes.
+        </div>
+      </template>
+      <template lwc:if={error}>
+        <div
+          class="slds-notify slds-notify_alert slds-theme_alert-texture slds-theme_error slds-m-bottom_small"
+          role="alert"
+        >
+          <span>{error}</span>
+        </div>
+      </template>
+      <template lwc:if={canReverse}>
+        <template lwc:if={isList}>
+          <div class="slds-grid slds-gutters slds-wrap">
+            <div class="slds-col slds-size_1-of-1 slds-medium-size_5-of-12">
+              <lightning-combobox
+                label="Titular"
+                placeholder="Selecione um titular"
+                options={holderOptions}
+                value={holderId}
+                onchange={handleHolder}
+                data-id="holder"
+              ></lightning-combobox>
+            </div>
+            <div class="slds-col slds-align-bottom">
+              <lightning-button
+                variant="brand"
+                label="Carregar"
+                onclick={handleLoad}
+                disabled={loadDisabled}
+                data-id="load"
+              ></lightning-button>
+            </div>
+          </div>
+          <template lwc:if={showEmpty}>
+            <div
+              class="slds-box slds-theme_shade slds-m-top_small"
+              role="status"
+              data-id="empty"
+            >
+              Nenhuma conciliacao encontrada para este titular.
+            </div>
+          </template>
+          <template lwc:if={hasReconciliations}>
+            <table
+              class="slds-table slds-table_cell-buffer slds-table_bordered slds-m-top_small"
+              data-id="table"
+            >
+              <thead>
+                <tr class="slds-line-height_reset">
+                  <th scope="col">Conciliacao</th>
+                  <th scope="col">Estado</th>
+                  <th scope="col">Alocacoes</th>
+                  <th scope="col">Acao</th>
+                </tr>
+              </thead>
+              <tbody>
+                <template for:each={reconciliationRows} for:item="row">
+                  <tr key={row.key} class="slds-hint-parent">
+                    <td>{row.reconciliationId}</td>
+                    <td>{row.state}</td>
+                    <td>{row.allocationCount}</td>
+                    <td>
+                      <lightning-button
+                        label="Selecionar"
+                        data-index={row.index}
+                        onclick={handleSelectReconciliation}
+                        disabled={busy}
+                      ></lightning-button>
+                    </td>
+                  </tr>
+                </template>
+              </tbody>
+            </table>
+          </template>
+        </template>
+
+        <template lwc:if={isAllocations}>
+          <p class="slds-text-body_small slds-m-bottom_small">
+            Confira as alocacoes desta conciliacao antes de reverter todas.
+          </p>
+          <table
+            class="slds-table slds-table_cell-buffer slds-table_bordered slds-m-bottom_small"
+            data-id="allocationsTable"
+          >
+            <thead>
+              <tr class="slds-line-height_reset">
+                <th scope="col">Alvo</th>
+                <th scope="col">Origem</th>
+                <th scope="col">Valor</th>
+              </tr>
+            </thead>
+            <tbody>
+              <template for:each={allocationRows} for:item="row">
+                <tr key={row.key}>
+                  <td>{row.targetDescription}</td>
+                  <td>{row.sourceKindLabel} · {row.sourceDescription}</td>
+                  <td>
+                    <lightning-formatted-number
+                      value={row.amount}
+                      format-style="currency"
+                      currency-code={row.currencyIso}
+                    ></lightning-formatted-number>
+                  </td>
+                </tr>
+              </template>
+            </tbody>
+          </table>
+          <div class="slds-grid slds-gutters slds-wrap">
+            <div class="slds-col slds-size_1-of-1 slds-medium-size_4-of-12">
+              <lightning-combobox
+                label="Motivo"
+                placeholder="Selecione um motivo"
+                options={reasonOptions}
+                value={reasonCode}
+                onchange={handleReason}
+                data-id="reason"
+                required
+              ></lightning-combobox>
+            </div>
+            <div class="slds-col slds-size_1-of-1 slds-medium-size_8-of-12">
+              <lightning-input
+                label="Observacao"
+                value={reasonNote}
+                max-length="255"
+                onchange={handleNote}
+                data-id="note"
+              ></lightning-input>
+            </div>
+          </div>
+          <div class="slds-m-top_medium">
+            <lightning-button
+              label="Voltar"
+              onclick={handleBack}
+              disabled={busy}
+              data-id="back"
+            ></lightning-button>
+            <lightning-button
+              class="slds-m-left_small"
+              variant="destructive"
+              label={reverseLabel}
+              onclick={handleReverse}
+              disabled={reverseDisabled}
+              data-id="reverse"
+            ></lightning-button>
+          </div>
+        </template>
+
+        <template lwc:if={isDone}>
+          <div class="slds-box slds-theme_success" role="status" data-id="done">
+            <p class="slds-text-heading_small">Reversao composta concluida</p>
+            <p>Estado: {result.state} · Versao: {result.version}</p>
+            <template for:each={result.lines} for:item="line">
+              <p key={line.allocationId} data-id="line">
+                Alocacao {line.allocationId} → reversao {line.reversalId}
+              </p>
+            </template>
+          </div>
+          <template lwc:if={canRedistribute}>
+            <div class="slds-box slds-m-top_medium" data-id="redistribute">
+              <p class="slds-text-heading_small slds-m-bottom_small">
+                Redistribuir uma correcao
+              </p>
+              <div class="slds-grid slds-gutters slds-wrap">
+                <div class="slds-col slds-size_1-of-1 slds-medium-size_4-of-12">
+                  <lightning-combobox
+                    label="Alocacao original revertida"
+                    options={redistributeOriginalOptions}
+                    value={redistributeOriginalId}
+                    onchange={handleRedistributeOriginal}
+                    data-id="redistributeOriginal"
+                  ></lightning-combobox>
+                </div>
+                <div class="slds-col slds-size_1-of-1 slds-medium-size_4-of-12">
+                  <lightning-input
+                    label="Id do novo alvo"
+                    value={redistributeTargetId}
+                    onchange={handleRedistributeTarget}
+                    data-id="redistributeTarget"
+                  ></lightning-input>
+                </div>
+                <div class="slds-col slds-size_1-of-1 slds-medium-size_4-of-12">
+                  <lightning-input
+                    type="number"
+                    step="0.01"
+                    label="Valor"
+                    value={redistributeAmount}
+                    onchange={handleRedistributeAmount}
+                    data-id="redistributeAmount"
+                  ></lightning-input>
+                </div>
+                <div class="slds-col slds-size_1-of-1 slds-medium-size_4-of-12">
+                  <lightning-combobox
+                    label="Motivo"
+                    placeholder="Selecione um motivo"
+                    options={reasonOptions}
+                    value={redistributeReasonCode}
+                    onchange={handleRedistributeReason}
+                    data-id="redistributeReason"
+                    required
+                  ></lightning-combobox>
+                </div>
+                <div class="slds-col slds-size_1-of-1 slds-medium-size_8-of-12">
+                  <lightning-input
+                    label="Observacao"
+                    value={redistributeReasonNote}
+                    max-length="255"
+                    onchange={handleRedistributeNote}
+                    data-id="redistributeNote"
+                  ></lightning-input>
+                </div>
+              </div>
+              <lightning-button
+                class="slds-m-top_small"
+                variant="brand"
+                label="Redistribuir"
+                onclick={handleRedistribute}
+                disabled={redistributeDisabled}
+                data-id="redistributeSubmit"
+              ></lightning-button>
+              <template lwc:if={redistributeResult}>
+                <p class="slds-m-top_small" data-id="redistributeResult">
+                  Nova conciliacao: {redistributeResult.reconciliationId} ·
+                  Estado: {redistributeResult.state}
+                </p>
+              </template>
+            </div>
+          </template>
+          <lightning-button
+            class="slds-m-top_small"
+            label="Nova reversao"
+            onclick={handleNew}
+            data-id="new"
+          ></lightning-button>
+        </template>
+        <p class="slds-text-body_small slds-text-color_weak slds-m-top_medium">
+          Politica: {policyVersion}
+        </p>
+      </template>
+    </div>
+  </lightning-card>
+</template>

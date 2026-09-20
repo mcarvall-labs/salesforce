@@ -50,6 +50,19 @@ public with sharing class ALT_CLS_RealizationService {
      * limitada por uma estimativa original obsoleta. Nula preserva o comportamento AXF-25.
      */
     public Decimal effectiveObligation;
+    /**
+     * @description AXF-142: quando esta linha é uma redistribuição, aponta para a allocation
+     * `APPLICATION` original que ela substitui (mesmo campo já usado pela reversão AXF-141,
+     * reaproveitado com outro sentido). Nula preserva o comportamento AXF-25/AXF-30.
+     */
+    public Id originalAllocationId;
+    /**
+     * @description AXF-142: why a redistribution line exists (same restricted set as AXF-141's
+     * reversal reasons). Persisted on the row via the reason/note pair already carried by every
+     * compensation; null preserves the AXF-25/AXF-30 confirmation behavior (empty on those rows).
+     */
+    public String reasonCode;
+    public String reasonNote;
   }
   public class View {
     public Id targetId;
@@ -281,6 +294,19 @@ public with sharing class ALT_CLS_RealizationService {
     if (input.reconciliationId != null) {
       applicationPayload.add(input.reconciliationId);
     }
+    // AXF-142: the original allocation a redistribution substitutes is part of the payload, so a
+    // divergent request under the same identity conflicts instead of replaying.
+    if (input.originalAllocationId != null) {
+      applicationPayload.add(input.originalAllocationId);
+    }
+    // AXF-142: the redistribution's declared reason is part of the payload, so a divergent
+    // request under the same identity conflicts instead of silently replaying another reason.
+    if (String.isNotBlank(input.reasonCode)) {
+      applicationPayload.add(input.reasonCode);
+    }
+    if (input.reasonNote != null) {
+      applicationPayload.add(input.reasonNote);
+    }
     String payload = hash(applicationPayload);
     Savepoint sp = Database.setSavepoint();
     try {
@@ -384,7 +410,10 @@ public with sharing class ALT_CLS_RealizationService {
         AXF_RA_PKL_Kind__c = 'APPLICATION',
         AXF_RA_PKL_FxState__c = 'PENDING_FX',
         AXF_RA_TXT_ReportingIso__c = preference.AXF_RCP_TXT_IsoCode__c,
-        AXF_RA_LKP_Reconciliation__c = input.reconciliationId
+        AXF_RA_LKP_Reconciliation__c = input.reconciliationId,
+        AXF_RA_LKP_OriginalAllocation__c = input.originalAllocationId,
+        AXF_RA_PKL_ReversalReason__c = input.reasonCode,
+        AXF_RA_TXT_ReversalNote__c = input.reasonNote
       );
       row.put(
         'AXF_RA_LKP_' +
