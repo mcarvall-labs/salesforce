@@ -107,11 +107,43 @@ public with sharing class ALT_CLS_ReviewQueueService {
       candidates.add(fromInput(input));
     }
     ReferenceAccess allowed = authorizedReferences(candidates);
-    List<AXF_OBJ_ReviewItem__c> existing = (List<AXF_OBJ_ReviewItem__c>) Database.queryWithBinds(
-      selectQuery() + ' WHERE AXF_RVI_EXI_ReviewKey__c IN :keys',
-      new Map<String, Object>{ 'keys' => keys },
-      AccessLevel.USER_MODE
-    );
+    List<AXF_OBJ_ReviewItem__c> existing = [
+      SELECT
+        Id,
+        Name,
+        AXF_RVI_DAT_PriorDate__c,
+        AXF_RVI_DAT_ProposedDate__c,
+        AXF_RVI_DT_ObservedAt__c,
+        AXF_RVI_DT_ResolvedAt__c,
+        AXF_RVI_EXI_ReviewKey__c,
+        AXF_RVI_LKP_Account__c,
+        AXF_RVI_LKP_BankAccountTransaction__c,
+        AXF_RVI_LKP_BankAccount__c,
+        AXF_RVI_LKP_CreditCardTransaction__c,
+        AXF_RVI_LKP_CreditCard__c,
+        AXF_RVI_LKP_FinancialTransaction__c,
+        AXF_RVI_LKP_InternalTransfer__c,
+        AXF_RVI_LKP_ResolvedByUser__c,
+        AXF_RVI_NUM_PriorAmount__c,
+        AXF_RVI_NUM_PriorMatchConfidence__c,
+        AXF_RVI_NUM_ProposedAmount__c,
+        AXF_RVI_NUM_Version__c,
+        AXF_RVI_PKL_State__c,
+        AXF_RVI_PKL_Type__c,
+        AXF_RVI_TAL_ResolutionNote__c,
+        AXF_RVI_TXT_EvidenceRef__c,
+        AXF_RVI_TXT_PriorCurrency__c,
+        AXF_RVI_TXT_PriorDescription__c,
+        AXF_RVI_TXT_PriorDirection__c,
+        AXF_RVI_TXT_PriorStatus__c,
+        AXF_RVI_TXT_ProposedCurrency__c,
+        AXF_RVI_TXT_ProposedDescription__c,
+        AXF_RVI_TXT_ProposedDirection__c,
+        AXF_RVI_TXT_ProposedStatus__c
+      FROM AXF_OBJ_ReviewItem__c
+      WHERE AXF_RVI_EXI_ReviewKey__c IN :keys
+      WITH USER_MODE
+    ];
     ReferenceAccess existingAllowed = authorizedReferences(existing);
     Map<String, AXF_OBJ_ReviewItem__c> byKey = new Map<String, AXF_OBJ_ReviewItem__c>();
     for (AXF_OBJ_ReviewItem__c row : existing)
@@ -212,14 +244,86 @@ public with sharing class ALT_CLS_ReviewQueueService {
 
   /** @description Filters before the page limit; the same reference authorization applies. */
   public List<ReviewViewDTO> listOpenByType(String type) {
-    List<AXF_OBJ_ReviewItem__c> rows = (List<AXF_OBJ_ReviewItem__c>) Database.queryWithBinds(
-      selectQuery() +
-        ' WHERE AXF_RVI_PKL_State__c = :state' +
-        (type == null ? '' : ' AND AXF_RVI_PKL_Type__c = :type') +
-        ' ORDER BY CreatedDate ASC LIMIT 200',
-      new Map<String, Object>{ 'state' => STATE_OPEN, 'type' => type },
-      AccessLevel.USER_MODE
-    );
+    String state = STATE_OPEN;
+    List<AXF_OBJ_ReviewItem__c> rows = type == null
+      ? [
+          SELECT
+            Id,
+            Name,
+            AXF_RVI_DAT_PriorDate__c,
+            AXF_RVI_DAT_ProposedDate__c,
+            AXF_RVI_DT_ObservedAt__c,
+            AXF_RVI_DT_ResolvedAt__c,
+            AXF_RVI_EXI_ReviewKey__c,
+            AXF_RVI_LKP_Account__c,
+            AXF_RVI_LKP_BankAccountTransaction__c,
+            AXF_RVI_LKP_BankAccount__c,
+            AXF_RVI_LKP_CreditCardTransaction__c,
+            AXF_RVI_LKP_CreditCard__c,
+            AXF_RVI_LKP_FinancialTransaction__c,
+            AXF_RVI_LKP_InternalTransfer__c,
+            AXF_RVI_LKP_ResolvedByUser__c,
+            AXF_RVI_NUM_PriorAmount__c,
+            AXF_RVI_NUM_PriorMatchConfidence__c,
+            AXF_RVI_NUM_ProposedAmount__c,
+            AXF_RVI_NUM_Version__c,
+            AXF_RVI_PKL_State__c,
+            AXF_RVI_PKL_Type__c,
+            AXF_RVI_TAL_ResolutionNote__c,
+            AXF_RVI_TXT_EvidenceRef__c,
+            AXF_RVI_TXT_PriorCurrency__c,
+            AXF_RVI_TXT_PriorDescription__c,
+            AXF_RVI_TXT_PriorDirection__c,
+            AXF_RVI_TXT_PriorStatus__c,
+            AXF_RVI_TXT_ProposedCurrency__c,
+            AXF_RVI_TXT_ProposedDescription__c,
+            AXF_RVI_TXT_ProposedDirection__c,
+            AXF_RVI_TXT_ProposedStatus__c
+          FROM AXF_OBJ_ReviewItem__c
+          WHERE AXF_RVI_PKL_State__c = :state
+          WITH USER_MODE
+          ORDER BY CreatedDate ASC
+          LIMIT 200
+        ]
+      : [
+          SELECT
+            Id,
+            Name,
+            AXF_RVI_DAT_PriorDate__c,
+            AXF_RVI_DAT_ProposedDate__c,
+            AXF_RVI_DT_ObservedAt__c,
+            AXF_RVI_DT_ResolvedAt__c,
+            AXF_RVI_EXI_ReviewKey__c,
+            AXF_RVI_LKP_Account__c,
+            AXF_RVI_LKP_BankAccountTransaction__c,
+            AXF_RVI_LKP_BankAccount__c,
+            AXF_RVI_LKP_CreditCardTransaction__c,
+            AXF_RVI_LKP_CreditCard__c,
+            AXF_RVI_LKP_FinancialTransaction__c,
+            AXF_RVI_LKP_InternalTransfer__c,
+            AXF_RVI_LKP_ResolvedByUser__c,
+            AXF_RVI_NUM_PriorAmount__c,
+            AXF_RVI_NUM_PriorMatchConfidence__c,
+            AXF_RVI_NUM_ProposedAmount__c,
+            AXF_RVI_NUM_Version__c,
+            AXF_RVI_PKL_State__c,
+            AXF_RVI_PKL_Type__c,
+            AXF_RVI_TAL_ResolutionNote__c,
+            AXF_RVI_TXT_EvidenceRef__c,
+            AXF_RVI_TXT_PriorCurrency__c,
+            AXF_RVI_TXT_PriorDescription__c,
+            AXF_RVI_TXT_PriorDirection__c,
+            AXF_RVI_TXT_PriorStatus__c,
+            AXF_RVI_TXT_ProposedCurrency__c,
+            AXF_RVI_TXT_ProposedDescription__c,
+            AXF_RVI_TXT_ProposedDirection__c,
+            AXF_RVI_TXT_ProposedStatus__c
+          FROM AXF_OBJ_ReviewItem__c
+          WHERE AXF_RVI_PKL_State__c = :state AND AXF_RVI_PKL_Type__c = :type
+          WITH USER_MODE
+          ORDER BY CreatedDate ASC
+          LIMIT 200
+        ];
     ReferenceAccess allowed = authorizedReferences(rows);
     List<ReviewViewDTO> out = new List<ReviewViewDTO>();
     for (AXF_OBJ_ReviewItem__c row : rows)
@@ -380,24 +484,97 @@ public with sharing class ALT_CLS_ReviewQueueService {
   }
 
   private List<AXF_OBJ_ReviewItem__c> fetch(Id id, Boolean lockRow) {
-    List<AXF_OBJ_ReviewItem__c> rows = (List<AXF_OBJ_ReviewItem__c>) Database.queryWithBinds(
-      selectQuery() +
-        ' WHERE Id = :id LIMIT 1' +
-        (lockRow ? ' FOR UPDATE' : ''),
-      new Map<String, Object>{ 'id' => id },
-      AccessLevel.USER_MODE
-    );
+    List<AXF_OBJ_ReviewItem__c> rows = lockRow
+      ? [
+          SELECT
+            Id,
+            Name,
+            AXF_RVI_DAT_PriorDate__c,
+            AXF_RVI_DAT_ProposedDate__c,
+            AXF_RVI_DT_ObservedAt__c,
+            AXF_RVI_DT_ResolvedAt__c,
+            AXF_RVI_EXI_ReviewKey__c,
+            AXF_RVI_LKP_Account__c,
+            AXF_RVI_LKP_BankAccountTransaction__c,
+            AXF_RVI_LKP_BankAccount__c,
+            AXF_RVI_LKP_CreditCardTransaction__c,
+            AXF_RVI_LKP_CreditCard__c,
+            AXF_RVI_LKP_FinancialTransaction__c,
+            AXF_RVI_LKP_InternalTransfer__c,
+            AXF_RVI_LKP_ResolvedByUser__c,
+            AXF_RVI_NUM_PriorAmount__c,
+            AXF_RVI_NUM_PriorMatchConfidence__c,
+            AXF_RVI_NUM_ProposedAmount__c,
+            AXF_RVI_NUM_Version__c,
+            AXF_RVI_PKL_State__c,
+            AXF_RVI_PKL_Type__c,
+            AXF_RVI_TAL_ResolutionNote__c,
+            AXF_RVI_TXT_EvidenceRef__c,
+            AXF_RVI_TXT_PriorCurrency__c,
+            AXF_RVI_TXT_PriorDescription__c,
+            AXF_RVI_TXT_PriorDirection__c,
+            AXF_RVI_TXT_PriorStatus__c,
+            AXF_RVI_TXT_ProposedCurrency__c,
+            AXF_RVI_TXT_ProposedDescription__c,
+            AXF_RVI_TXT_ProposedDirection__c,
+            AXF_RVI_TXT_ProposedStatus__c
+          FROM AXF_OBJ_ReviewItem__c
+          WHERE Id = :id
+          WITH USER_MODE
+          LIMIT 1
+          FOR UPDATE
+        ]
+      : [
+          SELECT
+            Id,
+            Name,
+            AXF_RVI_DAT_PriorDate__c,
+            AXF_RVI_DAT_ProposedDate__c,
+            AXF_RVI_DT_ObservedAt__c,
+            AXF_RVI_DT_ResolvedAt__c,
+            AXF_RVI_EXI_ReviewKey__c,
+            AXF_RVI_LKP_Account__c,
+            AXF_RVI_LKP_BankAccountTransaction__c,
+            AXF_RVI_LKP_BankAccount__c,
+            AXF_RVI_LKP_CreditCardTransaction__c,
+            AXF_RVI_LKP_CreditCard__c,
+            AXF_RVI_LKP_FinancialTransaction__c,
+            AXF_RVI_LKP_InternalTransfer__c,
+            AXF_RVI_LKP_ResolvedByUser__c,
+            AXF_RVI_NUM_PriorAmount__c,
+            AXF_RVI_NUM_PriorMatchConfidence__c,
+            AXF_RVI_NUM_ProposedAmount__c,
+            AXF_RVI_NUM_Version__c,
+            AXF_RVI_PKL_State__c,
+            AXF_RVI_PKL_Type__c,
+            AXF_RVI_TAL_ResolutionNote__c,
+            AXF_RVI_TXT_EvidenceRef__c,
+            AXF_RVI_TXT_PriorCurrency__c,
+            AXF_RVI_TXT_PriorDescription__c,
+            AXF_RVI_TXT_PriorDirection__c,
+            AXF_RVI_TXT_PriorStatus__c,
+            AXF_RVI_TXT_ProposedCurrency__c,
+            AXF_RVI_TXT_ProposedDescription__c,
+            AXF_RVI_TXT_ProposedDirection__c,
+            AXF_RVI_TXT_ProposedStatus__c
+          FROM AXF_OBJ_ReviewItem__c
+          WHERE Id = :id
+          WITH USER_MODE
+          LIMIT 1
+        ];
     ReferenceAccess allowed = authorizedReferences(rows);
     if (!rows.isEmpty() && !referencesAllowed(rows[0], allowed))
       rows.clear();
     return rows;
   }
 
-  // Static field list instead of a runtime Schema describe: a describe-based dynamic SOQL
-  // built in the same transaction that just created a new AXF_RVI_* field can observe the
-  // field in the describe map yet have the query executor reject it as unrecognized (a
-  // platform describe/query-engine cache inconsistency reproduced during the AXF-142 UAT
-  // promotion validate). A static, compile-time-checked list has no such window.
+  // Field list used by sameEvidence() below. The record queries themselves use compiled
+  // static SOQL (not Database.query/queryWithBinds): any dynamic query -- even one built
+  // from this static list -- is resolved against the query engine's own schema cache at
+  // runtime, which can still reject a field created earlier in the same deploy transaction
+  // as unrecognized even though describe() already reports it (reproduced during the
+  // AXF-142 UAT promotion validate). Static SOQL is bound at compile time and has no such
+  // window.
   private static final List<String> FIELDS = new List<String>{
     'Id',
     'Name',
@@ -431,10 +608,6 @@ public with sharing class ALT_CLS_ReviewQueueService {
     'AXF_RVI_TXT_ProposedDirection__c',
     'AXF_RVI_TXT_ProposedStatus__c'
   };
-
-  private static String selectQuery() {
-    return 'SELECT ' + String.join(FIELDS, ',') + ' FROM AXF_OBJ_ReviewItem__c';
-  }
 
   private static final List<String> REFERENCES = new List<String>{
     'AXF_RVI_LKP_FinancialTransaction__c',
