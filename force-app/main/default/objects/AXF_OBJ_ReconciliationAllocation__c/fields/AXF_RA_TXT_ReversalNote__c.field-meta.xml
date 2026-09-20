@@ -3,7 +3,8 @@
   <fullName>AXF_RA_TXT_ReversalNote__c</fullName>
   <label>Reversal note</label>
   <description
-  >AXF-141: free-text justification recorded with the compensating allocation. Immutable.</description>
+  >AXF-141: free-text justification recorded with the compensating allocation. AXF-142 reuses it
+  for a redistribution APPLICATION allocation's justification. Immutable.</description>
   <length>255</length>
   <type>Text</type>
 </CustomField>

@@ -43,6 +43,15 @@ public with sharing class ALT_CLS_ReconciliationService {
   public static final String POLICY_VERSION = ALT_CLS_MatchEvidence.MATCHING_POLICY;
   /** Identity of one line, per IMPLEMENTATION-CONTRACTS §3: alloc-v2. */
   public static final String ALLOCATION_IDENTITY_VERSION = 'alloc-v2';
+  /**
+   * AXF-142 (ratificado em AXF-142-COMPOSITE-REVERSAL.md §2): identidade exclusiva das linhas de
+   * redistribuição, nunca usada pelo fluxo de confirmação original. Inclui a `AllocationKey` da
+   * allocation revertida como componente de framing, garantindo uma chave diferente mesmo quando o
+   * mesmo par fato/alvo é reaplicado.
+   */
+  public static final String REDISTRIBUTE_IDENTITY_VERSION = 'alloc-v2-redistribute';
+  /** operationId da redistribuição (AXF-142); nunca reaproveita o operationId de confirmação. */
+  public static final String OP_REDISTRIBUTE = 'reconciliation.allocation.redistribute.v1';
   public static final String TARGET_TYPE = 'FINANCIAL_TRANSACTION';
   /**
    * Economic kind declared by this aggregate. The reconciliation workbench is the matching surface
@@ -122,6 +131,29 @@ public with sharing class ALT_CLS_ReconciliationService {
     public String correlationId;
     @AuraEnabled
     public List<LineInput> lines;
+  }
+
+  /**
+   * @description AXF-142: nova distribuição para o(s) mesmo(s) par(es) fato/alvo (ou outros) da
+   * allocation `APPLICATION` já revertida em `originalAllocationId`. Reaproveita exatamente o
+   * mesmo comando de confirmação N:N, trocando apenas a fórmula de identidade das linhas.
+   */
+  public class RedistributeInput {
+    @AuraEnabled
+    public Id originalAllocationId;
+    @AuraEnabled
+    public List<LineInput> lines;
+    @AuraEnabled
+    public Decimal expectedVersion;
+    @AuraEnabled
+    public String idempotencyKey;
+    @AuraEnabled
+    public String correlationId;
+    /** @description Why this correction exists; same restricted set as AXF-141's reversal reasons. */
+    @AuraEnabled
+    public String reasonCode;
+    @AuraEnabled
+    public String reasonNote;
   }
 
   public class SourceView {
@@ -387,6 +419,124 @@ public with sharing class ALT_CLS_ReconciliationService {
     }
     requireUuid(input.correlationId);
     Plan plan = plan(input.lines, input.correlationId);
+    return commitPlan(
+      plan,
+      input.expectedVersion,
+      null,
+      OP_CONFIRM,
+      null,
+      null
+    );
+  }
+
+  // ------------------------------------------------------------------ redistribute
+
+  /**
+   * @description AXF-142: nova distribuição (identidades `alloc-v2-redistribute`) para o(s)
+   * par(es) fato/alvo desejado(s), amarrada por evidência à allocation `APPLICATION` original que
+   * substitui (`originalAllocationId`). Reaproveita byte a byte a mesma orquestração de `confirm`
+   * (plan/lock/validate/write/close); a allocation original e sua evidência nunca são tocadas.
+   */
+  public ConfirmResult redistribute(RedistributeInput input) {
+    requireAccess();
+    if (
+      input == null ||
+      input.originalAllocationId == null ||
+      input.lines == null ||
+      input.lines.isEmpty() ||
+      input.lines.size() > MAX_LINES ||
+      String.isBlank(input.idempotencyKey) ||
+      input.idempotencyKey.length() > MAX_KEY ||
+      String.isBlank(input.reasonCode) ||
+      !ALT_CLS_ReconciliationReversalService.REASONS.contains(input.reasonCode)
+    ) {
+      throw failure('INVALID_INPUT', new List<String>());
+    }
+    // Trim first, then bound: a note that fits once trimmed is accepted (same as AXF-141).
+    String note = String.isBlank(input.reasonNote)
+      ? null
+      : input.reasonNote.trim();
+    if (note != null && note.length() > 255) {
+      throw failure('INVALID_INPUT', new List<String>());
+    }
+    requireUuid(input.correlationId);
+    String originalKey = lookupOriginalAllocationKey(
+      input.originalAllocationId
+    );
+    Plan plan = plan(input.lines, input.correlationId, originalKey);
+    return commitPlan(
+      plan,
+      input.expectedVersion,
+      input.originalAllocationId,
+      OP_REDISTRIBUTE,
+      input.reasonCode,
+      note
+    );
+  }
+
+  /**
+   * @description Authorized, non-enumerating lookup of the `APPLICATION` allocation a
+   * redistribution substitutes; its own canonical `alloc-v2` key becomes a framing component of
+   * every new line's identity (AXF-142-COMPOSITE-REVERSAL.md §2).
+   */
+  private String lookupOriginalAllocationKey(Id originalAllocationId) {
+    List<AXF_OBJ_ReconciliationAllocation__c> rows = [
+      SELECT
+        Id,
+        AXF_RA_PKL_Kind__c,
+        AXF_RA_EXI_AllocationKey__c,
+        AXF_RA_LKP_FinancialTransaction__r.AXF_FTX_LKP_Account__c
+      FROM AXF_OBJ_ReconciliationAllocation__c
+      WHERE Id = :originalAllocationId
+      WITH USER_MODE
+      LIMIT 1
+    ];
+    if (rows.isEmpty()) {
+      throw failure('NOT_ACCESSIBLE', new List<String>());
+    }
+    if (
+      !authorizedAccounts()
+        .contains(
+          rows[0].AXF_RA_LKP_FinancialTransaction__r?.AXF_FTX_LKP_Account__c
+        )
+    ) {
+      throw failure('NOT_ACCESSIBLE', new List<String>());
+    }
+    if (rows[0].AXF_RA_PKL_Kind__c != 'APPLICATION') {
+      // Never: redistribution never substitutes a REVERSAL row, only the APPLICATION it reversed.
+      throw failure('INVALID_TARGET', new List<String>());
+    }
+    // Never: a still-active APPLICATION cannot be redistributed — that would double-represent the
+    // same fact/target pair. Redistribution only ever substitutes an allocation already reversed.
+    List<AXF_OBJ_ReconciliationAllocation__c> reversal = [
+      SELECT Id
+      FROM AXF_OBJ_ReconciliationAllocation__c
+      WHERE
+        AXF_RA_PKL_Kind__c = 'REVERSAL'
+        AND AXF_RA_LKP_OriginalAllocation__c = :originalAllocationId
+      WITH SYSTEM_MODE
+      LIMIT 1
+    ];
+    if (reversal.isEmpty()) {
+      throw failure('INVALID_TARGET', new List<String>());
+    }
+    return rows[0].AXF_RA_EXI_AllocationKey__c;
+  }
+
+  /**
+   * @description Shared commit of one plan (confirmation or redistribution): rank-20 aggregate
+   * lock, replay-or-write decision, ranks 30/50 locks, whole-command validation and the N-line
+   * write, all under one Savepoint. `opTag` and `originalAllocationId` are the only axis on which
+   * the two callers differ.
+   */
+  private ConfirmResult commitPlan(
+    Plan plan,
+    Decimal expectedVersion,
+    Id originalAllocationId,
+    String opTag,
+    String reasonCode,
+    String reasonNote
+  ) {
     // Rank 20: the aggregate identity token of this intention.
     AXF_OBJ_Reconciliation__c aggregate = lockAggregate(plan.key);
     if (aggregate != null) {
@@ -394,7 +544,7 @@ public with sharing class ALT_CLS_ReconciliationService {
         // GF-75: the retry stays refused until an authoritative query resolves the outcome.
         throw failure('CONFLICT', new List<String>{ REASON_RESULT_UNKNOWN });
       }
-      checkVersion(aggregate, input.expectedVersion);
+      checkVersion(aggregate, expectedVersion);
       if (!STATE_FAILED.equals(aggregate.AXF_RCN_PKL_State__c)) {
         return replay(plan, aggregate);
       }
@@ -423,7 +573,15 @@ public with sharing class ALT_CLS_ReconciliationService {
       lockTargets(plan.targets.values());
       Amounts amounts = amounts(plan);
       validate(plan, amounts);
-      write(plan, aggregate, amounts);
+      write(
+        plan,
+        aggregate,
+        amounts,
+        originalAllocationId,
+        opTag,
+        reasonCode,
+        reasonNote
+      );
       return result(read(aggregate, durablePlan(aggregate, plan)), false);
     } catch (ReconciliationException failure) {
       Database.rollback(point);
@@ -550,6 +708,18 @@ public with sharing class ALT_CLS_ReconciliationService {
    * of the records, never from a Salesforce record id where a durable identity exists.
    */
   private Plan plan(List<LineInput> lines, String correlationId) {
+    return plan(lines, correlationId, null);
+  }
+
+  /**
+   * @description `redistributeOriginalKey` is null for the original confirmation (`alloc-v2`) and
+   * the reverted allocation's own key for a redistribution (`alloc-v2-redistribute`, AXF-142).
+   */
+  private Plan plan(
+    List<LineInput> lines,
+    String correlationId,
+    String redistributeOriginalKey
+  ) {
     if (
       lines == null ||
       lines.isEmpty() ||
@@ -600,10 +770,16 @@ public with sharing class ALT_CLS_ReconciliationService {
         value(result.amountsByTarget.get(line.targetId)) + line.amount
       );
       result.allocationKeys.add(
-        allocationIdentity(
-          result.factsByKey.get(factKey).identity,
-          result.targets.get(line.targetId).identity
-        )
+        redistributeOriginalKey == null
+          ? allocationIdentity(
+              result.factsByKey.get(factKey).identity,
+              result.targets.get(line.targetId).identity
+            )
+          : redistributeIdentity(
+              result.factsByKey.get(factKey).identity,
+              result.targets.get(line.targetId).identity,
+              redistributeOriginalKey
+            )
       );
     }
     result.key = reconciliationKey(
@@ -648,6 +824,30 @@ public with sharing class ALT_CLS_ReconciliationService {
         TARGET_TYPE,
         targetIdentity,
         ECONOMIC_KIND
+      }
+    );
+  }
+
+  /**
+   * @description `alloc-v2-redistribute` (AXF-142-COMPOSITE-REVERSAL.md §2): includes the
+   * reverted allocation's own key as a framing component, so the same fact/target pair reapplied
+   * by a redistribution never reproduces `alloc-v2` nor collides with itself when the same
+   * correction is submitted twice — deterministic replay, never a third `Kind`.
+   */
+  @TestVisible
+  private static String redistributeIdentity(
+    String factIdentity,
+    String targetIdentity,
+    String originalAllocationKey
+  ) {
+    return AXF_CLS_IdentityFraming.key(
+      new List<Object>{
+        REDISTRIBUTE_IDENTITY_VERSION,
+        factIdentity,
+        TARGET_TYPE,
+        targetIdentity,
+        ECONOMIC_KIND,
+        originalAllocationKey
       }
     );
   }
@@ -1198,7 +1398,11 @@ public with sharing class ALT_CLS_ReconciliationService {
   private void write(
     Plan plan,
     AXF_OBJ_Reconciliation__c aggregate,
-    Amounts amounts
+    Amounts amounts,
+    Id originalAllocationId,
+    String opTag,
+    String reasonCode,
+    String reasonNote
   ) {
     Amounts current = amounts;
     for (Integer index = 0; index < plan.lines.size(); index++) {
@@ -1243,13 +1447,16 @@ public with sharing class ALT_CLS_ReconciliationService {
       apply.sourceVersion =
         value(fact.version) + writtenLines(plan, index, fact.id, true);
       apply.operationKey =
-        OP_CONFIRM +
+        opTag +
         ':' +
         plan.key.left(30) +
         ':' +
         String.valueOf(index);
       apply.allocationIdentity = allocationKey;
       apply.reconciliationId = aggregate.Id;
+      apply.originalAllocationId = originalAllocationId;
+      apply.reasonCode = reasonCode;
+      apply.reasonNote = reasonNote;
       if (target.planKind != 'ACTUAL_ONLY') {
         // AXF-104: the revised effective obligation replaces the original estimate as the limit.
         apply.effectiveObligation = capacity(target, current);

@@ -1189,4 +1189,502 @@ private class ALT_CLS_ReconciliationServiceTest {
       return expected.code;
     }
   }
+
+  // ------------------------------------------------------------------ AXF-142 redistribution
+
+  private static Decimal targetVersion(Id targetId) {
+    return [
+      SELECT AXF_FTX_NUM_Version__c
+      FROM AXF_OBJ_FinancialTransaction__c
+      WHERE Id = :targetId
+    ]
+    .AXF_FTX_NUM_Version__c;
+  }
+
+  private static void reverseAllocation(
+    Id allocationId,
+    Decimal expectedVersion,
+    String key
+  ) {
+    ALT_CLS_ReconciliationReversalService.Input reversal = new ALT_CLS_ReconciliationReversalService.Input();
+    reversal.allocationId = allocationId;
+    reversal.expectedVersion = expectedVersion;
+    reversal.reasonCode = 'USER_ERROR';
+    reversal.operationKey = 'axf142-reverse-' + key;
+    new ALT_CLS_ReconciliationReversalService().reverse(reversal);
+  }
+
+  private static ALT_CLS_ReconciliationService.RedistributeInput redistributeInput(
+    Id originalAllocationId,
+    List<ALT_CLS_ReconciliationService.LineInput> lines,
+    Decimal expectedVersion,
+    String correlationId,
+    String idempotencyKey
+  ) {
+    return redistributeInput(
+      originalAllocationId,
+      lines,
+      expectedVersion,
+      correlationId,
+      idempotencyKey,
+      'OTHER'
+    );
+  }
+
+  private static ALT_CLS_ReconciliationService.RedistributeInput redistributeInput(
+    Id originalAllocationId,
+    List<ALT_CLS_ReconciliationService.LineInput> lines,
+    Decimal expectedVersion,
+    String correlationId,
+    String idempotencyKey,
+    String reasonCode
+  ) {
+    ALT_CLS_ReconciliationService.RedistributeInput input = new ALT_CLS_ReconciliationService.RedistributeInput();
+    input.originalAllocationId = originalAllocationId;
+    input.lines = lines;
+    input.expectedVersion = expectedVersion;
+    input.correlationId = correlationId;
+    input.idempotencyKey = idempotencyKey;
+    input.reasonCode = reasonCode;
+    input.reasonNote = 'axf142 redistribution';
+    return input;
+  }
+
+  private static String codeOfRedistribute(
+    ALT_CLS_ReconciliationService.RedistributeInput input
+  ) {
+    try {
+      new ALT_CLS_ReconciliationService().redistribute(input);
+      return null;
+    } catch (ALT_CLS_ReconciliationService.ReconciliationException expected) {
+      return expected.code;
+    }
+  }
+
+  @IsTest
+  static void redistributionAfterReversalUsesNewIdentityAndKeepsOriginalQueryable() {
+    System.runAs(byAlias('axf30g')) {
+      Fixture f = fixture(
+        'redist',
+        100,
+        'DEBIT',
+        'BRL',
+        new List<Decimal>{ 100 },
+        'BRL'
+      );
+      List<ALT_CLS_ReconciliationService.LineInput> lines = new List<ALT_CLS_ReconciliationService.LineInput>{
+        line(f.fact, f.targets[0], 100)
+      };
+      ALT_CLS_ReconciliationService.ConfirmResult original = new ALT_CLS_ReconciliationService()
+        .confirm(
+          confirmInput(lines, 0, correlation('redist-c'), 'axf142-redist-c')
+        );
+      Id originalAllocationId = original.lines[0].allocationId;
+      String originalKey = original.lines[0].allocationKey;
+      reverseAllocation(
+        originalAllocationId,
+        targetVersion(f.targets[0].Id),
+        'redist'
+      );
+
+      Test.startTest();
+      // Same fact/target pair reapplied by the correction: alloc-v2 would collide, the
+      // redistribution formula never does.
+      ALT_CLS_ReconciliationService.ConfirmResult redistributed = new ALT_CLS_ReconciliationService()
+        .redistribute(
+          redistributeInput(
+            originalAllocationId,
+            new List<ALT_CLS_ReconciliationService.LineInput>{
+              line(f.fact, f.targets[0], 100)
+            },
+            null,
+            correlation('redist-r'),
+            'axf142-redist-r'
+          )
+        );
+      Test.stopTest();
+
+      Assert.areEqual(
+        ALT_CLS_ReconciliationService.STATE_CONFIRMED,
+        redistributed.state
+      );
+      Assert.areNotEqual(
+        originalKey,
+        redistributed.lines[0].allocationKey,
+        'the redistribution never reproduces alloc-v2 for the same fact/target pair'
+      );
+      AXF_OBJ_ReconciliationAllocation__c newRow = [
+        SELECT
+          AXF_RA_LKP_OriginalAllocation__c,
+          AXF_RA_PKL_Kind__c,
+          AXF_RA_PKL_ReversalReason__c,
+          AXF_RA_TXT_ReversalNote__c
+        FROM AXF_OBJ_ReconciliationAllocation__c
+        WHERE Id = :redistributed.lines[0].allocationId
+      ];
+      Assert.areEqual('APPLICATION', newRow.AXF_RA_PKL_Kind__c);
+      Assert.areEqual(
+        originalAllocationId,
+        newRow.AXF_RA_LKP_OriginalAllocation__c,
+        'the redistribution links to the allocation it substitutes'
+      );
+      Assert.areEqual(
+        'OTHER',
+        newRow.AXF_RA_PKL_ReversalReason__c,
+        'the redistribution records why it was created'
+      );
+      Assert.areEqual(
+        'axf142 redistribution',
+        newRow.AXF_RA_TXT_ReversalNote__c
+      );
+      AXF_OBJ_ReconciliationAllocation__c originalRow = [
+        SELECT
+          AXF_RA_PKL_Kind__c,
+          AXF_RA_NUM_Magnitude__c,
+          AXF_RA_EXI_AllocationKey__c
+        FROM AXF_OBJ_ReconciliationAllocation__c
+        WHERE Id = :originalAllocationId
+      ];
+      Assert.areEqual(
+        'APPLICATION',
+        originalRow.AXF_RA_PKL_Kind__c,
+        'the reverted original is never edited'
+      );
+      Assert.areEqual(100, originalRow.AXF_RA_NUM_Magnitude__c);
+      Assert.areEqual(originalKey, originalRow.AXF_RA_EXI_AllocationKey__c);
+    }
+  }
+
+  @IsTest
+  static void redistributionReplaysIdempotentlyByOperationKey() {
+    System.runAs(byAlias('axf30g')) {
+      Fixture f = fixture(
+        'redistreplay',
+        100,
+        'DEBIT',
+        'BRL',
+        new List<Decimal>{ 100 },
+        'BRL'
+      );
+      ALT_CLS_ReconciliationService.ConfirmResult original = new ALT_CLS_ReconciliationService()
+        .confirm(
+          confirmInput(
+            new List<ALT_CLS_ReconciliationService.LineInput>{
+              line(f.fact, f.targets[0], 100)
+            },
+            0,
+            correlation('redistreplay-c'),
+            'axf142-redistreplay-c'
+          )
+        );
+      Id originalAllocationId = original.lines[0].allocationId;
+      reverseAllocation(
+        originalAllocationId,
+        targetVersion(f.targets[0].Id),
+        'redistreplay'
+      );
+      String redistCorrelationId = correlation('redistreplay-r');
+      ALT_CLS_ReconciliationService.RedistributeInput input = redistributeInput(
+        originalAllocationId,
+        new List<ALT_CLS_ReconciliationService.LineInput>{
+          line(f.fact, f.targets[0], 100)
+        },
+        null,
+        redistCorrelationId,
+        'axf142-redistreplay-r'
+      );
+
+      Test.startTest();
+      ALT_CLS_ReconciliationService.ConfirmResult first = new ALT_CLS_ReconciliationService()
+        .redistribute(input);
+      ALT_CLS_ReconciliationService.RedistributeInput replayInput = redistributeInput(
+        originalAllocationId,
+        new List<ALT_CLS_ReconciliationService.LineInput>{
+          line(f.fact, f.targets[0], 100)
+        },
+        first.version,
+        redistCorrelationId,
+        'axf142-redistreplay-r'
+      );
+      ALT_CLS_ReconciliationService.ConfirmResult replayed = new ALT_CLS_ReconciliationService()
+        .redistribute(replayInput);
+      Test.stopTest();
+
+      Assert.isFalse(first.replayed);
+      Assert.isTrue(
+        replayed.replayed,
+        'same correlationId and payload replays'
+      );
+      Assert.areEqual(first.reconciliationId, replayed.reconciliationId);
+      Assert.areEqual(
+        first.lines[0].allocationId,
+        replayed.lines[0].allocationId,
+        'no second redistribution allocation is ever written'
+      );
+    }
+  }
+
+  @IsTest
+  static void redistributionOverAllocationRejectsTheWholeCommandWithoutPartialWrite() {
+    System.runAs(byAlias('axf30g')) {
+      Fixture f = fixture(
+        'redistover',
+        100,
+        'DEBIT',
+        'BRL',
+        new List<Decimal>{ 100 },
+        'BRL'
+      );
+      ALT_CLS_ReconciliationService.ConfirmResult original = new ALT_CLS_ReconciliationService()
+        .confirm(
+          confirmInput(
+            new List<ALT_CLS_ReconciliationService.LineInput>{
+              line(f.fact, f.targets[0], 100)
+            },
+            0,
+            correlation('redistover-c'),
+            'axf142-redistover-c'
+          )
+        );
+      Id originalAllocationId = original.lines[0].allocationId;
+      reverseAllocation(
+        originalAllocationId,
+        targetVersion(f.targets[0].Id),
+        'redistover'
+      );
+      Integer before = countAllocations(f.fact.Id);
+
+      Test.startTest();
+      // The fact has only 100 available; requesting 150 back onto the same target over-allocates.
+      ALT_CLS_ReconciliationService.LineInput overLine = line(
+        f.fact,
+        f.targets[0],
+        150
+      );
+      overLine.amount = 150;
+      String code = codeOfRedistribute(
+        redistributeInput(
+          originalAllocationId,
+          new List<ALT_CLS_ReconciliationService.LineInput>{ overLine },
+          null,
+          correlation('redistover-r'),
+          'axf142-redistover-r'
+        )
+      );
+      Test.stopTest();
+
+      Assert.areEqual('VALUE_CONSERVATION', code);
+      Assert.areEqual(
+        before,
+        countAllocations(f.fact.Id),
+        'a rejected redistribution writes nothing partial'
+      );
+    }
+  }
+
+  @IsTest
+  static void redistributionRequiresAReasonAndAnAlreadyReversedOriginal() {
+    System.runAs(byAlias('axf30g')) {
+      Fixture f = fixture(
+        'redistguard',
+        100,
+        'DEBIT',
+        'BRL',
+        new List<Decimal>{ 100 },
+        'BRL'
+      );
+      ALT_CLS_ReconciliationService.ConfirmResult original = new ALT_CLS_ReconciliationService()
+        .confirm(
+          confirmInput(
+            new List<ALT_CLS_ReconciliationService.LineInput>{
+              line(f.fact, f.targets[0], 100)
+            },
+            0,
+            correlation('redistguard-c'),
+            'axf142-redistguard-c'
+          )
+        );
+      Id originalAllocationId = original.lines[0].allocationId;
+
+      Test.startTest();
+      // Never reversed yet: redistribution never substitutes a still-active APPLICATION.
+      String stillActive = codeOfRedistribute(
+        redistributeInput(
+          originalAllocationId,
+          new List<ALT_CLS_ReconciliationService.LineInput>{
+            line(f.fact, f.targets[0], 50)
+          },
+          null,
+          correlation('redistguard-active'),
+          'axf142-redistguard-active'
+        )
+      );
+      reverseAllocation(
+        originalAllocationId,
+        targetVersion(f.targets[0].Id),
+        'redistguard'
+      );
+      // No reasonCode at all: INVALID_INPUT, same discipline as every other required field.
+      ALT_CLS_ReconciliationService.RedistributeInput noReason = redistributeInput(
+        originalAllocationId,
+        new List<ALT_CLS_ReconciliationService.LineInput>{
+          line(f.fact, f.targets[0], 50)
+        },
+        null,
+        correlation('redistguard-noreason'),
+        'axf142-redistguard-noreason'
+      );
+      noReason.reasonCode = null;
+      String noReasonCode = codeOfRedistribute(noReason);
+      Test.stopTest();
+
+      Assert.areEqual(
+        'INVALID_TARGET',
+        stillActive,
+        'a still-active APPLICATION cannot be redistributed'
+      );
+      Assert.areEqual('INVALID_INPUT', noReasonCode);
+    }
+  }
+
+  @IsTest
+  static void redistributionRejectsAnOversizedNoteAMissingOriginalAndAReversalAsOriginal() {
+    System.runAs(byAlias('axf30g')) {
+      Fixture f = fixture(
+        'redistguard2',
+        100,
+        'DEBIT',
+        'BRL',
+        new List<Decimal>{ 100 },
+        'BRL'
+      );
+      ALT_CLS_ReconciliationService.ConfirmResult original = new ALT_CLS_ReconciliationService()
+        .confirm(
+          confirmInput(
+            new List<ALT_CLS_ReconciliationService.LineInput>{
+              line(f.fact, f.targets[0], 100)
+            },
+            0,
+            correlation('redistguard2-c'),
+            'axf142-redistguard2-c'
+          )
+        );
+      Id originalAllocationId = original.lines[0].allocationId;
+      reverseAllocation(
+        originalAllocationId,
+        targetVersion(f.targets[0].Id),
+        'redistguard2'
+      );
+      Id reversalAllocationId = [
+        SELECT Id
+        FROM AXF_OBJ_ReconciliationAllocation__c
+        WHERE
+          AXF_RA_PKL_Kind__c = 'REVERSAL'
+          AND AXF_RA_LKP_OriginalAllocation__c = :originalAllocationId
+      ]
+      .Id;
+      Id fakeAllocationId =
+        AXF_OBJ_ReconciliationAllocation__c.SObjectType.getDescribe()
+          .getKeyPrefix() + '000000000AAA';
+
+      Test.startTest();
+      // A note that is over 255 characters even after trimming: INVALID_INPUT, same discipline
+      // as AXF-141's own reversal note.
+      ALT_CLS_ReconciliationService.RedistributeInput oversizedNote = redistributeInput(
+        originalAllocationId,
+        new List<ALT_CLS_ReconciliationService.LineInput>{
+          line(f.fact, f.targets[0], 50)
+        },
+        null,
+        correlation('redistguard2-note'),
+        'axf142-redistguard2-note'
+      );
+      oversizedNote.reasonNote = 'x'.repeat(256);
+      String oversizedNoteCode = codeOfRedistribute(oversizedNote);
+      // A non-existent (or inaccessible) original allocation: NOT_ACCESSIBLE, indistinguishable
+      // from a denied one.
+      String missingCode = codeOfRedistribute(
+        redistributeInput(
+          fakeAllocationId,
+          new List<ALT_CLS_ReconciliationService.LineInput>{
+            line(f.fact, f.targets[0], 50)
+          },
+          null,
+          correlation('redistguard2-missing'),
+          'axf142-redistguard2-missing'
+        )
+      );
+      // A REVERSAL row itself is never a valid substitution target, only the APPLICATION it
+      // reversed.
+      String reversalAsOriginalCode = codeOfRedistribute(
+        redistributeInput(
+          reversalAllocationId,
+          new List<ALT_CLS_ReconciliationService.LineInput>{
+            line(f.fact, f.targets[0], 50)
+          },
+          null,
+          correlation('redistguard2-reversal'),
+          'axf142-redistguard2-reversal'
+        )
+      );
+      Test.stopTest();
+
+      Assert.areEqual('INVALID_INPUT', oversizedNoteCode);
+      Assert.areEqual('NOT_ACCESSIBLE', missingCode);
+      Assert.areEqual('INVALID_TARGET', reversalAsOriginalCode);
+    }
+  }
+
+  // ------------------------------------------------------------------ preview
+
+  @IsTest
+  static void previewListsSourcesAndEvaluatesADraftWithCandidatesWithoutWriting() {
+    System.runAs(byAlias('axf30g')) {
+      Fixture f = fixture(
+        'preview',
+        100,
+        'DEBIT',
+        'BRL',
+        new List<Decimal>{ 60, 40 },
+        'BRL'
+      );
+      ALT_CLS_ReconciliationService service = new ALT_CLS_ReconciliationService();
+
+      ALT_CLS_ReconciliationService.PreviewInput sourcesInput = new ALT_CLS_ReconciliationService.PreviewInput();
+      sourcesInput.accountId = f.holder.Id;
+
+      ALT_CLS_ReconciliationService.PreviewInput draftInput = new ALT_CLS_ReconciliationService.PreviewInput();
+      draftInput.factKind = 'BANK';
+      draftInput.factId = f.fact.Id;
+      draftInput.correlationId = correlation('preview');
+      draftInput.lines = new List<ALT_CLS_ReconciliationService.LineInput>{
+        line(f.fact, f.targets[0], 60),
+        line(f.fact, f.targets[1], 40)
+      };
+
+      Test.startTest();
+      ALT_CLS_ReconciliationService.WorkbenchView sourcesView = service.preview(
+        sourcesInput
+      );
+      ALT_CLS_ReconciliationService.WorkbenchView draftView = service.preview(
+        draftInput
+      );
+      Test.stopTest();
+
+      Assert.areEqual(1, sourcesView.sources.size());
+      Assert.areEqual(100, sourcesView.sources[0].residual);
+      Assert.areEqual('BANK', sourcesView.sources[0].factKind);
+
+      Assert.isNotNull(draftView.source);
+      Assert.areEqual(100, draftView.source.residual);
+      Assert.areEqual(2, draftView.candidates.size());
+      Assert.areEqual(2, draftView.lines.size());
+      Assert.areEqual(100, draftView.allocatedTotal);
+      Assert.areEqual(
+        ALT_CLS_MatchEvidence.STATE_CONSULTATIVE,
+        draftView.state,
+        'a draft is never concluded'
+      );
+    }
+  }
 }
