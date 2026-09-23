@@ -16,6 +16,10 @@
  *  - Estouro de valor é rejeitado antes da escrita, sem alargar metadado existente: o limite
  *    efetivo de magnitude continua sendo o Number(16,2) já em uso.
  *
+ * AXF-155: periodicidade em dias (7/14, sem âncora), origem e descrição aplicadas às ocorrências
+ * (janela inicial e reposição) e os comandos de mudança do contrato AXF-103 — EDIT de valor com
+ * escopo FROM_SEQUENCE e TERMINATE — que só alteram ocorrências futuras não realizadas.
+ *
  * Acesso: a autorização é a autoridade do titular (AXF-3), conferida antes de ler ou
  * escrever; as operações internas usam access mode explícito.
  */
@@ -58,6 +62,19 @@ public with sharing class ALT_CLS_FinancialScheduleService {
    * de sanidade do calendário puro, em vez de confiar em estouro aritmético.
    */
   public static final Integer MAX_PERIOD_MONTHS = 120;
+  /**
+   * AXF-155 — periodicidades em dias ratificadas: semanal (7) e quinzenal (14). Mutuamente
+   * exclusivas com `periodMonths`, sem âncora de dia.
+   */
+  public static final Set<Integer> PERIOD_DAYS = new Set<Integer>{ 7, 14 };
+  /** Limite do texto da descrição aplicada às ocorrências (`AXF_FTX_TXT_Description__c`). */
+  public static final Integer MAX_DESCRIPTION_LENGTH = 255;
+  /** Limite da chave de fluxo informada pelo chamador (discriminador da identidade). */
+  public static final Integer MAX_STREAM_KEY_LENGTH = 120;
+  /** Chaves da origem/descrição na entrada canônica da definição (AXF-155). */
+  public static final String INPUT_BANK_ACCOUNT = 'bankAccountId';
+  public static final String INPUT_CREDIT_CARD = 'creditCardId';
+  public static final String INPUT_DESCRIPTION = 'description';
   /** Meses da janela rolante: mês corrente mais onze. */
   public static final Integer DEFAULT_HORIZON_MONTHS = 12;
   /**
@@ -152,6 +169,33 @@ public with sharing class ALT_CLS_FinancialScheduleService {
     /** Chave de agrupamento legada de AXF-20, preservada na adoção. */
     @AuraEnabled
     public String legacyGroupKey;
+    /**
+     * AXF-155 — periodicidade em dias (7 ou 14), mutuamente exclusiva com `periodMonths`. Sem
+     * âncora: o vencimento avança exatamente `periodDays` por sequência.
+     */
+    @AuraEnabled
+    public Integer periodDays;
+    /**
+     * AXF-155 — origem das ocorrências (conta corrente/carteira OU cartão), gravada na entrada
+     * canônica da definição e aplicada a toda ocorrência materializada.
+     */
+    @AuraEnabled
+    public Id bankAccountId;
+    @AuraEnabled
+    public Id creditCardId;
+    /** AXF-155 — descrição aplicada às ocorrências materializadas. */
+    @AuraEnabled
+    public String description;
+    /** AXF-155 — cronogramas das telas de Recorrências nascem com a geração ligada. */
+    @AuraEnabled
+    public Boolean generationEnabled;
+    /**
+     * AXF-155 — discriminador de fluxo informado pelo chamador (a chave de operação da tela). Dois
+     * fluxos do mesmo titular com o mesmo calendário não colidem; ausente, a identidade legada é
+     * preservada byte a byte.
+     */
+    @AuraEnabled
+    public String streamKey;
   }
 
   public class CreateResult {
@@ -548,6 +592,16 @@ public with sharing class ALT_CLS_FinancialScheduleService {
       }
     }
 
+    // AXF-155: a origem aplicada às ocorrências pertence ao MESMO titular — validada sob o lock e
+    // antes de qualquer escrita.
+    if (!originBelongsTo(normalized, input.accountId)) {
+      return fail(
+        result,
+        OUTCOME_INVALID,
+        'A origem informada não pertence ao titular do cronograma; nada foi gravado.'
+      );
+    }
+
     Savepoint checkpoint = Database.setSavepoint();
     try {
       writing = true;
@@ -564,7 +618,8 @@ public with sharing class ALT_CLS_FinancialScheduleService {
         AXF_FSC_NUM_AppliedRevision__c = 0,
         AXF_FSC_NUM_FinancialVersion__c = 0,
         AXF_FSC_NUM_HorizonMonths__c = normalized.horizonMonths,
-        AXF_FSC_TXT_LegacyGroupKey__c = normalized.legacyGroupKey
+        AXF_FSC_TXT_LegacyGroupKey__c = normalized.legacyGroupKey,
+        AXF_FSC_BOL_GenerationEnabled__c = normalized.generationEnabled
       );
       Database.insert(
         new List<AXF_OBJ_FinancialSchedule__c>{ root },
@@ -582,6 +637,7 @@ public with sharing class ALT_CLS_FinancialScheduleService {
         AXF_SDF_DAT_FirstDueDate__c = normalized.firstDueDate,
         AXF_SDF_NUM_AnchorDay__c = normalized.anchorDay,
         AXF_SDF_NUM_PeriodMonths__c = normalized.periodMonths,
+        AXF_SDF_NUM_PeriodDays__c = normalized.periodDays,
         AXF_SDF_TXT_TimeZone__c = normalized.timeZone,
         AXF_SDF_NUM_Principal__c = normalized.principal,
         AXF_SDF_NUM_PeriodRate__c = normalized.periodRate,
@@ -1468,7 +1524,10 @@ public with sharing class ALT_CLS_FinancialScheduleService {
         AXF_FSC_DT_NextAttemptAt__c,
         AXF_FSC_TXT_LastErrorCode__c,
         AXF_FSC_BOL_GenerationEnabled__c,
-        AXF_FSC_LKP_ActiveDefinition__c
+        AXF_FSC_LKP_ActiveDefinition__c,
+        AXF_FSC_LKP_ActiveReference__c,
+        AXF_FSC_NUM_Version__c,
+        AXF_FSC_DAT_TerminationDate__c
       FROM AXF_OBJ_FinancialSchedule__c
       WHERE Id = :scheduleId
       WITH SYSTEM_MODE
@@ -1559,12 +1618,14 @@ public with sharing class ALT_CLS_FinancialScheduleService {
         AXF_SDF_NUM_FirstSequence__c,
         AXF_SDF_DAT_FirstDueDate__c,
         AXF_SDF_NUM_PeriodMonths__c,
+        AXF_SDF_NUM_PeriodDays__c,
         AXF_SDF_NUM_TotalInstallments__c,
         AXF_SDF_NUM_Principal__c,
         AXF_SDF_NUM_PeriodRate__c,
         AXF_SDF_NUM_FixedValue__c,
         AXF_SDF_NUM_RecurringFee__c,
-        AXF_SDF_NUM_UpfrontFee__c
+        AXF_SDF_NUM_UpfrontFee__c,
+        AXF_SDF_TAL_InputCanonicalJson__c
       FROM AXF_OBJ_ScheduleDefinition__c
       WHERE AXF_SDF_LKP_Schedule__c = :scheduleId
       WITH SYSTEM_MODE
@@ -1635,8 +1696,20 @@ public with sharing class ALT_CLS_FinancialScheduleService {
         scheduleKey,
         sequence
       );
+      // AXF-155: a reposição aplica a MESMA origem e descrição gravadas na entrada canônica da
+      // definição vigente daquela sequência.
+      Map<String, Object> canonicalInput = canonicalInputOf(definition);
       occurrences.add(
         new AXF_OBJ_FinancialTransaction__c(
+          AXF_FTX_LKP_BankAccount__c = (Id) canonicalInput.get(
+            INPUT_BANK_ACCOUNT
+          ),
+          AXF_FTX_LKP_CreditCard__c = (Id) canonicalInput.get(
+            INPUT_CREDIT_CARD
+          ),
+          AXF_FTX_TXT_Description__c = (String) canonicalInput.get(
+            INPUT_DESCRIPTION
+          ),
           AXF_FTX_LKP_Account__c = root.AXF_FSC_LKP_Account__c,
           AXF_FTX_LKP_Contract__c = root.AXF_FSC_LKP_Contract__c,
           AXF_FTX_LKP_Schedule__c = root.Id,
@@ -1687,6 +1760,47 @@ public with sharing class ALT_CLS_FinancialScheduleService {
       );
     }
     return occurrences;
+  }
+
+  /**
+   * @description AXF-155 — entrada canônica da definição como mapa, com a origem (`Id`) e a
+   * descrição tipadas. Uma entrada ausente ou ilegível não inventa origem: devolve vazio.
+   */
+  public static Map<String, Object> canonicalInputOf(
+    AXF_OBJ_ScheduleDefinition__c definition
+  ) {
+    Map<String, Object> values = new Map<String, Object>();
+    String raw = (definition == null)
+      ? null
+      : definition.AXF_SDF_TAL_InputCanonicalJson__c;
+    if (String.isBlank(raw)) {
+      return values;
+    }
+    Map<String, Object> parsed;
+    try {
+      parsed = (Map<String, Object>) JSON.deserializeUntyped(raw);
+    } catch (Exception malformed) {
+      return values;
+    }
+    for (
+      String key : new List<String>{ INPUT_BANK_ACCOUNT, INPUT_CREDIT_CARD }
+    ) {
+      Object value = parsed.get(key);
+      if (value instanceof String && !String.isBlank((String) value)) {
+        try {
+          values.put(key, Id.valueOf((String) value));
+        } catch (Exception invalidId) {
+          continue;
+        }
+      }
+    }
+    Object description = parsed.get(INPUT_DESCRIPTION);
+    if (
+      description instanceof String && !String.isBlank((String) description)
+    ) {
+      values.put(INPUT_DESCRIPTION, (String) description);
+    }
+    return values;
   }
 
   /**
@@ -2161,6 +2275,12 @@ public with sharing class ALT_CLS_FinancialScheduleService {
     String payloadHash;
     String operationKey;
     String canonicalJson;
+    Integer periodDays;
+    Id bankAccountId;
+    Id creditCardId;
+    String description;
+    Boolean generationEnabled = false;
+    String streamKey;
   }
 
   private class MaterializedOccurrence {
@@ -2218,14 +2338,34 @@ public with sharing class ALT_CLS_FinancialScheduleService {
         'A sequência inicial de rastreamento não pode ser anterior à sequência inicial da definição.'
       );
     }
-    value.periodMonths = (input.periodMonths == null) ? 1 : input.periodMonths;
-    if (value.periodMonths < 1) {
-      throw new ServiceException('Periodicidade deve ser de pelo menos 1 mês.');
-    }
-    if (value.periodMonths > MAX_PERIOD_MONTHS) {
-      throw new ServiceException(
-        'Periodicidade deve estar entre 1 e ' + MAX_PERIOD_MONTHS + ' meses.'
-      );
+    value.periodDays = input.periodDays;
+    if (value.periodDays != null) {
+      // AXF-155: exatamente uma periodicidade. Em dias não há âncora nem padrão mensal.
+      if (input.periodMonths != null) {
+        throw new ServiceException(
+          'Informe a periodicidade em meses ou em dias, nunca as duas.'
+        );
+      }
+      if (!PERIOD_DAYS.contains(value.periodDays)) {
+        throw new ServiceException(
+          'A periodicidade em dias deve ser 7 (semanal) ou 14 (quinzenal).'
+        );
+      }
+      value.periodMonths = null;
+    } else {
+      value.periodMonths = (input.periodMonths == null)
+        ? 1
+        : input.periodMonths;
+      if (value.periodMonths < 1) {
+        throw new ServiceException(
+          'Periodicidade deve ser de pelo menos 1 mês.'
+        );
+      }
+      if (value.periodMonths > MAX_PERIOD_MONTHS) {
+        throw new ServiceException(
+          'Periodicidade deve estar entre 1 e ' + MAX_PERIOD_MONTHS + ' meses.'
+        );
+      }
     }
     value.horizonMonths = (input.horizonMonths == null)
       ? DEFAULT_HORIZON_MONTHS
@@ -2251,54 +2391,58 @@ public with sharing class ALT_CLS_FinancialScheduleService {
       throw new ServiceException('Fuso horário excede 80 caracteres.');
     }
 
-    value.anchorDay = input.anchorDay;
-    if (value.anchorDay == null) {
-      // A âncora é a autoridade de calendário da DEFINIÇÃO e a definição nasce no primeiro
-      // vencimento: derivá-la da parcela corrente usaria um dia já recortado pelo mês curto e
-      // recusaria pares coerentes com âncora 29/30/31 cuja parcela corrente cai em fevereiro.
-      Date anchorSource = (input.firstDueDate != null)
-        ? input.firstDueDate
-        : input.trackingDueDate;
-      if (anchorSource == null) {
-        throw new ServiceException(
-          'Informe o vencimento da parcela corrente ou o primeiro vencimento.'
-        );
-      }
-      value.anchorDay = anchorSource.day();
-    }
-    if (
-      value.anchorDay < ALT_CLS_ScheduleCalendar.MIN_ANCHOR_DAY ||
-      value.anchorDay > ALT_CLS_ScheduleCalendar.MAX_ANCHOR_DAY
-    ) {
-      throw new ServiceException('Dia âncora deve estar entre 1 e 31.');
-    }
-
-    if (input.firstDueDate != null) {
-      if (input.trackingDueDate != null) {
-        // A coerência é comparada PARA A FRENTE, derivando pela mesma função que materializa a
-        // ocorrência — e não pelo calendário já recortado da parcela corrente. O par só é
-        // recusado quando o calendário aprovado realmente não o produz.
-        Date projected = ALT_CLS_ScheduleCalendar.nominalDueDate(
-          input.firstDueDate,
-          value.firstSequence,
-          value.periodMonths,
-          value.anchorDay,
-          value.trackingStartSequence
-        );
-        if (projected != input.trackingDueDate) {
+    if (value.periodDays != null) {
+      normalizeDayCalendar(input, value);
+    } else {
+      value.anchorDay = input.anchorDay;
+      if (value.anchorDay == null) {
+        // A âncora é a autoridade de calendário da DEFINIÇÃO e a definição nasce no primeiro
+        // vencimento: derivá-la da parcela corrente usaria um dia já recortado pelo mês curto e
+        // recusaria pares coerentes com âncora 29/30/31 cuja parcela corrente cai em fevereiro.
+        Date anchorSource = (input.firstDueDate != null)
+          ? input.firstDueDate
+          : input.trackingDueDate;
+        if (anchorSource == null) {
           throw new ServiceException(
-            'O vencimento da parcela corrente informado não é coerente com o primeiro vencimento, a periodicidade e a âncora.'
+            'Informe o vencimento da parcela corrente ou o primeiro vencimento.'
           );
         }
+        value.anchorDay = anchorSource.day();
       }
-      value.firstDueDate = input.firstDueDate;
-    } else if (input.trackingDueDate != null) {
-      value.firstDueDate = ALT_CLS_ScheduleCalendar.shift(
-        input.trackingDueDate,
-        -(value.trackingStartSequence - value.firstSequence) *
-        value.periodMonths,
-        value.anchorDay
-      );
+      if (
+        value.anchorDay < ALT_CLS_ScheduleCalendar.MIN_ANCHOR_DAY ||
+        value.anchorDay > ALT_CLS_ScheduleCalendar.MAX_ANCHOR_DAY
+      ) {
+        throw new ServiceException('Dia âncora deve estar entre 1 e 31.');
+      }
+
+      if (input.firstDueDate != null) {
+        if (input.trackingDueDate != null) {
+          // A coerência é comparada PARA A FRENTE, derivando pela mesma função que materializa a
+          // ocorrência — e não pelo calendário já recortado da parcela corrente. O par só é
+          // recusado quando o calendário aprovado realmente não o produz.
+          Date projected = ALT_CLS_ScheduleCalendar.nominalDueDate(
+            input.firstDueDate,
+            value.firstSequence,
+            value.periodMonths,
+            value.anchorDay,
+            value.trackingStartSequence
+          );
+          if (projected != input.trackingDueDate) {
+            throw new ServiceException(
+              'O vencimento da parcela corrente informado não é coerente com o primeiro vencimento, a periodicidade e a âncora.'
+            );
+          }
+        }
+        value.firstDueDate = input.firstDueDate;
+      } else if (input.trackingDueDate != null) {
+        value.firstDueDate = ALT_CLS_ScheduleCalendar.shift(
+          input.trackingDueDate,
+          -(value.trackingStartSequence - value.firstSequence) *
+          value.periodMonths,
+          value.anchorDay
+        );
+      }
     }
     if (value.firstDueDate == null) {
       throw new ServiceException(
@@ -2408,27 +2552,36 @@ public with sharing class ALT_CLS_FinancialScheduleService {
       );
     }
 
+    normalizeOrigin(input, value);
+
     // Identidade do cronograma: estável sob emenda de fórmula (principal, taxa e tarifas não
     // participam) e distinta por contrato, titular, direção, moeda, método, calendário e pelo
     // discriminador do fluxo. Um contrato admite vários cronogramas; dois contratos do mesmo
     // titular com o mesmo calendário não podem colidir.
-    value.scheduleKey = AXF_CLS_IdentityFraming.key(
-      new List<Object>{
-        SCHEDULE_TAG,
-        input.accountId,
-        value.contractId,
-        value.direction,
-        value.currencyIsoCode,
-        value.method,
-        value.firstSequence,
-        value.firstDueDate,
-        value.periodMonths,
-        value.anchorDay,
-        value.totalInstallments,
-        value.trackingStartSequence,
-        value.legacyGroupKey
-      }
-    );
+    List<Object> keyParts = new List<Object>{
+      SCHEDULE_TAG,
+      input.accountId,
+      value.contractId,
+      value.direction,
+      value.currencyIsoCode,
+      value.method,
+      value.firstSequence,
+      value.firstDueDate,
+      value.periodMonths,
+      value.anchorDay,
+      value.totalInstallments,
+      value.trackingStartSequence,
+      value.legacyGroupKey
+    };
+    // AXF-155: partes novas entram SÓ quando presentes, para que a identidade de todo cronograma
+    // mensal existente continue byte a byte a mesma (replay de criação inalterado).
+    if (value.periodDays != null) {
+      keyParts.addAll(new List<Object>{ 'periodDays', value.periodDays });
+    }
+    if (value.streamKey != null) {
+      keyParts.addAll(new List<Object>{ 'stream', value.streamKey });
+    }
+    value.scheduleKey = AXF_CLS_IdentityFraming.key(keyParts);
     value.definitionKey = AXF_CLS_IdentityFraming.key(
       new List<Object>{ DEFINITION_TAG, value.scheduleKey, 1 }
     );
@@ -2436,31 +2589,44 @@ public with sharing class ALT_CLS_FinancialScheduleService {
       new List<Object>{ REFERENCE_TAG, value.scheduleKey, 1, 'INITIAL' }
     );
 
-    String canonical = AXF_CLS_IdentityFraming.frame(
-      new List<Object>{
-        PAYLOAD_TAG,
-        input.accountId,
-        value.contractId,
-        value.direction,
-        value.currencyIsoCode,
-        value.method,
-        value.totalInstallments,
-        value.firstSequence,
-        value.firstDueDate,
-        value.periodMonths,
-        value.anchorDay,
-        value.trackingStartSequence,
-        value.horizonMonths,
-        value.principal,
-        value.periodRate,
-        value.fixedValue,
-        value.recurringFee,
-        value.upfrontFee,
-        value.referenceAmount,
-        value.timeZone,
-        value.legacyGroupKey
-      }
-    );
+    List<Object> payloadParts = new List<Object>{
+      PAYLOAD_TAG,
+      input.accountId,
+      value.contractId,
+      value.direction,
+      value.currencyIsoCode,
+      value.method,
+      value.totalInstallments,
+      value.firstSequence,
+      value.firstDueDate,
+      value.periodMonths,
+      value.anchorDay,
+      value.trackingStartSequence,
+      value.horizonMonths,
+      value.principal,
+      value.periodRate,
+      value.fixedValue,
+      value.recurringFee,
+      value.upfrontFee,
+      value.referenceAmount,
+      value.timeZone,
+      value.legacyGroupKey
+    };
+    if (value.periodDays != null) {
+      payloadParts.addAll(new List<Object>{ 'periodDays', value.periodDays });
+    }
+    if (value.bankAccountId != null || value.creditCardId != null) {
+      payloadParts.addAll(
+        new List<Object>{ 'origin', value.bankAccountId, value.creditCardId }
+      );
+    }
+    if (value.description != null) {
+      payloadParts.addAll(new List<Object>{ 'description', value.description });
+    }
+    if (value.generationEnabled) {
+      payloadParts.addAll(new List<Object>{ 'generationEnabled', true });
+    }
+    String canonical = AXF_CLS_IdentityFraming.frame(payloadParts);
     value.payloadHash = AXF_CLS_IdentityFraming.sha256Hex(canonical);
     value.operationKey = AXF_CLS_IdentityFraming.key(
       new List<Object>{
@@ -2470,15 +2636,93 @@ public with sharing class ALT_CLS_FinancialScheduleService {
         value.payloadHash
       }
     );
-    value.canonicalJson = JSON.serialize(
-      new Map<String, Object>{
-        'tag' => PAYLOAD_TAG,
-        'canonical' => canonical,
-        'payloadHash' => value.payloadHash,
-        'scheduleKey' => value.scheduleKey
-      }
-    );
+    Map<String, Object> canonicalInput = new Map<String, Object>{
+      'tag' => PAYLOAD_TAG,
+      'canonical' => canonical,
+      'payloadHash' => value.payloadHash,
+      'scheduleKey' => value.scheduleKey
+    };
+    // AXF-155: origem e descrição fazem parte da entrada canônica da definição, e é daqui que a
+    // reposição as reaplica a cada ocorrência nova.
+    if (value.bankAccountId != null) {
+      canonicalInput.put(INPUT_BANK_ACCOUNT, value.bankAccountId);
+    }
+    if (value.creditCardId != null) {
+      canonicalInput.put(INPUT_CREDIT_CARD, value.creditCardId);
+    }
+    if (value.description != null) {
+      canonicalInput.put(INPUT_DESCRIPTION, value.description);
+    }
+    value.canonicalJson = JSON.serialize(canonicalInput);
     return value;
+  }
+
+  /**
+   * @description AXF-155 — calendário em dias: sem âncora. O primeiro vencimento vem informado ou
+   * é derivado da parcela corrente recuando `periodDays` por sequência; a âncora persistida (campo
+   * obrigatório da definição) é apenas o dia do primeiro vencimento e não participa do cálculo.
+   */
+  private static void normalizeDayCalendar(
+    CreateInput input,
+    Normalized value
+  ) {
+    if (input.firstDueDate != null) {
+      if (
+        input.trackingDueDate != null &&
+        ALT_CLS_ScheduleCalendar.nominalDueDateByDays(
+          input.firstDueDate,
+          value.firstSequence,
+          value.periodDays,
+          value.trackingStartSequence
+        ) != input.trackingDueDate
+      ) {
+        throw new ServiceException(
+          'O vencimento da parcela corrente informado não é coerente com o primeiro vencimento e a periodicidade em dias.'
+        );
+      }
+      value.firstDueDate = input.firstDueDate;
+    } else if (input.trackingDueDate != null) {
+      value.firstDueDate = ALT_CLS_ScheduleCalendar.shiftDays(
+        input.trackingDueDate,
+        -(value.trackingStartSequence - value.firstSequence) * value.periodDays
+      );
+    }
+    if (value.firstDueDate != null) {
+      value.anchorDay = value.firstDueDate.day();
+    }
+  }
+
+  /**
+   * @description AXF-155 — origem (uma só: conta/carteira OU cartão), descrição, geração e chave de
+   * fluxo normalizadas. A pertença da origem ao titular é conferida sob o lock, antes da escrita.
+   */
+  private static void normalizeOrigin(CreateInput input, Normalized value) {
+    if (input.bankAccountId != null && input.creditCardId != null) {
+      throw new ServiceException(
+        'Informe uma única origem: conta corrente, carteira ou cartão.'
+      );
+    }
+    value.bankAccountId = input.bankAccountId;
+    value.creditCardId = input.creditCardId;
+    value.description = blankToNull(input.description);
+    if (
+      value.description != null &&
+      value.description.length() > MAX_DESCRIPTION_LENGTH
+    ) {
+      throw new ServiceException(
+        'A descrição excede ' + MAX_DESCRIPTION_LENGTH + ' caracteres.'
+      );
+    }
+    value.generationEnabled = input.generationEnabled == true;
+    value.streamKey = blankToNull(input.streamKey);
+    if (
+      value.streamKey != null &&
+      value.streamKey.length() > MAX_STREAM_KEY_LENGTH
+    ) {
+      throw new ServiceException(
+        'A chave de fluxo excede ' + MAX_STREAM_KEY_LENGTH + ' caracteres.'
+      );
+    }
   }
 
   private static String blankToNull(String value) {
@@ -2524,7 +2768,7 @@ public with sharing class ALT_CLS_FinancialScheduleService {
     Normalized normalized
   ) {
     List<MaterializedOccurrence> window = new List<MaterializedOccurrence>();
-    Date today = Date.today();
+    Date today = today();
     Date windowEnd = ALT_CLS_ScheduleCalendar.monthEndShifted(
       today,
       normalized.horizonMonths - 1
@@ -2556,6 +2800,7 @@ public with sharing class ALT_CLS_FinancialScheduleService {
         normalized.firstDueDate,
         normalized.firstSequence,
         normalized.periodMonths,
+        normalized.periodDays,
         normalized.anchorDay,
         sequence
       );
@@ -2765,8 +3010,44 @@ public with sharing class ALT_CLS_FinancialScheduleService {
       // ESTIMATED não é uma modalidade da política de amortização: o valor vem da referência.
       AXF_FTX_PKL_Modality__c = (normalized.method == METHOD_ESTIMATED)
         ? null
-        : normalized.method
+        : normalized.method,
+      // AXF-155: origem e descrição da recorrência em toda ocorrência materializada.
+      AXF_FTX_LKP_BankAccount__c = normalized.bankAccountId,
+      AXF_FTX_LKP_CreditCard__c = normalized.creditCardId,
+      AXF_FTX_TXT_Description__c = normalized.description
     );
+  }
+
+  /**
+   * @description A origem informada existe e pertence ao titular? Sem origem, nada a conferir.
+   * Leitura do caminho privilegiado declarado: a autoridade do titular já foi conferida.
+   */
+  private static Boolean originBelongsTo(Normalized normalized, Id holderId) {
+    if (normalized.bankAccountId != null) {
+      List<AXF_OBJ_BankAccount__c> accounts = [
+        SELECT Id
+        FROM AXF_OBJ_BankAccount__c
+        WHERE
+          Id = :normalized.bankAccountId
+          AND AXF_BA_LKP_Account__c = :holderId
+        WITH SYSTEM_MODE
+        LIMIT 1
+      ];
+      return accounts.size() == 1;
+    }
+    if (normalized.creditCardId != null) {
+      List<AXF_OBJ_CreditCard__c> cards = [
+        SELECT Id
+        FROM AXF_OBJ_CreditCard__c
+        WHERE
+          Id = :normalized.creditCardId
+          AND AXF_CC_LKP_Account__c = :holderId
+        WITH SYSTEM_MODE
+        LIMIT 1
+      ];
+      return cards.size() == 1;
+    }
+    return true;
   }
 
   // --- replay --------------------------------------------------------------
@@ -2884,6 +3165,844 @@ public with sharing class ALT_CLS_FinancialScheduleService {
     stored.replay = true;
     stored.message = 'Operação já confirmada — o resultado original foi devolvido.';
     return stored;
+  }
+
+  // --- comandos de mudança: EDIT de valor e TERMINATE (AXF-155) -----------
+
+  public static final String OPERATION_EDIT = 'EDIT';
+  public static final String OPERATION_TERMINATE = 'TERMINATE';
+  public static final String STATE_ENDED = 'ENDED';
+  public static final String OUTCOME_UPDATED = 'UPDATED';
+  public static final String OUTCOME_TERMINATED = 'TERMINATED';
+  public static final String OUTCOME_UNSUPPORTED = 'UNSUPPORTED';
+  public static final String CHANGE_TAG = 'axf155-change-v1';
+  public static final String MANUAL_REFERENCE_TAG = 'axf155-srf-manual-v1';
+  public static final String WITHDRAW_REFERENCE_TAG = 'axf155-srf-withdraw-v1';
+  /** Política de proteção registrada no recibo: nada realizado/conciliado/congelado muda. */
+  public static final String PROTECTION_POLICY = 'ALLOCATED_CONFIRMED_FROZEN_PROTECTED';
+  public static final Integer MAX_OPERATION_KEY_LENGTH = 120;
+  /** Teto de ocorrências persistidas lidas por comando de mudança. */
+  public static final Integer MAX_CHANGE_ROWS = 2000;
+  private static final String KIND_MANUAL = 'MANUAL';
+  private static final String KIND_REALIZATION = 'REALIZATION';
+  private static final String KIND_COMPENSATION = 'COMPENSATION';
+  private static final String STATE_CANCELLED = 'CANCELLED';
+  private static final String STATUS_CONFIRMED = 'CONFIRMED';
+
+  /**
+   * Comando de mudança de um cronograma (contrato AXF-103 EDIT/TERMINATE). `operationKey` é a
+   * identidade de idempotência do chamador; `expectedVersion` é a versão otimista da raiz.
+   */
+  public class ChangeInput {
+    public Id scheduleId;
+    public String operationKey;
+    public Long expectedVersion;
+    /** EDIT: novo valor de referência, a partir da primeira ocorrência futura não realizada. */
+    public Decimal amount;
+    /** TERMINATE: data efetiva; vencimentos estritamente posteriores são cancelados. */
+    public Date terminationDate;
+    public String reason;
+  }
+
+  /** Resultado autorizado do comando de mudança, devolvido também no replay. */
+  public class ChangeResult {
+    public String outcome;
+    public String message;
+    public Id scheduleId;
+    public Id changeId;
+    public String changeKey;
+    public Id referenceId;
+    public Long revision;
+    public Long version;
+    public Integer fromSequence;
+    public Integer updatedCount = 0;
+    public Integer cancelledCount = 0;
+    public Integer protectedCount = 0;
+    public Decimal amount;
+    public Date terminationDate;
+    public Boolean replay = false;
+  }
+
+  /**
+   * @description EDIT de valor com escopo FROM_SEQUENCE: nova referência MANUAL efetiva na
+   * primeira ocorrência futura não realizada, recibo EDIT e atualização da base corrente das
+   * ocorrências persistidas elegíveis. Realizadas, conciliadas e congeladas ficam intocadas.
+   */
+  public static ChangeResult editAmount(ChangeInput input) {
+    return applyChange(OPERATION_EDIT, input);
+  }
+
+  /**
+   * @description TERMINATE: fronteira efetiva, raiz ENDED, ocorrências elegíveis com vencimento
+   * estritamente posterior à data marcadas CANCELLED e recibo TERMINATE. Sem reativação.
+   */
+  public static ChangeResult terminateSchedule(ChangeInput input) {
+    return applyChange(OPERATION_TERMINATE, input);
+  }
+
+  private static ChangeResult applyChange(String operation, ChangeInput input) {
+    ChangeResult result = new ChangeResult();
+    lastRunLockedHolder = false;
+    String invalid = changeInputError(operation, input);
+    if (invalid != null) {
+      return changeFail(result, OUTCOME_INVALID, invalid);
+    }
+    result.scheduleId = input.scheduleId;
+    AXF_OBJ_FinancialSchedule__c root = readSchedule(input.scheduleId);
+    if (root == null) {
+      return changeFail(
+        result,
+        OUTCOME_NOT_FOUND,
+        'Cronograma não encontrado neste escopo.'
+      );
+    }
+    Id holderId = root.AXF_FSC_LKP_Account__c;
+    if (!isAuthorized(holderId)) {
+      return changeFail(
+        result,
+        OUTCOME_FORBIDDEN,
+        'Você não tem acesso a esta entidade titular.'
+      );
+    }
+    if (!canChangeSchedules()) {
+      return changeFail(
+        result,
+        OUTCOME_FORBIDDEN,
+        'Você não tem permissão para alterar cronogramas financeiros.'
+      );
+    }
+    Decimal amount = (operation == OPERATION_EDIT)
+      ? input.amount.setScale(MONEY_SCALE)
+      : null;
+    String payloadHash = changePayloadHash(operation, root, input, amount);
+    String operationKey = AXF_CLS_IdentityFraming.key(
+      new List<Object>{
+        OPERATION_TAG,
+        operation,
+        root.AXF_FSC_EXI_ScheduleKey__c,
+        input.operationKey.trim()
+      }
+    );
+    result.changeKey = operationKey;
+
+    // Replay autorizado: identidade de operação ANTES da checagem de versão.
+    ChangeResult replay = changeReplayOrConflict(
+      operation,
+      operationKey,
+      payloadHash,
+      result
+    );
+    if (replay != null) {
+      return replay;
+    }
+    ChangeResult rejected = changePreconditions(operation, root, input, result);
+    if (rejected != null) {
+      return rejected;
+    }
+
+    // Serialização holder-first, releitura sob o lock e rechecagem de replay e de versão.
+    lastRunLockedHolder = true;
+    if (!lockHolder(holderId, AccessLevel.USER_MODE)) {
+      return changeFail(
+        result,
+        OUTCOME_UNAVAILABLE,
+        'O titular não está disponível para escrita neste momento.'
+      );
+    }
+    AXF_OBJ_FinancialSchedule__c locked = readSchedule(input.scheduleId);
+    if (locked == null || locked.AXF_FSC_LKP_Account__c != holderId) {
+      return changeFail(
+        result,
+        OUTCOME_UNAVAILABLE,
+        'O cronograma não está mais disponível sob o lock do titular; nada foi gravado.'
+      );
+    }
+    replay = changeReplayOrConflict(
+      operation,
+      operationKey,
+      payloadHash,
+      result
+    );
+    if (replay != null) {
+      return replay;
+    }
+    rejected = changePreconditions(operation, locked, input, result);
+    if (rejected != null) {
+      return rejected;
+    }
+
+    Savepoint checkpoint = Database.setSavepoint();
+    try {
+      writing = true;
+      ChangeContext context = new ChangeContext();
+      context.root = locked;
+      context.input = input;
+      context.operationKey = operationKey;
+      context.payloadHash = payloadHash;
+      context.amount = amount;
+      context.revision = projectionRevisionOf(locked) + 1;
+      context.version = versionOf(locked) + 1;
+      context.rows = changeRows(locked.Id);
+      context.allocated = allocatedTargets(context.rows);
+      if (operation == OPERATION_EDIT) {
+        applyEdit(context, result);
+      } else {
+        applyTerminate(context, result);
+      }
+    } catch (DmlException failure) {
+      Database.rollback(checkpoint);
+      ChangeResult recovered = changeReplayOrConflict(
+        operation,
+        operationKey,
+        payloadHash,
+        new ChangeResult()
+      );
+      if (recovered != null) {
+        return recovered;
+      }
+      return changeFail(
+        result,
+        OUTCOME_UNAVAILABLE,
+        'Não foi possível gravar a alteração: ' +
+        sanitize(failure.getDmlType(0))
+      );
+    } catch (ServiceException failure) {
+      Database.rollback(checkpoint);
+      return changeFail(result, OUTCOME_INVALID, failure.getMessage());
+    } finally {
+      writing = false;
+    }
+    return result;
+  }
+
+  /** Estado compartilhado de UM comando de mudança sob o lock. */
+  private class ChangeContext {
+    AXF_OBJ_FinancialSchedule__c root;
+    ChangeInput input;
+    String operationKey;
+    String payloadHash;
+    Decimal amount;
+    Long revision;
+    Long version;
+    List<AXF_OBJ_FinancialTransaction__c> rows;
+    Set<Id> allocated;
+  }
+
+  private static void applyEdit(ChangeContext context, ChangeResult result) {
+    Date today = today();
+    Integer fromSequence;
+    Integer highest = 0;
+    List<AXF_OBJ_FinancialTransaction__c> eligible = new List<AXF_OBJ_FinancialTransaction__c>();
+    List<Integer> protectedSequences = new List<Integer>();
+    for (AXF_OBJ_FinancialTransaction__c row : context.rows) {
+      Integer sequence = row.AXF_FTX_NUM_Sequence__c.intValue();
+      highest = Math.max(highest, sequence);
+      if (row.AXF_FTX_PKL_ScheduleState__c == STATE_CANCELLED) {
+        continue;
+      }
+      Boolean future =
+        row.AXF_FTX_DAT_DueDate__c != null &&
+        row.AXF_FTX_DAT_DueDate__c >= today;
+      if (!future) {
+        continue;
+      }
+      // Toda ocorrência futura protegida é registrada, inclusive as anteriores à primeira
+      // ocorrência mutável (conciliadas antecipadamente).
+      if (!isMutable(row, context.allocated)) {
+        protectedSequences.add(sequence);
+        continue;
+      }
+      if (fromSequence == null) {
+        fromSequence = sequence;
+      }
+      eligible.add(row);
+    }
+    if (fromSequence == null) {
+      // Nenhuma ocorrência persistida elegível no futuro: vale a partir da próxima virtual.
+      fromSequence = Math.max(
+        highest + 1,
+        intOf(context.root.AXF_FSC_NUM_TrackingStartSequence__c)
+      );
+    }
+
+    Decimal previousAmount = activeReferenceAmount(context.root);
+    List<AXF_OBJ_ScheduleReference__c> inserts = withdrawnReferences(
+      context.root.Id,
+      fromSequence
+    );
+    AXF_OBJ_ScheduleReference__c manual = new AXF_OBJ_ScheduleReference__c(
+      AXF_SRF_EXI_ReferenceKey__c = AXF_CLS_IdentityFraming.key(
+        new List<Object>{
+          MANUAL_REFERENCE_TAG,
+          context.root.AXF_FSC_EXI_ScheduleKey__c,
+          context.operationKey
+        }
+      ),
+      AXF_SRF_LKP_Schedule__c = context.root.Id,
+      AXF_SRF_NUM_EconomicSequence__c = fromSequence,
+      AXF_SRF_NUM_EffectiveSequence__c = fromSequence,
+      AXF_SRF_NUM_RecurringAmount__c = context.amount,
+      AXF_SRF_PKL_Kind__c = KIND_MANUAL,
+      AXF_SRF_LKP_Predecessor__c = context.root.AXF_FSC_LKP_ActiveReference__c,
+      AXF_SRF_DT_ConfirmedAt__c = System.now(),
+      AXF_SRF_LKP_ConfirmedBy__c = UserInfo.getUserId(),
+      AXF_SRF_TAL_Reason__c = blankToNull(context.input.reason)
+    );
+    inserts.add(manual);
+    Database.insert(inserts, AccessLevel.SYSTEM_MODE);
+
+    List<AXF_OBJ_FinancialTransaction__c> updates = new List<AXF_OBJ_FinancialTransaction__c>();
+    for (AXF_OBJ_FinancialTransaction__c row : eligible) {
+      updates.add(
+        new AXF_OBJ_FinancialTransaction__c(
+          Id = row.Id,
+          AXF_FTX_NUM_CurrentBasis__c = context.amount,
+          // Linha futura, não alocada, não CONFIRMED e sem base congelada: a previsão exibida
+          // por extratos, lançamentos, sugestões e exportações acompanha o novo valor.
+          AXF_FTX_NUM_Magnitude__c = context.amount,
+          AXF_FTX_LKP_ScheduleReference__c = manual.Id,
+          AXF_FTX_NUM_ProjectionRevision__c = context.revision,
+          AXF_FTX_NUM_Version__c = nextRowVersion(row)
+        )
+      );
+    }
+    if (!updates.isEmpty()) {
+      Database.update(updates, AccessLevel.SYSTEM_MODE);
+    }
+    persistChangeRoot(context, manual.Id, null);
+
+    result.outcome = OUTCOME_UPDATED;
+    result.referenceId = manual.Id;
+    result.fromSequence = fromSequence;
+    result.updatedCount = updates.size();
+    result.protectedCount = protectedSequences.size();
+    result.amount = context.amount;
+    result.revision = context.revision;
+    result.version = context.version;
+    result.message =
+      'Valor atualizado a partir da sequência ' +
+      fromSequence +
+      ': ' +
+      updates.size() +
+      ' ocorrência(s) alterada(s), ' +
+      protectedSequences.size() +
+      ' protegida(s).';
+    insertChangeReceipt(
+      context,
+      OPERATION_EDIT,
+      fromSequence,
+      new Map<String, Object>{ 'amount' => context.amount },
+      new Map<String, Object>{ 'amount' => previousAmount },
+      protectedSequences,
+      result
+    );
+  }
+
+  private static void applyTerminate(
+    ChangeContext context,
+    ChangeResult result
+  ) {
+    Date boundary = context.input.terminationDate;
+    Integer fromSequence;
+    Integer highest = 0;
+    List<AXF_OBJ_FinancialTransaction__c> cancellations = new List<AXF_OBJ_FinancialTransaction__c>();
+    List<Integer> protectedSequences = new List<Integer>();
+    for (AXF_OBJ_FinancialTransaction__c row : context.rows) {
+      Integer sequence = row.AXF_FTX_NUM_Sequence__c.intValue();
+      highest = Math.max(highest, sequence);
+      // Fronteira aprovada: vencimento ESTRITAMENTE posterior à data efetiva.
+      if (
+        row.AXF_FTX_DAT_DueDate__c == null ||
+        row.AXF_FTX_DAT_DueDate__c <= boundary
+      ) {
+        continue;
+      }
+      if (fromSequence == null) {
+        fromSequence = sequence;
+      }
+      if (row.AXF_FTX_PKL_ScheduleState__c == STATE_CANCELLED) {
+        continue;
+      }
+      if (!isMutable(row, context.allocated)) {
+        protectedSequences.add(sequence);
+        continue;
+      }
+      cancellations.add(
+        new AXF_OBJ_FinancialTransaction__c(
+          Id = row.Id,
+          AXF_FTX_PKL_ScheduleState__c = STATE_CANCELLED,
+          AXF_FTX_NUM_ProjectionRevision__c = context.revision,
+          AXF_FTX_NUM_Version__c = nextRowVersion(row)
+        )
+      );
+    }
+    if (fromSequence == null) {
+      fromSequence = Math.max(
+        highest + 1,
+        intOf(context.root.AXF_FSC_NUM_TrackingStartSequence__c)
+      );
+    }
+    if (!cancellations.isEmpty()) {
+      Database.update(cancellations, AccessLevel.SYSTEM_MODE);
+    }
+    persistChangeRoot(context, null, boundary);
+
+    result.outcome = OUTCOME_TERMINATED;
+    result.fromSequence = fromSequence;
+    result.cancelledCount = cancellations.size();
+    result.protectedCount = protectedSequences.size();
+    result.terminationDate = boundary;
+    result.revision = context.revision;
+    result.version = context.version;
+    result.message =
+      'Cronograma encerrado em ' +
+      String.valueOf(boundary) +
+      ': ' +
+      cancellations.size() +
+      ' ocorrência(s) cancelada(s), ' +
+      protectedSequences.size() +
+      ' protegida(s).';
+    insertChangeReceipt(
+      context,
+      OPERATION_TERMINATE,
+      fromSequence,
+      new Map<String, Object>{
+        'terminationDate' => String.valueOf(boundary),
+        'protectionPolicy' => PROTECTION_POLICY
+      },
+      new Map<String, Object>{
+        'state' => context.root.AXF_FSC_PKL_State__c,
+        'terminationDate' => context.root.AXF_FSC_DAT_TerminationDate__c == null
+          ? null
+          : String.valueOf(context.root.AXF_FSC_DAT_TerminationDate__c)
+      },
+      protectedSequences,
+      result
+    );
+  }
+
+  /**
+   * @description Ocorrência que o comando pode alterar: não alocada (nenhuma alocação a
+   * referencia, nem revertida — a guarda AXF-25 congela a linha referenciada), não CONFIRMED e
+   * sem base congelada.
+   */
+  private static Boolean isMutable(
+    AXF_OBJ_FinancialTransaction__c row,
+    Set<Id> allocated
+  ) {
+    return !allocated.contains(row.Id) &&
+      row.AXF_FTX_PKL_Status__c != STATUS_CONFIRMED &&
+      row.AXF_FTX_BOL_BasisFrozen__c != true;
+  }
+
+  /**
+   * @description Referências ativas retiradas pela nova referência manual: a da MESMA ordem
+   * econômica (para a precedência nunca ficar ambígua) e as manuais/iniciais posteriores (uma
+   * edição mais recente do usuário prevalece sobre as dele próprias). Referências de realização
+   * posteriores são evidência AXF-104 e permanecem.
+   */
+  private static List<AXF_OBJ_ScheduleReference__c> withdrawnReferences(
+    Id scheduleId,
+    Integer fromSequence
+  ) {
+    List<AXF_OBJ_ScheduleReference__c> references = [
+      SELECT
+        Id,
+        AXF_SRF_PKL_Kind__c,
+        AXF_SRF_NUM_EconomicSequence__c,
+        AXF_SRF_NUM_EffectiveSequence__c,
+        AXF_SRF_LKP_Compensates__c
+      FROM AXF_OBJ_ScheduleReference__c
+      WHERE AXF_SRF_LKP_Schedule__c = :scheduleId
+      WITH SYSTEM_MODE
+      ORDER BY AXF_SRF_NUM_EconomicSequence__c ASC, Id ASC
+    ];
+    Set<Id> compensated = new Set<Id>();
+    for (AXF_OBJ_ScheduleReference__c reference : references) {
+      if (
+        reference.AXF_SRF_PKL_Kind__c == KIND_COMPENSATION &&
+        reference.AXF_SRF_LKP_Compensates__c != null
+      ) {
+        compensated.add(reference.AXF_SRF_LKP_Compensates__c);
+      }
+    }
+    List<AXF_OBJ_ScheduleReference__c> withdrawals = new List<AXF_OBJ_ScheduleReference__c>();
+    for (AXF_OBJ_ScheduleReference__c reference : references) {
+      if (
+        reference.AXF_SRF_PKL_Kind__c == KIND_COMPENSATION ||
+        compensated.contains(reference.Id)
+      ) {
+        continue;
+      }
+      Integer economic = (reference.AXF_SRF_NUM_EconomicSequence__c == null)
+        ? 0
+        : reference.AXF_SRF_NUM_EconomicSequence__c.intValue();
+      Boolean sameOrder = economic == fromSequence;
+      Boolean laterOwnEdit =
+        economic > fromSequence &&
+        reference.AXF_SRF_PKL_Kind__c != KIND_REALIZATION;
+      if (!sameOrder && !laterOwnEdit) {
+        continue;
+      }
+      withdrawals.add(
+        new AXF_OBJ_ScheduleReference__c(
+          AXF_SRF_EXI_ReferenceKey__c = AXF_CLS_IdentityFraming.key(
+            new List<Object>{ WITHDRAW_REFERENCE_TAG, reference.Id }
+          ),
+          AXF_SRF_LKP_Schedule__c = scheduleId,
+          AXF_SRF_NUM_EconomicSequence__c = reference.AXF_SRF_NUM_EconomicSequence__c,
+          AXF_SRF_NUM_EffectiveSequence__c = reference.AXF_SRF_NUM_EffectiveSequence__c,
+          AXF_SRF_NUM_RecurringAmount__c = 0,
+          AXF_SRF_PKL_Kind__c = KIND_COMPENSATION,
+          AXF_SRF_LKP_Compensates__c = reference.Id,
+          AXF_SRF_DT_ConfirmedAt__c = System.now(),
+          AXF_SRF_LKP_ConfirmedBy__c = UserInfo.getUserId(),
+          AXF_SRF_TAL_Reason__c = 'Substituída por edição manual do valor (AXF-155).'
+        )
+      );
+    }
+    return withdrawals;
+  }
+
+  private static Decimal activeReferenceAmount(
+    AXF_OBJ_FinancialSchedule__c root
+  ) {
+    if (root.AXF_FSC_LKP_ActiveReference__c == null) {
+      return null;
+    }
+    List<AXF_OBJ_ScheduleReference__c> rows = [
+      SELECT AXF_SRF_NUM_RecurringAmount__c
+      FROM AXF_OBJ_ScheduleReference__c
+      WHERE Id = :root.AXF_FSC_LKP_ActiveReference__c
+      WITH SYSTEM_MODE
+      LIMIT 1
+    ];
+    return rows.isEmpty() ? null : rows[0].AXF_SRF_NUM_RecurringAmount__c;
+  }
+
+  /**
+   * @description Avança revisão solicitada/aplicada, versão financeira e versão otimista da raiz
+   * atomicamente com a mudança; o EDIT reposiciona a referência vigente e o TERMINATE grava a
+   * fronteira e encerra a raiz.
+   */
+  private static void persistChangeRoot(
+    ChangeContext context,
+    Id activeReference,
+    Date terminationDate
+  ) {
+    AXF_OBJ_FinancialSchedule__c revision = new AXF_OBJ_FinancialSchedule__c(
+      Id = context.root.Id,
+      AXF_FSC_NUM_ProjectionRevision__c = context.revision,
+      AXF_FSC_NUM_AppliedRevision__c = context.revision,
+      AXF_FSC_NUM_FinancialVersion__c = financialVersionOf(context.root, true),
+      AXF_FSC_NUM_Version__c = context.version
+    );
+    if (activeReference != null) {
+      revision.AXF_FSC_LKP_ActiveReference__c = activeReference;
+    }
+    if (terminationDate != null) {
+      revision.AXF_FSC_DAT_TerminationDate__c = terminationDate;
+      revision.AXF_FSC_PKL_State__c = STATE_ENDED;
+    }
+    Database.update(
+      new List<AXF_OBJ_FinancialSchedule__c>{ revision },
+      AccessLevel.SYSTEM_MODE
+    );
+  }
+
+  private static void insertChangeReceipt(
+    ChangeContext context,
+    String operation,
+    Integer fromSequence,
+    Map<String, Object> patch,
+    Map<String, Object> priorValues,
+    List<Integer> protectedSequences,
+    ChangeResult result
+  ) {
+    result.scheduleId = context.root.Id;
+    result.changeKey = context.operationKey;
+    // O Id do próprio recibo não participa do ResultJson: um recibo é imutável.
+    AXF_OBJ_ScheduleChange__c receipt = new AXF_OBJ_ScheduleChange__c(
+      AXF_SCH_EXI_OperationKey__c = context.operationKey,
+      AXF_SCH_TXT_PayloadHash__c = context.payloadHash,
+      AXF_SCH_LKP_Schedule__c = context.root.Id,
+      AXF_SCH_PKL_Operation__c = operation,
+      AXF_SCH_NUM_Revision__c = context.revision,
+      AXF_SCH_PKL_Scope__c = SCOPE_FROM_SEQUENCE,
+      AXF_SCH_NUM_FromSequence__c = fromSequence,
+      AXF_SCH_BOL_IncludeManualOverrides__c = false,
+      AXF_SCH_TAL_FieldPatchJson__c = JSON.serialize(patch),
+      AXF_SCH_TAL_PriorValuesJson__c = JSON.serialize(priorValues),
+      AXF_SCH_TAL_ProtectedRangesJson__c = JSON.serialize(protectedSequences),
+      AXF_SCH_TAL_ResultJson__c = JSON.serialize(result),
+      AXF_SCH_LKP_Actor__c = UserInfo.getUserId(),
+      AXF_SCH_DT_CommittedAt__c = System.now(),
+      AXF_SCH_TAL_Reason__c = blankToNull(context.input.reason)
+    );
+    Database.insert(
+      new List<AXF_OBJ_ScheduleChange__c>{ receipt },
+      AccessLevel.SYSTEM_MODE
+    );
+    result.changeId = receipt.Id;
+  }
+
+  /** @description Ocorrências persistidas do cronograma, em ordem de sequência. */
+  private static List<AXF_OBJ_FinancialTransaction__c> changeRows(
+    Id scheduleId
+  ) {
+    Integer probe = MAX_CHANGE_ROWS + 1;
+    List<AXF_OBJ_FinancialTransaction__c> rows = [
+      SELECT
+        Id,
+        AXF_FTX_NUM_Sequence__c,
+        AXF_FTX_DAT_DueDate__c,
+        AXF_FTX_PKL_Status__c,
+        AXF_FTX_BOL_BasisFrozen__c,
+        AXF_FTX_PKL_ScheduleState__c,
+        AXF_FTX_NUM_Version__c
+      FROM AXF_OBJ_FinancialTransaction__c
+      WHERE
+        AXF_FTX_LKP_Schedule__c = :scheduleId
+        AND AXF_FTX_NUM_Sequence__c != NULL
+      WITH SYSTEM_MODE
+      ORDER BY AXF_FTX_NUM_Sequence__c ASC
+      LIMIT :probe
+    ];
+    if (rows.size() > MAX_CHANGE_ROWS) {
+      throw new ServiceException(
+        'O cronograma tem mais de ' +
+          MAX_CHANGE_ROWS +
+          ' ocorrências persistidas; a alteração não é decidível nesta transação.'
+      );
+    }
+    return rows;
+  }
+
+  /** @description Ocorrências referenciadas por qualquer alocação (inclusive revertida). */
+  private static Set<Id> allocatedTargets(
+    List<AXF_OBJ_FinancialTransaction__c> rows
+  ) {
+    Set<Id> ids = new Map<Id, AXF_OBJ_FinancialTransaction__c>(rows).keySet();
+    Set<Id> allocated = new Set<Id>();
+    if (ids.isEmpty()) {
+      return allocated;
+    }
+    for (AXF_OBJ_ReconciliationAllocation__c allocation : [
+      SELECT AXF_RA_LKP_FinancialTransaction__c
+      FROM AXF_OBJ_ReconciliationAllocation__c
+      WHERE AXF_RA_LKP_FinancialTransaction__c IN :ids
+      WITH SYSTEM_MODE
+    ]) {
+      allocated.add(allocation.AXF_RA_LKP_FinancialTransaction__c);
+    }
+    return allocated;
+  }
+
+  private static Decimal nextRowVersion(AXF_OBJ_FinancialTransaction__c row) {
+    return (row.AXF_FTX_NUM_Version__c == null)
+      ? 1
+      : row.AXF_FTX_NUM_Version__c + 1;
+  }
+
+  private static Long versionOf(AXF_OBJ_FinancialSchedule__c row) {
+    return (row == null ||
+      row.AXF_FSC_NUM_Version__c == null)
+      ? 0
+      : row.AXF_FSC_NUM_Version__c.longValue();
+  }
+
+  /** Data de hoje sobreposta em teste; a mesma data serve à janela e aos comandos. */
+  @TestVisible
+  private static Date todayOverride;
+
+  /** @description Hoje, para a janela inicial e os comandos de mudança (teste pode fixar). */
+  public static Date today() {
+    return todayOverride == null ? Date.today() : todayOverride;
+  }
+
+  /** @description Permissão de alterar cronogramas: criação e edição da raiz (Gestor). */
+  public static Boolean canChangeSchedules() {
+    Schema.DescribeSObjectResult describe = AXF_OBJ_FinancialSchedule__c.SObjectType.getDescribe();
+    return describe.isCreateable() && describe.isUpdateable();
+  }
+
+  private static String changeInputError(String operation, ChangeInput input) {
+    if (input == null || input.scheduleId == null) {
+      return 'Cronograma é obrigatório.';
+    }
+    if (
+      String.isBlank(input.operationKey) ||
+      input.operationKey.trim().length() > MAX_OPERATION_KEY_LENGTH
+    ) {
+      return 'A chave de operação é obrigatória e tem até ' +
+        MAX_OPERATION_KEY_LENGTH +
+        ' caracteres.';
+    }
+    if (input.expectedVersion == null || input.expectedVersion < 0) {
+      return 'A versão esperada do cronograma é obrigatória.';
+    }
+    if (input.reason != null && input.reason.length() > MAX_TAL_LENGTH) {
+      return 'Justificativa excede o limite de ' +
+        MAX_TAL_LENGTH +
+        ' caracteres do campo de texto longo.';
+    }
+    if (operation == OPERATION_EDIT) {
+      if (
+        input.amount == null ||
+        input.amount <= 0 ||
+        input.amount > MAX_AMOUNT ||
+        input.amount != input.amount.setScale(MONEY_SCALE)
+      ) {
+        return 'O novo valor deve ser positivo, com até duas casas decimais e dentro do limite efetivo de magnitude.';
+      }
+    } else if (input.terminationDate == null) {
+      return 'A data de encerramento é obrigatória.';
+    }
+    return null;
+  }
+
+  /**
+   * @description Pré-condições revalidadas antes e depois do lock: cronograma ativo (encerrado não
+   * é alterado nem reativado), versão otimista e, no EDIT, método estimado — um método calculado
+   * exige emenda de parâmetros aprovada, não um valor manual.
+   */
+  private static ChangeResult changePreconditions(
+    String operation,
+    AXF_OBJ_FinancialSchedule__c root,
+    ChangeInput input,
+    ChangeResult result
+  ) {
+    if (root.AXF_FSC_PKL_State__c != STATE_ACTIVE) {
+      return changeFail(
+        result,
+        OUTCOME_CONFLICT,
+        'O cronograma não está ativo: um cronograma encerrado não é alterado nem reativado.'
+      );
+    }
+    if (versionOf(root) != input.expectedVersion) {
+      return changeFail(
+        result,
+        OUTCOME_CONFLICT,
+        'O cronograma mudou desde a leitura; recarregue antes de alterar.'
+      );
+    }
+    if (operation == OPERATION_EDIT) {
+      List<AXF_OBJ_ScheduleDefinition__c> definitions = [
+        SELECT AXF_SDF_PKL_Method__c
+        FROM AXF_OBJ_ScheduleDefinition__c
+        WHERE Id = :root.AXF_FSC_LKP_ActiveDefinition__c
+        WITH SYSTEM_MODE
+        LIMIT 1
+      ];
+      if (
+        definitions.isEmpty() ||
+        definitions[0].AXF_SDF_PKL_Method__c != METHOD_ESTIMATED
+      ) {
+        return changeFail(
+          result,
+          OUTCOME_UNSUPPORTED,
+          'Alterar o valor de um cronograma calculado exige uma emenda de parâmetros aprovada.'
+        );
+      }
+    }
+    return null;
+  }
+
+  /** @description Hash do payload canônico versionado do comando de mudança. */
+  private static String changePayloadHash(
+    String operation,
+    AXF_OBJ_FinancialSchedule__c root,
+    ChangeInput input,
+    Decimal amount
+  ) {
+    return AXF_CLS_IdentityFraming.sha256Hex(
+      AXF_CLS_IdentityFraming.frame(
+        new List<Object>{
+          CHANGE_TAG,
+          operation,
+          root.Id,
+          root.AXF_FSC_EXI_ScheduleKey__c,
+          root.AXF_FSC_LKP_Account__c,
+          input.expectedVersion,
+          amount,
+          input.terminationDate,
+          PROTECTION_POLICY,
+          blankToNull(input.reason),
+          UserInfo.getUserId()
+        }
+      )
+    );
+  }
+
+  /**
+   * @description Recibo já confirmado para a identidade de operação: payload equivalente devolve o
+   * resultado autorizado original; payload diferente é CONFLICT.
+   */
+  private static ChangeResult changeReplayOrConflict(
+    String operation,
+    String operationKey,
+    String payloadHash,
+    ChangeResult result
+  ) {
+    List<AXF_OBJ_ScheduleChange__c> receipts = [
+      SELECT
+        Id,
+        AXF_SCH_TXT_PayloadHash__c,
+        AXF_SCH_TAL_ResultJson__c,
+        AXF_SCH_LKP_Schedule__c
+      FROM AXF_OBJ_ScheduleChange__c
+      WHERE
+        AXF_SCH_EXI_OperationKey__c = :operationKey
+        AND AXF_SCH_PKL_Operation__c = :operation
+      WITH SYSTEM_MODE
+      LIMIT 1
+    ];
+    if (receipts.isEmpty()) {
+      return null;
+    }
+    AXF_OBJ_ScheduleChange__c receipt = receipts[0];
+    if (receipt.AXF_SCH_TXT_PayloadHash__c != payloadHash) {
+      return changeFail(
+        result,
+        OUTCOME_CONFLICT,
+        'A identidade de operação já está confirmada com um payload diferente.'
+      );
+    }
+    ChangeResult stored;
+    try {
+      stored = String.isBlank(receipt.AXF_SCH_TAL_ResultJson__c)
+        ? null
+        : (ChangeResult) JSON.deserialize(
+            receipt.AXF_SCH_TAL_ResultJson__c,
+            ChangeResult.class
+          );
+    } catch (Exception malformed) {
+      stored = null;
+    }
+    if (stored == null) {
+      return changeFail(
+        result,
+        OUTCOME_CONFLICT,
+        'O resultado autorizado registrado no recibo não pôde ser lido; o reenvio é recusado.'
+      );
+    }
+    stored.scheduleId = receipt.AXF_SCH_LKP_Schedule__c;
+    stored.changeId = receipt.Id;
+    stored.changeKey = operationKey;
+    stored.outcome = OUTCOME_REPLAY;
+    stored.replay = true;
+    stored.message = 'Operação já confirmada — o resultado original foi devolvido.';
+    return stored;
+  }
+
+  private static ChangeResult changeFail(
+    ChangeResult result,
+    String outcome,
+    String message
+  ) {
+    result.outcome = outcome;
+    result.message = message;
+    return result;
   }
 
   // --- autorização ---------------------------------------------------------

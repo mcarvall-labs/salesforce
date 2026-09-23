@@ -2,7 +2,8 @@
  * @description Handler de trigger para AXF_OBJ_ScheduleDefinition__c (AXF-103).
  * A definição é evidência imutável: nenhuma atualização é aceita e nenhuma exclusão é
  * permitida. Substituir uma definição cria uma revisão maior; a história efetiva nunca é
- * mutada. A revisão é única e monotônica dentro do cronograma.
+ * mutada. A revisão é única e monotônica dentro do cronograma. A periodicidade é exatamente uma:
+ * em meses ou em dias (AXF-155).
  */
 public with sharing class AXF_CLS_SDFTriggerHandler {
   private static final Set<String> METHODS = new Set<String>{
@@ -92,11 +93,14 @@ public with sharing class AXF_CLS_SDFTriggerHandler {
         );
         continue;
       }
-      if (
-        record.AXF_SDF_NUM_PeriodMonths__c == null ||
-        record.AXF_SDF_NUM_PeriodMonths__c < 1
-      ) {
-        record.addError('A periodicidade deve ser de pelo menos 1 mês.');
+      // AXF-155: exatamente uma periodicidade — em meses (1..120, âncora de dia) ou em dias
+      // (7 ou 14, sem âncora). As duas juntas, ou nenhuma, são recusadas.
+      String periodError = periodError(
+        record.AXF_SDF_NUM_PeriodMonths__c,
+        record.AXF_SDF_NUM_PeriodDays__c
+      );
+      if (periodError != null) {
+        record.addError(periodError);
         continue;
       }
       if (
@@ -179,6 +183,31 @@ public with sharing class AXF_CLS_SDFTriggerHandler {
         'Definições de cronograma são evidência imutável e não podem ser excluídas (AXF-103).'
       );
     }
+  }
+
+  /**
+   * @description Mensagem de recusa da periodicidade, ou nulo quando ela é válida: exatamente um
+   * de `PeriodMonths` (1..120) e `PeriodDays` (7 ou 14).
+   */
+  @TestVisible
+  private static String periodError(Decimal periodMonths, Decimal periodDays) {
+    if ((periodMonths == null) == (periodDays == null)) {
+      return 'Informe exatamente uma periodicidade: em meses ou em dias.';
+    }
+    if (periodDays != null) {
+      return periodDays == periodDays.intValue() &&
+        ALT_CLS_FinancialScheduleService.PERIOD_DAYS.contains(
+          periodDays.intValue()
+        )
+        ? null
+        : 'A periodicidade em dias deve ser 7 (semanal) ou 14 (quinzenal).';
+    }
+    return (periodMonths >= 1 &&
+      periodMonths <= ALT_CLS_FinancialScheduleService.MAX_PERIOD_MONTHS)
+      ? null
+      : 'A periodicidade deve estar entre 1 e ' +
+        ALT_CLS_FinancialScheduleService.MAX_PERIOD_MONTHS +
+        ' meses.';
   }
 
   private static Boolean isChanged(Object newValue, Object oldValue) {

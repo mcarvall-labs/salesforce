@@ -2335,4 +2335,1029 @@ private class ALT_CLS_FinancialScheduleServiceTest {
       'Só o recibo autorizado da criação existe'
     );
   }
+
+  // --- AXF-155: periodicidade em dias, origem, EDIT e TERMINATE ---------------
+
+  private static AXF_OBJ_BankAccount__c wallet(Id holderId) {
+    AXF_OBJ_BankAccount__c result = new AXF_OBJ_BankAccount__c(
+      AXF_BA_LKP_Account__c = holderId,
+      AXF_BA_PKL_AvailabilityState__c = 'AVAILABLE',
+      AXF_BA_TXT_CurrencyIsoCode__c = 'BRL',
+      AXF_BA_TXT_Type__c = 'WALLET',
+      AXF_BA_NUM_Version__c = 1
+    );
+    insert result;
+    return result;
+  }
+
+  private static ALT_CLS_FinancialScheduleService.CreateInput recurrence(
+    Id accountId,
+    Date firstDueDate,
+    Integer periodDays,
+    Integer periodMonths,
+    Id bankAccountId,
+    String streamKey
+  ) {
+    ALT_CLS_FinancialScheduleService.CreateInput value = new ALT_CLS_FinancialScheduleService.CreateInput();
+    value.accountId = accountId;
+    value.direction = 'DEBIT';
+    value.currencyIsoCode = 'BRL';
+    value.method = 'ESTIMATED';
+    value.firstSequence = 1;
+    value.firstDueDate = firstDueDate;
+    value.periodDays = periodDays;
+    value.periodMonths = periodMonths;
+    value.horizonMonths = (periodDays == 7) ? 11 : 12;
+    value.referenceAmount = 300.00;
+    value.bankAccountId = bankAccountId;
+    value.description = 'Mão de obra';
+    value.generationEnabled = true;
+    value.streamKey = streamKey;
+    return value;
+  }
+
+  private static List<AXF_OBJ_FinancialTransaction__c> occurrencesOf(
+    Id scheduleId
+  ) {
+    return [
+      SELECT
+        Id,
+        AXF_FTX_NUM_Sequence__c,
+        AXF_FTX_DAT_DueDate__c,
+        AXF_FTX_NUM_CurrentBasis__c,
+        AXF_FTX_NUM_Magnitude__c,
+        AXF_FTX_PKL_ScheduleState__c,
+        AXF_FTX_PKL_Status__c,
+        AXF_FTX_LKP_BankAccount__c,
+        AXF_FTX_LKP_CreditCard__c,
+        AXF_FTX_TXT_Description__c,
+        AXF_FTX_NUM_Version__c,
+        AXF_FTX_LKP_ScheduleReference__c
+      FROM AXF_OBJ_FinancialTransaction__c
+      WHERE AXF_FTX_LKP_Schedule__c = :scheduleId
+      ORDER BY AXF_FTX_NUM_Sequence__c
+    ];
+  }
+
+  private static ALT_CLS_FinancialScheduleService.ChangeInput change(
+    Id scheduleId,
+    String key,
+    Long expectedVersion
+  ) {
+    ALT_CLS_FinancialScheduleService.ChangeInput value = new ALT_CLS_FinancialScheduleService.ChangeInput();
+    value.scheduleId = scheduleId;
+    value.operationKey = key;
+    value.expectedVersion = expectedVersion;
+    return value;
+  }
+
+  @IsTest
+  static void weeklyRecurrenceSpacesSevenDaysAndAppliesTheOrigin() {
+    Account owner = holder('AXF155 semanal');
+    AXF_OBJ_BankAccount__c cash = wallet(owner.Id);
+    ALT_CLS_FinancialScheduleService.authorizedOverride = new Set<Id>{
+      owner.Id
+    };
+    Date first = Date.today().addDays(9);
+
+    Test.startTest();
+    ALT_CLS_FinancialScheduleService.CreateResult created = ALT_CLS_FinancialScheduleService.createSchedule(
+      recurrence(owner.Id, first, 7, null, cash.Id, 'axf155-weekly')
+    );
+    Test.stopTest();
+
+    Assert.areEqual('CREATED', created.outcome, created.message);
+    List<AXF_OBJ_FinancialTransaction__c> rows = occurrencesOf(
+      created.scheduleId
+    );
+    Assert.isTrue(rows.size() > 1 && rows.size() <= 50, 'janela ≤ 50');
+    for (Integer i = 0; i < rows.size(); i++) {
+      AXF_OBJ_FinancialTransaction__c row = rows[i];
+      Assert.areEqual(first.addDays(7 * i), row.AXF_FTX_DAT_DueDate__c);
+      Assert.areEqual(cash.Id, row.AXF_FTX_LKP_BankAccount__c);
+      Assert.isNull(row.AXF_FTX_LKP_CreditCard__c);
+      Assert.areEqual('Mão de obra', row.AXF_FTX_TXT_Description__c);
+      Assert.areEqual(300.00, row.AXF_FTX_NUM_CurrentBasis__c);
+    }
+    // Os campos novos de periodicidade não têm FLS para o usuário do deploy de verificação: a
+    // periodicidade é provada pelas datas e pela entrada canônica.
+    AXF_OBJ_ScheduleDefinition__c definition = [
+      SELECT AXF_SDF_TAL_InputCanonicalJson__c
+      FROM AXF_OBJ_ScheduleDefinition__c
+      WHERE AXF_SDF_LKP_Schedule__c = :created.scheduleId
+    ];
+    Map<String, Object> canonical = ALT_CLS_FinancialScheduleService.canonicalInputOf(
+      definition
+    );
+    Assert.areEqual(cash.Id, canonical.get('bankAccountId'));
+    Assert.areEqual('Mão de obra', canonical.get('description'));
+    AXF_OBJ_FinancialSchedule__c root = [
+      SELECT AXF_FSC_BOL_GenerationEnabled__c, AXF_FSC_NUM_HorizonMonths__c
+      FROM AXF_OBJ_FinancialSchedule__c
+      WHERE Id = :created.scheduleId
+    ];
+    Assert.isTrue(root.AXF_FSC_BOL_GenerationEnabled__c);
+    Assert.areEqual(11, root.AXF_FSC_NUM_HorizonMonths__c.intValue());
+
+    // A projeção lê o mesmo calendário em dias.
+    ALT_CLS_ScheduleProjection.authorizedOverride = new Set<Id>{ owner.Id };
+    ALT_CLS_ScheduleProjection.ProjectionInput input = new ALT_CLS_ScheduleProjection.ProjectionInput();
+    input.scheduleId = created.scheduleId;
+    input.asOfDate = Date.today();
+    ALT_CLS_ScheduleProjection.ProjectionResult projection = ALT_CLS_ScheduleProjection.project(
+      input
+    );
+    Assert.areEqual('OK', projection.outcome, projection.message);
+    Assert.areEqual(first.addDays(7), projection.lines[1].nominalDueDate);
+  }
+
+  @IsTest
+  static void biweeklyRecurrenceIsIdempotentAndKeepsMonthlyKeysStable() {
+    Account owner = holder('AXF155 quinzenal');
+    AXF_OBJ_BankAccount__c cash = wallet(owner.Id);
+    ALT_CLS_FinancialScheduleService.authorizedOverride = new Set<Id>{
+      owner.Id
+    };
+    Date first = Date.today().addDays(3);
+    ALT_CLS_FinancialScheduleService.CreateInput input = recurrence(
+      owner.Id,
+      first,
+      14,
+      null,
+      cash.Id,
+      'axf155-biweekly'
+    );
+
+    ALT_CLS_FinancialScheduleService.CreateResult created = ALT_CLS_FinancialScheduleService.createSchedule(
+      input
+    );
+    ALT_CLS_FinancialScheduleService.CreateResult again = ALT_CLS_FinancialScheduleService.createSchedule(
+      input
+    );
+
+    Assert.areEqual('CREATED', created.outcome, created.message);
+    Assert.areEqual('REPLAY', again.outcome, again.message);
+    Assert.areEqual(created.scheduleId, again.scheduleId);
+    List<AXF_OBJ_FinancialTransaction__c> rows = occurrencesOf(
+      created.scheduleId
+    );
+    Assert.areEqual(first.addDays(14), rows[1].AXF_FTX_DAT_DueDate__c);
+
+    // Um segundo fluxo do mesmo titular com o mesmo calendário não colide.
+    ALT_CLS_FinancialScheduleService.CreateInput other = recurrence(
+      owner.Id,
+      first,
+      14,
+      null,
+      cash.Id,
+      'axf155-biweekly-2'
+    );
+    other.referenceAmount = 120.00;
+    Assert.areEqual(
+      'CREATED',
+      ALT_CLS_FinancialScheduleService.createSchedule(other).outcome
+    );
+
+    // A identidade de um cronograma mensal sem os campos novos continua a do framing legado.
+    ALT_CLS_FinancialScheduleService.CreateInput monthly = request(
+      owner.Id,
+      'INSTALLMENT',
+      12,
+      1,
+      Date.newInstance(2027, 1, 10),
+      'axf155-legacy'
+    );
+    Assert.areEqual(
+      AXF_CLS_IdentityFraming.key(
+        new List<Object>{
+          'axf103-sch-v1',
+          owner.Id,
+          null,
+          'DEBIT',
+          'BRL',
+          'INSTALLMENT',
+          1,
+          Date.newInstance(2027, 1, 10),
+          1,
+          10,
+          12,
+          1,
+          'axf155-legacy'
+        }
+      ),
+      ALT_CLS_FinancialScheduleService.previewScheduleKey(monthly)
+    );
+  }
+
+  @IsTest
+  static void invalidPeriodsAndOriginsAreRejectedBeforeWriting() {
+    Account owner = holder('AXF155 inválidos');
+    Account stranger = holder('AXF155 alheio');
+    AXF_OBJ_BankAccount__c cash = wallet(owner.Id);
+    AXF_OBJ_BankAccount__c foreign = wallet(stranger.Id);
+    ALT_CLS_FinancialScheduleService.authorizedOverride = new Set<Id>{
+      owner.Id
+    };
+    Date first = Date.today().addDays(5);
+
+    List<ALT_CLS_FinancialScheduleService.CreateInput> invalid = new List<ALT_CLS_FinancialScheduleService.CreateInput>{
+      recurrence(owner.Id, first, 10, null, cash.Id, 'axf155-ten'),
+      recurrence(owner.Id, first, 7, 1, cash.Id, 'axf155-both'),
+      recurrence(owner.Id, first, 7, null, foreign.Id, 'axf155-foreign')
+    };
+    ALT_CLS_FinancialScheduleService.CreateInput twoOrigins = recurrence(
+      owner.Id,
+      first,
+      7,
+      null,
+      cash.Id,
+      'axf155-two'
+    );
+    twoOrigins.creditCardId = cash.Id;
+    invalid.add(twoOrigins);
+    ALT_CLS_FinancialScheduleService.CreateInput longText = recurrence(
+      owner.Id,
+      first,
+      14,
+      null,
+      cash.Id,
+      'axf155-long'
+    );
+    longText.description = 'x'.repeat(256);
+    invalid.add(longText);
+    for (ALT_CLS_FinancialScheduleService.CreateInput input : invalid) {
+      Assert.areEqual(
+        'INVALID',
+        ALT_CLS_FinancialScheduleService.createSchedule(input).outcome
+      );
+    }
+    Assert.areEqual(0, [SELECT COUNT() FROM AXF_OBJ_FinancialSchedule__c]);
+  }
+
+  @IsTest
+  static void definitionRequiresExactlyOneValidPeriod() {
+    Assert.isNull(AXF_CLS_SDFTriggerHandler.periodError(1, null));
+    Assert.isNull(AXF_CLS_SDFTriggerHandler.periodError(120, null));
+    Assert.isNull(AXF_CLS_SDFTriggerHandler.periodError(null, 7));
+    Assert.isNull(AXF_CLS_SDFTriggerHandler.periodError(null, 14));
+    Assert.isNotNull(AXF_CLS_SDFTriggerHandler.periodError(null, null));
+    Assert.isNotNull(AXF_CLS_SDFTriggerHandler.periodError(1, 7));
+    Assert.isNotNull(AXF_CLS_SDFTriggerHandler.periodError(null, 10));
+    Assert.isNotNull(AXF_CLS_SDFTriggerHandler.periodError(null, 7.5));
+    Assert.isNotNull(AXF_CLS_SDFTriggerHandler.periodError(0, null));
+    Assert.isNotNull(AXF_CLS_SDFTriggerHandler.periodError(121, null));
+
+    Account owner = holder('AXF155 definição');
+    ALT_CLS_FinancialScheduleService.authorizedOverride = new Set<Id>{
+      owner.Id
+    };
+    ALT_CLS_FinancialScheduleService.CreateResult created = ALT_CLS_FinancialScheduleService.createSchedule(
+      recurrence(owner.Id, Date.today().addDays(2), null, 1, null, 'axf155-def')
+    );
+    Assert.areEqual('CREATED', created.outcome, created.message);
+    Database.SaveResult withoutPeriod = Database.insert(
+      new AXF_OBJ_ScheduleDefinition__c(
+        AXF_SDF_EXI_DefinitionKey__c = 'axf155-def-none',
+        AXF_SDF_LKP_Schedule__c = created.scheduleId,
+        AXF_SDF_NUM_Revision__c = 2,
+        AXF_SDF_NUM_EffectiveSequence__c = 5,
+        AXF_SDF_PKL_Method__c = 'ESTIMATED',
+        AXF_SDF_NUM_FirstSequence__c = 1,
+        AXF_SDF_DAT_FirstDueDate__c = Date.today(),
+        AXF_SDF_NUM_AnchorDay__c = 10
+      ),
+      false
+    );
+    Assert.isFalse(withoutPeriod.isSuccess(), 'Sem periodicidade é recusado');
+
+    // Evidência imutável: definição e recibo não são editados nem excluídos, e um recibo de
+    // alteração registra a sequência a partir da qual vale.
+    AXF_OBJ_ScheduleDefinition__c definition = [
+      SELECT Id
+      FROM AXF_OBJ_ScheduleDefinition__c
+      WHERE AXF_SDF_LKP_Schedule__c = :created.scheduleId
+    ];
+    Assert.isFalse(
+      Database.update(
+          new AXF_OBJ_ScheduleDefinition__c(
+            Id = definition.Id,
+            AXF_SDF_NUM_AnchorDay__c = 3
+          ),
+          false
+        )
+        .isSuccess()
+    );
+    Assert.isFalse(Database.delete(definition.Id, false).isSuccess());
+    AXF_OBJ_ScheduleChange__c receipt = [
+      SELECT Id
+      FROM AXF_OBJ_ScheduleChange__c
+      WHERE AXF_SCH_LKP_Schedule__c = :created.scheduleId
+    ];
+    Assert.isFalse(
+      Database.update(
+          new AXF_OBJ_ScheduleChange__c(
+            Id = receipt.Id,
+            AXF_SCH_TAL_Reason__c = 'reescrito'
+          ),
+          false
+        )
+        .isSuccess()
+    );
+    Assert.isFalse(Database.delete(receipt.Id, false).isSuccess());
+    ALT_CLS_FinancialScheduleService.writing = true;
+    Database.SaveResult unsequenced = Database.insert(
+      new AXF_OBJ_ScheduleChange__c(
+        AXF_SCH_EXI_OperationKey__c = 'axf155-edit-unsequenced',
+        AXF_SCH_TXT_PayloadHash__c = 'hash'.rightPad(64, '0'),
+        AXF_SCH_LKP_Schedule__c = created.scheduleId,
+        AXF_SCH_PKL_Operation__c = 'EDIT',
+        AXF_SCH_NUM_Revision__c = 2,
+        AXF_SCH_PKL_Scope__c = 'FROM_SEQUENCE'
+      ),
+      false
+    );
+    ALT_CLS_FinancialScheduleService.writing = false;
+    Assert.isFalse(unsequenced.isSuccess(), 'EDIT sem sequência inicial');
+  }
+
+  @IsTest
+  static void replenishmentAppliesTheOriginOfTheDefinition() {
+    Account owner = holder('AXF155 reposição');
+    AXF_OBJ_BankAccount__c cash = wallet(owner.Id);
+    ALT_CLS_FinancialScheduleService.authorizedOverride = new Set<Id>{
+      owner.Id
+    };
+    ALT_CLS_ScheduleProjection.authorizedOverride = new Set<Id>{ owner.Id };
+    ALT_CLS_FinancialScheduleService.CreateResult created = ALT_CLS_FinancialScheduleService.createSchedule(
+      recurrence(
+        owner.Id,
+        Date.today().addDays(1),
+        14,
+        null,
+        cash.Id,
+        'axf155-replenish'
+      )
+    );
+    Assert.areEqual('CREATED', created.outcome, created.message);
+    List<AXF_OBJ_FinancialTransaction__c> rows = occurrencesOf(
+      created.scheduleId
+    );
+    AXF_OBJ_FinancialTransaction__c last = rows[rows.size() - 1];
+    delete last;
+
+    Test.startTest();
+    ALT_CLS_FinancialScheduleService.ReplenishmentRequest request = new ALT_CLS_FinancialScheduleService.ReplenishmentRequest();
+    request.scheduleId = created.scheduleId;
+    ALT_CLS_FinancialScheduleService.ReplenishmentResult result = ALT_CLS_FinancialScheduleService.replenishSchedule(
+      request
+    );
+    Test.stopTest();
+
+    Assert.areEqual('GENERATED', result.outcome, result.message);
+    AXF_OBJ_FinancialTransaction__c regenerated = [
+      SELECT
+        AXF_FTX_LKP_BankAccount__c,
+        AXF_FTX_TXT_Description__c,
+        AXF_FTX_DAT_DueDate__c
+      FROM AXF_OBJ_FinancialTransaction__c
+      WHERE
+        AXF_FTX_LKP_Schedule__c = :created.scheduleId
+        AND AXF_FTX_NUM_Sequence__c = :last.AXF_FTX_NUM_Sequence__c
+    ];
+    Assert.areEqual(cash.Id, regenerated.AXF_FTX_LKP_BankAccount__c);
+    Assert.areEqual('Mão de obra', regenerated.AXF_FTX_TXT_Description__c);
+    Assert.areEqual(
+      last.AXF_FTX_DAT_DueDate__c,
+      regenerated.AXF_FTX_DAT_DueDate__c
+    );
+  }
+
+  @IsTest
+  static void editAmountChangesOnlyFutureUnrealizedOccurrences() {
+    System.runAs(actor()) {
+      Account owner = holder('AXF155 editar');
+      ALT_CLS_FinancialScheduleService.authorizedOverride = new Set<Id>{
+        owner.Id
+      };
+      ALT_CLS_ScheduleProjection.authorizedOverride = new Set<Id>{ owner.Id };
+      ALT_CLS_FinancialScheduleService.CreateResult created = ALT_CLS_FinancialScheduleService.createSchedule(
+        recurrence(owner.Id, Date.today(), null, 1, null, 'axf155-edit')
+      );
+      Assert.areEqual('CREATED', created.outcome, created.message);
+      List<AXF_OBJ_FinancialTransaction__c> rows = occurrencesOf(
+        created.scheduleId
+      );
+      Assert.isTrue(rows.size() > 2);
+
+      // A primeira ocorrência é conciliada (alocação AXF-25): fica protegida.
+      ALT_CLS_RealizationService.Input realization = new ALT_CLS_RealizationService.Input();
+      realization.targetId = rows[0].Id;
+      realization.sourceKind = 'CASH';
+      realization.amount = 300;
+      realization.targetVersion = rows[0].AXF_FTX_NUM_Version__c;
+      realization.operationKey = 'axf155-realize-1';
+      realization.recognitionDate = Date.today();
+      new ALT_CLS_RealizationService().apply(realization);
+
+      Test.startTest();
+      ALT_CLS_FinancialScheduleService.ChangeInput edit = change(
+        created.scheduleId,
+        'axf155-edit-350',
+        0
+      );
+      edit.amount = 350;
+      ALT_CLS_FinancialScheduleService.ChangeResult changed = ALT_CLS_FinancialScheduleService.editAmount(
+        edit
+      );
+      ALT_CLS_FinancialScheduleService.ChangeResult replayed = ALT_CLS_FinancialScheduleService.editAmount(
+        edit
+      );
+      ALT_CLS_FinancialScheduleService.ChangeInput stale = change(
+        created.scheduleId,
+        'axf155-edit-stale',
+        0
+      );
+      stale.amount = 400;
+      ALT_CLS_FinancialScheduleService.ChangeResult conflict = ALT_CLS_FinancialScheduleService.editAmount(
+        stale
+      );
+      Test.stopTest();
+
+      Assert.areEqual('UPDATED', changed.outcome, changed.message);
+      Assert.areEqual(2, changed.fromSequence);
+      Assert.areEqual(rows.size() - 1, changed.updatedCount);
+      Assert.areEqual(1, changed.version);
+      Assert.areEqual(1, changed.protectedCount, 'a conciliada de hoje');
+      Assert.areEqual('REPLAY', replayed.outcome, replayed.message);
+      Assert.isTrue(replayed.replay);
+      Assert.areEqual(changed.updatedCount, replayed.updatedCount);
+      Assert.areEqual('CONFLICT', conflict.outcome, conflict.message);
+
+      List<AXF_OBJ_FinancialTransaction__c> after = occurrencesOf(
+        created.scheduleId
+      );
+      Assert.areEqual(300.00, after[0].AXF_FTX_NUM_CurrentBasis__c);
+      Assert.areEqual(300.00, after[0].AXF_FTX_NUM_Magnitude__c);
+      for (Integer i = 1; i < after.size(); i++) {
+        Assert.areEqual(350.00, after[i].AXF_FTX_NUM_CurrentBasis__c);
+        Assert.areEqual(350.00, after[i].AXF_FTX_NUM_Magnitude__c);
+        Assert.areEqual(
+          changed.referenceId,
+          after[i].AXF_FTX_LKP_ScheduleReference__c
+        );
+      }
+      AXF_OBJ_FinancialSchedule__c root = [
+        SELECT AXF_FSC_NUM_Version__c, AXF_FSC_LKP_ActiveReference__c
+        FROM AXF_OBJ_FinancialSchedule__c
+        WHERE Id = :created.scheduleId
+      ];
+      Assert.areEqual(1, root.AXF_FSC_NUM_Version__c.intValue());
+      Assert.areEqual(changed.referenceId, root.AXF_FSC_LKP_ActiveReference__c);
+      Assert.areEqual(
+        1,
+        [
+          SELECT COUNT()
+          FROM AXF_OBJ_ScheduleChange__c
+          WHERE
+            AXF_SCH_LKP_Schedule__c = :created.scheduleId
+            AND AXF_SCH_PKL_Operation__c = 'EDIT'
+        ]
+      );
+
+      ALT_CLS_ScheduleProjection.ProjectionInput input = new ALT_CLS_ScheduleProjection.ProjectionInput();
+      input.scheduleId = created.scheduleId;
+      input.asOfDate = Date.today();
+      ALT_CLS_ScheduleProjection.ProjectionResult projection = ALT_CLS_ScheduleProjection.project(
+        input
+      );
+      Assert.areEqual('OK', projection.outcome, projection.message);
+      for (ALT_CLS_ScheduleProjection.OccurrenceLine line : projection.lines) {
+        if (line.sequence >= 2) {
+          Assert.areEqual(350.00, line.amount, 'sequência ' + line.sequence);
+        }
+      }
+    }
+  }
+
+  @IsTest
+  static void terminateCancelsOnlyEligibleFutureOccurrences() {
+    Account owner = holder('AXF155 encerrar');
+    AXF_OBJ_BankAccount__c cash = wallet(owner.Id);
+    ALT_CLS_FinancialScheduleService.authorizedOverride = new Set<Id>{
+      owner.Id
+    };
+    ALT_CLS_FinancialScheduleService.CreateResult created = ALT_CLS_FinancialScheduleService.createSchedule(
+      recurrence(owner.Id, Date.today(), null, 1, cash.Id, 'axf155-end')
+    );
+    Assert.areEqual('CREATED', created.outcome, created.message);
+    List<AXF_OBJ_FinancialTransaction__c> rows = occurrencesOf(
+      created.scheduleId
+    );
+    Assert.isTrue(rows.size() > 3);
+    // A terceira ocorrência foi conciliada antecipadamente.
+    update new AXF_OBJ_FinancialTransaction__c(
+      Id = rows[2].Id,
+      AXF_FTX_PKL_Status__c = 'CONFIRMED',
+      AXF_FTX_BOL_BasisFrozen__c = true
+    );
+
+    Test.startTest();
+    ALT_CLS_FinancialScheduleService.ChangeInput terminate = change(
+      created.scheduleId,
+      'axf155-end-today',
+      0
+    );
+    terminate.terminationDate = Date.today();
+    ALT_CLS_FinancialScheduleService.ChangeResult ended = ALT_CLS_FinancialScheduleService.terminateSchedule(
+      terminate
+    );
+    ALT_CLS_FinancialScheduleService.ChangeResult replayed = ALT_CLS_FinancialScheduleService.terminateSchedule(
+      terminate
+    );
+    ALT_CLS_FinancialScheduleService.ChangeResult reactivate = ALT_CLS_FinancialScheduleService.terminateSchedule(
+      change(created.scheduleId, 'axf155-end-again', 1)
+    );
+    ALT_CLS_FinancialScheduleService.ChangeInput edit = change(
+      created.scheduleId,
+      'axf155-edit-ended',
+      1
+    );
+    edit.amount = 10;
+    ALT_CLS_FinancialScheduleService.ChangeResult editEnded = ALT_CLS_FinancialScheduleService.editAmount(
+      edit
+    );
+    Test.stopTest();
+
+    Assert.areEqual('TERMINATED', ended.outcome, ended.message);
+    Assert.areEqual(rows.size() - 2, ended.cancelledCount);
+    Assert.areEqual(1, ended.protectedCount);
+    Assert.areEqual(2, ended.fromSequence);
+    Assert.areEqual('REPLAY', replayed.outcome);
+    Assert.areEqual('INVALID', reactivate.outcome, 'sem data');
+    Assert.areEqual('CONFLICT', editEnded.outcome, editEnded.message);
+
+    List<AXF_OBJ_FinancialTransaction__c> after = occurrencesOf(
+      created.scheduleId
+    );
+    Assert.areEqual('OPEN', after[0].AXF_FTX_PKL_ScheduleState__c);
+    Assert.areEqual('OPEN', after[2].AXF_FTX_PKL_ScheduleState__c);
+    Assert.areEqual('CONFIRMED', after[2].AXF_FTX_PKL_Status__c);
+    for (Integer i = 1; i < after.size(); i++) {
+      if (i != 2) {
+        Assert.areEqual('CANCELLED', after[i].AXF_FTX_PKL_ScheduleState__c);
+      }
+    }
+    AXF_OBJ_FinancialSchedule__c root = [
+      SELECT
+        AXF_FSC_PKL_State__c,
+        AXF_FSC_DAT_TerminationDate__c,
+        AXF_FSC_NUM_Version__c
+      FROM AXF_OBJ_FinancialSchedule__c
+      WHERE Id = :created.scheduleId
+    ];
+    Assert.areEqual('ENDED', root.AXF_FSC_PKL_State__c);
+    Assert.areEqual(Date.today(), root.AXF_FSC_DAT_TerminationDate__c);
+    Assert.areEqual(1, root.AXF_FSC_NUM_Version__c.intValue());
+
+    ALT_CLS_FinancialScheduleService.ChangeInput again = change(
+      created.scheduleId,
+      'axf155-end-twice',
+      1
+    );
+    again.terminationDate = Date.today();
+    Assert.areEqual(
+      'CONFLICT',
+      ALT_CLS_FinancialScheduleService.terminateSchedule(again).outcome,
+      'Um cronograma encerrado não é reativado nem reencerrado'
+    );
+  }
+
+  @IsTest
+  static void changeCommandsRejectInvalidOrForeignRequests() {
+    Account owner = holder('AXF155 mudança inválida');
+    Account stranger = holder('AXF155 mudança alheia');
+    ALT_CLS_FinancialScheduleService.authorizedOverride = new Set<Id>{
+      owner.Id,
+      stranger.Id
+    };
+    ALT_CLS_FinancialScheduleService.CreateResult estimated = ALT_CLS_FinancialScheduleService.createSchedule(
+      recurrence(owner.Id, Date.today().addDays(4), null, 1, null, 'axf155-inv')
+    );
+    ALT_CLS_FinancialScheduleService.CreateResult calculated = ALT_CLS_FinancialScheduleService.createSchedule(
+      request(owner.Id, 'INSTALLMENT', 6, 1, Date.today(), 'axf155-calc')
+    );
+    ALT_CLS_FinancialScheduleService.CreateResult foreign = ALT_CLS_FinancialScheduleService.createSchedule(
+      recurrence(
+        stranger.Id,
+        Date.today().addDays(4),
+        null,
+        1,
+        null,
+        'axf155-foreign'
+      )
+    );
+    Assert.areEqual('CREATED', estimated.outcome, estimated.message);
+    Assert.areEqual('CREATED', calculated.outcome, calculated.message);
+    Assert.areEqual('CREATED', foreign.outcome, foreign.message);
+
+    ALT_CLS_FinancialScheduleService.ChangeInput missingKey = change(
+      estimated.scheduleId,
+      ' ',
+      0
+    );
+    missingKey.amount = 10;
+    ALT_CLS_FinancialScheduleService.ChangeInput missingVersion = change(
+      estimated.scheduleId,
+      'axf155-k1',
+      null
+    );
+    missingVersion.amount = 10;
+    ALT_CLS_FinancialScheduleService.ChangeInput badAmount = change(
+      estimated.scheduleId,
+      'axf155-k2',
+      0
+    );
+    badAmount.amount = 1.234;
+    ALT_CLS_FinancialScheduleService.ChangeInput zero = change(
+      estimated.scheduleId,
+      'axf155-k3',
+      0
+    );
+    zero.amount = 0;
+    for (
+      ALT_CLS_FinancialScheduleService.ChangeInput input : new List<ALT_CLS_FinancialScheduleService.ChangeInput>{
+        null,
+        missingKey,
+        missingVersion,
+        badAmount,
+        zero
+      }
+    ) {
+      Assert.areEqual(
+        'INVALID',
+        ALT_CLS_FinancialScheduleService.editAmount(input).outcome
+      );
+    }
+
+    ALT_CLS_FinancialScheduleService.ChangeInput onCalculated = change(
+      calculated.scheduleId,
+      'axf155-k4',
+      0
+    );
+    onCalculated.amount = 10;
+    Assert.areEqual(
+      'UNSUPPORTED',
+      ALT_CLS_FinancialScheduleService.editAmount(onCalculated).outcome
+    );
+
+    ALT_CLS_FinancialScheduleService.authorizedOverride = new Set<Id>{
+      owner.Id
+    };
+    ALT_CLS_FinancialScheduleService.ChangeInput onForeign = change(
+      foreign.scheduleId,
+      'axf155-k5',
+      0
+    );
+    onForeign.terminationDate = Date.today();
+    Assert.areEqual(
+      'FORBIDDEN',
+      ALT_CLS_FinancialScheduleService.terminateSchedule(onForeign).outcome
+    );
+    ALT_CLS_FinancialScheduleService.ChangeInput missing = change(
+      owner.Id,
+      'axf155-k6',
+      0
+    );
+    missing.terminationDate = Date.today();
+    Assert.areEqual(
+      'NOT_FOUND',
+      ALT_CLS_FinancialScheduleService.terminateSchedule(missing).outcome
+    );
+  }
+
+  private static ALT_CLS_ScheduleProjection.ProjectionResult projectToday(
+    Id scheduleId
+  ) {
+    ALT_CLS_ScheduleProjection.ProjectionInput input = new ALT_CLS_ScheduleProjection.ProjectionInput();
+    input.scheduleId = scheduleId;
+    input.asOfDate = Date.today();
+    return ALT_CLS_ScheduleProjection.project(input);
+  }
+
+  @IsTest
+  static void editKeepsAProtectedOccurrenceAfterTheFirstMutableOne() {
+    Account owner = holder('AXF155 protegida no meio');
+    ALT_CLS_FinancialScheduleService.authorizedOverride = new Set<Id>{
+      owner.Id
+    };
+    ALT_CLS_FinancialScheduleService.CreateResult created = ALT_CLS_FinancialScheduleService.createSchedule(
+      recurrence(owner.Id, Date.today().addDays(3), null, 1, null, 'axf155-mid')
+    );
+    Assert.areEqual('CREATED', created.outcome, created.message);
+    List<AXF_OBJ_FinancialTransaction__c> rows = occurrencesOf(
+      created.scheduleId
+    );
+    Assert.isTrue(rows.size() >= 4);
+    Id initialReference = rows[2].AXF_FTX_LKP_ScheduleReference__c;
+    // A sequência 3 foi conciliada antecipadamente; 2 e 4 continuam mutáveis.
+    update new AXF_OBJ_FinancialTransaction__c(
+      Id = rows[2].Id,
+      AXF_FTX_PKL_Status__c = 'CONFIRMED'
+    );
+
+    Test.startTest();
+    ALT_CLS_FinancialScheduleService.ChangeInput edit = change(
+      created.scheduleId,
+      'axf155-mid-edit',
+      0
+    );
+    edit.amount = 350;
+    ALT_CLS_FinancialScheduleService.ChangeResult changed = ALT_CLS_FinancialScheduleService.editAmount(
+      edit
+    );
+    Test.stopTest();
+
+    Assert.areEqual('UPDATED', changed.outcome, changed.message);
+    Assert.areEqual(1, changed.fromSequence);
+    Assert.areEqual(1, changed.protectedCount);
+    Assert.areEqual(rows.size() - 1, changed.updatedCount);
+    List<AXF_OBJ_FinancialTransaction__c> after = occurrencesOf(
+      created.scheduleId
+    );
+    Assert.areEqual(300.00, after[2].AXF_FTX_NUM_CurrentBasis__c);
+    Assert.areEqual(300.00, after[2].AXF_FTX_NUM_Magnitude__c);
+    Assert.areEqual(
+      initialReference,
+      after[2].AXF_FTX_LKP_ScheduleReference__c
+    );
+    for (Integer index : new List<Integer>{ 1, 3 }) {
+      Assert.areEqual(350.00, after[index].AXF_FTX_NUM_CurrentBasis__c);
+      Assert.areEqual(350.00, after[index].AXF_FTX_NUM_Magnitude__c);
+    }
+    AXF_OBJ_ScheduleChange__c receipt = [
+      SELECT AXF_SCH_TAL_ProtectedRangesJson__c
+      FROM AXF_OBJ_ScheduleChange__c
+      WHERE
+        AXF_SCH_LKP_Schedule__c = :created.scheduleId
+        AND AXF_SCH_PKL_Operation__c = 'EDIT'
+    ];
+    Assert.areEqual('[3]', receipt.AXF_SCH_TAL_ProtectedRangesJson__c);
+  }
+
+  @IsTest
+  static void editFromTheFirstSequenceTwiceKeepsTheProjectionCurrent() {
+    Account owner = holder('AXF155 edição dupla');
+    ALT_CLS_FinancialScheduleService.authorizedOverride = new Set<Id>{
+      owner.Id
+    };
+    ALT_CLS_ScheduleProjection.authorizedOverride = new Set<Id>{ owner.Id };
+    ALT_CLS_FinancialScheduleService.CreateResult created = ALT_CLS_FinancialScheduleService.createSchedule(
+      recurrence(owner.Id, Date.today().addDays(3), null, 1, null, 'axf155-2x')
+    );
+    Assert.areEqual('CREATED', created.outcome, created.message);
+
+    Test.startTest();
+    ALT_CLS_FinancialScheduleService.ChangeInput first = change(
+      created.scheduleId,
+      'axf155-2x-a',
+      0
+    );
+    first.amount = 350;
+    ALT_CLS_FinancialScheduleService.ChangeResult firstResult = ALT_CLS_FinancialScheduleService.editAmount(
+      first
+    );
+    ALT_CLS_ScheduleProjection.ProjectionResult afterFirst = projectToday(
+      created.scheduleId
+    );
+    ALT_CLS_FinancialScheduleService.ChangeInput second = change(
+      created.scheduleId,
+      'axf155-2x-b',
+      1
+    );
+    second.amount = 400;
+    ALT_CLS_FinancialScheduleService.ChangeResult secondResult = ALT_CLS_FinancialScheduleService.editAmount(
+      second
+    );
+    ALT_CLS_ScheduleProjection.ProjectionResult afterSecond = projectToday(
+      created.scheduleId
+    );
+    Test.stopTest();
+
+    Assert.areEqual('UPDATED', firstResult.outcome, firstResult.message);
+    Assert.areEqual(1, firstResult.fromSequence);
+    Assert.areEqual('OK', afterFirst.outcome, afterFirst.message);
+    for (ALT_CLS_ScheduleProjection.OccurrenceLine line : afterFirst.lines) {
+      Assert.areEqual(350.00, line.amount, 'sequência ' + line.sequence);
+    }
+    Assert.areEqual('UPDATED', secondResult.outcome, secondResult.message);
+    Assert.areEqual(1, secondResult.fromSequence);
+    Assert.areEqual('OK', afterSecond.outcome, afterSecond.message);
+    Assert.isFalse(afterSecond.lines.isEmpty());
+    for (ALT_CLS_ScheduleProjection.OccurrenceLine line : afterSecond.lines) {
+      Assert.areEqual(400.00, line.amount, 'sequência ' + line.sequence);
+    }
+  }
+
+  @IsTest
+  static void replenishmentAfterAnEditUsesTheNewAmountAndEndedCreatesNothing() {
+    Account owner = holder('AXF155 reposição editada');
+    AXF_OBJ_BankAccount__c cash = wallet(owner.Id);
+    ALT_CLS_FinancialScheduleService.authorizedOverride = new Set<Id>{
+      owner.Id
+    };
+    ALT_CLS_ScheduleProjection.authorizedOverride = new Set<Id>{ owner.Id };
+    ALT_CLS_FinancialScheduleService.CreateResult created = ALT_CLS_FinancialScheduleService.createSchedule(
+      recurrence(
+        owner.Id,
+        Date.today().addDays(1),
+        14,
+        null,
+        cash.Id,
+        'axf155-replenish-edit'
+      )
+    );
+    Assert.areEqual('CREATED', created.outcome, created.message);
+    ALT_CLS_FinancialScheduleService.ChangeInput edit = change(
+      created.scheduleId,
+      'axf155-replenish-edit-420',
+      0
+    );
+    edit.amount = 420;
+    Assert.areEqual(
+      'UPDATED',
+      ALT_CLS_FinancialScheduleService.editAmount(edit).outcome
+    );
+    List<AXF_OBJ_FinancialTransaction__c> rows = occurrencesOf(
+      created.scheduleId
+    );
+    AXF_OBJ_FinancialTransaction__c last = rows[rows.size() - 1];
+    delete last;
+    ALT_CLS_FinancialScheduleService.ReplenishmentRequest request = new ALT_CLS_FinancialScheduleService.ReplenishmentRequest();
+    request.scheduleId = created.scheduleId;
+
+    Test.startTest();
+    ALT_CLS_FinancialScheduleService.ReplenishmentResult generated = ALT_CLS_FinancialScheduleService.replenishSchedule(
+      request
+    );
+    ALT_CLS_FinancialScheduleService.ChangeInput terminate = change(
+      created.scheduleId,
+      'axf155-replenish-end',
+      1
+    );
+    terminate.terminationDate = Date.today();
+    Assert.areEqual(
+      'TERMINATED',
+      ALT_CLS_FinancialScheduleService.terminateSchedule(terminate).outcome
+    );
+    delete [
+      SELECT Id
+      FROM AXF_OBJ_FinancialTransaction__c
+      WHERE
+        AXF_FTX_LKP_Schedule__c = :created.scheduleId
+        AND AXF_FTX_NUM_Sequence__c = :last.AXF_FTX_NUM_Sequence__c
+    ];
+    Integer before = occurrencesOf(created.scheduleId).size();
+    ALT_CLS_FinancialScheduleService.ReplenishmentResult ended = ALT_CLS_FinancialScheduleService.replenishSchedule(
+      request
+    );
+    Test.stopTest();
+
+    Assert.areEqual('GENERATED', generated.outcome, generated.message);
+    Assert.areEqual(1, generated.createdCount);
+    Assert.areEqual('SKIPPED', ended.outcome, ended.message);
+    Assert.areEqual(before, occurrencesOf(created.scheduleId).size());
+    Assert.areEqual(0, ended.createdCount);
+  }
+
+  @IsTest
+  static void regenerationAfterAnEditCarriesTheNewAmountAndTheOrigin() {
+    Account owner = holder('AXF155 regeração');
+    AXF_OBJ_BankAccount__c cash = wallet(owner.Id);
+    ALT_CLS_FinancialScheduleService.authorizedOverride = new Set<Id>{
+      owner.Id
+    };
+    ALT_CLS_ScheduleProjection.authorizedOverride = new Set<Id>{ owner.Id };
+    ALT_CLS_FinancialScheduleService.CreateResult created = ALT_CLS_FinancialScheduleService.createSchedule(
+      recurrence(
+        owner.Id,
+        Date.today().addDays(1),
+        14,
+        null,
+        cash.Id,
+        'axf155-regenerate'
+      )
+    );
+    ALT_CLS_FinancialScheduleService.ChangeInput edit = change(
+      created.scheduleId,
+      'axf155-regenerate-420',
+      0
+    );
+    edit.amount = 420;
+    ALT_CLS_FinancialScheduleService.ChangeResult changed = ALT_CLS_FinancialScheduleService.editAmount(
+      edit
+    );
+    Assert.areEqual('UPDATED', changed.outcome, changed.message);
+    List<AXF_OBJ_FinancialTransaction__c> rows = occurrencesOf(
+      created.scheduleId
+    );
+    AXF_OBJ_FinancialTransaction__c last = rows[rows.size() - 1];
+    delete last;
+    ALT_CLS_FinancialScheduleService.ReplenishmentRequest request = new ALT_CLS_FinancialScheduleService.ReplenishmentRequest();
+    request.scheduleId = created.scheduleId;
+
+    Test.startTest();
+    ALT_CLS_FinancialScheduleService.ReplenishmentResult generated = ALT_CLS_FinancialScheduleService.replenishSchedule(
+      request
+    );
+    Test.stopTest();
+
+    Assert.areEqual('GENERATED', generated.outcome, generated.message);
+    AXF_OBJ_FinancialTransaction__c regenerated = [
+      SELECT
+        AXF_FTX_NUM_CurrentBasis__c,
+        AXF_FTX_NUM_Magnitude__c,
+        AXF_FTX_LKP_BankAccount__c,
+        AXF_FTX_LKP_ScheduleReference__c
+      FROM AXF_OBJ_FinancialTransaction__c
+      WHERE
+        AXF_FTX_LKP_Schedule__c = :created.scheduleId
+        AND AXF_FTX_NUM_Sequence__c = :last.AXF_FTX_NUM_Sequence__c
+    ];
+    Assert.areEqual(420.00, regenerated.AXF_FTX_NUM_CurrentBasis__c);
+    Assert.areEqual(420.00, regenerated.AXF_FTX_NUM_Magnitude__c);
+    Assert.areEqual(cash.Id, regenerated.AXF_FTX_LKP_BankAccount__c);
+    Assert.areEqual(
+      changed.referenceId,
+      regenerated.AXF_FTX_LKP_ScheduleReference__c
+    );
+  }
+
+  @IsTest
+  static void legacyMonthlyPayloadHashIsUnchanged() {
+    Account owner = holder('AXF155 payload legado');
+    ALT_CLS_FinancialScheduleService.CreateInput monthly = request(
+      owner.Id,
+      'INSTALLMENT',
+      12,
+      1,
+      Date.newInstance(2027, 1, 10),
+      'axf155-legacy-payload'
+    );
+    Assert.areEqual(
+      AXF_CLS_IdentityFraming.sha256Hex(
+        AXF_CLS_IdentityFraming.frame(
+          new List<Object>{
+            'axf103-payload-v1',
+            owner.Id,
+            null,
+            'DEBIT',
+            'BRL',
+            'INSTALLMENT',
+            12,
+            1,
+            Date.newInstance(2027, 1, 10),
+            1,
+            10,
+            1,
+            12,
+            360000.00,
+            null,
+            null,
+            0.00,
+            0.00,
+            null,
+            null,
+            'axf155-legacy-payload'
+          }
+        )
+      ),
+      ALT_CLS_FinancialScheduleService.previewPayloadHash(monthly)
+    );
+  }
+
+  @IsTest
+  static void bimonthlyAndQuarterlyRecurrencesKeepTheirCalendar() {
+    Account owner = holder('AXF155 bimestral e trimestral');
+    ALT_CLS_FinancialScheduleService.authorizedOverride = new Set<Id>{
+      owner.Id
+    };
+    Date first = ALT_CLS_ScheduleCalendar.monthStart(Date.today()).addDays(9);
+    for (Integer months : new List<Integer>{ 2, 3 }) {
+      ALT_CLS_FinancialScheduleService.CreateResult created = ALT_CLS_FinancialScheduleService.createSchedule(
+        recurrence(owner.Id, first, null, months, null, 'axf155-m' + months)
+      );
+      Assert.areEqual('CREATED', created.outcome, created.message);
+      List<AXF_OBJ_FinancialTransaction__c> rows = occurrencesOf(
+        created.scheduleId
+      );
+      Assert.isTrue(rows.size() >= 4, 'meses ' + months);
+      for (Integer i = 0; i < rows.size(); i++) {
+        Assert.areEqual(
+          first.addMonths(months * i),
+          rows[i].AXF_FTX_DAT_DueDate__c,
+          'meses ' + months + ', ocorrência ' + i
+        );
+      }
+    }
+  }
 }

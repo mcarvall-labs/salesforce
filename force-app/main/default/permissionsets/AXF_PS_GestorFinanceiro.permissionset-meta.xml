@@ -1945,6 +1945,16 @@
     </fieldPermissions>
     <fieldPermissions>
         <editable>false</editable>
+        <field>AXF_OBJ_ScheduleDefinition__c.AXF_SDF_NUM_PeriodDays__c</field>
+        <readable>true</readable>
+    </fieldPermissions>
+    <fieldPermissions>
+        <editable>false</editable>
+        <field>AXF_OBJ_ScheduleDefinition__c.AXF_SDF_NUM_PeriodMonths__c</field>
+        <readable>true</readable>
+    </fieldPermissions>
+    <fieldPermissions>
+        <editable>false</editable>
         <field>AXF_OBJ_ScheduleDefinition__c.AXF_SDF_NUM_PeriodRate__c</field>
         <readable>true</readable>
     </fieldPermissions>

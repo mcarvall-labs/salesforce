@@ -195,6 +195,92 @@ private class ALT_CLS_ScheduleCalendarTest {
     }
   }
 
+  @IsTest
+  static void weeklyPeriodAddsSevenDaysWithoutAnchor() {
+    // AXF-155: sexta 02/10/2026, semanal — 02/10, 09/10, 16/10, e atravessa o fim do mês sem ajuste.
+    Date origin = Date.newInstance(2026, 10, 2);
+    Assert.areEqual(
+      origin,
+      ALT_CLS_ScheduleCalendar.nominalDueDate(origin, 1, null, 7, 2, 1)
+    );
+    Assert.areEqual(
+      Date.newInstance(2026, 10, 9),
+      ALT_CLS_ScheduleCalendar.nominalDueDate(origin, 1, null, 7, 2, 2)
+    );
+    Assert.areEqual(
+      Date.newInstance(2026, 10, 16),
+      ALT_CLS_ScheduleCalendar.nominalDueDate(origin, 1, null, 7, 2, 3)
+    );
+    Assert.areEqual(
+      Date.newInstance(2026, 11, 6),
+      ALT_CLS_ScheduleCalendar.nominalDueDate(origin, 1, null, 7, 31, 6),
+      'A âncora não participa da periodicidade em dias'
+    );
+  }
+
+  @IsTest
+  static void biweeklyPeriodHonoursFirstSequence() {
+    Date origin = Date.newInstance(2026, 10, 2);
+    Assert.areEqual(
+      Date.newInstance(2026, 10, 16),
+      ALT_CLS_ScheduleCalendar.nominalDueDateByDays(origin, 1, 14, 2)
+    );
+    Assert.areEqual(
+      Date.newInstance(2026, 10, 30),
+      ALT_CLS_ScheduleCalendar.nominalDueDateByDays(origin, 5, 14, 7)
+    );
+    Assert.areEqual(
+      Date.newInstance(2026, 9, 18),
+      ALT_CLS_ScheduleCalendar.shiftDays(origin, -14)
+    );
+  }
+
+  @IsTest
+  static void dispatcherKeepsTheMonthlyCalendar() {
+    Date origin = Date.newInstance(2026, 1, 31);
+    Assert.areEqual(
+      Date.newInstance(2026, 2, 28),
+      ALT_CLS_ScheduleCalendar.nominalDueDate(origin, 1, 1, null, 31, 2)
+    );
+    Assert.areEqual(
+      Date.newInstance(2026, 3, 31),
+      ALT_CLS_ScheduleCalendar.nominalDueDate(origin, 1, null, null, 31, 3),
+      'Sem periodicidade informada, o padrão legado de um mês é preservado'
+    );
+  }
+
+  @IsTest
+  static void dayPeriodRejectsInvalidInputs() {
+    Date origin = Date.newInstance(2026, 10, 2);
+    List<List<Integer>> invalid = new List<List<Integer>>{
+      new List<Integer>{ 1, 1, 7, 2 },
+      new List<Integer>{ null, 0, 7, 2 },
+      new List<Integer>{ null, 1, 0, 2 },
+      new List<Integer>{ null, 3, 7, 2 }
+    };
+    for (List<Integer> values : invalid) {
+      try {
+        ALT_CLS_ScheduleCalendar.nominalDueDate(
+          origin,
+          values[1],
+          values[0],
+          values[2],
+          null,
+          values[3]
+        );
+        Assert.fail('Entrada inválida deve ser recusada: ' + values);
+      } catch (ALT_CLS_ScheduleCalendar.CalendarException expected) {
+        Assert.isNotNull(expected.getMessage());
+      }
+    }
+    try {
+      ALT_CLS_ScheduleCalendar.shiftDays(origin, 40000);
+      Assert.fail('Deslocamento acima do limite de sanidade deve ser recusado');
+    } catch (ALT_CLS_ScheduleCalendar.CalendarException expected) {
+      Assert.isNotNull(expected.getMessage());
+    }
+  }
+
   private static void assertRejected(
     Date origin,
     Integer firstSequence,

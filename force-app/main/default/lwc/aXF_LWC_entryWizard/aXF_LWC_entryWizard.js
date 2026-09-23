@@ -281,6 +281,15 @@ export default class AxfLwcEntryWizard extends NavigationMixin(
   get isScheduled() {
     return !this.isSingle;
   }
+  get isRecurring() {
+    return this.form.entryType === TYPE.RECURRING;
+  }
+  get scheduleRedirectText() {
+    return this.isRecurring ? L.recurringRedirect : L.scheduleRedirect;
+  }
+  get continueScheduleLabel() {
+    return this.isRecurring ? L.continueRecurring : L.continueSchedule;
+  }
   get showRealizedToggle() {
     return this.isSingle && this.capabilities.canRealize === true;
   }
@@ -607,8 +616,15 @@ export default class AxfLwcEntryWizard extends NavigationMixin(
     this.moveFocus("[data-step-heading]");
   }
 
-  /** Installments and recurrences are planned by the schedule planner, pre-filled (AXF-153). */
+  /**
+   * Installments are planned by the schedule planner (AXF-153); recurring entries with no end
+   * are managed on the Recurring screen (AXF-155). Both open pre-filled.
+   */
   handleContinueSchedule() {
+    if (this.isRecurring) {
+      this.navigateToRecurrences();
+      return;
+    }
     this[NavigationMixin.Navigate]({
       type: "standard__navItemPage",
       attributes: { apiName: "AXF_ScheduleWizard" },
@@ -620,6 +636,33 @@ export default class AxfLwcEntryWizard extends NavigationMixin(
         c__firstDueDate: this.form.dueDate || this.form.purchaseDate,
         c__currencyIsoCode: this.form.currencyIsoCode
       }
+    });
+  }
+
+  navigateToRecurrences() {
+    const card = this.isSourceCard;
+    const firstDueDate = this.form.dueDate || this.form.purchaseDate;
+    const state = {
+      c__direction: this.form.direction,
+      c__accountId: this.form.accountId,
+      c__amount: String(this.form.magnitude),
+      // A recurrence never backfills: a past date is not handed over.
+      c__firstDueDate:
+        firstDueDate && firstDueDate >= todayIso() ? firstDueDate : null,
+      c__currencyIsoCode: this.form.currencyIsoCode,
+      c__description: this.form.description || null,
+      c__bankAccountId: card ? null : this.form.bankAccountId,
+      c__creditCardId: card ? this.form.creditCardId : null
+    };
+    Object.keys(state).forEach((key) => {
+      if (state[key] === null || state[key] === undefined) {
+        delete state[key];
+      }
+    });
+    this[NavigationMixin.Navigate]({
+      type: "standard__navItemPage",
+      attributes: { apiName: "AXF_CT_Recurrences" },
+      state
     });
   }
 

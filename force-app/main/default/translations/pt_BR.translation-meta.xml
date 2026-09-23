@@ -2646,6 +2646,336 @@
     >Transações em outra moeda são listadas, mas não entram nos totais.</label>
         <name>AXF_CardStatement_mixedCurrency</name>
     </customLabels>
+    <customLabels>
+        <label>Recorrências</label>
+        <name>AXF_Recurrences_title</name>
+    </customLabels>
+    <customLabels>
+        <label
+    >Despesas e receitas recorrentes sem fim definido: contas de consumo, assinaturas, mão de obra semanal. Cada uma gera as próprias ocorrências.</label>
+        <name>AXF_Recurrences_intro</name>
+    </customLabels>
+    <customLabels>
+        <label>Você não tem acesso à tela de recorrências.</label>
+        <name>AXF_Recurrences_noCapability</name>
+    </customLabels>
+    <customLabels>
+        <label
+    >Você pode consultar as recorrências; só um gestor financeiro pode criar, editar ou encerrar.</label>
+        <name>AXF_Recurrences_readOnly</name>
+    </customLabels>
+    <customLabels>
+        <label>Carregando…</label>
+        <name>AXF_Recurrences_loading</name>
+    </customLabels>
+    <customLabels>
+        <label>Algo deu errado. Tente novamente.</label>
+        <name>AXF_Recurrences_error</name>
+    </customLabels>
+    <customLabels>
+        <label>Nova recorrência</label>
+        <name>AXF_Recurrences_newRecurrence</name>
+    </customLabels>
+    <customLabels>
+        <label>Nova despesa ou receita recorrente</label>
+        <name>AXF_Recurrences_formHeading</name>
+    </customLabels>
+    <customLabels>
+        <label>Recorrências cadastradas</label>
+        <name>AXF_Recurrences_listCaption</name>
+    </customLabels>
+    <customLabels>
+        <label>Nenhuma recorrência nos seus contextos autorizados.</label>
+        <name>AXF_Recurrences_noRecurrences</name>
+    </customLabels>
+    <customLabels>
+        <label>Descrição</label>
+        <name>AXF_Recurrences_colDescription</name>
+    </customLabels>
+    <customLabels>
+        <label>Pessoa ou empresa</label>
+        <name>AXF_Recurrences_colHolder</name>
+    </customLabels>
+    <customLabels>
+        <label>Periodicidade</label>
+        <name>AXF_Recurrences_colPeriodicity</name>
+    </customLabels>
+    <customLabels>
+        <label>Valor</label>
+        <name>AXF_Recurrences_colAmount</name>
+    </customLabels>
+    <customLabels>
+        <label>Natureza</label>
+        <name>AXF_Recurrences_colNature</name>
+    </customLabels>
+    <customLabels>
+        <label>Origem</label>
+        <name>AXF_Recurrences_colSource</name>
+    </customLabels>
+    <customLabels>
+        <label>Próximo vencimento</label>
+        <name>AXF_Recurrences_colNextDue</name>
+    </customLabels>
+    <customLabels>
+        <label>Situação</label>
+        <name>AXF_Recurrences_colState</name>
+    </customLabels>
+    <customLabels>
+        <label>Ações</label>
+        <name>AXF_Recurrences_colActions</name>
+    </customLabels>
+    <customLabels>
+        <label>Vencimento</label>
+        <name>AXF_Recurrences_colDueDate</name>
+    </customLabels>
+    <customLabels>
+        <label>Status</label>
+        <name>AXF_Recurrences_colStatus</name>
+    </customLabels>
+    <customLabels>
+        <label>Ativa</label>
+        <name>AXF_Recurrences_stateACTIVE</name>
+    </customLabels>
+    <customLabels>
+        <label>Encerrada em {0}</label>
+        <name>AXF_Recurrences_stateENDED</name>
+    </customLabels>
+    <customLabels>
+        <label>Despesa</label>
+        <name>AXF_Recurrences_natureDEBIT</name>
+    </customLabels>
+    <customLabels>
+        <label>Receita</label>
+        <name>AXF_Recurrences_natureCREDIT</name>
+    </customLabels>
+    <customLabels>
+        <label>Semanal</label>
+        <name>AXF_Recurrences_periodWEEKLY</name>
+    </customLabels>
+    <customLabels>
+        <label>Quinzenal</label>
+        <name>AXF_Recurrences_periodBIWEEKLY</name>
+    </customLabels>
+    <customLabels>
+        <label>Mensal</label>
+        <name>AXF_Recurrences_periodMONTHLY</name>
+    </customLabels>
+    <customLabels>
+        <label>Bimestral</label>
+        <name>AXF_Recurrences_periodBIMONTHLY</name>
+    </customLabels>
+    <customLabels>
+        <label>Trimestral</label>
+        <name>AXF_Recurrences_periodQUARTERLY</name>
+    </customLabels>
+    <customLabels>
+        <label>Outra (meses)</label>
+        <name>AXF_Recurrences_periodCUSTOM</name>
+    </customLabels>
+    <customLabels>
+        <label>A cada {0} meses</label>
+        <name>AXF_Recurrences_periodEveryMonths</name>
+    </customLabels>
+    <customLabels>
+        <label>Pessoa ou empresa</label>
+        <name>AXF_Recurrences_fieldHolder</name>
+    </customLabels>
+    <customLabels>
+        <label>Descrição</label>
+        <name>AXF_Recurrences_fieldDescription</name>
+    </customLabels>
+    <customLabels>
+        <label>Natureza</label>
+        <name>AXF_Recurrences_fieldNature</name>
+    </customLabels>
+    <customLabels>
+        <label>Valor</label>
+        <name>AXF_Recurrences_fieldAmount</name>
+    </customLabels>
+    <customLabels>
+        <label>Moeda</label>
+        <name>AXF_Recurrences_fieldCurrency</name>
+    </customLabels>
+    <customLabels>
+        <label>Primeiro vencimento</label>
+        <name>AXF_Recurrences_fieldFirstDueDate</name>
+    </customLabels>
+    <customLabels>
+        <label>Periodicidade</label>
+        <name>AXF_Recurrences_fieldPeriodicity</name>
+    </customLabels>
+    <customLabels>
+        <label>Intervalo em meses (1–120)</label>
+        <name>AXF_Recurrences_fieldPeriodMonths</name>
+    </customLabels>
+    <customLabels>
+        <label>Origem (conta, cartão ou carteira)</label>
+        <name>AXF_Recurrences_fieldSource</name>
+    </customLabels>
+    <customLabels>
+        <label
+    >Nenhuma conta, cartão ou carteira disponível para esta pessoa ou empresa.</label>
+        <name>AXF_Recurrences_noSources</name>
+    </customLabels>
+    <customLabels>
+        <label>Preencha todos os campos com valores válidos.</label>
+        <name>AXF_Recurrences_formInvalid</name>
+    </customLabels>
+    <customLabels>
+        <label>Criar recorrência</label>
+        <name>AXF_Recurrences_create</name>
+    </customLabels>
+    <customLabels>
+        <label>Cancelar</label>
+        <name>AXF_Recurrences_cancel</name>
+    </customLabels>
+    <customLabels>
+        <label>Salvar</label>
+        <name>AXF_Recurrences_save</name>
+    </customLabels>
+    <customLabels>
+        <label>Fechar</label>
+        <name>AXF_Recurrences_close</name>
+    </customLabels>
+    <customLabels>
+        <label>Recorrência criada com {0} ocorrência(s).</label>
+        <name>AXF_Recurrences_created</name>
+    </customLabels>
+    <customLabels>
+        <label>Ocorrências</label>
+        <name>AXF_Recurrences_viewOccurrences</name>
+    </customLabels>
+    <customLabels>
+        <label>Ver as ocorrências de {0}</label>
+        <name>AXF_Recurrences_viewOccurrencesFor</name>
+    </customLabels>
+    <customLabels>
+        <label>Ocorrências de {0}</label>
+        <name>AXF_Recurrences_occurrencesCaption</name>
+    </customLabels>
+    <customLabels>
+        <label>Nenhuma ocorrência gerada ainda.</label>
+        <name>AXF_Recurrences_noOccurrences</name>
+    </customLabels>
+    <customLabels>
+        <label>Somente as primeiras ocorrências são exibidas.</label>
+        <name>AXF_Recurrences_occurrencesTruncated</name>
+    </customLabels>
+    <customLabels>
+        <label
+    >O status de algumas ocorrências não pôde ser verificado com as conciliações que você enxerga.</label>
+        <name>AXF_Recurrences_occurrencesUnverified</name>
+    </customLabels>
+    <customLabels>
+        <label>Prevista</label>
+        <name>AXF_Recurrences_occPLANNED</name>
+    </customLabels>
+    <customLabels>
+        <label>Conciliada</label>
+        <name>AXF_Recurrences_occRECONCILED</name>
+    </customLabels>
+    <customLabels>
+        <label>Parcial</label>
+        <name>AXF_Recurrences_occPARTIAL</name>
+    </customLabels>
+    <customLabels>
+        <label>Cancelada</label>
+        <name>AXF_Recurrences_occCANCELLED</name>
+    </customLabels>
+    <customLabels>
+        <label>Editar valor</label>
+        <name>AXF_Recurrences_editAmount</name>
+    </customLabels>
+    <customLabels>
+        <label>Editar o valor de {0}</label>
+        <name>AXF_Recurrences_editAmountFor</name>
+    </customLabels>
+    <customLabels>
+        <label>Novo valor</label>
+        <name>AXF_Recurrences_newAmount</name>
+    </customLabels>
+    <customLabels>
+        <label
+    >O novo valor vale a partir da próxima ocorrência ainda não realizada; ocorrências conciliadas não mudam.</label>
+        <name>AXF_Recurrences_editHint</name>
+    </customLabels>
+    <customLabels>
+        <label
+    >Valor atualizado: {0} ocorrência(s) futura(s) alterada(s), {1} mantida(s) por já estar(em) realizada(s).</label>
+        <name>AXF_Recurrences_amountSaved</name>
+    </customLabels>
+    <customLabels>
+        <label>Encerrar</label>
+        <name>AXF_Recurrences_end</name>
+    </customLabels>
+    <customLabels>
+        <label>Encerrar {0}</label>
+        <name>AXF_Recurrences_endFor</name>
+    </customLabels>
+    <customLabels>
+        <label>Data de encerramento</label>
+        <name>AXF_Recurrences_endDate</name>
+    </customLabels>
+    <customLabels>
+        <label
+    >Ocorrências com vencimento após esta data e ainda não realizadas são canceladas; as realizadas ou conciliadas permanecem. Uma recorrência encerrada não pode ser reativada.</label>
+        <name>AXF_Recurrences_endHint</name>
+    </customLabels>
+    <customLabels>
+        <label>Confirmar encerramento</label>
+        <name>AXF_Recurrences_confirmEnd</name>
+    </customLabels>
+    <customLabels>
+        <label
+    >Recorrência encerrada: {0} ocorrência(s) cancelada(s), {1} mantida(s) por já estar(em) realizada(s).</label>
+        <name>AXF_Recurrences_ended</name>
+    </customLabels>
+    <customLabels>
+        <label>—</label>
+        <name>AXF_Recurrences_notAvailable</name>
+    </customLabels>
+    <customLabels>
+        <label
+    >Esta recorrência não está disponível nos seus contextos autorizados.</label>
+        <name>AXF_Recurrences_codeNOT_ACCESSIBLE</name>
+    </customLabels>
+    <customLabels>
+        <label
+    >Só um gestor financeiro pode criar, editar ou encerrar recorrências.</label>
+        <name>AXF_Recurrences_codeNOT_ALLOWED</name>
+    </customLabels>
+    <customLabels>
+        <label
+    >A recorrência mudou ou já foi encerrada; os dados foram recarregados.</label>
+        <name>AXF_Recurrences_codeCONFLICT</name>
+    </customLabels>
+    <customLabels>
+        <label>Verifique os valores informados.</label>
+        <name>AXF_Recurrences_codeINVALID_INPUT</name>
+    </customLabels>
+    <customLabels>
+        <label
+    >Seriam geradas ocorrências demais de uma vez: escolha um primeiro vencimento mais próximo de hoje.</label>
+        <name>AXF_Recurrences_codeTOO_LARGE</name>
+    </customLabels>
+    <customLabels>
+        <label
+    >O registro está ocupado agora; tente de novo em instantes.</label>
+        <name>AXF_Recurrences_codeUNAVAILABLE</name>
+    </customLabels>
+    <customLabels>
+        <label>A alteração foi recusada; nada foi salvo.</label>
+        <name>AXF_Recurrences_codeREJECTED</name>
+    </customLabels>
+    <customLabels>
+        <label
+    >Lançamentos recorrentes são gerenciados na tela de Recorrências, que abre com estes dados preenchidos.</label>
+        <name>AXF_ManualEntry_recurringRedirect</name>
+    </customLabels>
+    <customLabels>
+        <label>Continuar na tela de Recorrências</label>
+        <name>AXF_ManualEntry_continueRecurring</name>
+    </customLabels>
 <customTabs><label>Conta Corrente</label><name
     >AXF_CT_BankStatement</name></customTabs>
     <customTabs>
@@ -2654,5 +2984,9 @@
     </customTabs>    <customTabs>
         <label>Despesas e receitas</label>
         <name>AXF_CT_ManualEntries</name>
+    </customTabs>
+    <customTabs>
+        <label>Recorrências</label>
+        <name>AXF_CT_Recurrences</name>
     </customTabs>
 </Translations>

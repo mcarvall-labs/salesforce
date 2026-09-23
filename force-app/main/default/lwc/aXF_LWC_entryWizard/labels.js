@@ -18,6 +18,8 @@ import originRequired from "@salesforce/label/c.AXF_ManualEntry_originRequired";
 import connectedHint from "@salesforce/label/c.AXF_ManualEntry_connectedHint";
 import scheduleRedirect from "@salesforce/label/c.AXF_ManualEntry_scheduleRedirect";
 import continueSchedule from "@salesforce/label/c.AXF_ManualEntry_continueSchedule";
+import recurringRedirect from "@salesforce/label/c.AXF_ManualEntry_recurringRedirect";
+import continueRecurring from "@salesforce/label/c.AXF_ManualEntry_continueRecurring";
 import reviewType from "@salesforce/label/c.AXF_ManualEntry_reviewType";
 import reviewSituation from "@salesforce/label/c.AXF_ManualEntry_reviewSituation";
 import situationPlanned from "@salesforce/label/c.AXF_ManualEntry_situationPlanned";
@@ -158,6 +160,8 @@ const CUSTOM = {
   connectedHint,
   scheduleRedirect,
   continueSchedule,
+  recurringRedirect,
+  continueRecurring,
   reviewType,
   reviewSituation,
   situationPlanned,

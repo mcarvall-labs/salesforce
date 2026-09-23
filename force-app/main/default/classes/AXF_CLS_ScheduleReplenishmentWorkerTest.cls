@@ -3389,4 +3389,59 @@ private class AXF_CLS_ScheduleReplenishmentWorkerTest {
     }
     return value;
   }
+
+  /** AXF-155: um cronograma semanal atrás da janela é devido; depois de reposto, não. */
+  @IsTest
+  static void aWeeklyScheduleBehindTheWindowIsDueUntilCaughtUp() {
+    Account account = holder('AXF155 semanal devido');
+    ALT_CLS_FinancialScheduleService.authorizedOverride = new Set<Id>{
+      account.Id
+    };
+    ALT_CLS_ScheduleProjection.authorizedOverride = new Set<Id>{ account.Id };
+    ALT_CLS_FinancialScheduleService.CreateInput input = new ALT_CLS_FinancialScheduleService.CreateInput();
+    input.accountId = account.Id;
+    input.direction = 'DEBIT';
+    input.currencyIsoCode = 'BRL';
+    input.method = 'ESTIMATED';
+    input.firstSequence = 1;
+    input.firstDueDate = Date.today();
+    input.periodDays = 7;
+    input.horizonMonths = 11;
+    input.referenceAmount = 300;
+    input.generationEnabled = true;
+    input.streamKey = 'axf155-weekly-due';
+    ALT_CLS_FinancialScheduleService.CreateResult created = ALT_CLS_FinancialScheduleService.createSchedule(
+      input
+    );
+    Assert.areEqual('CREATED', created.outcome, created.message);
+
+    Test.startTest();
+    Boolean dueBefore = isSelected(created.scheduleId);
+    ALT_CLS_FinancialScheduleService.ReplenishmentResult pass = runPass(
+      created.scheduleId,
+      false
+    );
+    Boolean dueAfter = isSelected(created.scheduleId);
+    Test.stopTest();
+
+    Assert.isTrue(dueBefore, 'A cobertura atrás da janela semanal é devida');
+    Assert.isTrue(
+      pass.coverageSequence >= created.occurrenceCount,
+      pass.message
+    );
+    Assert.isFalse(dueAfter, 'Depois de reposto, o cronograma sai da fila');
+  }
+
+  private static Boolean isSelected(Id scheduleId) {
+    for (
+      AXF_CLS_ScheduleReplenishmentSelector.WorkItem item : AXF_CLS_ScheduleReplenishmentSelector.selectDue(
+        25
+      )
+    ) {
+      if (item.scheduleId == scheduleId) {
+        return true;
+      }
+    }
+    return false;
+  }
 }

@@ -1,11 +1,17 @@
 /**
  * @description Handler de trigger para AXF_OBJ_ScheduleChange__c (AXF-103).
  * O recibo é imutável e delimitado por OperationKey: nenhuma atualização é aceita, nenhuma
- * exclusão é permitida. Nesta fatia apenas CREATE é gravado pelo serviço; uma operação
- * revertida não deixa recibo.
+ * exclusão é permitida. O serviço grava CREATE e, desde a AXF-155, EDIT e TERMINATE; uma
+ * operação revertida não deixa recibo.
  */
 public with sharing class AXF_CLS_SCHTriggerHandler {
   public static final String OPERATION_CREATE = 'CREATE';
+  /** Operações cujo recibo registra a sequência a partir da qual a mudança vale. */
+  private static final Set<String> SEQUENCED_OPERATIONS = new Set<String>{
+    'CREATE',
+    'EDIT',
+    'TERMINATE'
+  };
   private static final Set<String> SCOPES = new Set<String>{
     'ONE',
     'FROM_SEQUENCE',
@@ -56,11 +62,13 @@ public with sharing class AXF_CLS_SCHTriggerHandler {
         continue;
       }
       if (
-        record.AXF_SCH_PKL_Operation__c == OPERATION_CREATE &&
+        SEQUENCED_OPERATIONS.contains(record.AXF_SCH_PKL_Operation__c) &&
         record.AXF_SCH_NUM_FromSequence__c == null
       ) {
         record.addError(
-          'O recibo de criação registra a sequência inicial de rastreamento.'
+          record.AXF_SCH_PKL_Operation__c == OPERATION_CREATE
+            ? 'O recibo de criação registra a sequência inicial de rastreamento.'
+            : 'O recibo de alteração registra a sequência a partir da qual a mudança vale.'
         );
         continue;
       }

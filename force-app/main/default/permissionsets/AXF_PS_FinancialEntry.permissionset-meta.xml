@@ -45,7 +45,15 @@
         <enabled>true</enabled>
     </classAccesses>
     <classAccesses>
+        <apexClass>ALT_CLS_RecurrenceService</apexClass>
+        <enabled>true</enabled>
+    </classAccesses>
+    <classAccesses>
         <apexClass>AXF_CLS_CTRL_FinancialSchedule</apexClass>
+        <enabled>true</enabled>
+    </classAccesses>
+    <classAccesses>
+        <apexClass>AXF_CLS_CTRL_Recurrences</apexClass>
         <enabled>true</enabled>
     </classAccesses>
     <classAccesses>
@@ -477,6 +485,16 @@
     </fieldPermissions>
     <fieldPermissions>
         <editable>false</editable>
+        <field>AXF_OBJ_ScheduleDefinition__c.AXF_SDF_NUM_PeriodDays__c</field>
+        <readable>true</readable>
+    </fieldPermissions>
+    <fieldPermissions>
+        <editable>false</editable>
+        <field>AXF_OBJ_ScheduleDefinition__c.AXF_SDF_NUM_PeriodMonths__c</field>
+        <readable>true</readable>
+    </fieldPermissions>
+    <fieldPermissions>
+        <editable>false</editable>
         <field>AXF_OBJ_ScheduleDefinition__c.AXF_SDF_NUM_PeriodRate__c</field>
         <readable>true</readable>
     </fieldPermissions>
@@ -621,6 +639,10 @@
     </tabSettings>
     <tabSettings>
         <tab>AXF_CT_ManualEntries</tab>
+        <visibility>Visible</visibility>
+    </tabSettings>
+    <tabSettings>
+        <tab>AXF_CT_Recurrences</tab>
         <visibility>Visible</visibility>
     </tabSettings>
     <tabSettings>

@@ -338,6 +338,77 @@ describe("c-aXF_LWC_entryWizard", () => {
     expect(ref.state.c__firstDueDate).toMatch(/^\d{4}-\d{2}-\d{2}$/);
   });
 
+  it("hands a recurring entry over to the Recurring screen with its origin", async () => {
+    const el = build();
+    getContexts.emit([CONTEXTS[0]]);
+    getFundingSources.emit([MANUAL_BANK, WALLET, CARD]);
+    await flush();
+    await toDetails(el, "300");
+    const recurring = el.shadowRoot.querySelector(
+      "input[data-type='RECURRING']"
+    );
+    recurring.checked = true;
+    recurring.dispatchEvent(new CustomEvent("change"));
+    await flush();
+    next(el).click();
+    await flush();
+    await chooseSource(el, "WALLET", WALLET.bankAccountId);
+    next(el).click();
+    await flush();
+
+    expect(
+      el.shadowRoot.querySelector("[data-schedule-redirect]").textContent
+    ).toMatch(/AXF_ManualEntry_recurringRedirect/);
+    expect(btn(el, /AXF_ManualEntry_continueSchedule/)).toBeUndefined();
+    btn(el, /AXF_ManualEntry_continueRecurring/).click();
+    await flush();
+    expect(createEntry).not.toHaveBeenCalled();
+    expect(mockNavigate).toHaveBeenCalledTimes(1);
+    const ref = mockNavigate.mock.calls[0][0];
+    expect(ref.type).toBe("standard__navItemPage");
+    expect(ref.attributes.apiName).toBe("AXF_CT_Recurrences");
+    expect(ref.state).toMatchObject({
+      c__direction: "DEBIT",
+      c__accountId: CONTEXTS[0].accountId,
+      c__amount: "300",
+      c__currencyIsoCode: "BRL",
+      c__bankAccountId: WALLET.bankAccountId
+    });
+    expect(ref.state.c__creditCardId).toBeUndefined();
+    expect(ref.state.c__modality).toBeUndefined();
+    expect(ref.state.c__firstDueDate).toMatch(/^\d{4}-\d{2}-\d{2}$/);
+  });
+
+  it("does not hand a past date over to the Recurring screen", async () => {
+    const el = build();
+    getContexts.emit([CONTEXTS[0]]);
+    getFundingSources.emit([WALLET]);
+    await flush();
+    await toDetails(el, "300");
+    el.shadowRoot
+      .querySelector("lightning-input[data-field='purchaseDate']")
+      .dispatchEvent(
+        new CustomEvent("change", { detail: { value: "2020-01-10" } })
+      );
+    const recurring = el.shadowRoot.querySelector(
+      "input[data-type='RECURRING']"
+    );
+    recurring.checked = true;
+    recurring.dispatchEvent(new CustomEvent("change"));
+    await flush();
+    next(el).click();
+    await flush();
+    next(el).click();
+    await flush();
+    btn(el, /AXF_ManualEntry_continueRecurring/).click();
+    await flush();
+    const ref = mockNavigate.mock.calls[0][0];
+    expect(ref.attributes.apiName).toBe("AXF_CT_Recurrences");
+    expect(ref.state.c__firstDueDate).toBeUndefined();
+    expect(ref.state.c__description).toBeUndefined();
+    expect(ref.state.c__amount).toBe("300");
+  });
+
   it("realizes a wallet entry at once through the realization endpoint", async () => {
     realizeEntry.mockResolvedValue({
       financialTransactionId: "a0X000000000009",
