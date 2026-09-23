@@ -15,7 +15,7 @@
     <isNavTabPersistenceDisabled>false</isNavTabPersistenceDisabled>
     <isOmniPinnedViewEnabled>false</isOmniPinnedViewEnabled>
     <label>Axon Finance</label>
-    <navType>Standard</navType>
+    <navType>Console</navType>
     <tabs>AXF_Home</tabs>
     <tabs>AXF_CT_BillingComposer</tabs>
     <tabs>AXF_Contracts</tabs>
