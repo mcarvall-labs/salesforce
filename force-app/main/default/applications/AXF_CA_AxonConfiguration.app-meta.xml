@@ -12,7 +12,7 @@
     <isNavAutoTempTabsDisabled>false</isNavAutoTempTabsDisabled>
     <isNavPersonalizationDisabled>false</isNavPersonalizationDisabled>
     <label>AXON - Configuration</label>
-    <navType>Standard</navType>
+    <navType>Console</navType>
     <tabs>AXF_ConfigHome</tabs>
     <tabs>AXF_Configuration</tabs>
     <tabs>AXF_PluggyConfig</tabs>
