@@ -1,4 +1,7 @@
 <?xml version="1.0" encoding="UTF-8" ?>
+<!-- AXF-159: kept in the same commit/diff as the PermissionSet applicationVisibilities
+     fix so both recreate together whenever manifest/destructiveChangesPre.xml is
+     non-empty for this app. See AXF_PS_GestorFinanceiro for the full explanation. -->
 <CustomApplication xmlns="http://soap.sforce.com/2006/04/metadata">
     <brand>
         <headerColor>#021B39</headerColor>
