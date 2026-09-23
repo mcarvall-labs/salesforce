@@ -116,4 +116,46 @@ describe("c-a-x-f_-l-w-c_manual-financial-source", () => {
     element.shadowRoot.querySelector('[data-action="save"]').click();
     expect(save).not.toHaveBeenCalled();
   });
+  it("saves a wallet as a bank-kind source without institution", async () => {
+    save.mockResolvedValueOnce({
+      outcome: "CREATED",
+      sourceId: "a01",
+      version: 1
+    });
+    const element = build();
+    element.shadowRoot
+      .querySelector("lightning-combobox")
+      .dispatchEvent(
+        new CustomEvent("change", { detail: { value: "WALLET" } })
+      );
+    await flush();
+    expect(
+      element.shadowRoot.querySelector(
+        'lightning-input[name="institutionName"]'
+      )
+    ).toBeNull();
+    expect(
+      element.shadowRoot.querySelector('[data-action="new-bank"]')
+    ).toBeNull();
+    const kind = element.shadowRoot.querySelector("lightning-combobox");
+    expect(kind.options.map((o) => o.value)).toContain("WALLET");
+    element.shadowRoot
+      .querySelectorAll(
+        "lightning-input, lightning-combobox, lightning-record-picker"
+      )
+      .forEach((field) => {
+        field.checkValidity = jest.fn(() => true);
+        field.reportValidity = jest.fn();
+      });
+    element.shadowRoot.querySelector('[data-action="save"]').click();
+    await flush();
+    await flush();
+    expect(save).toHaveBeenCalledTimes(1);
+    expect(save.mock.calls[0][0]).toMatchObject({
+      kind: "BANK",
+      sourceType: "WALLET",
+      institutionName: null,
+      bankInstitutionId: null
+    });
+  });
 });

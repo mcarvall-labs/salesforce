@@ -17,8 +17,30 @@
     <label>Axon Finance</label>
     <navType>Console</navType>
     <tabs>AXF_Home</tabs>
+    <tabs>AXF_CT_BankStatement</tabs>
     <tabs>AXF_CT_BillingComposer</tabs>
     <tabs>AXF_Contracts</tabs>
+    <tabs>AXF_EntryWizard</tabs>
     <tabs>AXF_ScheduleWizard</tabs>
     <uiType>Lightning</uiType>
+    <workspaceConfig>
+        <mappings>
+            <tab>AXF_CT_BankStatement</tab>
+        </mappings>
+        <mappings>
+            <tab>AXF_CT_BillingComposer</tab>
+        </mappings>
+        <mappings>
+            <tab>AXF_Contracts</tab>
+        </mappings>
+        <mappings>
+            <tab>AXF_EntryWizard</tab>
+        </mappings>
+        <mappings>
+            <tab>AXF_Home</tab>
+        </mappings>
+        <mappings>
+            <tab>AXF_ScheduleWizard</tab>
+        </mappings>
+    </workspaceConfig>
 </CustomApplication>

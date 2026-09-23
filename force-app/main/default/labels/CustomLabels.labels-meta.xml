@@ -4147,4 +4147,309 @@
   ><fullName>AXF_ReconciliationWorkbench_codeUNEXPECTED</fullName><language
     >en_US</language><protected>false</protected><shortDescription
     >Code unexpected</shortDescription><value
-    >The operation could not be completed.</value></labels></CustomLabels>
+    >The operation could not be completed.</value></labels><labels><fullName
+    >AXF_BankStatement_title</fullName><language>en_US</language><protected
+    >false</protected><shortDescription
+    >Bank statement title</shortDescription><value
+    >Current account</value></labels><labels><fullName
+    >AXF_BankStatement_intro</fullName><language>en_US</language><protected
+    >false</protected><shortDescription
+    >Bank statement intro</shortDescription><value
+    >Balances, statement and reconciliation of your accounts and wallets.</value></labels><labels
+  ><fullName>AXF_BankStatement_noCapability</fullName><language
+    >en_US</language><protected>false</protected><shortDescription
+    >Bank statement no Capability</shortDescription><value
+    >You do not have access to the current account screen.</value></labels><labels
+  ><fullName>AXF_BankStatement_loading</fullName><language
+    >en_US</language><protected>false</protected><shortDescription
+    >Bank statement loading</shortDescription><value
+    >Loading…</value></labels><labels><fullName
+    >AXF_BankStatement_accountsCaption</fullName><language
+    >en_US</language><protected>false</protected><shortDescription
+    >Bank statement accounts Caption</shortDescription><value
+    >Accounts and wallets</value></labels><labels><fullName
+    >AXF_BankStatement_noAccounts</fullName><language>en_US</language><protected
+    >false</protected><shortDescription
+    >Bank statement no Accounts</shortDescription><value
+    >No account or wallet is available in your authorized contexts.</value></labels><labels
+  ><fullName>AXF_BankStatement_colAccount</fullName><language
+    >en_US</language><protected>false</protected><shortDescription
+    >Bank statement col Account</shortDescription><value
+    >Account</value></labels><labels><fullName
+    >AXF_BankStatement_colHolder</fullName><language>en_US</language><protected
+    >false</protected><shortDescription
+    >Bank statement col Holder</shortDescription><value
+    >Holder</value></labels><labels><fullName
+    >AXF_BankStatement_colBalance</fullName><language>en_US</language><protected
+    >false</protected><shortDescription
+    >Bank statement col Balance</shortDescription><value
+    >Balance</value></labels><labels><fullName
+    >AXF_BankStatement_colActions</fullName><language>en_US</language><protected
+    >false</protected><shortDescription
+    >Bank statement col Actions</shortDescription><value
+    >Actions</value></labels><labels><fullName
+    >AXF_BankStatement_wallet</fullName><language>en_US</language><protected
+    >false</protected><shortDescription
+    >Bank statement wallet</shortDescription><value
+    >Wallet (cash)</value></labels><labels><fullName
+    >AXF_BankStatement_balanceUnknown</fullName><language
+    >en_US</language><protected>false</protected><shortDescription
+    >Bank statement balance Unknown</shortDescription><value
+    >Not informed</value></labels><labels><fullName
+    >AXF_BankStatement_viewStatement</fullName><language
+    >en_US</language><protected>false</protected><shortDescription
+    >Bank statement view Statement</shortDescription><value
+    >View statement</value></labels><labels><fullName
+    >AXF_BankStatement_viewStatementFor</fullName><language
+    >en_US</language><protected>false</protected><shortDescription
+    >Bank statement view Statement For</shortDescription><value
+    >View statement of {0}</value></labels><labels><fullName
+    >AXF_BankStatement_refresh</fullName><language>en_US</language><protected
+    >false</protected><shortDescription
+    >Bank statement refresh</shortDescription><value
+    >Refresh from Pluggy</value></labels><labels><fullName
+    >AXF_BankStatement_refreshFor</fullName><language>en_US</language><protected
+    >false</protected><shortDescription
+    >Bank statement refresh For</shortDescription><value
+    >Refresh {0} from Pluggy</value></labels><labels><fullName
+    >AXF_BankStatement_refreshDone</fullName><language
+    >en_US</language><protected>false</protected><shortDescription
+    >Bank statement refresh Done</shortDescription><value
+    >Balance refreshed from Pluggy.</value></labels><labels><fullName
+    >AXF_BankStatement_refreshRunning</fullName><language
+    >en_US</language><protected>false</protected><shortDescription
+    >Bank statement refresh Running</shortDescription><value
+    >A Pluggy refresh is already running; try again in a few minutes.</value></labels><labels
+  ><fullName>AXF_BankStatement_refreshPending</fullName><language
+    >en_US</language><protected>false</protected><shortDescription
+    >Bank statement refresh Pending</shortDescription><value
+    >Pluggy refresh started; not all data has been received yet.</value></labels><labels
+  ><fullName>AXF_BankStatement_editBalance</fullName><language
+    >en_US</language><protected>false</protected><shortDescription
+    >Bank statement edit Balance</shortDescription><value
+    >Edit balance</value></labels><labels><fullName
+    >AXF_BankStatement_editBalanceFor</fullName><language
+    >en_US</language><protected>false</protected><shortDescription
+    >Bank statement edit Balance For</shortDescription><value
+    >Edit balance of {0}</value></labels><labels><fullName
+    >AXF_BankStatement_newBalance</fullName><language>en_US</language><protected
+    >false</protected><shortDescription
+    >Bank statement new Balance</shortDescription><value
+    >New balance</value></labels><labels><fullName
+    >AXF_BankStatement_save</fullName><language>en_US</language><protected
+    >false</protected><shortDescription
+    >Bank statement save</shortDescription><value>Save</value></labels><labels
+  ><fullName>AXF_BankStatement_cancel</fullName><language
+    >en_US</language><protected>false</protected><shortDescription
+    >Bank statement cancel</shortDescription><value
+    >Cancel</value></labels><labels><fullName
+    >AXF_BankStatement_balanceSaved</fullName><language
+    >en_US</language><protected>false</protected><shortDescription
+    >Bank statement balance Saved</shortDescription><value
+    >Balance updated.</value></labels><labels><fullName
+    >AXF_BankStatement_statementCaption</fullName><language
+    >en_US</language><protected>false</protected><shortDescription
+    >Bank statement statement Caption</shortDescription><value
+    >Statement of {0} — {1}</value></labels><labels><fullName
+    >AXF_BankStatement_previousMonth</fullName><language
+    >en_US</language><protected>false</protected><shortDescription
+    >Bank statement previous Month</shortDescription><value
+    >Previous month</value></labels><labels><fullName
+    >AXF_BankStatement_nextMonth</fullName><language>en_US</language><protected
+    >false</protected><shortDescription
+    >Bank statement next Month</shortDescription><value
+    >Next month</value></labels><labels><fullName
+    >AXF_BankStatement_customPeriod</fullName><language
+    >en_US</language><protected>false</protected><shortDescription
+    >Bank statement custom Period</shortDescription><value
+    >{0} to {1}</value></labels><labels><fullName
+    >AXF_BankStatement_filtersLegend</fullName><language
+    >en_US</language><protected>false</protected><shortDescription
+    >Bank statement filters Legend</shortDescription><value
+    >Filters</value></labels><labels><fullName
+    >AXF_BankStatement_fromDate</fullName><language>en_US</language><protected
+    >false</protected><shortDescription
+    >Bank statement from Date</shortDescription><value
+    >From</value></labels><labels><fullName
+    >AXF_BankStatement_toDate</fullName><language>en_US</language><protected
+    >false</protected><shortDescription
+    >Bank statement to Date</shortDescription><value>To</value></labels><labels
+  ><fullName>AXF_BankStatement_minAmount</fullName><language
+    >en_US</language><protected>false</protected><shortDescription
+    >Bank statement min Amount</shortDescription><value
+    >Minimum amount</value></labels><labels><fullName
+    >AXF_BankStatement_maxAmount</fullName><language>en_US</language><protected
+    >false</protected><shortDescription
+    >Bank statement max Amount</shortDescription><value
+    >Maximum amount</value></labels><labels><fullName
+    >AXF_BankStatement_term</fullName><language>en_US</language><protected
+    >false</protected><shortDescription
+    >Bank statement term</shortDescription><value
+    >Description contains</value></labels><labels><fullName
+    >AXF_BankStatement_applyFilters</fullName><language
+    >en_US</language><protected>false</protected><shortDescription
+    >Bank statement apply Filters</shortDescription><value
+    >Apply filters</value></labels><labels><fullName
+    >AXF_BankStatement_clearFilters</fullName><language
+    >en_US</language><protected>false</protected><shortDescription
+    >Bank statement clear Filters</shortDescription><value
+    >Clear filters</value></labels><labels><fullName
+    >AXF_BankStatement_colDate</fullName><language>en_US</language><protected
+    >false</protected><shortDescription
+    >Bank statement col Date</shortDescription><value
+    >Date</value></labels><labels><fullName
+    >AXF_BankStatement_colDescription</fullName><language
+    >en_US</language><protected>false</protected><shortDescription
+    >Bank statement col Description</shortDescription><value
+    >Description</value></labels><labels><fullName
+    >AXF_BankStatement_colOrigin</fullName><language>en_US</language><protected
+    >false</protected><shortDescription
+    >Bank statement col Origin</shortDescription><value
+    >Origin</value></labels><labels><fullName
+    >AXF_BankStatement_colAmount</fullName><language>en_US</language><protected
+    >false</protected><shortDescription
+    >Bank statement col Amount</shortDescription><value
+    >Amount</value></labels><labels><fullName
+    >AXF_BankStatement_colStatus</fullName><language>en_US</language><protected
+    >false</protected><shortDescription
+    >Bank statement col Status</shortDescription><value
+    >Reconciliation</value></labels><labels><fullName
+    >AXF_BankStatement_statusRECONCILED</fullName><language
+    >en_US</language><protected>false</protected><shortDescription
+    >Bank statement status R E C O N C I L E D</shortDescription><value
+    >Reconciled</value></labels><labels><fullName
+    >AXF_BankStatement_statusPARTIAL</fullName><language
+    >en_US</language><protected>false</protected><shortDescription
+    >Bank statement status P A R T I A L</shortDescription><value
+    >Partial</value></labels><labels><fullName
+    >AXF_BankStatement_statusUNRECONCILED</fullName><language
+    >en_US</language><protected>false</protected><shortDescription
+    >Bank statement status U N R E C O N C I L E D</shortDescription><value
+    >Not reconciled</value></labels><labels><fullName
+    >AXF_BankStatement_statusUNVERIFIED</fullName><language
+    >en_US</language><protected>false</protected><shortDescription
+    >Bank statement status U N V E R I F I E D</shortDescription><value
+    >Cannot be verified</value></labels><labels><fullName
+    >AXF_BankStatement_originPLUGGY</fullName><language
+    >en_US</language><protected>false</protected><shortDescription
+    >Bank statement origin P L U G G Y</shortDescription><value
+    >Pluggy</value></labels><labels><fullName
+    >AXF_BankStatement_originCSV</fullName><language>en_US</language><protected
+    >false</protected><shortDescription
+    >Bank statement origin C S V</shortDescription><value
+    >CSV import</value></labels><labels><fullName
+    >AXF_BankStatement_originMANUAL</fullName><language
+    >en_US</language><protected>false</protected><shortDescription
+    >Bank statement origin M A N U A L</shortDescription><value
+    >Manual fact</value></labels><labels><fullName
+    >AXF_BankStatement_originPLANNED</fullName><language
+    >en_US</language><protected>false</protected><shortDescription
+    >Bank statement origin P L A N N E D</shortDescription><value
+    >Manual entry (planned)</value></labels><labels><fullName
+    >AXF_BankStatement_originACTUAL_ONLY</fullName><language
+    >en_US</language><protected>false</protected><shortDescription
+    >Bank statement origin A C T U A L_ O N L Y</shortDescription><value
+    >Manual entry (actual)</value></labels><labels><fullName
+    >AXF_BankStatement_showSuggestions</fullName><language
+    >en_US</language><protected>false</protected><shortDescription
+    >Bank statement show Suggestions</shortDescription><value
+    >Suggestions</value></labels><labels><fullName
+    >AXF_BankStatement_showSuggestionsFor</fullName><language
+    >en_US</language><protected>false</protected><shortDescription
+    >Bank statement show Suggestions For</shortDescription><value
+    >Show suggestions for {0}</value></labels><labels><fullName
+    >AXF_BankStatement_suggestionsCaption</fullName><language
+    >en_US</language><protected>false</protected><shortDescription
+    >Bank statement suggestions Caption</shortDescription><value
+    >Suggestions within ±5% of the amount and ±7 days</value></labels><labels
+  ><fullName>AXF_BankStatement_noSuggestions</fullName><language
+    >en_US</language><protected>false</protected><shortDescription
+    >Bank statement no Suggestions</shortDescription><value
+    >No suggestion within the window.</value></labels><labels><fullName
+    >AXF_BankStatement_suggestionAction</fullName><language
+    >en_US</language><protected>false</protected><shortDescription
+    >Bank statement suggestion Action</shortDescription><value
+    >Reconcile with {0} — {1} on {2}</value></labels><labels><fullName
+    >AXF_BankStatement_tied</fullName><language>en_US</language><protected
+    >false</protected><shortDescription
+    >Bank statement tied</shortDescription><value>Tie</value></labels><labels
+  ><fullName>AXF_BankStatement_confirmed</fullName><language
+    >en_US</language><protected>false</protected><shortDescription
+    >Bank statement confirmed</shortDescription><value
+    >Reconciliation confirmed.</value></labels><labels><fullName
+    >AXF_BankStatement_newEntry</fullName><language>en_US</language><protected
+    >false</protected><shortDescription
+    >Bank statement new Entry</shortDescription><value
+    >New manual expense or income</value></labels><labels><fullName
+    >AXF_BankStatement_noLines</fullName><language>en_US</language><protected
+    >false</protected><shortDescription
+    >Bank statement no Lines</shortDescription><value
+    >No line in this period.</value></labels><labels><fullName
+    >AXF_BankStatement_truncated</fullName><language>en_US</language><protected
+    >false</protected><shortDescription
+    >Bank statement truncated</shortDescription><value
+    >The list was limited; narrow the period or the filters.</value></labels><labels
+  ><fullName>AXF_BankStatement_error</fullName><language
+    >en_US</language><protected>false</protected><shortDescription
+    >Bank statement error</shortDescription><value
+    >The operation could not be completed.</value></labels><labels><fullName
+    >AXF_BankStatement_codeNOT_ACCESSIBLE</fullName><language
+    >en_US</language><protected>false</protected><shortDescription
+    >Bank statement code N O T_ A C C E S S I B L E</shortDescription><value
+    >This record is not available in your authorized context.</value></labels><labels
+  ><fullName>AXF_BankStatement_codeUNAVAILABLE</fullName><language
+    >en_US</language><protected>false</protected><shortDescription
+    >Bank statement code U N A V A I L A B L E</shortDescription><value
+    >You are not authorized for this action.</value></labels><labels><fullName
+    >AXF_BankStatement_codeINVALID_INPUT</fullName><language
+    >en_US</language><protected>false</protected><shortDescription
+    >Bank statement code I N V A L I D_ I N P U T</shortDescription><value
+    >Review the entered values.</value></labels><labels><fullName
+    >AXF_BankStatement_codeCONFLICT</fullName><language
+    >en_US</language><protected>false</protected><shortDescription
+    >Bank statement code C O N F L I C T</shortDescription><value
+    >The data changed in another session; the line was reloaded.</value></labels><labels
+  ><fullName>AXF_BankStatement_codeALREADY_LINKED</fullName><language
+    >en_US</language><protected>false</protected><shortDescription
+    >Bank statement code A L R E A D Y_ L I N K E D</shortDescription><value
+    >These records are already reconciled together; the line was reloaded.</value></labels><labels
+  ><fullName>AXF_BankStatement_codeNOT_ALLOWED</fullName><language
+    >en_US</language><protected>false</protected><shortDescription
+    >Bank statement code N O T_ A L L O W E D</shortDescription><value
+    >This action is not allowed for this account.</value></labels><labels
+  ><fullName>AXF_BankStatement_codeOUT_OF_WINDOW</fullName><language
+    >en_US</language><protected>false</protected><shortDescription
+    >Bank statement code O U T_ O F_ W I N D O W</shortDescription><value
+    >The suggestion is outside the allowed window.</value></labels><labels
+  ><fullName>AXF_BankStatement_codeEXHAUSTED</fullName><language
+    >en_US</language><protected>false</protected><shortDescription
+    >Bank statement code E X H A U S T E D</shortDescription><value
+    >Nothing is left to reconcile on this record.</value></labels><labels
+  ><fullName>AXF_BankStatement_codeREVIEW_OPEN</fullName><language
+    >en_US</language><protected>false</protected><shortDescription
+    >Bank statement code R E V I E W_ O P E N</shortDescription><value
+    >This fact has an open review item.</value></labels><labels><fullName
+    >AXF_BankStatement_codeREFRESH_FAILED</fullName><language
+    >en_US</language><protected>false</protected><shortDescription
+    >Bank statement code R E F R E S H_ F A I L E D</shortDescription><value
+    >The Pluggy refresh failed. Try again later.</value></labels><labels
+  ><fullName>AXF_BankStatement_codeREFRESH_BLOCKED</fullName><language
+    >en_US</language><protected>false</protected><shortDescription
+    >Bank statement code R E F R E S H_ B L O C K E D</shortDescription><value
+    >Collection is blocked for this connection.</value></labels><labels
+  ><fullName>AXF_BankStatement_filterPeriodIncomplete</fullName><language
+    >en_US</language><protected>false</protected><shortDescription
+    >Bank statement filterPeriodIncomplete</shortDescription><value
+    >Fill in both dates of the period.</value></labels><labels><fullName
+    >AXF_BankStatement_filterPeriodOrder</fullName><language
+    >en_US</language><protected>false</protected><shortDescription
+    >Bank statement filterPeriodOrder</shortDescription><value
+    >The start date must be on or before the end date.</value></labels><labels
+  ><fullName>AXF_BankStatement_filterPeriodTooLong</fullName><language
+    >en_US</language><protected>false</protected><shortDescription
+    >Bank statement filterPeriodTooLong</shortDescription><value
+    >The period must be shorter than 366 days.</value></labels><labels><fullName
+    >AXF_BankStatement_filterAmountOrder</fullName><language
+    >en_US</language><protected>false</protected><shortDescription
+    >Bank statement filterAmountOrder</shortDescription><value
+    >The minimum amount must not exceed the maximum.</value></labels></CustomLabels>
