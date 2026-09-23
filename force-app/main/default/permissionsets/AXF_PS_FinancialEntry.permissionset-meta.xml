@@ -5,6 +5,18 @@
         <enabled>true</enabled>
     </classAccesses>
     <classAccesses>
+        <apexClass>ALT_CLS_ManualEntryService</apexClass>
+        <enabled>true</enabled>
+    </classAccesses>
+    <classAccesses>
+        <apexClass>ALT_CLS_MatchingWindow</apexClass>
+        <enabled>true</enabled>
+    </classAccesses>
+    <classAccesses>
+        <apexClass>AXF_CLS_CTRL_ManualEntries</apexClass>
+        <enabled>true</enabled>
+    </classAccesses>
+    <classAccesses>
         <apexClass>ALT_CLS_BankStatementService</apexClass>
         <enabled>true</enabled>
     </classAccesses>
@@ -38,6 +50,36 @@
     </classAccesses>
     <description
   >Permite a qualquer usuario do Axon criar um Lancamento financeiro pelo wizard guiado (sem Delete). Componente dos PSGs Gestor/Participante. AXF-19.</description>
+    <fieldPermissions>
+        <editable>false</editable>
+        <field>AXF_OBJ_CreditCard__c.AXF_CC_LKP_Account__c</field>
+        <readable>true</readable>
+    </fieldPermissions>
+    <fieldPermissions>
+        <editable>false</editable>
+        <field>AXF_OBJ_CreditCard__c.AXF_CC_LKP_Connection__c</field>
+        <readable>true</readable>
+    </fieldPermissions>
+    <fieldPermissions>
+        <editable>false</editable>
+        <field>AXF_OBJ_CreditCard__c.AXF_CC_TXT_InstitutionName__c</field>
+        <readable>true</readable>
+    </fieldPermissions>
+    <fieldPermissions>
+        <editable>false</editable>
+        <field>AXF_OBJ_CreditCard__c.AXF_CC_TXT_LastFourMasked__c</field>
+        <readable>true</readable>
+    </fieldPermissions>
+    <fieldPermissions>
+        <editable>false</editable>
+        <field>AXF_OBJ_FinancialTransaction__c.AXF_FTX_LKP_Contract__c</field>
+        <readable>true</readable>
+    </fieldPermissions>
+    <fieldPermissions>
+        <editable>false</editable>
+        <field>AXF_OBJ_FinancialTransaction__c.AXF_FTX_PKL_PlanKind__c</field>
+        <readable>true</readable>
+    </fieldPermissions>
     <fieldPermissions>
         <editable>false</editable>
         <field>AXF_OBJ_BankAccountTransaction__c.AXF_BAT_PKL_Status__c</field>
@@ -473,6 +515,10 @@
     </objectPermissions>
     <tabSettings>
         <tab>AXF_CT_BankStatement</tab>
+        <visibility>Visible</visibility>
+    </tabSettings>
+    <tabSettings>
+        <tab>AXF_CT_ManualEntries</tab>
         <visibility>Visible</visibility>
     </tabSettings>
     <tabSettings>

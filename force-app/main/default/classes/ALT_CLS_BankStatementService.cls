@@ -8,7 +8,7 @@
  * Reconciliation state is never written: it is always derived from the canonical allocations.
  */
 public with sharing class ALT_CLS_BankStatementService {
-  public static final String MATCHING_POLICY = 'AXF-MATCHING@1.1.0';
+  public static final String MATCHING_POLICY = ALT_CLS_MatchingWindow.POLICY;
   public static final String CP_CONFIGURE = 'AXF_CanConfigure';
   public static final String TYPE_WALLET = 'WALLET';
   public static final String LINE_FACT = 'FACT';
@@ -18,8 +18,8 @@ public with sharing class ALT_CLS_BankStatementService {
   public static final String STATUS_UNRECONCILED = 'UNRECONCILED';
   public static final String STATUS_UNVERIFIED = 'UNVERIFIED';
   /** Policy 1.1.0 window: |Δamount| ≤ 5% of the source amount, |Δdate| ≤ 7 calendar days. */
-  public static final Decimal AMOUNT_TOLERANCE = 0.05;
-  public static final Integer DAY_WINDOW = 7;
+  public static final Decimal AMOUNT_TOLERANCE = ALT_CLS_MatchingWindow.AMOUNT_TOLERANCE;
+  public static final Integer DAY_WINDOW = ALT_CLS_MatchingWindow.DAY_WINDOW;
   public static final Integer MAX_ACCOUNTS = 200;
   public static final Integer MAX_FACTS = 500;
   public static final Integer MAX_ENTRIES = 200;
@@ -722,23 +722,24 @@ public with sharing class ALT_CLS_BankStatementService {
     List<SuggestionView> items = query.lineKind == LINE_FACT
       ? factSuggestions(account, query.recordId, page)
       : entrySuggestions(account, query.recordId, page);
-    List<SuggestionKey> keys = new List<SuggestionKey>();
-    Map<String, Integer> signatures = new Map<String, Integer>();
+    List<ALT_CLS_MatchingWindow.Ranked> ranked = new List<ALT_CLS_MatchingWindow.Ranked>();
     for (SuggestionView item : items) {
-      SuggestionKey key = new SuggestionKey(item);
-      keys.add(key);
-      signatures.put(
-        key.signature(),
-        (signatures.containsKey(key.signature())
-          ? signatures.get(key.signature())
-          : 0) + 1
+      ranked.add(
+        new ALT_CLS_MatchingWindow.Ranked(
+          item.amountDelta,
+          item.dayDelta,
+          item.candidateId,
+          item
+        )
       );
     }
-    keys.sort();
-    for (SuggestionKey key : keys) {
-      // Ties stay explicit: the same distance on both axes never selects a winner.
-      key.item.tied = signatures.get(key.signature()) > 1;
-      page.items.add(key.item);
+    // Ties stay explicit: the same distance on both axes never selects a winner.
+    for (
+      ALT_CLS_MatchingWindow.Ranked entry : ALT_CLS_MatchingWindow.order(ranked)
+    ) {
+      SuggestionView item = (SuggestionView) entry.item;
+      item.tied = entry.tied;
+      page.items.add(item);
     }
     return page;
   }
@@ -769,17 +770,12 @@ public with sharing class ALT_CLS_BankStatementService {
     Decimal otherAmount,
     Date otherDate
   ) {
-    if (
-      baseAmount == null ||
-      baseAmount <= 0 ||
-      otherAmount == null ||
-      baseDate == null ||
-      otherDate == null
-    ) {
-      return false;
-    }
-    return (otherAmount - baseAmount).abs() <= baseAmount * AMOUNT_TOLERANCE &&
-      Math.abs(baseDate.daysBetween(otherDate)) <= DAY_WINDOW;
+    return ALT_CLS_MatchingWindow.inWindow(
+      baseAmount,
+      baseDate,
+      otherAmount,
+      otherDate
+    );
   }
 
   private List<SuggestionView> factSuggestions(
@@ -916,8 +912,8 @@ public with sharing class ALT_CLS_BankStatementService {
     Decimal base = entry.AXF_FTX_NUM_Magnitude__c;
     Date fromDate = onDate.addDays(-DAY_WINDOW);
     Date toDate = onDate.addDays(DAY_WINDOW);
-    Decimal minAmount = base - base * AMOUNT_TOLERANCE;
-    Decimal maxAmount = base + base * AMOUNT_TOLERANCE;
+    Decimal minAmount = ALT_CLS_MatchingWindow.minAmount(base);
+    Decimal maxAmount = ALT_CLS_MatchingWindow.maxAmount(base);
     String iso = entry.AXF_FTX_TXT_CurrencyIsoCode__c;
     String direction = entry.AXF_FTX_PKL_Direction__c;
     Id bankAccountId = account.Id;
@@ -992,27 +988,6 @@ public with sharing class ALT_CLS_BankStatementService {
       result.add(s);
     }
     return result;
-  }
-
-  private class SuggestionKey implements Comparable {
-    public SuggestionView item;
-    public SuggestionKey(SuggestionView item) {
-      this.item = item;
-    }
-    public String signature() {
-      return String.valueOf(item.amountDelta) + '|' + item.dayDelta;
-    }
-    public Integer compareTo(Object other) {
-      SuggestionView b = ((SuggestionKey) other).item;
-      if (item.amountDelta != b.amountDelta) {
-        return item.amountDelta < b.amountDelta ? -1 : 1;
-      }
-      if (item.dayDelta != b.dayDelta) {
-        return item.dayDelta < b.dayDelta ? -1 : 1;
-      }
-      return String.valueOf(item.candidateId)
-        .compareTo(String.valueOf(b.candidateId));
-    }
   }
 
   // ----------------------------------------------------------------- confirm

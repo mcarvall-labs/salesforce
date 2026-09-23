@@ -55,6 +55,12 @@ public with sharing class AXF_CLS_FinancialEntryService {
     public String label;
     @AuraEnabled
     public String kind; // BANK_ACCOUNT | CREDIT_CARD
+    /** AXF-153: a wallet (cash, `Type='WALLET'`) is its own origin, never a current account. */
+    @AuraEnabled
+    public Boolean wallet = false;
+    /** AXF-153: the source is fed by a Pluggy connection, so its facts can be reconciled. */
+    @AuraEnabled
+    public Boolean connected = false;
   }
 
   private static final Set<String> VALID_DIRECTIONS = new Set<String>{
@@ -82,7 +88,8 @@ public with sharing class AXF_CLS_FinancialEntryService {
         AXF_BA_TXT_InstitutionName__c,
         AXF_BA_LKP_BankInstitution__r.Name,
         AXF_BA_TXT_NumberMasked__c,
-        AXF_BA_TXT_Type__c
+        AXF_BA_TXT_Type__c,
+        AXF_BA_LKP_Connection__c
       FROM AXF_OBJ_BankAccount__c
       WHERE
         AXF_BA_LKP_Account__c = :accountId
@@ -95,6 +102,8 @@ public with sharing class AXF_CLS_FinancialEntryService {
       o.kind = 'BANK_ACCOUNT';
       // AXF-151: a wallet has no institution; it is named as such, never "null".
       Boolean wallet = 'WALLET'.equalsIgnoreCase(ba.AXF_BA_TXT_Type__c);
+      o.wallet = wallet;
+      o.connected = !wallet && ba.AXF_BA_LKP_Connection__c != null;
       o.label = String.join(
           new List<String>{
             wallet
@@ -116,7 +125,8 @@ public with sharing class AXF_CLS_FinancialEntryService {
         Id,
         AXF_CC_TXT_InstitutionName__c,
         AXF_CC_LKP_BankInstitution__r.Name,
-        AXF_CC_TXT_LastFourMasked__c
+        AXF_CC_TXT_LastFourMasked__c,
+        AXF_CC_LKP_Connection__c
       FROM AXF_OBJ_CreditCard__c
       WHERE
         AXF_CC_LKP_Account__c = :accountId
@@ -127,6 +137,7 @@ public with sharing class AXF_CLS_FinancialEntryService {
       FundingSourceOption o = new FundingSourceOption();
       o.creditCardId = cc.Id;
       o.kind = 'CREDIT_CARD';
+      o.connected = cc.AXF_CC_LKP_Connection__c != null;
       o.label = String.join(
         new List<String>{
           cc.AXF_CC_LKP_BankInstitution__r == null

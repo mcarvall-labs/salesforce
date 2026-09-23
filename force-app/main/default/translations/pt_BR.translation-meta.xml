@@ -2189,6 +2189,309 @@
   ><label>O período deve ter menos de 366 dias.</label><name
     >AXF_BankStatement_filterPeriodTooLong</name></customLabels><customLabels
   ><label>O valor mínimo não pode ser maior que o máximo.</label><name
-    >AXF_BankStatement_filterAmountOrder</name></customLabels><customTabs><label
-    >Conta Corrente</label><name
-    >AXF_CT_BankStatement</name></customTabs></Translations>
+    >AXF_BankStatement_filterAmountOrder</name></customLabels>    <customLabels>
+        <label>Tipo de lançamento</label>
+        <name>AXF_ManualEntry_typeLabel</name>
+    </customLabels>
+    <customLabels>
+        <label>À vista</label>
+        <name>AXF_ManualEntry_typeSingle</name>
+    </customLabels>
+    <customLabels>
+        <label>Parcelada</label>
+        <name>AXF_ManualEntry_typeInstallment</name>
+    </customLabels>
+    <customLabels>
+        <label>Recorrente</label>
+        <name>AXF_ManualEntry_typeRecurring</name>
+    </customLabels>
+    <customLabels>
+        <label>Consórcio</label>
+        <name>AXF_ManualEntry_typeConsortium</name>
+    </customLabels>
+    <customLabels>
+        <label
+    >Indisponível: lançamentos de consórcio dependem da política de amortização (AXF-97).</label>
+        <name>AXF_ManualEntry_consortiumUnavailable</name>
+    </customLabels>
+    <customLabels>
+        <label>Já realizada (lançar como realizada)</label>
+        <name>AXF_ManualEntry_realizedLabel</name>
+    </customLabels>
+    <customLabels>
+        <label
+    >Em uma origem conectada à Pluggy, você escolherá a transação Pluggy correspondente antes de salvar.</label>
+        <name>AXF_ManualEntry_realizedHelp</name>
+    </customLabels>
+    <customLabels>
+        <label>Conta corrente</label>
+        <name>AXF_ManualEntry_sourceCurrentAccount</name>
+    </customLabels>
+    <customLabels>
+        <label>Cartão de crédito</label>
+        <name>AXF_ManualEntry_sourceCard</name>
+    </customLabels>
+    <customLabels>
+        <label>Carteira (dinheiro)</label>
+        <name>AXF_ManualEntry_sourceWallet</name>
+    </customLabels>
+    <customLabels>
+        <label>Selecione a conta corrente</label>
+        <name>AXF_ManualEntry_accountOptionLabel</name>
+    </customLabels>
+    <customLabels>
+        <label>Selecione o cartão de crédito</label>
+        <name>AXF_ManualEntry_cardOptionLabel</name>
+    </customLabels>
+    <customLabels>
+        <label>Selecione a carteira</label>
+        <name>AXF_ManualEntry_walletOptionLabel</name>
+    </customLabels>
+    <customLabels>
+        <label
+    >Nenhuma origem deste tipo está disponível para esta pessoa ou empresa.</label>
+        <name>AXF_ManualEntry_noOriginOfKind</name>
+    </customLabels>
+    <customLabels>
+        <label
+    >Selecione a origem do lançamento: conta corrente, cartão de crédito ou carteira.</label>
+        <name>AXF_ManualEntry_originRequired</name>
+    </customLabels>
+    <customLabels>
+        <label>Conectada à Pluggy</label>
+        <name>AXF_ManualEntry_connectedHint</name>
+    </customLabels>
+    <customLabels>
+        <label
+    >Lançamentos parcelados e recorrentes são planejados no planejador de cronograma, que abre com estes dados preenchidos.</label>
+        <name>AXF_ManualEntry_scheduleRedirect</name>
+    </customLabels>
+    <customLabels>
+        <label>Continuar no planejador de cronograma</label>
+        <name>AXF_ManualEntry_continueSchedule</name>
+    </customLabels>
+    <customLabels>
+        <label>Tipo</label>
+        <name>AXF_ManualEntry_reviewType</name>
+    </customLabels>
+    <customLabels>
+        <label>Situação</label>
+        <name>AXF_ManualEntry_reviewSituation</name>
+    </customLabels>
+    <customLabels>
+        <label>Prevista</label>
+        <name>AXF_ManualEntry_situationPlanned</name>
+    </customLabels>
+    <customLabels>
+        <label>Realizada</label>
+        <name>AXF_ManualEntry_situationRealized</name>
+    </customLabels>
+    <customLabels>
+        <label>Transação Pluggy correspondente</label>
+        <name>AXF_ManualEntry_factPanelTitle</name>
+    </customLabels>
+    <customLabels>
+        <label>Conciliar com uma transação Pluggy</label>
+        <name>AXF_ManualEntry_reconcileNowTitle</name>
+    </customLabels>
+    <customLabels>
+        <label
+    >Escolha a transação Pluggy correspondente a este lançamento para salvar.</label>
+        <name>AXF_ManualEntry_factRequired</name>
+    </customLabels>
+    <customLabels>
+        <label
+    >Você não tem permissão para conciliar transações Pluggy; por isso este lançamento não pode ser registrado como realizado nesta origem.</label>
+        <name>AXF_ManualEntry_noReconcilePermission</name>
+    </customLabels>
+    <customLabels>
+        <label>Sugestões (±5% do valor, ±7 dias)</label>
+        <name>AXF_ManualEntry_suggestionsTitle</name>
+    </customLabels>
+    <customLabels>
+        <label>Nenhuma transação Pluggy dentro da janela de sugestão.</label>
+        <name>AXF_ManualEntry_noSuggestions</name>
+    </customLabels>
+    <customLabels>
+        <label>Empate</label>
+        <name>AXF_ManualEntry_tied</name>
+    </customLabels>
+    <customLabels>
+        <label>Buscar transações Pluggy</label>
+        <name>AXF_ManualEntry_searchTitle</name>
+    </customLabels>
+    <customLabels>
+        <label
+    >Sem datas, a busca cobre o mês do lançamento; o período pode ter até 366 dias.</label>
+        <name>AXF_ManualEntry_searchHelp</name>
+    </customLabels>
+    <customLabels>
+        <label>De</label>
+        <name>AXF_ManualEntry_searchFrom</name>
+    </customLabels>
+    <customLabels>
+        <label>Até</label>
+        <name>AXF_ManualEntry_searchTo</name>
+    </customLabels>
+    <customLabels>
+        <label>Descrição contém</label>
+        <name>AXF_ManualEntry_searchTerm</name>
+    </customLabels>
+    <customLabels>
+        <label>Buscar</label>
+        <name>AXF_ManualEntry_searchAction</name>
+    </customLabels>
+    <customLabels>
+        <label>Nenhuma transação Pluggy encontrada neste período.</label>
+        <name>AXF_ManualEntry_noResults</name>
+    </customLabels>
+    <customLabels>
+        <label>Só parte dos resultados é exibida; reduza o período.</label>
+        <name>AXF_ManualEntry_truncated</name>
+    </customLabels>
+    <customLabels>
+        <label>{0} — {1} em {2}</label>
+        <name>AXF_ManualEntry_factText</name>
+    </customLabels>
+    <customLabels>
+        <label>Selecionar</label>
+        <name>AXF_ManualEntry_select</name>
+    </customLabels>
+    <customLabels>
+        <label>Selecionar {0}</label>
+        <name>AXF_ManualEntry_selectFor</name>
+    </customLabels>
+    <customLabels>
+        <label>Selecionada</label>
+        <name>AXF_ManualEntry_selected</name>
+    </customLabels>
+    <customLabels>
+        <label>Conciliar</label>
+        <name>AXF_ManualEntry_reconcileAction</name>
+    </customLabels>
+    <customLabels>
+        <label>Conciliar com {0}</label>
+        <name>AXF_ManualEntry_reconcileFor</name>
+    </customLabels>
+    <customLabels>
+        <label>Lançamento conciliado com a transação Pluggy.</label>
+        <name>AXF_ManualEntry_reconciled</name>
+    </customLabels>
+    <customLabels>
+        <label>Lançamento registrado como realizado.</label>
+        <name>AXF_ManualEntry_realizedDone</name>
+    </customLabels>
+    <customLabels>
+        <label
+    >Lançamento registrado como realizado e conciliado com a transação Pluggy.</label>
+        <name>AXF_ManualEntry_realizedLinkedDone</name>
+    </customLabels>
+    <customLabels>
+        <label
+    >Escolha uma data inicial igual ou anterior à final, em um período de até 366 dias.</label>
+        <name>AXF_ManualEntry_periodInvalid</name>
+    </customLabels>
+    <customLabels>
+        <label
+    >Os dados mudaram em outra sessão; revise e tente novamente.</label>
+        <name>AXF_ManualEntry_codeCONFLICT</name>
+    </customLabels>
+    <customLabels>
+        <label>Este lançamento já está conciliado com esta transação.</label>
+        <name>AXF_ManualEntry_codeALREADY_LINKED</name>
+    </customLabels>
+    <customLabels>
+        <label
+    >Escolha a transação Pluggy correspondente a este lançamento para salvar.</label>
+        <name>AXF_ManualEntry_codeFACT_REQUIRED</name>
+    </customLabels>
+    <customLabels>
+        <label
+    >A transação escolhida tem natureza ou moeda diferente do lançamento.</label>
+        <name>AXF_ManualEntry_codeFACT_MISMATCH</name>
+    </customLabels>
+    <customLabels>
+        <label
+    >O valor excede o que ainda está disponível na transação escolhida.</label>
+        <name>AXF_ManualEntry_codeUNAVAILABLE_AMOUNT</name>
+    </customLabels>
+    <customLabels>
+        <label>Despesas e receitas</label>
+        <name>AXF_ManualEntries_title</name>
+    </customLabels>
+    <customLabels>
+        <label
+    >Despesas e receitas lançadas manualmente, com o status de conciliação.</label>
+        <name>AXF_ManualEntries_intro</name>
+    </customLabels>
+    <customLabels>
+        <label>Novo lançamento</label>
+        <name>AXF_ManualEntries_newEntry</name>
+    </customLabels>
+    <customLabels>
+        <label>Lançamentos manuais — {0}</label>
+        <name>AXF_ManualEntries_caption</name>
+    </customLabels>
+    <customLabels>
+        <label>Nenhum lançamento manual corresponde a estes filtros.</label>
+        <name>AXF_ManualEntries_noEntries</name>
+    </customLabels>
+    <customLabels>
+        <label>Conciliação</label>
+        <name>AXF_ManualEntries_filterStatus</name>
+    </customLabels>
+    <customLabels>
+        <label>Natureza</label>
+        <name>AXF_ManualEntries_filterNature</name>
+    </customLabels>
+    <customLabels>
+        <label>Origem</label>
+        <name>AXF_ManualEntries_filterOrigin</name>
+    </customLabels>
+    <customLabels>
+        <label>Todos</label>
+        <name>AXF_ManualEntries_all</name>
+    </customLabels>
+    <customLabels>
+        <label>Natureza</label>
+        <name>AXF_ManualEntries_colNature</name>
+    </customLabels>
+    <customLabels>
+        <label>Situação</label>
+        <name>AXF_ManualEntries_colSituation</name>
+    </customLabels>
+    <customLabels>
+        <label>Despesa</label>
+        <name>AXF_ManualEntries_natureDEBIT</name>
+    </customLabels>
+    <customLabels>
+        <label>Receita</label>
+        <name>AXF_ManualEntries_natureCREDIT</name>
+    </customLabels>
+    <customLabels>
+        <label>Prevista</label>
+        <name>AXF_ManualEntries_kindPLANNED</name>
+    </customLabels>
+    <customLabels>
+        <label>Realizada</label>
+        <name>AXF_ManualEntries_kindACTUAL_ONLY</name>
+    </customLabels>
+    <customLabels>
+        <label>Sem origem</label>
+        <name>AXF_ManualEntries_noOrigin</name>
+    </customLabels>
+    <customLabels>
+        <label>Lançamento manual</label>
+        <name>AXF_ManualEntries_noDescription</name>
+    </customLabels>
+    <customLabels>
+        <label
+    >Parte do lançamento foi conciliada; escolha outra transação Pluggy para o valor restante.</label>
+        <name>AXF_ManualEntry_partiallyReconciled</name>
+    </customLabels>
+<customTabs><label>Conta Corrente</label><name
+    >AXF_CT_BankStatement</name></customTabs>    <customTabs>
+        <label>Despesas e receitas</label>
+        <name>AXF_CT_ManualEntries</name>
+    </customTabs>
+</Translations>
