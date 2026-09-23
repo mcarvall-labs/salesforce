@@ -333,8 +333,7 @@ public with sharing class ALT_CLS_ManualEntryService {
           Id,
           AXF_BA_LKP_Account__c,
           AXF_BA_PKL_AvailabilityState__c,
-          AXF_BA_TXT_Type__c,
-          AXF_BA_LKP_Connection__c
+          AXF_BA_TXT_Type__c
         FROM AXF_OBJ_BankAccount__c
         WHERE Id = :bankAccountId
         WITH USER_MODE
@@ -353,8 +352,7 @@ public with sharing class ALT_CLS_ManualEntryService {
       result.wallet = ALT_CLS_BankStatementService.TYPE_WALLET.equalsIgnoreCase(
         rows[0].AXF_BA_TXT_Type__c
       );
-      result.connected =
-        !result.wallet && rows[0].AXF_BA_LKP_Connection__c != null;
+      result.connected = !result.wallet && connected(rows[0].Id);
       return result;
     }
     check(
@@ -362,11 +360,7 @@ public with sharing class ALT_CLS_ManualEntryService {
       'INVALID_INPUT'
     );
     List<AXF_OBJ_CreditCard__c> rows = [
-      SELECT
-        Id,
-        AXF_CC_LKP_Account__c,
-        AXF_CC_PKL_AvailabilityState__c,
-        AXF_CC_LKP_Connection__c
+      SELECT Id, AXF_CC_LKP_Account__c, AXF_CC_PKL_AvailabilityState__c
       FROM AXF_OBJ_CreditCard__c
       WHERE Id = :creditCardId
       WITH USER_MODE
@@ -382,8 +376,34 @@ public with sharing class ALT_CLS_ManualEntryService {
     result.fundingId = rows[0].Id;
     result.holderId = holderId;
     result.sourceKind = ALT_CLS_SourceLinkService.KIND_CARD;
-    result.connected = rows[0].AXF_CC_LKP_Connection__c != null;
+    result.connected = connected(rows[0].Id);
     return result;
+  }
+
+  /**
+   * Whether a source already read in user mode for an authorized holder has a Pluggy connection.
+   * Only this flag leaves the read, never the connection itself: a reader without access to the
+   * connection object must still post against the source.
+   */
+  private static Boolean connected(Id fundingId) {
+    if (fundingId.getSObjectType() == AXF_OBJ_BankAccount__c.SObjectType) {
+      return ![
+          SELECT Id
+          FROM AXF_OBJ_BankAccount__c
+          WHERE Id = :fundingId AND AXF_BA_LKP_Connection__c != NULL
+          WITH SYSTEM_MODE
+          LIMIT 1
+        ]
+        .isEmpty();
+    }
+    return ![
+        SELECT Id
+        FROM AXF_OBJ_CreditCard__c
+        WHERE Id = :fundingId AND AXF_CC_LKP_Connection__c != NULL
+        WITH SYSTEM_MODE
+        LIMIT 1
+      ]
+      .isEmpty();
   }
 
   private Base base(Draft draft) {
