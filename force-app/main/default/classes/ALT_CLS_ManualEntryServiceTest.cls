@@ -45,13 +45,12 @@ private class ALT_CLS_ManualEntryServiceTest {
           'AXF_PS_GestorFinanceiro',
           'AXF_PS_FinancialEntry',
           'AXF_PS_Realization',
-          'AXF_PS_Participante',
-          'AXF_PS_PluggyIntegration'
+          'AXF_PS_Participante'
         )
     ]) {
       permissionSets.put(permission.Name, permission.Id);
     }
-    Assert.areEqual(5, permissionSets.size(), 'permission sets must exist');
+    Assert.areEqual(4, permissionSets.size(), 'permission sets must exist');
     List<PermissionSetAssignment> assignments = new List<PermissionSetAssignment>();
     for (Integer i = 0; i < 2; i++) {
       for (
@@ -73,10 +72,7 @@ private class ALT_CLS_ManualEntryServiceTest {
       String name : new List<String>{
         'AXF_PS_Participante',
         'AXF_PS_FinancialEntry',
-        'AXF_PS_Realization',
-        // Check-only deploys do not apply this branch's read FLS to test users; the integration
-        // set mirrors it and grants no capability.
-        'AXF_PS_PluggyIntegration'
+        'AXF_PS_Realization'
       }
     ) {
       assignments.add(
@@ -86,6 +82,15 @@ private class ALT_CLS_ManualEntryServiceTest {
         )
       );
     }
+    // Check-only deploys do not apply the branch's permission-set changes to test users: the
+    // read FLS AXF-151/AXF-153 add to AXF_PS_FinancialEntry is mirrored by a test set with no
+    // access to AXF_OBJ_PluggyConnection__c, exactly as the participant bundle.
+    assignments.add(
+      new PermissionSetAssignment(
+        AssigneeId = users[2].Id,
+        PermissionSetId = financialEntryReadMirror()
+      )
+    );
     insert assignments;
     System.runAs(new User(Id = UserInfo.getUserId())) {
       insert new AXF_ReportCurrencyPref__c(
@@ -93,6 +98,64 @@ private class ALT_CLS_ManualEntryServiceTest {
         AXF_RCP_TXT_IsoCode__c = 'BRL'
       );
     }
+  }
+
+  /** Read FLS the branch adds to AXF_PS_FinancialEntry; no Pluggy connection object access. */
+  private static Id financialEntryReadMirror() {
+    PermissionSet mirror = new PermissionSet(
+      Name = 'AXF153_FinancialEntryReadMirror',
+      Label = 'AXF153 FinancialEntry read mirror'
+    );
+    insert mirror;
+    List<ObjectPermissions> objects = new List<ObjectPermissions>();
+    for (
+      String name : new List<String>{
+        'AXF_OBJ_BankAccount__c',
+        'AXF_OBJ_BankAccountTransaction__c',
+        'AXF_OBJ_CreditCard__c',
+        'AXF_OBJ_FinancialTransaction__c'
+      }
+    ) {
+      objects.add(
+        new ObjectPermissions(
+          ParentId = mirror.Id,
+          SobjectType = name,
+          PermissionsRead = true
+        )
+      );
+    }
+    insert objects;
+    List<FieldPermissions> fields = new List<FieldPermissions>();
+    for (
+      String field : new List<String>{
+        'AXF_OBJ_BankAccountTransaction__c.AXF_BAT_PKL_Status__c',
+        'AXF_OBJ_BankAccount__c.AXF_BA_CUR_CurrentBalance__c',
+        'AXF_OBJ_BankAccount__c.AXF_BA_LKP_Account__c',
+        'AXF_OBJ_BankAccount__c.AXF_BA_LKP_Connection__c',
+        'AXF_OBJ_BankAccount__c.AXF_BA_NUM_Version__c',
+        'AXF_OBJ_BankAccount__c.AXF_BA_TXT_CurrencyIsoCode__c',
+        'AXF_OBJ_BankAccount__c.AXF_BA_TXT_NumberMasked__c',
+        'AXF_OBJ_BankAccount__c.AXF_BA_TXT_Type__c',
+        'AXF_OBJ_CreditCard__c.AXF_CC_LKP_Account__c',
+        'AXF_OBJ_CreditCard__c.AXF_CC_LKP_Connection__c',
+        'AXF_OBJ_CreditCard__c.AXF_CC_TXT_InstitutionName__c',
+        'AXF_OBJ_CreditCard__c.AXF_CC_TXT_LastFourMasked__c',
+        'AXF_OBJ_FinancialTransaction__c.AXF_FTX_LKP_Contract__c',
+        'AXF_OBJ_FinancialTransaction__c.AXF_FTX_PKL_PlanKind__c'
+      }
+    ) {
+      fields.add(
+        new FieldPermissions(
+          ParentId = mirror.Id,
+          SobjectType = field.substringBefore('.'),
+          Field = field,
+          PermissionsRead = true,
+          PermissionsEdit = false
+        )
+      );
+    }
+    insert fields;
+    return mirror.Id;
   }
 
   // ------------------------------------------------------------ fixture
@@ -1056,6 +1119,11 @@ private class ALT_CLS_ManualEntryServiceTest {
       Account owner = holder('Holder 153 participant');
       AXF_OBJ_BankAccount__c manualBank = bank(owner.Id, 'CHECKING', null);
       bankId = manualBank.Id;
+      // Without access to the connection object the connected flag is still derived.
+      AXF_OBJ_CreditCard__c linkedCard = card(
+        owner.Id,
+        connection('ITEM153N').Id
+      );
       target = planned(owner.Id, manualBank.Id, null, 20, day(7), 'part');
       // An entry posted as realized carries an APPLICATION allocation to its manual fact.
       Id realized = new ALT_CLS_ManualEntryService()
@@ -1071,7 +1139,14 @@ private class ALT_CLS_ManualEntryServiceTest {
       ALT_CLS_ManualEntryService.ReportView report = new ALT_CLS_ManualEntryService()
         .listEntries(thisMonth());
       String denied = failure(new SuggestCall(saved(target)));
+      List<AXF_CLS_FinancialEntryService.FundingSourceOption> sources = AXF_CLS_FinancialEntryService.getFundingSources(
+        owner.Id
+      );
       Test.stopTest();
+      Assert.areEqual(2, sources.size());
+      for (AXF_CLS_FinancialEntryService.FundingSourceOption o : sources) {
+        Assert.areEqual(o.creditCardId == linkedCard.Id, o.connected);
+      }
       Assert.isFalse(ALT_CLS_ManualEntryService.canReconcile());
       Assert.isNotNull(entryOf(report, target));
       Assert.areEqual(
