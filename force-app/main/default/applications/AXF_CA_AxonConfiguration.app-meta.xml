@@ -22,5 +22,8 @@
     <tabs>AXF_SourceDiscovery</tabs>
     <tabs>AXF_SourceHealth</tabs>
     <tabs>AXF_CT_ClosureRun</tabs>
+    <tabs>AXF_ReportCurrency</tabs>
+    <tabs>AXF_Holders</tabs>
+    <tabs>AXF_CT_ArchiveExplorer</tabs>
     <uiType>Lightning</uiType>
 </CustomApplication>

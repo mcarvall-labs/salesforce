@@ -288,23 +288,18 @@ private class ALT_CLS_ManualFinancialSourceTest {
       'INVALID',
       new ALT_CLS_ManualFinancialSource().save(blankInstitution).outcome
     );
-    Id legacyRecordTypeId = [
-      SELECT Id
-      FROM RecordType
-      WHERE SObjectType = 'Account' AND DeveloperName = 'AXF_Person_Legacy'
-      LIMIT 1
-    ]
-    .Id;
-    Account nonHolder = new Account(
-      Name = 'Legacy non-holder',
-      RecordTypeId = legacyRecordTypeId
-    );
+    // A holderId that does not resolve to an accessible AXF_Person/AXF_Business
+    // Account must be rejected the same way, without depending on any specific
+    // "invalid" record type (this org only has AXF_Person/AXF_Business on
+    // Account, and the default profile auto-assigns one of them on insert).
+    Account nonHolder = new Account(Name = 'Non-holder, deleted before use');
     insert nonHolder;
     ALT_CLS_ManualFinancialSource.SaveInput invalidRecordType = input(
       nonHolder,
       'BANK',
       '123e4567-e89b-42d3-a456-426614174008'
     );
+    delete nonHolder;
     System.assertEquals(
       'FORBIDDEN',
       new ALT_CLS_ManualFinancialSource().save(invalidRecordType).outcome
