@@ -45,13 +45,12 @@ private class ALT_CLS_BankStatementServiceTest {
           'AXF_PS_GestorFinanceiro',
           'AXF_PS_FinancialEntry',
           'AXF_PS_Realization',
-          'AXF_PS_Participante',
-          'AXF_PS_PluggyIntegration'
+          'AXF_PS_Participante'
         )
     ]) {
       permissionSets.put(permission.Name, permission.Id);
     }
-    Assert.areEqual(5, permissionSets.size(), 'permission sets must exist');
+    Assert.areEqual(4, permissionSets.size(), 'permission sets must exist');
     List<PermissionSetAssignment> assignments = new List<PermissionSetAssignment>();
     for (Integer i = 0; i < 2; i++) {
       for (
@@ -84,12 +83,12 @@ private class ALT_CLS_BankStatementServiceTest {
       );
     }
     // Check-only deploys do not apply the branch's permission-set changes to test users: the
-    // read FLS this branch adds to AXF_PS_FinancialEntry (bank account balance/type/connection/
-    // version, fact status) is mirrored here by the integration set, which grants no capability.
+    // read FLS this branch adds to AXF_PS_FinancialEntry is mirrored by a test set with no access
+    // to AXF_OBJ_PluggyConnection__c, exactly as the participant bundle (AXF_PSG_Participante).
     assignments.add(
       new PermissionSetAssignment(
         AssigneeId = users[2].Id,
-        PermissionSetId = permissionSets.get('AXF_PS_PluggyIntegration')
+        PermissionSetId = financialEntryReadMirror()
       )
     );
     insert assignments;
@@ -99,6 +98,56 @@ private class ALT_CLS_BankStatementServiceTest {
         AXF_RCP_TXT_IsoCode__c = 'BRL'
       );
     }
+  }
+
+  /** Read FLS this branch adds to AXF_PS_FinancialEntry; no Pluggy connection object access. */
+  private static Id financialEntryReadMirror() {
+    PermissionSet mirror = new PermissionSet(
+      Name = 'AXF151_FinancialEntryReadMirror',
+      Label = 'AXF151 FinancialEntry read mirror'
+    );
+    insert mirror;
+    List<ObjectPermissions> objects = new List<ObjectPermissions>();
+    for (
+      String name : new List<String>{
+        'AXF_OBJ_BankAccount__c',
+        'AXF_OBJ_BankAccountTransaction__c'
+      }
+    ) {
+      objects.add(
+        new ObjectPermissions(
+          ParentId = mirror.Id,
+          SobjectType = name,
+          PermissionsRead = true
+        )
+      );
+    }
+    insert objects;
+    List<FieldPermissions> fields = new List<FieldPermissions>();
+    for (
+      String field : new List<String>{
+        'AXF_OBJ_BankAccountTransaction__c.AXF_BAT_PKL_Status__c',
+        'AXF_OBJ_BankAccount__c.AXF_BA_CUR_CurrentBalance__c',
+        'AXF_OBJ_BankAccount__c.AXF_BA_LKP_Account__c',
+        'AXF_OBJ_BankAccount__c.AXF_BA_LKP_Connection__c',
+        'AXF_OBJ_BankAccount__c.AXF_BA_NUM_Version__c',
+        'AXF_OBJ_BankAccount__c.AXF_BA_TXT_CurrencyIsoCode__c',
+        'AXF_OBJ_BankAccount__c.AXF_BA_TXT_NumberMasked__c',
+        'AXF_OBJ_BankAccount__c.AXF_BA_TXT_Type__c'
+      }
+    ) {
+      fields.add(
+        new FieldPermissions(
+          ParentId = mirror.Id,
+          SobjectType = field.substringBefore('.'),
+          Field = field,
+          PermissionsRead = true,
+          PermissionsEdit = false
+        )
+      );
+    }
+    insert fields;
+    return mirror.Id;
   }
 
   // ------------------------------------------------------------ fixture
@@ -836,6 +885,12 @@ private class ALT_CLS_BankStatementServiceTest {
     System.runAs(byAlias(PARTICIPANT)) {
       Account owner = holder('Holder 151 participant');
       AXF_OBJ_BankAccount__c account = bank(owner.Id, 'CHECKING', null);
+      // Without access to the connection object the connected flag is still derived.
+      AXF_OBJ_BankAccount__c linked = bank(
+        owner.Id,
+        'CHECKING',
+        connection('ITEM151N').Id
+      );
       AXF_OBJ_BankAccountTransaction__c source = fact(
         account.Id,
         100,
@@ -865,8 +920,13 @@ private class ALT_CLS_BankStatementServiceTest {
       input.operationKey = 'axf151-participant';
       String confirmCode = failure(new ConfirmCall(input));
       Test.stopTest();
-      Assert.areEqual(1, accounts.size());
-      Assert.isFalse(accounts[0].canEditBalance, 'no configuration capability');
+      Assert.areEqual(2, accounts.size());
+      for (ALT_CLS_BankStatementService.AccountView v : accounts) {
+        Assert.areEqual(v.bankAccountId == linked.Id, v.hasConnection);
+        Assert.isFalse(v.canEditBalance, 'no configuration capability');
+        Assert.isFalse(v.canRefresh, 'no configuration capability');
+      }
+      Assert.isFalse(view.account.hasConnection);
       Assert.isFalse(view.canReconcile);
       Assert.areEqual(2, view.lines.size(), 'fact and entry are readable');
       for (ALT_CLS_BankStatementService.LineView line : view.lines) {

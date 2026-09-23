@@ -282,7 +282,7 @@ public with sharing class ALT_CLS_BankStatementService {
     if (holders.isEmpty()) {
       return result;
     }
-    for (AXF_OBJ_BankAccount__c row : [
+    List<AXF_OBJ_BankAccount__c> rows = [
       SELECT
         Id,
         AXF_BA_LKP_Account__c,
@@ -290,7 +290,6 @@ public with sharing class ALT_CLS_BankStatementService {
         AXF_BA_LKP_BankInstitution__r.Name,
         AXF_BA_TXT_NumberMasked__c,
         AXF_BA_TXT_Type__c,
-        AXF_BA_LKP_Connection__c,
         AXF_BA_CUR_CurrentBalance__c,
         AXF_BA_TXT_CurrencyIsoCode__c,
         AXF_BA_NUM_Version__c
@@ -301,7 +300,9 @@ public with sharing class ALT_CLS_BankStatementService {
       WITH USER_MODE
       ORDER BY AXF_BA_LKP_Account__c, AXF_BA_TXT_InstitutionName__c, Id
       LIMIT :MAX_ACCOUNTS
-    ]) {
+    ];
+    connections(new Map<Id, AXF_OBJ_BankAccount__c>(rows).keySet());
+    for (AXF_OBJ_BankAccount__c row : rows) {
       result.add(view(row));
     }
     return result;
@@ -320,7 +321,7 @@ public with sharing class ALT_CLS_BankStatementService {
           ? row.AXF_BA_TXT_InstitutionName__c
           : row.AXF_BA_LKP_BankInstitution__r.Name);
     v.numberMasked = row.AXF_BA_TXT_NumberMasked__c;
-    v.hasConnection = row.AXF_BA_LKP_Connection__c != null;
+    v.hasConnection = connectionOf(row.Id) != null;
     v.currentBalance = row.AXF_BA_CUR_CurrentBalance__c;
     v.currencyIso = row.AXF_BA_TXT_CurrencyIsoCode__c;
     v.version = row.AXF_BA_NUM_Version__c == null
@@ -330,6 +331,35 @@ public with sharing class ALT_CLS_BankStatementService {
     v.canRefresh = configure && v.hasConnection;
     v.canEditBalance = configure && !v.hasConnection;
     return v;
+  }
+
+  private Map<Id, Id> connectionCache = new Map<Id, Id>();
+  private Set<Id> connectionRead = new Set<Id>();
+
+  /**
+   * Pluggy connection of accounts already read in user mode through the authorized context. The
+   * lookup is read in system mode and never leaves this class as a record: a reader without access
+   * to the connection object must still see the account (only the connected flag is exposed).
+   */
+  private Map<Id, Id> connections(Set<Id> bankAccountIds) {
+    Set<Id> missing = new Set<Id>(bankAccountIds);
+    missing.removeAll(connectionRead);
+    if (!missing.isEmpty()) {
+      for (AXF_OBJ_BankAccount__c row : [
+        SELECT Id, AXF_BA_LKP_Connection__c
+        FROM AXF_OBJ_BankAccount__c
+        WHERE Id IN :missing AND AXF_BA_LKP_Connection__c != NULL
+        WITH SYSTEM_MODE
+      ]) {
+        connectionCache.put(row.Id, row.AXF_BA_LKP_Connection__c);
+      }
+      connectionRead.addAll(missing);
+    }
+    return connectionCache;
+  }
+
+  private Id connectionOf(Id bankAccountId) {
+    return connections(new Set<Id>{ bankAccountId }).get(bankAccountId);
   }
 
   /** One account of an authorized holder; anything else is indistinguishable from missing. */
@@ -347,7 +377,6 @@ public with sharing class ALT_CLS_BankStatementService {
         AXF_BA_LKP_BankInstitution__r.Name,
         AXF_BA_TXT_NumberMasked__c,
         AXF_BA_TXT_Type__c,
-        AXF_BA_LKP_Connection__c,
         AXF_BA_CUR_CurrentBalance__c,
         AXF_BA_TXT_CurrencyIsoCode__c,
         AXF_BA_NUM_Version__c,
@@ -1107,7 +1136,7 @@ public with sharing class ALT_CLS_BankStatementService {
       'INVALID_INPUT'
     );
     AXF_OBJ_BankAccount__c account = readAccount(input.bankAccountId);
-    check(account.AXF_BA_LKP_Connection__c == null, 'NOT_ALLOWED');
+    check(connectionOf(account.Id) == null, 'NOT_ALLOWED');
     List<AXF_OBJ_BankAccount__c> locked = [
       SELECT Id, AXF_BA_NUM_Version__c
       FROM AXF_OBJ_BankAccount__c
@@ -1134,11 +1163,12 @@ public with sharing class ALT_CLS_BankStatementService {
   public RefreshResult refresh(Id bankAccountId) {
     check(canConfigure(), 'UNAVAILABLE');
     AXF_OBJ_BankAccount__c account = readAccount(bankAccountId);
-    check(account.AXF_BA_LKP_Connection__c != null, 'NOT_ALLOWED');
+    Id connectionId = connectionOf(account.Id);
+    check(connectionId != null, 'NOT_ALLOWED');
     RefreshResult result = new RefreshResult();
     try {
       AXF_CLS_PluggyDiscoveryService.DiscoveryResult run = new AXF_CLS_PluggyDiscoveryService()
-        .startOrResume(account.AXF_BA_LKP_Connection__c);
+        .startOrResume(connectionId);
       result.state = run.state;
       result.complete = run.complete == true;
     } catch (AXF_CLS_PluggyDiscoveryException failure) {
