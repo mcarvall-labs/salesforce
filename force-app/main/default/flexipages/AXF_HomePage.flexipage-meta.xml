@@ -9,13 +9,38 @@
         </itemInstances>
         <itemInstances>
             <componentInstance>
-                <componentInstanceProperties>
-                    <name>richTextValue</name>
-                    <value
-          >&lt;p&gt;Bem-vindo ao Axon. As telas do dia a dia (fluxo de caixa, faturas) chegam nas próximas entregas.&lt;/p&gt;&lt;p&gt;Para configurar fontes, titulares, acessos e moeda, abra o aplicativo &lt;b&gt;AXON - Configuration&lt;/b&gt; pelo App Launcher.&lt;/p&gt;</value>
-                </componentInstanceProperties>
-                <componentName>flexipage:richText</componentName>
-                <identifier>axf_home_pointer</identifier>
+                <componentName>c:aXF_LWC_confidencePanel</componentName>
+                <identifier>axf_home_confidencePanel</identifier>
+            </componentInstance>
+        </itemInstances>
+        <itemInstances>
+            <componentInstance>
+                <componentName>c:aXF_LWC_consolidationPanel</componentName>
+                <identifier>axf_home_consolidationPanel</identifier>
+            </componentInstance>
+        </itemInstances>
+        <itemInstances>
+            <componentInstance>
+                <componentName>c:aXF_LWC_forecastComparison</componentName>
+                <identifier>axf_home_forecastComparison</identifier>
+            </componentInstance>
+        </itemInstances>
+        <itemInstances>
+            <componentInstance>
+                <componentName>c:aXF_LWC_reconciliationWorkbench</componentName>
+                <identifier>axf_home_reconciliationWorkbench</identifier>
+            </componentInstance>
+        </itemInstances>
+        <itemInstances>
+            <componentInstance>
+                <componentName>c:aXF_LWC_sourceLink</componentName>
+                <identifier>axf_home_sourceLink</identifier>
+            </componentInstance>
+        </itemInstances>
+        <itemInstances>
+            <componentInstance>
+                <componentName>c:aXF_LWC_reconciliationReversal</componentName>
+                <identifier>axf_home_reconciliationReversal</identifier>
             </componentInstance>
         </itemInstances>
         <itemInstances>
