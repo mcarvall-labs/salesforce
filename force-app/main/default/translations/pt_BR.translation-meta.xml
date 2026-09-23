@@ -2489,8 +2489,169 @@
     >Parte do lançamento foi conciliada; escolha outra transação Pluggy para o valor restante.</label>
         <name>AXF_ManualEntry_partiallyReconciled</name>
     </customLabels>
+    <customLabels>
+        <label>Cartões de crédito</label>
+        <name>AXF_CardStatement_title</name>
+    </customLabels>
+    <customLabels>
+        <label
+    >Limites, faturas e conciliação dos seus cartões de crédito.</label>
+        <name>AXF_CardStatement_intro</name>
+    </customLabels>
+    <customLabels>
+        <label>Você não tem acesso à tela de cartões de crédito.</label>
+        <name>AXF_CardStatement_noCapability</name>
+    </customLabels>
+    <customLabels>
+        <label>Cartões</label>
+        <name>AXF_CardStatement_cardsCaption</name>
+    </customLabels>
+    <customLabels>
+        <label
+    >Nenhum cartão de crédito disponível nos seus contextos autorizados.</label>
+        <name>AXF_CardStatement_noCards</name>
+    </customLabels>
+    <customLabels>
+        <label>Cartão</label>
+        <name>AXF_CardStatement_colCard</name>
+    </customLabels>
+    <customLabels>
+        <label>Limite total</label>
+        <name>AXF_CardStatement_colCreditLimit</name>
+    </customLabels>
+    <customLabels>
+        <label>Limite disponível</label>
+        <name>AXF_CardStatement_colAvailableLimit</name>
+    </customLabels>
+    <customLabels>
+        <label>Dia de fechamento</label>
+        <name>AXF_CardStatement_colClosingDay</name>
+    </customLabels>
+    <customLabels>
+        <label>Dia de vencimento</label>
+        <name>AXF_CardStatement_colDueDay</name>
+    </customLabels>
+    <customLabels>
+        <label>—</label>
+        <name>AXF_CardStatement_notAvailable</name>
+    </customLabels>
+    <customLabels>
+        <label>Ver fatura</label>
+        <name>AXF_CardStatement_viewInvoice</name>
+    </customLabels>
+    <customLabels>
+        <label>Ver a fatura de {0}</label>
+        <name>AXF_CardStatement_viewInvoiceFor</name>
+    </customLabels>
+    <customLabels>
+        <label>Definir fechamento</label>
+        <name>AXF_CardStatement_defineClosing</name>
+    </customLabels>
+    <customLabels>
+        <label>Definir o fechamento de {0}</label>
+        <name>AXF_CardStatement_defineClosingFor</name>
+    </customLabels>
+    <customLabels>
+        <label>Dia de fechamento (1–31)</label>
+        <name>AXF_CardStatement_closingDayInput</name>
+    </customLabels>
+    <customLabels>
+        <label>Dia de vencimento (1–31)</label>
+        <name>AXF_CardStatement_dueDayInput</name>
+    </customLabels>
+    <customLabels>
+        <label>Informe um dia inteiro entre 1 e 31.</label>
+        <name>AXF_CardStatement_dayRange</name>
+    </customLabels>
+    <customLabels>
+        <label
+    >Fechamento salvo: as faturas deste cartão agora seguem o calendário.</label>
+        <name>AXF_CardStatement_closingSaved</name>
+    </customLabels>
+    <customLabels>
+        <label>Fatura de {0} — {1}</label>
+        <name>AXF_CardStatement_invoiceCaption</name>
+    </customLabels>
+    <customLabels>
+        <label>Fatura anterior</label>
+        <name>AXF_CardStatement_previousInvoice</name>
+    </customLabels>
+    <customLabels>
+        <label>Próxima fatura</label>
+        <name>AXF_CardStatement_nextInvoice</name>
+    </customLabels>
+    <customLabels>
+        <label>Compras de {0} a {1}</label>
+        <name>AXF_CardStatement_invoiceWindow</name>
+    </customLabels>
+    <customLabels>
+        <label>Fechamento: {0}</label>
+        <name>AXF_CardStatement_closingDate</name>
+    </customLabels>
+    <customLabels>
+        <label>Vencimento: {0}</label>
+        <name>AXF_CardStatement_dueDate</name>
+    </customLabels>
+    <customLabels>
+        <label>Total da fatura</label>
+        <name>AXF_CardStatement_total</name>
+    </customLabels>
+    <customLabels>
+        <label>Lançamentos manuais não conciliados</label>
+        <name>AXF_CardStatement_plannedTotal</name>
+    </customLabels>
+    <customLabels>
+        <label
+    >Sem calendário: este cartão não tem regra de fechamento para este mês; o mês civil é exibido, sem inventar data de corte.</label>
+        <name>AXF_CardStatement_noCalendar</name>
+    </customLabels>
+    <customLabels>
+        <label>Nova despesa manual</label>
+        <name>AXF_CardStatement_newExpense</name>
+    </customLabels>
+    <customLabels>
+        <label>Nenhuma transação nesta fatura.</label>
+        <name>AXF_CardStatement_noLines</name>
+    </customLabels>
+    <customLabels>
+        <label
+    >Este cartão não está disponível nos seus contextos autorizados.</label>
+        <name>AXF_CardStatement_codeNOT_ACCESSIBLE</name>
+    </customLabels>
+    <customLabels>
+        <label
+    >Você não tem permissão para definir o fechamento deste cartão.</label>
+        <name>AXF_CardStatement_codeNOT_ALLOWED</name>
+    </customLabels>
+    <customLabels>
+        <label
+    >O registro mudou ou o cartão já tem regra de fechamento; os dados foram recarregados.</label>
+        <name>AXF_CardStatement_codeCONFLICT</name>
+    </customLabels>
+    <customLabels>
+        <label>Verifique os valores informados.</label>
+        <name>AXF_CardStatement_codeINVALID_INPUT</name>
+    </customLabels>
+    <customLabels>
+        <label>A alteração foi recusada; nada foi salvo.</label>
+        <name>AXF_CardStatement_codeREJECTED</name>
+    </customLabels>
+    <customLabels>
+        <label
+    >Parcial: a fatura tem mais transações do que foi possível ler.</label>
+        <name>AXF_CardStatement_totalPartial</name>
+    </customLabels>
+    <customLabels>
+        <label
+    >Transações em outra moeda são listadas, mas não entram nos totais.</label>
+        <name>AXF_CardStatement_mixedCurrency</name>
+    </customLabels>
 <customTabs><label>Conta Corrente</label><name
-    >AXF_CT_BankStatement</name></customTabs>    <customTabs>
+    >AXF_CT_BankStatement</name></customTabs>
+    <customTabs>
+        <label>Cartões de crédito</label>
+        <name>AXF_CT_CardStatement</name>
+    </customTabs>    <customTabs>
         <label>Despesas e receitas</label>
         <name>AXF_CT_ManualEntries</name>
     </customTabs>

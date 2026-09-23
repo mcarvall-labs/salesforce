@@ -106,16 +106,23 @@ export default class AxfLwcEntryWizard extends NavigationMixin(
   reconciled = false;
   factSeq = 0;
   // AXF-151: account handed over by the current-account screen (state.c__bankAccountId).
+  // AXF-152: card handed over by the credit-card screen (state.c__creditCardId).
   preselectBankAccountId;
+  preselectCreditCardId;
   preselectAccountId;
   preselectDone = false;
 
   @wire(CurrentPageReference)
   wiredPageReference(pageRef) {
     const state = (pageRef && pageRef.state) || {};
-    const bankAccountId = state.c__bankAccountId || null;
-    if (bankAccountId && bankAccountId !== this.preselectBankAccountId) {
+    const creditCardId = state.c__creditCardId || null;
+    const bankAccountId = creditCardId ? null : state.c__bankAccountId || null;
+    if (
+      (bankAccountId && bankAccountId !== this.preselectBankAccountId) ||
+      (creditCardId && creditCardId !== this.preselectCreditCardId)
+    ) {
       this.preselectBankAccountId = bankAccountId;
+      this.preselectCreditCardId = creditCardId;
       this.preselectAccountId = state.c__accountId || null;
       this.preselectDone = false;
       this.applyPreselection();
@@ -151,11 +158,14 @@ export default class AxfLwcEntryWizard extends NavigationMixin(
   }
 
   /**
-   * Pre-selects the handed-over account as the entry's origin, once, and only when it is one of
-   * the holder's own available sources; an unknown or foreign id is silently ignored.
+   * Pre-selects the handed-over account or card as the entry's origin, once, and only when it is
+   * one of the holder's own available sources; an unknown or foreign id is silently ignored.
    */
   applyPreselection() {
-    if (!this.preselectBankAccountId || this.preselectDone) {
+    if (
+      (!this.preselectBankAccountId && !this.preselectCreditCardId) ||
+      this.preselectDone
+    ) {
       return;
     }
     if (
@@ -173,6 +183,23 @@ export default class AxfLwcEntryWizard extends NavigationMixin(
       };
       this.fundingSources = [];
       return; // the funding sources of this holder are loaded next
+    }
+    if (this.preselectCreditCardId) {
+      const card = this.fundingSources.find(
+        (s) =>
+          s.kind === "CREDIT_CARD" &&
+          s.creditCardId === this.preselectCreditCardId
+      );
+      if (card) {
+        this.preselectDone = true;
+        this.form = {
+          ...this.form,
+          sourceKind: KIND.CARD,
+          bankAccountId: null,
+          creditCardId: card.creditCardId
+        };
+      }
+      return;
     }
     const match = this.fundingSources.find(
       (s) =>

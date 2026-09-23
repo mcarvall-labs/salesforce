@@ -1145,6 +1145,46 @@
         <readable>true</readable>
     </fieldPermissions>
     <fieldPermissions>
+        <editable>false</editable>
+        <field
+    >AXF_OBJ_CardBillingCycleRule__c.AXF_CBR_DAT_EffectiveTo__c</field>
+        <readable>true</readable>
+    </fieldPermissions>
+    <fieldPermissions>
+        <editable>false</editable>
+        <field>AXF_OBJ_CardBillingCycleRule__c.AXF_CBR_NUM_ClosingDay__c</field>
+        <readable>true</readable>
+    </fieldPermissions>
+    <fieldPermissions>
+        <editable>false</editable>
+        <field
+    >AXF_OBJ_CardBillingCycleRule__c.AXF_CBR_NUM_DueDayOffset__c</field>
+        <readable>true</readable>
+    </fieldPermissions>
+    <fieldPermissions>
+        <editable>false</editable>
+        <field>AXF_OBJ_CardBillingCycleRule__c.AXF_CBR_NUM_Version__c</field>
+        <readable>true</readable>
+    </fieldPermissions>
+    <fieldPermissions>
+        <editable>false</editable>
+        <field
+    >AXF_OBJ_CardBillingCycleRule__c.AXF_CBR_PKL_ClosingDayAdjustment__c</field>
+        <readable>true</readable>
+    </fieldPermissions>
+    <fieldPermissions>
+        <editable>false</editable>
+        <field
+    >AXF_OBJ_CardBillingCycleRule__c.AXF_CBR_PKL_DueDayAdjustment__c</field>
+        <readable>true</readable>
+    </fieldPermissions>
+    <fieldPermissions>
+        <editable>false</editable>
+        <field
+    >AXF_OBJ_CardBillingCycleRule__c.AXF_CBR_TXT_CalendarPolicyVersion__c</field>
+        <readable>true</readable>
+    </fieldPermissions>
+    <fieldPermissions>
         <editable>true</editable>
         <field>AXF_OBJ_CreditCard__c.AXF_CC_CUR_AvailableLimit__c</field>
         <readable>true</readable>
@@ -2309,6 +2349,16 @@
         <allowRead>true</allowRead>
         <modifyAllRecords>false</modifyAllRecords>
         <object>AXF_OBJ_BillingDocument__c</object>
+        <viewAllFields>false</viewAllFields>
+        <viewAllRecords>false</viewAllRecords>
+    </objectPermissions>
+    <objectPermissions>
+        <allowCreate>false</allowCreate>
+        <allowDelete>false</allowDelete>
+        <allowEdit>false</allowEdit>
+        <allowRead>true</allowRead>
+        <modifyAllRecords>false</modifyAllRecords>
+        <object>AXF_OBJ_CardBillingCycleRule__c</object>
         <viewAllFields>false</viewAllFields>
         <viewAllRecords>false</viewAllRecords>
     </objectPermissions>
