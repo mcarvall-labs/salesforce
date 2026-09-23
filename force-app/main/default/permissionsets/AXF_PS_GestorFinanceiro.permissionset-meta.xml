@@ -1,4 +1,9 @@
 <?xml version="1.0" encoding="UTF-8" ?>
+<!-- AXF-159: touched deliberately so applicationVisibilities redeploy alongside
+     the versioned destructive-recreate of AXF_CA_AxonFinance/AXF_CA_AxonConfiguration
+     in manifest/destructiveChangesPre.xml. Without this in the git diff, the CI
+     delta only recreates the apps and never re-links the PermissionSets, which
+     broke app access in both DEV and UAT on 23/09/2026. -->
 <PermissionSet xmlns="http://soap.sforce.com/2006/04/metadata">
     <applicationVisibilities>
         <application>AXF_CA_AxonConfiguration</application>
