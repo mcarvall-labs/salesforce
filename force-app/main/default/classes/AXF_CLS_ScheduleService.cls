@@ -5,9 +5,15 @@
  * Formula authority: ALT_CLS_AmortizationSchedule / AMORTIZATION-POLICY.md v1.0.0.
  * Authorization: the target Account must be one of the caller's authorized contexts
  * (AXF-3); ownership/sharing/CRUD/FLS are native (`as user`). No fact is published.
- * Idempotency (G6): occurrences share `AXF_FTX_TXT_ScheduleGroupKey__c`; each carries a
- * per-occurrence `AXF_FTX_EXI_ClientRequestId__c = groupKey-<seq>`. Re-saving the same
- * plan is a no-op; the same groupKey with a different plan is CONFLICT, never overwrite.
+ * Idempotency (G6): the groupKey identifies the plan. Re-saving the same plan is a no-op
+ * (ALREADY); the same groupKey with a different plan is CONFLICT, never overwrite.
+ *
+ * AXF-156: PRICE, SAC, INSTALLMENT and RECURRING (always with a term) are persisted as a
+ * managed AXF-103 schedule through `ALT_CLS_FinancialScheduleService.createSchedule` — same
+ * AXF-20 formula, `PeriodMonths = 1`, generation enabled, optional origin/description applied
+ * to the installments. The groupKey becomes the schedule's legacy group key (part of its
+ * identity), so a replay is the command replay. Groups saved before AXF-156 (FTX rows carrying
+ * `AXF_FTX_TXT_ScheduleGroupKey__c`) keep their original ALREADY/CONFLICT answer.
  */
 public with sharing class AXF_CLS_ScheduleService {
   private static final Set<String> DIRECTIONS = new Set<String>{
@@ -45,6 +51,14 @@ public with sharing class AXF_CLS_ScheduleService {
     public String currencyIsoCode;
     @AuraEnabled
     public String groupKey;
+    /** AXF-156: optional origin handed over by the entry wizard (one of them). */
+    @AuraEnabled
+    public Id bankAccountId;
+    @AuraEnabled
+    public Id creditCardId;
+    /** AXF-156: optional description applied to the installments. */
+    @AuraEnabled
+    public String description;
   }
 
   public class SaveResult {
@@ -58,6 +72,9 @@ public with sharing class AXF_CLS_ScheduleService {
     public Integer occurrenceCount = 0;
     @AuraEnabled
     public ALT_CLS_AmortizationSchedule.ScheduleResult schedule;
+    /** AXF-156: the managed schedule that holds the installments. */
+    @AuraEnabled
+    public Id scheduleId;
   }
 
   @TestVisible
@@ -109,8 +126,9 @@ public with sharing class AXF_CLS_ScheduleService {
       return r;
     }
 
-    // Internal idempotency check — SYSTEM_MODE because the new schedule fields' FLS
-    // rides AXF_PS_FinancialEntry (LWC/LDS use); the authority gate above is isAuthorized().
+    // Legacy (pre-AXF-156) group under this key: answer as AXF-20 did, never write again.
+    // SYSTEM_MODE because the schedule fields' FLS rides AXF_PS_FinancialEntry (LWC/LDS use);
+    // the authority gate above is isAuthorized().
     List<AXF_OBJ_FinancialTransaction__c> existing = [
       SELECT
         Id,
@@ -138,47 +156,103 @@ public with sharing class AXF_CLS_ScheduleService {
       return r;
     }
 
-    List<AXF_OBJ_FinancialTransaction__c> rows = new List<AXF_OBJ_FinancialTransaction__c>();
-    for (ALT_CLS_AmortizationSchedule.Occurrence o : schedule.occurrences) {
-      rows.add(
-        new AXF_OBJ_FinancialTransaction__c(
-          AXF_FTX_LKP_Account__c = input.accountId,
-          AXF_FTX_PKL_Direction__c = input.direction.toUpperCase(),
-          AXF_FTX_NUM_Magnitude__c = o.payment,
-          AXF_FTX_TXT_CurrencyIsoCode__c = input.currencyIsoCode.toUpperCase(),
-          AXF_FTX_DAT_DueDate__c = Date.valueOf(o.dueDate),
-          AXF_FTX_DAT_PurchaseDate__c = Date.valueOf(o.dueDate),
-          AXF_FTX_PKL_Status__c = 'PLANNED',
-          AXF_FTX_CHK_IsEstimated__c = false,
-          AXF_FTX_NUM_Version__c = 0,
-          AXF_FTX_EXI_ClientRequestId__c = input.groupKey +
-            '-' +
-            String.valueOf(o.sequence).leftPad(4, '0'),
-          AXF_FTX_TXT_ScheduleGroupKey__c = input.groupKey,
-          AXF_FTX_NUM_Sequence__c = o.sequence,
-          AXF_FTX_PKL_Modality__c = schedule.modality,
-          AXF_FTX_NUM_PrincipalPortion__c = o.principalPortion,
-          AXF_FTX_NUM_InterestPortion__c = o.interestPortion,
-          AXF_FTX_NUM_FeePortion__c = o.feePortion,
-          AXF_FTX_NUM_ClosingBalance__c = o.closingBalance,
-          AXF_FTX_CHK_RoundingResidual__c = o.roundingResidualApplied
-        )
-      );
+    ALT_CLS_FinancialScheduleService.CreateInput create = toCreateInput(
+      input,
+      schedule
+    );
+    // The same groupKey under another calendar would be another schedule identity: it is the
+    // same key with a different plan, so CONFLICT before any write. Only this holder's schedules
+    // count, and no schedule Id is returned on a conflict.
+    for (AXF_OBJ_FinancialSchedule__c root : [
+      SELECT Id, AXF_FSC_EXI_ScheduleKey__c
+      FROM AXF_OBJ_FinancialSchedule__c
+      WHERE
+        AXF_FSC_TXT_LegacyGroupKey__c = :input.groupKey
+        AND AXF_FSC_LKP_Account__c = :input.accountId
+      WITH SYSTEM_MODE
+      LIMIT 1
+    ]) {
+      String expectedKey;
+      try {
+        expectedKey = ALT_CLS_FinancialScheduleService.previewScheduleKey(
+          create
+        );
+      } catch (Exception invalid) {
+        expectedKey = null;
+      }
+      if (expectedKey != root.AXF_FSC_EXI_ScheduleKey__c) {
+        return fail(
+          r,
+          'CONFLICT',
+          'Já existe um cronograma diferente com esta chave. Gere uma nova.'
+        );
+      }
     }
 
-    // Write in SYSTEM_MODE: the authority gate is isAuthorized() above (authorized
-    // context, AXF-3); these internal schedule fields' FLS is for LWC/LDS use.
-    // Matches AXF-88/85/15 internal-workflow pattern.
-    try {
-      Database.insert(rows, AccessLevel.SYSTEM_MODE);
-    } catch (Exception e) {
-      return fail(r, 'INVALID', 'Não foi possível salvar o cronograma.');
+    ALT_CLS_FinancialScheduleService.CreateResult created = ALT_CLS_FinancialScheduleService.createSchedule(
+      create
+    );
+    r.occurrenceCount = created.occurrenceCount == null
+      ? 0
+      : created.occurrenceCount;
+    switch on created.outcome {
+      when 'CREATED' {
+        r.scheduleId = created.scheduleId;
+        r.outcome = 'SAVED';
+        r.message = r.occurrenceCount + ' ocorrência(s) planejada(s).';
+      }
+      when 'REPLAY' {
+        r.scheduleId = created.scheduleId;
+        r.outcome = 'ALREADY';
+        r.message = 'Cronograma já salvo — nada foi duplicado.';
+      }
+      when 'CONFLICT' {
+        r.outcome = 'CONFLICT';
+        r.message = 'Já existe um cronograma diferente com esta chave. Gere uma nova.';
+      }
+      when 'FORBIDDEN' {
+        r.outcome = 'FORBIDDEN';
+        r.message = created.message;
+      }
+      when else {
+        r.outcome = 'INVALID';
+        r.message = String.isBlank(created.message)
+          ? 'Não foi possível salvar o cronograma.'
+          : created.message;
+      }
     }
-
-    r.outcome = 'SAVED';
-    r.occurrenceCount = rows.size();
-    r.message = rows.size() + ' ocorrência(s) planejada(s).';
     return r;
+  }
+
+  /**
+   * @description The AXF-20 plan as an AXF-103 create command: same formula inputs, monthly
+   * period, holder, direction, currency, optional origin/description and generation enabled.
+   */
+  private static ALT_CLS_FinancialScheduleService.CreateInput toCreateInput(
+    SaveInput input,
+    ALT_CLS_AmortizationSchedule.ScheduleResult schedule
+  ) {
+    PlanInput plan = input.plan;
+    ALT_CLS_FinancialScheduleService.CreateInput create = new ALT_CLS_FinancialScheduleService.CreateInput();
+    create.accountId = input.accountId;
+    create.direction = input.direction.toUpperCase();
+    create.currencyIsoCode = input.currencyIsoCode.trim().toUpperCase();
+    create.method = schedule.modality;
+    create.totalInstallments = plan.installments;
+    create.firstSequence = 1;
+    create.firstDueDate = plan.firstDueDate;
+    create.periodMonths = 1;
+    create.principal = plan.principal;
+    create.periodRate = plan.periodRate;
+    create.fixedValue = plan.fixedValue;
+    create.recurringFee = plan.flatFeePerInstallment;
+    create.upfrontFee = plan.upfrontFee;
+    create.legacyGroupKey = input.groupKey;
+    create.bankAccountId = input.bankAccountId;
+    create.creditCardId = input.creditCardId;
+    create.description = input.description;
+    create.generationEnabled = true;
+    return create;
   }
 
   private static ALT_CLS_AmortizationSchedule.ScheduleInput toScheduleInput(

@@ -625,17 +625,28 @@ export default class AxfLwcEntryWizard extends NavigationMixin(
       this.navigateToRecurrences();
       return;
     }
+    // AXF-156: origin and description travel too; the planner applies them to the installments.
+    const card = this.isSourceCard;
+    const state = {
+      c__modality: this.form.entryType,
+      c__direction: this.form.direction,
+      c__accountId: this.form.accountId,
+      c__amount: String(this.form.magnitude),
+      c__firstDueDate: this.form.dueDate || this.form.purchaseDate,
+      c__currencyIsoCode: this.form.currencyIsoCode,
+      c__description: this.form.description || null,
+      c__bankAccountId: card ? null : this.form.bankAccountId,
+      c__creditCardId: card ? this.form.creditCardId : null
+    };
+    Object.keys(state).forEach((key) => {
+      if (state[key] === null || state[key] === undefined) {
+        delete state[key];
+      }
+    });
     this[NavigationMixin.Navigate]({
       type: "standard__navItemPage",
       attributes: { apiName: "AXF_ScheduleWizard" },
-      state: {
-        c__modality: this.form.entryType,
-        c__direction: this.form.direction,
-        c__accountId: this.form.accountId,
-        c__amount: String(this.form.magnitude),
-        c__firstDueDate: this.form.dueDate || this.form.purchaseDate,
-        c__currencyIsoCode: this.form.currencyIsoCode
-      }
+      state
     });
   }
 

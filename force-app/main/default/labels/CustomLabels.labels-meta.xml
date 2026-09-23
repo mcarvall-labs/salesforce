@@ -5912,4 +5912,632 @@
         <shortDescription>Manual entry continue recurring</shortDescription>
         <value>Continue on the Recurring screen</value>
     </labels>
+    <labels>
+        <fullName>AXF_Financings_title</fullName>
+        <categories>AxonFinance,LWC,Financings</categories>
+        <language>en_US</language>
+        <protected>false</protected>
+        <shortDescription>Financing title</shortDescription>
+        <value>Financing</value>
+    </labels>
+    <labels>
+        <fullName>AXF_Financings_intro</fullName>
+        <categories>AxonFinance,LWC,Financings</categories>
+        <language>en_US</language>
+        <protected>false</protected>
+        <shortDescription>Financing intro</shortDescription>
+        <value
+    >Loans and installment purchases with a defined term: progress, outstanding balance and every installment.</value>
+    </labels>
+    <labels>
+        <fullName>AXF_Financings_noCapability</fullName>
+        <categories>AxonFinance,LWC,Financings</categories>
+        <language>en_US</language>
+        <protected>false</protected>
+        <shortDescription>Financing no capability</shortDescription>
+        <value>You do not have access to the financing screen.</value>
+    </labels>
+    <labels>
+        <fullName>AXF_Financings_readOnly</fullName>
+        <categories>AxonFinance,LWC,Financings</categories>
+        <language>en_US</language>
+        <protected>false</protected>
+        <shortDescription>Financing read only</shortDescription>
+        <value
+    >Read-only access: only a manager can change, end or pay off a financing.</value>
+    </labels>
+    <labels>
+        <fullName>AXF_Financings_loading</fullName>
+        <categories>AxonFinance,LWC,Financings</categories>
+        <language>en_US</language>
+        <protected>false</protected>
+        <shortDescription>Financing loading</shortDescription>
+        <value>Loading</value>
+    </labels>
+    <labels>
+        <fullName>AXF_Financings_error</fullName>
+        <categories>AxonFinance,LWC,Financings</categories>
+        <language>en_US</language>
+        <protected>false</protected>
+        <shortDescription>Financing error</shortDescription>
+        <value>Something went wrong. Try again.</value>
+    </labels>
+    <labels>
+        <fullName>AXF_Financings_newFinancing</fullName>
+        <categories>AxonFinance,LWC,Financings</categories>
+        <language>en_US</language>
+        <protected>false</protected>
+        <shortDescription>Financing new financing</shortDescription>
+        <value>New financing</value>
+    </labels>
+    <labels>
+        <fullName>AXF_Financings_listCaption</fullName>
+        <categories>AxonFinance,LWC,Financings</categories>
+        <language>en_US</language>
+        <protected>false</protected>
+        <shortDescription>Financing list caption</shortDescription>
+        <value>Financing and installment plans</value>
+    </labels>
+    <labels>
+        <fullName>AXF_Financings_noFinancings</fullName>
+        <categories>AxonFinance,LWC,Financings</categories>
+        <language>en_US</language>
+        <protected>false</protected>
+        <shortDescription>Financing no financings</shortDescription>
+        <value>No financing or installment plan yet.</value>
+    </labels>
+    <labels>
+        <fullName>AXF_Financings_colDescription</fullName>
+        <categories>AxonFinance,LWC,Financings</categories>
+        <language>en_US</language>
+        <protected>false</protected>
+        <shortDescription>Financing col description</shortDescription>
+        <value>Description</value>
+    </labels>
+    <labels>
+        <fullName>AXF_Financings_colHolder</fullName>
+        <categories>AxonFinance,LWC,Financings</categories>
+        <language>en_US</language>
+        <protected>false</protected>
+        <shortDescription>Financing col holder</shortDescription>
+        <value>Holder</value>
+    </labels>
+    <labels>
+        <fullName>AXF_Financings_colMethod</fullName>
+        <categories>AxonFinance,LWC,Financings</categories>
+        <language>en_US</language>
+        <protected>false</protected>
+        <shortDescription>Financing col method</shortDescription>
+        <value>Type</value>
+    </labels>
+    <labels>
+        <fullName>AXF_Financings_colProgress</fullName>
+        <categories>AxonFinance,LWC,Financings</categories>
+        <language>en_US</language>
+        <protected>false</protected>
+        <shortDescription>Financing col progress</shortDescription>
+        <value>Paid</value>
+    </labels>
+    <labels>
+        <fullName>AXF_Financings_colNextDue</fullName>
+        <categories>AxonFinance,LWC,Financings</categories>
+        <language>en_US</language>
+        <protected>false</protected>
+        <shortDescription>Financing col next due</shortDescription>
+        <value>Next due date</value>
+    </labels>
+    <labels>
+        <fullName>AXF_Financings_colNextAmount</fullName>
+        <categories>AxonFinance,LWC,Financings</categories>
+        <language>en_US</language>
+        <protected>false</protected>
+        <shortDescription>Financing col next amount</shortDescription>
+        <value>Next installment</value>
+    </labels>
+    <labels>
+        <fullName>AXF_Financings_colBalance</fullName>
+        <categories>AxonFinance,LWC,Financings</categories>
+        <language>en_US</language>
+        <protected>false</protected>
+        <shortDescription>Financing col balance</shortDescription>
+        <value>Outstanding balance</value>
+    </labels>
+    <labels>
+        <fullName>AXF_Financings_colState</fullName>
+        <categories>AxonFinance,LWC,Financings</categories>
+        <language>en_US</language>
+        <protected>false</protected>
+        <shortDescription>Financing col state</shortDescription>
+        <value>Status</value>
+    </labels>
+    <labels>
+        <fullName>AXF_Financings_colActions</fullName>
+        <categories>AxonFinance,LWC,Financings</categories>
+        <language>en_US</language>
+        <protected>false</protected>
+        <shortDescription>Financing col actions</shortDescription>
+        <value>Actions</value>
+    </labels>
+    <labels>
+        <fullName>AXF_Financings_colSequence</fullName>
+        <categories>AxonFinance,LWC,Financings</categories>
+        <language>en_US</language>
+        <protected>false</protected>
+        <shortDescription>Financing col sequence</shortDescription>
+        <value>Installment</value>
+    </labels>
+    <labels>
+        <fullName>AXF_Financings_colDueDate</fullName>
+        <categories>AxonFinance,LWC,Financings</categories>
+        <language>en_US</language>
+        <protected>false</protected>
+        <shortDescription>Financing col due date</shortDescription>
+        <value>Due date</value>
+    </labels>
+    <labels>
+        <fullName>AXF_Financings_colAmount</fullName>
+        <categories>AxonFinance,LWC,Financings</categories>
+        <language>en_US</language>
+        <protected>false</protected>
+        <shortDescription>Financing col amount</shortDescription>
+        <value>Amount</value>
+    </labels>
+    <labels>
+        <fullName>AXF_Financings_colInterest</fullName>
+        <categories>AxonFinance,LWC,Financings</categories>
+        <language>en_US</language>
+        <protected>false</protected>
+        <shortDescription>Financing col interest</shortDescription>
+        <value>Interest</value>
+    </labels>
+    <labels>
+        <fullName>AXF_Financings_colPrincipal</fullName>
+        <categories>AxonFinance,LWC,Financings</categories>
+        <language>en_US</language>
+        <protected>false</protected>
+        <shortDescription>Financing col principal</shortDescription>
+        <value>Principal</value>
+    </labels>
+    <labels>
+        <fullName>AXF_Financings_colBalanceAfter</fullName>
+        <categories>AxonFinance,LWC,Financings</categories>
+        <language>en_US</language>
+        <protected>false</protected>
+        <shortDescription>Financing col balance after</shortDescription>
+        <value>Balance after</value>
+    </labels>
+    <labels>
+        <fullName>AXF_Financings_colStatus</fullName>
+        <categories>AxonFinance,LWC,Financings</categories>
+        <language>en_US</language>
+        <protected>false</protected>
+        <shortDescription>Financing col status</shortDescription>
+        <value>Status</value>
+    </labels>
+    <labels>
+        <fullName>AXF_Financings_methodPRICE</fullName>
+        <categories>AxonFinance,LWC,Financings</categories>
+        <language>en_US</language>
+        <protected>false</protected>
+        <shortDescription>Financing method p r i c e</shortDescription>
+        <value>PRICE loan</value>
+    </labels>
+    <labels>
+        <fullName>AXF_Financings_methodSAC</fullName>
+        <categories>AxonFinance,LWC,Financings</categories>
+        <language>en_US</language>
+        <protected>false</protected>
+        <shortDescription>Financing method s a c</shortDescription>
+        <value>SAC loan</value>
+    </labels>
+    <labels>
+        <fullName>AXF_Financings_methodINSTALLMENT</fullName>
+        <categories>AxonFinance,LWC,Financings</categories>
+        <language>en_US</language>
+        <protected>false</protected>
+        <shortDescription
+    >Financing method i n s t a l l m e n t</shortDescription>
+        <value>Installment plan</value>
+    </labels>
+    <labels>
+        <fullName>AXF_Financings_stateACTIVE</fullName>
+        <categories>AxonFinance,LWC,Financings</categories>
+        <language>en_US</language>
+        <protected>false</protected>
+        <shortDescription>Financing state a c t i v e</shortDescription>
+        <value>Active</value>
+    </labels>
+    <labels>
+        <fullName>AXF_Financings_stateENDED</fullName>
+        <categories>AxonFinance,LWC,Financings</categories>
+        <language>en_US</language>
+        <protected>false</protected>
+        <shortDescription>Financing state e n d e d</shortDescription>
+        <value>Ended</value>
+    </labels>
+    <labels>
+        <fullName>AXF_Financings_stateSETTLED</fullName>
+        <categories>AxonFinance,LWC,Financings</categories>
+        <language>en_US</language>
+        <protected>false</protected>
+        <shortDescription>Financing state s e t t l e d</shortDescription>
+        <value>Paid off</value>
+    </labels>
+    <labels>
+        <fullName>AXF_Financings_legacy</fullName>
+        <categories>AxonFinance,LWC,Financings</categories>
+        <language>en_US</language>
+        <protected>false</protected>
+        <shortDescription>Financing legacy</shortDescription>
+        <value>Earlier plan (read-only)</value>
+    </labels>
+    <labels>
+        <fullName>AXF_Financings_progress</fullName>
+        <categories>AxonFinance,LWC,Financings</categories>
+        <language>en_US</language>
+        <protected>false</protected>
+        <shortDescription>Financing progress</shortDescription>
+        <value>{0} of {1}</value>
+    </labels>
+    <labels>
+        <fullName>AXF_Financings_viewInstallments</fullName>
+        <categories>AxonFinance,LWC,Financings</categories>
+        <language>en_US</language>
+        <protected>false</protected>
+        <shortDescription>Financing view installments</shortDescription>
+        <value>Installments</value>
+    </labels>
+    <labels>
+        <fullName>AXF_Financings_viewInstallmentsFor</fullName>
+        <categories>AxonFinance,LWC,Financings</categories>
+        <language>en_US</language>
+        <protected>false</protected>
+        <shortDescription>Financing view installments for</shortDescription>
+        <value>Show the installments of {0}</value>
+    </labels>
+    <labels>
+        <fullName>AXF_Financings_installmentsCaption</fullName>
+        <categories>AxonFinance,LWC,Financings</categories>
+        <language>en_US</language>
+        <protected>false</protected>
+        <shortDescription>Financing installments caption</shortDescription>
+        <value>Installments of {0}</value>
+    </labels>
+    <labels>
+        <fullName>AXF_Financings_noInstallments</fullName>
+        <categories>AxonFinance,LWC,Financings</categories>
+        <language>en_US</language>
+        <protected>false</protected>
+        <shortDescription>Financing no installments</shortDescription>
+        <value>No installment to show.</value>
+    </labels>
+    <labels>
+        <fullName>AXF_Financings_installmentsTruncated</fullName>
+        <categories>AxonFinance,LWC,Financings</categories>
+        <language>en_US</language>
+        <protected>false</protected>
+        <shortDescription>Financing installments truncated</shortDescription>
+        <value>Only the first installments are shown.</value>
+    </labels>
+    <labels>
+        <fullName>AXF_Financings_installmentsUnverified</fullName>
+        <categories>AxonFinance,LWC,Financings</categories>
+        <language>en_US</language>
+        <protected>false</protected>
+        <shortDescription>Financing installments unverified</shortDescription>
+        <value>The status of some installments could not be verified.</value>
+    </labels>
+    <labels>
+        <fullName>AXF_Financings_projected</fullName>
+        <categories>AxonFinance,LWC,Financings</categories>
+        <language>en_US</language>
+        <protected>false</protected>
+        <shortDescription>Financing projected</shortDescription>
+        <value>Not generated yet</value>
+    </labels>
+    <labels>
+        <fullName>AXF_Financings_instPAID</fullName>
+        <categories>AxonFinance,LWC,Financings</categories>
+        <language>en_US</language>
+        <protected>false</protected>
+        <shortDescription>Financing inst p a i d</shortDescription>
+        <value>Paid</value>
+    </labels>
+    <labels>
+        <fullName>AXF_Financings_instPARTIAL</fullName>
+        <categories>AxonFinance,LWC,Financings</categories>
+        <language>en_US</language>
+        <protected>false</protected>
+        <shortDescription>Financing inst p a r t i a l</shortDescription>
+        <value>Partial</value>
+    </labels>
+    <labels>
+        <fullName>AXF_Financings_instPLANNED</fullName>
+        <categories>AxonFinance,LWC,Financings</categories>
+        <language>en_US</language>
+        <protected>false</protected>
+        <shortDescription>Financing inst p l a n n e d</shortDescription>
+        <value>Planned</value>
+    </labels>
+    <labels>
+        <fullName>AXF_Financings_instCANCELLED</fullName>
+        <categories>AxonFinance,LWC,Financings</categories>
+        <language>en_US</language>
+        <protected>false</protected>
+        <shortDescription>Financing inst c a n c e l l e d</shortDescription>
+        <value>Cancelled</value>
+    </labels>
+    <labels>
+        <fullName>AXF_Financings_editAmount</fullName>
+        <categories>AxonFinance,LWC,Financings</categories>
+        <language>en_US</language>
+        <protected>false</protected>
+        <shortDescription>Financing edit amount</shortDescription>
+        <value>Change amount</value>
+    </labels>
+    <labels>
+        <fullName>AXF_Financings_editAmountFor</fullName>
+        <categories>AxonFinance,LWC,Financings</categories>
+        <language>en_US</language>
+        <protected>false</protected>
+        <shortDescription>Financing edit amount for</shortDescription>
+        <value>Change the installment amount of {0}</value>
+    </labels>
+    <labels>
+        <fullName>AXF_Financings_newAmount</fullName>
+        <categories>AxonFinance,LWC,Financings</categories>
+        <language>en_US</language>
+        <protected>false</protected>
+        <shortDescription>Financing new amount</shortDescription>
+        <value>New installment amount</value>
+    </labels>
+    <labels>
+        <fullName>AXF_Financings_editHint</fullName>
+        <categories>AxonFinance,LWC,Financings</categories>
+        <language>en_US</language>
+        <protected>false</protected>
+        <shortDescription>Financing edit hint</shortDescription>
+        <value
+    >Applies from the first future installment not yet paid; paid installments stay as they are.</value>
+    </labels>
+    <labels>
+        <fullName>AXF_Financings_amountSaved</fullName>
+        <categories>AxonFinance,LWC,Financings</categories>
+        <language>en_US</language>
+        <protected>false</protected>
+        <shortDescription>Financing amount saved</shortDescription>
+        <value>Amount changed: {0} installment(s) updated, {1} kept.</value>
+    </labels>
+    <labels>
+        <fullName>AXF_Financings_end</fullName>
+        <categories>AxonFinance,LWC,Financings</categories>
+        <language>en_US</language>
+        <protected>false</protected>
+        <shortDescription>Financing end</shortDescription>
+        <value>End financing</value>
+    </labels>
+    <labels>
+        <fullName>AXF_Financings_endFor</fullName>
+        <categories>AxonFinance,LWC,Financings</categories>
+        <language>en_US</language>
+        <protected>false</protected>
+        <shortDescription>Financing end for</shortDescription>
+        <value>End financing {0}</value>
+    </labels>
+    <labels>
+        <fullName>AXF_Financings_endDate</fullName>
+        <categories>AxonFinance,LWC,Financings</categories>
+        <language>en_US</language>
+        <protected>false</protected>
+        <shortDescription>Financing end date</shortDescription>
+        <value>End date</value>
+    </labels>
+    <labels>
+        <fullName>AXF_Financings_endHint</fullName>
+        <categories>AxonFinance,LWC,Financings</categories>
+        <language>en_US</language>
+        <protected>false</protected>
+        <shortDescription>Financing end hint</shortDescription>
+        <value
+    >Future installments after this date that are not paid are cancelled.</value>
+    </labels>
+    <labels>
+        <fullName>AXF_Financings_confirmEnd</fullName>
+        <categories>AxonFinance,LWC,Financings</categories>
+        <language>en_US</language>
+        <protected>false</protected>
+        <shortDescription>Financing confirm end</shortDescription>
+        <value>Confirm end</value>
+    </labels>
+    <labels>
+        <fullName>AXF_Financings_ended</fullName>
+        <categories>AxonFinance,LWC,Financings</categories>
+        <language>en_US</language>
+        <protected>false</protected>
+        <shortDescription>Financing ended</shortDescription>
+        <value>Ended: {0} installment(s) cancelled, {1} kept.</value>
+    </labels>
+    <labels>
+        <fullName>AXF_Financings_settle</fullName>
+        <categories>AxonFinance,LWC,Financings</categories>
+        <language>en_US</language>
+        <protected>false</protected>
+        <shortDescription>Financing settle</shortDescription>
+        <value>Pay off early</value>
+    </labels>
+    <labels>
+        <fullName>AXF_Financings_settleFor</fullName>
+        <categories>AxonFinance,LWC,Financings</categories>
+        <language>en_US</language>
+        <protected>false</protected>
+        <shortDescription>Financing settle for</shortDescription>
+        <value>Pay off {0} early</value>
+    </labels>
+    <labels>
+        <fullName>AXF_Financings_settleHeading</fullName>
+        <categories>AxonFinance,LWC,Financings</categories>
+        <language>en_US</language>
+        <protected>false</protected>
+        <shortDescription>Financing settle heading</shortDescription>
+        <value>Early payoff</value>
+    </labels>
+    <labels>
+        <fullName>AXF_Financings_settleAmount</fullName>
+        <categories>AxonFinance,LWC,Financings</categories>
+        <language>en_US</language>
+        <protected>false</protected>
+        <shortDescription>Financing settle amount</shortDescription>
+        <value>Payoff amount</value>
+    </labels>
+    <labels>
+        <fullName>AXF_Financings_settleAmountHint</fullName>
+        <categories>AxonFinance,LWC,Financings</categories>
+        <language>en_US</language>
+        <protected>false</protected>
+        <shortDescription>Financing settle amount hint</shortDescription>
+        <value
+    >Suggested: outstanding balance without future interest. Use the amount informed by the lender if different.</value>
+    </labels>
+    <labels>
+        <fullName>AXF_Financings_settleDate</fullName>
+        <categories>AxonFinance,LWC,Financings</categories>
+        <language>en_US</language>
+        <protected>false</protected>
+        <shortDescription>Financing settle date</shortDescription>
+        <value>Payoff date</value>
+    </labels>
+    <labels>
+        <fullName>AXF_Financings_settleHint</fullName>
+        <categories>AxonFinance,LWC,Financings</categories>
+        <language>en_US</language>
+        <protected>false</protected>
+        <shortDescription>Financing settle hint</shortDescription>
+        <value
+    >A planned payoff entry is created and future unpaid installments after this date are cancelled.</value>
+    </labels>
+    <labels>
+        <fullName>AXF_Financings_confirmSettle</fullName>
+        <categories>AxonFinance,LWC,Financings</categories>
+        <language>en_US</language>
+        <protected>false</protected>
+        <shortDescription>Financing confirm settle</shortDescription>
+        <value>Confirm payoff</value>
+    </labels>
+    <labels>
+        <fullName>AXF_Financings_settled</fullName>
+        <categories>AxonFinance,LWC,Financings</categories>
+        <language>en_US</language>
+        <protected>false</protected>
+        <shortDescription>Financing settled</shortDescription>
+        <value
+    >Paid off: payoff entry created, {0} installment(s) cancelled.</value>
+    </labels>
+    <labels>
+        <fullName>AXF_Financings_close</fullName>
+        <categories>AxonFinance,LWC,Financings</categories>
+        <language>en_US</language>
+        <protected>false</protected>
+        <shortDescription>Financing close</shortDescription>
+        <value>Close</value>
+    </labels>
+    <labels>
+        <fullName>AXF_Financings_cancel</fullName>
+        <categories>AxonFinance,LWC,Financings</categories>
+        <language>en_US</language>
+        <protected>false</protected>
+        <shortDescription>Financing cancel</shortDescription>
+        <value>Back</value>
+    </labels>
+    <labels>
+        <fullName>AXF_Financings_save</fullName>
+        <categories>AxonFinance,LWC,Financings</categories>
+        <language>en_US</language>
+        <protected>false</protected>
+        <shortDescription>Financing save</shortDescription>
+        <value>Save</value>
+    </labels>
+    <labels>
+        <fullName>AXF_Financings_notAvailable</fullName>
+        <categories>AxonFinance,LWC,Financings</categories>
+        <language>en_US</language>
+        <protected>false</protected>
+        <shortDescription>Financing not available</shortDescription>
+        <value>—</value>
+    </labels>
+    <labels>
+        <fullName>AXF_Financings_codeNOT_ACCESSIBLE</fullName>
+        <categories>AxonFinance,LWC,Financings</categories>
+        <language>en_US</language>
+        <protected>false</protected>
+        <shortDescription
+    >Financing code n o t_ a c c e s s i b l e</shortDescription>
+        <value>This financing is not available to you.</value>
+    </labels>
+    <labels>
+        <fullName>AXF_Financings_codeNOT_ALLOWED</fullName>
+        <categories>AxonFinance,LWC,Financings</categories>
+        <language>en_US</language>
+        <protected>false</protected>
+        <shortDescription>Financing code n o t_ a l l o w e d</shortDescription>
+        <value>This action is not allowed for this financing.</value>
+    </labels>
+    <labels>
+        <fullName>AXF_Financings_codeCONFLICT</fullName>
+        <categories>AxonFinance,LWC,Financings</categories>
+        <language>en_US</language>
+        <protected>false</protected>
+        <shortDescription>Financing code c o n f l i c t</shortDescription>
+        <value
+    >The financing changed since it was loaded; it was reloaded. Try again.</value>
+    </labels>
+    <labels>
+        <fullName>AXF_Financings_codeINVALID_INPUT</fullName>
+        <categories>AxonFinance,LWC,Financings</categories>
+        <language>en_US</language>
+        <protected>false</protected>
+        <shortDescription
+    >Financing code i n v a l i d_ i n p u t</shortDescription>
+        <value>Check the values entered.</value>
+    </labels>
+    <labels>
+        <fullName>AXF_Financings_codeUNAVAILABLE</fullName>
+        <categories>AxonFinance,LWC,Financings</categories>
+        <language>en_US</language>
+        <protected>false</protected>
+        <shortDescription
+    >Financing code u n a v a i l a b l e</shortDescription>
+        <value>The record is busy right now; try again in a moment.</value>
+    </labels>
+    <labels>
+        <fullName>AXF_Financings_codeREJECTED</fullName>
+        <categories>AxonFinance,LWC,Financings</categories>
+        <language>en_US</language>
+        <protected>false</protected>
+        <shortDescription>Financing code r e j e c t e d</shortDescription>
+        <value>The change was rejected; nothing was saved.</value>
+    </labels>
+    <labels>
+        <fullName>AXF_Financings_settlementDescription</fullName>
+        <categories>AxonFinance,LWC,Financings</categories>
+        <language>en_US</language>
+        <protected>false</protected>
+        <shortDescription>Financing settlement description</shortDescription>
+        <value>Payoff — {0}</value>
+    </labels>
+    <labels>
+        <fullName>AXF_ScheduleWizard_description</fullName>
+        <categories>AxonFinance,LWC,ScheduleWizard</categories>
+        <language>en_US</language>
+        <protected>false</protected>
+        <shortDescription>Schedule wizard description</shortDescription>
+        <value>Description</value>
+    </labels>
+    <labels>
+        <fullName>AXF_ScheduleWizard_openFinancings</fullName>
+        <categories>AxonFinance,LWC,ScheduleWizard</categories>
+        <language>en_US</language>
+        <protected>false</protected>
+        <shortDescription>Schedule wizard open financings</shortDescription>
+        <value>Saved. It is managed on the Financing screen.</value>
+    </labels>
 </CustomLabels>

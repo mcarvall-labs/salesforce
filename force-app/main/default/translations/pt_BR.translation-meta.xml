@@ -2976,6 +2976,325 @@
         <label>Continuar na tela de Recorrências</label>
         <name>AXF_ManualEntry_continueRecurring</name>
     </customLabels>
+<customLabels>
+        <label>Financiamentos</label>
+        <name>AXF_Financings_title</name>
+    </customLabels>
+    <customLabels>
+        <label
+    >Financiamentos e parcelamentos com prazo definido: progresso, saldo devedor e cada parcela.</label>
+        <name>AXF_Financings_intro</name>
+    </customLabels>
+    <customLabels>
+        <label>Você não tem acesso à tela de financiamentos.</label>
+        <name>AXF_Financings_noCapability</name>
+    </customLabels>
+    <customLabels>
+        <label
+    >Acesso somente leitura: só um gestor altera, encerra ou quita um financiamento.</label>
+        <name>AXF_Financings_readOnly</name>
+    </customLabels>
+    <customLabels>
+        <label>Carregando</label>
+        <name>AXF_Financings_loading</name>
+    </customLabels>
+    <customLabels>
+        <label>Algo deu errado. Tente novamente.</label>
+        <name>AXF_Financings_error</name>
+    </customLabels>
+    <customLabels>
+        <label>Novo financiamento</label>
+        <name>AXF_Financings_newFinancing</name>
+    </customLabels>
+    <customLabels>
+        <label>Financiamentos e parcelamentos</label>
+        <name>AXF_Financings_listCaption</name>
+    </customLabels>
+    <customLabels>
+        <label>Nenhum financiamento ou parcelamento ainda.</label>
+        <name>AXF_Financings_noFinancings</name>
+    </customLabels>
+    <customLabels>
+        <label>Descrição</label>
+        <name>AXF_Financings_colDescription</name>
+    </customLabels>
+    <customLabels>
+        <label>Titular</label>
+        <name>AXF_Financings_colHolder</name>
+    </customLabels>
+    <customLabels>
+        <label>Tipo</label>
+        <name>AXF_Financings_colMethod</name>
+    </customLabels>
+    <customLabels>
+        <label>Pagas</label>
+        <name>AXF_Financings_colProgress</name>
+    </customLabels>
+    <customLabels>
+        <label>Próximo vencimento</label>
+        <name>AXF_Financings_colNextDue</name>
+    </customLabels>
+    <customLabels>
+        <label>Próxima parcela</label>
+        <name>AXF_Financings_colNextAmount</name>
+    </customLabels>
+    <customLabels>
+        <label>Saldo devedor</label>
+        <name>AXF_Financings_colBalance</name>
+    </customLabels>
+    <customLabels>
+        <label>Situação</label>
+        <name>AXF_Financings_colState</name>
+    </customLabels>
+    <customLabels>
+        <label>Ações</label>
+        <name>AXF_Financings_colActions</name>
+    </customLabels>
+    <customLabels>
+        <label>Parcela</label>
+        <name>AXF_Financings_colSequence</name>
+    </customLabels>
+    <customLabels>
+        <label>Vencimento</label>
+        <name>AXF_Financings_colDueDate</name>
+    </customLabels>
+    <customLabels>
+        <label>Valor</label>
+        <name>AXF_Financings_colAmount</name>
+    </customLabels>
+    <customLabels>
+        <label>Juros</label>
+        <name>AXF_Financings_colInterest</name>
+    </customLabels>
+    <customLabels>
+        <label>Amortização</label>
+        <name>AXF_Financings_colPrincipal</name>
+    </customLabels>
+    <customLabels>
+        <label>Saldo após</label>
+        <name>AXF_Financings_colBalanceAfter</name>
+    </customLabels>
+    <customLabels>
+        <label>Status</label>
+        <name>AXF_Financings_colStatus</name>
+    </customLabels>
+    <customLabels>
+        <label>Financiamento PRICE</label>
+        <name>AXF_Financings_methodPRICE</name>
+    </customLabels>
+    <customLabels>
+        <label>Financiamento SAC</label>
+        <name>AXF_Financings_methodSAC</name>
+    </customLabels>
+    <customLabels>
+        <label>Parcelamento</label>
+        <name>AXF_Financings_methodINSTALLMENT</name>
+    </customLabels>
+    <customLabels>
+        <label>Ativo</label>
+        <name>AXF_Financings_stateACTIVE</name>
+    </customLabels>
+    <customLabels>
+        <label>Encerrado</label>
+        <name>AXF_Financings_stateENDED</name>
+    </customLabels>
+    <customLabels>
+        <label>Quitado</label>
+        <name>AXF_Financings_stateSETTLED</name>
+    </customLabels>
+    <customLabels>
+        <label>Plano anterior (somente leitura)</label>
+        <name>AXF_Financings_legacy</name>
+    </customLabels>
+    <customLabels>
+        <label>{0} de {1}</label>
+        <name>AXF_Financings_progress</name>
+    </customLabels>
+    <customLabels>
+        <label>Parcelas</label>
+        <name>AXF_Financings_viewInstallments</name>
+    </customLabels>
+    <customLabels>
+        <label>Mostrar as parcelas de {0}</label>
+        <name>AXF_Financings_viewInstallmentsFor</name>
+    </customLabels>
+    <customLabels>
+        <label>Parcelas de {0}</label>
+        <name>AXF_Financings_installmentsCaption</name>
+    </customLabels>
+    <customLabels>
+        <label>Nenhuma parcela para mostrar.</label>
+        <name>AXF_Financings_noInstallments</name>
+    </customLabels>
+    <customLabels>
+        <label>Apenas as primeiras parcelas são exibidas.</label>
+        <name>AXF_Financings_installmentsTruncated</name>
+    </customLabels>
+    <customLabels>
+        <label>O status de algumas parcelas não pôde ser verificado.</label>
+        <name>AXF_Financings_installmentsUnverified</name>
+    </customLabels>
+    <customLabels>
+        <label>Ainda não gerada</label>
+        <name>AXF_Financings_projected</name>
+    </customLabels>
+    <customLabels>
+        <label>Paga</label>
+        <name>AXF_Financings_instPAID</name>
+    </customLabels>
+    <customLabels>
+        <label>Parcial</label>
+        <name>AXF_Financings_instPARTIAL</name>
+    </customLabels>
+    <customLabels>
+        <label>Prevista</label>
+        <name>AXF_Financings_instPLANNED</name>
+    </customLabels>
+    <customLabels>
+        <label>Cancelada</label>
+        <name>AXF_Financings_instCANCELLED</name>
+    </customLabels>
+    <customLabels>
+        <label>Alterar valor</label>
+        <name>AXF_Financings_editAmount</name>
+    </customLabels>
+    <customLabels>
+        <label>Alterar o valor da parcela de {0}</label>
+        <name>AXF_Financings_editAmountFor</name>
+    </customLabels>
+    <customLabels>
+        <label>Novo valor da parcela</label>
+        <name>AXF_Financings_newAmount</name>
+    </customLabels>
+    <customLabels>
+        <label
+    >Vale a partir da primeira parcela futura ainda não paga; as pagas não mudam.</label>
+        <name>AXF_Financings_editHint</name>
+    </customLabels>
+    <customLabels>
+        <label
+    >Valor alterado: {0} parcela(s) atualizada(s), {1} preservada(s).</label>
+        <name>AXF_Financings_amountSaved</name>
+    </customLabels>
+    <customLabels>
+        <label>Encerrar financiamento</label>
+        <name>AXF_Financings_end</name>
+    </customLabels>
+    <customLabels>
+        <label>Encerrar o financiamento {0}</label>
+        <name>AXF_Financings_endFor</name>
+    </customLabels>
+    <customLabels>
+        <label>Data do encerramento</label>
+        <name>AXF_Financings_endDate</name>
+    </customLabels>
+    <customLabels>
+        <label
+    >As parcelas futuras após esta data que não foram pagas são canceladas.</label>
+        <name>AXF_Financings_endHint</name>
+    </customLabels>
+    <customLabels>
+        <label>Confirmar encerramento</label>
+        <name>AXF_Financings_confirmEnd</name>
+    </customLabels>
+    <customLabels>
+        <label
+    >Encerrado: {0} parcela(s) cancelada(s), {1} preservada(s).</label>
+        <name>AXF_Financings_ended</name>
+    </customLabels>
+    <customLabels>
+        <label>Quitar antecipado</label>
+        <name>AXF_Financings_settle</name>
+    </customLabels>
+    <customLabels>
+        <label>Quitar {0} antecipadamente</label>
+        <name>AXF_Financings_settleFor</name>
+    </customLabels>
+    <customLabels>
+        <label>Quitação antecipada</label>
+        <name>AXF_Financings_settleHeading</name>
+    </customLabels>
+    <customLabels>
+        <label>Valor da quitação</label>
+        <name>AXF_Financings_settleAmount</name>
+    </customLabels>
+    <customLabels>
+        <label
+    >Sugerido: saldo devedor sem juros futuros. Use o valor informado pelo credor se for diferente.</label>
+        <name>AXF_Financings_settleAmountHint</name>
+    </customLabels>
+    <customLabels>
+        <label>Data da quitação</label>
+        <name>AXF_Financings_settleDate</name>
+    </customLabels>
+    <customLabels>
+        <label
+    >Um lançamento previsto de quitação é criado e as parcelas futuras não pagas após esta data são canceladas.</label>
+        <name>AXF_Financings_settleHint</name>
+    </customLabels>
+    <customLabels>
+        <label>Confirmar quitação</label>
+        <name>AXF_Financings_confirmSettle</name>
+    </customLabels>
+    <customLabels>
+        <label
+    >Quitado: lançamento de quitação criado, {0} parcela(s) cancelada(s).</label>
+        <name>AXF_Financings_settled</name>
+    </customLabels>
+    <customLabels>
+        <label>Fechar</label>
+        <name>AXF_Financings_close</name>
+    </customLabels>
+    <customLabels>
+        <label>Voltar</label>
+        <name>AXF_Financings_cancel</name>
+    </customLabels>
+    <customLabels>
+        <label>Salvar</label>
+        <name>AXF_Financings_save</name>
+    </customLabels>
+    <customLabels>
+        <label>—</label>
+        <name>AXF_Financings_notAvailable</name>
+    </customLabels>
+    <customLabels>
+        <label>Este financiamento não está disponível para você.</label>
+        <name>AXF_Financings_codeNOT_ACCESSIBLE</name>
+    </customLabels>
+    <customLabels>
+        <label>Esta ação não é permitida para este financiamento.</label>
+        <name>AXF_Financings_codeNOT_ALLOWED</name>
+    </customLabels>
+    <customLabels>
+        <label
+    >O financiamento mudou desde que foi carregado; ele foi recarregado. Tente de novo.</label>
+        <name>AXF_Financings_codeCONFLICT</name>
+    </customLabels>
+    <customLabels>
+        <label>Confira os valores informados.</label>
+        <name>AXF_Financings_codeINVALID_INPUT</name>
+    </customLabels>
+    <customLabels>
+        <label
+    >O registro está ocupado agora; tente de novo em instantes.</label>
+        <name>AXF_Financings_codeUNAVAILABLE</name>
+    </customLabels>
+    <customLabels>
+        <label>A alteração foi recusada; nada foi salvo.</label>
+        <name>AXF_Financings_codeREJECTED</name>
+    </customLabels>
+    <customLabels>
+        <label>Quitação — {0}</label>
+        <name>AXF_Financings_settlementDescription</name>
+    </customLabels>
+    <customLabels>
+        <label>Descrição</label>
+        <name>AXF_ScheduleWizard_description</name>
+    </customLabels>
+    <customLabels>
+        <label>Salvo. Ele é gerenciado na tela de Financiamentos.</label>
+        <name>AXF_ScheduleWizard_openFinancings</name>
+    </customLabels>
 <customTabs><label>Conta Corrente</label><name
     >AXF_CT_BankStatement</name></customTabs>
     <customTabs>
@@ -2988,5 +3307,9 @@
     <customTabs>
         <label>Recorrências</label>
         <name>AXF_CT_Recurrences</name>
+    </customTabs>
+    <customTabs>
+        <label>Financiamentos</label>
+        <name>AXF_CT_Financings</name>
     </customTabs>
 </Translations>

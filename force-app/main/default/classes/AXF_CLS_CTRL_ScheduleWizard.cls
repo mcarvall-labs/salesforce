@@ -28,14 +28,18 @@ public with sharing class AXF_CLS_CTRL_ScheduleWizard {
   }
 
   // The nested PlanInput travels as JSON (planJson): Aura cannot bind a nested
-  // inner-class DTO either.
+  // inner-class DTO either. AXF-156: origin and description are optional (entry-wizard
+  // hand-over); the plan becomes a managed schedule listed on the Financing screen.
   @AuraEnabled
   public static AXF_CLS_ScheduleService.SaveResult saveSchedule(
     String planJson,
     Id accountId,
     String direction,
     String currencyIsoCode,
-    String groupKey
+    String groupKey,
+    Id bankAccountId,
+    Id creditCardId,
+    String description
   ) {
     AXF_CLS_ScheduleService.SaveInput input = new AXF_CLS_ScheduleService.SaveInput();
     if (String.isNotBlank(planJson)) {
@@ -48,6 +52,9 @@ public with sharing class AXF_CLS_CTRL_ScheduleWizard {
     input.direction = direction;
     input.currencyIsoCode = currencyIsoCode;
     input.groupKey = groupKey;
+    input.bankAccountId = bankAccountId;
+    input.creditCardId = creditCardId;
+    input.description = description;
     return AXF_CLS_ScheduleService.save(input);
   }
 

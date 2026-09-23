@@ -336,6 +336,69 @@ describe("c-aXF_LWC_entryWizard", () => {
       c__currencyIsoCode: "BRL"
     });
     expect(ref.state.c__firstDueDate).toMatch(/^\d{4}-\d{2}-\d{2}$/);
+    // AXF-156: only filled details travel; a bank origin never arrives as a card.
+    expect(ref.state.c__creditCardId).toBeUndefined();
+    Object.values(ref.state).forEach((value) => expect(value).not.toBeNull());
+  });
+
+  async function installmentHandOver(kind, id, sources) {
+    const el = build();
+    getContexts.emit([CONTEXTS[0]]);
+    getFundingSources.emit(sources);
+    await flush();
+    await toDetails(el, "1200");
+    // The wizard has no description input yet (AXF-155 deferral): the field is reached through
+    // the generic field handler so the hand-over path is exercised end to end.
+    const input = el.shadowRoot.querySelector(
+      "lightning-input[data-field='magnitude']"
+    );
+    input.dataset.field = "description";
+    input.dispatchEvent(
+      new CustomEvent("change", { detail: { value: "Geladeira" } })
+    );
+    input.dataset.field = "magnitude";
+    const installment = el.shadowRoot.querySelector(
+      "input[data-type='INSTALLMENT']"
+    );
+    installment.checked = true;
+    installment.dispatchEvent(new CustomEvent("change"));
+    await flush();
+    next(el).click();
+    await flush();
+    await chooseSource(el, kind, id);
+    next(el).click();
+    await flush();
+    btn(el, /AXF_ManualEntry_continueSchedule/).click();
+    await flush();
+    return mockNavigate.mock.calls[0][0];
+  }
+
+  it("hands an installment over with its bank origin and description", async () => {
+    const ref = await installmentHandOver(
+      "BANK_ACCOUNT",
+      MANUAL_BANK.bankAccountId,
+      [MANUAL_BANK, CARD]
+    );
+    expect(ref.attributes.apiName).toBe("AXF_ScheduleWizard");
+    expect(ref.state).toMatchObject({
+      c__modality: "INSTALLMENT",
+      c__bankAccountId: MANUAL_BANK.bankAccountId,
+      c__description: "Geladeira"
+    });
+    expect(ref.state.c__creditCardId).toBeUndefined();
+  });
+
+  it("hands an installment over with its card origin only", async () => {
+    const ref = await installmentHandOver("CREDIT_CARD", CARD.creditCardId, [
+      MANUAL_BANK,
+      CARD
+    ]);
+    expect(ref.state).toMatchObject({
+      c__modality: "INSTALLMENT",
+      c__creditCardId: CARD.creditCardId,
+      c__description: "Geladeira"
+    });
+    expect(ref.state.c__bankAccountId).toBeUndefined();
   });
 
   it("hands a recurring entry over to the Recurring screen with its origin", async () => {

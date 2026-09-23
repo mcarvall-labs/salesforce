@@ -3,6 +3,10 @@ import { CurrentPageReference } from "lightning/navigation";
 import planSchedule from "@salesforce/apex/AXF_CLS_CTRL_ScheduleWizard.planSchedule";
 import saveSchedule from "@salesforce/apex/AXF_CLS_CTRL_ScheduleWizard.saveSchedule";
 import authorizedContexts from "@salesforce/apex/AXF_CLS_CTRL_ScheduleWizard.authorizedContexts";
+import descriptionLabel from "@salesforce/label/c.AXF_ScheduleWizard_description";
+import openFinancingsLabel from "@salesforce/label/c.AXF_ScheduleWizard_openFinancings";
+
+const SALESFORCE_ID = /^[a-zA-Z0-9]{15}([a-zA-Z0-9]{3})?$/;
 
 const MODALITY_OPTIONS = [
   { label: "PRICE (parcela constante)", value: "PRICE" },
@@ -26,6 +30,10 @@ const OUTCOME_LABELS = {
 };
 
 export default class AXF_LWC_scheduleWizard extends LightningElement {
+  labels = {
+    description: descriptionLabel,
+    openFinancings: openFinancingsLabel
+  };
   modalityOptions = MODALITY_OPTIONS;
   directionOptions = DIRECTION_OPTIONS;
   contextOptions = [];
@@ -41,6 +49,9 @@ export default class AXF_LWC_scheduleWizard extends LightningElement {
   fixedValue;
   flatFeePerInstallment;
   upfrontFee;
+  description;
+  bankAccountId;
+  creditCardId;
 
   schedule;
   saveResult;
@@ -51,7 +62,8 @@ export default class AXF_LWC_scheduleWizard extends LightningElement {
   /**
    * AXF-153: the entry wizard hands installment/recurring entries over with their details
    * (c__modality, c__direction, c__accountId, c__amount, c__firstDueDate,
-   * c__currencyIsoCode). Only well-formed values
+   * c__currencyIsoCode; AXF-156: c__description, c__bankAccountId | c__creditCardId, applied to
+   * the installments of the managed schedule). Only well-formed values
    * are taken, once per hand-over; the holder is still checked by the server on save.
    */
   @wire(CurrentPageReference)
@@ -67,7 +79,10 @@ export default class AXF_LWC_scheduleWizard extends LightningElement {
       state.c__accountId,
       state.c__amount,
       state.c__firstDueDate,
-      state.c__currencyIsoCode
+      state.c__currencyIsoCode,
+      state.c__description,
+      state.c__bankAccountId,
+      state.c__creditCardId
     ]);
     if (key === this.prefillKey) {
       return;
@@ -94,6 +109,19 @@ export default class AXF_LWC_scheduleWizard extends LightningElement {
     if (/^[A-Z]{3}$/.test(state.c__currencyIsoCode || "")) {
       this.currencyIsoCode = state.c__currencyIsoCode;
     }
+    // Every hand-over replaces the previous one: nothing of an earlier entry is kept.
+    this.description = state.c__description
+      ? String(state.c__description).substring(0, 255)
+      : undefined;
+    // One origin at most: a card wins over an account, as in the entry wizard.
+    const card = SALESFORCE_ID.test(state.c__creditCardId || "")
+      ? state.c__creditCardId
+      : undefined;
+    const bank = SALESFORCE_ID.test(state.c__bankAccountId || "")
+      ? state.c__bankAccountId
+      : undefined;
+    this.creditCardId = card;
+    this.bankAccountId = card ? undefined : bank;
     this.schedule = undefined;
     this.saveResult = undefined;
   }
@@ -145,6 +173,14 @@ export default class AXF_LWC_scheduleWizard extends LightningElement {
     );
   }
 
+  get saved() {
+    return (
+      Boolean(this.saveResult) &&
+      (this.saveResult.outcome === "SAVED" ||
+        this.saveResult.outcome === "ALREADY")
+    );
+  }
+
   get planDisabled() {
     return this.loading;
   }
@@ -160,6 +196,11 @@ export default class AXF_LWC_scheduleWizard extends LightningElement {
       value = value === "" ? undefined : Number(value);
     }
     this[field] = value;
+    if (field === "accountId") {
+      // The handed-over origin belongs to the handed-over holder only.
+      this.bankAccountId = undefined;
+      this.creditCardId = undefined;
+    }
   }
 
   buildPlanInput() {
@@ -203,7 +244,10 @@ export default class AXF_LWC_scheduleWizard extends LightningElement {
         accountId: this.accountId,
         direction: this.direction,
         currencyIsoCode: this.currencyIsoCode,
-        groupKey
+        groupKey,
+        bankAccountId: this.bankAccountId || null,
+        creditCardId: this.creditCardId || null,
+        description: this.description ? String(this.description).trim() : null
       });
       this.saveResult = result;
       if (result.outcome !== "SAVED" && result.outcome !== "ALREADY") {
