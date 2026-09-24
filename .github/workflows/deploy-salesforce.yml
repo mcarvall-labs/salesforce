@@ -25,6 +25,7 @@ jobs:
       testsFailed: ${{ steps.operation.outputs.testsFailed }}
       deletedCount: ${{ steps.operation.outputs.deletedCount }}
       versionedDestructiveApplied: ${{ steps.operation.outputs.versionedDestructiveApplied }}
+      skippedRedundant: ${{ steps.operation.outputs.skippedRedundant }}
       errorMessage: ${{ steps.operation.outputs.errorMessage }}
     environment: ${{ github.ref_name == 'main' && 'PROD' || (github.ref_name == 'uat' && 'UAT' || 'DEV') }}
     steps:
@@ -76,6 +77,7 @@ jobs:
           TESTS_FAILED: ${{ needs.deploy.outputs.testsFailed }}
           DELETED_COUNT: ${{ needs.deploy.outputs.deletedCount }}
           VERSIONED_DESTRUCTIVE_APPLIED: ${{ needs.deploy.outputs.versionedDestructiveApplied }}
+          SKIPPED_REDUNDANT: ${{ needs.deploy.outputs.skippedRedundant }}
           ERROR_MESSAGE: ${{ needs.deploy.outputs.errorMessage }}
         with:
           script: |
@@ -87,10 +89,17 @@ jobs:
             const environment = context.ref === 'refs/heads/main' ? 'AXON_PROD' : (context.ref === 'refs/heads/uat' ? 'AXON_UAT' : 'AXON_DEV');
             const deletedCount = Number(process.env.DELETED_COUNT || 0);
             const versionedApplied = process.env.VERSIONED_DESTRUCTIVE_APPLIED === 'true';
+            const skippedRedundant = process.env.SKIPPED_REDUNDANT === 'true';
             const passed = process.env.DEPLOY_RESULT === 'success';
-            const icon = passed ? '✅' : '❌';
-            const status = passed ? 'Passed' : 'Failed';
+            const icon = skippedRedundant ? '⚪' : passed ? '✅' : '❌';
+            const status = skippedRedundant ? 'Skipped (redundant)' : passed ? 'Passed' : 'Failed';
             let body = `### ${icon} Salesforce deployment — ${environment}: **${status}**\n\n`;
+            if (skippedRedundant) {
+              body += `Identical to what this PR's own "Validate Salesforce delta" check already deployed for real before merge — not redeployed.\n`;
+              await Promise.all(prs.filter(p => p.merged_at && p.merge_commit_sha === context.sha).map(pr =>
+                github.rest.issues.createComment({...context.repo, issue_number: pr.number, body})));
+              return;
+            }
             body += [
               '| | |',
               '|---|---|',

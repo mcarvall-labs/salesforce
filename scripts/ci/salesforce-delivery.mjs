@@ -314,7 +314,7 @@ export async function run() {
       throw new Error("Deploy requires a protected branch push");
     // The delta is always computed from the PR base branch commit (from) to the
     // target/head commit being validated or deployed (to) — never from deploy history.
-    let baseSha, prBody;
+    let baseSha, prBody, mergedHeadSha;
     if (e.OPERATION === "deploy") {
       const prs = JSON.parse(
         command("gh", [
@@ -334,6 +334,7 @@ export async function run() {
         );
       baseSha = mergedPr.base.sha;
       prBody = mergedPr.body || "";
+      mergedHeadSha = mergedPr.head.sha;
     } else {
       baseSha = e.PR_BASE_SHA;
       prBody = e.PR_BODY || "";
@@ -344,6 +345,22 @@ export async function run() {
       );
     command("git", ["merge-base", "--is-ancestor", baseSha, e.GITHUB_SHA]);
     report.base = baseSha;
+    // DEV's PR-time "Validate Salesforce delta" check already does a real
+    // deploy (not dry-run) of the exact commit merged, and is a required
+    // check — so if the merge commit's tree is identical to that validated
+    // head (a clean merge, no conflict resolution changed content),
+    // redeploying here is provably redundant. Guard-rails above (merged PR
+    // for this exact commit, base ancestry) still ran regardless.
+    if (e.TARGET_ENV === "DEV" && mergedHeadSha) {
+      const headTree = command("git", ["rev-parse", `${mergedHeadSha}^{tree}`]);
+      const mergeTree = command("git", ["rev-parse", `${e.GITHUB_SHA}^{tree}`]);
+      if (headTree === mergeTree) {
+        report.outcome =
+          "Skipped — identical to what this PR's validation already deployed";
+        report.skippedRedundantDeploy = true;
+        return;
+      }
+    }
     const entries = changes(baseSha, e.GITHUB_SHA);
     report.paths = sourcePaths(entries);
     fs.writeFileSync(
@@ -469,9 +486,15 @@ export async function run() {
     ];
     for (const t of tests) args.push("--tests", t);
     // DEV PRs do a real deploy (no --dry-run) so devs can visually validate the
-    // org before approving the merge. UAT and PROD PRs keep --dry-run to avoid
-    // unintended side-effects before the merge is confirmed.
-    if (e.OPERATION === "validate" && e.TARGET_ENV !== "DEV")
+    // org before approving the merge. UAT and PROD PRs keep --dry-run by default
+    // to avoid unintended side-effects before the merge is confirmed — unless
+    // FORCE_REAL_DEPLOY is set (the label-triggered pre-merge-deploy job), which
+    // persists for real and gates the merge button on the result.
+    if (
+      e.OPERATION === "validate" &&
+      e.TARGET_ENV !== "DEV" &&
+      e.FORCE_REAL_DEPLOY !== "true"
+    )
       args.push("--dry-run");
     if (manifest.applied.length) {
       // `sf project deploy start` rejects --source-dir/--metadata-dir combined
@@ -635,7 +658,7 @@ code{background:#f4f4f4;padding:1px 4px;border-radius:3px}
 </head>
 <body>
 <h1>Salesforce ${escapeHtml(report.operation)}: ${escapeHtml(report.environment)}</h1>
-<p><span class="badge ${report.outcome === "Succeeded" ? "ok" : report.outcome.includes("manual review") ? "warn" : "fail"}">${escapeHtml(report.outcome)}</span></p>
+<p><span class="badge ${report.outcome === "Succeeded" ? "ok" : /skipped|manual review|no metadata changes/i.test(report.outcome) ? "warn" : "fail"}">${escapeHtml(report.outcome)}</span></p>
 <ul>
 <li><strong>Commit (to):</strong> <code>${escapeHtml(report.sha)}</code></li>
 <li><strong>Base (from):</strong> <code>${escapeHtml(report.base || "Not required / not configured")}</code></li>
@@ -709,6 +732,7 @@ ${
             "versionedDestructiveApplied",
             (report.versionedDestructiveManifests?.length ?? 0) > 0
           ) +
+          line("skippedRedundant", report.skippedRedundantDeploy === true) +
           line("errorMessage", report.error)
       );
     }
