@@ -73,6 +73,9 @@ every local test class in the org:
   either in the delta or declared in the PR body, the operation fails closed with a
   message asking for the `### Apex test classes to run` code block — Salesforce
   cannot compute coverage for `RunSpecifiedTests` without an explicit test list.
+  This is checked immediately after computing the delta, before packaging
+  metadata or contacting the org at all, so a PR missing this is caught right
+  away instead of after several minutes of setup.
 - If the delta has no Apex/trigger at all (e.g. only LWC, Flow or layout changes),
   the operation falls back to `RunLocalTests` so production code coverage is still
   proven.
