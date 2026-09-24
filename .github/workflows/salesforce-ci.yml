@@ -117,16 +117,16 @@ jobs:
           retention-days: 30
           if-no-files-found: warn
 
-  pre-merge-deploy:
-    name: Pre-merge deploy
+  pre-merge-deploy-run:
+    name: Pre-merge deploy (run)
     needs: scope
     # UAT/PROD only — DEV's "Validate Salesforce delta" already deploys for real
     # on every push and is already a required check, so no separate gate is
-    # needed there. Skipped (not merely pending) until the `deploy-approved`
-    # label is present; a skipped required check keeps the native Merge button
-    # locked, same as a failing one. Re-runs on every push while the label is
-    # still on the PR, so a stale success from an earlier commit can't linger —
-    # add the label again after pushing new changes to re-gate the merge.
+    # needed there. Only runs while the `deploy-approved` label is present, so
+    # ordinary PRs don't touch UAT/PROD credentials or approval gates on every
+    # push. This job itself is NOT the required check — see `pre-merge-deploy`
+    # below, which always runs and fails closed when this one is skipped or
+    # unsuccessful, so a `skipped` conclusion here can never satisfy the check.
     if: >-
       needs.scope.outputs.has_metadata == 'true' &&
       github.base_ref != 'develop' &&
@@ -216,6 +216,34 @@ jobs:
             body += `\n${artifactUrl ? `[⬇️ Download evidence](${artifactUrl})` : '_No evidence artifact uploaded._'} · [Run logs](${runUrl})\n`;
             if (!passed) body += `\nPush a fix and re-add the \`deploy-approved\` label to retry.`;
             await github.rest.issues.createComment({...context.repo, issue_number: context.issue.number, body});
+
+  # The actual required check for UAT/PROD PRs. Always runs (no `environment:`,
+  # so it never waits on approval and never touches deploy credentials) and
+  # fails closed unless `pre-merge-deploy-run` (above) actually succeeded — so
+  # a missing label or a failed real deploy reports `failure` here, which
+  # genuinely blocks GitHub's native Merge button (a `skipped` conclusion does
+  # not).
+  pre-merge-deploy:
+    name: Pre-merge deploy
+    needs: [scope, pre-merge-deploy-run]
+    if: always()
+    runs-on: ubuntu-latest
+    steps:
+      - name: Require a successful real pre-merge deploy
+        run: |
+          if [ "${{ needs.scope.outputs.has_metadata }}" != "true" ]; then
+            echo "No force-app changes in this PR — nothing to gate."
+            exit 0
+          fi
+          if [ "${{ github.base_ref }}" = "develop" ]; then
+            echo "develop deploys for real on every push to the PR already — no separate gate needed."
+            exit 0
+          fi
+          if [ "${{ needs.pre-merge-deploy-run.result }}" != "success" ]; then
+            echo "::error::Add the 'deploy-approved' label to this PR to trigger a real deploy to $(if [ '${{ github.base_ref }}' = 'main' ]; then echo AXON_PROD; else echo AXON_UAT; fi) — this check only passes once that deploy succeeds. Current status: ${{ needs.pre-merge-deploy-run.result }}"
+            exit 1
+          fi
+          echo "Pre-merge deploy succeeded — merge unlocked."
 
   comment:
     name: Publish validation result
