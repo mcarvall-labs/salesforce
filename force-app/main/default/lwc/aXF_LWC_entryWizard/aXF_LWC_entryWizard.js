@@ -1,4 +1,5 @@
 import { LightningElement, wire, track } from "lwc";
+import { CurrentPageReference } from "lightning/navigation";
 import getContexts from "@salesforce/apex/AXF_CLS_CTRL_AuthorizedContext.getContexts";
 import getFundingSources from "@salesforce/apex/AXF_CLS_CTRL_FinancialEntry.getFundingSources";
 import createEntry from "@salesforce/apex/AXF_CLS_CTRL_FinancialEntry.createEntry";
@@ -47,6 +48,22 @@ export default class AxfLwcEntryWizard extends LightningElement {
   clientRequestId = uuidv4();
   feedback;
   lastResult;
+  // AXF-151: account handed over by the current-account screen (state.c__bankAccountId).
+  preselectBankAccountId;
+  preselectAccountId;
+  preselectDone = false;
+
+  @wire(CurrentPageReference)
+  wiredPageReference(pageRef) {
+    const state = (pageRef && pageRef.state) || {};
+    const bankAccountId = state.c__bankAccountId || null;
+    if (bankAccountId && bankAccountId !== this.preselectBankAccountId) {
+      this.preselectBankAccountId = bankAccountId;
+      this.preselectAccountId = state.c__accountId || null;
+      this.preselectDone = false;
+      this.applyPreselection();
+    }
+  }
 
   @wire(getContexts)
   wiredContexts({ data, error }) {
@@ -56,6 +73,7 @@ export default class AxfLwcEntryWizard extends LightningElement {
       if (data.length === 1 && !this.form.accountId) {
         this.form = { ...this.form, accountId: data[0].accountId };
       }
+      this.applyPreselection();
     } else if (error) {
       this.contexts = [];
       this.contextsLoaded = true;
@@ -65,6 +83,47 @@ export default class AxfLwcEntryWizard extends LightningElement {
   @wire(getFundingSources, { accountId: "$form.accountId" })
   wiredSources({ data }) {
     this.fundingSources = data || [];
+    this.applyPreselection();
+  }
+
+  /**
+   * Pre-selects the handed-over account as the entry's origin, once, and only when it is one of
+   * the holder's own available sources; an unknown or foreign id is silently ignored.
+   */
+  applyPreselection() {
+    if (!this.preselectBankAccountId || this.preselectDone) {
+      return;
+    }
+    if (
+      this.preselectAccountId &&
+      this.form.accountId !== this.preselectAccountId &&
+      this.contexts.some((c) => c.accountId === this.preselectAccountId)
+    ) {
+      // A reused (console) tab may still show another holder: follow the handed-over one.
+      this.form = {
+        ...this.form,
+        accountId: this.preselectAccountId,
+        sourceKind: "CASH",
+        bankAccountId: null,
+        creditCardId: null
+      };
+      this.fundingSources = [];
+      return; // the funding sources of this holder are loaded next
+    }
+    const match = this.fundingSources.find(
+      (s) =>
+        s.kind === "BANK_ACCOUNT" &&
+        s.bankAccountId === this.preselectBankAccountId
+    );
+    if (match) {
+      this.preselectDone = true;
+      this.form = {
+        ...this.form,
+        sourceKind: "BANK_ACCOUNT",
+        bankAccountId: match.bankAccountId,
+        creditCardId: null
+      };
+    }
   }
 
   // ---- labels/getters ----
@@ -195,6 +254,10 @@ export default class AxfLwcEntryWizard extends LightningElement {
   // ---- handlers ----
   handleField(event) {
     const field = event.target.dataset.field;
+    if (field === "accountId") {
+      // A manual holder choice ends any pending hand-over: it never takes the source later.
+      this.preselectDone = true;
+    }
     const value = event.detail ? event.detail.value : event.target.value;
     this.form = { ...this.form, [field]: value };
   }

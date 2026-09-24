@@ -2034,4 +2034,161 @@
     >A exportação não está configurada. Contate um administrador.</label><name
     >AXF_Export_codeEXPORT_POLICY_MISSING</name></customLabels><customLabels
   ><label>Não foi possível concluir a solicitação. Tente novamente.</label><name
-    >AXF_Export_codeSHARE_FAILED</name></customLabels></Translations>
+    >AXF_Export_codeSHARE_FAILED</name></customLabels><customLabels><label
+    >Conta Corrente</label><name
+    >AXF_BankStatement_title</name></customLabels><customLabels><label
+    >Saldos, extrato e conciliação das suas contas e carteiras.</label><name
+    >AXF_BankStatement_intro</name></customLabels><customLabels><label
+    >Você não tem acesso à tela de Conta Corrente.</label><name
+    >AXF_BankStatement_noCapability</name></customLabels><customLabels><label
+    >Carregando…</label><name
+    >AXF_BankStatement_loading</name></customLabels><customLabels><label
+    >Contas e carteiras</label><name
+    >AXF_BankStatement_accountsCaption</name></customLabels><customLabels><label
+    >Nenhuma conta ou carteira disponível nos seus contextos autorizados.</label><name
+    >AXF_BankStatement_noAccounts</name></customLabels><customLabels><label
+    >Conta</label><name
+    >AXF_BankStatement_colAccount</name></customLabels><customLabels><label
+    >Titular</label><name
+    >AXF_BankStatement_colHolder</name></customLabels><customLabels><label
+    >Saldo</label><name
+    >AXF_BankStatement_colBalance</name></customLabels><customLabels><label
+    >Ações</label><name
+    >AXF_BankStatement_colActions</name></customLabels><customLabels><label
+    >Carteira (dinheiro)</label><name
+    >AXF_BankStatement_wallet</name></customLabels><customLabels><label
+    >Não informado</label><name
+    >AXF_BankStatement_balanceUnknown</name></customLabels><customLabels><label
+    >Ver extrato</label><name
+    >AXF_BankStatement_viewStatement</name></customLabels><customLabels><label
+    >Ver extrato de {0}</label><name
+    >AXF_BankStatement_viewStatementFor</name></customLabels><customLabels
+  ><label>Atualizar da Pluggy</label><name
+    >AXF_BankStatement_refresh</name></customLabels><customLabels><label
+    >Atualizar {0} da Pluggy</label><name
+    >AXF_BankStatement_refreshFor</name></customLabels><customLabels><label
+    >Saldo atualizado da Pluggy.</label><name
+    >AXF_BankStatement_refreshDone</name></customLabels><customLabels><label
+    >Já existe uma atualização da Pluggy em andamento; tente novamente em alguns minutos.</label><name
+    >AXF_BankStatement_refreshRunning</name></customLabels><customLabels><label
+    >Atualização da Pluggy iniciada; nem todos os dados foram recebidos ainda.</label><name
+    >AXF_BankStatement_refreshPending</name></customLabels><customLabels><label
+    >Editar saldo</label><name
+    >AXF_BankStatement_editBalance</name></customLabels><customLabels><label
+    >Editar saldo de {0}</label><name
+    >AXF_BankStatement_editBalanceFor</name></customLabels><customLabels><label
+    >Novo saldo</label><name
+    >AXF_BankStatement_newBalance</name></customLabels><customLabels><label
+    >Salvar</label><name
+    >AXF_BankStatement_save</name></customLabels><customLabels><label
+    >Cancelar</label><name
+    >AXF_BankStatement_cancel</name></customLabels><customLabels><label
+    >Saldo atualizado.</label><name
+    >AXF_BankStatement_balanceSaved</name></customLabels><customLabels><label
+    >Extrato de {0} — {1}</label><name
+    >AXF_BankStatement_statementCaption</name></customLabels><customLabels
+  ><label>Mês anterior</label><name
+    >AXF_BankStatement_previousMonth</name></customLabels><customLabels><label
+    >Próximo mês</label><name
+    >AXF_BankStatement_nextMonth</name></customLabels><customLabels><label
+    >{0} a {1}</label><name
+    >AXF_BankStatement_customPeriod</name></customLabels><customLabels><label
+    >Filtros</label><name
+    >AXF_BankStatement_filtersLegend</name></customLabels><customLabels><label
+    >De</label><name
+    >AXF_BankStatement_fromDate</name></customLabels><customLabels><label
+    >Até</label><name
+    >AXF_BankStatement_toDate</name></customLabels><customLabels><label
+    >Valor mínimo</label><name
+    >AXF_BankStatement_minAmount</name></customLabels><customLabels><label
+    >Valor máximo</label><name
+    >AXF_BankStatement_maxAmount</name></customLabels><customLabels><label
+    >Descrição contém</label><name
+    >AXF_BankStatement_term</name></customLabels><customLabels><label
+    >Aplicar filtros</label><name
+    >AXF_BankStatement_applyFilters</name></customLabels><customLabels><label
+    >Limpar filtros</label><name
+    >AXF_BankStatement_clearFilters</name></customLabels><customLabels><label
+    >Data</label><name
+    >AXF_BankStatement_colDate</name></customLabels><customLabels><label
+    >Descrição</label><name
+    >AXF_BankStatement_colDescription</name></customLabels><customLabels><label
+    >Origem</label><name
+    >AXF_BankStatement_colOrigin</name></customLabels><customLabels><label
+    >Valor</label><name
+    >AXF_BankStatement_colAmount</name></customLabels><customLabels><label
+    >Conciliação</label><name
+    >AXF_BankStatement_colStatus</name></customLabels><customLabels><label
+    >Conciliada</label><name
+    >AXF_BankStatement_statusRECONCILED</name></customLabels><customLabels
+  ><label>Parcial</label><name
+    >AXF_BankStatement_statusPARTIAL</name></customLabels><customLabels><label
+    >Não conciliada</label><name
+    >AXF_BankStatement_statusUNRECONCILED</name></customLabels><customLabels
+  ><label>Não verificável</label><name
+    >AXF_BankStatement_statusUNVERIFIED</name></customLabels><customLabels
+  ><label>Pluggy</label><name
+    >AXF_BankStatement_originPLUGGY</name></customLabels><customLabels><label
+    >Importação CSV</label><name
+    >AXF_BankStatement_originCSV</name></customLabels><customLabels><label
+    >Fato manual</label><name
+    >AXF_BankStatement_originMANUAL</name></customLabels><customLabels><label
+    >Lançamento manual (previsto)</label><name
+    >AXF_BankStatement_originPLANNED</name></customLabels><customLabels><label
+    >Lançamento manual (realizado)</label><name
+    >AXF_BankStatement_originACTUAL_ONLY</name></customLabels><customLabels
+  ><label>Sugestões</label><name
+    >AXF_BankStatement_showSuggestions</name></customLabels><customLabels><label
+    >Mostrar sugestões para {0}</label><name
+    >AXF_BankStatement_showSuggestionsFor</name></customLabels><customLabels
+  ><label>Sugestões com até ±5% do valor e ±7 dias</label><name
+    >AXF_BankStatement_suggestionsCaption</name></customLabels><customLabels
+  ><label>Nenhuma sugestão na janela.</label><name
+    >AXF_BankStatement_noSuggestions</name></customLabels><customLabels><label
+    >Conciliar com {0} — {1} em {2}</label><name
+    >AXF_BankStatement_suggestionAction</name></customLabels><customLabels
+  ><label>Empate</label><name
+    >AXF_BankStatement_tied</name></customLabels><customLabels><label
+    >Conciliação confirmada.</label><name
+    >AXF_BankStatement_confirmed</name></customLabels><customLabels><label
+    >Nova despesa ou receita manual</label><name
+    >AXF_BankStatement_newEntry</name></customLabels><customLabels><label
+    >Nenhuma linha neste período.</label><name
+    >AXF_BankStatement_noLines</name></customLabels><customLabels><label
+    >A lista foi limitada; reduza o período ou os filtros.</label><name
+    >AXF_BankStatement_truncated</name></customLabels><customLabels><label
+    >Não foi possível concluir a operação.</label><name
+    >AXF_BankStatement_error</name></customLabels><customLabels><label
+    >Este registro não está disponível no seu contexto autorizado.</label><name
+    >AXF_BankStatement_codeNOT_ACCESSIBLE</name></customLabels><customLabels
+  ><label>Você não tem autorização para esta ação.</label><name
+    >AXF_BankStatement_codeUNAVAILABLE</name></customLabels><customLabels><label
+    >Revise os valores informados.</label><name
+    >AXF_BankStatement_codeINVALID_INPUT</name></customLabels><customLabels
+  ><label
+    >Os dados mudaram em outra sessão; a linha foi recarregada.</label><name
+    >AXF_BankStatement_codeCONFLICT</name></customLabels><customLabels><label
+    >Estes registros já estão conciliados entre si; a linha foi recarregada.</label><name
+    >AXF_BankStatement_codeALREADY_LINKED</name></customLabels><customLabels
+  ><label>Esta ação não é permitida para esta conta.</label><name
+    >AXF_BankStatement_codeNOT_ALLOWED</name></customLabels><customLabels><label
+    >A sugestão está fora da janela permitida.</label><name
+    >AXF_BankStatement_codeOUT_OF_WINDOW</name></customLabels><customLabels
+  ><label>Não há mais valor a conciliar neste registro.</label><name
+    >AXF_BankStatement_codeEXHAUSTED</name></customLabels><customLabels><label
+    >Este fato tem um item de revisão em aberto.</label><name
+    >AXF_BankStatement_codeREVIEW_OPEN</name></customLabels><customLabels><label
+    >A atualização da Pluggy falhou. Tente novamente mais tarde.</label><name
+    >AXF_BankStatement_codeREFRESH_FAILED</name></customLabels><customLabels
+  ><label>A coleta está bloqueada para esta conexão.</label><name
+    >AXF_BankStatement_codeREFRESH_BLOCKED</name></customLabels><customLabels
+  ><label>Informe as duas datas do período.</label><name
+    >AXF_BankStatement_filterPeriodIncomplete</name></customLabels><customLabels
+  ><label>A data inicial deve ser igual ou anterior à final.</label><name
+    >AXF_BankStatement_filterPeriodOrder</name></customLabels><customLabels
+  ><label>O período deve ter menos de 366 dias.</label><name
+    >AXF_BankStatement_filterPeriodTooLong</name></customLabels><customLabels
+  ><label>O valor mínimo não pode ser maior que o máximo.</label><name
+    >AXF_BankStatement_filterAmountOrder</name></customLabels><customTabs><label
+    >Conta Corrente</label><name
+    >AXF_CT_BankStatement</name></customTabs></Translations>

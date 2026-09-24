@@ -260,4 +260,28 @@ private class AXF_CLS_FinancialEntryServiceTest {
       System.assertEquals('BANK_ACCOUNT', options[0].kind);
     }
   }
+
+  @IsTest
+  static void walletFundingSourceIsNamedAsSuch() {
+    System.runAs(new User(Id = UserInfo.getUserId())) {
+      Account a = holder();
+      AXF_OBJ_BankAccount__c wallet = new AXF_OBJ_BankAccount__c(
+        AXF_BA_LKP_Account__c = a.Id,
+        AXF_BA_PKL_AvailabilityState__c = 'AVAILABLE',
+        AXF_BA_TXT_CurrencyIsoCode__c = 'BRL',
+        AXF_BA_TXT_Type__c = 'WALLET'
+      );
+      insert wallet;
+
+      Test.startTest();
+      List<AXF_CLS_FinancialEntryService.FundingSourceOption> options = AXF_CLS_FinancialEntryService.getFundingSources(
+        a.Id
+      );
+      Test.stopTest();
+
+      System.assertEquals(1, options.size());
+      System.assertEquals(wallet.Id, options[0].bankAccountId);
+      System.assertEquals(Label.AXF_BankStatement_wallet, options[0].label);
+    }
+  }
 }

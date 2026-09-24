@@ -3,6 +3,7 @@ import Wizard from "c/aXF_LWC_entryWizard";
 import getContexts from "@salesforce/apex/AXF_CLS_CTRL_AuthorizedContext.getContexts";
 import getFundingSources from "@salesforce/apex/AXF_CLS_CTRL_FinancialEntry.getFundingSources";
 import createEntry from "@salesforce/apex/AXF_CLS_CTRL_FinancialEntry.createEntry";
+import { CurrentPageReference } from "lightning/navigation";
 
 jest.mock(
   "@salesforce/apex/AXF_CLS_CTRL_AuthorizedContext.getContexts",
@@ -191,5 +192,157 @@ describe("c-aXF_LWC_entryWizard", () => {
 
     expect(createEntry).not.toHaveBeenCalled();
     expect(el.shadowRoot.textContent).toMatch(/Contexto|Context/);
+  });
+
+  it("pre-selects the account handed over by the current-account screen", async () => {
+    createEntry.mockResolvedValue({ outcome: "CREATED" });
+    const el = build();
+    CurrentPageReference.emit({
+      type: "standard__navItemPage",
+      attributes: { apiName: "AXF_EntryWizard" },
+      state: {
+        c__bankAccountId: "a01000000000002",
+        c__accountId: CONTEXTS[1].accountId
+      }
+    });
+    getContexts.emit(CONTEXTS);
+    await flush();
+    getFundingSources.emit([
+      {
+        kind: "BANK_ACCOUNT",
+        bankAccountId: "a01000000000001",
+        label: "Banco A"
+      },
+      {
+        kind: "BANK_ACCOUNT",
+        bankAccountId: "a01000000000002",
+        label: "Carteira (dinheiro)"
+      }
+    ]);
+    await flush();
+
+    btn(el, /Próximo|Next/).click();
+    await flush();
+    el.shadowRoot
+      .querySelector("lightning-input[data-field='magnitude']")
+      .dispatchEvent(new CustomEvent("change", { detail: { value: "20" } }));
+    await flush();
+    btn(el, /Próximo|Next/).click();
+    await flush();
+    // The source step is already filled: no second question.
+    expect(btn(el, /Próximo|Next/).disabled).toBe(false);
+    btn(el, /Próximo|Next/).click();
+    await flush();
+    btn(el, /Confirmar|Confirm/).click();
+    await settle();
+
+    const call = createEntry.mock.calls[0][0];
+    expect(call.accountId).toBe(CONTEXTS[1].accountId);
+    expect(call.bankAccountId).toBe("a01000000000002");
+  });
+
+  it("ignores a handed-over account that is not a source of the holder", async () => {
+    createEntry.mockResolvedValue({ outcome: "CREATED" });
+    const el = build();
+    CurrentPageReference.emit({
+      state: { c__bankAccountId: "a01000000000999" }
+    });
+    getContexts.emit([CONTEXTS[0]]);
+    getFundingSources.emit([
+      {
+        kind: "BANK_ACCOUNT",
+        bankAccountId: "a01000000000001",
+        label: "Banco A"
+      }
+    ]);
+    await flush();
+
+    btn(el, /Próximo|Next/).click();
+    await flush();
+    el.shadowRoot
+      .querySelector("lightning-input[data-field='magnitude']")
+      .dispatchEvent(new CustomEvent("change", { detail: { value: "20" } }));
+    await flush();
+    btn(el, /Próximo|Next/).click();
+    await flush();
+    btn(el, /Próximo|Next/).click();
+    await flush();
+    btn(el, /Confirmar|Confirm/).click();
+    await settle();
+
+    const call = createEntry.mock.calls[0][0];
+    expect(call.accountId).toBe(CONTEXTS[0].accountId);
+    expect(call.bankAccountId).toBeNull();
+  });
+
+  async function finishWith(el) {
+    btn(el, /Próximo|Next/).click();
+    await flush();
+    el.shadowRoot
+      .querySelector("lightning-input[data-field='magnitude']")
+      .dispatchEvent(new CustomEvent("change", { detail: { value: "20" } }));
+    await flush();
+    btn(el, /Próximo|Next/).click();
+    await flush();
+    btn(el, /Próximo|Next/).click();
+    await flush();
+    btn(el, /Confirmar|Confirm/).click();
+    await settle();
+    return createEntry.mock.calls[0][0];
+  }
+
+  it("follows a new hand-over when the reused tab shows another holder", async () => {
+    createEntry.mockResolvedValue({ outcome: "CREATED" });
+    const el = build();
+    getContexts.emit(CONTEXTS);
+    await flush();
+    el.shadowRoot
+      .querySelector("lightning-combobox")
+      .dispatchEvent(
+        new CustomEvent("change", { detail: { value: CONTEXTS[0].accountId } })
+      );
+    await flush();
+    CurrentPageReference.emit({
+      state: {
+        c__bankAccountId: "a01000000000002",
+        c__accountId: CONTEXTS[1].accountId
+      }
+    });
+    await flush();
+    getFundingSources.emit([
+      { kind: "BANK_ACCOUNT", bankAccountId: "a01000000000002", label: "B" }
+    ]);
+    await flush();
+
+    const call = await finishWith(el);
+    expect(call.accountId).toBe(CONTEXTS[1].accountId);
+    expect(call.bankAccountId).toBe("a01000000000002");
+  });
+
+  it("never takes the source after a manual holder change", async () => {
+    createEntry.mockResolvedValue({ outcome: "CREATED" });
+    const el = build();
+    getContexts.emit(CONTEXTS);
+    CurrentPageReference.emit({
+      state: {
+        c__bankAccountId: "a01000000000002",
+        c__accountId: CONTEXTS[1].accountId
+      }
+    });
+    await flush();
+    el.shadowRoot
+      .querySelector("lightning-combobox")
+      .dispatchEvent(
+        new CustomEvent("change", { detail: { value: CONTEXTS[0].accountId } })
+      );
+    await flush();
+    getFundingSources.emit([
+      { kind: "BANK_ACCOUNT", bankAccountId: "a01000000000002", label: "B" }
+    ]);
+    await flush();
+
+    const call = await finishWith(el);
+    expect(call.accountId).toBe(CONTEXTS[0].accountId);
+    expect(call.bankAccountId).toBeNull();
   });
 });

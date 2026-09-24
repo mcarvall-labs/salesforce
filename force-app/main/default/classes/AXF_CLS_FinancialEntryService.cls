@@ -81,7 +81,8 @@ public with sharing class AXF_CLS_FinancialEntryService {
         Id,
         AXF_BA_TXT_InstitutionName__c,
         AXF_BA_LKP_BankInstitution__r.Name,
-        AXF_BA_TXT_NumberMasked__c
+        AXF_BA_TXT_NumberMasked__c,
+        AXF_BA_TXT_Type__c
       FROM AXF_OBJ_BankAccount__c
       WHERE
         AXF_BA_LKP_Account__c = :accountId
@@ -92,15 +93,22 @@ public with sharing class AXF_CLS_FinancialEntryService {
       FundingSourceOption o = new FundingSourceOption();
       o.bankAccountId = ba.Id;
       o.kind = 'BANK_ACCOUNT';
+      // AXF-151: a wallet has no institution; it is named as such, never "null".
+      Boolean wallet = 'WALLET'.equalsIgnoreCase(ba.AXF_BA_TXT_Type__c);
       o.label = String.join(
-        new List<String>{
-          ba.AXF_BA_LKP_BankInstitution__r == null
-            ? ba.AXF_BA_TXT_InstitutionName__c
-            : ba.AXF_BA_LKP_BankInstitution__r.Name,
-          ba.AXF_BA_TXT_NumberMasked__c
-        },
-        ' '
-      );
+          new List<String>{
+            wallet
+              ? System.Label.AXF_BankStatement_wallet
+              : (ba.AXF_BA_LKP_BankInstitution__r == null
+                  ? ba.AXF_BA_TXT_InstitutionName__c
+                  : ba.AXF_BA_LKP_BankInstitution__r.Name),
+            ba.AXF_BA_TXT_NumberMasked__c == null
+              ? ''
+              : ba.AXF_BA_TXT_NumberMasked__c
+          },
+          ' '
+        )
+        .trim();
       out.add(o);
     }
     for (AXF_OBJ_CreditCard__c cc : [

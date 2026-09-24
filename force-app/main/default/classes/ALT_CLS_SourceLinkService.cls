@@ -694,6 +694,29 @@ public with sharing class ALT_CLS_SourceLinkService {
     }
   }
 
+  /**
+   * @description AXF-151: user-visible net allocation (Σ APPLICATION − Σ REVERSAL) per bank/card
+   * fact, with the same unverified rule as source eligibility. Read-only; exposes no allocation row.
+   */
+  public Map<Id, Decimal> netOfSources(Set<Id> ids, Set<Id> unverified) {
+    requireAccess();
+    Map<Id, Decimal> nets = new Map<Id, Decimal>();
+    if (ids != null && !ids.isEmpty()) {
+      netBySource(ids, nets, unverified);
+    }
+    return nets;
+  }
+
+  /** @description AXF-151: the same net per planned/actual financial transaction (target side). */
+  public Map<Id, Decimal> netOfTargets(Set<Id> ids, Set<Id> unverified) {
+    requireAccess();
+    Map<Id, Decimal> nets = new Map<Id, Decimal>();
+    if (ids != null && !ids.isEmpty()) {
+      netByTarget(ids, nets, unverified);
+    }
+    return nets;
+  }
+
   /** @description Reads and evaluates one fact; unauthorized or missing facts are indistinguishable. */
   public SourceView readSource(Id sourceId, String sourceKind) {
     requireAccess();

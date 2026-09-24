@@ -553,4 +553,109 @@ private class ALT_CLS_ManualFinancialSourceTest {
       'provider text derived from the canonical directory'
     );
   }
+
+  @IsTest
+  static void createsWalletWithoutInstitution() {
+    ALT_CLS_ManualFinancialSource.canConfigureOverride = true;
+    ALT_CLS_ManualFinancialSource.sourceAccessOverride = true;
+    Account a = holder();
+    ALT_CLS_ManualFinancialSource.SaveInput i = input(
+      a,
+      'BANK',
+      '123e4567-e89b-42d3-a456-426614174151'
+    );
+    i.sourceType = 'wallet';
+    i.institutionName = null;
+    i.bankInstitutionId = null;
+    i.maskedNumber = null;
+    ALT_CLS_ManualFinancialSource svc = new ALT_CLS_ManualFinancialSource();
+    ALT_CLS_ManualFinancialSource.SaveResult created = svc.save(i);
+    System.assertEquals(
+      'CREATED',
+      created.outcome,
+      created.message + ' / ' + ALT_CLS_ManualFinancialSource.lastFailure
+    );
+    AXF_OBJ_BankAccount__c wallet = [
+      SELECT
+        AXF_BA_TXT_Type__c,
+        AXF_BA_TXT_InstitutionName__c,
+        AXF_BA_LKP_BankInstitution__c,
+        AXF_BA_LKP_Connection__c,
+        AXF_BA_PKL_AvailabilityState__c
+      FROM AXF_OBJ_BankAccount__c
+      WHERE Id = :created.sourceId
+    ];
+    System.assertEquals('WALLET', wallet.AXF_BA_TXT_Type__c);
+    System.assertEquals(null, wallet.AXF_BA_TXT_InstitutionName__c);
+    System.assertEquals(null, wallet.AXF_BA_LKP_BankInstitution__c);
+    System.assertEquals(null, wallet.AXF_BA_LKP_Connection__c);
+    System.assertEquals('AVAILABLE', wallet.AXF_BA_PKL_AvailabilityState__c);
+    System.assertEquals('ALREADY', svc.save(i).outcome, 'null-safe replay');
+    i.sourceId = created.sourceId;
+    i.expectedVersion = 1;
+    i.maskedNumber = 'Bolso';
+    System.assertEquals(
+      'UPDATED',
+      svc.save(i).outcome,
+      'a wallet is edited without an institution'
+    );
+    i.expectedVersion = 2;
+    i.sourceType = 'CHECKING';
+    i.institutionName = 'Banco Manual';
+    ALT_CLS_ManualFinancialSource.SaveResult toChecking = svc.save(i);
+    System.assertEquals('INVALID', toChecking.outcome, 'wallet stays wallet');
+    System.assert(toChecking.invalidFields.contains('sourceType'));
+    Account b = holder();
+    ALT_CLS_ManualFinancialSource.SaveInput checking = input(
+      b,
+      'BANK',
+      '123e4567-e89b-42d3-a456-426614174154'
+    );
+    ALT_CLS_ManualFinancialSource.SaveResult bank = svc.save(checking);
+    System.assertEquals('CREATED', bank.outcome);
+    checking.sourceId = bank.sourceId;
+    checking.expectedVersion = 1;
+    checking.sourceType = 'WALLET';
+    ALT_CLS_ManualFinancialSource.SaveResult toWallet = svc.save(checking);
+    System.assertEquals('INVALID', toWallet.outcome, 'account stays account');
+    System.assertEquals(
+      'Banco Manual',
+      [
+        SELECT AXF_BA_TXT_InstitutionName__c
+        FROM AXF_OBJ_BankAccount__c
+        WHERE Id = :bank.sourceId
+      ]
+      .AXF_BA_TXT_InstitutionName__c,
+      'institution is never dropped'
+    );
+  }
+  @IsTest
+  static void nonWalletStillRequiresInstitution() {
+    ALT_CLS_ManualFinancialSource.canConfigureOverride = true;
+    ALT_CLS_ManualFinancialSource.sourceAccessOverride = true;
+    Account a = holder();
+    ALT_CLS_ManualFinancialSource.SaveInput i = input(
+      a,
+      'BANK',
+      '123e4567-e89b-42d3-a456-426614174152'
+    );
+    i.sourceType = 'CHECKING';
+    i.institutionName = null;
+    ALT_CLS_ManualFinancialSource.SaveResult rejected = new ALT_CLS_ManualFinancialSource()
+      .save(i);
+    System.assertEquals('INVALID', rejected.outcome);
+    System.assert(rejected.invalidFields.contains('institutionName'));
+    ALT_CLS_ManualFinancialSource.SaveInput card = input(
+      a,
+      'CARD',
+      '123e4567-e89b-42d3-a456-426614174153'
+    );
+    card.sourceType = 'WALLET';
+    card.institutionName = ' ';
+    System.assertEquals(
+      'INVALID',
+      new ALT_CLS_ManualFinancialSource().save(card).outcome,
+      'a card is never a wallet'
+    );
+  }
 }
