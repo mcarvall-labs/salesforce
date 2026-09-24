@@ -169,6 +169,15 @@ auto-generated `destructiveChanges.xml` already covers with a lighter-weight,
 off-pipeline manual step. Verify org identity and impact before adding
 anything here; this is deploying deletions for real.
 
+**Tracking is mandatory, not optional.** A candidate for this kind of legacy
+cleanup must never live only in chat history or a PR comment — record it in
+[`docs/destructive-backlog.md`](destructive-backlog.md) (status, impact
+analysis, exclusions and why) and file/update a Jira ticket under `AXF` (see
+[AXF-161](https://axon-personal-finances.atlassian.net/browse/AXF-161) for the
+current one) before ending the task. Whoever eventually applies an entry
+re-verifies it against the live org first — the backlog is a snapshot, not a
+guarantee it still holds.
+
 A checked-in manifest's presence alone is enough to trigger a deploy, even
 for a commit whose own `force-app` diff is empty — e.g. the PR that adds
 `manifest/destructiveChangesPost.xml` only touches `manifest/`, but its

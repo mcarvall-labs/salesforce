@@ -48,6 +48,7 @@ public with sharing class ALT_CLS_ManualFinancialSource {
     public List<String> invalidFields = new List<String>();
   }
 
+  public static final String WALLET = 'WALLET';
   @TestVisible
   private static Boolean canConfigureOverride;
   @TestVisible
@@ -72,6 +73,12 @@ public with sharing class ALT_CLS_ManualFinancialSource {
     SaveResult invalid = validate(input);
     if (invalid != null)
       return invalid;
+    if (isWallet(input)) {
+      // AXF-151: a wallet (cash) is a bank-kind source with no institution and no Pluggy link.
+      input.sourceType = WALLET;
+      input.institutionName = null;
+      input.bankInstitutionId = null;
+    }
     try {
       // `with sharing` enforces record access; the explicit describe checks above
       // enforce CRUD/FLS without requiring access to relationship pseudo-fields.
@@ -138,7 +145,7 @@ public with sharing class ALT_CLS_ManualFinancialSource {
           AXF_BA_LKP_Account__c = holder.Id,
           AXF_BA_EXI_ManualKey__c = i.manualKey.toLowerCase(),
           AXF_BA_TXT_CurrencyIsoCode__c = i.currencyIsoCode.toUpperCase(),
-          AXF_BA_TXT_InstitutionName__c = i.institutionName.trim(),
+          AXF_BA_TXT_InstitutionName__c = trim(i.institutionName),
           AXF_BA_LKP_BankInstitution__c = i.bankInstitutionId,
           AXF_BA_TXT_NumberMasked__c = trim(i.maskedNumber),
           AXF_BA_TXT_Type__c = trim(i.sourceType),
@@ -151,7 +158,7 @@ public with sharing class ALT_CLS_ManualFinancialSource {
           AXF_CC_LKP_Account__c = holder.Id,
           AXF_CC_EXI_ManualKey__c = i.manualKey.toLowerCase(),
           AXF_CC_TXT_CurrencyIsoCode__c = i.currencyIsoCode.toUpperCase(),
-          AXF_CC_TXT_InstitutionName__c = i.institutionName.trim(),
+          AXF_CC_TXT_InstitutionName__c = trim(i.institutionName),
           AXF_CC_LKP_BankInstitution__c = i.bankInstitutionId,
           AXF_CC_TXT_LastFourMasked__c = trim(i.maskedNumber),
           AXF_CC_TXT_Brand__c = trim(i.brand),
@@ -215,6 +222,7 @@ public with sharing class ALT_CLS_ManualFinancialSource {
           AXF_BA_LKP_Account__c,
           AXF_BA_EXI_ManualKey__c,
           AXF_BA_TXT_CurrencyIsoCode__c,
+          AXF_BA_TXT_Type__c,
           AXF_BA_NUM_Version__c
         FROM AXF_OBJ_BankAccount__c
         WHERE Id = :i.sourceId
@@ -234,12 +242,18 @@ public with sharing class ALT_CLS_ManualFinancialSource {
           Outcome.INVALID,
           'Titular e moeda não podem ser alterados.'
         );
+      // AXF-151: a wallet never turns into an account with institution, nor the reverse.
+      if (WALLET.equalsIgnoreCase(row.AXF_BA_TXT_Type__c) != isWallet(i))
+        return invalid(
+          'sourceType',
+          'O tipo Carteira não pode ser alterado depois de criado.'
+        );
       if (integer(row.AXF_BA_NUM_Version__c) != i.expectedVersion)
         return result(
           Outcome.CONFLICT,
           'A fonte foi alterada em outra sessão.'
         );
-      row.AXF_BA_TXT_InstitutionName__c = i.institutionName.trim();
+      row.AXF_BA_TXT_InstitutionName__c = trim(i.institutionName);
       row.AXF_BA_LKP_BankInstitution__c = i.bankInstitutionId;
       row.AXF_BA_TXT_NumberMasked__c = trim(i.maskedNumber);
       row.AXF_BA_TXT_Type__c = trim(i.sourceType);
@@ -274,7 +288,7 @@ public with sharing class ALT_CLS_ManualFinancialSource {
       );
     if (integer(row.AXF_CC_NUM_Version__c) != i.expectedVersion)
       return result(Outcome.CONFLICT, 'A fonte foi alterada em outra sessão.');
-    row.AXF_CC_TXT_InstitutionName__c = i.institutionName.trim();
+    row.AXF_CC_TXT_InstitutionName__c = trim(i.institutionName);
     row.AXF_CC_LKP_BankInstitution__c = i.bankInstitutionId;
     row.AXF_CC_TXT_LastFourMasked__c = trim(i.maskedNumber);
     row.AXF_CC_TXT_Brand__c = trim(i.brand);
@@ -317,7 +331,7 @@ public with sharing class ALT_CLS_ManualFinancialSource {
         integer(r.AXF_BA_NUM_Version__c),
         r.AXF_BA_LKP_Account__c == i.holderId &&
           r.AXF_BA_TXT_CurrencyIsoCode__c == i.currencyIsoCode.toUpperCase() &&
-          r.AXF_BA_TXT_InstitutionName__c == i.institutionName.trim() &&
+          r.AXF_BA_TXT_InstitutionName__c == trim(i.institutionName) &&
           r.AXF_BA_LKP_BankInstitution__c == i.bankInstitutionId &&
           r.AXF_BA_TXT_NumberMasked__c == trim(i.maskedNumber) &&
           r.AXF_BA_TXT_Type__c == trim(i.sourceType)
@@ -352,7 +366,7 @@ public with sharing class ALT_CLS_ManualFinancialSource {
       integer(r.AXF_CC_NUM_Version__c),
       r.AXF_CC_LKP_Account__c == i.holderId &&
         r.AXF_CC_TXT_CurrencyIsoCode__c == i.currencyIsoCode.toUpperCase() &&
-        r.AXF_CC_TXT_InstitutionName__c == i.institutionName.trim() &&
+        r.AXF_CC_TXT_InstitutionName__c == trim(i.institutionName) &&
         r.AXF_CC_LKP_BankInstitution__c == i.bankInstitutionId &&
         r.AXF_CC_TXT_LastFourMasked__c == trim(i.maskedNumber) &&
         r.AXF_CC_TXT_Brand__c == trim(i.brand)
@@ -374,7 +388,11 @@ public with sharing class ALT_CLS_ManualFinancialSource {
       !Pattern.matches('^[A-Za-z]{3}$', i.currencyIsoCode)
     )
       return invalid('currencyIsoCode', 'Informe uma moeda ISO válida.');
-    if (String.isBlank(i.institutionName) && i.bankInstitutionId == null)
+    if (
+      !isWallet(i) &&
+      String.isBlank(i.institutionName) &&
+      i.bankInstitutionId == null
+    )
       return invalid('institutionName', 'Informe a instituição.');
     if (
       !String.isBlank(i.maskedNumber) &&
@@ -538,6 +556,12 @@ public with sharing class ALT_CLS_ManualFinancialSource {
           return false;
     }
     return true;
+  }
+  /** AXF-151: a wallet is declared by the caller as a bank-kind source of type WALLET. */
+  private static Boolean isWallet(SaveInput i) {
+    return kind(i) == 'BANK' &&
+      trim(i.sourceType) != null &&
+      trim(i.sourceType).toUpperCase() == WALLET;
   }
   private static String kind(SaveInput i) {
     if (i == null || String.isBlank(i.kind))

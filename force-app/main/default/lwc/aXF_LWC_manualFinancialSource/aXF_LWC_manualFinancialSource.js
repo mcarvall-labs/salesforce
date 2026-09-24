@@ -33,6 +33,7 @@ const COPY = {
     saving: "Salvando",
     bank: "Conta bancária",
     card: "Cartão de crédito",
+    wallet: "Carteira (dinheiro)",
     invalid: "Revise os campos destacados.",
     created: "Fonte financeira criada.",
     updated: "Fonte financeira atualizada.",
@@ -63,6 +64,7 @@ const COPY = {
     saving: "Saving",
     bank: "Bank account",
     card: "Credit card",
+    wallet: "Wallet (cash)",
     invalid: "Review the highlighted fields.",
     created: "Financial source created.",
     updated: "Financial source updated.",
@@ -72,6 +74,8 @@ const COPY = {
     failed: "Unable to save. Nothing was changed."
   }
 };
+
+const WALLET = "WALLET";
 
 export default class AXF_LWC_manualFinancialSource extends LightningElement {
   @api locale;
@@ -118,11 +122,19 @@ export default class AXF_LWC_manualFinancialSource extends LightningElement {
   get kindOptions() {
     return [
       { label: this.labels.bank, value: "BANK" },
-      { label: this.labels.card, value: "CARD" }
+      { label: this.labels.card, value: "CARD" },
+      { label: this.labels.wallet, value: WALLET }
     ];
   }
   get isBank() {
     return this.form.kind === "BANK";
+  }
+  // AXF-151: a wallet (cash) has no institution, no Pluggy link and no account type to fill.
+  get isWallet() {
+    return this.form.kind === WALLET;
+  }
+  get needsInstitution() {
+    return !this.isWallet;
   }
   get isCard() {
     return this.form.kind === "CARD";
@@ -219,8 +231,17 @@ export default class AXF_LWC_manualFinancialSource extends LightningElement {
         this.pendingManualKey = crypto.randomUUID();
       }
       // Primitive params: the controller does not accept the service's inner DTO.
+      const walletFields = this.isWallet
+        ? {
+            kind: "BANK",
+            sourceType: WALLET,
+            institutionName: null,
+            bankInstitutionId: null
+          }
+        : {};
       const result = await save({
         ...this.form,
+        ...walletFields,
         sourceId: this.sourceId,
         expectedVersion: this.expectedVersion,
         manualKey: this.sourceId ? null : this.pendingManualKey
