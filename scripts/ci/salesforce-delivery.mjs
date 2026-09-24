@@ -182,7 +182,29 @@ export function extractDeclaredTests(body) {
   return [...new Set(names)];
 }
 
+// force-app/main/default/permissionsets|permissionsetgroups/...
+const PERMISSION_SET_OR_GROUP_PATH =
+  /^force-app\/main\/default\/(permissionsets|permissionsetgroups)\//;
+
+// A delta made up entirely of PermissionSet/PermissionSetGroup metadata never
+// needs to run tests: every org here is Developer Edition, where `NoTestRun`
+// is a valid test level regardless of target (unlike a real Production org,
+// which forces some test level on every deploy). Skipping tests entirely for
+// this case also sidesteps the known PermissionSetGroup recalculation race
+// (see the wait in run() below) at its root, instead of racing against it —
+// there's no test execution left to race. Requires the PR to touch only
+// PS/PSG (see the "PermissionSet/PermissionSetGroup PRs" project rule in
+// docs/SALESFORCE_DELIVERY.md); any other metadata in the same delta forces
+// the normal test-coverage path below.
+export function isPermissionSetOrGroupOnly(paths) {
+  return (
+    paths.length > 0 && paths.every((p) => PERMISSION_SET_OR_GROUP_PATH.test(p))
+  );
+}
+
 export function testPlan(paths, readFile, declaredTests) {
+  if (isPermissionSetOrGroupOnly(paths))
+    return { testLevel: "NoTestRun", tests: [] };
   const testsInDelta = [];
   let hasProductionApex = false;
   for (const p of paths) {
@@ -495,51 +517,13 @@ export async function run() {
         "Authenticated Org ID does not match the configured target"
       );
     report.orgId = org.result.id;
-    // Wait for any in-flight PermissionSetGroup recalculation to settle before
-    // the deploy call below runs tests, to avoid the known recalculation-race
-    // flake (see waitForPermissionSetGroupsUpdated). Best-effort: a query
-    // failure or timeout is logged but never fails the pipeline closed — this
-    // is a mitigation for a known org-side timing issue, not a correctness
-    // requirement, and must not become a new way for every deploy to hang.
-    try {
-      const psgWait = await waitForPermissionSetGroupsUpdated({
-        queryOnce: () =>
-          pendingPermissionSetGroups(
-            JSON.parse(
-              command("sf", [
-                "data",
-                "query",
-                "--use-tooling-api",
-                "--target-org",
-                alias,
-                "--query",
-                "SELECT Id, DeveloperName, Status FROM PermissionSetGroup WHERE Status != 'Updated'",
-                "--json"
-              ])
-            )
-          ),
-        sleep: (ms) => new Promise((resolve) => setTimeout(resolve, ms)),
-        log: (msg) => process.stdout.write(msg + "\n")
-      });
-      report.permissionSetGroupWait = psgWait;
-      if (!psgWait.settled)
-        process.stdout.write(
-          `Timed out waiting for PermissionSetGroup recalculation; proceeding anyway. Still pending: ${psgWait.pending.join(", ")}\n`
-        );
-    } catch (waitError) {
-      report.permissionSetGroupWait = {
-        settled: null,
-        error: waitError.message
-      };
-      process.stdout.write(
-        `Could not check PermissionSetGroup recalculation status (${waitError.message}); proceeding anyway.\n`
-      );
-    }
     // Every environment scopes tests to what the delta actually touches instead of
     // running every local test class: any test class included in the delta itself,
     // plus anything declared in the PR's "### Apex test classes to run" code block.
     // Applies to both validate (dry-run) and deploy — same code path either way.
-    // Falls back to RunLocalTests only when the delta has no Apex/trigger at all.
+    // Falls back to RunLocalTests only when the delta has no Apex/trigger at all,
+    // except a PermissionSet/PermissionSetGroup-only delta, which skips tests
+    // entirely (see testPlan/isPermissionSetOrGroupOnly).
     const plan = testPlan(
       report.paths,
       (p) => fs.readFileSync(p, "utf8"),
@@ -549,6 +533,49 @@ export async function run() {
     const tests = plan.tests;
     report.testLevel = testLevel;
     report.tests = tests;
+    // Wait for any in-flight PermissionSetGroup recalculation to settle before
+    // the deploy call below runs tests, to avoid the known recalculation-race
+    // flake (see waitForPermissionSetGroupsUpdated). Skipped when this deploy
+    // won't run any tests (NoTestRun) — nothing left to race. Best-effort: a
+    // query failure or timeout is logged but never fails the pipeline closed —
+    // this mitigates a known org-side timing issue, it isn't a correctness
+    // requirement, and must not become a new way for every deploy to hang.
+    if (testLevel !== "NoTestRun") {
+      try {
+        const psgWait = await waitForPermissionSetGroupsUpdated({
+          queryOnce: () =>
+            pendingPermissionSetGroups(
+              JSON.parse(
+                command("sf", [
+                  "data",
+                  "query",
+                  "--use-tooling-api",
+                  "--target-org",
+                  alias,
+                  "--query",
+                  "SELECT Id, DeveloperName, Status FROM PermissionSetGroup WHERE Status != 'Updated'",
+                  "--json"
+                ])
+              )
+            ),
+          sleep: (ms) => new Promise((resolve) => setTimeout(resolve, ms)),
+          log: (msg) => process.stdout.write(msg + "\n")
+        });
+        report.permissionSetGroupWait = psgWait;
+        if (!psgWait.settled)
+          process.stdout.write(
+            `Timed out waiting for PermissionSetGroup recalculation; proceeding anyway. Still pending: ${psgWait.pending.join(", ")}\n`
+          );
+      } catch (waitError) {
+        report.permissionSetGroupWait = {
+          settled: null,
+          error: waitError.message
+        };
+        process.stdout.write(
+          `Could not check PermissionSetGroup recalculation status (${waitError.message}); proceeding anyway.\n`
+        );
+      }
+    }
     const args = [
       "project",
       "deploy",
