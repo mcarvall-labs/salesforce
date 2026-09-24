@@ -182,7 +182,29 @@ export function extractDeclaredTests(body) {
   return [...new Set(names)];
 }
 
+// force-app/main/default/permissionsets|permissionsetgroups/...
+const PERMISSION_SET_OR_GROUP_PATH =
+  /^force-app\/main\/default\/(permissionsets|permissionsetgroups)\//;
+
+// A delta made up entirely of PermissionSet/PermissionSetGroup metadata never
+// needs to run tests: every org here is Developer Edition, where `NoTestRun`
+// is a valid test level regardless of target (unlike a real Production org,
+// which forces some test level on every deploy). Skipping tests entirely for
+// this case also sidesteps the known PermissionSetGroup recalculation race
+// (see the wait in run() below) at its root, instead of racing against it —
+// there's no test execution left to race. Requires the PR to touch only
+// PS/PSG (see the "PermissionSet/PermissionSetGroup PRs" project rule in
+// docs/SALESFORCE_DELIVERY.md); any other metadata in the same delta forces
+// the normal test-coverage path below.
+export function isPermissionSetOrGroupOnly(paths) {
+  return (
+    paths.length > 0 && paths.every((p) => PERMISSION_SET_OR_GROUP_PATH.test(p))
+  );
+}
+
 export function testPlan(paths, readFile, declaredTests) {
+  if (isPermissionSetOrGroupOnly(paths))
+    return { testLevel: "NoTestRun", tests: [] };
   const testsInDelta = [];
   let hasProductionApex = false;
   for (const p of paths) {
@@ -246,6 +268,43 @@ export function safeResult(payload) {
       message: clean(f.message)
     }))
   };
+}
+
+// After any deploy touching PermissionSet/PermissionSetGroup assignments,
+// Salesforce recalculates each affected PermissionSetGroup asynchronously —
+// its Status stays e.g. "Updating" until that finishes. Apex tests that
+// assign/query users against that group (in this project, mainly the Axon
+// user-provisioning flow) intermittently fail with
+// "You can only assign users to permission set groups that have the
+// 'Updated' status" or an assertion stuck at an intermediate provisioning
+// step, whenever they run while a recalculation from THIS deploy or a very
+// recent one on the same org is still in flight — a known, recurring
+// AXON_DEV/UAT/PROD flake, not a code regression. Deploys and test runs are
+// one atomic Salesforce operation in this pipeline, so the only place to
+// avoid the race is polling for a settled state right before it starts.
+export function pendingPermissionSetGroups(queryPayload) {
+  return (queryPayload?.result?.records || [])
+    .map((r) => `${r.DeveloperName || r.Id} (${r.Status})`)
+    .sort();
+}
+
+export async function waitForPermissionSetGroupsUpdated({
+  queryOnce,
+  sleep,
+  log,
+  timeoutMs = 3 * 60 * 1000,
+  intervalMs = 15 * 1000
+}) {
+  const deadline = Date.now() + timeoutMs;
+  for (;;) {
+    const pending = queryOnce();
+    if (pending.length === 0) return { settled: true, pending: [] };
+    if (Date.now() >= deadline) return { settled: false, pending };
+    log(
+      `Waiting for ${pending.length} PermissionSetGroup(s) to finish recalculating before running tests: ${pending.join(", ")}`
+    );
+    await sleep(intervalMs);
+  }
 }
 
 function command(bin, args) {
@@ -314,7 +373,7 @@ export async function run() {
       throw new Error("Deploy requires a protected branch push");
     // The delta is always computed from the PR base branch commit (from) to the
     // target/head commit being validated or deployed (to) — never from deploy history.
-    let baseSha, prBody;
+    let baseSha, prBody, mergedHeadSha;
     if (e.OPERATION === "deploy") {
       const prs = JSON.parse(
         command("gh", [
@@ -334,6 +393,7 @@ export async function run() {
         );
       baseSha = mergedPr.base.sha;
       prBody = mergedPr.body || "";
+      mergedHeadSha = mergedPr.head.sha;
     } else {
       baseSha = e.PR_BASE_SHA;
       prBody = e.PR_BODY || "";
@@ -344,12 +404,49 @@ export async function run() {
       );
     command("git", ["merge-base", "--is-ancestor", baseSha, e.GITHUB_SHA]);
     report.base = baseSha;
+    // DEV's PR-time "Validate Salesforce delta" check already does a real
+    // deploy (not dry-run) of the exact commit merged, and is a required
+    // check — so if the merge commit's tree is identical to that validated
+    // head (a clean merge, no conflict resolution changed content),
+    // redeploying here is provably redundant. Guard-rails above (merged PR
+    // for this exact commit, base ancestry) still ran regardless.
+    if (e.TARGET_ENV === "DEV" && mergedHeadSha) {
+      const headTree = command("git", ["rev-parse", `${mergedHeadSha}^{tree}`]);
+      const mergeTree = command("git", ["rev-parse", `${e.GITHUB_SHA}^{tree}`]);
+      if (headTree === mergeTree) {
+        report.outcome =
+          "Skipped — identical to what this PR's validation already deployed";
+        report.skippedRedundantDeploy = true;
+        return;
+      }
+    }
     const entries = changes(baseSha, e.GITHUB_SHA);
     report.paths = sourcePaths(entries);
     fs.writeFileSync(
       path.join(directory, "source-paths.txt"),
       report.paths.join("\n") + "\n"
     );
+    // Computed as early as possible — right after the delta is known, before
+    // packaging metadata or contacting the org at all — so a changed Apex
+    // class/trigger with no declared coverage fails immediately with a clear
+    // message instead of after several minutes of setup (CLI install, org
+    // login) only to fail on the same check. Every environment scopes tests
+    // to what the delta actually touches: any test class included in the
+    // delta itself, plus anything declared in the PR's "### Apex test
+    // classes to run" code block. Applies to both validate (dry-run) and
+    // deploy — same code path either way. Falls back to RunLocalTests only
+    // when the delta has no Apex/trigger at all, except a
+    // PermissionSet/PermissionSetGroup-only delta, which skips tests
+    // entirely (see testPlan/isPermissionSetOrGroupOnly).
+    const plan = testPlan(
+      report.paths,
+      (p) => fs.readFileSync(p, "utf8"),
+      extractDeclaredTests(prBody)
+    );
+    const testLevel = plan.testLevel;
+    const tests = plan.tests;
+    report.testLevel = testLevel;
+    report.tests = tests;
     const deletedFiles = [
       ...new Set(entries.filter((en) => en.status === "D").map((en) => en.file))
     ].sort();
@@ -441,20 +538,49 @@ export async function run() {
         "Authenticated Org ID does not match the configured target"
       );
     report.orgId = org.result.id;
-    // Every environment scopes tests to what the delta actually touches instead of
-    // running every local test class: any test class included in the delta itself,
-    // plus anything declared in the PR's "### Apex test classes to run" code block.
-    // Applies to both validate (dry-run) and deploy — same code path either way.
-    // Falls back to RunLocalTests only when the delta has no Apex/trigger at all.
-    const plan = testPlan(
-      report.paths,
-      (p) => fs.readFileSync(p, "utf8"),
-      extractDeclaredTests(prBody)
-    );
-    const testLevel = plan.testLevel;
-    const tests = plan.tests;
-    report.testLevel = testLevel;
-    report.tests = tests;
+    // Wait for any in-flight PermissionSetGroup recalculation to settle before
+    // the deploy call below runs tests, to avoid the known recalculation-race
+    // flake (see waitForPermissionSetGroupsUpdated). Skipped when this deploy
+    // won't run any tests (NoTestRun) — nothing left to race. Best-effort: a
+    // query failure or timeout is logged but never fails the pipeline closed —
+    // this mitigates a known org-side timing issue, it isn't a correctness
+    // requirement, and must not become a new way for every deploy to hang.
+    if (testLevel !== "NoTestRun") {
+      try {
+        const psgWait = await waitForPermissionSetGroupsUpdated({
+          queryOnce: () =>
+            pendingPermissionSetGroups(
+              JSON.parse(
+                command("sf", [
+                  "data",
+                  "query",
+                  "--use-tooling-api",
+                  "--target-org",
+                  alias,
+                  "--query",
+                  "SELECT Id, DeveloperName, Status FROM PermissionSetGroup WHERE Status != 'Updated'",
+                  "--json"
+                ])
+              )
+            ),
+          sleep: (ms) => new Promise((resolve) => setTimeout(resolve, ms)),
+          log: (msg) => process.stdout.write(msg + "\n")
+        });
+        report.permissionSetGroupWait = psgWait;
+        if (!psgWait.settled)
+          process.stdout.write(
+            `Timed out waiting for PermissionSetGroup recalculation; proceeding anyway. Still pending: ${psgWait.pending.join(", ")}\n`
+          );
+      } catch (waitError) {
+        report.permissionSetGroupWait = {
+          settled: null,
+          error: waitError.message
+        };
+        process.stdout.write(
+          `Could not check PermissionSetGroup recalculation status (${waitError.message}); proceeding anyway.\n`
+        );
+      }
+    }
     const args = [
       "project",
       "deploy",
@@ -469,9 +595,15 @@ export async function run() {
     ];
     for (const t of tests) args.push("--tests", t);
     // DEV PRs do a real deploy (no --dry-run) so devs can visually validate the
-    // org before approving the merge. UAT and PROD PRs keep --dry-run to avoid
-    // unintended side-effects before the merge is confirmed.
-    if (e.OPERATION === "validate" && e.TARGET_ENV !== "DEV")
+    // org before approving the merge. UAT and PROD PRs keep --dry-run by default
+    // to avoid unintended side-effects before the merge is confirmed — unless
+    // FORCE_REAL_DEPLOY is set (the label-triggered pre-merge-deploy job), which
+    // persists for real and gates the merge button on the result.
+    if (
+      e.OPERATION === "validate" &&
+      e.TARGET_ENV !== "DEV" &&
+      e.FORCE_REAL_DEPLOY !== "true"
+    )
       args.push("--dry-run");
     if (manifest.applied.length) {
       // `sf project deploy start` rejects --source-dir/--metadata-dir combined
@@ -635,7 +767,7 @@ code{background:#f4f4f4;padding:1px 4px;border-radius:3px}
 </head>
 <body>
 <h1>Salesforce ${escapeHtml(report.operation)}: ${escapeHtml(report.environment)}</h1>
-<p><span class="badge ${report.outcome === "Succeeded" ? "ok" : report.outcome.includes("manual review") ? "warn" : "fail"}">${escapeHtml(report.outcome)}</span></p>
+<p><span class="badge ${report.outcome === "Succeeded" ? "ok" : /skipped|manual review|no metadata changes/i.test(report.outcome) ? "warn" : "fail"}">${escapeHtml(report.outcome)}</span></p>
 <ul>
 <li><strong>Commit (to):</strong> <code>${escapeHtml(report.sha)}</code></li>
 <li><strong>Base (from):</strong> <code>${escapeHtml(report.base || "Not required / not configured")}</code></li>
@@ -709,6 +841,7 @@ ${
             "versionedDestructiveApplied",
             (report.versionedDestructiveManifests?.length ?? 0) > 0
           ) +
+          line("skippedRedundant", report.skippedRedundantDeploy === true) +
           line("errorMessage", report.error)
       );
     }
