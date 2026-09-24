@@ -85,3 +85,22 @@ needed for UAT.
 ### AXON_DEV status
 
 Not yet checked. Pending in AXF-161.
+
+## Status: applied to DEV/UAT, pending PROD — AXF-159 Console app migration
+
+`manifest/destructiveChangesPre.xml` carried this destructive delete-and-recreate
+(same API name, `navType: Standard -> Console`) through `develop` and `uat` on
+23-24/09/2026 — see AXF-159. Emptied back out on 24/09/2026 once both confirmed
+working, per this file's own process (copy into a reviewed PR when actually
+applying, don't leave it live in between).
+
+```
+CustomApplication: AXF_CA_AxonFinance
+CustomApplication: AXF_CA_AxonConfiguration
+```
+
+| Environment | Status      | Verified                                                                                                                                                                                                                                                                                                                                                                                                                  |
+| ----------- | ----------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| AXON_DEV    | Applied     | Visual validation in browser 24/09/2026 — Console nav, correct tabs both apps                                                                                                                                                                                                                                                                                                                                             |
+| AXON_UAT    | Applied     | Visual validation in browser 24/09/2026 — Console nav, correct tabs both apps                                                                                                                                                                                                                                                                                                                                             |
+| AXON_PROD   | **Pending** | Not yet promoted. When promoting this branch to `main`: re-populate `manifest/destructiveChangesPre.xml` with these two `CustomApplication` members, redeploy `AXF_PS_GestorFinanceiro`/`AXF_PS_Participante` in the SAME transaction (app recreation orphans their `applicationVisibilities` otherwise — see AXF-159 PR history for the exact failure modes), and empty the manifest again immediately after confirming. |

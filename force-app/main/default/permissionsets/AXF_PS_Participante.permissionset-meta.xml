@@ -1,4 +1,8 @@
 <?xml version="1.0" encoding="UTF-8" ?>
+<!-- AXF-159: redeployed on its own, ahead of the app-recreation PR, so the
+     PermissionSetGroup recalculation this triggers has time to settle in the
+     background before any deploy that runs PSG-dependent tests. See
+     AXF_PS_GestorFinanceiro for the same note. -->
 <PermissionSet xmlns="http://soap.sforce.com/2006/04/metadata">
     <applicationVisibilities>
         <application>AXF_CA_AxonFinance</application>
