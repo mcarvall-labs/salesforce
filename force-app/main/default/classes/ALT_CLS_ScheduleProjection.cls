@@ -307,6 +307,7 @@ public with sharing class ALT_CLS_ScheduleProjection {
         AXF_SDF_DAT_FirstDueDate__c,
         AXF_SDF_NUM_AnchorDay__c,
         AXF_SDF_NUM_PeriodMonths__c,
+        AXF_SDF_NUM_PeriodDays__c,
         AXF_SDF_NUM_Principal__c,
         AXF_SDF_NUM_PeriodRate__c,
         AXF_SDF_NUM_FixedValue__c,
@@ -471,8 +472,12 @@ public with sharing class ALT_CLS_ScheduleProjection {
             ? 1
             : definition.AXF_SDF_NUM_FirstSequence__c.intValue(),
           definition.AXF_SDF_NUM_PeriodMonths__c == null
-            ? 1
+            ? null
             : definition.AXF_SDF_NUM_PeriodMonths__c.intValue(),
+          // AXF-155: periodicidade em dias (sem âncora) quando a definição a declara.
+          definition.AXF_SDF_NUM_PeriodDays__c == null
+            ? null
+            : definition.AXF_SDF_NUM_PeriodDays__c.intValue(),
           definition.AXF_SDF_NUM_AnchorDay__c == null
             ? null
             : definition.AXF_SDF_NUM_AnchorDay__c.intValue(),

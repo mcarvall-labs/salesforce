@@ -194,7 +194,7 @@
         </dl>
         <template if:true={isScheduled}>
           <p class="slds-m-top_small" data-schedule-redirect>
-            {labels.scheduleRedirect}
+            {scheduleRedirectText}
           </p>
         </template>
         <template if:true={isSingle}>
@@ -396,7 +396,7 @@
         <template if:true={onReview}>
           <template if:true={isScheduled}>
             <lightning-button
-              label={labels.continueSchedule}
+              label={continueScheduleLabel}
               variant="brand"
               class="slds-m-left_x-small"
               data-action="continue-schedule"

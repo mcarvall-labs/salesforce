@@ -226,6 +226,7 @@ public without sharing class AXF_CLS_ScheduleReplenishmentSelector {
       dispatch.firstSequence = intOf(definition.AXF_SDF_NUM_FirstSequence__c);
       dispatch.firstDueDate = definition.AXF_SDF_DAT_FirstDueDate__c;
       dispatch.periodMonths = intOf(definition.AXF_SDF_NUM_PeriodMonths__c);
+      dispatch.periodDays = intOf(definition.AXF_SDF_NUM_PeriodDays__c);
       dispatch.anchorDay = intOf(definition.AXF_SDF_NUM_AnchorDay__c);
       dispatch.lastCoveredSequence = lastCoveredSequence(definition);
       dispatch.trackingStartSequence = intOf(
@@ -521,6 +522,7 @@ public without sharing class AXF_CLS_ScheduleReplenishmentSelector {
         AXF_SDF_NUM_FirstSequence__c,
         AXF_SDF_DAT_FirstDueDate__c,
         AXF_SDF_NUM_PeriodMonths__c,
+        AXF_SDF_NUM_PeriodDays__c,
         AXF_SDF_NUM_AnchorDay__c,
         AXF_SDF_NUM_TotalInstallments__c
       FROM AXF_OBJ_ScheduleDefinition__c

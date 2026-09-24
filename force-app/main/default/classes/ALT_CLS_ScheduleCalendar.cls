@@ -17,6 +17,8 @@ public inherited sharing class ALT_CLS_ScheduleCalendar {
    * estouro aritmético como único freio.
    */
   public static final Integer MAX_MONTH_OFFSET = 1200;
+  /** O mesmo limite de sanidade de cem anos, expresso em dias (AXF-155). */
+  public static final Integer MAX_DAY_OFFSET = 36525;
 
   public class CalendarException extends Exception {
   }
@@ -55,6 +57,82 @@ public inherited sharing class ALT_CLS_ScheduleCalendar {
       (sequence - firstSequence) * periodMonths,
       anchor
     );
+  }
+
+  /**
+   * @description AXF-155 — data nominal pela periodicidade da definição, em meses OU em dias.
+   * É a única entrada que os chamadores usam: `periodDays` preenchido segue o calendário em dias
+   * (sem âncora); caso contrário vale o calendário mensal com âncora, inalterado. Informar os dois
+   * é recusado; nenhum dos dois preserva o padrão legado de um mês.
+   */
+  public static Date nominalDueDate(
+    Date firstDueDate,
+    Integer firstSequence,
+    Integer periodMonths,
+    Integer periodDays,
+    Integer anchorDay,
+    Integer sequence
+  ) {
+    if (periodDays == null) {
+      return nominalDueDate(
+        firstDueDate,
+        firstSequence,
+        (periodMonths == null) ? 1 : periodMonths,
+        anchorDay,
+        sequence
+      );
+    }
+    require(
+      periodMonths == null,
+      'Informe a periodicidade em meses ou em dias, nunca as duas.'
+    );
+    return nominalDueDateByDays(
+      firstDueDate,
+      firstSequence,
+      periodDays,
+      sequence
+    );
+  }
+
+  /**
+   * @description AXF-155 — data nominal de uma periodicidade em dias:
+   * `firstDueDate + (sequence - firstSequence) * periodDays`. Não há âncora: o intervalo em dias
+   * nunca sofre ajuste de fim de mês.
+   */
+  public static Date nominalDueDateByDays(
+    Date firstDueDate,
+    Integer firstSequence,
+    Integer periodDays,
+    Integer sequence
+  ) {
+    require(firstDueDate != null, 'Data do primeiro vencimento é obrigatória.');
+    require(
+      firstSequence != null && firstSequence >= 1,
+      'Sequência inicial deve ser maior ou igual a 1.'
+    );
+    require(
+      periodDays != null && periodDays >= 1,
+      'Periodicidade deve ser de pelo menos 1 dia.'
+    );
+    require(
+      sequence != null && sequence >= firstSequence,
+      'Sequência anterior ao início da definição não possui data nominal.'
+    );
+    return shiftDays(firstDueDate, (sequence - firstSequence) * periodDays);
+  }
+
+  /**
+   * @description Desloca dias dentro do limite de sanidade. Aceita deslocamento negativo, usado
+   * para derivar a origem a partir da parcela corrente informada no cadastro.
+   */
+  public static Date shiftDays(Date origin, Integer days) {
+    require(origin != null, 'Data de origem é obrigatória.');
+    Integer offset = (days == null) ? 0 : days;
+    require(
+      Math.abs(offset) <= MAX_DAY_OFFSET,
+      'Deslocamento de dias fora do limite de sanidade.'
+    );
+    return origin.addDays(offset);
   }
 
   /**

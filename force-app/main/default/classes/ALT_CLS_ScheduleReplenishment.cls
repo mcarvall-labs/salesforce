@@ -246,6 +246,8 @@ public inherited sharing class ALT_CLS_ScheduleReplenishment {
     public Integer firstSequence;
     public Date firstDueDate;
     public Integer periodMonths;
+    /** AXF-155: periodicidade em dias (7/14), exclusiva com `periodMonths`. */
+    public Integer periodDays;
     public Integer anchorDay;
     /** Última sequência do termo; nulo em recorrência indefinida. */
     public Integer lastCoveredSequence;
@@ -438,7 +440,8 @@ public inherited sharing class ALT_CLS_ScheduleReplenishment {
       nominal = ALT_CLS_ScheduleCalendar.nominalDueDate(
         input.firstDueDate,
         (input.firstSequence == null) ? 1 : input.firstSequence,
-        (input.periodMonths == null) ? 1 : input.periodMonths,
+        input.periodMonths,
+        input.periodDays,
         input.anchorDay,
         next
       );

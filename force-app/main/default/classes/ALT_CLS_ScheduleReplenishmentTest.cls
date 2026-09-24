@@ -353,6 +353,32 @@ private class ALT_CLS_ScheduleReplenishmentTest {
   }
 
   @IsTest
+  static void dispatchCriterionFollowsTheDayPeriod() {
+    // AXF-155: semanal a partir de 01/01/2027 — a 5ª ocorrência vence em 29/01, a 6ª em 05/02.
+    ALT_CLS_ScheduleReplenishment.DispatchInput input = new ALT_CLS_ScheduleReplenishment.DispatchInput();
+    input.firstSequence = 1;
+    input.firstDueDate = Date.newInstance(2027, 1, 1);
+    input.periodDays = 7;
+    input.trackingStartSequence = 1;
+    input.coverageSequence = 4;
+    input.windowEndDate = Date.newInstance(2027, 1, 31);
+    Assert.isTrue(
+      ALT_CLS_ScheduleReplenishment.isBehindWindow(input),
+      'A próxima semana ainda cabe na janela'
+    );
+    input.coverageSequence = 5;
+    Assert.isFalse(
+      ALT_CLS_ScheduleReplenishment.isBehindWindow(input),
+      'A próxima semana cai depois do fim da janela'
+    );
+    input.periodMonths = 1;
+    Assert.isFalse(
+      ALT_CLS_ScheduleReplenishment.isBehindWindow(input),
+      'Periodicidade dupla é recusada pelo calendário e não despacha'
+    );
+  }
+
+  @IsTest
   static void dispatchCriterionComparesTheNextEligibleSequenceWithTheWindowEdge() {
     Date origin = Date.newInstance(2027, 1, 10);
     Date windowEnd = ALT_CLS_ScheduleCalendar.monthEnd(

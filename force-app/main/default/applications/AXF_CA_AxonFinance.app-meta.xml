@@ -23,6 +23,7 @@
     <tabs>AXF_Contracts</tabs>
     <tabs>AXF_EntryWizard</tabs>
     <tabs>AXF_CT_ManualEntries</tabs>
+    <tabs>AXF_CT_Recurrences</tabs>
     <tabs>AXF_ScheduleWizard</tabs>
     <uiType>Lightning</uiType>
     <workspaceConfig>
@@ -43,6 +44,9 @@
         </mappings>
         <mappings>
             <tab>AXF_CT_ManualEntries</tab>
+        </mappings>
+        <mappings>
+            <tab>AXF_CT_Recurrences</tab>
         </mappings>
         <mappings>
             <tab>AXF_Home</tab>

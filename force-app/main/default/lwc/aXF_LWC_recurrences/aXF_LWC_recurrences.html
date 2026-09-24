@@ -1,0 +1,418 @@
+<template>
+  <lightning-card title={labels.title} icon-name="custom:custom19">
+    <div class="slds-var-p-horizontal_medium">
+      <p class="slds-var-m-bottom_small">{labels.intro}</p>
+
+      <div aria-live="polite">
+        <template lwc:if={message}>
+          <div class={messageClass} role="status" tabindex="-1" data-message>
+            {message}
+          </div>
+        </template>
+      </div>
+
+      <template lwc:if={loading}>
+        <lightning-spinner
+          alternative-text={labels.loading}
+          size="small"
+        ></lightning-spinner>
+      </template>
+
+      <template lwc:if={error}>
+        <p class="slds-text-color_error" role="alert" data-error>{error}</p>
+      </template>
+
+      <template lwc:if={noCapability}>
+        <p class="slds-text-color_weak" data-no-capability>
+          {labels.noCapability}
+        </p>
+      </template>
+
+      <template lwc:if={showReadOnly}>
+        <p class="slds-text-color_weak slds-var-m-bottom_small" data-read-only>
+          {labels.readOnly}
+        </p>
+      </template>
+
+      <template lwc:if={showNewButton}>
+        <lightning-button
+          class="slds-var-m-bottom_small"
+          variant="brand"
+          label={labels.newRecurrence}
+          data-new
+          onclick={handleNew}
+        ></lightning-button>
+      </template>
+
+      <template lwc:if={showForm}>
+        <section
+          class="slds-box slds-var-m-bottom_medium"
+          aria-labelledby="recurrence-form-heading"
+          data-form
+        >
+          <h2
+            id="recurrence-form-heading"
+            class="slds-text-heading_small slds-var-m-bottom_small"
+            tabindex="-1"
+            data-form-heading
+          >
+            {labels.formHeading}
+          </h2>
+          <template lwc:if={formError}>
+            <p
+              class="slds-text-color_error slds-var-m-bottom_small"
+              role="alert"
+              tabindex="-1"
+              data-form-error
+            >
+              {formError}
+            </p>
+          </template>
+          <div class="slds-grid slds-wrap slds-gutters_small">
+            <div class="slds-col slds-size_1-of-1 slds-medium-size_1-of-2">
+              <lightning-combobox
+                label={labels.fieldHolder}
+                options={holderOptions}
+                value={form.accountId}
+                data-field="accountId"
+                onchange={handleFormField}
+                required
+              ></lightning-combobox>
+            </div>
+            <div class="slds-col slds-size_1-of-1 slds-medium-size_1-of-2">
+              <lightning-input
+                label={labels.fieldDescription}
+                value={form.description}
+                max-length="255"
+                data-field="description"
+                onchange={handleFormField}
+                required
+              ></lightning-input>
+            </div>
+            <div class="slds-col slds-size_1-of-1 slds-medium-size_1-of-2">
+              <lightning-radio-group
+                label={labels.fieldNature}
+                options={natureOptions}
+                value={form.direction}
+                type="button"
+                name="direction"
+                data-field="direction"
+                onchange={handleFormField}
+                required
+              ></lightning-radio-group>
+            </div>
+            <div class="slds-col slds-size_1-of-2 slds-medium-size_1-of-4">
+              <lightning-input
+                type="number"
+                step="0.01"
+                min="0.01"
+                label={labels.fieldAmount}
+                value={form.amount}
+                data-field="amount"
+                onchange={handleFormField}
+                required
+              ></lightning-input>
+            </div>
+            <div class="slds-col slds-size_1-of-2 slds-medium-size_1-of-4">
+              <lightning-input
+                label={labels.fieldCurrency}
+                value={form.currencyIsoCode}
+                max-length="3"
+                data-field="currencyIsoCode"
+                onchange={handleFormField}
+                required
+              ></lightning-input>
+            </div>
+            <div class="slds-col slds-size_1-of-1 slds-medium-size_1-of-2">
+              <lightning-input
+                type="date"
+                label={labels.fieldFirstDueDate}
+                value={form.firstDueDate}
+                min={minFirstDueDate}
+                max={maxFirstDueDate}
+                data-field="firstDueDate"
+                onchange={handleFormField}
+                required
+              ></lightning-input>
+            </div>
+            <div class="slds-col slds-size_1-of-1 slds-medium-size_1-of-2">
+              <lightning-combobox
+                label={labels.fieldPeriodicity}
+                options={periodicityOptions}
+                value={form.periodicity}
+                data-field="periodicity"
+                onchange={handleFormField}
+                required
+              ></lightning-combobox>
+            </div>
+            <template lwc:if={isCustomPeriod}>
+              <div class="slds-col slds-size_1-of-1 slds-medium-size_1-of-2">
+                <lightning-input
+                  type="number"
+                  step="1"
+                  min="1"
+                  max="120"
+                  label={labels.fieldPeriodMonths}
+                  value={form.periodMonths}
+                  data-field="periodMonths"
+                  onchange={handleFormField}
+                  required
+                ></lightning-input>
+              </div>
+            </template>
+            <div class="slds-col slds-size_1-of-1 slds-medium-size_1-of-2">
+              <lightning-combobox
+                label={labels.fieldSource}
+                options={sourceOptions}
+                value={form.sourceKey}
+                disabled={sourceDisabled}
+                data-field="sourceKey"
+                onchange={handleFormField}
+                required
+              ></lightning-combobox>
+              <template lwc:if={showNoSources}>
+                <p class="slds-text-color_weak" data-no-sources>
+                  {labels.noSources}
+                </p>
+              </template>
+            </div>
+          </div>
+          <div class="slds-var-m-top_small">
+            <lightning-button
+              variant="brand"
+              label={labels.create}
+              disabled={busy}
+              data-action="create"
+              onclick={handleCreate}
+            ></lightning-button>
+            <lightning-button
+              class="slds-var-m-left_x-small"
+              label={labels.cancel}
+              data-action="cancel-form"
+              onclick={handleCancelForm}
+            ></lightning-button>
+          </div>
+        </section>
+      </template>
+
+      <template lwc:if={showEmpty}>
+        <p class="slds-text-color_weak" data-empty>{labels.noRecurrences}</p>
+      </template>
+
+      <template lwc:if={hasRecurrences}>
+        <div class="slds-scrollable_x">
+          <table
+            class="slds-table slds-table_cell-buffer slds-table_bordered slds-var-m-bottom_medium"
+            data-recurrences
+          >
+            <caption class="slds-text-heading_small slds-text-align_left">
+              {labels.listCaption}
+            </caption>
+            <thead>
+              <tr class="slds-line-height_reset">
+                <th scope="col">{labels.colDescription}</th>
+                <th scope="col">{labels.colHolder}</th>
+                <th scope="col">{labels.colPeriodicity}</th>
+                <th scope="col" class="slds-text-align_right">
+                  {labels.colAmount}
+                </th>
+                <th scope="col">{labels.colNature}</th>
+                <th scope="col">{labels.colSource}</th>
+                <th scope="col">{labels.colNextDue}</th>
+                <th scope="col">{labels.colState}</th>
+                <th scope="col">{labels.colActions}</th>
+              </tr>
+            </thead>
+            <tbody>
+              <template for:each={recurrenceRows} for:item="row">
+                <tr
+                  key={row.key}
+                  class={row.rowClass}
+                  data-recurrence-row={row.key}
+                >
+                  <th scope="row">{row.name}</th>
+                  <td>{row.holderLabel}</td>
+                  <td data-period>{row.periodText}</td>
+                  <td class="slds-text-align_right" data-amount>
+                    <template lwc:if={row.editing}>
+                      <lightning-input
+                        type="number"
+                        step="0.01"
+                        min="0.01"
+                        label={labels.newAmount}
+                        field-level-help={labels.editHint}
+                        value={editAmountDraft}
+                        data-edit-amount
+                        onchange={handleEditAmount}
+                        required
+                      ></lightning-input>
+                    </template>
+                    <template lwc:else>
+                      <lightning-formatted-number
+                        value={row.amount}
+                        format-style="currency"
+                        currency-code={row.currency}
+                      ></lightning-formatted-number>
+                    </template>
+                  </td>
+                  <td data-nature>{row.natureText}</td>
+                  <td data-source>{row.sourceText}</td>
+                  <td data-next-due>{row.nextDueText}</td>
+                  <td data-state>{row.stateText}</td>
+                  <td>
+                    <template lwc:if={row.ending}>
+                      <lightning-input
+                        type="date"
+                        label={labels.endDate}
+                        field-level-help={labels.endHint}
+                        value={endDateDraft}
+                        min={minEndDate}
+                        max={row.maxEndDate}
+                        data-end-date
+                        onchange={handleEndDate}
+                        required
+                      ></lightning-input>
+                    </template>
+                    <lightning-button-group>
+                      <lightning-button
+                        label={labels.viewOccurrences}
+                        title={row.viewLabel}
+                        data-id={row.key}
+                        data-view={row.key}
+                        data-action="view"
+                        onclick={handleView}
+                      ></lightning-button>
+                      <template lwc:if={row.canChange}>
+                        <template lwc:if={row.editing}>
+                          <lightning-button
+                            variant="brand"
+                            label={labels.save}
+                            disabled={busy}
+                            data-action="save-amount"
+                            onclick={handleSaveAmount}
+                          ></lightning-button>
+                          <lightning-button
+                            label={labels.cancel}
+                            data-action="cancel-change"
+                            onclick={handleCancelChange}
+                          ></lightning-button>
+                        </template>
+                        <template lwc:elseif={row.ending}>
+                          <lightning-button
+                            variant="destructive"
+                            label={labels.confirmEnd}
+                            disabled={busy}
+                            data-action="confirm-end"
+                            onclick={handleConfirmEnd}
+                          ></lightning-button>
+                          <lightning-button
+                            label={labels.cancel}
+                            data-action="cancel-change"
+                            onclick={handleCancelChange}
+                          ></lightning-button>
+                        </template>
+                        <template lwc:else>
+                          <lightning-button
+                            label={labels.editAmount}
+                            title={row.editLabel}
+                            data-id={row.key}
+                            data-action="edit"
+                            onclick={handleEdit}
+                          ></lightning-button>
+                          <lightning-button
+                            label={labels.end}
+                            title={row.endLabel}
+                            data-id={row.key}
+                            data-action="end"
+                            onclick={handleEnd}
+                          ></lightning-button>
+                        </template>
+                      </template>
+                    </lightning-button-group>
+                  </td>
+                </tr>
+              </template>
+            </tbody>
+          </table>
+        </div>
+      </template>
+
+      <template lwc:if={selectedId}>
+        <section aria-labelledby="occurrences-heading" data-detail>
+          <div
+            class="slds-grid slds-grid_align-spread slds-var-m-bottom_x-small"
+          >
+            <h2
+              id="occurrences-heading"
+              class="slds-text-heading_small"
+              tabindex="-1"
+              data-detail-heading
+            >
+              {detailCaption}
+            </h2>
+            <lightning-button
+              label={labels.close}
+              data-action="close-detail"
+              onclick={handleCloseDetail}
+            ></lightning-button>
+          </div>
+          <template lwc:if={detailLoading}>
+            <lightning-spinner
+              alternative-text={labels.loading}
+              size="small"
+            ></lightning-spinner>
+          </template>
+          <template lwc:if={showNoOccurrences}>
+            <p class="slds-text-color_weak" data-no-occurrences>
+              {labels.noOccurrences}
+            </p>
+          </template>
+          <template lwc:if={hasOccurrences}>
+            <table
+              class="slds-table slds-table_cell-buffer slds-table_bordered"
+              data-occurrences
+            >
+              <caption class="slds-assistive-text">
+                {detailCaption}
+              </caption>
+              <thead>
+                <tr class="slds-line-height_reset">
+                  <th scope="col">{labels.colDueDate}</th>
+                  <th scope="col" class="slds-text-align_right">
+                    {labels.colAmount}
+                  </th>
+                  <th scope="col">{labels.colStatus}</th>
+                </tr>
+              </thead>
+              <tbody>
+                <template for:each={occurrenceRows} for:item="occ">
+                  <tr key={occ.key} data-occurrence-row={occ.key}>
+                    <th scope="row">{occ.dueText}</th>
+                    <td class="slds-text-align_right">
+                      <lightning-formatted-number
+                        value={occ.amount}
+                        format-style="currency"
+                        currency-code={occ.currency}
+                      ></lightning-formatted-number>
+                    </td>
+                    <td data-occurrence-status>{occ.statusText}</td>
+                  </tr>
+                </template>
+              </tbody>
+            </table>
+            <template lwc:if={detail.truncated}>
+              <p class="slds-text-color_weak" data-truncated>
+                {labels.occurrencesTruncated}
+              </p>
+            </template>
+            <template lwc:if={detail.unverified}>
+              <p class="slds-text-color_weak" data-unverified>
+                {labels.occurrencesUnverified}
+              </p>
+            </template>
+          </template>
+        </section>
+      </template>
+    </div>
+  </lightning-card>
+</template>

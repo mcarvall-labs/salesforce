@@ -5267,4 +5267,649 @@
         <value
     >Transactions in another currency are listed but not included in the totals.</value>
     </labels>
+    <labels>
+        <fullName>AXF_Recurrences_title</fullName>
+        <categories>AxonFinance,LWC,Recurring</categories>
+        <language>en_US</language>
+        <protected>false</protected>
+        <shortDescription>Recurring title</shortDescription>
+        <value>Recurring</value>
+    </labels>
+    <labels>
+        <fullName>AXF_Recurrences_intro</fullName>
+        <categories>AxonFinance,LWC,Recurring</categories>
+        <language>en_US</language>
+        <protected>false</protected>
+        <shortDescription>Recurring intro</shortDescription>
+        <value
+    >Recurring expenses and revenues with no end date: utility bills, subscriptions, weekly labor. Each one generates its occurrences on its own.</value>
+    </labels>
+    <labels>
+        <fullName>AXF_Recurrences_noCapability</fullName>
+        <categories>AxonFinance,LWC,Recurring</categories>
+        <language>en_US</language>
+        <protected>false</protected>
+        <shortDescription>Recurring no capability</shortDescription>
+        <value>You do not have access to the recurring entries screen.</value>
+    </labels>
+    <labels>
+        <fullName>AXF_Recurrences_readOnly</fullName>
+        <categories>AxonFinance,LWC,Recurring</categories>
+        <language>en_US</language>
+        <protected>false</protected>
+        <shortDescription>Recurring read only</shortDescription>
+        <value
+    >You can view recurring entries; only a financial manager can create, edit or end them.</value>
+    </labels>
+    <labels>
+        <fullName>AXF_Recurrences_loading</fullName>
+        <categories>AxonFinance,LWC,Recurring</categories>
+        <language>en_US</language>
+        <protected>false</protected>
+        <shortDescription>Recurring loading</shortDescription>
+        <value>Loading…</value>
+    </labels>
+    <labels>
+        <fullName>AXF_Recurrences_error</fullName>
+        <categories>AxonFinance,LWC,Recurring</categories>
+        <language>en_US</language>
+        <protected>false</protected>
+        <shortDescription>Recurring generic error</shortDescription>
+        <value>Something went wrong. Try again.</value>
+    </labels>
+    <labels>
+        <fullName>AXF_Recurrences_newRecurrence</fullName>
+        <categories>AxonFinance,LWC,Recurring</categories>
+        <language>en_US</language>
+        <protected>false</protected>
+        <shortDescription>Recurring new button</shortDescription>
+        <value>New recurrence</value>
+    </labels>
+    <labels>
+        <fullName>AXF_Recurrences_formHeading</fullName>
+        <categories>AxonFinance,LWC,Recurring</categories>
+        <language>en_US</language>
+        <protected>false</protected>
+        <shortDescription>Recurring form heading</shortDescription>
+        <value>New recurring entry</value>
+    </labels>
+    <labels>
+        <fullName>AXF_Recurrences_listCaption</fullName>
+        <categories>AxonFinance,LWC,Recurring</categories>
+        <language>en_US</language>
+        <protected>false</protected>
+        <shortDescription>Recurring list caption</shortDescription>
+        <value>Recurring entries</value>
+    </labels>
+    <labels>
+        <fullName>AXF_Recurrences_noRecurrences</fullName>
+        <categories>AxonFinance,LWC,Recurring</categories>
+        <language>en_US</language>
+        <protected>false</protected>
+        <shortDescription>Recurring empty list</shortDescription>
+        <value>No recurring entry in your authorized contexts yet.</value>
+    </labels>
+    <labels>
+        <fullName>AXF_Recurrences_colDescription</fullName>
+        <categories>AxonFinance,LWC,Recurring</categories>
+        <language>en_US</language>
+        <protected>false</protected>
+        <shortDescription>Recurring column description</shortDescription>
+        <value>Description</value>
+    </labels>
+    <labels>
+        <fullName>AXF_Recurrences_colHolder</fullName>
+        <categories>AxonFinance,LWC,Recurring</categories>
+        <language>en_US</language>
+        <protected>false</protected>
+        <shortDescription>Recurring column holder</shortDescription>
+        <value>Person or company</value>
+    </labels>
+    <labels>
+        <fullName>AXF_Recurrences_colPeriodicity</fullName>
+        <categories>AxonFinance,LWC,Recurring</categories>
+        <language>en_US</language>
+        <protected>false</protected>
+        <shortDescription>Recurring column frequency</shortDescription>
+        <value>Frequency</value>
+    </labels>
+    <labels>
+        <fullName>AXF_Recurrences_colAmount</fullName>
+        <categories>AxonFinance,LWC,Recurring</categories>
+        <language>en_US</language>
+        <protected>false</protected>
+        <shortDescription>Recurring column amount</shortDescription>
+        <value>Amount</value>
+    </labels>
+    <labels>
+        <fullName>AXF_Recurrences_colNature</fullName>
+        <categories>AxonFinance,LWC,Recurring</categories>
+        <language>en_US</language>
+        <protected>false</protected>
+        <shortDescription>Recurring column nature</shortDescription>
+        <value>Type</value>
+    </labels>
+    <labels>
+        <fullName>AXF_Recurrences_colSource</fullName>
+        <categories>AxonFinance,LWC,Recurring</categories>
+        <language>en_US</language>
+        <protected>false</protected>
+        <shortDescription>Recurring column origin</shortDescription>
+        <value>Origin</value>
+    </labels>
+    <labels>
+        <fullName>AXF_Recurrences_colNextDue</fullName>
+        <categories>AxonFinance,LWC,Recurring</categories>
+        <language>en_US</language>
+        <protected>false</protected>
+        <shortDescription>Recurring column next due</shortDescription>
+        <value>Next due date</value>
+    </labels>
+    <labels>
+        <fullName>AXF_Recurrences_colState</fullName>
+        <categories>AxonFinance,LWC,Recurring</categories>
+        <language>en_US</language>
+        <protected>false</protected>
+        <shortDescription>Recurring column state</shortDescription>
+        <value>Status</value>
+    </labels>
+    <labels>
+        <fullName>AXF_Recurrences_colActions</fullName>
+        <categories>AxonFinance,LWC,Recurring</categories>
+        <language>en_US</language>
+        <protected>false</protected>
+        <shortDescription>Recurring column actions</shortDescription>
+        <value>Actions</value>
+    </labels>
+    <labels>
+        <fullName>AXF_Recurrences_colDueDate</fullName>
+        <categories>AxonFinance,LWC,Recurring</categories>
+        <language>en_US</language>
+        <protected>false</protected>
+        <shortDescription>Recurring column due date</shortDescription>
+        <value>Due date</value>
+    </labels>
+    <labels>
+        <fullName>AXF_Recurrences_colStatus</fullName>
+        <categories>AxonFinance,LWC,Recurring</categories>
+        <language>en_US</language>
+        <protected>false</protected>
+        <shortDescription>Recurring column occurrence status</shortDescription>
+        <value>Status</value>
+    </labels>
+    <labels>
+        <fullName>AXF_Recurrences_stateACTIVE</fullName>
+        <categories>AxonFinance,LWC,Recurring</categories>
+        <language>en_US</language>
+        <protected>false</protected>
+        <shortDescription>Recurring state active</shortDescription>
+        <value>Active</value>
+    </labels>
+    <labels>
+        <fullName>AXF_Recurrences_stateENDED</fullName>
+        <categories>AxonFinance,LWC,Recurring</categories>
+        <language>en_US</language>
+        <protected>false</protected>
+        <shortDescription>Recurring state ended</shortDescription>
+        <value>Ended on {0}</value>
+    </labels>
+    <labels>
+        <fullName>AXF_Recurrences_natureDEBIT</fullName>
+        <categories>AxonFinance,LWC,Recurring</categories>
+        <language>en_US</language>
+        <protected>false</protected>
+        <shortDescription>Recurring nature debit</shortDescription>
+        <value>Expense</value>
+    </labels>
+    <labels>
+        <fullName>AXF_Recurrences_natureCREDIT</fullName>
+        <categories>AxonFinance,LWC,Recurring</categories>
+        <language>en_US</language>
+        <protected>false</protected>
+        <shortDescription>Recurring nature credit</shortDescription>
+        <value>Revenue</value>
+    </labels>
+    <labels>
+        <fullName>AXF_Recurrences_periodWEEKLY</fullName>
+        <categories>AxonFinance,LWC,Recurring</categories>
+        <language>en_US</language>
+        <protected>false</protected>
+        <shortDescription>Recurring weekly</shortDescription>
+        <value>Weekly</value>
+    </labels>
+    <labels>
+        <fullName>AXF_Recurrences_periodBIWEEKLY</fullName>
+        <categories>AxonFinance,LWC,Recurring</categories>
+        <language>en_US</language>
+        <protected>false</protected>
+        <shortDescription>Recurring biweekly</shortDescription>
+        <value>Every two weeks</value>
+    </labels>
+    <labels>
+        <fullName>AXF_Recurrences_periodMONTHLY</fullName>
+        <categories>AxonFinance,LWC,Recurring</categories>
+        <language>en_US</language>
+        <protected>false</protected>
+        <shortDescription>Recurring monthly</shortDescription>
+        <value>Monthly</value>
+    </labels>
+    <labels>
+        <fullName>AXF_Recurrences_periodBIMONTHLY</fullName>
+        <categories>AxonFinance,LWC,Recurring</categories>
+        <language>en_US</language>
+        <protected>false</protected>
+        <shortDescription>Recurring bimonthly</shortDescription>
+        <value>Every two months</value>
+    </labels>
+    <labels>
+        <fullName>AXF_Recurrences_periodQUARTERLY</fullName>
+        <categories>AxonFinance,LWC,Recurring</categories>
+        <language>en_US</language>
+        <protected>false</protected>
+        <shortDescription>Recurring quarterly</shortDescription>
+        <value>Quarterly</value>
+    </labels>
+    <labels>
+        <fullName>AXF_Recurrences_periodCUSTOM</fullName>
+        <categories>AxonFinance,LWC,Recurring</categories>
+        <language>en_US</language>
+        <protected>false</protected>
+        <shortDescription>Recurring custom period</shortDescription>
+        <value>Other (months)</value>
+    </labels>
+    <labels>
+        <fullName>AXF_Recurrences_periodEveryMonths</fullName>
+        <categories>AxonFinance,LWC,Recurring</categories>
+        <language>en_US</language>
+        <protected>false</protected>
+        <shortDescription>Recurring every n months</shortDescription>
+        <value>Every {0} months</value>
+    </labels>
+    <labels>
+        <fullName>AXF_Recurrences_fieldHolder</fullName>
+        <categories>AxonFinance,LWC,Recurring</categories>
+        <language>en_US</language>
+        <protected>false</protected>
+        <shortDescription>Recurring field holder</shortDescription>
+        <value>Person or company</value>
+    </labels>
+    <labels>
+        <fullName>AXF_Recurrences_fieldDescription</fullName>
+        <categories>AxonFinance,LWC,Recurring</categories>
+        <language>en_US</language>
+        <protected>false</protected>
+        <shortDescription>Recurring field description</shortDescription>
+        <value>Description</value>
+    </labels>
+    <labels>
+        <fullName>AXF_Recurrences_fieldNature</fullName>
+        <categories>AxonFinance,LWC,Recurring</categories>
+        <language>en_US</language>
+        <protected>false</protected>
+        <shortDescription>Recurring field nature</shortDescription>
+        <value>Type</value>
+    </labels>
+    <labels>
+        <fullName>AXF_Recurrences_fieldAmount</fullName>
+        <categories>AxonFinance,LWC,Recurring</categories>
+        <language>en_US</language>
+        <protected>false</protected>
+        <shortDescription>Recurring field amount</shortDescription>
+        <value>Amount</value>
+    </labels>
+    <labels>
+        <fullName>AXF_Recurrences_fieldCurrency</fullName>
+        <categories>AxonFinance,LWC,Recurring</categories>
+        <language>en_US</language>
+        <protected>false</protected>
+        <shortDescription>Recurring field currency</shortDescription>
+        <value>Currency</value>
+    </labels>
+    <labels>
+        <fullName>AXF_Recurrences_fieldFirstDueDate</fullName>
+        <categories>AxonFinance,LWC,Recurring</categories>
+        <language>en_US</language>
+        <protected>false</protected>
+        <shortDescription>Recurring field first due</shortDescription>
+        <value>First due date</value>
+    </labels>
+    <labels>
+        <fullName>AXF_Recurrences_fieldPeriodicity</fullName>
+        <categories>AxonFinance,LWC,Recurring</categories>
+        <language>en_US</language>
+        <protected>false</protected>
+        <shortDescription>Recurring field frequency</shortDescription>
+        <value>Frequency</value>
+    </labels>
+    <labels>
+        <fullName>AXF_Recurrences_fieldPeriodMonths</fullName>
+        <categories>AxonFinance,LWC,Recurring</categories>
+        <language>en_US</language>
+        <protected>false</protected>
+        <shortDescription>Recurring field months</shortDescription>
+        <value>Interval in months (1–120)</value>
+    </labels>
+    <labels>
+        <fullName>AXF_Recurrences_fieldSource</fullName>
+        <categories>AxonFinance,LWC,Recurring</categories>
+        <language>en_US</language>
+        <protected>false</protected>
+        <shortDescription>Recurring field origin</shortDescription>
+        <value>Origin (account, card or wallet)</value>
+    </labels>
+    <labels>
+        <fullName>AXF_Recurrences_noSources</fullName>
+        <categories>AxonFinance,LWC,Recurring</categories>
+        <language>en_US</language>
+        <protected>false</protected>
+        <shortDescription>Recurring no sources</shortDescription>
+        <value
+    >No account, card or wallet is available for this person or company.</value>
+    </labels>
+    <labels>
+        <fullName>AXF_Recurrences_formInvalid</fullName>
+        <categories>AxonFinance,LWC,Recurring</categories>
+        <language>en_US</language>
+        <protected>false</protected>
+        <shortDescription>Recurring form invalid</shortDescription>
+        <value>Fill in every field with a valid value.</value>
+    </labels>
+    <labels>
+        <fullName>AXF_Recurrences_create</fullName>
+        <categories>AxonFinance,LWC,Recurring</categories>
+        <language>en_US</language>
+        <protected>false</protected>
+        <shortDescription>Recurring create button</shortDescription>
+        <value>Create recurrence</value>
+    </labels>
+    <labels>
+        <fullName>AXF_Recurrences_cancel</fullName>
+        <categories>AxonFinance,LWC,Recurring</categories>
+        <language>en_US</language>
+        <protected>false</protected>
+        <shortDescription>Recurring cancel</shortDescription>
+        <value>Cancel</value>
+    </labels>
+    <labels>
+        <fullName>AXF_Recurrences_save</fullName>
+        <categories>AxonFinance,LWC,Recurring</categories>
+        <language>en_US</language>
+        <protected>false</protected>
+        <shortDescription>Recurring save</shortDescription>
+        <value>Save</value>
+    </labels>
+    <labels>
+        <fullName>AXF_Recurrences_close</fullName>
+        <categories>AxonFinance,LWC,Recurring</categories>
+        <language>en_US</language>
+        <protected>false</protected>
+        <shortDescription>Recurring close</shortDescription>
+        <value>Close</value>
+    </labels>
+    <labels>
+        <fullName>AXF_Recurrences_created</fullName>
+        <categories>AxonFinance,LWC,Recurring</categories>
+        <language>en_US</language>
+        <protected>false</protected>
+        <shortDescription>Recurring created</shortDescription>
+        <value>Recurrence created with {0} occurrence(s).</value>
+    </labels>
+    <labels>
+        <fullName>AXF_Recurrences_viewOccurrences</fullName>
+        <categories>AxonFinance,LWC,Recurring</categories>
+        <language>en_US</language>
+        <protected>false</protected>
+        <shortDescription>Recurring view occurrences</shortDescription>
+        <value>Occurrences</value>
+    </labels>
+    <labels>
+        <fullName>AXF_Recurrences_viewOccurrencesFor</fullName>
+        <categories>AxonFinance,LWC,Recurring</categories>
+        <language>en_US</language>
+        <protected>false</protected>
+        <shortDescription>Recurring view occurrences for</shortDescription>
+        <value>View the occurrences of {0}</value>
+    </labels>
+    <labels>
+        <fullName>AXF_Recurrences_occurrencesCaption</fullName>
+        <categories>AxonFinance,LWC,Recurring</categories>
+        <language>en_US</language>
+        <protected>false</protected>
+        <shortDescription>Recurring occurrences caption</shortDescription>
+        <value>Occurrences of {0}</value>
+    </labels>
+    <labels>
+        <fullName>AXF_Recurrences_noOccurrences</fullName>
+        <categories>AxonFinance,LWC,Recurring</categories>
+        <language>en_US</language>
+        <protected>false</protected>
+        <shortDescription>Recurring no occurrences</shortDescription>
+        <value>No occurrence generated yet.</value>
+    </labels>
+    <labels>
+        <fullName>AXF_Recurrences_occurrencesTruncated</fullName>
+        <categories>AxonFinance,LWC,Recurring</categories>
+        <language>en_US</language>
+        <protected>false</protected>
+        <shortDescription>Recurring occurrences truncated</shortDescription>
+        <value>Only the first occurrences are listed.</value>
+    </labels>
+    <labels>
+        <fullName>AXF_Recurrences_occurrencesUnverified</fullName>
+        <categories>AxonFinance,LWC,Recurring</categories>
+        <language>en_US</language>
+        <protected>false</protected>
+        <shortDescription>Recurring unverified status</shortDescription>
+        <value
+    >The status of some occurrences could not be verified with the reconciliations you can see.</value>
+    </labels>
+    <labels>
+        <fullName>AXF_Recurrences_occPLANNED</fullName>
+        <categories>AxonFinance,LWC,Recurring</categories>
+        <language>en_US</language>
+        <protected>false</protected>
+        <shortDescription>Recurring occurrence planned</shortDescription>
+        <value>Planned</value>
+    </labels>
+    <labels>
+        <fullName>AXF_Recurrences_occRECONCILED</fullName>
+        <categories>AxonFinance,LWC,Recurring</categories>
+        <language>en_US</language>
+        <protected>false</protected>
+        <shortDescription>Recurring occurrence reconciled</shortDescription>
+        <value>Reconciled</value>
+    </labels>
+    <labels>
+        <fullName>AXF_Recurrences_occPARTIAL</fullName>
+        <categories>AxonFinance,LWC,Recurring</categories>
+        <language>en_US</language>
+        <protected>false</protected>
+        <shortDescription>Recurring occurrence partial</shortDescription>
+        <value>Partial</value>
+    </labels>
+    <labels>
+        <fullName>AXF_Recurrences_occCANCELLED</fullName>
+        <categories>AxonFinance,LWC,Recurring</categories>
+        <language>en_US</language>
+        <protected>false</protected>
+        <shortDescription>Recurring occurrence cancelled</shortDescription>
+        <value>Cancelled</value>
+    </labels>
+    <labels>
+        <fullName>AXF_Recurrences_editAmount</fullName>
+        <categories>AxonFinance,LWC,Recurring</categories>
+        <language>en_US</language>
+        <protected>false</protected>
+        <shortDescription>Recurring edit amount</shortDescription>
+        <value>Edit amount</value>
+    </labels>
+    <labels>
+        <fullName>AXF_Recurrences_editAmountFor</fullName>
+        <categories>AxonFinance,LWC,Recurring</categories>
+        <language>en_US</language>
+        <protected>false</protected>
+        <shortDescription>Recurring edit amount for</shortDescription>
+        <value>Edit the amount of {0}</value>
+    </labels>
+    <labels>
+        <fullName>AXF_Recurrences_newAmount</fullName>
+        <categories>AxonFinance,LWC,Recurring</categories>
+        <language>en_US</language>
+        <protected>false</protected>
+        <shortDescription>Recurring new amount</shortDescription>
+        <value>New amount</value>
+    </labels>
+    <labels>
+        <fullName>AXF_Recurrences_editHint</fullName>
+        <categories>AxonFinance,LWC,Recurring</categories>
+        <language>en_US</language>
+        <protected>false</protected>
+        <shortDescription>Recurring edit hint</shortDescription>
+        <value
+    >The new amount applies from the next occurrence not yet realized; reconciled occurrences are not changed.</value>
+    </labels>
+    <labels>
+        <fullName>AXF_Recurrences_amountSaved</fullName>
+        <categories>AxonFinance,LWC,Recurring</categories>
+        <language>en_US</language>
+        <protected>false</protected>
+        <shortDescription>Recurring amount saved</shortDescription>
+        <value
+    >Amount updated: {0} future occurrence(s) changed, {1} kept because already realized.</value>
+    </labels>
+    <labels>
+        <fullName>AXF_Recurrences_end</fullName>
+        <categories>AxonFinance,LWC,Recurring</categories>
+        <language>en_US</language>
+        <protected>false</protected>
+        <shortDescription>Recurring end</shortDescription>
+        <value>End</value>
+    </labels>
+    <labels>
+        <fullName>AXF_Recurrences_endFor</fullName>
+        <categories>AxonFinance,LWC,Recurring</categories>
+        <language>en_US</language>
+        <protected>false</protected>
+        <shortDescription>Recurring end for</shortDescription>
+        <value>End {0}</value>
+    </labels>
+    <labels>
+        <fullName>AXF_Recurrences_endDate</fullName>
+        <categories>AxonFinance,LWC,Recurring</categories>
+        <language>en_US</language>
+        <protected>false</protected>
+        <shortDescription>Recurring end date</shortDescription>
+        <value>End date</value>
+    </labels>
+    <labels>
+        <fullName>AXF_Recurrences_endHint</fullName>
+        <categories>AxonFinance,LWC,Recurring</categories>
+        <language>en_US</language>
+        <protected>false</protected>
+        <shortDescription>Recurring end hint</shortDescription>
+        <value
+    >Occurrences due after this date that were not realized are cancelled; realized or reconciled ones stay. An ended recurrence cannot be reactivated.</value>
+    </labels>
+    <labels>
+        <fullName>AXF_Recurrences_confirmEnd</fullName>
+        <categories>AxonFinance,LWC,Recurring</categories>
+        <language>en_US</language>
+        <protected>false</protected>
+        <shortDescription>Recurring confirm end</shortDescription>
+        <value>Confirm end</value>
+    </labels>
+    <labels>
+        <fullName>AXF_Recurrences_ended</fullName>
+        <categories>AxonFinance,LWC,Recurring</categories>
+        <language>en_US</language>
+        <protected>false</protected>
+        <shortDescription>Recurring ended</shortDescription>
+        <value
+    >Recurrence ended: {0} occurrence(s) cancelled, {1} kept because already realized.</value>
+    </labels>
+    <labels>
+        <fullName>AXF_Recurrences_notAvailable</fullName>
+        <categories>AxonFinance,LWC,Recurring</categories>
+        <language>en_US</language>
+        <protected>false</protected>
+        <shortDescription>Recurring not available</shortDescription>
+        <value>—</value>
+    </labels>
+    <labels>
+        <fullName>AXF_Recurrences_codeNOT_ACCESSIBLE</fullName>
+        <categories>AxonFinance,LWC,Recurring</categories>
+        <language>en_US</language>
+        <protected>false</protected>
+        <shortDescription>Recurring not accessible</shortDescription>
+        <value
+    >This recurrence is not available in your authorized contexts.</value>
+    </labels>
+    <labels>
+        <fullName>AXF_Recurrences_codeNOT_ALLOWED</fullName>
+        <categories>AxonFinance,LWC,Recurring</categories>
+        <language>en_US</language>
+        <protected>false</protected>
+        <shortDescription>Recurring not allowed</shortDescription>
+        <value
+    >Only a financial manager can create, edit or end recurrences.</value>
+    </labels>
+    <labels>
+        <fullName>AXF_Recurrences_codeCONFLICT</fullName>
+        <categories>AxonFinance,LWC,Recurring</categories>
+        <language>en_US</language>
+        <protected>false</protected>
+        <shortDescription>Recurring conflict</shortDescription>
+        <value
+    >The recurrence changed or was already ended; the data was reloaded.</value>
+    </labels>
+    <labels>
+        <fullName>AXF_Recurrences_codeINVALID_INPUT</fullName>
+        <categories>AxonFinance,LWC,Recurring</categories>
+        <language>en_US</language>
+        <protected>false</protected>
+        <shortDescription>Recurring invalid input</shortDescription>
+        <value>Check the values entered.</value>
+    </labels>
+    <labels>
+        <fullName>AXF_Recurrences_codeTOO_LARGE</fullName>
+        <categories>AxonFinance,LWC,Recurring</categories>
+        <language>en_US</language>
+        <protected>false</protected>
+        <shortDescription>Recurring too large</shortDescription>
+        <value
+    >Too many occurrences would be generated at once: choose a first due date closer to today.</value>
+    </labels>
+    <labels>
+        <fullName>AXF_Recurrences_codeUNAVAILABLE</fullName>
+        <categories>AxonFinance,LWC,Recurring</categories>
+        <language>en_US</language>
+        <protected>false</protected>
+        <shortDescription>Recurring unavailable</shortDescription>
+        <value>The record is busy right now; try again in a moment.</value>
+    </labels>
+    <labels>
+        <fullName>AXF_Recurrences_codeREJECTED</fullName>
+        <categories>AxonFinance,LWC,Recurring</categories>
+        <language>en_US</language>
+        <protected>false</protected>
+        <shortDescription>Recurring rejected</shortDescription>
+        <value>The change was rejected; nothing was saved.</value>
+    </labels>
+    <labels>
+        <fullName>AXF_ManualEntry_recurringRedirect</fullName>
+        <categories>AxonFinance,LWC,ManualEntry</categories>
+        <language>en_US</language>
+        <protected>false</protected>
+        <shortDescription>Manual entry recurring redirect</shortDescription>
+        <value
+    >Recurring entries are managed on the Recurring screen, which opens with these details filled in.</value>
+    </labels>
+    <labels>
+        <fullName>AXF_ManualEntry_continueRecurring</fullName>
+        <categories>AxonFinance,LWC,ManualEntry</categories>
+        <language>en_US</language>
+        <protected>false</protected>
+        <shortDescription>Manual entry continue recurring</shortDescription>
+        <value>Continue on the Recurring screen</value>
+    </labels>
 </CustomLabels>

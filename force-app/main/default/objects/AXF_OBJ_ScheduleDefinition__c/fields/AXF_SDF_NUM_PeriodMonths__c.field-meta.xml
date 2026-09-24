@@ -5,7 +5,7 @@
   <type>Number</type>
   <precision>3</precision>
   <scale>0</scale>
-  <required>true</required>
+  <required>false</required>
   <description
-  >Intervalo positivo, em meses de calendário, entre ocorrências consecutivas. Um cronograma pode ter periodicidade própria, distinta de outros fluxos do mesmo contrato (AXF-103).</description>
+  >Intervalo positivo, em meses de calendário, entre ocorrências consecutivas; mutuamente exclusivo com AXF_SDF_NUM_PeriodDays__c (exatamente um dos dois é informado, AXF-155). Um cronograma pode ter periodicidade própria, distinta de outros fluxos do mesmo contrato (AXF-103).</description>
 </CustomField>
