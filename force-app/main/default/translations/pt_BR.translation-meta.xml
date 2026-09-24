@@ -3390,6 +3390,355 @@
         <label>Conta ou cartão</label>
         <name>AXF_ReconciliationQueue_colSource</name>
     </customLabels>
+    <customLabels>
+        <label>Apontamento de horas</label>
+        <name>AXF_Timesheet_title</name>
+    </customLabels>
+    <customLabels>
+        <label
+    >Lance as horas diárias dos seus contratos de prestação de serviço ativos. A aprovação continua na Gestão de Contratos.</label>
+        <name>AXF_Timesheet_intro</name>
+    </customLabels>
+    <customLabels>
+        <label>Carregando…</label>
+        <name>AXF_Timesheet_loading</name>
+    </customLabels>
+    <customLabels>
+        <label>Algo deu errado. Tente novamente.</label>
+        <name>AXF_Timesheet_error</name>
+    </customLabels>
+    <customLabels>
+        <label
+    >Você pode consultar os lançamentos, mas não pode lançar horas.</label>
+        <name>AXF_Timesheet_readOnly</name>
+    </customLabels>
+    <customLabels>
+        <label>Lançar um dia</label>
+        <name>AXF_Timesheet_formHeading</name>
+    </customLabels>
+    <customLabels>
+        <label>Data</label>
+        <name>AXF_Timesheet_workDate</name>
+    </customLabels>
+    <customLabels>
+        <label>Contrato</label>
+        <name>AXF_Timesheet_contract</name>
+    </customLabels>
+    <customLabels>
+        <label>Selecione um contrato</label>
+        <name>AXF_Timesheet_contractPlaceholder</name>
+    </customLabels>
+    <customLabels>
+        <label
+    >Nenhum contrato de prestação de serviço ativo disponível para lançar horas.</label>
+        <name>AXF_Timesheet_noContracts</name>
+    </customLabels>
+    <customLabels>
+        <label>Entrada</label>
+        <name>AXF_Timesheet_startTime</name>
+    </customLabels>
+    <customLabels>
+        <label>Pausa</label>
+        <name>AXF_Timesheet_breakStart</name>
+    </customLabels>
+    <customLabels>
+        <label>Retorno</label>
+        <name>AXF_Timesheet_breakEnd</name>
+    </customLabels>
+    <customLabels>
+        <label>Saída</label>
+        <name>AXF_Timesheet_endTime</name>
+    </customLabels>
+    <customLabels>
+        <label>Observação</label>
+        <name>AXF_Timesheet_note</name>
+    </customLabels>
+    <customLabels>
+        <label>Taxa de {0} por hora, do termo vigente do contrato.</label>
+        <name>AXF_Timesheet_rateInfo</name>
+    </customLabels>
+    <customLabels>
+        <label>Horas trabalhadas: {0}</label>
+        <name>AXF_Timesheet_computedHours</name>
+    </customLabels>
+    <customLabels>
+        <label>Informe a pausa e o retorno.</label>
+        <name>AXF_Timesheet_breakIncomplete</name>
+    </customLabels>
+    <customLabels>
+        <label
+    >Os horários devem seguir Entrada, Pausa, Retorno e Saída no mesmo dia.</label>
+        <name>AXF_Timesheet_timeOrder</name>
+    </customLabels>
+    <customLabels>
+        <label>Salvar lançamento</label>
+        <name>AXF_Timesheet_save</name>
+    </customLabels>
+    <customLabels>
+        <label>Lançamento salvo como rascunho.</label>
+        <name>AXF_Timesheet_saved</name>
+    </customLabels>
+    <customLabels>
+        <label>Lançamentos</label>
+        <name>AXF_Timesheet_entriesHeading</name>
+    </customLabels>
+    <customLabels>
+        <label>Mês anterior</label>
+        <name>AXF_Timesheet_previousMonth</name>
+    </customLabels>
+    <customLabels>
+        <label>Próximo mês</label>
+        <name>AXF_Timesheet_nextMonth</name>
+    </customLabels>
+    <customLabels>
+        <label>{0} a {1}</label>
+        <name>AXF_Timesheet_customPeriod</name>
+    </customLabels>
+    <customLabels>
+        <label>Filtros</label>
+        <name>AXF_Timesheet_filtersLegend</name>
+    </customLabels>
+    <customLabels>
+        <label>De</label>
+        <name>AXF_Timesheet_fromDate</name>
+    </customLabels>
+    <customLabels>
+        <label>Até</label>
+        <name>AXF_Timesheet_toDate</name>
+    </customLabels>
+    <customLabels>
+        <label>Todos os contratos</label>
+        <name>AXF_Timesheet_allContracts</name>
+    </customLabels>
+    <customLabels>
+        <label>Status de faturamento</label>
+        <name>AXF_Timesheet_billingStatus</name>
+    </customLabels>
+    <customLabels>
+        <label>Status do lançamento</label>
+        <name>AXF_Timesheet_recordStatus</name>
+    </customLabels>
+    <customLabels>
+        <label>Todos</label>
+        <name>AXF_Timesheet_allStatuses</name>
+    </customLabels>
+    <customLabels>
+        <label>Aplicar filtros</label>
+        <name>AXF_Timesheet_applyFilters</name>
+    </customLabels>
+    <customLabels>
+        <label>Limpar filtros</label>
+        <name>AXF_Timesheet_clearFilters</name>
+    </customLabels>
+    <customLabels>
+        <label>Informe as duas datas do período.</label>
+        <name>AXF_Timesheet_filterPeriodIncomplete</name>
+    </customLabels>
+    <customLabels>
+        <label>A data final não pode ser anterior à inicial.</label>
+        <name>AXF_Timesheet_filterPeriodOrder</name>
+    </customLabels>
+    <customLabels>
+        <label>O período pode ter no máximo 366 dias.</label>
+        <name>AXF_Timesheet_filterPeriodTooLong</name>
+    </customLabels>
+    <customLabels>
+        <label>Lançamentos de {0}</label>
+        <name>AXF_Timesheet_entriesCaption</name>
+    </customLabels>
+    <customLabels>
+        <label>Data</label>
+        <name>AXF_Timesheet_colDate</name>
+    </customLabels>
+    <customLabels>
+        <label>Contrato</label>
+        <name>AXF_Timesheet_colContract</name>
+    </customLabels>
+    <customLabels>
+        <label>Horários</label>
+        <name>AXF_Timesheet_colTimes</name>
+    </customLabels>
+    <customLabels>
+        <label>Horas</label>
+        <name>AXF_Timesheet_colHours</name>
+    </customLabels>
+    <customLabels>
+        <label>Taxa</label>
+        <name>AXF_Timesheet_colRate</name>
+    </customLabels>
+    <customLabels>
+        <label>Total</label>
+        <name>AXF_Timesheet_colTotal</name>
+    </customLabels>
+    <customLabels>
+        <label>Status</label>
+        <name>AXF_Timesheet_colStatus</name>
+    </customLabels>
+    <customLabels>
+        <label>Faturamento</label>
+        <name>AXF_Timesheet_colBilling</name>
+    </customLabels>
+    <customLabels>
+        <label>Ações</label>
+        <name>AXF_Timesheet_colActions</name>
+    </customLabels>
+    <customLabels>
+        <label>Rascunho</label>
+        <name>AXF_Timesheet_statusDRAFT</name>
+    </customLabels>
+    <customLabels>
+        <label>Submetido</label>
+        <name>AXF_Timesheet_statusSUBMITTED</name>
+    </customLabels>
+    <customLabels>
+        <label>Aprovado</label>
+        <name>AXF_Timesheet_statusAPPROVED</name>
+    </customLabels>
+    <customLabels>
+        <label>Rejeitado</label>
+        <name>AXF_Timesheet_statusREJECTED</name>
+    </customLabels>
+    <customLabels>
+        <label>Substituído</label>
+        <name>AXF_Timesheet_statusSUPERSEDED</name>
+    </customLabels>
+    <customLabels>
+        <label>Faturado</label>
+        <name>AXF_Timesheet_billingBILLED</name>
+    </customLabels>
+    <customLabels>
+        <label>Parcial</label>
+        <name>AXF_Timesheet_billingPARTIAL</name>
+    </customLabels>
+    <customLabels>
+        <label>Não faturado</label>
+        <name>AXF_Timesheet_billingUNBILLED</name>
+    </customLabels>
+    <customLabels>
+        <label>Submeter</label>
+        <name>AXF_Timesheet_submit</name>
+    </customLabels>
+    <customLabels>
+        <label>Submeter o lançamento de {0} para aprovação</label>
+        <name>AXF_Timesheet_submitFor</name>
+    </customLabels>
+    <customLabels>
+        <label>Lançamento submetido para aprovação.</label>
+        <name>AXF_Timesheet_submitted</name>
+    </customLabels>
+    <customLabels>
+        <label>Nenhum lançamento neste período.</label>
+        <name>AXF_Timesheet_noEntries</name>
+    </customLabels>
+    <customLabels>
+        <label
+    >Somente os primeiros 500 lançamentos são exibidos. Reduza o período ou os filtros.</label>
+        <name>AXF_Timesheet_truncated</name>
+    </customLabels>
+    <customLabels>
+        <label>Previsão de receita</label>
+        <name>AXF_Timesheet_forecastHeading</name>
+    </customLabels>
+    <customLabels>
+        <label
+    >Horas aprovadas de {0} por conta de destino. As horas aguardando aprovação aparecem à parte e não entram na previsão.</label>
+        <name>AXF_Timesheet_forecastIntro</name>
+    </customLabels>
+    <customLabels>
+        <label>Conta de destino</label>
+        <name>AXF_Timesheet_destination</name>
+    </customLabels>
+    <customLabels>
+        <label>Todas as contas</label>
+        <name>AXF_Timesheet_allDestinations</name>
+    </customLabels>
+    <customLabels>
+        <label>Sem conta de destino</label>
+        <name>AXF_Timesheet_noDestination</name>
+    </customLabels>
+    <customLabels>
+        <label>Carteira</label>
+        <name>AXF_Timesheet_wallet</name>
+    </customLabels>
+    <customLabels>
+        <label>Horas aprovadas</label>
+        <name>AXF_Timesheet_colApprovedHours</name>
+    </customLabels>
+    <customLabels>
+        <label>Receita prevista</label>
+        <name>AXF_Timesheet_colForecast</name>
+    </customLabels>
+    <customLabels>
+        <label>Aguardando aprovação</label>
+        <name>AXF_Timesheet_colPending</name>
+    </customLabels>
+    <customLabels>
+        <label>Total</label>
+        <name>AXF_Timesheet_groupTotal</name>
+    </customLabels>
+    <customLabels>
+        <label>Total geral</label>
+        <name>AXF_Timesheet_grandTotal</name>
+    </customLabels>
+    <customLabels>
+        <label>Previsão de receita para {0}</label>
+        <name>AXF_Timesheet_forecastCaption</name>
+    </customLabels>
+    <customLabels>
+        <label>Nenhuma hora aprovada ou submetida neste mês.</label>
+        <name>AXF_Timesheet_noForecast</name>
+    </customLabels>
+    <customLabels>
+        <label
+    >Este contrato ou lançamento não está disponível para você.</label>
+        <name>AXF_Timesheet_codeNOT_ACCESSIBLE</name>
+    </customLabels>
+    <customLabels>
+        <label>Verifique os dados informados.</label>
+        <name>AXF_Timesheet_codeINVALID_INPUT</name>
+    </customLabels>
+    <customLabels>
+        <label
+    >Somente lançamentos em rascunho ou rejeitados podem ser submetidos.</label>
+        <name>AXF_Timesheet_codeINVALID_STATE</name>
+    </customLabels>
+    <customLabels>
+        <label>A alteração foi recusada. Recarregue e tente novamente.</label>
+        <name>AXF_Timesheet_codeREJECTED</name>
+    </customLabels>
+    <customLabels>
+        <label>Não faturável</label>
+        <name>AXF_Timesheet_billingNOT_BILLABLE</name>
+    </customLabels>
+    <customLabels>
+        <label>Editar</label>
+        <name>AXF_Timesheet_edit</name>
+    </customLabels>
+    <customLabels>
+        <label>Editar o lançamento de {0}</label>
+        <name>AXF_Timesheet_editFor</name>
+    </customLabels>
+    <customLabels>
+        <label
+    >Editando o lançamento de {0}. Ao salvar, ele permanece no status atual.</label>
+        <name>AXF_Timesheet_editing</name>
+    </customLabels>
+    <customLabels>
+        <label>Cancelar edição</label>
+        <name>AXF_Timesheet_cancelEdit</name>
+    </customLabels>
+    <customLabels>
+        <label>Lançamento atualizado.</label>
+        <name>AXF_Timesheet_updated</name>
+    </customLabels>
+    <customLabels>
+        <label>Horas aguardando aprovação</label>
+        <name>AXF_Timesheet_colPendingHours</name>
+    </customLabels>
+    <customLabels>
+        <label>Turno já registrado.</label>
+        <name>AXF_Timesheet_codeALREADY_REGISTERED</name>
+    </customLabels>
     <customTabs><label>Conta Corrente</label><name
     >AXF_CT_BankStatement</name></customTabs>
     <customTabs>
@@ -3410,5 +3759,9 @@
     <customTabs>
         <label>Fila de conciliação</label>
         <name>AXF_CT_ReconciliationQueue</name>
+    </customTabs>
+    <customTabs>
+        <label>Apontamento de horas</label>
+        <name>AXF_CT_Timesheet</name>
     </customTabs>
 </Translations>

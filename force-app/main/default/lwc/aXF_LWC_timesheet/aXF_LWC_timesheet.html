@@ -1,0 +1,536 @@
+<template>
+  <lightning-card title={labels.title} icon-name="custom:custom18">
+    <div class="slds-var-p-horizontal_medium">
+      <p class="slds-var-m-bottom_small">{labels.intro}</p>
+
+      <div aria-live="polite">
+        <template lwc:if={message}>
+          <div class={messageClass} role="status" tabindex="-1" data-message>
+            {message}
+          </div>
+        </template>
+      </div>
+
+      <template lwc:if={error}>
+        <p class="slds-text-color_error" role="alert" data-error>{error}</p>
+      </template>
+
+      <template lwc:if={loading}>
+        <lightning-spinner
+          alternative-text={labels.loading}
+          size="small"
+        ></lightning-spinner>
+      </template>
+
+      <template lwc:if={showReadOnly}>
+        <p class="slds-text-color_weak" data-read-only>{labels.readOnly}</p>
+      </template>
+
+      <template lwc:if={showNoContracts}>
+        <p class="slds-text-color_weak" data-no-contracts>
+          {labels.noContracts}
+        </p>
+      </template>
+
+      <template lwc:if={showForm}>
+        <section
+          class="slds-var-m-bottom_medium"
+          aria-labelledby="axf157-form-heading"
+          data-form-section
+        >
+          <h2
+            id="axf157-form-heading"
+            class="slds-text-heading_small slds-var-m-bottom_x-small"
+          >
+            {labels.formHeading}
+          </h2>
+          <template lwc:if={editingId}>
+            <p class="slds-var-m-bottom_x-small" data-editing>{editingText}</p>
+          </template>
+          <div class="slds-grid slds-wrap slds-gutters_x-small">
+            <div class="slds-col slds-size_1-of-1 slds-medium-size_1-of-3">
+              <lightning-input
+                type="date"
+                label={labels.workDate}
+                value={form.workDate}
+                max={maxWorkDate}
+                data-field="workDate"
+                data-form
+                onchange={handleFormField}
+                required
+              ></lightning-input>
+            </div>
+            <div class="slds-col slds-size_1-of-1 slds-medium-size_2-of-3">
+              <lightning-combobox
+                label={labels.contract}
+                placeholder={labels.contractPlaceholder}
+                options={contractOptions}
+                value={form.contractId}
+                data-field="contractId"
+                data-form
+                onchange={handleFormField}
+                required
+              ></lightning-combobox>
+            </div>
+            <div class="slds-col slds-size_1-of-2 slds-medium-size_1-of-4">
+              <lightning-input
+                type="time"
+                label={labels.startTime}
+                value={form.startTime}
+                data-field="startTime"
+                data-form
+                onchange={handleFormField}
+                required
+              ></lightning-input>
+            </div>
+            <div class="slds-col slds-size_1-of-2 slds-medium-size_1-of-4">
+              <lightning-input
+                type="time"
+                label={labels.breakStart}
+                value={form.breakStart}
+                data-field="breakStart"
+                data-form
+                onchange={handleFormField}
+              ></lightning-input>
+            </div>
+            <div class="slds-col slds-size_1-of-2 slds-medium-size_1-of-4">
+              <lightning-input
+                type="time"
+                label={labels.breakEnd}
+                value={form.breakEnd}
+                data-field="breakEnd"
+                data-form
+                onchange={handleFormField}
+              ></lightning-input>
+            </div>
+            <div class="slds-col slds-size_1-of-2 slds-medium-size_1-of-4">
+              <lightning-input
+                type="time"
+                label={labels.endTime}
+                value={form.endTime}
+                data-field="endTime"
+                data-form
+                onchange={handleFormField}
+                required
+              ></lightning-input>
+            </div>
+            <div class="slds-col slds-size_1-of-1">
+              <lightning-input
+                label={labels.note}
+                value={form.note}
+                max-length="200"
+                data-field="note"
+                data-form
+                onchange={handleFormField}
+              ></lightning-input>
+            </div>
+          </div>
+          <div
+            class="slds-grid slds-grid_vertical-align-center slds-wrap slds-var-m-top_x-small"
+          >
+            <lightning-button
+              variant="brand"
+              label={labels.save}
+              data-action="save"
+              disabled={saving}
+              onclick={handleSave}
+            ></lightning-button>
+            <template lwc:if={editingId}>
+              <lightning-button
+                class="slds-var-m-left_x-small"
+                label={labels.cancelEdit}
+                data-action="cancel-edit"
+                onclick={handleCancelEdit}
+              ></lightning-button>
+            </template>
+            <p class="slds-var-m-left_small" aria-live="polite" data-hours>
+              {computedText}
+            </p>
+            <p class="slds-var-m-left_small slds-text-color_weak" data-rate>
+              {rateInfo}
+            </p>
+          </div>
+        </section>
+      </template>
+
+      <section
+        class="slds-var-m-bottom_medium"
+        aria-labelledby="axf157-entries-heading"
+        data-entries-section
+      >
+        <h2
+          id="axf157-entries-heading"
+          class="slds-text-heading_small slds-var-m-bottom_x-small"
+        >
+          {labels.entriesHeading}
+        </h2>
+        <div class="slds-grid slds-grid_vertical-align-center">
+          <lightning-button-icon
+            icon-name="utility:chevronleft"
+            alternative-text={labels.previousMonth}
+            title={labels.previousMonth}
+            data-action="previous"
+            onclick={handlePrevious}
+          ></lightning-button-icon>
+          <p
+            class="slds-text-title_bold slds-var-m-horizontal_small"
+            data-period
+          >
+            {periodLabel}
+          </p>
+          <lightning-button-icon
+            icon-name="utility:chevronright"
+            alternative-text={labels.nextMonth}
+            title={labels.nextMonth}
+            data-action="next"
+            onclick={handleNext}
+          ></lightning-button-icon>
+        </div>
+
+        <fieldset class="slds-form-element slds-var-m-vertical_small">
+          <legend class="slds-form-element__legend slds-form-element__label">
+            {labels.filtersLegend}
+          </legend>
+          <div class="slds-grid slds-wrap slds-gutters_x-small">
+            <div class="slds-col slds-size_1-of-2 slds-medium-size_1-of-6">
+              <lightning-input
+                type="date"
+                label={labels.fromDate}
+                value={draftFilters.fromDate}
+                data-field="fromDate"
+                data-filter
+                onchange={handleFilterChange}
+              ></lightning-input>
+            </div>
+            <div class="slds-col slds-size_1-of-2 slds-medium-size_1-of-6">
+              <lightning-input
+                type="date"
+                label={labels.toDate}
+                value={draftFilters.toDate}
+                data-field="toDate"
+                data-filter
+                onchange={handleFilterChange}
+              ></lightning-input>
+            </div>
+            <div class="slds-col slds-size_1-of-1 slds-medium-size_2-of-6">
+              <lightning-combobox
+                label={labels.contract}
+                options={filterContractOptions}
+                value={draftFilters.contractId}
+                data-field="contractId"
+                onchange={handleFilterChange}
+              ></lightning-combobox>
+            </div>
+            <div class="slds-col slds-size_1-of-2 slds-medium-size_1-of-6">
+              <lightning-combobox
+                label={labels.billingStatus}
+                options={billingOptions}
+                value={draftFilters.billingStatus}
+                data-field="billingStatus"
+                onchange={handleFilterChange}
+              ></lightning-combobox>
+            </div>
+            <div class="slds-col slds-size_1-of-2 slds-medium-size_1-of-6">
+              <lightning-combobox
+                label={labels.recordStatus}
+                options={recordStatusOptions}
+                value={draftFilters.recordStatus}
+                data-field="recordStatus"
+                onchange={handleFilterChange}
+              ></lightning-combobox>
+            </div>
+          </div>
+          <div class="slds-var-m-top_x-small">
+            <lightning-button
+              label={labels.applyFilters}
+              data-action="apply-filters"
+              onclick={handleApplyFilters}
+            ></lightning-button>
+            <lightning-button
+              class="slds-var-m-left_x-small"
+              variant="base"
+              label={labels.clearFilters}
+              data-action="clear-filters"
+              onclick={handleClearFilters}
+            ></lightning-button>
+          </div>
+        </fieldset>
+
+        <template lwc:if={listLoading}>
+          <p role="status">{labels.loading}</p>
+        </template>
+        <template lwc:if={list}>
+          <template lwc:if={list.truncated}>
+            <p class="slds-text-color_weak" role="status" data-truncated>
+              {labels.truncated}
+            </p>
+          </template>
+        </template>
+        <template lwc:if={showNoEntries}>
+          <p class="slds-text-color_weak" data-no-entries>{labels.noEntries}</p>
+        </template>
+
+        <template lwc:if={hasEntries}>
+          <div class="slds-scrollable_x">
+            <table
+              class="slds-table slds-table_cell-buffer slds-table_bordered"
+              data-entries
+            >
+              <caption class="slds-assistive-text">
+                {entriesCaption}
+              </caption>
+              <thead>
+                <tr class="slds-line-height_reset">
+                  <th scope="col">{labels.colDate}</th>
+                  <th scope="col">{labels.colContract}</th>
+                  <th scope="col">{labels.colTimes}</th>
+                  <th scope="col" class="slds-text-align_right">
+                    {labels.colHours}
+                  </th>
+                  <th scope="col" class="slds-text-align_right">
+                    {labels.colRate}
+                  </th>
+                  <th scope="col" class="slds-text-align_right">
+                    {labels.colTotal}
+                  </th>
+                  <th scope="col">{labels.colStatus}</th>
+                  <th scope="col">{labels.colBilling}</th>
+                  <th scope="col">{labels.colActions}</th>
+                </tr>
+              </thead>
+              <tbody>
+                <template for:each={entryRows} for:item="row">
+                  <tr key={row.key} data-entry={row.key}>
+                    <th scope="row">{row.dateText}</th>
+                    <td class="slds-cell-wrap">{row.contractLabel}</td>
+                    <td class="slds-cell-wrap">
+                      <span data-times>{row.times}</span>
+                      <template lwc:if={row.note}>
+                        <span class="slds-text-color_weak slds-show"
+                          >{row.note}</span
+                        >
+                      </template>
+                    </td>
+                    <td class="slds-text-align_right">{row.hoursText}</td>
+                    <td class="slds-text-align_right">
+                      <lightning-formatted-number
+                        value={row.rate}
+                        format-style="currency"
+                        currency-code={row.currencyIsoCode}
+                      ></lightning-formatted-number>
+                    </td>
+                    <td class="slds-text-align_right">
+                      <lightning-formatted-number
+                        value={row.totalAmount}
+                        format-style="currency"
+                        currency-code={row.currencyIsoCode}
+                      ></lightning-formatted-number>
+                    </td>
+                    <td data-status>{row.statusLabel}</td>
+                    <td>
+                      <span class={row.billingClass} data-billing
+                        >{row.billingLabel}</span
+                      >
+                    </td>
+                    <td>
+                      <template lwc:if={row.canEdit}>
+                        <lightning-button
+                          label={labels.edit}
+                          title={row.editLabel}
+                          data-id={row.key}
+                          data-action="edit"
+                          onclick={handleEdit}
+                        ></lightning-button>
+                      </template>
+                      <template lwc:if={row.canSubmit}>
+                        <lightning-button
+                          label={labels.submit}
+                          title={row.submitLabel}
+                          data-id={row.key}
+                          data-action="submit"
+                          disabled={row.busy}
+                          onclick={handleSubmit}
+                        ></lightning-button>
+                      </template>
+                    </td>
+                  </tr>
+                </template>
+              </tbody>
+            </table>
+          </div>
+        </template>
+      </section>
+
+      <section aria-labelledby="axf157-forecast-heading" data-forecast-section>
+        <h2
+          id="axf157-forecast-heading"
+          class="slds-text-heading_small slds-var-m-bottom_x-small"
+        >
+          {labels.forecastHeading}
+        </h2>
+        <p class="slds-var-m-bottom_x-small">{forecastIntro}</p>
+        <div class="slds-size_1-of-1 slds-medium-size_1-of-3">
+          <lightning-combobox
+            label={labels.destination}
+            options={destinationOptions}
+            value={destination}
+            data-field="destination"
+            onchange={handleDestinationChange}
+          ></lightning-combobox>
+        </div>
+
+        <template lwc:if={forecastLoading}>
+          <p role="status">{labels.loading}</p>
+        </template>
+        <template lwc:if={showNoForecast}>
+          <p class="slds-text-color_weak" data-no-forecast>
+            {labels.noForecast}
+          </p>
+        </template>
+
+        <template lwc:if={hasForecast}>
+          <template for:each={forecastGroups} for:item="group">
+            <div
+              key={group.key}
+              class="slds-var-m-top_small slds-scrollable_x"
+              data-group={group.key}
+            >
+              <h3 id={group.headingId} class="slds-text-title_bold">
+                {group.label}
+              </h3>
+              <table
+                class="slds-table slds-table_cell-buffer slds-table_bordered"
+                aria-labelledby={group.headingId}
+              >
+                <thead>
+                  <tr class="slds-line-height_reset">
+                    <th scope="col">{labels.colContract}</th>
+                    <th scope="col" class="slds-text-align_right">
+                      {labels.colApprovedHours}
+                    </th>
+                    <th scope="col" class="slds-text-align_right">
+                      {labels.colForecast}
+                    </th>
+                    <th scope="col" class="slds-text-align_right">
+                      {labels.colPendingHours}
+                    </th>
+                    <th scope="col" class="slds-text-align_right">
+                      {labels.colPending}
+                    </th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <template for:each={group.lines} for:item="line">
+                    <tr key={line.key} data-line={line.key}>
+                      <th scope="row" class="slds-cell-wrap">
+                        {line.contractLabel}
+                      </th>
+                      <td class="slds-text-align_right">
+                        {line.approvedHoursText}
+                      </td>
+                      <td class="slds-text-align_right">
+                        <lightning-formatted-number
+                          value={line.approvedAmount}
+                          format-style="currency"
+                          currency-code={line.currencyIsoCode}
+                        ></lightning-formatted-number>
+                      </td>
+                      <td class="slds-text-align_right">
+                        {line.pendingHoursText}
+                      </td>
+                      <td class="slds-text-align_right">
+                        <lightning-formatted-number
+                          value={line.pendingAmount}
+                          format-style="currency"
+                          currency-code={line.currencyIsoCode}
+                        ></lightning-formatted-number>
+                      </td>
+                    </tr>
+                  </template>
+                  <template for:each={group.totals} for:item="total">
+                    <tr key={total.key} class="slds-text-title_bold">
+                      <th scope="row">{labels.groupTotal}</th>
+                      <td class="slds-text-align_right" data-total-hours>
+                        {total.approvedHoursText}
+                      </td>
+                      <td class="slds-text-align_right">
+                        <lightning-formatted-number
+                          value={total.approvedAmount}
+                          format-style="currency"
+                          currency-code={total.currencyIsoCode}
+                        ></lightning-formatted-number>
+                      </td>
+                      <td class="slds-text-align_right">
+                        {total.pendingHoursText}
+                      </td>
+                      <td class="slds-text-align_right">
+                        <lightning-formatted-number
+                          value={total.pendingAmount}
+                          format-style="currency"
+                          currency-code={total.currencyIsoCode}
+                        ></lightning-formatted-number>
+                      </td>
+                    </tr>
+                  </template>
+                </tbody>
+              </table>
+            </div>
+          </template>
+
+          <table
+            class="slds-table slds-table_cell-buffer slds-table_bordered slds-var-m-top_small"
+            data-grand-total
+          >
+            <caption class="slds-assistive-text">
+              {forecastCaption}
+            </caption>
+            <thead>
+              <tr class="slds-line-height_reset">
+                <th scope="col">{labels.grandTotal}</th>
+                <th scope="col" class="slds-text-align_right">
+                  {labels.colApprovedHours}
+                </th>
+                <th scope="col" class="slds-text-align_right">
+                  {labels.colForecast}
+                </th>
+                <th scope="col" class="slds-text-align_right">
+                  {labels.colPendingHours}
+                </th>
+                <th scope="col" class="slds-text-align_right">
+                  {labels.colPending}
+                </th>
+              </tr>
+            </thead>
+            <tbody>
+              <template for:each={grandTotals} for:item="total">
+                <tr key={total.key}>
+                  <th scope="row">{total.currencyIsoCode}</th>
+                  <td class="slds-text-align_right" data-grand-hours>
+                    {total.approvedHoursText}
+                  </td>
+                  <td class="slds-text-align_right">
+                    <lightning-formatted-number
+                      value={total.approvedAmount}
+                      format-style="currency"
+                      currency-code={total.currencyIsoCode}
+                    ></lightning-formatted-number>
+                  </td>
+                  <td class="slds-text-align_right">
+                    {total.pendingHoursText}
+                  </td>
+                  <td class="slds-text-align_right">
+                    <lightning-formatted-number
+                      value={total.pendingAmount}
+                      format-style="currency"
+                      currency-code={total.currencyIsoCode}
+                    ></lightning-formatted-number>
+                  </td>
+                </tr>
+              </template>
+            </tbody>
+          </table>
+        </template>
+      </section>
+    </div>
+  </lightning-card>
+</template>

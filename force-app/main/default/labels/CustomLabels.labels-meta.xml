@@ -6733,4 +6733,690 @@
         <shortDescription>Reconciliation queue source column</shortDescription>
         <value>Account or card</value>
     </labels>
+    <labels>
+        <fullName>AXF_Timesheet_title</fullName>
+        <categories>AxonFinance,LWC,Timesheet</categories>
+        <language>en_US</language>
+        <protected>false</protected>
+        <shortDescription>Timesheet title</shortDescription>
+        <value>Timesheet</value>
+    </labels>
+    <labels>
+        <fullName>AXF_Timesheet_intro</fullName>
+        <categories>AxonFinance,LWC,Timesheet</categories>
+        <language>en_US</language>
+        <protected>false</protected>
+        <shortDescription>Timesheet intro</shortDescription>
+        <value
+    >Log the daily hours of your active service contracts. Approval stays in Contract Management.</value>
+    </labels>
+    <labels>
+        <fullName>AXF_Timesheet_loading</fullName>
+        <categories>AxonFinance,LWC,Timesheet</categories>
+        <language>en_US</language>
+        <protected>false</protected>
+        <shortDescription>Timesheet loading</shortDescription>
+        <value>Loading…</value>
+    </labels>
+    <labels>
+        <fullName>AXF_Timesheet_error</fullName>
+        <categories>AxonFinance,LWC,Timesheet</categories>
+        <language>en_US</language>
+        <protected>false</protected>
+        <shortDescription>Timesheet error</shortDescription>
+        <value>Something went wrong. Try again.</value>
+    </labels>
+    <labels>
+        <fullName>AXF_Timesheet_readOnly</fullName>
+        <categories>AxonFinance,LWC,Timesheet</categories>
+        <language>en_US</language>
+        <protected>false</protected>
+        <shortDescription>Timesheet read only</shortDescription>
+        <value>You can view the entries but cannot log hours.</value>
+    </labels>
+    <labels>
+        <fullName>AXF_Timesheet_formHeading</fullName>
+        <categories>AxonFinance,LWC,Timesheet</categories>
+        <language>en_US</language>
+        <protected>false</protected>
+        <shortDescription>Timesheet form heading</shortDescription>
+        <value>Log a day</value>
+    </labels>
+    <labels>
+        <fullName>AXF_Timesheet_workDate</fullName>
+        <categories>AxonFinance,LWC,Timesheet</categories>
+        <language>en_US</language>
+        <protected>false</protected>
+        <shortDescription>Timesheet work date</shortDescription>
+        <value>Date</value>
+    </labels>
+    <labels>
+        <fullName>AXF_Timesheet_contract</fullName>
+        <categories>AxonFinance,LWC,Timesheet</categories>
+        <language>en_US</language>
+        <protected>false</protected>
+        <shortDescription>Timesheet contract</shortDescription>
+        <value>Contract</value>
+    </labels>
+    <labels>
+        <fullName>AXF_Timesheet_contractPlaceholder</fullName>
+        <categories>AxonFinance,LWC,Timesheet</categories>
+        <language>en_US</language>
+        <protected>false</protected>
+        <shortDescription>Timesheet contract placeholder</shortDescription>
+        <value>Select a contract</value>
+    </labels>
+    <labels>
+        <fullName>AXF_Timesheet_noContracts</fullName>
+        <categories>AxonFinance,LWC,Timesheet</categories>
+        <language>en_US</language>
+        <protected>false</protected>
+        <shortDescription>Timesheet no contracts</shortDescription>
+        <value
+    >No active service contract is available for logging hours.</value>
+    </labels>
+    <labels>
+        <fullName>AXF_Timesheet_startTime</fullName>
+        <categories>AxonFinance,LWC,Timesheet</categories>
+        <language>en_US</language>
+        <protected>false</protected>
+        <shortDescription>Timesheet start time</shortDescription>
+        <value>Start</value>
+    </labels>
+    <labels>
+        <fullName>AXF_Timesheet_breakStart</fullName>
+        <categories>AxonFinance,LWC,Timesheet</categories>
+        <language>en_US</language>
+        <protected>false</protected>
+        <shortDescription>Timesheet break start</shortDescription>
+        <value>Break</value>
+    </labels>
+    <labels>
+        <fullName>AXF_Timesheet_breakEnd</fullName>
+        <categories>AxonFinance,LWC,Timesheet</categories>
+        <language>en_US</language>
+        <protected>false</protected>
+        <shortDescription>Timesheet break end</shortDescription>
+        <value>Return</value>
+    </labels>
+    <labels>
+        <fullName>AXF_Timesheet_endTime</fullName>
+        <categories>AxonFinance,LWC,Timesheet</categories>
+        <language>en_US</language>
+        <protected>false</protected>
+        <shortDescription>Timesheet end time</shortDescription>
+        <value>End</value>
+    </labels>
+    <labels>
+        <fullName>AXF_Timesheet_note</fullName>
+        <categories>AxonFinance,LWC,Timesheet</categories>
+        <language>en_US</language>
+        <protected>false</protected>
+        <shortDescription>Timesheet note</shortDescription>
+        <value>Note</value>
+    </labels>
+    <labels>
+        <fullName>AXF_Timesheet_rateInfo</fullName>
+        <categories>AxonFinance,LWC,Timesheet</categories>
+        <language>en_US</language>
+        <protected>false</protected>
+        <shortDescription>Timesheet rate info</shortDescription>
+        <value>Rate {0} per hour, from the active contract term.</value>
+    </labels>
+    <labels>
+        <fullName>AXF_Timesheet_computedHours</fullName>
+        <categories>AxonFinance,LWC,Timesheet</categories>
+        <language>en_US</language>
+        <protected>false</protected>
+        <shortDescription>Timesheet computed hours</shortDescription>
+        <value>Hours worked: {0}</value>
+    </labels>
+    <labels>
+        <fullName>AXF_Timesheet_breakIncomplete</fullName>
+        <categories>AxonFinance,LWC,Timesheet</categories>
+        <language>en_US</language>
+        <protected>false</protected>
+        <shortDescription>Timesheet break incomplete</shortDescription>
+        <value>Enter both the break and the return.</value>
+    </labels>
+    <labels>
+        <fullName>AXF_Timesheet_timeOrder</fullName>
+        <categories>AxonFinance,LWC,Timesheet</categories>
+        <language>en_US</language>
+        <protected>false</protected>
+        <shortDescription>Timesheet time order</shortDescription>
+        <value
+    >Times must follow Start, Break, Return and End on the same day.</value>
+    </labels>
+    <labels>
+        <fullName>AXF_Timesheet_save</fullName>
+        <categories>AxonFinance,LWC,Timesheet</categories>
+        <language>en_US</language>
+        <protected>false</protected>
+        <shortDescription>Timesheet save</shortDescription>
+        <value>Save entry</value>
+    </labels>
+    <labels>
+        <fullName>AXF_Timesheet_saved</fullName>
+        <categories>AxonFinance,LWC,Timesheet</categories>
+        <language>en_US</language>
+        <protected>false</protected>
+        <shortDescription>Timesheet saved</shortDescription>
+        <value>Entry saved as a draft.</value>
+    </labels>
+    <labels>
+        <fullName>AXF_Timesheet_entriesHeading</fullName>
+        <categories>AxonFinance,LWC,Timesheet</categories>
+        <language>en_US</language>
+        <protected>false</protected>
+        <shortDescription>Timesheet entries heading</shortDescription>
+        <value>Entries</value>
+    </labels>
+    <labels>
+        <fullName>AXF_Timesheet_previousMonth</fullName>
+        <categories>AxonFinance,LWC,Timesheet</categories>
+        <language>en_US</language>
+        <protected>false</protected>
+        <shortDescription>Timesheet previous month</shortDescription>
+        <value>Previous month</value>
+    </labels>
+    <labels>
+        <fullName>AXF_Timesheet_nextMonth</fullName>
+        <categories>AxonFinance,LWC,Timesheet</categories>
+        <language>en_US</language>
+        <protected>false</protected>
+        <shortDescription>Timesheet next month</shortDescription>
+        <value>Next month</value>
+    </labels>
+    <labels>
+        <fullName>AXF_Timesheet_customPeriod</fullName>
+        <categories>AxonFinance,LWC,Timesheet</categories>
+        <language>en_US</language>
+        <protected>false</protected>
+        <shortDescription>Timesheet custom period</shortDescription>
+        <value>{0} to {1}</value>
+    </labels>
+    <labels>
+        <fullName>AXF_Timesheet_filtersLegend</fullName>
+        <categories>AxonFinance,LWC,Timesheet</categories>
+        <language>en_US</language>
+        <protected>false</protected>
+        <shortDescription>Timesheet filters legend</shortDescription>
+        <value>Filters</value>
+    </labels>
+    <labels>
+        <fullName>AXF_Timesheet_fromDate</fullName>
+        <categories>AxonFinance,LWC,Timesheet</categories>
+        <language>en_US</language>
+        <protected>false</protected>
+        <shortDescription>Timesheet from date</shortDescription>
+        <value>From</value>
+    </labels>
+    <labels>
+        <fullName>AXF_Timesheet_toDate</fullName>
+        <categories>AxonFinance,LWC,Timesheet</categories>
+        <language>en_US</language>
+        <protected>false</protected>
+        <shortDescription>Timesheet to date</shortDescription>
+        <value>To</value>
+    </labels>
+    <labels>
+        <fullName>AXF_Timesheet_allContracts</fullName>
+        <categories>AxonFinance,LWC,Timesheet</categories>
+        <language>en_US</language>
+        <protected>false</protected>
+        <shortDescription>Timesheet all contracts</shortDescription>
+        <value>All contracts</value>
+    </labels>
+    <labels>
+        <fullName>AXF_Timesheet_billingStatus</fullName>
+        <categories>AxonFinance,LWC,Timesheet</categories>
+        <language>en_US</language>
+        <protected>false</protected>
+        <shortDescription>Timesheet billing status</shortDescription>
+        <value>Billing status</value>
+    </labels>
+    <labels>
+        <fullName>AXF_Timesheet_recordStatus</fullName>
+        <categories>AxonFinance,LWC,Timesheet</categories>
+        <language>en_US</language>
+        <protected>false</protected>
+        <shortDescription>Timesheet record status</shortDescription>
+        <value>Entry status</value>
+    </labels>
+    <labels>
+        <fullName>AXF_Timesheet_allStatuses</fullName>
+        <categories>AxonFinance,LWC,Timesheet</categories>
+        <language>en_US</language>
+        <protected>false</protected>
+        <shortDescription>Timesheet all statuses</shortDescription>
+        <value>All</value>
+    </labels>
+    <labels>
+        <fullName>AXF_Timesheet_applyFilters</fullName>
+        <categories>AxonFinance,LWC,Timesheet</categories>
+        <language>en_US</language>
+        <protected>false</protected>
+        <shortDescription>Timesheet apply filters</shortDescription>
+        <value>Apply filters</value>
+    </labels>
+    <labels>
+        <fullName>AXF_Timesheet_clearFilters</fullName>
+        <categories>AxonFinance,LWC,Timesheet</categories>
+        <language>en_US</language>
+        <protected>false</protected>
+        <shortDescription>Timesheet clear filters</shortDescription>
+        <value>Clear filters</value>
+    </labels>
+    <labels>
+        <fullName>AXF_Timesheet_filterPeriodIncomplete</fullName>
+        <categories>AxonFinance,LWC,Timesheet</categories>
+        <language>en_US</language>
+        <protected>false</protected>
+        <shortDescription>Timesheet filter period incomplete</shortDescription>
+        <value>Enter both dates of the period.</value>
+    </labels>
+    <labels>
+        <fullName>AXF_Timesheet_filterPeriodOrder</fullName>
+        <categories>AxonFinance,LWC,Timesheet</categories>
+        <language>en_US</language>
+        <protected>false</protected>
+        <shortDescription>Timesheet filter period order</shortDescription>
+        <value>The end date must not be before the start date.</value>
+    </labels>
+    <labels>
+        <fullName>AXF_Timesheet_filterPeriodTooLong</fullName>
+        <categories>AxonFinance,LWC,Timesheet</categories>
+        <language>en_US</language>
+        <protected>false</protected>
+        <shortDescription>Timesheet filter period too long</shortDescription>
+        <value>The period can have at most 366 days.</value>
+    </labels>
+    <labels>
+        <fullName>AXF_Timesheet_entriesCaption</fullName>
+        <categories>AxonFinance,LWC,Timesheet</categories>
+        <language>en_US</language>
+        <protected>false</protected>
+        <shortDescription>Timesheet entries caption</shortDescription>
+        <value>Entries of {0}</value>
+    </labels>
+    <labels>
+        <fullName>AXF_Timesheet_colDate</fullName>
+        <categories>AxonFinance,LWC,Timesheet</categories>
+        <language>en_US</language>
+        <protected>false</protected>
+        <shortDescription>Timesheet col date</shortDescription>
+        <value>Date</value>
+    </labels>
+    <labels>
+        <fullName>AXF_Timesheet_colContract</fullName>
+        <categories>AxonFinance,LWC,Timesheet</categories>
+        <language>en_US</language>
+        <protected>false</protected>
+        <shortDescription>Timesheet col contract</shortDescription>
+        <value>Contract</value>
+    </labels>
+    <labels>
+        <fullName>AXF_Timesheet_colTimes</fullName>
+        <categories>AxonFinance,LWC,Timesheet</categories>
+        <language>en_US</language>
+        <protected>false</protected>
+        <shortDescription>Timesheet col times</shortDescription>
+        <value>Times</value>
+    </labels>
+    <labels>
+        <fullName>AXF_Timesheet_colHours</fullName>
+        <categories>AxonFinance,LWC,Timesheet</categories>
+        <language>en_US</language>
+        <protected>false</protected>
+        <shortDescription>Timesheet col hours</shortDescription>
+        <value>Hours</value>
+    </labels>
+    <labels>
+        <fullName>AXF_Timesheet_colRate</fullName>
+        <categories>AxonFinance,LWC,Timesheet</categories>
+        <language>en_US</language>
+        <protected>false</protected>
+        <shortDescription>Timesheet col rate</shortDescription>
+        <value>Rate</value>
+    </labels>
+    <labels>
+        <fullName>AXF_Timesheet_colTotal</fullName>
+        <categories>AxonFinance,LWC,Timesheet</categories>
+        <language>en_US</language>
+        <protected>false</protected>
+        <shortDescription>Timesheet col total</shortDescription>
+        <value>Total</value>
+    </labels>
+    <labels>
+        <fullName>AXF_Timesheet_colStatus</fullName>
+        <categories>AxonFinance,LWC,Timesheet</categories>
+        <language>en_US</language>
+        <protected>false</protected>
+        <shortDescription>Timesheet col status</shortDescription>
+        <value>Status</value>
+    </labels>
+    <labels>
+        <fullName>AXF_Timesheet_colBilling</fullName>
+        <categories>AxonFinance,LWC,Timesheet</categories>
+        <language>en_US</language>
+        <protected>false</protected>
+        <shortDescription>Timesheet col billing</shortDescription>
+        <value>Billing</value>
+    </labels>
+    <labels>
+        <fullName>AXF_Timesheet_colActions</fullName>
+        <categories>AxonFinance,LWC,Timesheet</categories>
+        <language>en_US</language>
+        <protected>false</protected>
+        <shortDescription>Timesheet col actions</shortDescription>
+        <value>Actions</value>
+    </labels>
+    <labels>
+        <fullName>AXF_Timesheet_statusDRAFT</fullName>
+        <categories>AxonFinance,LWC,Timesheet</categories>
+        <language>en_US</language>
+        <protected>false</protected>
+        <shortDescription>Timesheet status draft</shortDescription>
+        <value>Draft</value>
+    </labels>
+    <labels>
+        <fullName>AXF_Timesheet_statusSUBMITTED</fullName>
+        <categories>AxonFinance,LWC,Timesheet</categories>
+        <language>en_US</language>
+        <protected>false</protected>
+        <shortDescription>Timesheet status submitted</shortDescription>
+        <value>Submitted</value>
+    </labels>
+    <labels>
+        <fullName>AXF_Timesheet_statusAPPROVED</fullName>
+        <categories>AxonFinance,LWC,Timesheet</categories>
+        <language>en_US</language>
+        <protected>false</protected>
+        <shortDescription>Timesheet status approved</shortDescription>
+        <value>Approved</value>
+    </labels>
+    <labels>
+        <fullName>AXF_Timesheet_statusREJECTED</fullName>
+        <categories>AxonFinance,LWC,Timesheet</categories>
+        <language>en_US</language>
+        <protected>false</protected>
+        <shortDescription>Timesheet status rejected</shortDescription>
+        <value>Rejected</value>
+    </labels>
+    <labels>
+        <fullName>AXF_Timesheet_statusSUPERSEDED</fullName>
+        <categories>AxonFinance,LWC,Timesheet</categories>
+        <language>en_US</language>
+        <protected>false</protected>
+        <shortDescription>Timesheet status superseded</shortDescription>
+        <value>Superseded</value>
+    </labels>
+    <labels>
+        <fullName>AXF_Timesheet_billingBILLED</fullName>
+        <categories>AxonFinance,LWC,Timesheet</categories>
+        <language>en_US</language>
+        <protected>false</protected>
+        <shortDescription>Timesheet billing billed</shortDescription>
+        <value>Billed</value>
+    </labels>
+    <labels>
+        <fullName>AXF_Timesheet_billingPARTIAL</fullName>
+        <categories>AxonFinance,LWC,Timesheet</categories>
+        <language>en_US</language>
+        <protected>false</protected>
+        <shortDescription>Timesheet billing partial</shortDescription>
+        <value>Partial</value>
+    </labels>
+    <labels>
+        <fullName>AXF_Timesheet_billingUNBILLED</fullName>
+        <categories>AxonFinance,LWC,Timesheet</categories>
+        <language>en_US</language>
+        <protected>false</protected>
+        <shortDescription>Timesheet billing unbilled</shortDescription>
+        <value>Not billed</value>
+    </labels>
+    <labels>
+        <fullName>AXF_Timesheet_submit</fullName>
+        <categories>AxonFinance,LWC,Timesheet</categories>
+        <language>en_US</language>
+        <protected>false</protected>
+        <shortDescription>Timesheet submit</shortDescription>
+        <value>Submit</value>
+    </labels>
+    <labels>
+        <fullName>AXF_Timesheet_submitFor</fullName>
+        <categories>AxonFinance,LWC,Timesheet</categories>
+        <language>en_US</language>
+        <protected>false</protected>
+        <shortDescription>Timesheet submit for</shortDescription>
+        <value>Submit the entry of {0} for approval</value>
+    </labels>
+    <labels>
+        <fullName>AXF_Timesheet_submitted</fullName>
+        <categories>AxonFinance,LWC,Timesheet</categories>
+        <language>en_US</language>
+        <protected>false</protected>
+        <shortDescription>Timesheet submitted</shortDescription>
+        <value>Entry submitted for approval.</value>
+    </labels>
+    <labels>
+        <fullName>AXF_Timesheet_noEntries</fullName>
+        <categories>AxonFinance,LWC,Timesheet</categories>
+        <language>en_US</language>
+        <protected>false</protected>
+        <shortDescription>Timesheet no entries</shortDescription>
+        <value>No entries in this period.</value>
+    </labels>
+    <labels>
+        <fullName>AXF_Timesheet_truncated</fullName>
+        <categories>AxonFinance,LWC,Timesheet</categories>
+        <language>en_US</language>
+        <protected>false</protected>
+        <shortDescription>Timesheet truncated</shortDescription>
+        <value
+    >Only the first 500 entries are shown. Narrow the period or the filters.</value>
+    </labels>
+    <labels>
+        <fullName>AXF_Timesheet_forecastHeading</fullName>
+        <categories>AxonFinance,LWC,Timesheet</categories>
+        <language>en_US</language>
+        <protected>false</protected>
+        <shortDescription>Timesheet forecast heading</shortDescription>
+        <value>Revenue forecast</value>
+    </labels>
+    <labels>
+        <fullName>AXF_Timesheet_forecastIntro</fullName>
+        <categories>AxonFinance,LWC,Timesheet</categories>
+        <language>en_US</language>
+        <protected>false</protected>
+        <shortDescription>Timesheet forecast intro</shortDescription>
+        <value
+    >Approved hours of {0} by destination account. Hours awaiting approval are shown apart and are not in the forecast.</value>
+    </labels>
+    <labels>
+        <fullName>AXF_Timesheet_destination</fullName>
+        <categories>AxonFinance,LWC,Timesheet</categories>
+        <language>en_US</language>
+        <protected>false</protected>
+        <shortDescription>Timesheet destination</shortDescription>
+        <value>Destination account</value>
+    </labels>
+    <labels>
+        <fullName>AXF_Timesheet_allDestinations</fullName>
+        <categories>AxonFinance,LWC,Timesheet</categories>
+        <language>en_US</language>
+        <protected>false</protected>
+        <shortDescription>Timesheet all destinations</shortDescription>
+        <value>All accounts</value>
+    </labels>
+    <labels>
+        <fullName>AXF_Timesheet_noDestination</fullName>
+        <categories>AxonFinance,LWC,Timesheet</categories>
+        <language>en_US</language>
+        <protected>false</protected>
+        <shortDescription>Timesheet no destination</shortDescription>
+        <value>No destination account</value>
+    </labels>
+    <labels>
+        <fullName>AXF_Timesheet_wallet</fullName>
+        <categories>AxonFinance,LWC,Timesheet</categories>
+        <language>en_US</language>
+        <protected>false</protected>
+        <shortDescription>Timesheet wallet</shortDescription>
+        <value>Wallet</value>
+    </labels>
+    <labels>
+        <fullName>AXF_Timesheet_colApprovedHours</fullName>
+        <categories>AxonFinance,LWC,Timesheet</categories>
+        <language>en_US</language>
+        <protected>false</protected>
+        <shortDescription>Timesheet col approved hours</shortDescription>
+        <value>Approved hours</value>
+    </labels>
+    <labels>
+        <fullName>AXF_Timesheet_colForecast</fullName>
+        <categories>AxonFinance,LWC,Timesheet</categories>
+        <language>en_US</language>
+        <protected>false</protected>
+        <shortDescription>Timesheet col forecast</shortDescription>
+        <value>Forecast revenue</value>
+    </labels>
+    <labels>
+        <fullName>AXF_Timesheet_colPending</fullName>
+        <categories>AxonFinance,LWC,Timesheet</categories>
+        <language>en_US</language>
+        <protected>false</protected>
+        <shortDescription>Timesheet col pending</shortDescription>
+        <value>Awaiting approval</value>
+    </labels>
+    <labels>
+        <fullName>AXF_Timesheet_groupTotal</fullName>
+        <categories>AxonFinance,LWC,Timesheet</categories>
+        <language>en_US</language>
+        <protected>false</protected>
+        <shortDescription>Timesheet group total</shortDescription>
+        <value>Total</value>
+    </labels>
+    <labels>
+        <fullName>AXF_Timesheet_grandTotal</fullName>
+        <categories>AxonFinance,LWC,Timesheet</categories>
+        <language>en_US</language>
+        <protected>false</protected>
+        <shortDescription>Timesheet grand total</shortDescription>
+        <value>Grand total</value>
+    </labels>
+    <labels>
+        <fullName>AXF_Timesheet_forecastCaption</fullName>
+        <categories>AxonFinance,LWC,Timesheet</categories>
+        <language>en_US</language>
+        <protected>false</protected>
+        <shortDescription>Timesheet forecast caption</shortDescription>
+        <value>Revenue forecast for {0}</value>
+    </labels>
+    <labels>
+        <fullName>AXF_Timesheet_noForecast</fullName>
+        <categories>AxonFinance,LWC,Timesheet</categories>
+        <language>en_US</language>
+        <protected>false</protected>
+        <shortDescription>Timesheet no forecast</shortDescription>
+        <value>No approved or submitted hours in this month.</value>
+    </labels>
+    <labels>
+        <fullName>AXF_Timesheet_codeNOT_ACCESSIBLE</fullName>
+        <categories>AxonFinance,LWC,Timesheet</categories>
+        <language>en_US</language>
+        <protected>false</protected>
+        <shortDescription>Timesheet code not accessible</shortDescription>
+        <value>This contract or entry is not available to you.</value>
+    </labels>
+    <labels>
+        <fullName>AXF_Timesheet_codeINVALID_INPUT</fullName>
+        <categories>AxonFinance,LWC,Timesheet</categories>
+        <language>en_US</language>
+        <protected>false</protected>
+        <shortDescription>Timesheet code invalid input</shortDescription>
+        <value>Check the information entered.</value>
+    </labels>
+    <labels>
+        <fullName>AXF_Timesheet_codeINVALID_STATE</fullName>
+        <categories>AxonFinance,LWC,Timesheet</categories>
+        <language>en_US</language>
+        <protected>false</protected>
+        <shortDescription>Timesheet code invalid state</shortDescription>
+        <value>Only draft or rejected entries can be submitted.</value>
+    </labels>
+    <labels>
+        <fullName>AXF_Timesheet_codeREJECTED</fullName>
+        <categories>AxonFinance,LWC,Timesheet</categories>
+        <language>en_US</language>
+        <protected>false</protected>
+        <shortDescription>Timesheet code rejected</shortDescription>
+        <value>The change was refused. Reload and try again.</value>
+    </labels>
+    <labels>
+        <fullName>AXF_Timesheet_billingNOT_BILLABLE</fullName>
+        <categories>AxonFinance,LWC,Timesheet</categories>
+        <language>en_US</language>
+        <protected>false</protected>
+        <shortDescription>Timesheet billingNOT_BILLABLE</shortDescription>
+        <value>Not billable</value>
+    </labels>
+    <labels>
+        <fullName>AXF_Timesheet_edit</fullName>
+        <categories>AxonFinance,LWC,Timesheet</categories>
+        <language>en_US</language>
+        <protected>false</protected>
+        <shortDescription>Timesheet edit</shortDescription>
+        <value>Edit</value>
+    </labels>
+    <labels>
+        <fullName>AXF_Timesheet_editFor</fullName>
+        <categories>AxonFinance,LWC,Timesheet</categories>
+        <language>en_US</language>
+        <protected>false</protected>
+        <shortDescription>Timesheet editFor</shortDescription>
+        <value>Edit the entry of {0}</value>
+    </labels>
+    <labels>
+        <fullName>AXF_Timesheet_editing</fullName>
+        <categories>AxonFinance,LWC,Timesheet</categories>
+        <language>en_US</language>
+        <protected>false</protected>
+        <shortDescription>Timesheet editing</shortDescription>
+        <value
+    >Editing the entry of {0}. Saving keeps it in its current status.</value>
+    </labels>
+    <labels>
+        <fullName>AXF_Timesheet_cancelEdit</fullName>
+        <categories>AxonFinance,LWC,Timesheet</categories>
+        <language>en_US</language>
+        <protected>false</protected>
+        <shortDescription>Timesheet cancelEdit</shortDescription>
+        <value>Cancel editing</value>
+    </labels>
+    <labels>
+        <fullName>AXF_Timesheet_updated</fullName>
+        <categories>AxonFinance,LWC,Timesheet</categories>
+        <language>en_US</language>
+        <protected>false</protected>
+        <shortDescription>Timesheet updated</shortDescription>
+        <value>Entry updated.</value>
+    </labels>
+    <labels>
+        <fullName>AXF_Timesheet_colPendingHours</fullName>
+        <categories>AxonFinance,LWC,Timesheet</categories>
+        <language>en_US</language>
+        <protected>false</protected>
+        <shortDescription>Timesheet colPendingHours</shortDescription>
+        <value>Hours awaiting approval</value>
+    </labels>
+    <labels>
+        <fullName>AXF_Timesheet_codeALREADY_REGISTERED</fullName>
+        <categories>AxonFinance,LWC,Timesheet</categories>
+        <language>en_US</language>
+        <protected>false</protected>
+        <shortDescription>Timesheet codeALREADY_REGISTERED</shortDescription>
+        <value>This shift is already registered.</value>
+    </labels>
 </CustomLabels>
