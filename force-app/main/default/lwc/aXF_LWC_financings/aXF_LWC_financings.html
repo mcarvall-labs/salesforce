@@ -1,0 +1,385 @@
+<template>
+  <lightning-card title={labels.title} icon-name="custom:custom41">
+    <div class="slds-var-p-horizontal_medium">
+      <p class="slds-var-m-bottom_small">{labels.intro}</p>
+
+      <div aria-live="polite">
+        <template lwc:if={message}>
+          <div class={messageClass} role="status" tabindex="-1" data-message>
+            {message}
+          </div>
+        </template>
+      </div>
+
+      <template lwc:if={loading}>
+        <lightning-spinner
+          alternative-text={labels.loading}
+          size="small"
+        ></lightning-spinner>
+      </template>
+
+      <template lwc:if={error}>
+        <p class="slds-text-color_error" role="alert" data-error>{error}</p>
+      </template>
+
+      <template lwc:if={noCapability}>
+        <p class="slds-text-color_weak" data-no-capability>
+          {labels.noCapability}
+        </p>
+      </template>
+
+      <template lwc:if={showReadOnly}>
+        <p class="slds-text-color_weak slds-var-m-bottom_small" data-read-only>
+          {labels.readOnly}
+        </p>
+      </template>
+
+      <template lwc:if={canManage}>
+        <lightning-button
+          class="slds-var-m-bottom_small"
+          variant="brand"
+          label={labels.newFinancing}
+          data-new
+          onclick={handleNew}
+        ></lightning-button>
+      </template>
+
+      <template lwc:if={showEmpty}>
+        <p class="slds-text-color_weak" data-empty>{labels.noFinancings}</p>
+      </template>
+
+      <template lwc:if={hasFinancings}>
+        <div class="slds-scrollable_x">
+          <table
+            class="slds-table slds-table_cell-buffer slds-table_bordered slds-var-m-bottom_medium"
+            data-financings
+          >
+            <caption class="slds-text-heading_small slds-text-align_left">
+              {labels.listCaption}
+            </caption>
+            <thead>
+              <tr class="slds-line-height_reset">
+                <th scope="col">{labels.colDescription}</th>
+                <th scope="col">{labels.colHolder}</th>
+                <th scope="col">{labels.colMethod}</th>
+                <th scope="col">{labels.colProgress}</th>
+                <th scope="col">{labels.colNextDue}</th>
+                <th scope="col" class="slds-text-align_right">
+                  {labels.colNextAmount}
+                </th>
+                <th scope="col" class="slds-text-align_right">
+                  {labels.colBalance}
+                </th>
+                <th scope="col">{labels.colState}</th>
+                <th scope="col">{labels.colActions}</th>
+              </tr>
+            </thead>
+            <tbody>
+              <template for:each={financingRows} for:item="row">
+                <tr
+                  key={row.key}
+                  class={row.rowClass}
+                  data-financing-row={row.key}
+                >
+                  <th scope="row">
+                    {row.name}
+                    <template lwc:if={row.legacy}>
+                      <span
+                        class="slds-badge slds-var-m-left_x-small"
+                        data-legacy
+                        >{labels.legacy}</span
+                      >
+                    </template>
+                  </th>
+                  <td>{row.holderLabel}</td>
+                  <td data-method>{row.methodText}</td>
+                  <td data-progress>{row.progressText}</td>
+                  <td data-next-due>{row.nextDueText}</td>
+                  <td class="slds-text-align_right" data-next-amount>
+                    <template lwc:if={row.hasNextAmount}>
+                      <lightning-formatted-number
+                        value={row.nextAmount}
+                        format-style="currency"
+                        currency-code={row.currency}
+                      ></lightning-formatted-number>
+                    </template>
+                    <template lwc:else>{labels.notAvailable}</template>
+                  </td>
+                  <td class="slds-text-align_right" data-balance>
+                    <template lwc:if={row.hasBalance}>
+                      <lightning-formatted-number
+                        value={row.outstandingBalance}
+                        format-style="currency"
+                        currency-code={row.currency}
+                      ></lightning-formatted-number>
+                    </template>
+                    <template lwc:else>{labels.notAvailable}</template>
+                  </td>
+                  <td data-state>{row.stateText}</td>
+                  <td>
+                    <template lwc:if={row.editing}>
+                      <lightning-input
+                        type="number"
+                        step="0.01"
+                        min="0.01"
+                        label={labels.newAmount}
+                        field-level-help={labels.editHint}
+                        value={editAmountDraft}
+                        data-edit-amount
+                        onchange={handleEditAmount}
+                        required
+                      ></lightning-input>
+                    </template>
+                    <template lwc:if={row.ending}>
+                      <lightning-input
+                        type="date"
+                        label={labels.endDate}
+                        field-level-help={labels.endHint}
+                        value={endDateDraft}
+                        min={minDate}
+                        max={row.maxEndDate}
+                        data-end-date
+                        onchange={handleEndDate}
+                        required
+                      ></lightning-input>
+                    </template>
+                    <template lwc:if={row.settling}>
+                      <fieldset class="slds-form-element" data-settle>
+                        <legend class="slds-form-element__legend">
+                          {labels.settleHeading}
+                        </legend>
+                        <lightning-input
+                          type="number"
+                          step="0.01"
+                          min="0.01"
+                          label={labels.settleAmount}
+                          field-level-help={labels.settleAmountHint}
+                          value={settleAmountDraft}
+                          data-settle-amount
+                          onchange={handleSettleAmount}
+                          required
+                        ></lightning-input>
+                        <lightning-input
+                          type="date"
+                          label={labels.settleDate}
+                          field-level-help={labels.settleHint}
+                          value={settleDateDraft}
+                          min={settlement.minDate}
+                          max={settlement.maxDate}
+                          data-settle-date
+                          onchange={handleSettleDate}
+                          required
+                        ></lightning-input>
+                      </fieldset>
+                    </template>
+                    <lightning-button-group>
+                      <lightning-button
+                        label={labels.viewInstallments}
+                        title={row.viewLabel}
+                        data-id={row.key}
+                        data-view={row.key}
+                        data-action="view"
+                        onclick={handleView}
+                      ></lightning-button>
+                      <template lwc:if={row.editing}>
+                        <lightning-button
+                          variant="brand"
+                          label={labels.save}
+                          disabled={busy}
+                          data-action="save-amount"
+                          onclick={handleSaveAmount}
+                        ></lightning-button>
+                      </template>
+                      <template lwc:if={row.ending}>
+                        <lightning-button
+                          variant="destructive"
+                          label={labels.confirmEnd}
+                          disabled={busy}
+                          data-action="confirm-end"
+                          onclick={handleConfirmEnd}
+                        ></lightning-button>
+                      </template>
+                      <template lwc:if={row.settling}>
+                        <lightning-button
+                          variant="brand"
+                          label={labels.confirmSettle}
+                          disabled={busy}
+                          data-action="confirm-settle"
+                          onclick={handleConfirmSettle}
+                        ></lightning-button>
+                      </template>
+                      <template lwc:if={row.idle}>
+                        <template lwc:if={row.canEdit}>
+                          <lightning-button
+                            label={labels.editAmount}
+                            title={row.editLabel}
+                            data-id={row.key}
+                            data-action="edit"
+                            onclick={handleEdit}
+                          ></lightning-button>
+                        </template>
+                        <template lwc:if={row.canChange}>
+                          <lightning-button
+                            label={labels.settle}
+                            title={row.settleLabel}
+                            data-id={row.key}
+                            data-action="settle"
+                            disabled={busy}
+                            onclick={handleSettle}
+                          ></lightning-button>
+                          <lightning-button
+                            label={labels.end}
+                            title={row.endLabel}
+                            data-id={row.key}
+                            data-action="end"
+                            onclick={handleEnd}
+                          ></lightning-button>
+                        </template>
+                      </template>
+                      <template lwc:else>
+                        <lightning-button
+                          label={labels.cancel}
+                          data-action="cancel-change"
+                          onclick={handleCancelChange}
+                        ></lightning-button>
+                      </template>
+                    </lightning-button-group>
+                  </td>
+                </tr>
+              </template>
+            </tbody>
+          </table>
+        </div>
+      </template>
+
+      <template lwc:if={selectedKey}>
+        <section aria-labelledby="installments-heading" data-detail>
+          <div
+            class="slds-grid slds-grid_align-spread slds-var-m-bottom_x-small"
+          >
+            <h2
+              id="installments-heading"
+              class="slds-text-heading_small"
+              tabindex="-1"
+              data-detail-heading
+            >
+              {detailCaption}
+            </h2>
+            <lightning-button
+              label={labels.close}
+              data-action="close-detail"
+              onclick={handleCloseDetail}
+            ></lightning-button>
+          </div>
+          <template lwc:if={detailLoading}>
+            <lightning-spinner
+              alternative-text={labels.loading}
+              size="small"
+            ></lightning-spinner>
+          </template>
+          <template lwc:if={showNoInstallments}>
+            <p class="slds-text-color_weak" data-no-installments>
+              {labels.noInstallments}
+            </p>
+          </template>
+          <template lwc:if={hasInstallments}>
+            <div class="slds-scrollable_x">
+              <table
+                class="slds-table slds-table_cell-buffer slds-table_bordered"
+                data-installments
+              >
+                <caption class="slds-assistive-text">
+                  {detailCaption}
+                </caption>
+                <thead>
+                  <tr class="slds-line-height_reset">
+                    <th scope="col">{labels.colSequence}</th>
+                    <th scope="col">{labels.colDueDate}</th>
+                    <th scope="col" class="slds-text-align_right">
+                      {labels.colAmount}
+                    </th>
+                    <th scope="col" class="slds-text-align_right">
+                      {labels.colInterest}
+                    </th>
+                    <th scope="col" class="slds-text-align_right">
+                      {labels.colPrincipal}
+                    </th>
+                    <th scope="col" class="slds-text-align_right">
+                      {labels.colBalanceAfter}
+                    </th>
+                    <th scope="col">{labels.colStatus}</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <template for:each={installmentRows} for:item="inst">
+                    <tr key={inst.key} data-installment-row={inst.key}>
+                      <th scope="row">{inst.sequence}</th>
+                      <td>{inst.dueText}</td>
+                      <td class="slds-text-align_right">
+                        <lightning-formatted-number
+                          value={inst.amount}
+                          format-style="currency"
+                          currency-code={inst.currency}
+                        ></lightning-formatted-number>
+                      </td>
+                      <td class="slds-text-align_right">
+                        <template lwc:if={inst.hasInterest}>
+                          <lightning-formatted-number
+                            value={inst.interestPortion}
+                            format-style="currency"
+                            currency-code={inst.currency}
+                          ></lightning-formatted-number>
+                        </template>
+                        <template lwc:else>{labels.notAvailable}</template>
+                      </td>
+                      <td class="slds-text-align_right">
+                        <template lwc:if={inst.hasPrincipal}>
+                          <lightning-formatted-number
+                            value={inst.principalPortion}
+                            format-style="currency"
+                            currency-code={inst.currency}
+                          ></lightning-formatted-number>
+                        </template>
+                        <template lwc:else>{labels.notAvailable}</template>
+                      </td>
+                      <td class="slds-text-align_right">
+                        <template lwc:if={inst.hasBalance}>
+                          <lightning-formatted-number
+                            value={inst.closingBalance}
+                            format-style="currency"
+                            currency-code={inst.currency}
+                          ></lightning-formatted-number>
+                        </template>
+                        <template lwc:else>{labels.notAvailable}</template>
+                      </td>
+                      <td data-installment-status>
+                        {inst.statusText}
+                        <template lwc:if={inst.projected}>
+                          <span
+                            class="slds-text-color_weak slds-var-m-left_xx-small"
+                            data-projected
+                            >({labels.projected})</span
+                          >
+                        </template>
+                      </td>
+                    </tr>
+                  </template>
+                </tbody>
+              </table>
+            </div>
+            <template lwc:if={detail.truncated}>
+              <p class="slds-text-color_weak" data-truncated>
+                {labels.installmentsTruncated}
+              </p>
+            </template>
+            <template lwc:if={detail.unverified}>
+              <p class="slds-text-color_weak" data-unverified>
+                {labels.installmentsUnverified}
+              </p>
+            </template>
+          </template>
+        </section>
+      </template>
+    </div>
+  </lightning-card>
+</template>

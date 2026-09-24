@@ -213,4 +213,105 @@ describe("c-a-x-f_-l-w-c_schedule-wizard", () => {
     const combos = [...el.shadowRoot.querySelectorAll("lightning-combobox")];
     expect(combos.find((c) => c.label === "Modalidade").value).toBe("PRICE");
   });
+  it("hands the origin and description over to the managed schedule", async () => {
+    planSchedule.mockResolvedValue(PRICE_SCHEDULE);
+    saveSchedule.mockResolvedValue({
+      outcome: "SAVED",
+      message: "1 ocorrência(s) planejada(s).",
+      occurrenceCount: 1
+    });
+    const el = build();
+    CurrentPageReference.emit({
+      state: {
+        c__modality: "INSTALLMENT",
+        c__accountId: "001000000000001AAA",
+        c__amount: "900",
+        c__description: "Geladeira",
+        c__bankAccountId: "a01000000000001AAA",
+        c__creditCardId: "not-an-id"
+      }
+    });
+    await flush();
+    expect(
+      [...el.shadowRoot.querySelectorAll("lightning-input")].find(
+        (i) => i.label === "c.AXF_ScheduleWizard_description"
+      ).value
+    ).toBe("Geladeira");
+
+    clickButton(el, "Gerar prévia");
+    await flush();
+    clickButton(el, "Salvar cronograma");
+    await flush();
+
+    const call = saveSchedule.mock.calls[0][0];
+    expect(call.bankAccountId).toBe("a01000000000001AAA");
+    expect(call.creditCardId).toBeNull();
+    expect(call.description).toBe("Geladeira");
+    expect(
+      el.shadowRoot.querySelector("[data-financings-hint]").textContent
+    ).toContain("c.AXF_ScheduleWizard_openFinancings");
+  });
+
+  it("does not keep a previous hand-over's description or origin", async () => {
+    planSchedule.mockResolvedValue(PRICE_SCHEDULE);
+    saveSchedule.mockResolvedValue({ outcome: "SAVED", occurrenceCount: 1 });
+    const el = build();
+    CurrentPageReference.emit({
+      state: {
+        c__modality: "INSTALLMENT",
+        c__accountId: "001000000000001AAA",
+        c__description: "Geladeira",
+        c__bankAccountId: "a01000000000001AAA"
+      }
+    });
+    await flush();
+    CurrentPageReference.emit({
+      state: {
+        c__modality: "INSTALLMENT",
+        c__accountId: "001000000000001AAA",
+        c__amount: "300"
+      }
+    });
+    await flush();
+
+    clickButton(el, "Gerar prévia");
+    await flush();
+    clickButton(el, "Salvar cronograma");
+    await flush();
+
+    const call = saveSchedule.mock.calls[0][0];
+    expect(call.description).toBeNull();
+    expect(call.bankAccountId).toBeNull();
+    expect(call.creditCardId).toBeNull();
+  });
+
+  it("drops the handed-over origin when the holder changes", async () => {
+    planSchedule.mockResolvedValue(PRICE_SCHEDULE);
+    saveSchedule.mockResolvedValue({ outcome: "INVALID", message: "x" });
+    const el = build();
+    CurrentPageReference.emit({
+      state: {
+        c__modality: "INSTALLMENT",
+        c__accountId: "001000000000001AAA",
+        c__creditCardId: "a02000000000001AAA"
+      }
+    });
+    await flush();
+    const accountCombo = [
+      ...el.shadowRoot.querySelectorAll("lightning-combobox")
+    ].find((c) => c.label === "Entidade titular");
+    accountCombo.value = "001000000000002AAA";
+    accountCombo.dispatchEvent(new CustomEvent("change"));
+
+    clickButton(el, "Gerar prévia");
+    await flush();
+    clickButton(el, "Salvar cronograma");
+    await flush();
+
+    const call = saveSchedule.mock.calls[0][0];
+    expect(call.creditCardId).toBeNull();
+    expect(call.bankAccountId).toBeNull();
+    expect(call.description).toBeNull();
+    expect(el.shadowRoot.querySelector("[data-financings-hint]")).toBeNull();
+  });
 });

@@ -38,6 +38,14 @@
       ></lightning-combobox>
 
       <lightning-input
+        label={labels.description}
+        data-field="description"
+        value={description}
+        max-length="255"
+        onchange={handleChange}
+      ></lightning-input>
+
+      <lightning-input
         label="Moeda (ISO)"
         data-field="currencyIsoCode"
         value={currencyIsoCode}
@@ -179,6 +187,11 @@
             ({saveResult.occurrenceCount} ocorrências)
           </template>
         </p>
+        <template if:true={saved}>
+          <p class="slds-var-m-top_x-small" data-financings-hint>
+            {labels.openFinancings}
+          </p>
+        </template>
       </template>
     </div>
   </lightning-card>

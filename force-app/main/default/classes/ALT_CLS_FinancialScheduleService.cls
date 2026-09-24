@@ -3171,6 +3171,13 @@ public with sharing class ALT_CLS_FinancialScheduleService {
 
   public static final String OPERATION_EDIT = 'EDIT';
   public static final String OPERATION_TERMINATE = 'TERMINATE';
+  /**
+   * AXF-156: quitação antecipada. Não é um valor do picklist de operação: o recibo gravado é um
+   * TERMINATE; o marcador só separa a identidade de operação e o hash do payload.
+   */
+  public static final String OPERATION_SETTLE = 'SETTLE';
+  public static final String SETTLEMENT_TAG = 'axf156-settle-v1';
+  public static final String METHOD_INSTALLMENT = 'INSTALLMENT';
   public static final String STATE_ENDED = 'ENDED';
   public static final String OUTCOME_UPDATED = 'UPDATED';
   public static final String OUTCOME_TERMINATED = 'TERMINATED';
@@ -3221,6 +3228,21 @@ public with sharing class ALT_CLS_FinancialScheduleService {
     public Decimal amount;
     public Date terminationDate;
     public Boolean replay = false;
+    /** AXF-156: nova revisão de definição criada pelo EDIT de parcelamento. */
+    public Id definitionId;
+    /** AXF-156: lançamento previsto de quitação criado junto do TERMINATE da quitação. */
+    public Id settlementTransactionId;
+  }
+
+  /**
+   * @description AXF-156 — quitação antecipada: num comando atômico e idempotente cria UM
+   * lançamento previsto de quitação (`amount` na data `terminationDate`, sem sequência de
+   * cronograma) e encerra o cronograma com `terminationDate` = data da quitação. O recibo é um
+   * TERMINATE cujo ResultJson carrega o Id do lançamento de quitação. Não é cotação oficial do
+   * credor: o valor é o informado pelo chamador.
+   */
+  public static ChangeResult settleSchedule(ChangeInput input) {
+    return applyChange(OPERATION_SETTLE, input);
   }
 
   /**
@@ -3271,9 +3293,15 @@ public with sharing class ALT_CLS_FinancialScheduleService {
         'Você não tem permissão para alterar cronogramas financeiros.'
       );
     }
-    Decimal amount = (operation == OPERATION_EDIT)
+    Decimal amount = (operation == OPERATION_EDIT ||
+      operation == OPERATION_SETTLE)
       ? input.amount.setScale(MONEY_SCALE)
       : null;
+    // A quitação grava um recibo TERMINATE: o replay procura o recibo por essa operação, e a
+    // identidade de operação (com o marcador SETTLE) separa uma quitação de um encerramento.
+    String receiptOperation = (operation == OPERATION_SETTLE)
+      ? OPERATION_TERMINATE
+      : operation;
     String payloadHash = changePayloadHash(operation, root, input, amount);
     String operationKey = AXF_CLS_IdentityFraming.key(
       new List<Object>{
@@ -3287,7 +3315,7 @@ public with sharing class ALT_CLS_FinancialScheduleService {
 
     // Replay autorizado: identidade de operação ANTES da checagem de versão.
     ChangeResult replay = changeReplayOrConflict(
-      operation,
+      receiptOperation,
       operationKey,
       payloadHash,
       result
@@ -3318,7 +3346,7 @@ public with sharing class ALT_CLS_FinancialScheduleService {
       );
     }
     replay = changeReplayOrConflict(
-      operation,
+      receiptOperation,
       operationKey,
       payloadHash,
       result
@@ -3344,15 +3372,25 @@ public with sharing class ALT_CLS_FinancialScheduleService {
       context.version = versionOf(locked) + 1;
       context.rows = changeRows(locked.Id);
       context.allocated = allocatedTargets(context.rows);
+      context.definition = definitionOf(locked.AXF_FSC_LKP_ActiveDefinition__c);
       if (operation == OPERATION_EDIT) {
-        applyEdit(context, result);
+        if (
+          context.definition != null &&
+          context.definition.AXF_SDF_PKL_Method__c == METHOD_INSTALLMENT
+        ) {
+          applyInstallmentEdit(context, result);
+        } else {
+          applyEdit(context, result);
+        }
+      } else if (operation == OPERATION_SETTLE) {
+        applySettle(context, result);
       } else {
         applyTerminate(context, result);
       }
     } catch (DmlException failure) {
       Database.rollback(checkpoint);
       ChangeResult recovered = changeReplayOrConflict(
-        operation,
+        receiptOperation,
         operationKey,
         payloadHash,
         new ChangeResult()
@@ -3386,6 +3424,12 @@ public with sharing class ALT_CLS_FinancialScheduleService {
     Long version;
     List<AXF_OBJ_FinancialTransaction__c> rows;
     Set<Id> allocated;
+    /** Definição vigente lida sob o lock. */
+    AXF_OBJ_ScheduleDefinition__c definition;
+    /** AXF-156: nova definição vigente (EDIT de parcelamento). */
+    Id activeDefinition;
+    /** AXF-156: campos adicionais do patch do recibo (quitação). */
+    Map<String, Object> extraPatch = new Map<String, Object>();
   }
 
   private static void applyEdit(ChangeContext context, ChangeResult result) {
@@ -3562,14 +3606,16 @@ public with sharing class ALT_CLS_FinancialScheduleService {
       ' ocorrência(s) cancelada(s), ' +
       protectedSequences.size() +
       ' protegida(s).';
+    Map<String, Object> patch = new Map<String, Object>{
+      'terminationDate' => String.valueOf(boundary),
+      'protectionPolicy' => PROTECTION_POLICY
+    };
+    patch.putAll(context.extraPatch);
     insertChangeReceipt(
       context,
       OPERATION_TERMINATE,
       fromSequence,
-      new Map<String, Object>{
-        'terminationDate' => String.valueOf(boundary),
-        'protectionPolicy' => PROTECTION_POLICY
-      },
+      patch,
       new Map<String, Object>{
         'state' => context.root.AXF_FSC_PKL_State__c,
         'terminationDate' => context.root.AXF_FSC_DAT_TerminationDate__c == null
@@ -3579,6 +3625,255 @@ public with sharing class ALT_CLS_FinancialScheduleService {
       protectedSequences,
       result
     );
+  }
+
+  /**
+   * @description AXF-156 — EDIT do valor da parcela de um parcelamento (INSTALLMENT): nova revisão
+   * imutável da definição (`FixedValue`, `Predecessor`, `EffectiveSequence` = primeira parcela
+   * futura não realizada), recibo EDIT FROM_SEQUENCE e base corrente/magnitude das parcelas
+   * persistidas mutáveis. Protegidas ficam intocadas; as virtuais seguem a nova revisão.
+   */
+  private static void applyInstallmentEdit(
+    ChangeContext context,
+    ChangeResult result
+  ) {
+    AXF_OBJ_ScheduleDefinition__c active = context.definition;
+    Date today = today();
+    Integer fromSequence;
+    Integer highest = 0;
+    List<AXF_OBJ_FinancialTransaction__c> eligible = new List<AXF_OBJ_FinancialTransaction__c>();
+    List<Integer> protectedSequences = new List<Integer>();
+    for (AXF_OBJ_FinancialTransaction__c row : context.rows) {
+      Integer sequence = row.AXF_FTX_NUM_Sequence__c.intValue();
+      highest = Math.max(highest, sequence);
+      if (
+        row.AXF_FTX_PKL_ScheduleState__c == STATE_CANCELLED ||
+        row.AXF_FTX_DAT_DueDate__c == null ||
+        row.AXF_FTX_DAT_DueDate__c < today
+      ) {
+        continue;
+      }
+      if (!isMutable(row, context.allocated)) {
+        protectedSequences.add(sequence);
+        continue;
+      }
+      if (fromSequence == null) {
+        fromSequence = sequence;
+      }
+      eligible.add(row);
+    }
+    Integer first = intOf(active.AXF_SDF_NUM_FirstSequence__c);
+    Integer last = first + intOf(active.AXF_SDF_NUM_TotalInstallments__c) - 1;
+    if (fromSequence == null) {
+      fromSequence = Math.max(
+        highest + 1,
+        intOf(context.root.AXF_FSC_NUM_TrackingStartSequence__c)
+      );
+    }
+    if (fromSequence > last) {
+      throw new ServiceException(
+        'Não há parcela futura não realizada para receber o novo valor.'
+      );
+    }
+
+    Decimal previousAmount;
+    List<ALT_CLS_AmortizationSchedule.Occurrence> formula = ALT_CLS_ScheduleProjection.generateOccurrences(
+      active
+    );
+    Integer index = fromSequence - first;
+    if (index >= 0 && index < formula.size()) {
+      previousAmount = formula[index].payment;
+    }
+
+    Integer revision = highestDefinitionRevision(context.root.Id) + 1;
+    AXF_OBJ_ScheduleDefinition__c revised = new AXF_OBJ_ScheduleDefinition__c(
+      AXF_SDF_EXI_DefinitionKey__c = AXF_CLS_IdentityFraming.key(
+        new List<Object>{
+          DEFINITION_TAG,
+          context.root.AXF_FSC_EXI_ScheduleKey__c,
+          revision
+        }
+      ),
+      AXF_SDF_LKP_Schedule__c = context.root.Id,
+      AXF_SDF_LKP_TermVersion__c = active.AXF_SDF_LKP_TermVersion__c,
+      AXF_SDF_LKP_Predecessor__c = active.Id,
+      AXF_SDF_NUM_Revision__c = revision,
+      AXF_SDF_NUM_EffectiveSequence__c = fromSequence,
+      AXF_SDF_PKL_Method__c = METHOD_INSTALLMENT,
+      AXF_SDF_NUM_TotalInstallments__c = active.AXF_SDF_NUM_TotalInstallments__c,
+      AXF_SDF_NUM_FirstSequence__c = active.AXF_SDF_NUM_FirstSequence__c,
+      AXF_SDF_DAT_FirstDueDate__c = active.AXF_SDF_DAT_FirstDueDate__c,
+      AXF_SDF_NUM_AnchorDay__c = active.AXF_SDF_NUM_AnchorDay__c,
+      AXF_SDF_NUM_PeriodMonths__c = active.AXF_SDF_NUM_PeriodMonths__c,
+      AXF_SDF_NUM_PeriodDays__c = active.AXF_SDF_NUM_PeriodDays__c,
+      AXF_SDF_TXT_TimeZone__c = active.AXF_SDF_TXT_TimeZone__c,
+      AXF_SDF_NUM_Principal__c = active.AXF_SDF_NUM_Principal__c,
+      // Valor fixo por parcela, sem tarifas: o pagamento da parcela é exatamente o novo valor.
+      AXF_SDF_NUM_FixedValue__c = context.amount,
+      AXF_SDF_NUM_RecurringFee__c = 0,
+      AXF_SDF_NUM_UpfrontFee__c = 0,
+      AXF_SDF_TXT_FormulaVersion__c = active.AXF_SDF_TXT_FormulaVersion__c,
+      // Origem e descrição continuam valendo para a reposição das parcelas seguintes.
+      AXF_SDF_TAL_InputCanonicalJson__c = active.AXF_SDF_TAL_InputCanonicalJson__c
+    );
+    Database.insert(
+      new List<AXF_OBJ_ScheduleDefinition__c>{ revised },
+      AccessLevel.SYSTEM_MODE
+    );
+
+    List<AXF_OBJ_FinancialTransaction__c> updates = new List<AXF_OBJ_FinancialTransaction__c>();
+    for (AXF_OBJ_FinancialTransaction__c row : eligible) {
+      updates.add(
+        new AXF_OBJ_FinancialTransaction__c(
+          Id = row.Id,
+          AXF_FTX_NUM_CurrentBasis__c = context.amount,
+          AXF_FTX_NUM_Magnitude__c = context.amount,
+          AXF_FTX_LKP_ScheduleDefinition__c = revised.Id,
+          AXF_FTX_NUM_PrincipalPortion__c = context.amount,
+          AXF_FTX_NUM_FeePortion__c = 0,
+          AXF_FTX_CHK_RoundingResidual__c = false,
+          AXF_FTX_NUM_ProjectionRevision__c = context.revision,
+          AXF_FTX_NUM_Version__c = nextRowVersion(row)
+        )
+      );
+    }
+    if (!updates.isEmpty()) {
+      Database.update(updates, AccessLevel.SYSTEM_MODE);
+    }
+    context.activeDefinition = revised.Id;
+    persistChangeRoot(context, null, null);
+
+    result.outcome = OUTCOME_UPDATED;
+    result.definitionId = revised.Id;
+    result.fromSequence = fromSequence;
+    result.updatedCount = updates.size();
+    result.protectedCount = protectedSequences.size();
+    result.amount = context.amount;
+    result.revision = context.revision;
+    result.version = context.version;
+    result.message =
+      'Valor da parcela atualizado a partir da sequência ' +
+      fromSequence +
+      ': ' +
+      updates.size() +
+      ' parcela(s) alterada(s), ' +
+      protectedSequences.size() +
+      ' protegida(s).';
+    insertChangeReceipt(
+      context,
+      OPERATION_EDIT,
+      fromSequence,
+      new Map<String, Object>{
+        'amount' => context.amount,
+        'definitionRevision' => revision
+      },
+      new Map<String, Object>{
+        'amount' => previousAmount,
+        'definitionRevision' => active.AXF_SDF_NUM_Revision__c
+      },
+      protectedSequences,
+      result
+    );
+  }
+
+  /**
+   * @description AXF-156 — quitação: grava o lançamento previsto de quitação (titular, direção,
+   * moeda e origem da definição, sem sequência de cronograma) e encerra o cronograma na data da
+   * quitação pelo mesmo TERMINATE, com o Id do lançamento no ResultJson do recibo.
+   */
+  private static void applySettle(ChangeContext context, ChangeResult result) {
+    AXF_OBJ_ScheduleDefinition__c active = context.definition;
+    Map<String, Object> canonical = canonicalInputOf(active);
+    String subject = (String) canonical.get(INPUT_DESCRIPTION);
+    if (String.isBlank(subject)) {
+      subject = (active == null) ? '' : active.AXF_SDF_PKL_Method__c;
+    }
+    String description = String.format(
+      System.Label.AXF_Financings_settlementDescription,
+      new List<Object>{ subject }
+    );
+    if (description.length() > MAX_DESCRIPTION_LENGTH) {
+      description = description.substring(0, MAX_DESCRIPTION_LENGTH);
+    }
+    Date settlementDate = context.input.terminationDate;
+    AXF_OBJ_FinancialTransaction__c settlement = new AXF_OBJ_FinancialTransaction__c(
+      AXF_FTX_LKP_Account__c = context.root.AXF_FSC_LKP_Account__c,
+      AXF_FTX_LKP_BankAccount__c = (Id) canonical.get(INPUT_BANK_ACCOUNT),
+      AXF_FTX_LKP_CreditCard__c = (Id) canonical.get(INPUT_CREDIT_CARD),
+      AXF_FTX_PKL_Direction__c = context.root.AXF_FSC_PKL_Direction__c,
+      AXF_FTX_TXT_CurrencyIsoCode__c = context.root.AXF_FSC_TXT_CurrencyIsoCode__c,
+      AXF_FTX_NUM_Magnitude__c = context.amount,
+      AXF_FTX_DAT_DueDate__c = settlementDate,
+      AXF_FTX_DAT_PurchaseDate__c = settlementDate,
+      AXF_FTX_PKL_Status__c = 'PLANNED',
+      AXF_FTX_PKL_PlanKind__c = 'PLANNED',
+      AXF_FTX_CHK_IsEstimated__c = false,
+      AXF_FTX_NUM_Version__c = 0,
+      AXF_FTX_TXT_Description__c = description,
+      AXF_FTX_EXI_ClientRequestId__c = ALT_CLS_ScheduleProjection.clientRequestId(
+        AXF_CLS_IdentityFraming.key(
+          new List<Object>{ SETTLEMENT_TAG, context.operationKey }
+        )
+      )
+    );
+    Database.insert(
+      new List<AXF_OBJ_FinancialTransaction__c>{ settlement },
+      AccessLevel.SYSTEM_MODE
+    );
+    result.settlementTransactionId = settlement.Id;
+    result.amount = context.amount;
+    context.extraPatch.put('settlementAmount', context.amount);
+    context.extraPatch.put('settlementTransactionId', settlement.Id);
+    applyTerminate(context, result);
+  }
+
+  /** @description Definição completa (todos os insumos) para derivar uma revisão. */
+  private static AXF_OBJ_ScheduleDefinition__c definitionOf(Id definitionId) {
+    if (definitionId == null) {
+      return null;
+    }
+    List<AXF_OBJ_ScheduleDefinition__c> rows = [
+      SELECT
+        Id,
+        AXF_SDF_LKP_TermVersion__c,
+        AXF_SDF_NUM_Revision__c,
+        AXF_SDF_NUM_EffectiveSequence__c,
+        AXF_SDF_PKL_Method__c,
+        AXF_SDF_NUM_TotalInstallments__c,
+        AXF_SDF_NUM_FirstSequence__c,
+        AXF_SDF_DAT_FirstDueDate__c,
+        AXF_SDF_NUM_AnchorDay__c,
+        AXF_SDF_NUM_PeriodMonths__c,
+        AXF_SDF_NUM_PeriodDays__c,
+        AXF_SDF_TXT_TimeZone__c,
+        AXF_SDF_NUM_Principal__c,
+        AXF_SDF_NUM_PeriodRate__c,
+        AXF_SDF_NUM_FixedValue__c,
+        AXF_SDF_NUM_RecurringFee__c,
+        AXF_SDF_NUM_UpfrontFee__c,
+        AXF_SDF_TXT_FormulaVersion__c,
+        AXF_SDF_TAL_InputCanonicalJson__c
+      FROM AXF_OBJ_ScheduleDefinition__c
+      WHERE Id = :definitionId
+      WITH SYSTEM_MODE
+      LIMIT 1
+    ];
+    return rows.isEmpty() ? null : rows[0];
+  }
+
+  private static Integer highestDefinitionRevision(Id scheduleId) {
+    Integer highest = 0;
+    for (AXF_OBJ_ScheduleDefinition__c row : [
+      SELECT AXF_SDF_NUM_Revision__c
+      FROM AXF_OBJ_ScheduleDefinition__c
+      WHERE AXF_SDF_LKP_Schedule__c = :scheduleId
+      WITH SYSTEM_MODE
+    ]) {
+      if (row.AXF_SDF_NUM_Revision__c != null) {
+        highest = Math.max(highest, row.AXF_SDF_NUM_Revision__c.intValue());
+      }
+    }
+    return highest;
   }
 
   /**
@@ -3699,6 +3994,9 @@ public with sharing class ALT_CLS_FinancialScheduleService {
     );
     if (activeReference != null) {
       revision.AXF_FSC_LKP_ActiveReference__c = activeReference;
+    }
+    if (context.activeDefinition != null) {
+      revision.AXF_FSC_LKP_ActiveDefinition__c = context.activeDefinition;
     }
     if (terminationDate != null) {
       revision.AXF_FSC_DAT_TerminationDate__c = terminationDate;
@@ -3846,7 +4144,10 @@ public with sharing class ALT_CLS_FinancialScheduleService {
         MAX_TAL_LENGTH +
         ' caracteres do campo de texto longo.';
     }
-    if (operation == OPERATION_EDIT) {
+    if (operation == OPERATION_SETTLE && input.terminationDate == null) {
+      return 'A data da quitação é obrigatória.';
+    }
+    if (operation == OPERATION_EDIT || operation == OPERATION_SETTLE) {
       if (
         input.amount == null ||
         input.amount <= 0 ||
@@ -3886,7 +4187,19 @@ public with sharing class ALT_CLS_FinancialScheduleService {
         'O cronograma mudou desde a leitura; recarregue antes de alterar.'
       );
     }
-    if (operation == OPERATION_EDIT) {
+    // AXF-156: a porta pública também recusa encerramento/quitação no passado (vencidas não
+    // pagas continuam obrigações). Conferido depois do replay: um reenvio confirmado não expira.
+    if (
+      (operation == OPERATION_TERMINATE || operation == OPERATION_SETTLE) &&
+      input.terminationDate < today()
+    ) {
+      return changeFail(
+        result,
+        OUTCOME_INVALID,
+        'A data do encerramento não pode ser anterior a hoje.'
+      );
+    }
+    if (operation == OPERATION_EDIT || operation == OPERATION_SETTLE) {
       List<AXF_OBJ_ScheduleDefinition__c> definitions = [
         SELECT AXF_SDF_PKL_Method__c
         FROM AXF_OBJ_ScheduleDefinition__c
@@ -3894,14 +4207,21 @@ public with sharing class ALT_CLS_FinancialScheduleService {
         WITH SYSTEM_MODE
         LIMIT 1
       ];
-      if (
-        definitions.isEmpty() ||
-        definitions[0].AXF_SDF_PKL_Method__c != METHOD_ESTIMATED
-      ) {
+      String method = definitions.isEmpty()
+        ? null
+        : definitions[0].AXF_SDF_PKL_Method__c;
+      // EDIT: estimado (referência manual) ou parcelamento (valor fixo por parcela, AXF-156).
+      // PRICE/SAC exigem emenda de parâmetros aprovada (renegociação = quitar/encerrar e criar).
+      Boolean supported = (operation == OPERATION_EDIT)
+        ? (method == METHOD_ESTIMATED || method == METHOD_INSTALLMENT)
+        : (method != null && method != METHOD_ESTIMATED);
+      if (!supported) {
         return changeFail(
           result,
           OUTCOME_UNSUPPORTED,
-          'Alterar o valor de um cronograma calculado exige uma emenda de parâmetros aprovada.'
+          operation == OPERATION_EDIT
+            ? 'Alterar o valor de um cronograma calculado exige uma emenda de parâmetros aprovada.'
+            : 'A quitação vale para cronogramas com prazo e valor calculado.'
         );
       }
     }

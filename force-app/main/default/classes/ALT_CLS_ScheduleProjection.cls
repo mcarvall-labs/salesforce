@@ -36,6 +36,8 @@ public with sharing class ALT_CLS_ScheduleProjection {
   public static final String OUTCOME_FORBIDDEN = 'FORBIDDEN';
 
   public static final String METHOD_ESTIMATED = 'ESTIMATED';
+  public static final String METHOD_INSTALLMENT = 'INSTALLMENT';
+  public static final String METHOD_RECURRING = 'RECURRING';
   public static final String KIND_COMPENSATION = 'COMPENSATION';
   public static final String STATE_CANCELLED = 'CANCELLED';
   public static final String STATUS_CONFIRMED = 'CONFIRMED';
@@ -726,6 +728,18 @@ public with sharing class ALT_CLS_ScheduleProjection {
   }
 
   /**
+   * @description AXF-156 — a MESMA seleção de definição vigente deste motor, exposta aos leitores
+   * que resolvem as parcelas virtuais de vários cronogramas numa só leitura (lista de
+   * financiamentos), sem uma seleção paralela.
+   */
+  public static AXF_OBJ_ScheduleDefinition__c effectiveDefinition(
+    List<AXF_OBJ_ScheduleDefinition__c> definitions,
+    Integer sequence
+  ) {
+    return resolveDefinition(definitions, sequence);
+  }
+
+  /**
    * @description Define a revisão de definição vigente para uma sequência: a maior revisão
    * cuja sequência efetiva não ultrapassa a sequência pedida.
    */
@@ -994,6 +1008,14 @@ public with sharing class ALT_CLS_ScheduleProjection {
     }
     ALT_CLS_AmortizationSchedule.ScheduleInput input = new ALT_CLS_AmortizationSchedule.ScheduleInput();
     input.modality = definition.AXF_SDF_PKL_Method__c;
+    // AXF-156: uma revisão de parcelamento com valor fixo (edição do valor da parcela) usa a
+    // fórmula aprovada de valor fixo por ocorrência (política §4), sem fórmula nova.
+    if (
+      input.modality == METHOD_INSTALLMENT &&
+      definition.AXF_SDF_NUM_FixedValue__c != null
+    ) {
+      input.modality = METHOD_RECURRING;
+    }
     input.principal = definition.AXF_SDF_NUM_Principal__c;
     input.installments = installments;
     input.periodRate = definition.AXF_SDF_NUM_PeriodRate__c;
