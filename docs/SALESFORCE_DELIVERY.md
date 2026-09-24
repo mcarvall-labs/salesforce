@@ -15,6 +15,16 @@ Create feature/bugfix branches from `develop`.
 - Promoting `develop` to `uat` via PR validates against `AXON_UAT`, and merging deploys to `AXON_UAT`.
 - After UAT acceptance, promoting `uat` to `main` via PR validates against `AXON_PROD`, and merging deploys to `AXON_PROD`.
 
+### Sprint labels
+
+Every PR implementing a Jira user story must carry that story's sprint label
+(`sprint-1`, `sprint-2`, `sprint-3`, `sprint-4`, ...) — check the story's current
+sprint in Jira before opening the PR, and create the next `sprint-N` label the
+first time it's needed. This applies to PRs against `develop`, `uat` and `main`
+alike. PRs that aren't tied to a specific sprint story (CI/tooling, docs, hotfix
+investigation) don't need one. This is a tracking convention only, not enforced
+by CI — reviewers should ask for the label if it's missing on a US-driven PR.
+
 ## Workflows and evidence
 
 - `salesforce-ci.yml`: PR creation, reopening and updates targeting develop/uat/main.
@@ -133,9 +143,15 @@ genuine `sf project deploy start` (no `--dry-run`) against the real `UAT`/`PROD`
 environment — same credentials and approval rules as an actual deploy, including
 PROD's required reviewer. It only runs while the label is present and re-runs on
 every push, so a stale success from an earlier commit never lingers; re-add the
-label after pushing a fix. Until it succeeds, the check stays `Skipped` (not merely
-pending) for that PR, and GitHub's native Merge button stays locked, exactly as a
-failing required check would.
+label after pushing a fix.
+
+The required check itself (`Pre-merge deploy`) is a separate, always-running job
+with no `environment:` of its own — it never waits on approval or touches deploy
+credentials directly. It fails closed (`exit 1`) unless the real, label-gated
+deploy job succeeded. This split exists because GitHub treats a `skipped` job
+conclusion as satisfying a required check, so a single job that simply skipped
+itself without the label never actually blocked the native Merge button; the
+always-running gate job does.
 
 Because DEV already deploys for real before merge and that check is on the exact
 merge tree, `deploy-salesforce.yml`'s post-merge run for `develop` compares the
