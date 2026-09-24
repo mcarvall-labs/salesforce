@@ -333,17 +333,21 @@ private class ALT_CLS_ReconciliationQueueServiceTest {
     return query;
   }
 
-  private static ALT_CLS_BankStatementService.SuggestionView pick(
-    ALT_CLS_BankStatementService.SuggestionPage page,
-    Id targetId
+  /** Confirmation of a known pair at its initial versions, without the suggestion read. */
+  private static ALT_CLS_ReconciliationQueueService.ConfirmInput direct(
+    Id fundingId,
+    Id sourceId,
+    Id targetId,
+    String key
   ) {
-    for (ALT_CLS_BankStatementService.SuggestionView s : page.items) {
-      if (s.targetId == targetId) {
-        return s;
-      }
-    }
-    Assert.fail('suggestion for ' + targetId + ' expected');
-    return null;
+    ALT_CLS_ReconciliationQueueService.ConfirmInput input = new ALT_CLS_ReconciliationQueueService.ConfirmInput();
+    input.fundingId = fundingId;
+    input.sourceId = sourceId;
+    input.sourceVersion = 0;
+    input.targetId = targetId;
+    input.targetVersion = 0;
+    input.operationKey = key;
+    return input;
   }
 
   private static Set<Id> ids(
@@ -579,22 +583,17 @@ private class ALT_CLS_ReconciliationQueueServiceTest {
         ago(20),
         'mixed-part'
       );
-      Test.startTest();
+      // The engine's own confirmation (no suggestion round-trip) runs before the measured
+      // transaction: only the queue reads count against the limits below.
       ALT_CLS_ReconciliationQueueService service = new ALT_CLS_ReconciliationQueueService();
       service.confirm(
-        confirmOf(
-          account.Id,
-          pick(suggest(account.Id, reconciled.Id), full.Id),
-          'axf154-mixed-1'
-        )
+        direct(account.Id, reconciled.Id, full.Id, 'axf154-mixed-1')
       );
       service.confirm(
-        confirmOf(
-          account.Id,
-          pick(suggest(account.Id, partial.Id), part.Id),
-          'axf154-mixed-2'
-        )
+        direct(account.Id, partial.Id, part.Id, 'axf154-mixed-2')
       );
+      Test.startTest();
+      Integer before = Limits.getQueries();
       ALT_CLS_ReconciliationQueueService.QueueView byDefault = queue(
         new ALT_CLS_ReconciliationQueueService.QueueQuery()
       );
@@ -612,7 +611,12 @@ private class ALT_CLS_ReconciliationQueueServiceTest {
         query.status = status;
         byStatus.put(status, queue(query));
       }
+      Integer perCall = (Limits.getQueries() - before) / 6;
       Test.stopTest();
+      Assert.isTrue(
+        perCall <= 12,
+        'a queue read stays well under the SOQL limit: ' + perCall
+      );
       Assert.areEqual('PENDING', byDefault.status, 'pending by default');
       Assert.areEqual(new Set<Id>{ partial.Id, open.Id }, ids(byDefault));
       Assert.areEqual(1, byDefault.countReconciled);
@@ -839,8 +843,9 @@ private class ALT_CLS_ReconciliationQueueServiceTest {
       AXF_OBJ_BankAccount__c account = bank(owner.Id, '****1544');
       AXF_OBJ_CreditCard__c creditCard = card(owner.Id);
       ALT_CLS_ReconciliationQueueService.QueueQuery tooLong = all();
+      // 01/01/2026..01/01/2027 is 366 days inclusive (allowed); one more day is refused.
       tooLong.fromDate = d(2026, 1, 1);
-      tooLong.toDate = d(2027, 1, 1);
+      tooLong.toDate = d(2027, 1, 2);
       ALT_CLS_ReconciliationQueueService.QueueQuery halfPeriod = all();
       halfPeriod.fromDate = d(2026, 1, 1);
       ALT_CLS_ReconciliationQueueService.QueueQuery invoiceNoCard = all();
