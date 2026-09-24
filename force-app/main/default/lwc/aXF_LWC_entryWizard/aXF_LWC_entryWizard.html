@@ -47,6 +47,56 @@
           onchange={handleField}
           type="radio"
         ></lightning-radio-group>
+
+        <fieldset class="slds-form-element slds-m-top_small" data-entry-type>
+          <legend class="slds-form-element__legend slds-form-element__label">
+            {labels.typeLabel}
+          </legend>
+          <div class="slds-form-element__control">
+            <template for:each={typeOptions} for:item="opt">
+              <span key={opt.value} class="slds-radio">
+                <input
+                  type="radio"
+                  id={opt.id}
+                  name="entryType"
+                  value={opt.value}
+                  checked={opt.checked}
+                  data-type={opt.value}
+                  onchange={handleType}
+                />
+                <label class="slds-radio__label" for={opt.id}>
+                  <span class="slds-radio_faux"></span>
+                  <span class="slds-form-element__label">{opt.label}</span>
+                </label>
+              </span>
+            </template>
+            <span class="slds-radio">
+              <input
+                type="radio"
+                id="entry-type-consortium"
+                name="entryType"
+                value="CONSORTIUM"
+                disabled
+                aria-describedby="entry-type-consortium-note"
+                data-type="CONSORTIUM"
+              />
+              <label class="slds-radio__label" for="entry-type-consortium">
+                <span class="slds-radio_faux"></span>
+                <span class="slds-form-element__label"
+                  >{labels.typeConsortium}</span
+                >
+              </label>
+            </span>
+            <p
+              id="entry-type-consortium-note"
+              class="slds-text-body_small slds-text-color_weak"
+              data-consortium-note
+            >
+              {labels.consortiumUnavailable}
+            </p>
+          </div>
+        </fieldset>
+
         <lightning-input
           type="number"
           formatter="currency"
@@ -70,13 +120,28 @@
           data-field="purchaseDate"
           onchange={handleField}
         ></lightning-input>
-        <lightning-input
-          type="date"
-          label={labels.dueDateLabel}
-          value={form.dueDate}
-          data-field="dueDate"
-          onchange={handleField}
-        ></lightning-input>
+        <template if:true={showDueDate}>
+          <lightning-input
+            type="date"
+            label={labels.dueDateLabel}
+            value={form.dueDate}
+            data-field="dueDate"
+            onchange={handleField}
+          ></lightning-input>
+        </template>
+        <template if:true={showRealizedToggle}>
+          <lightning-input
+            type="toggle"
+            class="slds-m-top_small"
+            label={labels.realizedLabel}
+            field-level-help={labels.realizedHelp}
+            checked={form.realized}
+            message-toggle-active=""
+            message-toggle-inactive=""
+            data-realized
+            onchange={handleRealized}
+          ></lightning-input>
+        </template>
       </template>
 
       <template if:true={onSource}>
@@ -86,32 +151,24 @@
           value={form.sourceKind}
           onchange={handleSourceKind}
           type="radio"
+          required
         ></lightning-radio-group>
-        <template if:true={isSourceBank}>
-          <template if:true={hasNoSources}>
-            <p role="status">{labels.noSources}</p>
-          </template>
-          <template if:false={hasNoSources}>
-            <lightning-combobox
-              label={labels.sourceOptionLabel}
-              options={bankAccountOptions}
-              value={form.bankAccountId}
-              data-field="bankAccountId"
-              onchange={handleField}
-            ></lightning-combobox>
-          </template>
+        <template if:true={showOriginRequired}>
+          <p class="slds-text-body_small slds-text-color_weak" role="status">
+            {labels.originRequired}
+          </p>
         </template>
-        <template if:true={isSourceCard}>
+        <template if:true={hasSourceKind}>
           <template if:true={hasNoSources}>
-            <p role="status">{labels.noSources}</p>
+            <p role="status">{labels.noOriginOfKind}</p>
           </template>
           <template if:false={hasNoSources}>
             <lightning-combobox
-              label={labels.sourceOptionLabel}
-              options={creditCardOptions}
-              value={form.creditCardId}
-              data-field="creditCardId"
-              onchange={handleField}
+              label={sourceOptionLabel}
+              options={sourceOptions}
+              value={sourceValue}
+              data-source
+              onchange={handleSource}
             ></lightning-combobox>
           </template>
         </template>
@@ -122,21 +179,199 @@
         <dl>
           <dt>{labels.reviewNature}</dt>
           <dd>{natureText}</dd>
+          <dt>{labels.reviewType}</dt>
+          <dd>{typeText}</dd>
           <dt>{labels.reviewAmount}</dt>
           <dd>{form.magnitude} {form.currencyIsoCode}</dd>
           <dt>{labels.reviewDate}</dt>
           <dd>{form.purchaseDate}</dd>
           <dt>{labels.reviewSource}</dt>
           <dd>{sourceText}</dd>
+          <template if:true={isSingle}>
+            <dt>{labels.reviewSituation}</dt>
+            <dd>{situationText}</dd>
+          </template>
         </dl>
-        <lightning-input
-          type="checkbox"
-          label={labels.trackConfirmation}
-          checked={form.trackConfirmation}
-          onchange={handleTracking}
-        ></lightning-input>
+        <template if:true={isScheduled}>
+          <p class="slds-m-top_small" data-schedule-redirect>
+            {labels.scheduleRedirect}
+          </p>
+        </template>
+        <template if:true={isSingle}>
+          <template if:false={isRealized}>
+            <lightning-input
+              type="checkbox"
+              label={labels.trackConfirmation}
+              checked={form.trackConfirmation}
+              onchange={handleTracking}
+            ></lightning-input>
+          </template>
+          <template if:true={cannotReconcile}>
+            <p class="slds-text-color_error" role="alert" data-no-reconcile>
+              {labels.noReconcilePermission}
+            </p>
+          </template>
+        </template>
       </template>
+    </template>
 
+    <template if:true={isConfirming}>
+      <lightning-spinner
+        alternative-text={labels.confirming}
+        size="small"
+      ></lightning-spinner>
+    </template>
+
+    <template if:true={isDone}>
+      <div
+        data-feedback
+        tabindex="-1"
+        role="status"
+        class="slds-text-color_success"
+      >
+        {feedback}
+      </div>
+    </template>
+
+    <template if:true={showFactPanel}>
+      <section
+        class="slds-m-top_medium"
+        aria-labelledby="fact-panel-heading"
+        data-fact-panel
+      >
+        <h2 id="fact-panel-heading" class="slds-text-heading_small">
+          {factPanelTitle}
+        </h2>
+        <div aria-live="polite">
+          <template if:true={factMessage}>
+            <p class="slds-text-color_error" role="alert" data-fact-message>
+              {factMessage}
+            </p>
+          </template>
+          <template if:true={showFactRequired}>
+            <p class="slds-text-color_weak" data-fact-required>
+              {labels.factRequired}
+            </p>
+          </template>
+        </div>
+
+        <h3 class="slds-text-title slds-m-top_small">
+          {labels.suggestionsTitle}
+        </h3>
+        <template if:true={facts.loading}>
+          <lightning-spinner
+            alternative-text={labels.confirming}
+            size="small"
+          ></lightning-spinner>
+        </template>
+        <template if:true={noSuggestions}>
+          <p class="slds-text-color_weak" data-no-suggestions>
+            {labels.noSuggestions}
+          </p>
+        </template>
+        <ul class="slds-list_vertical-space" data-suggestions>
+          <template for:each={suggestionRows} for:item="f">
+            <li key={f.key}>
+              <span class="slds-m-right_x-small">{f.text}</span>
+              <template if:true={f.tied}>
+                <span class="slds-badge slds-m-right_x-small"
+                  >{labels.tied}</span
+                >
+              </template>
+              <lightning-button
+                label={f.actionLabel}
+                title={f.actionTitle}
+                variant={f.variant}
+                aria-pressed={f.ariaPressed}
+                data-id={f.sourceId}
+                data-action="fact"
+                disabled={f.busy}
+                onclick={handleFactAction}
+              ></lightning-button>
+            </li>
+          </template>
+        </ul>
+        <template if:true={facts.suggestionsTruncated}>
+          <p class="slds-text-color_weak">{labels.truncated}</p>
+        </template>
+
+        <fieldset class="slds-form-element slds-m-top_small">
+          <legend class="slds-form-element__legend slds-form-element__label">
+            {labels.searchTitle}
+          </legend>
+          <p class="slds-text-body_small slds-text-color_weak">
+            {labels.searchHelp}
+          </p>
+          <div class="slds-grid slds-wrap slds-gutters_x-small">
+            <div class="slds-col slds-size_1-of-2 slds-medium-size_1-of-4">
+              <lightning-input
+                type="date"
+                label={labels.searchFrom}
+                value={search.fromDate}
+                data-field="fromDate"
+                onchange={handleSearchField}
+              ></lightning-input>
+            </div>
+            <div class="slds-col slds-size_1-of-2 slds-medium-size_1-of-4">
+              <lightning-input
+                type="date"
+                label={labels.searchTo}
+                value={search.toDate}
+                data-field="toDate"
+                onchange={handleSearchField}
+              ></lightning-input>
+            </div>
+            <div class="slds-col slds-size_1-of-1 slds-medium-size_2-of-4">
+              <lightning-input
+                type="search"
+                label={labels.searchTerm}
+                value={search.term}
+                maxlength="100"
+                data-field="term"
+                onchange={handleSearchField}
+              ></lightning-input>
+            </div>
+          </div>
+          <lightning-button
+            class="slds-m-top_x-small"
+            label={labels.searchAction}
+            data-action="search"
+            onclick={handleSearch}
+          ></lightning-button>
+        </fieldset>
+        <template if:true={facts.searching}>
+          <lightning-spinner
+            alternative-text={labels.confirming}
+            size="small"
+          ></lightning-spinner>
+        </template>
+        <template if:true={noResults}>
+          <p class="slds-text-color_weak" data-no-results>{labels.noResults}</p>
+        </template>
+        <ul class="slds-list_vertical-space" data-results>
+          <template for:each={resultRows} for:item="f">
+            <li key={f.key}>
+              <span class="slds-m-right_x-small">{f.text}</span>
+              <lightning-button
+                label={f.actionLabel}
+                title={f.actionTitle}
+                variant={f.variant}
+                aria-pressed={f.ariaPressed}
+                data-id={f.sourceId}
+                data-action="fact"
+                disabled={f.busy}
+                onclick={handleFactAction}
+              ></lightning-button>
+            </li>
+          </template>
+        </ul>
+        <template if:true={facts.resultsTruncated}>
+          <p class="slds-text-color_weak">{labels.truncated}</p>
+        </template>
+      </section>
+    </template>
+
+    <template if:true={isForm}>
       <div class="slds-m-top_medium">
         <lightning-button
           label={labels.cancel}
@@ -159,32 +394,29 @@
           ></lightning-button>
         </template>
         <template if:true={onReview}>
-          <lightning-button
-            label={labels.confirm}
-            variant="brand"
-            class="slds-m-left_x-small"
-            onclick={handleConfirm}
-          ></lightning-button>
+          <template if:true={isScheduled}>
+            <lightning-button
+              label={labels.continueSchedule}
+              variant="brand"
+              class="slds-m-left_x-small"
+              data-action="continue-schedule"
+              onclick={handleContinueSchedule}
+            ></lightning-button>
+          </template>
+          <template if:true={isSingle}>
+            <lightning-button
+              label={labels.confirm}
+              variant="brand"
+              class="slds-m-left_x-small"
+              disabled={confirmDisabled}
+              onclick={handleConfirm}
+            ></lightning-button>
+          </template>
         </template>
       </div>
     </template>
 
-    <template if:true={isConfirming}>
-      <lightning-spinner
-        alternative-text={labels.confirming}
-        size="small"
-      ></lightning-spinner>
-    </template>
-
     <template if:true={isDone}>
-      <div
-        data-feedback
-        tabindex="-1"
-        role="status"
-        class="slds-text-color_success"
-      >
-        {feedback}
-      </div>
       <lightning-button
         label={labels.newEntry}
         variant="brand"

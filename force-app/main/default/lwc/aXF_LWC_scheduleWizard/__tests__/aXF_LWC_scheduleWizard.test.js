@@ -3,6 +3,7 @@ import ScheduleWizard from "c/aXF_LWC_scheduleWizard";
 import planSchedule from "@salesforce/apex/AXF_CLS_CTRL_ScheduleWizard.planSchedule";
 import saveSchedule from "@salesforce/apex/AXF_CLS_CTRL_ScheduleWizard.saveSchedule";
 import authorizedContexts from "@salesforce/apex/AXF_CLS_CTRL_ScheduleWizard.authorizedContexts";
+import { CurrentPageReference } from "lightning/navigation";
 
 jest.mock(
   "@salesforce/apex/AXF_CLS_CTRL_ScheduleWizard.planSchedule",
@@ -138,5 +139,78 @@ describe("c-a-x-f_-l-w-c_schedule-wizard", () => {
     await flush();
 
     expect(el.shadowRoot.textContent).toContain("AXF-97");
+  });
+
+  it("pre-fills an installment handed over by the entry wizard", async () => {
+    planSchedule.mockResolvedValue(PRICE_SCHEDULE);
+    const el = build();
+    CurrentPageReference.emit({
+      state: {
+        c__modality: "INSTALLMENT",
+        c__direction: "CREDIT",
+        c__accountId: "001000000000001AAA",
+        c__amount: "900",
+        c__firstDueDate: "2026-10-05",
+        c__currencyIsoCode: "USD"
+      }
+    });
+    await flush();
+    expect(
+      [...el.shadowRoot.querySelectorAll("lightning-input")].find(
+        (i) => i.label === "Moeda (ISO)"
+      ).value
+    ).toBe("USD");
+
+    const combos = [...el.shadowRoot.querySelectorAll("lightning-combobox")];
+    expect(combos.find((c) => c.label === "Modalidade").value).toBe(
+      "INSTALLMENT"
+    );
+    expect(combos.find((c) => c.label === "Natureza").value).toBe("CREDIT");
+    expect(combos.find((c) => c.label === "Entidade titular").value).toBe(
+      "001000000000001AAA"
+    );
+
+    clickButton(el, "Gerar prévia");
+    await flush();
+    const plan = planSchedule.mock.calls[0][0];
+    expect(plan.modality).toBe("INSTALLMENT");
+    expect(plan.principal).toBe(900);
+    expect(plan.firstDueDate).toBe("2026-10-05");
+    expect(plan.fixedValue).toBeUndefined();
+  });
+
+  it("pre-fills a recurrence value and ignores malformed hand-over values", async () => {
+    planSchedule.mockResolvedValue(PRICE_SCHEDULE);
+    const el = build();
+    CurrentPageReference.emit({
+      state: {
+        c__modality: "RECURRING",
+        c__direction: "SIDEWAYS",
+        c__amount: "-3",
+        c__firstDueDate: "05/10/2026"
+      }
+    });
+    await flush();
+    CurrentPageReference.emit({
+      state: { c__modality: "RECURRING", c__amount: "49.9" }
+    });
+    await flush();
+
+    clickButton(el, "Gerar prévia");
+    await flush();
+    const plan = planSchedule.mock.calls[0][0];
+    expect(plan.modality).toBe("RECURRING");
+    expect(plan.fixedValue).toBe(49.9);
+    expect(plan.firstDueDate).toBeUndefined();
+    const combos = [...el.shadowRoot.querySelectorAll("lightning-combobox")];
+    expect(combos.find((c) => c.label === "Natureza").value).toBe("DEBIT");
+  });
+
+  it("ignores a page reference without a supported modality", async () => {
+    const el = build();
+    CurrentPageReference.emit({ state: { c__modality: "PRICE" } });
+    await flush();
+    const combos = [...el.shadowRoot.querySelectorAll("lightning-combobox")];
+    expect(combos.find((c) => c.label === "Modalidade").value).toBe("PRICE");
   });
 });

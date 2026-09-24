@@ -1,4 +1,5 @@
-import { LightningElement } from "lwc";
+import { LightningElement, wire } from "lwc";
+import { CurrentPageReference } from "lightning/navigation";
 import planSchedule from "@salesforce/apex/AXF_CLS_CTRL_ScheduleWizard.planSchedule";
 import saveSchedule from "@salesforce/apex/AXF_CLS_CTRL_ScheduleWizard.saveSchedule";
 import authorizedContexts from "@salesforce/apex/AXF_CLS_CTRL_ScheduleWizard.authorizedContexts";
@@ -43,8 +44,59 @@ export default class AXF_LWC_scheduleWizard extends LightningElement {
 
   schedule;
   saveResult;
+  prefillKey;
   errorMessage;
   loading = false;
+
+  /**
+   * AXF-153: the entry wizard hands installment/recurring entries over with their details
+   * (c__modality, c__direction, c__accountId, c__amount, c__firstDueDate,
+   * c__currencyIsoCode). Only well-formed values
+   * are taken, once per hand-over; the holder is still checked by the server on save.
+   */
+  @wire(CurrentPageReference)
+  wiredPageReference(pageRef) {
+    const state = (pageRef && pageRef.state) || {};
+    const modality = state.c__modality;
+    if (modality !== "INSTALLMENT" && modality !== "RECURRING") {
+      return;
+    }
+    const key = JSON.stringify([
+      modality,
+      state.c__direction,
+      state.c__accountId,
+      state.c__amount,
+      state.c__firstDueDate,
+      state.c__currencyIsoCode
+    ]);
+    if (key === this.prefillKey) {
+      return;
+    }
+    this.prefillKey = key;
+    this.modality = modality;
+    if (state.c__direction === "DEBIT" || state.c__direction === "CREDIT") {
+      this.direction = state.c__direction;
+    }
+    if (state.c__accountId) {
+      this.accountId = state.c__accountId;
+    }
+    const amount = Number(state.c__amount);
+    if (state.c__amount && Number.isFinite(amount) && amount > 0) {
+      if (modality === "RECURRING") {
+        this.fixedValue = amount;
+      } else {
+        this.principal = amount;
+      }
+    }
+    if (/^\d{4}-\d{2}-\d{2}$/.test(state.c__firstDueDate || "")) {
+      this.firstDueDate = state.c__firstDueDate;
+    }
+    if (/^[A-Z]{3}$/.test(state.c__currencyIsoCode || "")) {
+      this.currencyIsoCode = state.c__currencyIsoCode;
+    }
+    this.schedule = undefined;
+    this.saveResult = undefined;
+  }
 
   connectedCallback() {
     authorizedContexts()

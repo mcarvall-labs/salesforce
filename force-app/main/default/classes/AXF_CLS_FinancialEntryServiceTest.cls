@@ -284,4 +284,60 @@ private class AXF_CLS_FinancialEntryServiceTest {
       System.assertEquals(Label.AXF_BankStatement_wallet, options[0].label);
     }
   }
+
+  @IsTest
+  static void fundingSourcesFlagWalletAndConnectedSources() {
+    System.runAs(new User(Id = UserInfo.getUserId())) {
+      Account a = holder();
+      AXF_OBJ_PluggyConnection__c link = new AXF_OBJ_PluggyConnection__c(
+        AXF_CON_EXI_PluggyItemId__c = 'ITEM153FS-' + System.now().getTime(),
+        AXF_CON_PKL_ConsentState__c = 'ACTIVE',
+        AXF_CON_PKL_CollectionState__c = 'ACTIVE',
+        AXF_CON_TXT_InstitutionName__c = 'Banco Teste'
+      );
+      insert link;
+      AXF_OBJ_BankAccount__c wallet = new AXF_OBJ_BankAccount__c(
+        AXF_BA_LKP_Account__c = a.Id,
+        AXF_BA_PKL_AvailabilityState__c = 'AVAILABLE',
+        AXF_BA_TXT_CurrencyIsoCode__c = 'BRL',
+        AXF_BA_TXT_Type__c = 'WALLET'
+      );
+      AXF_OBJ_BankAccount__c connected = new AXF_OBJ_BankAccount__c(
+        AXF_BA_LKP_Account__c = a.Id,
+        AXF_BA_PKL_AvailabilityState__c = 'AVAILABLE',
+        AXF_BA_TXT_CurrencyIsoCode__c = 'BRL',
+        AXF_BA_TXT_InstitutionName__c = 'Banco Teste',
+        AXF_BA_TXT_Type__c = 'CHECKING',
+        AXF_BA_LKP_Connection__c = link.Id
+      );
+      insert new List<AXF_OBJ_BankAccount__c>{ wallet, connected };
+      AXF_OBJ_CreditCard__c card = new AXF_OBJ_CreditCard__c(
+        AXF_CC_LKP_Account__c = a.Id,
+        AXF_CC_PKL_AvailabilityState__c = 'AVAILABLE',
+        AXF_CC_TXT_CurrencyIsoCode__c = 'BRL',
+        AXF_CC_TXT_InstitutionName__c = 'Cartao Teste',
+        AXF_CC_TXT_LastFourMasked__c = '1234',
+        AXF_CC_LKP_Connection__c = link.Id
+      );
+      insert card;
+
+      Test.startTest();
+      List<AXF_CLS_FinancialEntryService.FundingSourceOption> options = AXF_CLS_FinancialEntryService.getFundingSources(
+        a.Id
+      );
+      Test.stopTest();
+
+      Map<Id, AXF_CLS_FinancialEntryService.FundingSourceOption> byId = new Map<Id, AXF_CLS_FinancialEntryService.FundingSourceOption>();
+      for (AXF_CLS_FinancialEntryService.FundingSourceOption o : options) {
+        byId.put(o.kind == 'CREDIT_CARD' ? o.creditCardId : o.bankAccountId, o);
+      }
+      System.assertEquals(3, options.size());
+      System.assertEquals(true, byId.get(wallet.Id).wallet);
+      System.assertEquals(false, byId.get(wallet.Id).connected);
+      System.assertEquals(false, byId.get(connected.Id).wallet);
+      System.assertEquals(true, byId.get(connected.Id).connected);
+      System.assertEquals(true, byId.get(card.Id).connected);
+      System.assertEquals(false, byId.get(card.Id).wallet);
+    }
+  }
 }

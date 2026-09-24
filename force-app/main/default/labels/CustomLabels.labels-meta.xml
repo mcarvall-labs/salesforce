@@ -4452,4 +4452,518 @@
     >AXF_BankStatement_filterAmountOrder</fullName><language
     >en_US</language><protected>false</protected><shortDescription
     >Bank statement filterAmountOrder</shortDescription><value
-    >The minimum amount must not exceed the maximum.</value></labels></CustomLabels>
+    >The minimum amount must not exceed the maximum.</value></labels>    <labels
+  >
+        <fullName>AXF_ManualEntry_typeLabel</fullName>
+        <language>en_US</language>
+        <protected>false</protected>
+        <shortDescription>Entry type legend</shortDescription>
+        <value>Entry type</value>
+    </labels>
+    <labels>
+        <fullName>AXF_ManualEntry_typeSingle</fullName>
+        <language>en_US</language>
+        <protected>false</protected>
+        <shortDescription>Entry type one-off</shortDescription>
+        <value>One-off</value>
+    </labels>
+    <labels>
+        <fullName>AXF_ManualEntry_typeInstallment</fullName>
+        <language>en_US</language>
+        <protected>false</protected>
+        <shortDescription>Entry type installments</shortDescription>
+        <value>Installments</value>
+    </labels>
+    <labels>
+        <fullName>AXF_ManualEntry_typeRecurring</fullName>
+        <language>en_US</language>
+        <protected>false</protected>
+        <shortDescription>Entry type recurring</shortDescription>
+        <value>Recurring</value>
+    </labels>
+    <labels>
+        <fullName>AXF_ManualEntry_typeConsortium</fullName>
+        <language>en_US</language>
+        <protected>false</protected>
+        <shortDescription>Entry type consortium</shortDescription>
+        <value>Consortium</value>
+    </labels>
+    <labels>
+        <fullName>AXF_ManualEntry_consortiumUnavailable</fullName>
+        <language>en_US</language>
+        <protected>false</protected>
+        <shortDescription>Consortium unavailable note</shortDescription>
+        <value
+    >Unavailable: consortium entries depend on the amortization policy (AXF-97).</value>
+    </labels>
+    <labels>
+        <fullName>AXF_ManualEntry_realizedLabel</fullName>
+        <language>en_US</language>
+        <protected>false</protected>
+        <shortDescription>Already realized toggle</shortDescription>
+        <value>Already happened (post as realized)</value>
+    </labels>
+    <labels>
+        <fullName>AXF_ManualEntry_realizedHelp</fullName>
+        <language>en_US</language>
+        <protected>false</protected>
+        <shortDescription>Already realized help</shortDescription>
+        <value
+    >On an origin connected to Pluggy you will choose the matching Pluggy transaction before saving.</value>
+    </labels>
+    <labels>
+        <fullName>AXF_ManualEntry_sourceCurrentAccount</fullName>
+        <language>en_US</language>
+        <protected>false</protected>
+        <shortDescription>Origin current account</shortDescription>
+        <value>Current account</value>
+    </labels>
+    <labels>
+        <fullName>AXF_ManualEntry_sourceCard</fullName>
+        <language>en_US</language>
+        <protected>false</protected>
+        <shortDescription>Origin credit card</shortDescription>
+        <value>Credit card</value>
+    </labels>
+    <labels>
+        <fullName>AXF_ManualEntry_sourceWallet</fullName>
+        <language>en_US</language>
+        <protected>false</protected>
+        <shortDescription>Origin wallet</shortDescription>
+        <value>Wallet (cash)</value>
+    </labels>
+    <labels>
+        <fullName>AXF_ManualEntry_accountOptionLabel</fullName>
+        <language>en_US</language>
+        <protected>false</protected>
+        <shortDescription>Select current account</shortDescription>
+        <value>Select the current account</value>
+    </labels>
+    <labels>
+        <fullName>AXF_ManualEntry_cardOptionLabel</fullName>
+        <language>en_US</language>
+        <protected>false</protected>
+        <shortDescription>Select credit card</shortDescription>
+        <value>Select the credit card</value>
+    </labels>
+    <labels>
+        <fullName>AXF_ManualEntry_walletOptionLabel</fullName>
+        <language>en_US</language>
+        <protected>false</protected>
+        <shortDescription>Select wallet</shortDescription>
+        <value>Select the wallet</value>
+    </labels>
+    <labels>
+        <fullName>AXF_ManualEntry_noOriginOfKind</fullName>
+        <language>en_US</language>
+        <protected>false</protected>
+        <shortDescription>No origin of this kind</shortDescription>
+        <value
+    >No origin of this kind is available for this person or company.</value>
+    </labels>
+    <labels>
+        <fullName>AXF_ManualEntry_originRequired</fullName>
+        <language>en_US</language>
+        <protected>false</protected>
+        <shortDescription>Origin required</shortDescription>
+        <value
+    >Select the entry origin: current account, credit card or wallet.</value>
+    </labels>
+    <labels>
+        <fullName>AXF_ManualEntry_connectedHint</fullName>
+        <language>en_US</language>
+        <protected>false</protected>
+        <shortDescription>Origin connected hint</shortDescription>
+        <value>Connected to Pluggy</value>
+    </labels>
+    <labels>
+        <fullName>AXF_ManualEntry_scheduleRedirect</fullName>
+        <language>en_US</language>
+        <protected>false</protected>
+        <shortDescription>Schedule redirect text</shortDescription>
+        <value
+    >Installment and recurring entries are planned in the schedule planner, which opens with these details filled in.</value>
+    </labels>
+    <labels>
+        <fullName>AXF_ManualEntry_continueSchedule</fullName>
+        <language>en_US</language>
+        <protected>false</protected>
+        <shortDescription>Continue in schedule planner</shortDescription>
+        <value>Continue in the schedule planner</value>
+    </labels>
+    <labels>
+        <fullName>AXF_ManualEntry_reviewType</fullName>
+        <language>en_US</language>
+        <protected>false</protected>
+        <shortDescription>Review type</shortDescription>
+        <value>Type</value>
+    </labels>
+    <labels>
+        <fullName>AXF_ManualEntry_reviewSituation</fullName>
+        <language>en_US</language>
+        <protected>false</protected>
+        <shortDescription>Review situation</shortDescription>
+        <value>Situation</value>
+    </labels>
+    <labels>
+        <fullName>AXF_ManualEntry_situationPlanned</fullName>
+        <language>en_US</language>
+        <protected>false</protected>
+        <shortDescription>Situation planned</shortDescription>
+        <value>Planned</value>
+    </labels>
+    <labels>
+        <fullName>AXF_ManualEntry_situationRealized</fullName>
+        <language>en_US</language>
+        <protected>false</protected>
+        <shortDescription>Situation realized</shortDescription>
+        <value>Realized</value>
+    </labels>
+    <labels>
+        <fullName>AXF_ManualEntry_factPanelTitle</fullName>
+        <language>en_US</language>
+        <protected>false</protected>
+        <shortDescription>Fact panel title</shortDescription>
+        <value>Matching Pluggy transaction</value>
+    </labels>
+    <labels>
+        <fullName>AXF_ManualEntry_reconcileNowTitle</fullName>
+        <language>en_US</language>
+        <protected>false</protected>
+        <shortDescription>Reconcile now title</shortDescription>
+        <value>Reconcile with a Pluggy transaction</value>
+    </labels>
+    <labels>
+        <fullName>AXF_ManualEntry_factRequired</fullName>
+        <language>en_US</language>
+        <protected>false</protected>
+        <shortDescription>Fact required</shortDescription>
+        <value
+    >Choose the Pluggy transaction that matches this entry to save it.</value>
+    </labels>
+    <labels>
+        <fullName>AXF_ManualEntry_noReconcilePermission</fullName>
+        <language>en_US</language>
+        <protected>false</protected>
+        <shortDescription>No reconcile permission</shortDescription>
+        <value
+    >You are not allowed to reconcile Pluggy transactions, so this entry cannot be posted as realized on this origin.</value>
+    </labels>
+    <labels>
+        <fullName>AXF_ManualEntry_suggestionsTitle</fullName>
+        <language>en_US</language>
+        <protected>false</protected>
+        <shortDescription>Suggestions title</shortDescription>
+        <value>Suggestions (±5% of the amount, ±7 days)</value>
+    </labels>
+    <labels>
+        <fullName>AXF_ManualEntry_noSuggestions</fullName>
+        <language>en_US</language>
+        <protected>false</protected>
+        <shortDescription>No suggestions</shortDescription>
+        <value>No Pluggy transaction inside the suggestion window.</value>
+    </labels>
+    <labels>
+        <fullName>AXF_ManualEntry_tied</fullName>
+        <language>en_US</language>
+        <protected>false</protected>
+        <shortDescription>Tie badge</shortDescription>
+        <value>Tie</value>
+    </labels>
+    <labels>
+        <fullName>AXF_ManualEntry_searchTitle</fullName>
+        <language>en_US</language>
+        <protected>false</protected>
+        <shortDescription>Search title</shortDescription>
+        <value>Search Pluggy transactions</value>
+    </labels>
+    <labels>
+        <fullName>AXF_ManualEntry_searchHelp</fullName>
+        <language>en_US</language>
+        <protected>false</protected>
+        <shortDescription>Search help</shortDescription>
+        <value
+    >Without dates the search covers the month of the entry; the period may have up to 366 days.</value>
+    </labels>
+    <labels>
+        <fullName>AXF_ManualEntry_searchFrom</fullName>
+        <language>en_US</language>
+        <protected>false</protected>
+        <shortDescription>Search from</shortDescription>
+        <value>From</value>
+    </labels>
+    <labels>
+        <fullName>AXF_ManualEntry_searchTo</fullName>
+        <language>en_US</language>
+        <protected>false</protected>
+        <shortDescription>Search to</shortDescription>
+        <value>To</value>
+    </labels>
+    <labels>
+        <fullName>AXF_ManualEntry_searchTerm</fullName>
+        <language>en_US</language>
+        <protected>false</protected>
+        <shortDescription>Search term</shortDescription>
+        <value>Description contains</value>
+    </labels>
+    <labels>
+        <fullName>AXF_ManualEntry_searchAction</fullName>
+        <language>en_US</language>
+        <protected>false</protected>
+        <shortDescription>Search action</shortDescription>
+        <value>Search</value>
+    </labels>
+    <labels>
+        <fullName>AXF_ManualEntry_noResults</fullName>
+        <language>en_US</language>
+        <protected>false</protected>
+        <shortDescription>No results</shortDescription>
+        <value>No Pluggy transaction found in this period.</value>
+    </labels>
+    <labels>
+        <fullName>AXF_ManualEntry_truncated</fullName>
+        <language>en_US</language>
+        <protected>false</protected>
+        <shortDescription>Truncated</shortDescription>
+        <value>Only part of the results is shown; narrow the period.</value>
+    </labels>
+    <labels>
+        <fullName>AXF_ManualEntry_factText</fullName>
+        <language>en_US</language>
+        <protected>false</protected>
+        <shortDescription>Fact text</shortDescription>
+        <value>{0} — {1} on {2}</value>
+    </labels>
+    <labels>
+        <fullName>AXF_ManualEntry_select</fullName>
+        <language>en_US</language>
+        <protected>false</protected>
+        <shortDescription>Select fact</shortDescription>
+        <value>Select</value>
+    </labels>
+    <labels>
+        <fullName>AXF_ManualEntry_selectFor</fullName>
+        <language>en_US</language>
+        <protected>false</protected>
+        <shortDescription>Select fact for</shortDescription>
+        <value>Select {0}</value>
+    </labels>
+    <labels>
+        <fullName>AXF_ManualEntry_selected</fullName>
+        <language>en_US</language>
+        <protected>false</protected>
+        <shortDescription>Selected fact</shortDescription>
+        <value>Selected</value>
+    </labels>
+    <labels>
+        <fullName>AXF_ManualEntry_reconcileAction</fullName>
+        <language>en_US</language>
+        <protected>false</protected>
+        <shortDescription>Reconcile action</shortDescription>
+        <value>Reconcile</value>
+    </labels>
+    <labels>
+        <fullName>AXF_ManualEntry_reconcileFor</fullName>
+        <language>en_US</language>
+        <protected>false</protected>
+        <shortDescription>Reconcile with</shortDescription>
+        <value>Reconcile with {0}</value>
+    </labels>
+    <labels>
+        <fullName>AXF_ManualEntry_reconciled</fullName>
+        <language>en_US</language>
+        <protected>false</protected>
+        <shortDescription>Reconciled</shortDescription>
+        <value>Entry reconciled with the Pluggy transaction.</value>
+    </labels>
+    <labels>
+        <fullName>AXF_ManualEntry_realizedDone</fullName>
+        <language>en_US</language>
+        <protected>false</protected>
+        <shortDescription>Realized done</shortDescription>
+        <value>Entry posted as realized.</value>
+    </labels>
+    <labels>
+        <fullName>AXF_ManualEntry_realizedLinkedDone</fullName>
+        <language>en_US</language>
+        <protected>false</protected>
+        <shortDescription>Realized linked done</shortDescription>
+        <value
+    >Entry posted as realized and reconciled with the Pluggy transaction.</value>
+    </labels>
+    <labels>
+        <fullName>AXF_ManualEntry_periodInvalid</fullName>
+        <language>en_US</language>
+        <protected>false</protected>
+        <shortDescription>Search period invalid</shortDescription>
+        <value
+    >Choose a start date on or before the end date, in a period of up to 366 days.</value>
+    </labels>
+    <labels>
+        <fullName>AXF_ManualEntry_codeCONFLICT</fullName>
+        <language>en_US</language>
+        <protected>false</protected>
+        <shortDescription>Code conflict</shortDescription>
+        <value
+    >The data changed in another session; review and try again.</value>
+    </labels>
+    <labels>
+        <fullName>AXF_ManualEntry_codeALREADY_LINKED</fullName>
+        <language>en_US</language>
+        <protected>false</protected>
+        <shortDescription>Code already linked</shortDescription>
+        <value>This entry is already reconciled with this transaction.</value>
+    </labels>
+    <labels>
+        <fullName>AXF_ManualEntry_codeFACT_REQUIRED</fullName>
+        <language>en_US</language>
+        <protected>false</protected>
+        <shortDescription>Code fact required</shortDescription>
+        <value
+    >Choose the Pluggy transaction that matches this entry to save it.</value>
+    </labels>
+    <labels>
+        <fullName>AXF_ManualEntry_codeFACT_MISMATCH</fullName>
+        <language>en_US</language>
+        <protected>false</protected>
+        <shortDescription>Code fact mismatch</shortDescription>
+        <value
+    >The chosen transaction has another nature or currency than the entry.</value>
+    </labels>
+    <labels>
+        <fullName>AXF_ManualEntry_codeUNAVAILABLE_AMOUNT</fullName>
+        <language>en_US</language>
+        <protected>false</protected>
+        <shortDescription>Code unavailable amount</shortDescription>
+        <value
+    >The amount exceeds what is still available on the chosen transaction.</value>
+    </labels>
+    <labels>
+        <fullName>AXF_ManualEntries_title</fullName>
+        <language>en_US</language>
+        <protected>false</protected>
+        <shortDescription>Manual entries title</shortDescription>
+        <value>Manual entries</value>
+    </labels>
+    <labels>
+        <fullName>AXF_ManualEntries_intro</fullName>
+        <language>en_US</language>
+        <protected>false</protected>
+        <shortDescription>Manual entries intro</shortDescription>
+        <value
+    >Expenses and income posted by hand, with their reconciliation status.</value>
+    </labels>
+    <labels>
+        <fullName>AXF_ManualEntries_newEntry</fullName>
+        <language>en_US</language>
+        <protected>false</protected>
+        <shortDescription>New entry</shortDescription>
+        <value>New entry</value>
+    </labels>
+    <labels>
+        <fullName>AXF_ManualEntries_caption</fullName>
+        <language>en_US</language>
+        <protected>false</protected>
+        <shortDescription>Entries caption</shortDescription>
+        <value>Manual entries — {0}</value>
+    </labels>
+    <labels>
+        <fullName>AXF_ManualEntries_noEntries</fullName>
+        <language>en_US</language>
+        <protected>false</protected>
+        <shortDescription>No entries</shortDescription>
+        <value>No manual entry matches these filters.</value>
+    </labels>
+    <labels>
+        <fullName>AXF_ManualEntries_filterStatus</fullName>
+        <language>en_US</language>
+        <protected>false</protected>
+        <shortDescription>Filter status</shortDescription>
+        <value>Reconciliation</value>
+    </labels>
+    <labels>
+        <fullName>AXF_ManualEntries_filterNature</fullName>
+        <language>en_US</language>
+        <protected>false</protected>
+        <shortDescription>Filter nature</shortDescription>
+        <value>Nature</value>
+    </labels>
+    <labels>
+        <fullName>AXF_ManualEntries_filterOrigin</fullName>
+        <language>en_US</language>
+        <protected>false</protected>
+        <shortDescription>Filter origin</shortDescription>
+        <value>Origin</value>
+    </labels>
+    <labels>
+        <fullName>AXF_ManualEntries_all</fullName>
+        <language>en_US</language>
+        <protected>false</protected>
+        <shortDescription>All option</shortDescription>
+        <value>All</value>
+    </labels>
+    <labels>
+        <fullName>AXF_ManualEntries_colNature</fullName>
+        <language>en_US</language>
+        <protected>false</protected>
+        <shortDescription>Column nature</shortDescription>
+        <value>Nature</value>
+    </labels>
+    <labels>
+        <fullName>AXF_ManualEntries_colSituation</fullName>
+        <language>en_US</language>
+        <protected>false</protected>
+        <shortDescription>Column situation</shortDescription>
+        <value>Situation</value>
+    </labels>
+    <labels>
+        <fullName>AXF_ManualEntries_natureDEBIT</fullName>
+        <language>en_US</language>
+        <protected>false</protected>
+        <shortDescription>Nature expense</shortDescription>
+        <value>Expense</value>
+    </labels>
+    <labels>
+        <fullName>AXF_ManualEntries_natureCREDIT</fullName>
+        <language>en_US</language>
+        <protected>false</protected>
+        <shortDescription>Nature income</shortDescription>
+        <value>Income</value>
+    </labels>
+    <labels>
+        <fullName>AXF_ManualEntries_kindPLANNED</fullName>
+        <language>en_US</language>
+        <protected>false</protected>
+        <shortDescription>Situation planned</shortDescription>
+        <value>Planned</value>
+    </labels>
+    <labels>
+        <fullName>AXF_ManualEntries_kindACTUAL_ONLY</fullName>
+        <language>en_US</language>
+        <protected>false</protected>
+        <shortDescription>Situation realized</shortDescription>
+        <value>Realized</value>
+    </labels>
+    <labels>
+        <fullName>AXF_ManualEntries_noOrigin</fullName>
+        <language>en_US</language>
+        <protected>false</protected>
+        <shortDescription>No origin</shortDescription>
+        <value>No origin</value>
+    </labels>
+    <labels>
+        <fullName>AXF_ManualEntries_noDescription</fullName>
+        <language>en_US</language>
+        <protected>false</protected>
+        <shortDescription>No description</shortDescription>
+        <value>Manual entry</value>
+    </labels>
+    <labels>
+        <fullName>AXF_ManualEntry_partiallyReconciled</fullName>
+        <language>en_US</language>
+        <protected>false</protected>
+        <shortDescription>Partially reconciled</shortDescription>
+        <value
+    >Part of the entry was reconciled; choose another Pluggy transaction for the remaining amount.</value>
+    </labels>
+</CustomLabels>

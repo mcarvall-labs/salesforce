@@ -55,6 +55,12 @@ public with sharing class AXF_CLS_FinancialEntryService {
     public String label;
     @AuraEnabled
     public String kind; // BANK_ACCOUNT | CREDIT_CARD
+    /** AXF-153: a wallet (cash, `Type='WALLET'`) is its own origin, never a current account. */
+    @AuraEnabled
+    public Boolean wallet = false;
+    /** AXF-153: the source is fed by a Pluggy connection, so its facts can be reconciled. */
+    @AuraEnabled
+    public Boolean connected = false;
   }
 
   private static final Set<String> VALID_DIRECTIONS = new Set<String>{
@@ -76,7 +82,7 @@ public with sharing class AXF_CLS_FinancialEntryService {
     if (accountId == null || !isAuthorizedContext(accountId)) {
       return out;
     }
-    for (AXF_OBJ_BankAccount__c ba : [
+    List<AXF_OBJ_BankAccount__c> accounts = [
       SELECT
         Id,
         AXF_BA_TXT_InstitutionName__c,
@@ -89,12 +95,32 @@ public with sharing class AXF_CLS_FinancialEntryService {
         AND AXF_BA_PKL_AvailabilityState__c = 'AVAILABLE'
       WITH USER_MODE
       ORDER BY AXF_BA_TXT_InstitutionName__c
-    ]) {
+    ];
+    List<AXF_OBJ_CreditCard__c> cards = [
+      SELECT
+        Id,
+        AXF_CC_TXT_InstitutionName__c,
+        AXF_CC_LKP_BankInstitution__r.Name,
+        AXF_CC_TXT_LastFourMasked__c
+      FROM AXF_OBJ_CreditCard__c
+      WHERE
+        AXF_CC_LKP_Account__c = :accountId
+        AND AXF_CC_PKL_AvailabilityState__c = 'AVAILABLE'
+      WITH USER_MODE
+      ORDER BY AXF_CC_TXT_InstitutionName__c
+    ];
+    Set<Id> connected = connectedSources(
+      new Map<Id, AXF_OBJ_BankAccount__c>(accounts).keySet(),
+      new Map<Id, AXF_OBJ_CreditCard__c>(cards).keySet()
+    );
+    for (AXF_OBJ_BankAccount__c ba : accounts) {
       FundingSourceOption o = new FundingSourceOption();
       o.bankAccountId = ba.Id;
       o.kind = 'BANK_ACCOUNT';
       // AXF-151: a wallet has no institution; it is named as such, never "null".
       Boolean wallet = 'WALLET'.equalsIgnoreCase(ba.AXF_BA_TXT_Type__c);
+      o.wallet = wallet;
+      o.connected = !wallet && connected.contains(ba.Id);
       o.label = String.join(
           new List<String>{
             wallet
@@ -111,22 +137,11 @@ public with sharing class AXF_CLS_FinancialEntryService {
         .trim();
       out.add(o);
     }
-    for (AXF_OBJ_CreditCard__c cc : [
-      SELECT
-        Id,
-        AXF_CC_TXT_InstitutionName__c,
-        AXF_CC_LKP_BankInstitution__r.Name,
-        AXF_CC_TXT_LastFourMasked__c
-      FROM AXF_OBJ_CreditCard__c
-      WHERE
-        AXF_CC_LKP_Account__c = :accountId
-        AND AXF_CC_PKL_AvailabilityState__c = 'AVAILABLE'
-      WITH USER_MODE
-      ORDER BY AXF_CC_TXT_InstitutionName__c
-    ]) {
+    for (AXF_OBJ_CreditCard__c cc : cards) {
       FundingSourceOption o = new FundingSourceOption();
       o.creditCardId = cc.Id;
       o.kind = 'CREDIT_CARD';
+      o.connected = connected.contains(cc.Id);
       o.label = String.join(
         new List<String>{
           cc.AXF_CC_LKP_BankInstitution__r == null
@@ -139,6 +154,39 @@ public with sharing class AXF_CLS_FinancialEntryService {
       out.add(o);
     }
     return out;
+  }
+
+  /**
+   * Sources (already read in user mode for an authorized holder) that have a Pluggy connection.
+   * Only this flag leaves the read, never the connection itself: a reader without access to the
+   * connection object must still see the source.
+   */
+  private static Set<Id> connectedSources(
+    Set<Id> bankAccountIds,
+    Set<Id> creditCardIds
+  ) {
+    Set<Id> result = new Set<Id>();
+    if (!bankAccountIds.isEmpty()) {
+      for (AXF_OBJ_BankAccount__c row : [
+        SELECT Id
+        FROM AXF_OBJ_BankAccount__c
+        WHERE Id IN :bankAccountIds AND AXF_BA_LKP_Connection__c != NULL
+        WITH SYSTEM_MODE
+      ]) {
+        result.add(row.Id);
+      }
+    }
+    if (!creditCardIds.isEmpty()) {
+      for (AXF_OBJ_CreditCard__c row : [
+        SELECT Id
+        FROM AXF_OBJ_CreditCard__c
+        WHERE Id IN :creditCardIds AND AXF_CC_LKP_Connection__c != NULL
+        WITH SYSTEM_MODE
+      ]) {
+        result.add(row.Id);
+      }
+    }
+    return result;
   }
 
   /**

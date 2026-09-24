@@ -1,0 +1,188 @@
+<template>
+  <lightning-card title={labels.title} icon-name="custom:custom19">
+    <div slot="actions">
+      <lightning-button
+        variant="brand"
+        label={labels.newEntry}
+        data-action="new-entry"
+        onclick={handleNewEntry}
+      ></lightning-button>
+    </div>
+    <div class="slds-var-p-horizontal_medium">
+      <p class="slds-var-m-bottom_small">{labels.intro}</p>
+
+      <div aria-live="polite">
+        <template lwc:if={message}>
+          <div
+            class="slds-notify slds-notify_alert slds-alert_error slds-var-m-bottom_small"
+            role="alert"
+            data-message
+          >
+            {message}
+          </div>
+        </template>
+      </div>
+
+      <section aria-labelledby="axf153-period-heading">
+        <div class="slds-grid slds-grid_vertical-align-center slds-wrap">
+          <lightning-button-icon
+            icon-name="utility:chevronleft"
+            alternative-text={labels.previousMonth}
+            title={labels.previousMonth}
+            data-action="previous"
+            onclick={handlePrevious}
+          ></lightning-button-icon>
+          <h2
+            id="axf153-period-heading"
+            class="slds-text-heading_small slds-var-m-horizontal_small"
+            data-period
+          >
+            {periodLabel}
+          </h2>
+          <lightning-button-icon
+            icon-name="utility:chevronright"
+            alternative-text={labels.nextMonth}
+            title={labels.nextMonth}
+            data-action="next"
+            onclick={handleNext}
+          ></lightning-button-icon>
+        </div>
+
+        <fieldset class="slds-form-element slds-var-m-vertical_small">
+          <legend class="slds-form-element__legend slds-form-element__label">
+            {labels.filtersLegend}
+          </legend>
+          <div class="slds-grid slds-wrap slds-gutters_x-small">
+            <div class="slds-col slds-size_1-of-2 slds-medium-size_1-of-5">
+              <lightning-combobox
+                label={labels.filterStatus}
+                options={statusOptions}
+                value={draftFilters.status}
+                data-field="status"
+                onchange={handleFilterChange}
+              ></lightning-combobox>
+            </div>
+            <div class="slds-col slds-size_1-of-2 slds-medium-size_1-of-5">
+              <lightning-combobox
+                label={labels.filterNature}
+                options={natureOptions}
+                value={draftFilters.direction}
+                data-field="direction"
+                onchange={handleFilterChange}
+              ></lightning-combobox>
+            </div>
+            <div class="slds-col slds-size_1-of-1 slds-medium-size_1-of-5">
+              <lightning-combobox
+                label={labels.filterOrigin}
+                options={originOptions}
+                value={draftFilters.originId}
+                data-field="originId"
+                onchange={handleFilterChange}
+              ></lightning-combobox>
+            </div>
+            <div class="slds-col slds-size_1-of-2 slds-medium-size_1-of-5">
+              <lightning-input
+                type="date"
+                label={labels.fromDate}
+                value={draftFilters.fromDate}
+                data-field="fromDate"
+                data-filter
+                onchange={handleFilterChange}
+              ></lightning-input>
+            </div>
+            <div class="slds-col slds-size_1-of-2 slds-medium-size_1-of-5">
+              <lightning-input
+                type="date"
+                label={labels.toDate}
+                value={draftFilters.toDate}
+                data-field="toDate"
+                data-filter
+                onchange={handleFilterChange}
+              ></lightning-input>
+            </div>
+          </div>
+          <div class="slds-var-m-top_x-small">
+            <lightning-button
+              label={labels.applyFilters}
+              data-action="apply-filters"
+              onclick={handleApplyFilters}
+            ></lightning-button>
+            <lightning-button
+              class="slds-var-m-left_x-small"
+              variant="base"
+              label={labels.clearFilters}
+              data-action="clear-filters"
+              onclick={handleClearFilters}
+            ></lightning-button>
+          </div>
+        </fieldset>
+
+        <template lwc:if={loading}>
+          <lightning-spinner
+            alternative-text={labels.loading}
+            size="small"
+          ></lightning-spinner>
+        </template>
+
+        <template lwc:if={truncated}>
+          <p class="slds-text-color_weak" role="status">{labels.truncated}</p>
+        </template>
+
+        <template lwc:if={showNoEntries}>
+          <p class="slds-text-color_weak" data-no-entries>{labels.noEntries}</p>
+        </template>
+
+        <template lwc:if={hasEntries}>
+          <table
+            class="slds-table slds-table_cell-buffer slds-table_bordered"
+            data-entries
+          >
+            <caption class="slds-assistive-text">
+              {caption}
+            </caption>
+            <thead>
+              <tr class="slds-line-height_reset">
+                <th scope="col">{labels.colDate}</th>
+                <th scope="col">{labels.colDescription}</th>
+                <th scope="col">{labels.colNature}</th>
+                <th scope="col">{labels.colSituation}</th>
+                <th scope="col">{labels.colOrigin}</th>
+                <th scope="col">{labels.colHolder}</th>
+                <th scope="col" class="slds-text-align_right">
+                  {labels.colAmount}
+                </th>
+                <th scope="col">{labels.colStatus}</th>
+              </tr>
+            </thead>
+            <tbody>
+              <template for:each={rows} for:item="row">
+                <tr key={row.key} data-entry={row.key}>
+                  <td>{row.dateText}</td>
+                  <th scope="row" class="slds-cell-wrap">
+                    {row.descriptionText}
+                  </th>
+                  <td>{row.natureLabel}</td>
+                  <td>{row.situationLabel}</td>
+                  <td>{row.originText}</td>
+                  <td>{row.holderLabel}</td>
+                  <td class="slds-text-align_right">
+                    <lightning-formatted-number
+                      value={row.signedAmount}
+                      format-style="currency"
+                      currency-code={row.currencyIso}
+                    ></lightning-formatted-number>
+                  </td>
+                  <td>
+                    <span class={row.statusClass} data-status
+                      >{row.statusLabel}</span
+                    >
+                  </td>
+                </tr>
+              </template>
+            </tbody>
+          </table>
+        </template>
+      </section>
+    </div>
+  </lightning-card>
+</template>
