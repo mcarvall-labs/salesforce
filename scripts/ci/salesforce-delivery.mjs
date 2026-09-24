@@ -248,6 +248,43 @@ export function safeResult(payload) {
   };
 }
 
+// After any deploy touching PermissionSet/PermissionSetGroup assignments,
+// Salesforce recalculates each affected PermissionSetGroup asynchronously —
+// its Status stays e.g. "Updating" until that finishes. Apex tests that
+// assign/query users against that group (in this project, mainly the Axon
+// user-provisioning flow) intermittently fail with
+// "You can only assign users to permission set groups that have the
+// 'Updated' status" or an assertion stuck at an intermediate provisioning
+// step, whenever they run while a recalculation from THIS deploy or a very
+// recent one on the same org is still in flight — a known, recurring
+// AXON_DEV/UAT/PROD flake, not a code regression. Deploys and test runs are
+// one atomic Salesforce operation in this pipeline, so the only place to
+// avoid the race is polling for a settled state right before it starts.
+export function pendingPermissionSetGroups(queryPayload) {
+  return (queryPayload?.result?.records || [])
+    .map((r) => `${r.DeveloperName || r.Id} (${r.Status})`)
+    .sort();
+}
+
+export async function waitForPermissionSetGroupsUpdated({
+  queryOnce,
+  sleep,
+  log,
+  timeoutMs = 3 * 60 * 1000,
+  intervalMs = 15 * 1000
+}) {
+  const deadline = Date.now() + timeoutMs;
+  for (;;) {
+    const pending = queryOnce();
+    if (pending.length === 0) return { settled: true, pending: [] };
+    if (Date.now() >= deadline) return { settled: false, pending };
+    log(
+      `Waiting for ${pending.length} PermissionSetGroup(s) to finish recalculating before running tests: ${pending.join(", ")}`
+    );
+    await sleep(intervalMs);
+  }
+}
+
 function command(bin, args) {
   const result = spawnSync(bin, args, {
     encoding: "utf8",
@@ -458,6 +495,46 @@ export async function run() {
         "Authenticated Org ID does not match the configured target"
       );
     report.orgId = org.result.id;
+    // Wait for any in-flight PermissionSetGroup recalculation to settle before
+    // the deploy call below runs tests, to avoid the known recalculation-race
+    // flake (see waitForPermissionSetGroupsUpdated). Best-effort: a query
+    // failure or timeout is logged but never fails the pipeline closed — this
+    // is a mitigation for a known org-side timing issue, not a correctness
+    // requirement, and must not become a new way for every deploy to hang.
+    try {
+      const psgWait = await waitForPermissionSetGroupsUpdated({
+        queryOnce: () =>
+          pendingPermissionSetGroups(
+            JSON.parse(
+              command("sf", [
+                "data",
+                "query",
+                "--use-tooling-api",
+                "--target-org",
+                alias,
+                "--query",
+                "SELECT Id, DeveloperName, Status FROM PermissionSetGroup WHERE Status != 'Updated'",
+                "--json"
+              ])
+            )
+          ),
+        sleep: (ms) => new Promise((resolve) => setTimeout(resolve, ms)),
+        log: (msg) => process.stdout.write(msg + "\n")
+      });
+      report.permissionSetGroupWait = psgWait;
+      if (!psgWait.settled)
+        process.stdout.write(
+          `Timed out waiting for PermissionSetGroup recalculation; proceeding anyway. Still pending: ${psgWait.pending.join(", ")}\n`
+        );
+    } catch (waitError) {
+      report.permissionSetGroupWait = {
+        settled: null,
+        error: waitError.message
+      };
+      process.stdout.write(
+        `Could not check PermissionSetGroup recalculation status (${waitError.message}); proceeding anyway.\n`
+      );
+    }
     // Every environment scopes tests to what the delta actually touches instead of
     // running every local test class: any test class included in the delta itself,
     // plus anything declared in the PR's "### Apex test classes to run" code block.
