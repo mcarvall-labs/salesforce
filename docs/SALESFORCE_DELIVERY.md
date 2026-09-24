@@ -25,6 +25,22 @@ alike. PRs that aren't tied to a specific sprint story (CI/tooling, docs, hotfix
 investigation) don't need one. This is a tracking convention only, not enforced
 by CI — reviewers should ask for the label if it's missing on a US-driven PR.
 
+### PermissionSet/PermissionSetGroup PRs
+
+A PR that adds or modifies `PermissionSet`/`PermissionSetGroup` metadata must
+contain **only** that metadata — no Apex, LWC, object or other changes in the
+same PR. Every org here (including `AXON_PROD`) is Developer Edition, where
+`NoTestRun` is always a valid test level (unlike a real Production org, which
+forces some test level on every deploy) — so the pipeline skips test execution
+entirely for a delta that's exclusively PS/PSG (see `isPermissionSetOrGroupOnly`
+in `scripts/ci/salesforce-delivery.mjs`). This is the project's fix for the
+recurring PermissionSetGroup recalculation race (a deploy that touches PS/PSG
+triggers Salesforce's async recalculation, and any Apex test that runs in that
+same deploy can hit it mid-recalculation and fail intermittently, e.g.
+`ALT_CLS_AxonUserProvisioningTest`) — with no tests running, there's nothing
+left to race. Mixing PS/PSG changes into a PR with other metadata forces the
+normal test-coverage path and reintroduces the race risk.
+
 ## Workflows and evidence
 
 - `salesforce-ci.yml`: PR creation, reopening and updates targeting develop/uat/main.
@@ -57,6 +73,9 @@ every local test class in the org:
   either in the delta or declared in the PR body, the operation fails closed with a
   message asking for the `### Apex test classes to run` code block — Salesforce
   cannot compute coverage for `RunSpecifiedTests` without an explicit test list.
+  This is checked immediately after computing the delta, before packaging
+  metadata or contacting the org at all, so a PR missing this is caught right
+  away instead of after several minutes of setup.
 - If the delta has no Apex/trigger at all (e.g. only LWC, Flow or layout changes),
   the operation falls back to `RunLocalTests` so production code coverage is still
   proven.
@@ -65,14 +84,14 @@ PRs never persist metadata. Deployment reruns tests for the actual merged commit
 rather than quick-deploying a synthetic PR merge. Authenticated Org IDs are checked
 before metadata operations.
 
-Immediately before running tests, the pipeline polls the target org (Tooling API,
-up to 3 minutes, 15s interval) for any `PermissionSetGroup` not yet `Status =
-'Updated'` and waits for it to settle. This mitigates a known, recurring
-Salesforce timing issue: recalculation after a PermissionSet/PermissionSetGroup
-change is asynchronous, and Apex tests that assign/query users against a group
-still recalculating fail intermittently (`"...permission set groups that have
-the 'Updated' status"`, or a provisioning assertion stuck at an intermediate
-step) — not a code regression. Best-effort only: a query failure or timeout is
+When a deploy will run tests at all (i.e. not the PS/PSG-only `NoTestRun` case
+below), the pipeline polls the target org (Tooling API, up to 3 minutes, 15s
+interval) immediately before running them for any `PermissionSetGroup` not yet
+`Status = 'Updated'`, and waits for it to settle. This mitigates the same
+known, recurring Salesforce timing issue from a different angle — a lingering
+recalculation from an _earlier_ deploy to the same org, rather than one this
+delta's own PS/PSG changes just triggered (which "PermissionSet/PermissionSetGroup
+PRs" below addresses directly). Best-effort only: a query failure or timeout is
 logged (`result.json`'s `permissionSetGroupWait`) and the deploy proceeds
 regardless, so this check can never itself hang or block a pipeline.
 

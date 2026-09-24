@@ -6,6 +6,7 @@ import {
   safeResult,
   extractDeclaredTests,
   testPlan,
+  isPermissionSetOrGroupOnly,
   destructiveMember,
   buildDestructiveChangesXml,
   destructiveManifestArgs,
@@ -322,6 +323,48 @@ test("testPlan falls back to RunLocalTests when no Apex/trigger is in the delta"
     []
   );
   assert.deepEqual(plan, { testLevel: "RunLocalTests", tests: [] });
+});
+
+test("isPermissionSetOrGroupOnly is true only when every path is a PermissionSet/PermissionSetGroup", () => {
+  assert.equal(
+    isPermissionSetOrGroupOnly([
+      "force-app/main/default/permissionsets/AXF_PS_Foo.permissionset-meta.xml",
+      "force-app/main/default/permissionsetgroups/AXF_PSG_Bar.permissionsetgroup-meta.xml"
+    ]),
+    true
+  );
+  assert.equal(
+    isPermissionSetOrGroupOnly([
+      "force-app/main/default/permissionsets/AXF_PS_Foo.permissionset-meta.xml",
+      "force-app/main/default/classes/Foo.cls"
+    ]),
+    false
+  );
+  assert.equal(isPermissionSetOrGroupOnly([]), false);
+});
+
+test("testPlan skips tests entirely for a PermissionSet/PermissionSetGroup-only delta", () => {
+  const plan = testPlan(
+    [
+      "force-app/main/default/permissionsets/AXF_PS_Foo.permissionset-meta.xml",
+      "force-app/main/default/permissionsetgroups/AXF_PSG_Bar.permissionsetgroup-meta.xml"
+    ],
+    () => "",
+    []
+  );
+  assert.deepEqual(plan, { testLevel: "NoTestRun", tests: [] });
+});
+
+test("testPlan does not skip tests when PS/PSG changes are mixed with other metadata", () => {
+  const files = {
+    "force-app/main/default/permissionsets/AXF_PS_Foo.permissionset-meta.xml":
+      "",
+    "force-app/main/default/classes/Foo.cls": "public class Foo {}"
+  };
+  assert.throws(
+    () => testPlan(Object.keys(files), (p) => files[p], []),
+    /Apex test classes to run/
+  );
 });
 
 test("testPlan fails closed when production Apex has no test coverage in scope", () => {
