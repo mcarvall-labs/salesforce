@@ -3295,7 +3295,102 @@
         <label>Salvo. Ele é gerenciado na tela de Financiamentos.</label>
         <name>AXF_ScheduleWizard_openFinancings</name>
     </customLabels>
-<customTabs><label>Conta Corrente</label><name
+<customLabels>
+        <label>Fila de conciliação</label>
+        <name>AXF_ReconciliationQueue_title</name>
+    </customLabels>
+    <customLabels>
+        <label
+    >Transações da Pluggy de todas as suas contas e cartões para conciliar, com as pendências primeiro.</label>
+        <name>AXF_ReconciliationQueue_intro</name>
+    </customLabels>
+    <customLabels>
+        <label
+    >Você pode consultar a fila, mas não tem permissão para conciliar.</label>
+        <name>AXF_ReconciliationQueue_readOnly</name>
+    </customLabels>
+    <customLabels>
+        <label
+    >Nenhuma conta ou cartão está disponível nos seus contextos autorizados.</label>
+        <name>AXF_ReconciliationQueue_noSources</name>
+    </customLabels>
+    <customLabels>
+        <label>Tipo</label>
+        <name>AXF_ReconciliationQueue_filterKind</name>
+    </customLabels>
+    <customLabels>
+        <label>Todos</label>
+        <name>AXF_ReconciliationQueue_kindAll</name>
+    </customLabels>
+    <customLabels>
+        <label>Conta Corrente</label>
+        <name>AXF_ReconciliationQueue_kindBANK</name>
+    </customLabels>
+    <customLabels>
+        <label>Cartão de crédito</label>
+        <name>AXF_ReconciliationQueue_kindCARD</name>
+    </customLabels>
+    <customLabels>
+        <label>Conta ou cartão</label>
+        <name>AXF_ReconciliationQueue_filterSource</name>
+    </customLabels>
+    <customLabels>
+        <label>Todas as contas e cartões</label>
+        <name>AXF_ReconciliationQueue_sourceAll</name>
+    </customLabels>
+    <customLabels>
+        <label>Fatura</label>
+        <name>AXF_ReconciliationQueue_filterInvoice</name>
+    </customLabels>
+    <customLabels>
+        <label>Sem filtro de fatura</label>
+        <name>AXF_ReconciliationQueue_invoiceNone</name>
+    </customLabels>
+    <customLabels>
+        <label>Selecione um cartão de crédito para filtrar por fatura.</label>
+        <name>AXF_ReconciliationQueue_invoiceNeedsCard</name>
+    </customLabels>
+    <customLabels>
+        <label>Status</label>
+        <name>AXF_ReconciliationQueue_filterStatus</name>
+    </customLabels>
+    <customLabels>
+        <label>Todos os status</label>
+        <name>AXF_ReconciliationQueue_statusAll</name>
+    </customLabels>
+    <customLabels>
+        <label>Pendentes (não conciliadas ou parciais)</label>
+        <name>AXF_ReconciliationQueue_statusPENDING</name>
+    </customLabels>
+    <customLabels>
+        <label>Transações por status</label>
+        <name>AXF_ReconciliationQueue_counters</name>
+    </customLabels>
+    <customLabels>
+        <label>Período: {0}</label>
+        <name>AXF_ReconciliationQueue_period</name>
+    </customLabels>
+    <customLabels>
+        <label>Pendências</label>
+        <name>AXF_ReconciliationQueue_pendingHeading</name>
+    </customLabels>
+    <customLabels>
+        <label>Nenhuma transação pendente.</label>
+        <name>AXF_ReconciliationQueue_noPending</name>
+    </customLabels>
+    <customLabels>
+        <label>Mostrar conciliadas ({0})</label>
+        <name>AXF_ReconciliationQueue_showReconciled</name>
+    </customLabels>
+    <customLabels>
+        <label>Ocultar conciliadas</label>
+        <name>AXF_ReconciliationQueue_hideReconciled</name>
+    </customLabels>
+    <customLabels>
+        <label>Conta ou cartão</label>
+        <name>AXF_ReconciliationQueue_colSource</name>
+    </customLabels>
+    <customTabs><label>Conta Corrente</label><name
     >AXF_CT_BankStatement</name></customTabs>
     <customTabs>
         <label>Cartões de crédito</label>
@@ -3311,5 +3406,9 @@
     <customTabs>
         <label>Financiamentos</label>
         <name>AXF_CT_Financings</name>
+    </customTabs>
+    <customTabs>
+        <label>Fila de conciliação</label>
+        <name>AXF_CT_ReconciliationQueue</name>
     </customTabs>
 </Translations>

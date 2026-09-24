@@ -6540,4 +6540,197 @@
         <shortDescription>Schedule wizard open financings</shortDescription>
         <value>Saved. It is managed on the Financing screen.</value>
     </labels>
+    <labels>
+        <fullName>AXF_ReconciliationQueue_title</fullName>
+        <categories>AxonFinance,LWC,ReconciliationQueue</categories>
+        <language>en_US</language>
+        <protected>false</protected>
+        <shortDescription>Reconciliation queue title</shortDescription>
+        <value>Reconciliation queue</value>
+    </labels>
+    <labels>
+        <fullName>AXF_ReconciliationQueue_intro</fullName>
+        <categories>AxonFinance,LWC,ReconciliationQueue</categories>
+        <language>en_US</language>
+        <protected>false</protected>
+        <shortDescription>Reconciliation queue intro</shortDescription>
+        <value
+    >Pluggy transactions of all your accounts and cards to reconcile, pending ones first.</value>
+    </labels>
+    <labels>
+        <fullName>AXF_ReconciliationQueue_readOnly</fullName>
+        <categories>AxonFinance,LWC,ReconciliationQueue</categories>
+        <language>en_US</language>
+        <protected>false</protected>
+        <shortDescription>Reconciliation queue read only</shortDescription>
+        <value
+    >You can view the queue, but you are not allowed to reconcile.</value>
+    </labels>
+    <labels>
+        <fullName>AXF_ReconciliationQueue_noSources</fullName>
+        <categories>AxonFinance,LWC,ReconciliationQueue</categories>
+        <language>en_US</language>
+        <protected>false</protected>
+        <shortDescription>Reconciliation queue no sources</shortDescription>
+        <value
+    >No account or card is available in your authorized contexts.</value>
+    </labels>
+    <labels>
+        <fullName>AXF_ReconciliationQueue_filterKind</fullName>
+        <categories>AxonFinance,LWC,ReconciliationQueue</categories>
+        <language>en_US</language>
+        <protected>false</protected>
+        <shortDescription>Reconciliation queue type filter</shortDescription>
+        <value>Type</value>
+    </labels>
+    <labels>
+        <fullName>AXF_ReconciliationQueue_kindAll</fullName>
+        <categories>AxonFinance,LWC,ReconciliationQueue</categories>
+        <language>en_US</language>
+        <protected>false</protected>
+        <shortDescription>Reconciliation queue all types</shortDescription>
+        <value>All</value>
+    </labels>
+    <labels>
+        <fullName>AXF_ReconciliationQueue_kindBANK</fullName>
+        <categories>AxonFinance,LWC,ReconciliationQueue</categories>
+        <language>en_US</language>
+        <protected>false</protected>
+        <shortDescription
+    >Reconciliation queue current account type</shortDescription>
+        <value>Current account</value>
+    </labels>
+    <labels>
+        <fullName>AXF_ReconciliationQueue_kindCARD</fullName>
+        <categories>AxonFinance,LWC,ReconciliationQueue</categories>
+        <language>en_US</language>
+        <protected>false</protected>
+        <shortDescription
+    >Reconciliation queue credit card type</shortDescription>
+        <value>Credit card</value>
+    </labels>
+    <labels>
+        <fullName>AXF_ReconciliationQueue_filterSource</fullName>
+        <categories>AxonFinance,LWC,ReconciliationQueue</categories>
+        <language>en_US</language>
+        <protected>false</protected>
+        <shortDescription>Reconciliation queue source filter</shortDescription>
+        <value>Account or card</value>
+    </labels>
+    <labels>
+        <fullName>AXF_ReconciliationQueue_sourceAll</fullName>
+        <categories>AxonFinance,LWC,ReconciliationQueue</categories>
+        <language>en_US</language>
+        <protected>false</protected>
+        <shortDescription>Reconciliation queue all sources</shortDescription>
+        <value>All accounts and cards</value>
+    </labels>
+    <labels>
+        <fullName>AXF_ReconciliationQueue_filterInvoice</fullName>
+        <categories>AxonFinance,LWC,ReconciliationQueue</categories>
+        <language>en_US</language>
+        <protected>false</protected>
+        <shortDescription>Reconciliation queue invoice filter</shortDescription>
+        <value>Invoice</value>
+    </labels>
+    <labels>
+        <fullName>AXF_ReconciliationQueue_invoiceNone</fullName>
+        <categories>AxonFinance,LWC,ReconciliationQueue</categories>
+        <language>en_US</language>
+        <protected>false</protected>
+        <shortDescription>Reconciliation queue no invoice</shortDescription>
+        <value>No invoice filter</value>
+    </labels>
+    <labels>
+        <fullName>AXF_ReconciliationQueue_invoiceNeedsCard</fullName>
+        <categories>AxonFinance,LWC,ReconciliationQueue</categories>
+        <language>en_US</language>
+        <protected>false</protected>
+        <shortDescription
+    >Reconciliation queue invoice needs card</shortDescription>
+        <value>Select a credit card to filter by invoice.</value>
+    </labels>
+    <labels>
+        <fullName>AXF_ReconciliationQueue_filterStatus</fullName>
+        <categories>AxonFinance,LWC,ReconciliationQueue</categories>
+        <language>en_US</language>
+        <protected>false</protected>
+        <shortDescription>Reconciliation queue status filter</shortDescription>
+        <value>Status</value>
+    </labels>
+    <labels>
+        <fullName>AXF_ReconciliationQueue_statusAll</fullName>
+        <categories>AxonFinance,LWC,ReconciliationQueue</categories>
+        <language>en_US</language>
+        <protected>false</protected>
+        <shortDescription>Reconciliation queue all statuses</shortDescription>
+        <value>All statuses</value>
+    </labels>
+    <labels>
+        <fullName>AXF_ReconciliationQueue_statusPENDING</fullName>
+        <categories>AxonFinance,LWC,ReconciliationQueue</categories>
+        <language>en_US</language>
+        <protected>false</protected>
+        <shortDescription>Reconciliation queue pending status</shortDescription>
+        <value>Pending (not reconciled or partial)</value>
+    </labels>
+    <labels>
+        <fullName>AXF_ReconciliationQueue_counters</fullName>
+        <categories>AxonFinance,LWC,ReconciliationQueue</categories>
+        <language>en_US</language>
+        <protected>false</protected>
+        <shortDescription>Reconciliation queue counters</shortDescription>
+        <value>Transactions by status</value>
+    </labels>
+    <labels>
+        <fullName>AXF_ReconciliationQueue_period</fullName>
+        <categories>AxonFinance,LWC,ReconciliationQueue</categories>
+        <language>en_US</language>
+        <protected>false</protected>
+        <shortDescription>Reconciliation queue period</shortDescription>
+        <value>Period: {0}</value>
+    </labels>
+    <labels>
+        <fullName>AXF_ReconciliationQueue_pendingHeading</fullName>
+        <categories>AxonFinance,LWC,ReconciliationQueue</categories>
+        <language>en_US</language>
+        <protected>false</protected>
+        <shortDescription
+    >Reconciliation queue pending heading</shortDescription>
+        <value>Pending</value>
+    </labels>
+    <labels>
+        <fullName>AXF_ReconciliationQueue_noPending</fullName>
+        <categories>AxonFinance,LWC,ReconciliationQueue</categories>
+        <language>en_US</language>
+        <protected>false</protected>
+        <shortDescription>Reconciliation queue no pending</shortDescription>
+        <value>No pending transaction.</value>
+    </labels>
+    <labels>
+        <fullName>AXF_ReconciliationQueue_showReconciled</fullName>
+        <categories>AxonFinance,LWC,ReconciliationQueue</categories>
+        <language>en_US</language>
+        <protected>false</protected>
+        <shortDescription
+    >Reconciliation queue show reconciled</shortDescription>
+        <value>Show reconciled ({0})</value>
+    </labels>
+    <labels>
+        <fullName>AXF_ReconciliationQueue_hideReconciled</fullName>
+        <categories>AxonFinance,LWC,ReconciliationQueue</categories>
+        <language>en_US</language>
+        <protected>false</protected>
+        <shortDescription
+    >Reconciliation queue hide reconciled</shortDescription>
+        <value>Hide reconciled</value>
+    </labels>
+    <labels>
+        <fullName>AXF_ReconciliationQueue_colSource</fullName>
+        <categories>AxonFinance,LWC,ReconciliationQueue</categories>
+        <language>en_US</language>
+        <protected>false</protected>
+        <shortDescription>Reconciliation queue source column</shortDescription>
+        <value>Account or card</value>
+    </labels>
 </CustomLabels>

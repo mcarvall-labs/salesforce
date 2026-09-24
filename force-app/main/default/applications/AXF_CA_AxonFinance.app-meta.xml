@@ -19,6 +19,7 @@
     <tabs>AXF_Home</tabs>
     <tabs>AXF_CT_BankStatement</tabs>
     <tabs>AXF_CT_CardStatement</tabs>
+    <tabs>AXF_CT_ReconciliationQueue</tabs>
     <tabs>AXF_CT_BillingComposer</tabs>
     <tabs>AXF_Contracts</tabs>
     <tabs>AXF_EntryWizard</tabs>
@@ -33,6 +34,9 @@
         </mappings>
         <mappings>
             <tab>AXF_CT_CardStatement</tab>
+        </mappings>
+        <mappings>
+            <tab>AXF_CT_ReconciliationQueue</tab>
         </mappings>
         <mappings>
             <tab>AXF_CT_BillingComposer</tab>
