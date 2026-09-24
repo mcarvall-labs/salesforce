@@ -6,9 +6,12 @@ import {
   safeResult,
   extractDeclaredTests,
   testPlan,
+  isPermissionSetOrGroupOnly,
   destructiveMember,
   buildDestructiveChangesXml,
   destructiveManifestArgs,
+  pendingPermissionSetGroups,
+  waitForPermissionSetGroupsUpdated,
   run
 } from "./salesforce-delivery.mjs";
 import fs from "node:fs";
@@ -149,6 +152,62 @@ test("destructiveManifestArgs is a no-op when no manifest file exists", () => {
   );
 });
 
+test("pendingPermissionSetGroups extracts and sorts non-Updated groups from a Tooling API query payload", () => {
+  assert.deepEqual(
+    pendingPermissionSetGroups({
+      result: {
+        records: [
+          { DeveloperName: "AXF_PSG_Second", Status: "Updating" },
+          { DeveloperName: "AXF_PSG_First", Status: "Error" }
+        ]
+      }
+    }),
+    ["AXF_PSG_First (Error)", "AXF_PSG_Second (Updating)"]
+  );
+});
+
+test("pendingPermissionSetGroups returns nothing for an empty or missing query result", () => {
+  assert.deepEqual(pendingPermissionSetGroups({}), []);
+  assert.deepEqual(pendingPermissionSetGroups({ result: { records: [] } }), []);
+});
+
+test("waitForPermissionSetGroupsUpdated polls until settled, without sleeping past the last poll", async () => {
+  let calls = 0;
+  const sleeps = [];
+  const result = await waitForPermissionSetGroupsUpdated({
+    queryOnce: () => (++calls < 3 ? ["AXF_PSG_Test (Updating)"] : []),
+    sleep: async (ms) => {
+      sleeps.push(ms);
+    },
+    log: () => {},
+    intervalMs: 10
+  });
+  assert.deepEqual(result, { settled: true, pending: [] });
+  assert.equal(calls, 3);
+  assert.deepEqual(sleeps, [10, 10]);
+});
+
+test("waitForPermissionSetGroupsUpdated gives up after the timeout and reports what is still pending", async () => {
+  let now = 0;
+  const realNow = Date.now;
+  Date.now = () => now;
+  try {
+    const result = await waitForPermissionSetGroupsUpdated({
+      queryOnce: () => ["AXF_PSG_Stuck (Error)"],
+      sleep: async () => {
+        now += 20;
+      },
+      log: () => {},
+      timeoutMs: 30,
+      intervalMs: 20
+    });
+    assert.equal(result.settled, false);
+    assert.deepEqual(result.pending, ["AXF_PSG_Stuck (Error)"]);
+  } finally {
+    Date.now = realNow;
+  }
+});
+
 test("only a successful terminal Salesforce result counts as success", () => {
   const p = {
     status: 0,
@@ -264,6 +323,48 @@ test("testPlan falls back to RunLocalTests when no Apex/trigger is in the delta"
     []
   );
   assert.deepEqual(plan, { testLevel: "RunLocalTests", tests: [] });
+});
+
+test("isPermissionSetOrGroupOnly is true only when every path is a PermissionSet/PermissionSetGroup", () => {
+  assert.equal(
+    isPermissionSetOrGroupOnly([
+      "force-app/main/default/permissionsets/AXF_PS_Foo.permissionset-meta.xml",
+      "force-app/main/default/permissionsetgroups/AXF_PSG_Bar.permissionsetgroup-meta.xml"
+    ]),
+    true
+  );
+  assert.equal(
+    isPermissionSetOrGroupOnly([
+      "force-app/main/default/permissionsets/AXF_PS_Foo.permissionset-meta.xml",
+      "force-app/main/default/classes/Foo.cls"
+    ]),
+    false
+  );
+  assert.equal(isPermissionSetOrGroupOnly([]), false);
+});
+
+test("testPlan skips tests entirely for a PermissionSet/PermissionSetGroup-only delta", () => {
+  const plan = testPlan(
+    [
+      "force-app/main/default/permissionsets/AXF_PS_Foo.permissionset-meta.xml",
+      "force-app/main/default/permissionsetgroups/AXF_PSG_Bar.permissionsetgroup-meta.xml"
+    ],
+    () => "",
+    []
+  );
+  assert.deepEqual(plan, { testLevel: "NoTestRun", tests: [] });
+});
+
+test("testPlan does not skip tests when PS/PSG changes are mixed with other metadata", () => {
+  const files = {
+    "force-app/main/default/permissionsets/AXF_PS_Foo.permissionset-meta.xml":
+      "",
+    "force-app/main/default/classes/Foo.cls": "public class Foo {}"
+  };
+  assert.throws(
+    () => testPlan(Object.keys(files), (p) => files[p], []),
+    /Apex test classes to run/
+  );
 });
 
 test("testPlan fails closed when production Apex has no test coverage in scope", () => {
