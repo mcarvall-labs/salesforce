@@ -15,6 +15,32 @@ Create feature/bugfix branches from `develop`.
 - Promoting `develop` to `uat` via PR validates against `AXON_UAT`, and merging deploys to `AXON_UAT`.
 - After UAT acceptance, promoting `uat` to `main` via PR validates against `AXON_PROD`, and merging deploys to `AXON_PROD`.
 
+### Sprint labels
+
+Every PR implementing a Jira user story must carry that story's sprint label
+(`sprint-1`, `sprint-2`, `sprint-3`, `sprint-4`, ...) — check the story's current
+sprint in Jira before opening the PR, and create the next `sprint-N` label the
+first time it's needed. This applies to PRs against `develop`, `uat` and `main`
+alike. PRs that aren't tied to a specific sprint story (CI/tooling, docs, hotfix
+investigation) don't need one. This is a tracking convention only, not enforced
+by CI — reviewers should ask for the label if it's missing on a US-driven PR.
+
+### PermissionSet/PermissionSetGroup PRs
+
+A PR that adds or modifies `PermissionSet`/`PermissionSetGroup` metadata must
+contain **only** that metadata — no Apex, LWC, object or other changes in the
+same PR. Every org here (including `AXON_PROD`) is Developer Edition, where
+`NoTestRun` is always a valid test level (unlike a real Production org, which
+forces some test level on every deploy) — so the pipeline skips test execution
+entirely for a delta that's exclusively PS/PSG (see `isPermissionSetOrGroupOnly`
+in `scripts/ci/salesforce-delivery.mjs`). This is the project's fix for the
+recurring PermissionSetGroup recalculation race (a deploy that touches PS/PSG
+triggers Salesforce's async recalculation, and any Apex test that runs in that
+same deploy can hit it mid-recalculation and fail intermittently, e.g.
+`ALT_CLS_AxonUserProvisioningTest`) — with no tests running, there's nothing
+left to race. Mixing PS/PSG changes into a PR with other metadata forces the
+normal test-coverage path and reintroduces the race risk.
+
 ## Workflows and evidence
 
 - `salesforce-ci.yml`: PR creation, reopening and updates targeting develop/uat/main.
@@ -47,6 +73,9 @@ every local test class in the org:
   either in the delta or declared in the PR body, the operation fails closed with a
   message asking for the `### Apex test classes to run` code block — Salesforce
   cannot compute coverage for `RunSpecifiedTests` without an explicit test list.
+  This is checked immediately after computing the delta, before packaging
+  metadata or contacting the org at all, so a PR missing this is caught right
+  away instead of after several minutes of setup.
 - If the delta has no Apex/trigger at all (e.g. only LWC, Flow or layout changes),
   the operation falls back to `RunLocalTests` so production code coverage is still
   proven.
@@ -54,6 +83,17 @@ every local test class in the org:
 PRs never persist metadata. Deployment reruns tests for the actual merged commit
 rather than quick-deploying a synthetic PR merge. Authenticated Org IDs are checked
 before metadata operations.
+
+When a deploy will run tests at all (i.e. not the PS/PSG-only `NoTestRun` case
+below), the pipeline polls the target org (Tooling API, up to 3 minutes, 15s
+interval) immediately before running them for any `PermissionSetGroup` not yet
+`Status = 'Updated'`, and waits for it to settle. This mitigates the same
+known, recurring Salesforce timing issue from a different angle — a lingering
+recalculation from an _earlier_ deploy to the same org, rather than one this
+delta's own PS/PSG changes just triggered (which "PermissionSet/PermissionSetGroup
+PRs" below addresses directly). Best-effort only: a query failure or timeout is
+logged (`result.json`'s `permissionSetGroupWait`) and the deploy proceeds
+regardless, so this check can never itself hang or block a pipeline.
 
 Each operation publishes a compact, visual PR comment — a ✅/❌/⚪ status heading, a
 small table (deployment ID, component count, tests completed/failed, commit), the
@@ -106,6 +146,40 @@ Protect develop/main: require PRs, current `Lint and unit tests` and
 `Validate Salesforce delta` checks, zero required external approvals and resolved
 conversations. Block direct pushes, force pushes and deletion, including admins.
 Preserve stronger existing protections. Do not bypass checks to install workflows.
+
+### Merge only after a successful real deploy
+
+For `develop`, this is already true: `Validate Salesforce delta` deploys for real
+(no `--dry-run`) on every push to the PR, and is a required check tied to the exact
+head SHA — so by the time GitHub allows merging, that commit's delta is already
+live in `AXON_DEV`.
+
+For `uat`/`main`, the same real-deploy-before-merge guarantee is opt-in, not
+automatic (a dry-run-only validate stays the default so ordinary PRs don't
+persist to UAT/PROD on every push): add the `deploy-approved` label to the PR to
+trigger `Pre-merge deploy`, a required check for those two branches that runs a
+genuine `sf project deploy start` (no `--dry-run`) against the real `UAT`/`PROD`
+environment — same credentials and approval rules as an actual deploy, including
+PROD's required reviewer. It only runs while the label is present and re-runs on
+every push, so a stale success from an earlier commit never lingers; re-add the
+label after pushing a fix.
+
+The required check itself (`Pre-merge deploy`) is a separate, always-running job
+with no `environment:` of its own — it never waits on approval or touches deploy
+credentials directly. It fails closed (`exit 1`) unless the real, label-gated
+deploy job succeeded. This split exists because GitHub treats a `skipped` job
+conclusion as satisfying a required check, so a single job that simply skipped
+itself without the label never actually blocked the native Merge button; the
+always-running gate job does.
+
+Because DEV already deploys for real before merge and that check is on the exact
+merge tree, `deploy-salesforce.yml`'s post-merge run for `develop` compares the
+merge commit's tree against the merged PR's head tree and reports
+`Skipped (redundant)` instead of calling `sf` again when they're identical (a
+clean merge, no conflict resolution changed content) — the guard-rails above it
+(merged-PR-for-this-exact-commit, base ancestry) still run either way. `uat`/`main`
+don't get this shortcut even when `deploy-approved` was used, since that path is
+opt-in per PR rather than guaranteed.
 
 This project has a single GitHub user. GitHub does not allow authors to approve
 their own PRs, so the owner merges after reviewing the changes and passing checks.
@@ -168,6 +242,15 @@ not as the default path for ordinary feature-driven deletions, which the
 auto-generated `destructiveChanges.xml` already covers with a lighter-weight,
 off-pipeline manual step. Verify org identity and impact before adding
 anything here; this is deploying deletions for real.
+
+**Tracking is mandatory, not optional.** A candidate for this kind of legacy
+cleanup must never live only in chat history or a PR comment — record it in
+[`docs/destructive-backlog.md`](destructive-backlog.md) (status, impact
+analysis, exclusions and why) and file/update a Jira ticket under `AXF` (see
+[AXF-161](https://axon-personal-finances.atlassian.net/browse/AXF-161) for the
+current one) before ending the task. Whoever eventually applies an entry
+re-verifies it against the live org first — the backlog is a snapshot, not a
+guarantee it still holds.
 
 A checked-in manifest's presence alone is enough to trigger a deploy, even
 for a commit whose own `force-app` diff is empty — e.g. the PR that adds
