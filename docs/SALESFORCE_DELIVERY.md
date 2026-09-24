@@ -55,6 +55,17 @@ PRs never persist metadata. Deployment reruns tests for the actual merged commit
 rather than quick-deploying a synthetic PR merge. Authenticated Org IDs are checked
 before metadata operations.
 
+Immediately before running tests, the pipeline polls the target org (Tooling API,
+up to 3 minutes, 15s interval) for any `PermissionSetGroup` not yet `Status =
+'Updated'` and waits for it to settle. This mitigates a known, recurring
+Salesforce timing issue: recalculation after a PermissionSet/PermissionSetGroup
+change is asynchronous, and Apex tests that assign/query users against a group
+still recalculating fail intermittently (`"...permission set groups that have
+the 'Updated' status"`, or a provisioning assertion stuck at an intermediate
+step) — not a code regression. Best-effort only: a query failure or timeout is
+logged (`result.json`'s `permissionSetGroupWait`) and the deploy proceeds
+regardless, so this check can never itself hang or block a pipeline.
+
 Each operation publishes a compact, visual PR comment — a ✅/❌/⚪ status heading, a
 small table (deployment ID, component count, tests completed/failed, commit), the
 error message when failed, and a direct link to download the evidence artifact
