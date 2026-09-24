@@ -37,6 +37,14 @@
         <enabled>true</enabled>
     </classAccesses>
     <classAccesses>
+        <apexClass>ALT_CLS_ReconciliationQueueService</apexClass>
+        <enabled>true</enabled>
+    </classAccesses>
+    <classAccesses>
+        <apexClass>AXF_CLS_CTRL_ReconciliationQueue</apexClass>
+        <enabled>true</enabled>
+    </classAccesses>
+    <classAccesses>
         <apexClass>ALT_CLS_FinancialScheduleService</apexClass>
         <enabled>true</enabled>
     </classAccesses>
@@ -643,6 +651,10 @@
     </tabSettings>
     <tabSettings>
         <tab>AXF_CT_CardStatement</tab>
+        <visibility>Visible</visibility>
+    </tabSettings>
+    <tabSettings>
+        <tab>AXF_CT_ReconciliationQueue</tab>
         <visibility>Visible</visibility>
     </tabSettings>
     <tabSettings>

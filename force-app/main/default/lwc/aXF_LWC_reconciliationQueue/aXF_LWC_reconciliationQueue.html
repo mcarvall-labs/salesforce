@@ -1,0 +1,348 @@
+<template>
+  <lightning-card title={labels.title} icon-name="custom:custom18">
+    <div class="slds-var-p-horizontal_medium">
+      <p class="slds-var-m-bottom_small">{labels.intro}</p>
+
+      <div aria-live="polite">
+        <template lwc:if={message}>
+          <div class={messageClass} role="status" tabindex="-1" data-message>
+            {message}
+          </div>
+        </template>
+      </div>
+
+      <template lwc:if={error}>
+        <p class="slds-text-color_error" role="alert">{error}</p>
+      </template>
+
+      <template lwc:if={readOnly}>
+        <p class="slds-text-color_weak slds-var-m-bottom_small" data-read-only>
+          {labels.readOnly}
+        </p>
+      </template>
+
+      <template lwc:if={sourcesTruncated}>
+        <p class="slds-text-color_weak" role="status" data-sources-truncated>
+          {labels.truncated}
+        </p>
+      </template>
+
+      <template lwc:if={showNoSources}>
+        <p class="slds-text-color_weak" data-no-sources>{labels.noSources}</p>
+      </template>
+
+      <template lwc:if={context}>
+        <fieldset class="slds-form-element slds-var-m-vertical_small">
+          <legend class="slds-form-element__legend slds-form-element__label">
+            {labels.filtersLegend}
+          </legend>
+          <div class="slds-grid slds-wrap slds-gutters_x-small">
+            <div class="slds-col slds-size_1-of-2 slds-medium-size_1-of-4">
+              <lightning-combobox
+                label={labels.filterKind}
+                options={kindOptions}
+                value={draftFilters.kind}
+                data-field="kind"
+                onchange={handleFilterChange}
+              ></lightning-combobox>
+            </div>
+            <div class="slds-col slds-size_1-of-2 slds-medium-size_1-of-4">
+              <lightning-combobox
+                label={labels.filterSource}
+                options={sourceOptions}
+                value={draftFilters.fundingId}
+                data-field="fundingId"
+                onchange={handleFilterChange}
+              ></lightning-combobox>
+            </div>
+            <div class="slds-col slds-size_1-of-2 slds-medium-size_1-of-4">
+              <lightning-combobox
+                label={labels.filterInvoice}
+                options={invoiceOptions}
+                value={draftFilters.invoice}
+                disabled={invoiceDisabled}
+                field-level-help={invoiceHelp}
+                data-field="invoice"
+                onchange={handleFilterChange}
+              ></lightning-combobox>
+            </div>
+            <div class="slds-col slds-size_1-of-2 slds-medium-size_1-of-4">
+              <lightning-combobox
+                label={labels.filterStatus}
+                options={statusOptions}
+                value={draftFilters.status}
+                data-field="status"
+                onchange={handleFilterChange}
+              ></lightning-combobox>
+            </div>
+            <div class="slds-col slds-size_1-of-2 slds-medium-size_1-of-6">
+              <lightning-input
+                type="date"
+                label={labels.fromDate}
+                value={draftFilters.fromDate}
+                data-field="fromDate"
+                data-filter
+                onchange={handleFilterChange}
+              ></lightning-input>
+            </div>
+            <div class="slds-col slds-size_1-of-2 slds-medium-size_1-of-6">
+              <lightning-input
+                type="date"
+                label={labels.toDate}
+                value={draftFilters.toDate}
+                data-field="toDate"
+                data-filter
+                onchange={handleFilterChange}
+              ></lightning-input>
+            </div>
+            <div class="slds-col slds-size_1-of-2 slds-medium-size_1-of-6">
+              <lightning-input
+                type="number"
+                step="0.01"
+                min="0"
+                label={labels.minAmount}
+                value={draftFilters.minAmount}
+                data-field="minAmount"
+                data-filter
+                onchange={handleFilterChange}
+              ></lightning-input>
+            </div>
+            <div class="slds-col slds-size_1-of-2 slds-medium-size_1-of-6">
+              <lightning-input
+                type="number"
+                step="0.01"
+                min="0"
+                label={labels.maxAmount}
+                value={draftFilters.maxAmount}
+                data-field="maxAmount"
+                data-filter
+                onchange={handleFilterChange}
+              ></lightning-input>
+            </div>
+            <div class="slds-col slds-size_1-of-1 slds-medium-size_2-of-6">
+              <lightning-input
+                type="search"
+                label={labels.term}
+                value={draftFilters.term}
+                maxlength="100"
+                data-field="term"
+                data-filter
+                onchange={handleFilterChange}
+              ></lightning-input>
+            </div>
+          </div>
+          <div class="slds-var-m-top_x-small">
+            <lightning-button
+              label={labels.applyFilters}
+              data-action="apply-filters"
+              onclick={handleApplyFilters}
+            ></lightning-button>
+            <lightning-button
+              class="slds-var-m-left_x-small"
+              variant="base"
+              label={labels.clearFilters}
+              data-action="clear-filters"
+              onclick={handleClearFilters}
+            ></lightning-button>
+          </div>
+        </fieldset>
+      </template>
+
+      <template lwc:if={queueLoading}>
+        <lightning-spinner
+          alternative-text={labels.loading}
+          size="small"
+        ></lightning-spinner>
+      </template>
+
+      <template lwc:if={view}>
+        <p class="slds-var-m-bottom_x-small" data-period>{periodText}</p>
+        <template lwc:if={isBlocked}>
+          <div
+            class="slds-notify slds-notify_alert slds-alert_warning slds-var-m-vertical_small"
+            role="status"
+            data-no-calendar
+          >
+            {labels.noCalendar}
+          </div>
+        </template>
+        <template lwc:if={isResolved}>
+          <ul
+            class="slds-list_horizontal slds-has-dividers_right slds-wrap slds-var-m-bottom_small"
+            data-invoice
+          >
+            <li class="slds-item" data-window>{windowText}</li>
+            <li class="slds-item" data-closing>{closingText}</li>
+            <li class="slds-item" data-due>{dueText}</li>
+          </ul>
+        </template>
+        <ul
+          class="slds-list_horizontal slds-has-dividers_right slds-wrap slds-var-m-bottom_small"
+          aria-label={labels.counters}
+          data-counters
+        >
+          <template for:each={counters} for:item="counter">
+            <li key={counter.key} class="slds-item" data-counter={counter.key}>
+              <span class="slds-text-color_weak">{counter.label}:</span>
+              <strong class="slds-var-m-left_xx-small">{counter.count}</strong>
+            </li>
+          </template>
+        </ul>
+        <template lwc:if={view.truncated}>
+          <p class="slds-text-color_weak" role="status" data-truncated>
+            {labels.truncated}
+          </p>
+        </template>
+
+        <template for:each={sections} for:item="section">
+          <section
+            key={section.key}
+            class="slds-var-m-top_medium"
+            aria-labelledby={section.headingId}
+            data-section={section.key}
+          >
+            <div class="slds-grid slds-grid_vertical-align-center">
+              <h2 id={section.headingId} class="slds-text-heading_small">
+                {section.heading}
+              </h2>
+              <template lwc:if={section.collapsible}>
+                <lightning-button
+                  class="slds-var-m-left_small"
+                  variant="base"
+                  label={section.toggleLabel}
+                  aria-expanded={section.ariaExpanded}
+                  aria-controls={section.tableId}
+                  data-action="toggle-reconciled"
+                  onclick={handleToggleReconciled}
+                ></lightning-button>
+              </template>
+            </div>
+            <template lwc:if={section.empty}>
+              <p class="slds-text-color_weak" data-empty={section.key}>
+                {section.emptyText}
+              </p>
+            </template>
+            <div id={section.tableId}>
+              <template lwc:if={section.showTable}>
+                <table
+                  class="slds-table slds-table_cell-buffer slds-table_bordered"
+                  data-lines={section.key}
+                >
+                  <caption class="slds-assistive-text">
+                    {section.heading}
+                  </caption>
+                  <thead>
+                    <tr class="slds-line-height_reset">
+                      <th scope="col">{labels.colDate}</th>
+                      <th scope="col">{labels.colSource}</th>
+                      <th scope="col">{labels.colHolder}</th>
+                      <th scope="col">{labels.colDescription}</th>
+                      <th scope="col" class="slds-text-align_right">
+                        {labels.colAmount}
+                      </th>
+                      <th scope="col">{labels.colStatus}</th>
+                      <th scope="col">{labels.colActions}</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    <template for:each={section.rows} for:item="line">
+                      <tr key={line.key} data-line={line.key}>
+                        <td>{line.dateText}</td>
+                        <td>
+                          <span class="slds-text-color_weak"
+                            >{line.kindLabel}</span
+                          >
+                          <div>{line.fundingName}</div>
+                        </td>
+                        <td>{line.holderLabel}</td>
+                        <th scope="row" class="slds-cell-wrap">
+                          {line.description}
+                        </th>
+                        <td class="slds-text-align_right">
+                          <lightning-formatted-number
+                            value={line.signedAmount}
+                            format-style="currency"
+                            currency-code={line.currencyIso}
+                          ></lightning-formatted-number>
+                        </td>
+                        <td>
+                          <span class={line.statusClass} data-status
+                            >{line.statusLabel}</span
+                          >
+                        </td>
+                        <td>
+                          <template lwc:if={line.canSuggest}>
+                            <lightning-button
+                              variant="base"
+                              label={labels.showSuggestions}
+                              title={line.toggleLabel}
+                              aria-expanded={line.ariaExpanded}
+                              aria-controls={line.suggestionsId}
+                              data-id={line.key}
+                              data-action="toggle-suggestions"
+                              onclick={handleToggleSuggestions}
+                            ></lightning-button>
+                          </template>
+                        </td>
+                      </tr>
+                      <template lwc:if={line.expanded}>
+                        <tr key={line.subKey} data-suggestions={line.key}>
+                          <td colspan="7" id={line.suggestionsId}>
+                            <p
+                              class="slds-text-title slds-var-m-bottom_x-small"
+                            >
+                              {labels.suggestionsCaption}
+                            </p>
+                            <template lwc:if={line.suggestionsLoading}>
+                              <p role="status">{labels.loading}</p>
+                            </template>
+                            <template lwc:if={line.noSuggestions}>
+                              <p
+                                class="slds-text-color_weak"
+                                data-no-suggestions
+                              >
+                                {labels.noSuggestions}
+                              </p>
+                            </template>
+                            <ul class="slds-list_vertical-space">
+                              <template
+                                for:each={line.suggestionItems}
+                                for:item="s"
+                              >
+                                <li key={s.key}>
+                                  <lightning-button
+                                    label={s.text}
+                                    data-line={line.key}
+                                    data-index={s.index}
+                                    data-action="confirm-suggestion"
+                                    disabled={s.busy}
+                                    onclick={handleConfirm}
+                                  ></lightning-button>
+                                  <template lwc:if={s.tied}>
+                                    <span
+                                      class="slds-badge slds-var-m-left_x-small"
+                                      >{labels.tied}</span
+                                    >
+                                  </template>
+                                </li>
+                              </template>
+                            </ul>
+                            <template lwc:if={line.suggestionsTruncated}>
+                              <p class="slds-text-color_weak">
+                                {labels.truncated}
+                              </p>
+                            </template>
+                          </td>
+                        </tr>
+                      </template>
+                    </template>
+                  </tbody>
+                </table>
+              </template>
+            </div>
+          </section>
+        </template>
+      </template>
+    </div>
+  </lightning-card>
+</template>
