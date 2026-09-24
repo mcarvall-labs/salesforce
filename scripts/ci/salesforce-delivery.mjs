@@ -426,6 +426,27 @@ export async function run() {
       path.join(directory, "source-paths.txt"),
       report.paths.join("\n") + "\n"
     );
+    // Computed as early as possible — right after the delta is known, before
+    // packaging metadata or contacting the org at all — so a changed Apex
+    // class/trigger with no declared coverage fails immediately with a clear
+    // message instead of after several minutes of setup (CLI install, org
+    // login) only to fail on the same check. Every environment scopes tests
+    // to what the delta actually touches: any test class included in the
+    // delta itself, plus anything declared in the PR's "### Apex test
+    // classes to run" code block. Applies to both validate (dry-run) and
+    // deploy — same code path either way. Falls back to RunLocalTests only
+    // when the delta has no Apex/trigger at all, except a
+    // PermissionSet/PermissionSetGroup-only delta, which skips tests
+    // entirely (see testPlan/isPermissionSetOrGroupOnly).
+    const plan = testPlan(
+      report.paths,
+      (p) => fs.readFileSync(p, "utf8"),
+      extractDeclaredTests(prBody)
+    );
+    const testLevel = plan.testLevel;
+    const tests = plan.tests;
+    report.testLevel = testLevel;
+    report.tests = tests;
     const deletedFiles = [
       ...new Set(entries.filter((en) => en.status === "D").map((en) => en.file))
     ].sort();
@@ -517,22 +538,6 @@ export async function run() {
         "Authenticated Org ID does not match the configured target"
       );
     report.orgId = org.result.id;
-    // Every environment scopes tests to what the delta actually touches instead of
-    // running every local test class: any test class included in the delta itself,
-    // plus anything declared in the PR's "### Apex test classes to run" code block.
-    // Applies to both validate (dry-run) and deploy — same code path either way.
-    // Falls back to RunLocalTests only when the delta has no Apex/trigger at all,
-    // except a PermissionSet/PermissionSetGroup-only delta, which skips tests
-    // entirely (see testPlan/isPermissionSetOrGroupOnly).
-    const plan = testPlan(
-      report.paths,
-      (p) => fs.readFileSync(p, "utf8"),
-      extractDeclaredTests(prBody)
-    );
-    const testLevel = plan.testLevel;
-    const tests = plan.tests;
-    report.testLevel = testLevel;
-    report.tests = tests;
     // Wait for any in-flight PermissionSetGroup recalculation to settle before
     // the deploy call below runs tests, to avoid the known recalculation-race
     // flake (see waitForPermissionSetGroupsUpdated). Skipped when this deploy
