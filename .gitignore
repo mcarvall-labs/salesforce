@@ -54,3 +54,7 @@ force-app/main/default/profiles/Admin.profile-meta.xml
 _bmad-output/backups/
 
 .sf-package-builder/
+
+# AI planning artifacts live in the workspace root, never in this repository
+_bmad/
+_bmad-output/
