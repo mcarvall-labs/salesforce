@@ -4966,4 +4966,305 @@
         <value
     >Part of the entry was reconciled; choose another Pluggy transaction for the remaining amount.</value>
     </labels>
+    <labels>
+        <fullName>AXF_CardStatement_title</fullName>
+        <categories>AxonFinance,LWC,CreditCard</categories>
+        <language>en_US</language>
+        <protected>false</protected>
+        <shortDescription>Credit cards title</shortDescription>
+        <value>Credit cards</value>
+    </labels>
+    <labels>
+        <fullName>AXF_CardStatement_intro</fullName>
+        <categories>AxonFinance,LWC,CreditCard</categories>
+        <language>en_US</language>
+        <protected>false</protected>
+        <shortDescription>Credit cards intro</shortDescription>
+        <value>Limits, invoices and reconciliation of your credit cards.</value>
+    </labels>
+    <labels>
+        <fullName>AXF_CardStatement_noCapability</fullName>
+        <categories>AxonFinance,LWC,CreditCard</categories>
+        <language>en_US</language>
+        <protected>false</protected>
+        <shortDescription>Credit cards no capability</shortDescription>
+        <value>You do not have access to the credit card screen.</value>
+    </labels>
+    <labels>
+        <fullName>AXF_CardStatement_cardsCaption</fullName>
+        <categories>AxonFinance,LWC,CreditCard</categories>
+        <language>en_US</language>
+        <protected>false</protected>
+        <shortDescription>Credit cards caption</shortDescription>
+        <value>Credit cards</value>
+    </labels>
+    <labels>
+        <fullName>AXF_CardStatement_noCards</fullName>
+        <categories>AxonFinance,LWC,CreditCard</categories>
+        <language>en_US</language>
+        <protected>false</protected>
+        <shortDescription>Credit cards empty</shortDescription>
+        <value>No credit card is available in your authorized contexts.</value>
+    </labels>
+    <labels>
+        <fullName>AXF_CardStatement_colCard</fullName>
+        <categories>AxonFinance,LWC,CreditCard</categories>
+        <language>en_US</language>
+        <protected>false</protected>
+        <shortDescription>Credit cards card column</shortDescription>
+        <value>Card</value>
+    </labels>
+    <labels>
+        <fullName>AXF_CardStatement_colCreditLimit</fullName>
+        <categories>AxonFinance,LWC,CreditCard</categories>
+        <language>en_US</language>
+        <protected>false</protected>
+        <shortDescription>Credit cards credit limit column</shortDescription>
+        <value>Credit limit</value>
+    </labels>
+    <labels>
+        <fullName>AXF_CardStatement_colAvailableLimit</fullName>
+        <categories>AxonFinance,LWC,CreditCard</categories>
+        <language>en_US</language>
+        <protected>false</protected>
+        <shortDescription>Credit cards available limit column</shortDescription>
+        <value>Available limit</value>
+    </labels>
+    <labels>
+        <fullName>AXF_CardStatement_colClosingDay</fullName>
+        <categories>AxonFinance,LWC,CreditCard</categories>
+        <language>en_US</language>
+        <protected>false</protected>
+        <shortDescription>Credit cards closing day column</shortDescription>
+        <value>Closing day</value>
+    </labels>
+    <labels>
+        <fullName>AXF_CardStatement_colDueDay</fullName>
+        <categories>AxonFinance,LWC,CreditCard</categories>
+        <language>en_US</language>
+        <protected>false</protected>
+        <shortDescription>Credit cards due day column</shortDescription>
+        <value>Due day</value>
+    </labels>
+    <labels>
+        <fullName>AXF_CardStatement_notAvailable</fullName>
+        <categories>AxonFinance,LWC,CreditCard</categories>
+        <language>en_US</language>
+        <protected>false</protected>
+        <shortDescription>Credit cards value not available</shortDescription>
+        <value>—</value>
+    </labels>
+    <labels>
+        <fullName>AXF_CardStatement_viewInvoice</fullName>
+        <categories>AxonFinance,LWC,CreditCard</categories>
+        <language>en_US</language>
+        <protected>false</protected>
+        <shortDescription>Credit cards view invoice</shortDescription>
+        <value>View invoice</value>
+    </labels>
+    <labels>
+        <fullName>AXF_CardStatement_viewInvoiceFor</fullName>
+        <categories>AxonFinance,LWC,CreditCard</categories>
+        <language>en_US</language>
+        <protected>false</protected>
+        <shortDescription>Credit cards view invoice for</shortDescription>
+        <value>View the invoice of {0}</value>
+    </labels>
+    <labels>
+        <fullName>AXF_CardStatement_defineClosing</fullName>
+        <categories>AxonFinance,LWC,CreditCard</categories>
+        <language>en_US</language>
+        <protected>false</protected>
+        <shortDescription>Credit cards set closing</shortDescription>
+        <value>Set closing</value>
+    </labels>
+    <labels>
+        <fullName>AXF_CardStatement_defineClosingFor</fullName>
+        <categories>AxonFinance,LWC,CreditCard</categories>
+        <language>en_US</language>
+        <protected>false</protected>
+        <shortDescription>Credit cards set closing for</shortDescription>
+        <value>Set the closing of {0}</value>
+    </labels>
+    <labels>
+        <fullName>AXF_CardStatement_closingDayInput</fullName>
+        <categories>AxonFinance,LWC,CreditCard</categories>
+        <language>en_US</language>
+        <protected>false</protected>
+        <shortDescription>Credit cards closing day input</shortDescription>
+        <value>Closing day (1–31)</value>
+    </labels>
+    <labels>
+        <fullName>AXF_CardStatement_dueDayInput</fullName>
+        <categories>AxonFinance,LWC,CreditCard</categories>
+        <language>en_US</language>
+        <protected>false</protected>
+        <shortDescription>Credit cards due day input</shortDescription>
+        <value>Due day (1–31)</value>
+    </labels>
+    <labels>
+        <fullName>AXF_CardStatement_dayRange</fullName>
+        <categories>AxonFinance,LWC,CreditCard</categories>
+        <language>en_US</language>
+        <protected>false</protected>
+        <shortDescription>Credit cards day range</shortDescription>
+        <value>Enter a whole day between 1 and 31.</value>
+    </labels>
+    <labels>
+        <fullName>AXF_CardStatement_closingSaved</fullName>
+        <categories>AxonFinance,LWC,CreditCard</categories>
+        <language>en_US</language>
+        <protected>false</protected>
+        <shortDescription>Credit cards closing saved</shortDescription>
+        <value
+    >Closing saved: the invoices of this card now follow its calendar.</value>
+    </labels>
+    <labels>
+        <fullName>AXF_CardStatement_invoiceCaption</fullName>
+        <categories>AxonFinance,LWC,CreditCard</categories>
+        <language>en_US</language>
+        <protected>false</protected>
+        <shortDescription>Credit cards invoice caption</shortDescription>
+        <value>Invoice of {0} — {1}</value>
+    </labels>
+    <labels>
+        <fullName>AXF_CardStatement_previousInvoice</fullName>
+        <categories>AxonFinance,LWC,CreditCard</categories>
+        <language>en_US</language>
+        <protected>false</protected>
+        <shortDescription>Credit cards previous invoice</shortDescription>
+        <value>Previous invoice</value>
+    </labels>
+    <labels>
+        <fullName>AXF_CardStatement_nextInvoice</fullName>
+        <categories>AxonFinance,LWC,CreditCard</categories>
+        <language>en_US</language>
+        <protected>false</protected>
+        <shortDescription>Credit cards next invoice</shortDescription>
+        <value>Next invoice</value>
+    </labels>
+    <labels>
+        <fullName>AXF_CardStatement_invoiceWindow</fullName>
+        <categories>AxonFinance,LWC,CreditCard</categories>
+        <language>en_US</language>
+        <protected>false</protected>
+        <shortDescription>Credit cards invoice window</shortDescription>
+        <value>Purchases from {0} to {1}</value>
+    </labels>
+    <labels>
+        <fullName>AXF_CardStatement_closingDate</fullName>
+        <categories>AxonFinance,LWC,CreditCard</categories>
+        <language>en_US</language>
+        <protected>false</protected>
+        <shortDescription>Credit cards closing date</shortDescription>
+        <value>Closing: {0}</value>
+    </labels>
+    <labels>
+        <fullName>AXF_CardStatement_dueDate</fullName>
+        <categories>AxonFinance,LWC,CreditCard</categories>
+        <language>en_US</language>
+        <protected>false</protected>
+        <shortDescription>Credit cards due date</shortDescription>
+        <value>Due: {0}</value>
+    </labels>
+    <labels>
+        <fullName>AXF_CardStatement_total</fullName>
+        <categories>AxonFinance,LWC,CreditCard</categories>
+        <language>en_US</language>
+        <protected>false</protected>
+        <shortDescription>Credit cards invoice total</shortDescription>
+        <value>Invoice total</value>
+    </labels>
+    <labels>
+        <fullName>AXF_CardStatement_plannedTotal</fullName>
+        <categories>AxonFinance,LWC,CreditCard</categories>
+        <language>en_US</language>
+        <protected>false</protected>
+        <shortDescription>Credit cards planned total</shortDescription>
+        <value>Manual entries not reconciled</value>
+    </labels>
+    <labels>
+        <fullName>AXF_CardStatement_noCalendar</fullName>
+        <categories>AxonFinance,LWC,CreditCard</categories>
+        <language>en_US</language>
+        <protected>false</protected>
+        <shortDescription>Credit cards no calendar</shortDescription>
+        <value
+    >No calendar: this card has no closing rule for this month, so the calendar month is shown and no cut-off date is assumed.</value>
+    </labels>
+    <labels>
+        <fullName>AXF_CardStatement_newExpense</fullName>
+        <categories>AxonFinance,LWC,CreditCard</categories>
+        <language>en_US</language>
+        <protected>false</protected>
+        <shortDescription>Credit cards new manual expense</shortDescription>
+        <value>New manual expense</value>
+    </labels>
+    <labels>
+        <fullName>AXF_CardStatement_noLines</fullName>
+        <categories>AxonFinance,LWC,CreditCard</categories>
+        <language>en_US</language>
+        <protected>false</protected>
+        <shortDescription>Credit cards no lines</shortDescription>
+        <value>No transaction in this invoice.</value>
+    </labels>
+    <labels>
+        <fullName>AXF_CardStatement_codeNOT_ACCESSIBLE</fullName>
+        <categories>AxonFinance,LWC,CreditCard</categories>
+        <language>en_US</language>
+        <protected>false</protected>
+        <shortDescription>Credit cards not accessible</shortDescription>
+        <value>This card is not available in your authorized contexts.</value>
+    </labels>
+    <labels>
+        <fullName>AXF_CardStatement_codeNOT_ALLOWED</fullName>
+        <categories>AxonFinance,LWC,CreditCard</categories>
+        <language>en_US</language>
+        <protected>false</protected>
+        <shortDescription>Credit cards not allowed</shortDescription>
+        <value>You are not allowed to set the closing of this card.</value>
+    </labels>
+    <labels>
+        <fullName>AXF_CardStatement_codeCONFLICT</fullName>
+        <categories>AxonFinance,LWC,CreditCard</categories>
+        <language>en_US</language>
+        <protected>false</protected>
+        <shortDescription>Credit cards conflict</shortDescription>
+        <value
+    >The record changed or the card already has a closing rule; the data was reloaded.</value>
+    </labels>
+    <labels>
+        <fullName>AXF_CardStatement_codeINVALID_INPUT</fullName>
+        <categories>AxonFinance,LWC,CreditCard</categories>
+        <language>en_US</language>
+        <protected>false</protected>
+        <shortDescription>Credit cards invalid input</shortDescription>
+        <value>Check the values entered.</value>
+    </labels>
+    <labels>
+        <fullName>AXF_CardStatement_codeREJECTED</fullName>
+        <categories>AxonFinance,LWC,CreditCard</categories>
+        <language>en_US</language>
+        <protected>false</protected>
+        <shortDescription>Credit cards rejected</shortDescription>
+        <value>The change was rejected; nothing was saved.</value>
+    </labels>
+    <labels>
+        <fullName>AXF_CardStatement_totalPartial</fullName>
+        <categories>AxonFinance,LWC,CreditCard</categories>
+        <language>en_US</language>
+        <protected>false</protected>
+        <shortDescription>Credit cards total partial</shortDescription>
+        <value
+    >Partial: the invoice has more transactions than could be read.</value>
+    </labels>
+    <labels>
+        <fullName>AXF_CardStatement_mixedCurrency</fullName>
+        <categories>AxonFinance,LWC,CreditCard</categories>
+        <language>en_US</language>
+        <protected>false</protected>
+        <shortDescription>Credit cards mixed currency</shortDescription>
+        <value
+    >Transactions in another currency are listed but not included in the totals.</value>
+    </labels>
 </CustomLabels>

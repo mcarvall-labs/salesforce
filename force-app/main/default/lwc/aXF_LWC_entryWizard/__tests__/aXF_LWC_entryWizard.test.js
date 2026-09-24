@@ -652,6 +652,54 @@ describe("c-aXF_LWC_entryWizard", () => {
     expect(btn(el, /Confirmar|Confirm/)).toBeUndefined();
   });
 
+  it("pre-selects the card handed over by the credit-card screen", async () => {
+    createEntry.mockResolvedValue({ outcome: "CREATED" });
+    const manualCard = { ...CARD, connected: false };
+    const el = build();
+    CurrentPageReference.emit({
+      type: "standard__navItemPage",
+      attributes: { apiName: "AXF_EntryWizard" },
+      state: {
+        c__creditCardId: manualCard.creditCardId,
+        c__accountId: CONTEXTS[1].accountId
+      }
+    });
+    getContexts.emit(CONTEXTS);
+    await flush();
+    getFundingSources.emit([MANUAL_BANK, manualCard]);
+    await flush();
+
+    await toDetails(el);
+    next(el).click();
+    await flush();
+    // The source step is already filled with the card: no second question.
+    expect(next(el).disabled).toBe(false);
+    next(el).click();
+    await flush();
+    btn(el, /Confirmar|Confirm/).click();
+    await settle();
+
+    const call = createEntry.mock.calls[0][0];
+    expect(call.accountId).toBe(CONTEXTS[1].accountId);
+    expect(call.creditCardId).toBe(manualCard.creditCardId);
+    expect(call.bankAccountId).toBeNull();
+  });
+
+  it("ignores a handed-over card that is not a source of the holder", async () => {
+    const el = build();
+    CurrentPageReference.emit({
+      state: { c__creditCardId: "a02000000000999" }
+    });
+    getContexts.emit([CONTEXTS[0]]);
+    getFundingSources.emit([MANUAL_BANK, CARD]);
+    await flush();
+
+    await toDetails(el);
+    next(el).click();
+    await flush();
+    expect(next(el).disabled).toBe(true);
+  });
+
   it("follows a new hand-over when the reused tab shows another holder", async () => {
     createEntry.mockResolvedValue({ outcome: "CREATED" });
     const el = build();
