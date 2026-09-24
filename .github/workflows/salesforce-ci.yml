@@ -2,6 +2,7 @@ name: Salesforce CI
 
 on:
   pull_request:
+    types: [opened, synchronize, reopened, labeled, unlabeled]
     branches: [develop, uat, main]
 
 permissions:
@@ -76,6 +77,7 @@ jobs:
       testsCompleted: ${{ steps.operation.outputs.testsCompleted }}
       testsFailed: ${{ steps.operation.outputs.testsFailed }}
       deletedCount: ${{ steps.operation.outputs.deletedCount }}
+      versionedDestructiveApplied: ${{ steps.operation.outputs.versionedDestructiveApplied }}
       errorMessage: ${{ steps.operation.outputs.errorMessage }}
     environment: ${{ github.base_ref == 'main' && 'PROD-VALIDATION' || (github.base_ref == 'uat' && 'UAT-VALIDATION' || 'DEV-VALIDATION') }}
     permissions:
@@ -115,6 +117,106 @@ jobs:
           retention-days: 30
           if-no-files-found: warn
 
+  pre-merge-deploy:
+    name: Pre-merge deploy
+    needs: scope
+    # UAT/PROD only — DEV's "Validate Salesforce delta" already deploys for real
+    # on every push and is already a required check, so no separate gate is
+    # needed there. Skipped (not merely pending) until the `deploy-approved`
+    # label is present; a skipped required check keeps the native Merge button
+    # locked, same as a failing one. Re-runs on every push while the label is
+    # still on the PR, so a stale success from an earlier commit can't linger —
+    # add the label again after pushing new changes to re-gate the merge.
+    if: >-
+      needs.scope.outputs.has_metadata == 'true' &&
+      github.base_ref != 'develop' &&
+      contains(github.event.pull_request.labels.*.name, 'deploy-approved')
+    runs-on: ubuntu-latest
+    timeout-minutes: 150
+    outputs:
+      deploymentId: ${{ steps.operation.outputs.deploymentId }}
+      componentsTotal: ${{ steps.operation.outputs.componentsTotal }}
+      testsCompleted: ${{ steps.operation.outputs.testsCompleted }}
+      testsFailed: ${{ steps.operation.outputs.testsFailed }}
+      deletedCount: ${{ steps.operation.outputs.deletedCount }}
+      versionedDestructiveApplied: ${{ steps.operation.outputs.versionedDestructiveApplied }}
+      errorMessage: ${{ steps.operation.outputs.errorMessage }}
+    # The real deploy environment (not *-VALIDATION): this persists metadata,
+    # so it inherits the same credentials and approval rules as an actual
+    # deploy — including PROD's required reviewer.
+    environment: ${{ github.base_ref == 'main' && 'PROD' || 'UAT' }}
+    permissions:
+      contents: read
+    steps:
+      - name: Reject untrusted PR sources
+        env:
+          SAME_REPOSITORY: ${{ github.event.pull_request.head.repo.full_name == github.repository }}
+        run: test "$SAME_REPOSITORY" = "true"
+      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
+        with:
+          fetch-depth: 0
+          persist-credentials: false
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4.4.0
+        with:
+          node-version: 22
+      - name: Install Salesforce CLI
+        run: npm install --global @salesforce/cli@2.148.3
+      - name: Deploy PR delta for real (gates merge)
+        id: operation
+        env:
+          OPERATION: validate
+          FORCE_REAL_DEPLOY: "true"
+          TARGET_ENV: ${{ github.base_ref == 'main' && 'PROD' || 'UAT' }}
+          TARGET_BRANCH: ${{ github.base_ref }}
+          PR_BASE_SHA: ${{ github.event.pull_request.base.sha }}
+          PR_BODY: ${{ github.event.pull_request.body }}
+          SALESFORCE_AUTH_URL: ${{ secrets.SALESFORCE_AUTH_URL || secrets.SALESFORCE_DEV_AUTH_URL || secrets.SALESFORCE_PROD_AUTH_URL }}
+          EXPECTED_ORG_ID: ${{ vars.SALESFORCE_ORG_ID }}
+          EVIDENCE_DIR: ${{ runner.temp }}/salesforce-evidence
+        run: node scripts/ci/salesforce-delivery.mjs
+      - name: Upload pre-merge deploy evidence
+        if: always()
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
+        with:
+          name: salesforce-premerge-${{ github.run_id }}-${{ github.run_attempt }}
+          path: ${{ runner.temp }}/salesforce-evidence/
+          retention-days: 30
+          if-no-files-found: warn
+      - name: Publish pre-merge deploy result
+        if: always()
+        uses: actions/github-script@60a0d83039c74a4aee543508d2ffcb1c3799cdea9 # v7.0.1
+        env:
+          DEPLOY_RESULT: ${{ job.status }}
+          DEPLOYMENT_ID: ${{ steps.operation.outputs.deploymentId }}
+          COMPONENTS_TOTAL: ${{ steps.operation.outputs.componentsTotal }}
+          TESTS_COMPLETED: ${{ steps.operation.outputs.testsCompleted }}
+          TESTS_FAILED: ${{ steps.operation.outputs.testsFailed }}
+          ERROR_MESSAGE: ${{ steps.operation.outputs.errorMessage }}
+        with:
+          script: |
+            const runUrl = `${context.serverUrl}/${context.repo.owner}/${context.repo.repo}/actions/runs/${context.runId}`;
+            const {data} = await github.rest.actions.listWorkflowRunArtifacts({...context.repo, run_id: context.runId});
+            const artifact = data.artifacts[0];
+            const artifactUrl = artifact ? `${runUrl}/artifacts/${artifact.id}` : null;
+            const target = context.payload.pull_request.base.ref === 'main' ? 'AXON_PROD' : 'AXON_UAT';
+            const passed = process.env.DEPLOY_RESULT === 'success';
+            const icon = passed ? '✅' : '❌';
+            const status = passed ? 'Passed — merge unlocked' : 'Failed — merge stays blocked';
+            let body = `### ${icon} Pre-merge deploy — ${target}: **${status}**\n\n`;
+            body += `This is a **real deploy**, triggered by the \`deploy-approved\` label — metadata was actually persisted to ${target}, not a dry-run.\n\n`;
+            body += [
+              '| | |',
+              '|---|---|',
+              `| Deployment ID | ${process.env.DEPLOYMENT_ID ? '`' + process.env.DEPLOYMENT_ID + '`' : 'None'} |`,
+              `| Components | ${process.env.COMPONENTS_TOTAL || '—'} |`,
+              `| Tests | ${process.env.TESTS_COMPLETED || 0} completed / ${process.env.TESTS_FAILED || 0} failed |`,
+              `| Commit | \`${context.sha.slice(0, 7)}\` |`
+            ].join('\n') + '\n';
+            if (process.env.ERROR_MESSAGE) body += `\n> ${process.env.ERROR_MESSAGE}\n`;
+            body += `\n${artifactUrl ? `[⬇️ Download evidence](${artifactUrl})` : '_No evidence artifact uploaded._'} · [Run logs](${runUrl})\n`;
+            if (!passed) body += `\nPush a fix and re-add the \`deploy-approved\` label to retry.`;
+            await github.rest.issues.createComment({...context.repo, issue_number: context.issue.number, body});
+
   comment:
     name: Publish validation result
     if: always() && github.event.pull_request.head.repo.full_name == github.repository
@@ -134,6 +236,7 @@ jobs:
           TESTS_COMPLETED: ${{ needs.salesforce-validation.outputs.testsCompleted }}
           TESTS_FAILED: ${{ needs.salesforce-validation.outputs.testsFailed }}
           DELETED_COUNT: ${{ needs.salesforce-validation.outputs.deletedCount }}
+          VERSIONED_DESTRUCTIVE_APPLIED: ${{ needs.salesforce-validation.outputs.versionedDestructiveApplied }}
           ERROR_MESSAGE: ${{ needs.salesforce-validation.outputs.errorMessage }}
         with:
           script: |
@@ -148,6 +251,7 @@ jobs:
             const icon = skipped ? '⚪' : passed ? '✅' : '❌';
             const status = skipped ? 'Skipped' : passed ? 'Passed' : 'Failed';
             const deletedCount = Number(process.env.DELETED_COUNT || 0);
+            const versionedApplied = process.env.VERSIONED_DESTRUCTIVE_APPLIED === 'true';
             let body = `### ${icon} Salesforce validation — ${target}: **${status}**\n\n`;
             if (skipped) {
               body += `No \`force-app\` metadata changes in this PR — nothing to validate.\n`;
@@ -165,6 +269,9 @@ jobs:
             }
             if (deletedCount > 0) {
               body += `\n⚠️ **${deletedCount} deletion(s) detected — NOT auto-deployed.** \`destructiveChanges.xml\`/\`package.xml\` generated in the evidence artifact; requires manual review and a separate destructive deploy.\n`;
+            }
+            if (versionedApplied) {
+              body += `\n🔥 **Versioned destructive manifest (\`manifest/destructiveChanges{Pre,Post}.xml\`) was applied this run** — this actually validated/deployed a real deletion, not just evidence. See result.html for exactly what.\n`;
             }
             body += `\n${artifactUrl ? `[⬇️ Download evidence](${artifactUrl})` : '_No evidence artifact uploaded._'} · [Run logs](${runUrl})\n`;
             body += `\nOpen \`result.html\` in the evidence zip for the full report. Validation uses dry-run: no metadata is persisted.`;

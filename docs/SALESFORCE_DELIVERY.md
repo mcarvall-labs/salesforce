@@ -107,6 +107,34 @@ Protect develop/main: require PRs, current `Lint and unit tests` and
 conversations. Block direct pushes, force pushes and deletion, including admins.
 Preserve stronger existing protections. Do not bypass checks to install workflows.
 
+### Merge only after a successful real deploy
+
+For `develop`, this is already true: `Validate Salesforce delta` deploys for real
+(no `--dry-run`) on every push to the PR, and is a required check tied to the exact
+head SHA — so by the time GitHub allows merging, that commit's delta is already
+live in `AXON_DEV`.
+
+For `uat`/`main`, the same real-deploy-before-merge guarantee is opt-in, not
+automatic (a dry-run-only validate stays the default so ordinary PRs don't
+persist to UAT/PROD on every push): add the `deploy-approved` label to the PR to
+trigger `Pre-merge deploy`, a required check for those two branches that runs a
+genuine `sf project deploy start` (no `--dry-run`) against the real `UAT`/`PROD`
+environment — same credentials and approval rules as an actual deploy, including
+PROD's required reviewer. It only runs while the label is present and re-runs on
+every push, so a stale success from an earlier commit never lingers; re-add the
+label after pushing a fix. Until it succeeds, the check stays `Skipped` (not merely
+pending) for that PR, and GitHub's native Merge button stays locked, exactly as a
+failing required check would.
+
+Because DEV already deploys for real before merge and that check is on the exact
+merge tree, `deploy-salesforce.yml`'s post-merge run for `develop` compares the
+merge commit's tree against the merged PR's head tree and reports
+`Skipped (redundant)` instead of calling `sf` again when they're identical (a
+clean merge, no conflict resolution changed content) — the guard-rails above it
+(merged-PR-for-this-exact-commit, base ancestry) still run either way. `uat`/`main`
+don't get this shortcut even when `deploy-approved` was used, since that path is
+opt-in per PR rather than guaranteed.
+
 This project has a single GitHub user. GitHub does not allow authors to approve
 their own PRs, so the owner merges after reviewing the changes and passing checks.
 PRs remain mandatory; this does not waive DEV/UAT acceptance or protected
@@ -146,6 +174,54 @@ validates/deploys normally; only the deletions are set aside. If a change is
 _only_ deletions, the operation stops with outcome "Destructive changes only —
 manual review required" (not a failure) without contacting the org, since there
 is nothing safe to auto-validate/deploy.
+
+### Versioned destructive manifests (actually applied)
+
+`manifest/destructiveChangesPre.xml` and `manifest/destructiveChangesPost.xml`
+(see `manifest/README.md`) are a different, opt-in mechanism from the
+auto-generated evidence above: when either has `<types>` entries, they are
+passed straight to `sf project deploy start --pre-destructive-changes` /
+`--post-destructive-changes` — genuinely applied, on every validate (dry-run)
+and deploy, in every environment the file reaches as it's promoted
+`develop` → `uat` → `main`. Committing a non-empty manifest via a reviewed PR
+_is_ the explicitly approved destructive release; there's no separate
+off-pipeline step for that case. Empty it again in a follow-up commit once
+applied where intended, or it keeps re-submitting the same request on every
+future deploy. Managed package (`namespace__`-prefixed) components can't be
+removed this way — Salesforce rejects it.
+
+Use this specifically for a one-time reconciliation of metadata that predates
+the current git history (e.g. an org has components no branch ever tracked) —
+not as the default path for ordinary feature-driven deletions, which the
+auto-generated `destructiveChanges.xml` already covers with a lighter-weight,
+off-pipeline manual step. Verify org identity and impact before adding
+anything here; this is deploying deletions for real.
+
+**Tracking is mandatory, not optional.** A candidate for this kind of legacy
+cleanup must never live only in chat history or a PR comment — record it in
+[`docs/destructive-backlog.md`](destructive-backlog.md) (status, impact
+analysis, exclusions and why) and file/update a Jira ticket under `AXF` (see
+[AXF-161](https://axon-personal-finances.atlassian.net/browse/AXF-161) for the
+current one) before ending the task. Whoever eventually applies an entry
+re-verifies it against the live org first — the backlog is a snapshot, not a
+guarantee it still holds.
+
+A checked-in manifest's presence alone is enough to trigger a deploy, even
+for a commit whose own `force-app` diff is empty — e.g. the PR that adds
+`manifest/destructiveChangesPost.xml` only touches `manifest/`, but its
+deploy to DEV still runs and applies it. It isn't silently skipped as "no
+metadata changes."
+
+`sf project deploy start --pre/post-destructive-changes` rejects
+`--source-dir`/`--metadata-dir`; it requires `--manifest <package.xml>`
+instead (file paths resolve from the project's own source dirs regardless of
+where that package.xml physically sits, so the mdapi-converted one already
+built for `delta-package.zip` is reused as-is; a fresh empty one is written
+for a pure-destructive deploy with no additive delta). `--ignore-warnings` is
+always added alongside it, so deleting a component that doesn't exist in the
+target environment — expected wherever that legacy metadata was never
+deployed, e.g. DEV/UAT — doesn't fail the whole run; Salesforce only reports
+it as a warning, not an error.
 
 Pending/timeout is not success: inspect the Salesforce job before retrying.
 A successful deployment with failed comment publication may be redeployed; inspect
