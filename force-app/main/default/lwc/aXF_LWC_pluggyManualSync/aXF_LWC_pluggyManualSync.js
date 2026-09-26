@@ -1,170 +1,210 @@
-import { LightningElement, api, track } from 'lwc';
-import { CloseActionScreenEvent } from 'lightning/actions';
-import { ShowToastEvent } from 'lightning/platformShowToastEvent';
-import syncRecord from '@salesforce/apex/AXF_CLS_CTRL_PluggyManualSync.syncRecord';
+import { LightningElement, api, track } from "lwc";
+import { CloseActionScreenEvent } from "lightning/actions";
+import { ShowToastEvent } from "lightning/platformShowToastEvent";
+import syncRecord from "@salesforce/apex/AXF_CLS_CTRL_PluggyManualSync.syncRecord";
 
-import AXF_LBL_SuccessToastTitle from '@salesforce/label/c.AXF_LBL_SuccessToastTitle';
-import AXF_LBL_WarningToastTitle from '@salesforce/label/c.AXF_LBL_WarningToastTitle';
-import AXF_LBL_ErrorToastTitle from '@salesforce/label/c.AXF_LBL_ErrorToastTitle';
-import AXF_LBL_UnexpectedSyncError from '@salesforce/label/c.AXF_LBL_UnexpectedSyncError';
+import AXF_LBL_SuccessToastTitle from "@salesforce/label/c.AXF_LBL_SuccessToastTitle";
+import AXF_LBL_WarningToastTitle from "@salesforce/label/c.AXF_LBL_WarningToastTitle";
+import AXF_LBL_ErrorToastTitle from "@salesforce/label/c.AXF_LBL_ErrorToastTitle";
+import AXF_LBL_UnexpectedSyncError from "@salesforce/label/c.AXF_LBL_UnexpectedSyncError";
 
 export default class AXF_LWC_pluggyManualSync extends LightningElement {
-    _recordId;
-    _objectApiName;
-    styleElement;
+  _recordId;
+  _objectApiName;
+  styleElement;
 
-    /**
-     * When true, renders as a plain inline "Sync" button (no modal card, no internal
-     * date pickers) instead of the full quick-action screen. Used when this component is
-     * embedded directly in a filter section (aXF_LWC_bankAccountStatement /
-     * aXF_LWC_creditCardStatement) rather than launched as a record quick action.
-     * In this mode, startDate/endDate are supplied by the parent and are not editable here.
-     */
-    @api compactMode = false;
-    @api startDate;
-    @api endDate;
+  /**
+   * When true, renders as a plain inline "Sync" button (no modal card, no internal
+   * date pickers) instead of the full quick-action screen. Used when this component is
+   * embedded directly in a filter section (aXF_LWC_bankAccountStatement /
+   * aXF_LWC_creditCardStatement) rather than launched as a record quick action.
+   * In this mode, startDate/endDate are supplied by the parent and are not editable here.
+   */
+  @api compactMode = false;
+  _startDate;
+  _endDate;
 
-    @track isLoading = false;
-    @track syncResult = null;
+  @api
+  get startDate() {
+    return this._startDate;
+  }
+  set startDate(value) {
+    this._startDate = value;
+  }
 
-    @api
-    get recordId() {
-        return this._recordId;
+  @api
+  get endDate() {
+    return this._endDate;
+  }
+  set endDate(value) {
+    this._endDate = value;
+  }
+
+  @track isLoading = false;
+  @track syncResult = null;
+
+  @api
+  get recordId() {
+    return this._recordId;
+  }
+  set recordId(value) {
+    this._recordId = value;
+  }
+
+  @api
+  get objectApiName() {
+    return this._objectApiName;
+  }
+  set objectApiName(value) {
+    this._objectApiName = value;
+  }
+
+  connectedCallback() {
+    if (!this.compactMode) {
+      this.injectModalStyles();
+      this.initializeDefaultPeriod();
     }
-    set recordId(value) {
-        this._recordId = value;
-    }
+  }
 
-    @api
-    get objectApiName() {
-        return this._objectApiName;
-    }
-    set objectApiName(value) {
-        this._objectApiName = value;
-    }
+  initializeDefaultPeriod() {
+    const now = new Date();
+    const firstDayOfCurrentMonth = new Date(
+      now.getFullYear(),
+      now.getMonth(),
+      1
+    );
+    const start = new Date(
+      firstDayOfCurrentMonth.getFullYear(),
+      firstDayOfCurrentMonth.getMonth() - 1,
+      1
+    );
+    const end = new Date(
+      firstDayOfCurrentMonth.getFullYear(),
+      firstDayOfCurrentMonth.getMonth() + 2,
+      0
+    );
+    this._startDate = this.toIsoDate(start);
+    this._endDate = this.toIsoDate(end);
+  }
 
-    connectedCallback() {
-        if (!this.compactMode) {
-            this.injectModalStyles();
-            this.initializeDefaultPeriod();
+  toIsoDate(date) {
+    const year = date.getFullYear();
+    const month = String(date.getMonth() + 1).padStart(2, "0");
+    const day = String(date.getDate()).padStart(2, "0");
+    return `${year}-${month}-${day}`;
+  }
+
+  handleStartDateChange(event) {
+    this._startDate = event.target.value;
+  }
+
+  handleEndDateChange(event) {
+    this._endDate = event.target.value;
+  }
+
+  disconnectedCallback() {
+    this.removeModalStyles();
+  }
+
+  get title() {
+    if (this._objectApiName === "AXF_OBJ_BankAccount__c") {
+      return "Sincronizar Conta Bancária";
+    }
+    if (this._objectApiName === "AXF_OBJ_CreditCard__c") {
+      return "Sincronizar Cartão de Crédito";
+    }
+    if (this._objectApiName === "AXF_OBJ_CreditCardInvoice__c") {
+      return "Sincronizar Fatura";
+    }
+    return "Sincronizar Registro";
+  }
+
+  get description() {
+    if (this._objectApiName === "AXF_OBJ_BankAccount__c") {
+      return "Iniciar sincronização das transações da conta com a Pluggy.";
+    }
+    if (this._objectApiName === "AXF_OBJ_CreditCard__c") {
+      return "Iniciar sincronização das faturas e transações do cartão com a Pluggy.";
+    }
+    if (this._objectApiName === "AXF_OBJ_CreditCardInvoice__c") {
+      return "Iniciar sincronização das transações da fatura com a Pluggy.";
+    }
+    return "Iniciar sincronização dos dados com a Pluggy.";
+  }
+
+  get showBankStats() {
+    return this._objectApiName === "AXF_OBJ_BankAccount__c";
+  }
+
+  get showCreditStats() {
+    return (
+      this._objectApiName === "AXF_OBJ_CreditCard__c" ||
+      this._objectApiName === "AXF_OBJ_CreditCardInvoice__c"
+    );
+  }
+
+  get hasDetailedErrors() {
+    return (
+      this.syncResult &&
+      this.syncResult.errors &&
+      this.syncResult.errors.length > 0
+    );
+  }
+
+  get cancelButtonLabel() {
+    return this.syncResult ? "Voltar para o Registro" : "Cancelar / Voltar";
+  }
+
+  handleStartSync() {
+    this.isLoading = true;
+    this.syncResult = null;
+
+    syncRecord({
+      recordId: this._recordId,
+      sObjectType: this._objectApiName,
+      startDate: this.startDate,
+      endDate: this.endDate
+    })
+      .then((result) => {
+        this.isLoading = false;
+        this.syncResult = result;
+
+        if (result.isSuccess) {
+          this.showToast(AXF_LBL_SuccessToastTitle, result.message, "success");
+        } else {
+          this.showToast(AXF_LBL_WarningToastTitle, result.message, "warning");
         }
-    }
+        this.dispatchEvent(new CustomEvent("syncdone", { detail: result }));
+      })
+      .catch((error) => {
+        this.isLoading = false;
+        const errorMsg =
+          error && error.body
+            ? error.body.message
+            : error.message || AXF_LBL_UnexpectedSyncError;
+        this.syncResult = {
+          isSuccess: false,
+          message: errorMsg,
+          bankAccountsSynced: 0,
+          creditCardsSynced: 0,
+          invoicesSynced: 0,
+          transactionsSynced: 0,
+          errors: [errorMsg]
+        };
+        this.dispatchEvent(
+          new CustomEvent("syncdone", { detail: this.syncResult })
+        );
+        this.showToast(AXF_LBL_ErrorToastTitle, errorMsg, "error");
+      });
+  }
 
-    initializeDefaultPeriod() {
-        const now = new Date();
-        const firstDayOfCurrentMonth = new Date(now.getFullYear(), now.getMonth(), 1);
-        const start = new Date(firstDayOfCurrentMonth.getFullYear(), firstDayOfCurrentMonth.getMonth() - 1, 1);
-        const end = new Date(firstDayOfCurrentMonth.getFullYear(), firstDayOfCurrentMonth.getMonth() + 2, 0);
-        this.startDate = this.toIsoDate(start);
-        this.endDate = this.toIsoDate(end);
-    }
+  closeAction() {
+    this.dispatchEvent(new CloseActionScreenEvent());
+  }
 
-    toIsoDate(date) {
-        const year = date.getFullYear();
-        const month = String(date.getMonth() + 1).padStart(2, '0');
-        const day = String(date.getDate()).padStart(2, '0');
-        return `${year}-${month}-${day}`;
-    }
-
-    handleStartDateChange(event) {
-        this.startDate = event.target.value;
-    }
-
-    handleEndDateChange(event) {
-        this.endDate = event.target.value;
-    }
-
-    disconnectedCallback() {
-        this.removeModalStyles();
-    }
-
-    get title() {
-        if (this._objectApiName === 'AXF_OBJ_BankAccount__c') {
-            return 'Sincronizar Conta Bancária';
-        }
-        if (this._objectApiName === 'AXF_OBJ_CreditCard__c') {
-            return 'Sincronizar Cartão de Crédito';
-        }
-        if (this._objectApiName === 'AXF_OBJ_CreditCardInvoice__c') {
-            return 'Sincronizar Fatura';
-        }
-        return 'Sincronizar Registro';
-    }
-
-    get description() {
-        if (this._objectApiName === 'AXF_OBJ_BankAccount__c') {
-            return 'Iniciar sincronização das transações da conta com a Pluggy.';
-        }
-        if (this._objectApiName === 'AXF_OBJ_CreditCard__c') {
-            return 'Iniciar sincronização das faturas e transações do cartão com a Pluggy.';
-        }
-        if (this._objectApiName === 'AXF_OBJ_CreditCardInvoice__c') {
-            return 'Iniciar sincronização das transações da fatura com a Pluggy.';
-        }
-        return 'Iniciar sincronização dos dados com a Pluggy.';
-    }
-
-    get showBankStats() {
-        return this._objectApiName === 'AXF_OBJ_BankAccount__c';
-    }
-
-    get showCreditStats() {
-        return this._objectApiName === 'AXF_OBJ_CreditCard__c' || this._objectApiName === 'AXF_OBJ_CreditCardInvoice__c';
-    }
-
-    get hasDetailedErrors() {
-        return this.syncResult && this.syncResult.errors && this.syncResult.errors.length > 0;
-    }
-
-    get cancelButtonLabel() {
-        return this.syncResult ? 'Voltar para o Registro' : 'Cancelar / Voltar';
-    }
-
-    handleStartSync() {
-        this.isLoading = true;
-        this.syncResult = null;
-
-        syncRecord({
-            recordId: this._recordId,
-            sObjectType: this._objectApiName,
-            startDate: this.startDate,
-            endDate: this.endDate
-        })
-            .then(result => {
-                this.isLoading = false;
-                this.syncResult = result;
-
-                if (result.isSuccess) {
-                    this.showToast(AXF_LBL_SuccessToastTitle, result.message, 'success');
-                } else {
-                    this.showToast(AXF_LBL_WarningToastTitle, result.message, 'warning');
-                }
-                this.dispatchEvent(new CustomEvent('syncdone', { detail: result }));
-            })
-            .catch(error => {
-                this.isLoading = false;
-                const errorMsg = error && error.body ? error.body.message : (error.message || AXF_LBL_UnexpectedSyncError);
-                this.syncResult = {
-                    isSuccess: false,
-                    message: errorMsg,
-                    bankAccountsSynced: 0,
-                    creditCardsSynced: 0,
-                    invoicesSynced: 0,
-                    transactionsSynced: 0,
-                    errors: [errorMsg]
-                };
-                this.dispatchEvent(new CustomEvent('syncdone', { detail: this.syncResult }));
-                this.showToast(AXF_LBL_ErrorToastTitle, errorMsg, 'error');
-            });
-    }
-
-    closeAction() {
-        this.dispatchEvent(new CloseActionScreenEvent());
-    }
-
-    injectModalStyles() {
-        this.styleElement = document.createElement('style');
-        this.styleElement.innerText = `
+  injectModalStyles() {
+    this.styleElement = document.createElement("style");
+    this.styleElement.innerText = `
             .slds-modal__container {
                 max-width: 620px !important;
                 width: 95% !important;
@@ -199,22 +239,22 @@ export default class AXF_LWC_pluggyManualSync extends LightningElement {
                 box-shadow: none !important;
             }
         `;
-        document.head.appendChild(this.styleElement);
-    }
+    document.head.appendChild(this.styleElement);
+  }
 
-    removeModalStyles() {
-        if (this.styleElement) {
-            this.styleElement.remove();
-        }
+  removeModalStyles() {
+    if (this.styleElement) {
+      this.styleElement.remove();
     }
+  }
 
-    showToast(title, message, variant) {
-        this.dispatchEvent(
-            new ShowToastEvent({
-                title,
-                message,
-                variant
-            })
-        );
-    }
+  showToast(title, message, variant) {
+    this.dispatchEvent(
+      new ShowToastEvent({
+        title,
+        message,
+        variant
+      })
+    );
+  }
 }
