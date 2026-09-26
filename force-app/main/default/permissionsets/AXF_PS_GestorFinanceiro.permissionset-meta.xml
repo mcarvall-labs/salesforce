@@ -2264,6 +2264,41 @@
         <field>AXF_OBJ_InternalTransfer__c.AXF_ITR_TXT_ReversalNote__c</field>
         <readable>true</readable>
     </fieldPermissions>
+    <fieldPermissions>
+        <editable>false</editable>
+        <field>AXF_OBJ_BankAccount__c.AXF_BA_DAT_LastSync__c</field>
+        <readable>true</readable>
+    </fieldPermissions>
+    <fieldPermissions>
+        <editable>false</editable>
+        <field>AXF_OBJ_BankAccount__c.AXF_BA_DT_LastTransactionSync__c</field>
+        <readable>true</readable>
+    </fieldPermissions>
+    <fieldPermissions>
+        <editable>false</editable>
+        <field>AXF_OBJ_BankAccount__c.AXF_BA_TXT_AgencyNumber__c</field>
+        <readable>true</readable>
+    </fieldPermissions>
+    <fieldPermissions>
+        <editable>false</editable>
+        <field>AXF_OBJ_CreditCard__c.AXF_CC_DAT_LastSync__c</field>
+        <readable>true</readable>
+    </fieldPermissions>
+    <fieldPermissions>
+        <editable>false</editable>
+        <field>AXF_OBJ_CreditCard__c.AXF_CC_DT_LastTransactionSync__c</field>
+        <readable>true</readable>
+    </fieldPermissions>
+    <fieldPermissions>
+        <editable>false</editable>
+        <field>AXF_OBJ_CreditCard__c.AXF_CC_NUM_ClosingDay__c</field>
+        <readable>true</readable>
+    </fieldPermissions>
+    <fieldPermissions>
+        <editable>false</editable>
+        <field>AXF_OBJ_CreditCard__c.AXF_CC_NUM_DueDay__c</field>
+        <readable>true</readable>
+    </fieldPermissions>
     <hasActivationRequired>false</hasActivationRequired>
     <label>Axon - Gestor Financeiro (componente)</label>
     <objectPermissions>

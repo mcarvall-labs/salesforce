@@ -1,6 +1,10 @@
 <?xml version="1.0" encoding="UTF-8" ?>
 <PermissionSet xmlns="http://soap.sforce.com/2006/04/metadata">
     <classAccesses>
+        <apexClass>AXF_CLS_CTRL_HomeDashboard</apexClass>
+        <enabled>true</enabled>
+    </classAccesses>
+    <classAccesses>
         <apexClass>ALT_CLS_AmortizationSchedule</apexClass>
         <enabled>true</enabled>
     </classAccesses>
@@ -583,6 +587,41 @@
         <field>AXF_OBJ_ScheduleReference__c.AXF_SRF_TAL_Reason__c</field>
         <readable>true</readable>
     </fieldPermissions>
+    <fieldPermissions>
+        <editable>false</editable>
+        <field>AXF_OBJ_BankAccount__c.AXF_BA_DAT_LastSync__c</field>
+        <readable>true</readable>
+    </fieldPermissions>
+    <fieldPermissions>
+        <editable>false</editable>
+        <field>AXF_OBJ_BankAccount__c.AXF_BA_DT_LastTransactionSync__c</field>
+        <readable>true</readable>
+    </fieldPermissions>
+    <fieldPermissions>
+        <editable>false</editable>
+        <field>AXF_OBJ_BankAccount__c.AXF_BA_TXT_AgencyNumber__c</field>
+        <readable>true</readable>
+    </fieldPermissions>
+    <fieldPermissions>
+        <editable>false</editable>
+        <field>AXF_OBJ_CreditCard__c.AXF_CC_DAT_LastSync__c</field>
+        <readable>true</readable>
+    </fieldPermissions>
+    <fieldPermissions>
+        <editable>false</editable>
+        <field>AXF_OBJ_CreditCard__c.AXF_CC_DT_LastTransactionSync__c</field>
+        <readable>true</readable>
+    </fieldPermissions>
+    <fieldPermissions>
+        <editable>false</editable>
+        <field>AXF_OBJ_CreditCard__c.AXF_CC_NUM_ClosingDay__c</field>
+        <readable>true</readable>
+    </fieldPermissions>
+    <fieldPermissions>
+        <editable>false</editable>
+        <field>AXF_OBJ_CreditCard__c.AXF_CC_NUM_DueDay__c</field>
+        <readable>true</readable>
+    </fieldPermissions>
     <hasActivationRequired>false</hasActivationRequired>
     <label>Axon - Lancamento financeiro</label>
     <objectPermissions>
@@ -646,11 +685,11 @@
         <viewAllRecords>false</viewAllRecords>
     </objectPermissions>
     <tabSettings>
-        <tab>AXF_CT_BankStatement</tab>
+        <tab>AXF_OBJ_BankAccount__c</tab>
         <visibility>Visible</visibility>
     </tabSettings>
     <tabSettings>
-        <tab>AXF_CT_CardStatement</tab>
+        <tab>AXF_OBJ_CreditCard__c</tab>
         <visibility>Visible</visibility>
     </tabSettings>
     <tabSettings>
