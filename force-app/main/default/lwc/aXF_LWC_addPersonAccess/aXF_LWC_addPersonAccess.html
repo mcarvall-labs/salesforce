@@ -1,0 +1,274 @@
+<template>
+  <lightning-card title={labels.title} icon-name="standard:user">
+    <div class="slds-var-p-horizontal_medium slds-var-p-bottom_medium">
+      <p
+        class="slds-text-body_small slds-text-color_weak slds-var-m-bottom_small"
+      >
+        {labels.subtitle}
+      </p>
+
+      <template lwc:if={canEdit}>
+        <!-- FORM -->
+        <template lwc:if={isForm}>
+          <h2
+            class="slds-text-heading_small slds-var-m-bottom_xx-small"
+            tabindex="-1"
+            data-step-heading
+          >
+            {stepTitle}
+          </h2>
+          <p
+            class="slds-text-body_small slds-text-color_weak slds-var-m-bottom_x-small"
+          >
+            {stepOfLabel}
+          </p>
+          <lightning-progress-indicator
+            current-step={stepIndex}
+            type="base"
+            aria-hidden="true"
+          >
+            <lightning-progress-step
+              label={labels.stepPerson}
+              value="0"
+            ></lightning-progress-step>
+            <lightning-progress-step
+              label={labels.stepUser}
+              value="1"
+            ></lightning-progress-step>
+            <lightning-progress-step
+              label={labels.stepScope}
+              value="2"
+            ></lightning-progress-step>
+            <lightning-progress-step
+              label={labels.stepReview}
+              value="3"
+            ></lightning-progress-step>
+          </lightning-progress-indicator>
+
+          <div class="slds-var-m-top_medium">
+            <template lwc:if={onPerson}>
+              <lightning-record-picker
+                label={labels.personLabel}
+                placeholder={labels.personLabel}
+                object-api-name="Account"
+                onchange={handlePerson}
+              ></lightning-record-picker>
+              <lightning-input
+                label={labels.nameLabel}
+                data-field="name"
+                value={form.name}
+                onchange={handleField}
+                class="slds-var-m-top_small"
+              ></lightning-input>
+            </template>
+
+            <template lwc:if={onUser}>
+              <lightning-radio-group
+                label={labels.modeLabel}
+                type="radio"
+                options={modeOptions}
+                value={form.mode}
+                data-field="mode"
+                onchange={handleField}
+              ></lightning-radio-group>
+
+              <template lwc:if={isCreate}>
+                <lightning-input
+                  type="email"
+                  label={labels.emailLabel}
+                  data-field="email"
+                  value={form.email}
+                  onchange={handleField}
+                  required
+                  class="slds-var-m-top_small"
+                ></lightning-input>
+                <template lwc:if={licenseBlocked}>
+                  <p class="slds-text-color_error" role="alert">
+                    {labels.licenseWarn}
+                  </p>
+                </template>
+              </template>
+
+              <template lwc:if={isLink}>
+                <lightning-input
+                  type="search"
+                  label={labels.searchUser}
+                  value={userSearch}
+                  onchange={handleUserSearch}
+                  class="slds-var-m-top_small"
+                ></lightning-input>
+                <lightning-radio-group
+                  label={labels.modeLink}
+                  type="radio"
+                  options={userOptions}
+                  value={form.existingUserId}
+                  data-field="existingUserId"
+                  onchange={handleField}
+                ></lightning-radio-group>
+              </template>
+            </template>
+
+            <template lwc:if={onScope}>
+              <lightning-radio-group
+                label={labels.scopeLabel}
+                type="radio"
+                options={scopeOptions}
+                value={form.scope}
+                data-field="scope"
+                onchange={handleField}
+              ></lightning-radio-group>
+            </template>
+
+            <template lwc:if={onReview}>
+              <dl class="slds-dl_horizontal">
+                <dt class="slds-dl_horizontal__label">{labels.personLabel}</dt>
+                <dd class="slds-dl_horizontal__detail">{form.name}</dd>
+                <dt class="slds-dl_horizontal__label">{labels.modeLabel}</dt>
+                <dd class="slds-dl_horizontal__detail">{modeLabelText}</dd>
+                <template lwc:if={isCreate}>
+                  <dt class="slds-dl_horizontal__label">{labels.emailLabel}</dt>
+                  <dd class="slds-dl_horizontal__detail">{form.email}</dd>
+                </template>
+                <dt class="slds-dl_horizontal__label">{labels.scopeLabel}</dt>
+                <dd class="slds-dl_horizontal__detail">{scopeLabelText}</dd>
+              </dl>
+            </template>
+          </div>
+
+          <div class="slds-var-m-top_medium">
+            <lightning-button
+              label={labels.back}
+              onclick={handleBack}
+              disabled={isFirstStep}
+            ></lightning-button>
+            <template lwc:if={isLastStep}>
+              <lightning-button
+                class="slds-var-m-left_x-small"
+                variant="brand"
+                label={labels.confirm}
+                onclick={handleConfirm}
+              ></lightning-button>
+            </template>
+            <template lwc:else>
+              <lightning-button
+                class="slds-var-m-left_x-small"
+                variant="brand"
+                label={labels.next}
+                onclick={handleNext}
+                disabled={canAdvanceDisabled}
+              ></lightning-button>
+            </template>
+          </div>
+        </template>
+
+        <!-- RUNNING / DONE / FAILED / STALLED -->
+        <template lwc:if={isRunning}>
+          <div role="status" aria-live="polite" tabindex="-1" data-feedback>
+            <lightning-spinner
+              size="small"
+              alternative-text={labels.running}
+            ></lightning-spinner>
+            <p class="slds-var-m-top_small">{feedback}</p>
+            <template lwc:if={status}>
+              <p class="slds-text-body_small slds-text-color_weak">
+                {labels.statusStep}: {statusStepText}
+              </p>
+            </template>
+          </div>
+          <lightning-button
+            label={labels.leave}
+            onclick={handleLeave}
+          ></lightning-button>
+        </template>
+
+        <template lwc:if={isDone}>
+          <div role="status" tabindex="-1" data-feedback>
+            <p class="slds-text-color_success">{feedback}</p>
+            <dl class="slds-dl_horizontal slds-var-m-top_x-small">
+              <template lwc:if={summaryName}>
+                <dt class="slds-dl_horizontal__label">{labels.personLabel}</dt>
+                <dd class="slds-dl_horizontal__detail">{summaryName}</dd>
+              </template>
+              <dt class="slds-dl_horizontal__label">{labels.scopeLabel}</dt>
+              <dd class="slds-dl_horizontal__detail">{scopeLabelText}</dd>
+              <template lwc:if={linkedUserId}>
+                <dt class="slds-dl_horizontal__label">{labels.linkedUser}</dt>
+                <dd class="slds-dl_horizontal__detail">{linkedUserId}</dd>
+              </template>
+            </dl>
+          </div>
+          <lightning-button
+            label={labels.close}
+            onclick={handleCancel}
+          ></lightning-button>
+        </template>
+
+        <!-- Unknown outcome: the server job may still be running, so the operation
+             is neither reported as failed nor left loading forever. -->
+        <template lwc:if={isStalled}>
+          <div role="status" tabindex="-1" data-feedback>
+            <p>{feedback}</p>
+            <template lwc:if={status}>
+              <p class="slds-text-body_small slds-text-color_weak">
+                {labels.statusStep}: {statusStepText}
+              </p>
+            </template>
+          </div>
+          <lightning-button
+            variant="brand"
+            label={labels.retry}
+            onclick={handleRetry}
+          ></lightning-button>
+          <lightning-button
+            class="slds-var-m-left_x-small"
+            label={leaveLabel}
+            onclick={handleLeave}
+          ></lightning-button>
+          <template lwc:if={showResumeLeaveHint}>
+            <p
+              class="slds-text-body_small slds-text-color_weak slds-var-m-top_x-small"
+            >
+              {labels.retry}: {labels.resumeHint} · {leaveLabel}:
+              {labels.leaveHint}
+            </p>
+          </template>
+        </template>
+
+        <template lwc:if={isFailed}>
+          <p
+            class="slds-text-color_error"
+            role="alert"
+            tabindex="-1"
+            data-feedback
+          >
+            {feedback}
+          </p>
+          <template lwc:if={canRetry}>
+            <lightning-button
+              variant="brand"
+              label={labels.retry}
+              onclick={handleRetry}
+            ></lightning-button>
+          </template>
+          <lightning-button
+            class="slds-var-m-left_x-small"
+            label={leaveLabel}
+            onclick={handleLeave}
+          ></lightning-button>
+          <template lwc:if={showResumeLeaveHint}>
+            <p
+              class="slds-text-body_small slds-text-color_weak slds-var-m-top_x-small"
+            >
+              {labels.retry}: {labels.resumeHint} · {leaveLabel}:
+              {labels.leaveHint}
+            </p>
+          </template>
+        </template>
+      </template>
+
+      <template lwc:else>
+        <p role="status">{labels.forbidden}</p>
+      </template>
+    </div>
+  </lightning-card>
+</template>

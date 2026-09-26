@@ -1,147 +1,244 @@
+/**
+ * @description Covers AXF_CLS_CTRL_Category. Runs as a Standard User with AXF_PS_User because the
+ * controller queries WITH USER_MODE and needs FLS on the Category custom fields.
+ */
 @IsTest
 private class AXF_CLS_CTRL_CategoryTest {
+  private static final String USER_KEY = 'category';
 
-    @TestSetup
-    static void setupData() {
-        Map<String, Schema.RecordTypeInfo> catRtMap = Schema.SObjectType.AXF_OBJ_Category__c.getRecordTypeInfosByDeveloperName();
-        Id expenseRtId = catRtMap.containsKey('AXF_CAT_RT_Expense') ? catRtMap.get('AXF_CAT_RT_Expense').getRecordTypeId() : null;
-        Id revenueRtId = catRtMap.containsKey('AXF_CAT_RT_Revenue') ? catRtMap.get('AXF_CAT_RT_Revenue').getRecordTypeId() : null;
+  @TestSetup
+  static void setupData() {
+    AXF_CLS_AccountCardTestFactory.createUser(USER_KEY, false);
 
-        List<AXF_OBJ_Category__c> categories = new List<AXF_OBJ_Category__c>();
+    AXF_OBJ_Category__c housing = AXF_CLS_AccountCardTestFactory.newCategory(
+      'Moradia',
+      'AXF_CAT_RT_Expense',
+      null
+    );
+    AXF_OBJ_Category__c food = AXF_CLS_AccountCardTestFactory.newCategory(
+      'Alimentação RT',
+      'AXF_CAT_RT_Expense',
+      null
+    );
+    AXF_OBJ_Category__c salary = AXF_CLS_AccountCardTestFactory.newCategory(
+      'Salário RT',
+      'AXF_CAT_RT_Revenue',
+      null
+    );
+    insert new List<AXF_OBJ_Category__c>{ housing, food, salary };
+    insert AXF_CLS_AccountCardTestFactory.newCategory(
+      'Aluguel',
+      'AXF_CAT_RT_Expense',
+      housing.Id
+    );
+  }
 
-        if (expenseRtId != null) {
-            categories.add(new AXF_OBJ_Category__c(
-                Name = 'Alimentação RT',
-                RecordTypeId = expenseRtId
-            ));
-        } else {
-            categories.add(new AXF_OBJ_Category__c(
-                Name = 'Alimentação Picklist',
-                AXF_CAT_PKL_Type__c = 'DESPESA'
-            ));
-        }
+  private static User testUser() {
+    return AXF_CLS_AccountCardTestFactory.getUser(USER_KEY);
+  }
 
-        if (revenueRtId != null) {
-            categories.add(new AXF_OBJ_Category__c(
-                Name = 'Salário RT',
-                RecordTypeId = revenueRtId
-            ));
-        } else {
-            categories.add(new AXF_OBJ_Category__c(
-                Name = 'Salário Picklist',
-                AXF_CAT_PKL_Type__c = 'RECEITA'
-            ));
-        }
+  private static AXF_CLS_CTRL_Category.CategoryCreationDTO dto(
+    String name,
+    String parentId,
+    String recordType
+  ) {
+    AXF_CLS_CTRL_Category.CategoryCreationDTO dto = new AXF_CLS_CTRL_Category.CategoryCreationDTO();
+    dto.name = name;
+    dto.parentId = parentId;
+    dto.recordTypeDeveloperName = recordType;
+    return dto;
+  }
 
-        insert categories;
+  private static Boolean createThrows(
+    AXF_CLS_CTRL_Category.CategoryCreationDTO dto
+  ) {
+    try {
+      AXF_CLS_CTRL_Category.createCategory(dto);
+    } catch (AuraHandledException e) {
+      return true;
+    }
+    return false;
+  }
+
+  @IsTest
+  static void testGetCategories() {
+    List<AXF_OBJ_Category__c> expenseCats;
+    List<AXF_OBJ_Category__c> revenueCats;
+    List<AXF_OBJ_Category__c> byRecordTypeName;
+    System.runAs(testUser()) {
+      Test.startTest();
+      expenseCats = AXF_CLS_CTRL_Category.getCategories('DESPESA');
+      revenueCats = AXF_CLS_CTRL_Category.getCategories('Revenue');
+      byRecordTypeName = AXF_CLS_CTRL_Category.getCategories(
+        'AXF_CAT_RT_Expense'
+      );
+      Test.stopTest();
     }
 
-    @IsTest
-    static void testGetCategories() {
-        Test.startTest();
-        List<AXF_OBJ_Category__c> expenseCats = AXF_CLS_CTRL_Category.getCategories('DESPESA');
-        List<AXF_OBJ_Category__c> revenueCats = AXF_CLS_CTRL_Category.getCategories('RECEITA');
-        Test.stopTest();
+    Assert.areEqual(
+      3,
+      expenseCats.size(),
+      'Deveria retornar as categorias de despesa'
+    );
+    Assert.areEqual(
+      1,
+      revenueCats.size(),
+      'Deveria retornar as categorias de receita'
+    );
+    Assert.areEqual('Salário RT', revenueCats[0].Name);
+    Assert.areEqual(
+      3,
+      byRecordTypeName.size(),
+      'DeveloperName do RecordType também deve ser aceito'
+    );
+  }
 
-        System.assertNotEquals(0, expenseCats.size(), 'Deveria retornar categorias de despesa');
-        System.assertNotEquals(0, revenueCats.size(), 'Deveria retornar categorias de receita');
+  @IsTest
+  static void testGetCategoryOptions() {
+    List<AXF_CLS_CTRL_Category.CategoryOptionDTO> options;
+    System.runAs(testUser()) {
+      Test.startTest();
+      options = AXF_CLS_CTRL_Category.getCategoryOptions('AXF_CAT_RT_Expense');
+      Test.stopTest();
     }
 
-    @IsTest
-    static void testGetCategoryOptions() {
-        Test.startTest();
-        List<AXF_CLS_CTRL_Category.CategoryOptionDTO> options = AXF_CLS_CTRL_Category.getCategoryOptions('AXF_CAT_RT_Expense');
-        Test.stopTest();
+    Set<String> labels = new Set<String>();
+    for (AXF_CLS_CTRL_Category.CategoryOptionDTO option : options) {
+      labels.add(option.displayLabel);
+    }
+    Assert.areEqual(
+      new Set<String>{ 'Alimentação RT', 'Moradia > Aluguel' },
+      labels,
+      'Categorias-pai com filhas não são selecionáveis'
+    );
+  }
 
-        System.assertNotEquals(null, options, 'Lista de opções de categoria não deve ser nula');
+  @IsTest
+  static void testGetTopLevelCategoryOptions() {
+    List<AXF_CLS_CTRL_Category.CategoryOptionDTO> expenseOptions;
+    List<AXF_CLS_CTRL_Category.CategoryOptionDTO> revenueOptions;
+    System.runAs(testUser()) {
+      Test.startTest();
+      expenseOptions = AXF_CLS_CTRL_Category.getTopLevelCategoryOptions(
+        'AXF_CAT_RT_Expense'
+      );
+      revenueOptions = AXF_CLS_CTRL_Category.getTopLevelCategoryOptions(
+        'AXF_CAT_RT_Revenue'
+      );
+      Test.stopTest();
     }
 
-    @IsTest
-    static void testGetTopLevelCategoryOptions() {
-        Test.startTest();
-        List<AXF_CLS_CTRL_Category.CategoryOptionDTO> expenseOptions =
-            AXF_CLS_CTRL_Category.getTopLevelCategoryOptions('AXF_CAT_RT_Expense');
-        List<AXF_CLS_CTRL_Category.CategoryOptionDTO> revenueOptions =
-            AXF_CLS_CTRL_Category.getTopLevelCategoryOptions('AXF_CAT_RT_Revenue');
-        Test.stopTest();
+    Assert.areEqual(
+      2,
+      expenseOptions.size(),
+      'Somente categorias de primeiro nível'
+    );
+    Assert.areEqual('Alimentação RT', expenseOptions[0].displayLabel);
+    Assert.areEqual('Moradia', expenseOptions[1].displayLabel);
+    Assert.areEqual(1, revenueOptions.size());
+  }
 
-        System.assertNotEquals(null, expenseOptions, 'Lista de categorias-pai de despesa não deve ser nula');
-        System.assertNotEquals(null, revenueOptions, 'Lista de categorias-pai de receita não deve ser nula');
+  @IsTest
+  static void testCreateCategoryExpenseWithoutParent() {
+    AXF_CLS_CTRL_Category.CategoryOptionDTO result;
+    System.runAs(testUser()) {
+      Test.startTest();
+      result = AXF_CLS_CTRL_Category.createCategory(
+        dto(' Assinaturas ', null, 'DESPESA')
+      );
+      Test.stopTest();
     }
 
-    @IsTest
-    static void testCreateCategoryExpenseWithoutParent() {
-        AXF_CLS_CTRL_Category.CategoryCreationDTO dto = new AXF_CLS_CTRL_Category.CategoryCreationDTO();
-        dto.name = 'Assinaturas';
-        dto.recordTypeDeveloperName = 'AXF_CAT_RT_Expense';
+    Assert.isNotNull(result.id, 'Deveria retornar o Id da categoria criada');
+    Assert.areEqual(
+      'Assinaturas',
+      result.displayLabel,
+      'Rótulo deveria ser apenas o nome quando não há categoria pai'
+    );
+    AXF_OBJ_Category__c inserted = [
+      SELECT Id, RecordType.DeveloperName, AXF_CAT_LKP_Parent__c
+      FROM AXF_OBJ_Category__c
+      WHERE Id = :result.id
+    ];
+    Assert.areEqual(
+      'AXF_CAT_RT_Expense',
+      inserted.RecordType.DeveloperName,
+      'RecordType deveria ser de Despesa'
+    );
+    Assert.isNull(
+      inserted.AXF_CAT_LKP_Parent__c,
+      'Não deveria ter categoria pai'
+    );
+  }
 
-        Test.startTest();
-        AXF_CLS_CTRL_Category.CategoryOptionDTO result = AXF_CLS_CTRL_Category.createCategory(dto);
-        Test.stopTest();
-
-        System.assertNotEquals(null, result.id, 'Deveria retornar o Id da categoria criada');
-        System.assertEquals('Assinaturas', result.displayLabel, 'Rótulo deveria ser apenas o nome quando não há categoria pai');
-
-        AXF_OBJ_Category__c inserted = [SELECT Id, Name, RecordType.DeveloperName, AXF_CAT_LKP_Parent__c FROM AXF_OBJ_Category__c WHERE Id = :result.id];
-        System.assertEquals('AXF_CAT_RT_Expense', inserted.RecordType.DeveloperName, 'RecordType deveria ser de Despesa');
-        System.assertEquals(null, inserted.AXF_CAT_LKP_Parent__c, 'Não deveria ter categoria pai');
+  @IsTest
+  static void testCreateCategoryRevenueWithParent() {
+    AXF_OBJ_Category__c parent = [
+      SELECT Id, Name
+      FROM AXF_OBJ_Category__c
+      WHERE Name = 'Salário RT'
+    ];
+    AXF_CLS_CTRL_Category.CategoryOptionDTO result;
+    System.runAs(testUser()) {
+      Test.startTest();
+      result = AXF_CLS_CTRL_Category.createCategory(
+        dto('Freelance', parent.Id, 'RECEITA')
+      );
+      Test.stopTest();
     }
 
-    @IsTest
-    static void testCreateCategoryRevenueWithParent() {
-        AXF_OBJ_Category__c parent = [SELECT Id, Name FROM AXF_OBJ_Category__c WHERE RecordType.DeveloperName = 'AXF_CAT_RT_Revenue' LIMIT 1];
+    Assert.areEqual(
+      parent.Name + ' > Freelance',
+      result.displayLabel,
+      'Rótulo deveria combinar categoria pai e filha'
+    );
+    AXF_OBJ_Category__c inserted = [
+      SELECT Id, RecordType.DeveloperName, AXF_CAT_LKP_Parent__c
+      FROM AXF_OBJ_Category__c
+      WHERE Id = :result.id
+    ];
+    Assert.areEqual(
+      'AXF_CAT_RT_Revenue',
+      inserted.RecordType.DeveloperName,
+      'RecordType deveria ser de Receita'
+    );
+    Assert.areEqual(
+      parent.Id,
+      inserted.AXF_CAT_LKP_Parent__c,
+      'Deveria referenciar a categoria pai informada'
+    );
+  }
 
-        AXF_CLS_CTRL_Category.CategoryCreationDTO dto = new AXF_CLS_CTRL_Category.CategoryCreationDTO();
-        dto.name = 'Freelance';
-        dto.parentId = parent.Id;
-        dto.recordTypeDeveloperName = 'AXF_CAT_RT_Revenue';
-
-        Test.startTest();
-        AXF_CLS_CTRL_Category.CategoryOptionDTO result = AXF_CLS_CTRL_Category.createCategory(dto);
-        Test.stopTest();
-
-        System.assertNotEquals(null, result.id, 'Deveria retornar o Id da categoria criada');
-        System.assertEquals(parent.Name + ' > Freelance', result.displayLabel, 'Rótulo deveria combinar categoria pai e filha');
-
-        AXF_OBJ_Category__c inserted = [SELECT Id, RecordType.DeveloperName, AXF_CAT_LKP_Parent__c FROM AXF_OBJ_Category__c WHERE Id = :result.id];
-        System.assertEquals('AXF_CAT_RT_Revenue', inserted.RecordType.DeveloperName, 'RecordType deveria ser de Receita');
-        System.assertEquals(parent.Id, inserted.AXF_CAT_LKP_Parent__c, 'Deveria referenciar a categoria pai informada');
+  @IsTest
+  static void testCreateCategoryValidationErrors() {
+    Id accountId;
+    System.runAs(new User(Id = UserInfo.getUserId())) {
+      Account acc = AXF_CLS_AccountCardTestFactory.newAccount('Conta Qualquer');
+      insert acc;
+      accountId = acc.Id;
+    }
+    Integer failures = 0;
+    System.runAs(testUser()) {
+      Test.startTest();
+      failures += createThrows(null) ? 1 : 0;
+      failures += createThrows(dto('', null, 'AXF_CAT_RT_Expense')) ? 1 : 0;
+      failures += createThrows(dto('Categoria', null, 'INEXISTENTE')) ? 1 : 0;
+      failures += createThrows(dto('Categoria', 'not-a-valid-id', 'Expense'))
+        ? 1
+        : 0;
+      failures += createThrows(dto('Categoria', accountId, 'Expense')) ? 1 : 0;
+      Test.stopTest();
     }
 
-    @IsTest
-    static void testCreateCategoryBlankNameThrows() {
-        AXF_CLS_CTRL_Category.CategoryCreationDTO dto = new AXF_CLS_CTRL_Category.CategoryCreationDTO();
-        dto.name = '';
-        dto.recordTypeDeveloperName = 'AXF_CAT_RT_Expense';
-
-        Boolean threw = false;
-        Test.startTest();
-        try {
-            AXF_CLS_CTRL_Category.createCategory(dto);
-        } catch (AuraHandledException e) {
-            threw = true;
-        }
-        Test.stopTest();
-
-        System.assert(threw, 'Deveria lançar exceção quando o nome da categoria está em branco');
-    }
-
-    @IsTest
-    static void testCreateCategoryInvalidParentThrows() {
-        AXF_CLS_CTRL_Category.CategoryCreationDTO dto = new AXF_CLS_CTRL_Category.CategoryCreationDTO();
-        dto.name = 'Categoria Inválida';
-        dto.parentId = 'not-a-valid-id';
-        dto.recordTypeDeveloperName = 'AXF_CAT_RT_Expense';
-
-        Boolean threw = false;
-        Test.startTest();
-        try {
-            AXF_CLS_CTRL_Category.createCategory(dto);
-        } catch (AuraHandledException e) {
-            threw = true;
-        }
-        Test.stopTest();
-
-        System.assert(threw, 'Deveria lançar exceção quando o Id da categoria pai é inválido');
-    }
+    Assert.areEqual(
+      5,
+      failures,
+      'Todas as entradas inválidas devem lançar AuraHandledException'
+    );
+    Assert.areEqual(
+      0,
+      [SELECT COUNT() FROM AXF_OBJ_Category__c WHERE Name = 'Categoria'],
+      'Nada deve ser criado'
+    );
+  }
 }

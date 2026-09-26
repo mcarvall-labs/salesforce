@@ -1,9 +1,13 @@
-<?xml version="1.0" encoding="UTF-8"?>
+<?xml version="1.0" encoding="UTF-8" ?>
 <PermissionSet xmlns="http://soap.sforce.com/2006/04/metadata">
     <applicationVisibilities>
         <application>AXF_CA_FinanceApp</application>
         <visible>true</visible>
     </applicationVisibilities>
+    <classAccesses>
+        <apexClass>AXF_CLS_CTRL_HomeDashboard</apexClass>
+        <enabled>true</enabled>
+    </classAccesses>
     <classAccesses>
         <apexClass>AXF_CLS_CTRL_AccountLookup</apexClass>
         <enabled>true</enabled>
@@ -66,7 +70,8 @@
     </classAccesses>
     <externalCredentialPrincipalAccesses>
         <enabled>true</enabled>
-        <externalCredentialPrincipal>AXF_EXC_Pluggy-AXF_Pluggy_Principal</externalCredentialPrincipal>
+        <externalCredentialPrincipal
+    >AXF_EXC_Pluggy-AXF_Pluggy_Principal</externalCredentialPrincipal>
     </externalCredentialPrincipalAccesses>
     <fieldPermissions>
         <editable>true</editable>
@@ -85,7 +90,8 @@
     </fieldPermissions>
     <fieldPermissions>
         <editable>true</editable>
-        <field>AXF_OBJ_BankAccountTransaction__c.AXF_BAT_TXT_Description__c</field>
+        <field
+    >AXF_OBJ_BankAccountTransaction__c.AXF_BAT_TXT_Description__c</field>
         <readable>true</readable>
     </fieldPermissions>
     <fieldPermissions>
@@ -235,7 +241,8 @@
     </fieldPermissions>
     <fieldPermissions>
         <editable>true</editable>
-        <field>AXF_OBJ_CreditCardInvoice__c.AXF_CCI_EXI_PluggyInvoiceId__c</field>
+        <field
+    >AXF_OBJ_CreditCardInvoice__c.AXF_CCI_EXI_PluggyInvoiceId__c</field>
         <readable>true</readable>
     </fieldPermissions>
     <fieldPermissions>
@@ -270,12 +277,14 @@
     </fieldPermissions>
     <fieldPermissions>
         <editable>true</editable>
-        <field>AXF_OBJ_CreditCardTransaction__c.AXF_CCT_LKP_CreditCardInvoice__c</field>
+        <field
+    >AXF_OBJ_CreditCardTransaction__c.AXF_CCT_LKP_CreditCardInvoice__c</field>
         <readable>true</readable>
     </fieldPermissions>
     <fieldPermissions>
         <editable>true</editable>
-        <field>AXF_OBJ_CreditCardTransaction__c.AXF_CCT_TXT_Description__c</field>
+        <field
+    >AXF_OBJ_CreditCardTransaction__c.AXF_CCT_TXT_Description__c</field>
         <readable>true</readable>
     </fieldPermissions>
     <fieldPermissions>
@@ -335,17 +344,20 @@
     </fieldPermissions>
     <fieldPermissions>
         <editable>true</editable>
-        <field>AXF_OBJ_InstallmentGroup__c.AXF_IG_DAT_AdjustmentAnniversary__c</field>
+        <field
+    >AXF_OBJ_InstallmentGroup__c.AXF_IG_DAT_AdjustmentAnniversary__c</field>
         <readable>true</readable>
     </fieldPermissions>
     <fieldPermissions>
         <editable>true</editable>
-        <field>AXF_OBJ_InstallmentGroup__c.AXF_IG_DAT_LastAdjustmentDate__c</field>
+        <field
+    >AXF_OBJ_InstallmentGroup__c.AXF_IG_DAT_LastAdjustmentDate__c</field>
         <readable>true</readable>
     </fieldPermissions>
     <fieldPermissions>
         <editable>true</editable>
-        <field>AXF_OBJ_InstallmentGroup__c.AXF_IG_PCT_MonthlyAdjustmentRate__c</field>
+        <field
+    >AXF_OBJ_InstallmentGroup__c.AXF_IG_PCT_MonthlyAdjustmentRate__c</field>
         <readable>true</readable>
     </fieldPermissions>
     <fieldPermissions>
@@ -425,17 +437,20 @@
     </fieldPermissions>
     <fieldPermissions>
         <editable>true</editable>
-        <field>AXF_OBJ_PluggyConnection__c.AXF_CON_DT_LastSyncDatetime__c</field>
+        <field
+    >AXF_OBJ_PluggyConnection__c.AXF_CON_DT_LastSyncDatetime__c</field>
         <readable>true</readable>
     </fieldPermissions>
     <fieldPermissions>
         <editable>true</editable>
-        <field>AXF_OBJ_PluggyConnection__c.AXF_CON_TXT_ExecutionStatus__c</field>
+        <field
+    >AXF_OBJ_PluggyConnection__c.AXF_CON_TXT_ExecutionStatus__c</field>
         <readable>true</readable>
     </fieldPermissions>
     <fieldPermissions>
         <editable>true</editable>
-        <field>AXF_OBJ_PluggyConnection__c.AXF_CON_TXT_SyncErrorMessage__c</field>
+        <field
+    >AXF_OBJ_PluggyConnection__c.AXF_CON_TXT_SyncErrorMessage__c</field>
         <readable>true</readable>
     </fieldPermissions>
     <fieldPermissions>
@@ -446,6 +461,129 @@
     <fieldPermissions>
         <editable>true</editable>
         <field>Account.AXF_ACC_EXI_CPF__c</field>
+        <readable>true</readable>
+    </fieldPermissions>
+    <fieldPermissions>
+        <editable>true</editable>
+        <field>AXF_OBJ_BankAccountTransaction__c.AXF_BAT_LKP_CashFlow__c</field>
+        <readable>true</readable>
+    </fieldPermissions>
+    <fieldPermissions>
+        <editable>true</editable>
+        <field
+    >AXF_OBJ_BankAccountTransaction__c.AXF_BAT_PKL_ReconciliationStatus__c</field>
+        <readable>true</readable>
+    </fieldPermissions>
+    <fieldPermissions>
+        <editable>true</editable>
+        <field>AXF_OBJ_BankAccount__c.AXF_BA_DT_LastTransactionSync__c</field>
+        <readable>true</readable>
+    </fieldPermissions>
+    <fieldPermissions>
+        <editable>true</editable>
+        <field>AXF_OBJ_CashFlow__c.AXF_CF_DAT_DueDate__c</field>
+        <readable>true</readable>
+    </fieldPermissions>
+    <fieldPermissions>
+        <editable>true</editable>
+        <field>AXF_OBJ_CashFlow__c.AXF_CF_DAT_PaymentDate__c</field>
+        <readable>true</readable>
+    </fieldPermissions>
+    <fieldPermissions>
+        <editable>true</editable>
+        <field>AXF_OBJ_CashFlow__c.AXF_CF_DAT_PurchaseDate__c</field>
+        <readable>true</readable>
+    </fieldPermissions>
+    <fieldPermissions>
+        <editable>true</editable>
+        <field>AXF_OBJ_CashFlow__c.AXF_CF_LKP_InstallmentGroup__c</field>
+        <readable>true</readable>
+    </fieldPermissions>
+    <fieldPermissions>
+        <editable>true</editable>
+        <field>AXF_OBJ_CashFlow__c.AXF_CF_NUM_CurrentInstallment__c</field>
+        <readable>true</readable>
+    </fieldPermissions>
+    <fieldPermissions>
+        <editable>true</editable>
+        <field>AXF_OBJ_CashFlow__c.AXF_CF_NUM_TotalInstallments__c</field>
+        <readable>true</readable>
+    </fieldPermissions>
+    <fieldPermissions>
+        <editable>true</editable>
+        <field>AXF_OBJ_CashFlow__c.AXF_CF_PKL_ReconciliationStatus__c</field>
+        <readable>true</readable>
+    </fieldPermissions>
+    <fieldPermissions>
+        <editable>true</editable>
+        <field>AXF_OBJ_CashFlow__c.AXF_CF_PKL_Status__c</field>
+        <readable>true</readable>
+    </fieldPermissions>
+    <fieldPermissions>
+        <editable>true</editable>
+        <field>AXF_OBJ_CreditCardTransaction__c.AXF_CCT_LKP_CashFlow__c</field>
+        <readable>true</readable>
+    </fieldPermissions>
+    <fieldPermissions>
+        <editable>true</editable>
+        <field
+    >AXF_OBJ_CreditCardTransaction__c.AXF_CCT_PKL_ReconciliationStatus__c</field>
+        <readable>true</readable>
+    </fieldPermissions>
+    <fieldPermissions>
+        <editable>true</editable>
+        <field>AXF_OBJ_CreditCard__c.AXF_CC_DT_LastTransactionSync__c</field>
+        <readable>true</readable>
+    </fieldPermissions>
+    <fieldPermissions>
+        <editable>true</editable>
+        <field
+    >AXF_OBJ_InstallmentGroup__c.AXF_IG_CUR_InstallmentAmount__c</field>
+        <readable>true</readable>
+    </fieldPermissions>
+    <fieldPermissions>
+        <editable>true</editable>
+        <field>AXF_OBJ_InstallmentGroup__c.AXF_IG_CUR_TotalAmount__c</field>
+        <readable>true</readable>
+    </fieldPermissions>
+    <fieldPermissions>
+        <editable>true</editable>
+        <field>AXF_OBJ_InstallmentGroup__c.AXF_IG_CUR_TotalPaidAmount__c</field>
+        <readable>true</readable>
+    </fieldPermissions>
+    <fieldPermissions>
+        <editable>true</editable>
+        <field
+    >AXF_OBJ_InstallmentGroup__c.AXF_IG_CUR_TotalRemainingAmount__c</field>
+        <readable>true</readable>
+    </fieldPermissions>
+    <fieldPermissions>
+        <editable>true</editable>
+        <field>AXF_OBJ_InstallmentGroup__c.AXF_IG_DAT_FirstDueDate__c</field>
+        <readable>true</readable>
+    </fieldPermissions>
+    <fieldPermissions>
+        <editable>true</editable>
+        <field
+    >AXF_OBJ_InstallmentGroup__c.AXF_IG_NUM_OverdueInstallmentsCount__c</field>
+        <readable>true</readable>
+    </fieldPermissions>
+    <fieldPermissions>
+        <editable>true</editable>
+        <field
+    >AXF_OBJ_InstallmentGroup__c.AXF_IG_NUM_PaidInstallmentsCount__c</field>
+        <readable>true</readable>
+    </fieldPermissions>
+    <fieldPermissions>
+        <editable>true</editable>
+        <field
+    >AXF_OBJ_InstallmentGroup__c.AXF_IG_NUM_PendingInstallmentsCount__c</field>
+        <readable>true</readable>
+    </fieldPermissions>
+    <fieldPermissions>
+        <editable>true</editable>
+        <field
+    >AXF_OBJ_InstallmentGroup__c.AXF_IG_NUM_TotalInstallments__c</field>
         <readable>true</readable>
     </fieldPermissions>
     <hasActivationRequired>false</hasActivationRequired>
@@ -592,6 +730,10 @@
         <recordType>AXF_OBJ_Category__c.AXF_CAT_RT_Revenue</recordType>
         <visible>true</visible>
     </recordTypeVisibilities>
+    <tabSettings>
+        <tab>AXF_Home</tab>
+        <visibility>Visible</visibility>
+    </tabSettings>
     <tabSettings>
         <tab>AXF_OBJ_BankAccount__c</tab>
         <visibility>Visible</visibility>

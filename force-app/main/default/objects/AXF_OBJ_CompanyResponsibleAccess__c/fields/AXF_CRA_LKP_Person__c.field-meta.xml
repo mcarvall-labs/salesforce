@@ -1,0 +1,13 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<CustomField xmlns="http://soap.sforce.com/2006/04/metadata">
+    <fullName>AXF_CRA_LKP_Person__c</fullName>
+    <label>Pessoa responsável</label>
+    <description
+  >Person Account (Record Type AXF_Person) da pessoa responsável. Não é o User nem o OwnerId. AXF-83.</description>
+    <type>Lookup</type>
+    <referenceTo>Account</referenceTo>
+    <relationshipLabel>Acessos de Responsável (Pessoa)</relationshipLabel>
+    <relationshipName>AXF_ResponsibleAccessAsPerson</relationshipName>
+    <deleteConstraint>Restrict</deleteConstraint>
+    <required>true</required>
+</CustomField>

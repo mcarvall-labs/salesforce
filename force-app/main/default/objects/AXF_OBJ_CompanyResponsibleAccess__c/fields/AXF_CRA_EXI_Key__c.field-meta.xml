@@ -1,0 +1,13 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<CustomField xmlns="http://soap.sforce.com/2006/04/metadata">
+    <fullName>AXF_CRA_EXI_Key__c</fullName>
+    <label>Chave</label>
+    <description
+  >businessId18:personId18 — garante uma responsabilidade por par pessoa/empresa; repetir ou retomar não duplica (AC6). AXF-83.</description>
+    <type>Text</type>
+    <length>80</length>
+    <required>true</required>
+    <unique>true</unique>
+    <externalId>true</externalId>
+    <caseSensitive>true</caseSensitive>
+</CustomField>

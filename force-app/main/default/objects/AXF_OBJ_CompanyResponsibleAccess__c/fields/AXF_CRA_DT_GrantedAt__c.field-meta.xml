@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<CustomField xmlns="http://soap.sforce.com/2006/04/metadata">
+    <fullName>AXF_CRA_DT_GrantedAt__c</fullName>
+    <label>Concedido em</label>
+    <description
+  >Data e hora da última concessão verificada pelo serviço AXF-83.</description>
+    <type>DateTime</type>
+    <trackHistory>true</trackHistory>
+    <required>false</required>
+</CustomField>

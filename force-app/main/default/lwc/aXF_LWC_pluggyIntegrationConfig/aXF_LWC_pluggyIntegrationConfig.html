@@ -1,0 +1,106 @@
+<template>
+  <lightning-card title={labels.TITLE} icon-name="standard:connected_apps">
+    <div class="slds-p-horizontal_medium slds-p-bottom_medium">
+      <template lwc:if={isLoading}>
+        <lightning-spinner
+          alternative-text="Carregando"
+          size="small"
+        ></lightning-spinner>
+      </template>
+
+      <template lwc:if={isForbidden}>
+        <p class="slds-text-color_weak" role="status">{labels.FORBIDDEN}</p>
+      </template>
+
+      <template lwc:if={isError}>
+        <p class="slds-text-color_error" role="alert">{labels.LOAD_ERROR}</p>
+        <lightning-button
+          label={labels.RETRY}
+          onclick={handleRetry}
+          class="slds-m-top_x-small"
+        ></lightning-button>
+      </template>
+
+      <template lwc:if={isReady}>
+        <div class="pic__grid">
+          <div class="pic__col pic__col_form">
+            <p
+              class="slds-text-body_small slds-text-color_weak slds-m-bottom_small"
+            >
+              {labels.SECRET_HINT}
+            </p>
+
+            <lightning-input
+              class="pic__field"
+              type="text"
+              label={labels.CLIENT_ID}
+              value={clientId}
+              onchange={handleClientIdChange}
+              autocomplete="off"
+            ></lightning-input>
+            <lightning-input
+              class="pic__field"
+              type="password"
+              label={labels.CLIENT_SECRET}
+              value={clientSecret}
+              onchange={handleClientSecretChange}
+              autocomplete="off"
+            ></lightning-input>
+
+            <div
+              class="slds-m-top_x-small slds-grid slds-wrap slds-gutters_x-small"
+            >
+              <lightning-button
+                class="slds-m-around_xx-small"
+                variant="brand"
+                label={labels.SAVE_ACTIVE}
+                title={labels.SAVE_ACTIVE_TITLE}
+                disabled={credentialButtonsDisabled}
+                onclick={handleSaveActive}
+              ></lightning-button>
+            </div>
+          </div>
+
+          <div class="pic__col pic__col_status">
+            <!-- Credential presence badge -->
+            <div class={credentialBadgeClass} role="status" aria-live="polite">
+              <lightning-icon
+                icon-name={credentialBadgeIcon}
+                size="x-small"
+                class="slds-m-right_x-small"
+              ></lightning-icon>
+              {credentialStatusLabel}
+            </div>
+
+            <dl class="slds-dl_horizontal slds-m-top_small">
+              <dt class="slds-dl_horizontal__label">{labels.ACTIVE_SLOT}</dt>
+              <dd class="slds-dl_horizontal__detail">{status.activeSlot}</dd>
+              <dt class="slds-dl_horizontal__label">{labels.CONNECTIONS}</dt>
+              <dd class="slds-dl_horizontal__detail">
+                {status.connectionCount}
+              </dd>
+              <template lwc:if={activeSlotHealth}>
+                <dt class="slds-dl_horizontal__label">{labels.ACTIVE_TEST}</dt>
+                <dd class="slds-dl_horizontal__detail">{activeSlotHealth}</dd>
+              </template>
+            </dl>
+
+            <template lwc:if={busy}>
+              <p class="slds-m-top_small slds-text-color_weak" role="status">
+                {labels.BUSY}
+              </p>
+            </template>
+
+            <template lwc:if={feedback}>
+              <div class="slds-m-top_small" role="status" aria-live="polite">
+                <lightning-formatted-text
+                  value={feedback}
+                ></lightning-formatted-text>
+              </div>
+            </template>
+          </div>
+        </div>
+      </template>
+    </div>
+  </lightning-card>
+</template>

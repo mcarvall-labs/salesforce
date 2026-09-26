@@ -1,0 +1,24 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<CustomField xmlns="http://soap.sforce.com/2006/04/metadata">
+    <fullName>AXF_APV_PKL_CurrentStep__c</fullName>
+    <label>Etapa atual</label>
+    <type>Picklist</type>
+    <required>true</required>
+    <valueSet><restricted>true</restricted><valueSetDefinition><sorted
+      >false</sorted>
+      <value><fullName>CREATE_OR_LINK_PERSON</fullName><default
+        >true</default><label>CREATE_OR_LINK_PERSON</label></value>
+      <value><fullName>CREATE_OR_LINK_USER</fullName><default
+        >false</default><label>CREATE_OR_LINK_USER</label></value>
+      <value><fullName>ASSIGN_ROLE</fullName><default>false</default><label
+        >ASSIGN_ROLE</label></value>
+      <value><fullName>ASSIGN_PSG</fullName><default>false</default><label
+        >ASSIGN_PSG</label></value>
+      <value><fullName>SET_OWNER_SYNC</fullName><default>false</default><label
+        >SET_OWNER_SYNC</label></value>
+      <value><fullName>ACTIVATE</fullName><default>false</default><label
+        >ACTIVATE</label></value>
+      <value><fullName>DONE</fullName><default>false</default><label
+        >DONE</label></value>
+    </valueSetDefinition></valueSet>
+</CustomField>

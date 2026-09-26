@@ -1,13 +1,5 @@
-<?xml version="1.0" encoding="UTF-8"?>
+<?xml version="1.0" encoding="UTF-8" ?>
 <CustomApplication xmlns="http://soap.sforce.com/2006/04/metadata">
-    <actionOverrides>
-        <actionName>Tab</actionName>
-        <content>AXF_HPL_HomePage</content>
-        <formFactor>Large</formFactor>
-        <skipRecordTypeSelect>false</skipRecordTypeSelect>
-        <type>Flexipage</type>
-        <pageOrSobjectType>standard-home</pageOrSobjectType>
-    </actionOverrides>
     <brand>
         <headerColor>#0A192F</headerColor>
         <logo>AxonPersonalFinancesLogo</logo>
@@ -22,7 +14,7 @@
     <isOmniPinnedViewEnabled>false</isOmniPinnedViewEnabled>
     <label>Axon Personal Finances</label>
     <navType>Console</navType>
-    <tabs>standard-home</tabs>
+    <tabs>AXF_Home</tabs>
     <tabs>standard-Account</tabs>
     <tabs>AXF_OBJ_BankInstitution__c</tabs>
     <tabs>AXF_OBJ_BankAccount__c</tabs>
@@ -50,7 +42,7 @@
             <tab>standard-Account</tab>
         </mappings>
         <mappings>
-            <tab>standard-home</tab>
+            <tab>AXF_Home</tab>
         </mappings>
     </workspaceConfig>
 </CustomApplication>

@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<PermissionSetGroup xmlns="http://soap.sforce.com/2006/04/metadata">
+    <description
+  >Axon: permissoes atribuidas pelo provisionamento de acesso do app AXON - Configuration.</description>
+    <hasActivationRequired>false</hasActivationRequired>
+    <label>Axon - Participante</label>
+    <permissionSets>AXF_PS_ReportCurrency</permissionSets>
+    <permissionSets>AXF_PS_User</permissionSets>
+    <status>Updated</status>
+</PermissionSetGroup>

@@ -1,0 +1,22 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<CustomObject xmlns="http://soap.sforce.com/2006/04/metadata">
+    <label>Provisionamento de Acesso</label>
+    <pluralLabel>Provisionamentos de Acesso</pluralLabel>
+    <nameField>
+        <label>Número do Provisionamento</label>
+        <type>AutoNumber</type>
+        <displayFormat>APV-{0000000}</displayFormat>
+    </nameField>
+    <deploymentStatus>Deployed</deploymentStatus>
+    <sharingModel>Private</sharingModel>
+    <enableActivities>false</enableActivities>
+    <enableReports>true</enableReports>
+    <enableHistory>true</enableHistory>
+    <enableBulkApi>true</enableBulkApi>
+    <enableStreamingApi>true</enableStreamingApi>
+    <enableSharing>true</enableSharing>
+    <enableFeeds>false</enableFeeds>
+    <description
+  >Estado durável, por etapa, do fluxo "Adicionar pessoa e dar acesso ao Axon" (AXF-82 / G3-4). Registra a cadeia setup/non-setup encadeada e permite retomada idempotente. Sem PII sensível nem segredo.</description>
+    <visibility>Public</visibility>
+</CustomObject>

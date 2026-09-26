@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<CustomField xmlns="http://soap.sforce.com/2006/04/metadata">
+    <fullName>AXF_CRA_LKP_GrantedUser__c</fullName>
+    <label>User com acesso concedido</label>
+    <description
+  >User elegível que recebeu o membro de Account Team na Business Account. Nulo enquanto a pessoa não tiver User elegível vinculado (AC3). AXF-83.</description>
+    <type>Lookup</type>
+    <trackHistory>true</trackHistory>
+    <referenceTo>User</referenceTo>
+    <relationshipLabel>Acessos de Responsável por Empresa</relationshipLabel>
+    <relationshipName>AXF_CompanyResponsibleAccess</relationshipName>
+    <deleteConstraint>SetNull</deleteConstraint>
+    <required>false</required>
+</CustomField>

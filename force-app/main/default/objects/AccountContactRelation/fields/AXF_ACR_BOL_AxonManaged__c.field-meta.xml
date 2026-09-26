@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<CustomField xmlns="http://soap.sforce.com/2006/04/metadata">
+    <fullName>AXF_ACR_BOL_AxonManaged__c</fullName>
+    <label>Responsabilidade do Axon</label>
+    <description
+  >Marca exclusivamente a AccountContactRelation criada e gerida pelo AXF-83. Relações independentes nunca são adotadas, alteradas ou desativadas.</description>
+    <type>Checkbox</type>
+    <defaultValue>false</defaultValue>
+</CustomField>

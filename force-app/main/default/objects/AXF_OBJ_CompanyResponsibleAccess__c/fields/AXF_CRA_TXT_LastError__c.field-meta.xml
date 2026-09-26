@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<CustomField xmlns="http://soap.sforce.com/2006/04/metadata">
+    <fullName>AXF_CRA_TXT_LastError__c</fullName>
+    <label>Último erro</label>
+    <description
+  >Falha operacional sanitizada da última tentativa, adequada para correção e retomada sem expor dados financeiros ou segredos.</description>
+    <type>Text</type>
+    <trackHistory>true</trackHistory>
+    <length>255</length>
+    <required>false</required>
+</CustomField>

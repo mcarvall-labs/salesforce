@@ -1,4 +1,4 @@
-<?xml version="1.0" encoding="UTF-8"?>
+<?xml version="1.0" encoding="UTF-8" ?>
 <CustomLabels xmlns="http://soap.sforce.com/2006/04/metadata">
     <labels>
         <fullName>AXF_LBL_AllAccountsSyncedSuccess</fullName>
@@ -13,7 +13,8 @@
         <categories>AxonFinance,LWC,Statement</categories>
         <language>en_US</language>
         <protected>false</protected>
-        <shortDescription>Bank Statement All Transactions Filter Option</shortDescription>
+        <shortDescription
+    >Bank Statement All Transactions Filter Option</shortDescription>
         <value>All</value>
     </labels>
     <labels>
@@ -85,7 +86,8 @@
         <categories>AxonFinance,LWC,Statement</categories>
         <language>en_US</language>
         <protected>false</protected>
-        <shortDescription>Credit Card Statement Closing Date Label</shortDescription>
+        <shortDescription
+    >Credit Card Statement Closing Date Label</shortDescription>
         <value>Closing Date</value>
     </labels>
     <labels>
@@ -101,7 +103,8 @@
         <categories>AxonFinance,LWC,Statement</categories>
         <language>en_US</language>
         <protected>false</protected>
-        <shortDescription>Bank Statement Running Balance Column Header</shortDescription>
+        <shortDescription
+    >Bank Statement Running Balance Column Header</shortDescription>
         <value>Balance</value>
     </labels>
     <labels>
@@ -109,7 +112,8 @@
         <categories>AxonFinance,LWC,Statement</categories>
         <language>en_US</language>
         <protected>false</protected>
-        <shortDescription>Bank Statement Category Column Header</shortDescription>
+        <shortDescription
+    >Bank Statement Category Column Header</shortDescription>
         <value>Category</value>
     </labels>
     <labels>
@@ -150,14 +154,16 @@
         <language>en_US</language>
         <protected>false</protected>
         <shortDescription>Connection Synced Success Message</shortDescription>
-        <value>Connection {0} synchronized successfully. {1} accounts updated.</value>
+        <value
+    >Connection {0} synchronized successfully. {1} accounts updated.</value>
     </labels>
     <labels>
         <fullName>AXF_LBL_CreditCardStatementTitle</fullName>
         <categories>AxonFinance,LWC,Statement</categories>
         <language>en_US</language>
         <protected>false</protected>
-        <shortDescription>Credit Card Statement Component Title</shortDescription>
+        <shortDescription
+    >Credit Card Statement Component Title</shortDescription>
         <value>Credit Card Statement</value>
     </labels>
     <labels>
@@ -173,7 +179,8 @@
         <categories>AxonFinance,LWC,Statement</categories>
         <language>en_US</language>
         <protected>false</protected>
-        <shortDescription>Bank Statement Current Month Filter Option</shortDescription>
+        <shortDescription
+    >Bank Statement Current Month Filter Option</shortDescription>
         <value>Current Month</value>
     </labels>
     <labels>
@@ -181,7 +188,8 @@
         <categories>AxonFinance,LWC,Statement</categories>
         <language>en_US</language>
         <protected>false</protected>
-        <shortDescription>Bank Statement Custom Period Filter Option</shortDescription>
+        <shortDescription
+    >Bank Statement Custom Period Filter Option</shortDescription>
         <value>Custom Period</value>
     </labels>
     <labels>
@@ -205,7 +213,8 @@
         <categories>AxonFinance,LWC,Statement</categories>
         <language>en_US</language>
         <protected>false</protected>
-        <shortDescription>Bank Statement Description Filter/Column Label</shortDescription>
+        <shortDescription
+    >Bank Statement Description Filter/Column Label</shortDescription>
         <value>Description</value>
     </labels>
     <labels>
@@ -221,7 +230,8 @@
         <categories>AxonFinance,LWC,Statement</categories>
         <language>en_US</language>
         <protected>false</protected>
-        <shortDescription>Credit Card Statement Due Date Label</shortDescription>
+        <shortDescription
+    >Credit Card Statement Due Date Label</shortDescription>
         <value>Due Date</value>
     </labels>
     <labels>
@@ -237,7 +247,8 @@
         <categories>AxonFinance,LWC,Statement</categories>
         <language>en_US</language>
         <protected>false</protected>
-        <shortDescription>Credit Card Statement Invoice Loading Error</shortDescription>
+        <shortDescription
+    >Credit Card Statement Invoice Loading Error</shortDescription>
         <value>Error loading invoices.</value>
     </labels>
     <labels>
@@ -245,7 +256,8 @@
         <categories>AxonFinance,LWC,Statement</categories>
         <language>en_US</language>
         <protected>false</protected>
-        <shortDescription>Bank Statement Loading Error Message</shortDescription>
+        <shortDescription
+    >Bank Statement Loading Error Message</shortDescription>
         <value>Error loading statement.</value>
     </labels>
     <labels>
@@ -277,7 +289,8 @@
         <categories>AxonFinance,LWC,Statement</categories>
         <language>en_US</language>
         <protected>false</protected>
-        <shortDescription>Bank Statement Filters Section Title</shortDescription>
+        <shortDescription
+    >Bank Statement Filters Section Title</shortDescription>
         <value>Filters</value>
     </labels>
     <labels>
@@ -285,7 +298,8 @@
         <categories>AxonFinance,LWC,Statement</categories>
         <language>en_US</language>
         <protected>false</protected>
-        <shortDescription>Credit Card Statement Invoice Dropdown Label</shortDescription>
+        <shortDescription
+    >Credit Card Statement Invoice Dropdown Label</shortDescription>
         <value>Invoice</value>
     </labels>
     <labels>
@@ -293,7 +307,8 @@
         <categories>AxonFinance,LWC,Statement</categories>
         <language>en_US</language>
         <protected>false</protected>
-        <shortDescription>Bank Statement Last Month Filter Option</shortDescription>
+        <shortDescription
+    >Bank Statement Last Month Filter Option</shortDescription>
         <value>Last Month</value>
     </labels>
     <labels>
@@ -309,7 +324,8 @@
         <categories>AxonFinance,LWC,Statement</categories>
         <language>en_US</language>
         <protected>false</protected>
-        <shortDescription>Bank Statement Max Value Filter Label</shortDescription>
+        <shortDescription
+    >Bank Statement Max Value Filter Label</shortDescription>
         <value>Max Value</value>
     </labels>
     <labels>
@@ -317,7 +333,8 @@
         <categories>AxonFinance,LWC,Statement</categories>
         <language>en_US</language>
         <protected>false</protected>
-        <shortDescription>Bank Statement Min Value Filter Label</shortDescription>
+        <shortDescription
+    >Bank Statement Min Value Filter Label</shortDescription>
         <value>Min Value</value>
     </labels>
     <labels>
@@ -357,7 +374,8 @@
         <categories>AxonFinance,LWC,Statement</categories>
         <language>en_US</language>
         <protected>false</protected>
-        <shortDescription>Credit Card Statement No Invoices Message</shortDescription>
+        <shortDescription
+    >Credit Card Statement No Invoices Message</shortDescription>
         <value>No invoices found for this Credit Card.</value>
     </labels>
     <labels>
@@ -373,7 +391,8 @@
         <categories>AxonFinance,LWC,Statement</categories>
         <language>en_US</language>
         <protected>false</protected>
-        <shortDescription>Bank Statement No Transactions Found Message</shortDescription>
+        <shortDescription
+    >Bank Statement No Transactions Found Message</shortDescription>
         <value>No transactions found for the selected filters.</value>
     </labels>
     <labels>
@@ -405,7 +424,8 @@
         <categories>AxonFinance,LWC,Statement</categories>
         <language>en_US</language>
         <protected>false</protected>
-        <shortDescription>Bank Statement Period Balance Summary Label</shortDescription>
+        <shortDescription
+    >Bank Statement Period Balance Summary Label</shortDescription>
         <value>Period Balance</value>
     </labels>
     <labels>
@@ -413,7 +433,8 @@
         <categories>AxonFinance,LWC,Statement</categories>
         <language>en_US</language>
         <protected>false</protected>
-        <shortDescription>Bank Statement Period End Filter Label</shortDescription>
+        <shortDescription
+    >Bank Statement Period End Filter Label</shortDescription>
         <value>To</value>
     </labels>
     <labels>
@@ -421,7 +442,8 @@
         <categories>AxonFinance,LWC,Statement</categories>
         <language>en_US</language>
         <protected>false</protected>
-        <shortDescription>Bank Statement Period Start Filter Label</shortDescription>
+        <shortDescription
+    >Bank Statement Period Start Filter Label</shortDescription>
         <value>From</value>
     </labels>
     <labels>
@@ -429,7 +451,8 @@
         <categories>AxonFinance,LWC,CashFlow</categories>
         <language>en_US</language>
         <protected>false</protected>
-        <shortDescription>Reconcile With Bank Transaction Option Label</shortDescription>
+        <shortDescription
+    >Reconcile With Bank Transaction Option Label</shortDescription>
         <value>Reconcile with Bank Transaction</value>
     </labels>
     <labels>
@@ -437,7 +460,8 @@
         <categories>AxonFinance,LWC,CashFlow</categories>
         <language>en_US</language>
         <protected>false</protected>
-        <shortDescription>Reconcile With Credit Card Transaction Option Label</shortDescription>
+        <shortDescription
+    >Reconcile With Credit Card Transaction Option Label</shortDescription>
         <value>Reconcile with Credit Card Transaction</value>
     </labels>
     <labels>
@@ -485,7 +509,8 @@
         <categories>AxonFinance,LWC,Statement</categories>
         <language>en_US</language>
         <protected>false</protected>
-        <shortDescription>Bank Statement Transactions Displayed Count Label</shortDescription>
+        <shortDescription
+    >Bank Statement Transactions Displayed Count Label</shortDescription>
         <value>Transactions displayed:</value>
     </labels>
     <labels>
@@ -565,8 +590,10 @@
         <categories>AxonFinance,LWC</categories>
         <language>en_US</language>
         <protected>false</protected>
-        <shortDescription>Sync All Accounts Component Description</shortDescription>
-        <value>Initiate synchronization for all active Pluggy connections.</value>
+        <shortDescription
+    >Sync All Accounts Component Description</shortDescription>
+        <value
+    >Initiate synchronization for all active Pluggy connections.</value>
     </labels>
     <labels>
         <fullName>AXF_LBL_SyncAllAccountsTitle</fullName>
@@ -646,14 +673,16 @@
         <language>en_US</language>
         <protected>false</protected>
         <shortDescription>Syncing Spinner Status Text</shortDescription>
-        <value>Connecting and synchronizing with Open Finance via Pluggy...</value>
+        <value
+    >Connecting and synchronizing with Open Finance via Pluggy...</value>
     </labels>
     <labels>
         <fullName>AXF_LBL_TotalAmount</fullName>
         <categories>AxonFinance,LWC,Statement</categories>
         <language>en_US</language>
         <protected>false</protected>
-        <shortDescription>Credit Card Statement Total Amount Label</shortDescription>
+        <shortDescription
+    >Credit Card Statement Total Amount Label</shortDescription>
         <value>Total Amount</value>
     </labels>
     <labels>
@@ -661,7 +690,8 @@
         <categories>AxonFinance,LWC,Statement</categories>
         <language>en_US</language>
         <protected>false</protected>
-        <shortDescription>Bank Statement Total Credits Summary Label</shortDescription>
+        <shortDescription
+    >Bank Statement Total Credits Summary Label</shortDescription>
         <value>Total Credits</value>
     </labels>
     <labels>
@@ -669,7 +699,8 @@
         <categories>AxonFinance,LWC,Statement</categories>
         <language>en_US</language>
         <protected>false</protected>
-        <shortDescription>Bank Statement Total Debits Summary Label</shortDescription>
+        <shortDescription
+    >Bank Statement Total Debits Summary Label</shortDescription>
         <value>Total Debits</value>
     </labels>
     <labels>
@@ -695,5 +726,482 @@
         <protected>false</protected>
         <shortDescription>Warning Toast Title</shortDescription>
         <value>Synchronization Notice</value>
+    </labels>
+    <labels><fullName>AXF_AddPersonAccess_back</fullName><language
+    >en_US</language><protected>false</protected><shortDescription
+    >AddPersonAccess back</shortDescription><value>Back</value></labels>
+    <labels><fullName>AXF_AddPersonAccess_backToForm</fullName><language
+    >en_US</language><protected>false</protected><shortDescription
+    >AddPersonAccess backToForm</shortDescription><value
+    >Back to the form</value></labels>
+    <labels><fullName>AXF_AddPersonAccess_close</fullName><language
+    >en_US</language><protected>false</protected><shortDescription
+    >AddPersonAccess close</shortDescription><value
+    >Add another person</value></labels>
+    <labels><fullName>AXF_AddPersonAccess_confirm</fullName><language
+    >en_US</language><protected>false</protected><shortDescription
+    >AddPersonAccess confirm</shortDescription><value>Confirm</value></labels>
+    <labels><fullName>AXF_AddPersonAccess_done</fullName><language
+    >en_US</language><protected>false</protected><shortDescription
+    >AddPersonAccess done</shortDescription><value
+    >Access granted.</value></labels>
+    <labels><fullName>AXF_AddPersonAccess_emailLabel</fullName><language
+    >en_US</language><protected>false</protected><shortDescription
+    >AddPersonAccess emailLabel</shortDescription><value>Email</value></labels>
+    <labels><fullName>AXF_AddPersonAccess_failed</fullName><language
+    >en_US</language><protected>false</protected><shortDescription
+    >AddPersonAccess failed</shortDescription><value
+    >Could not finish. Read the message and resume.</value></labels>
+    <labels><fullName>AXF_AddPersonAccess_forbidden</fullName><language
+    >en_US</language><protected>false</protected><shortDescription
+    >AddPersonAccess forbidden</shortDescription><value
+    >You are not authorized to grant Axon access.</value></labels>
+    <labels><fullName>AXF_AddPersonAccess_leave</fullName><language
+    >en_US</language><protected>false</protected><shortDescription
+    >AddPersonAccess leave</shortDescription><value
+    >Leave and continue later</value></labels>
+    <labels><fullName>AXF_AddPersonAccess_leaveHint</fullName><language
+    >en_US</language><protected>false</protected><shortDescription
+    >AddPersonAccess leaveHint</shortDescription><value
+    >Provisioning may keep running on the server. Coming back, resume the same request — nothing is duplicated.</value></labels>
+    <labels><fullName>AXF_AddPersonAccess_licenseWarn</fullName><language
+    >en_US</language><protected>false</protected><shortDescription
+    >AddPersonAccess licenseWarn</shortDescription><value
+    >No Salesforce license is available to create a user.</value></labels>
+    <labels><fullName>AXF_AddPersonAccess_linkedUser</fullName><language
+    >en_US</language><protected>false</protected><shortDescription
+    >AddPersonAccess linkedUser</shortDescription><value
+    >Linked user</value></labels>
+    <labels><fullName>AXF_AddPersonAccess_modeCreate</fullName><language
+    >en_US</language><protected>false</protected><shortDescription
+    >AddPersonAccess modeCreate</shortDescription><value
+    >Create a new user</value></labels>
+    <labels><fullName>AXF_AddPersonAccess_modeLabel</fullName><language
+    >en_US</language><protected>false</protected><shortDescription
+    >AddPersonAccess modeLabel</shortDescription><value
+    >Salesforce user</value></labels>
+    <labels><fullName>AXF_AddPersonAccess_modeLink</fullName><language
+    >en_US</language><protected>false</protected><shortDescription
+    >AddPersonAccess modeLink</shortDescription><value
+    >Link an existing user</value></labels>
+    <labels><fullName>AXF_AddPersonAccess_nameLabel</fullName><language
+    >en_US</language><protected>false</protected><shortDescription
+    >AddPersonAccess nameLabel</shortDescription><value>Name</value></labels>
+    <labels><fullName>AXF_AddPersonAccess_next</fullName><language
+    >en_US</language><protected>false</protected><shortDescription
+    >AddPersonAccess next</shortDescription><value>Next</value></labels>
+    <labels><fullName>AXF_AddPersonAccess_personLabel</fullName><language
+    >en_US</language><protected>false</protected><shortDescription
+    >AddPersonAccess personLabel</shortDescription><value
+    >Person (Person Account)</value></labels>
+    <labels><fullName>AXF_AddPersonAccess_resumeHint</fullName><language
+    >en_US</language><protected>false</protected><shortDescription
+    >AddPersonAccess resumeHint</shortDescription><value
+    >Resumes now and checks whether it already finished.</value></labels>
+    <labels><fullName>AXF_AddPersonAccess_retry</fullName><language
+    >en_US</language><protected>false</protected><shortDescription
+    >AddPersonAccess retry</shortDescription><value>Resume</value></labels>
+    <labels><fullName>AXF_AddPersonAccess_running</fullName><language
+    >en_US</language><protected>false</protected><shortDescription
+    >AddPersonAccess running</shortDescription><value
+    >Provisioning… follow the progress.</value></labels>
+    <labels><fullName>AXF_AddPersonAccess_scopeAll</fullName><language
+    >en_US</language><protected>false</protected><shortDescription
+    >AddPersonAccess scopeAll</shortDescription><value
+    >All Axon data (Financial Manager)</value></labels>
+    <labels><fullName>AXF_AddPersonAccess_scopeLabel</fullName><language
+    >en_US</language><protected>false</protected><shortDescription
+    >AddPersonAccess scopeLabel</shortDescription><value
+    >Access level</value></labels>
+    <labels><fullName>AXF_AddPersonAccess_scopeOwn</fullName><language
+    >en_US</language><protected>false</protected><shortDescription
+    >AddPersonAccess scopeOwn</shortDescription><value
+    >Only their own data and businesses they are responsible for (Participant)</value></labels>
+    <labels><fullName>AXF_AddPersonAccess_searchUser</fullName><language
+    >en_US</language><protected>false</protected><shortDescription
+    >AddPersonAccess searchUser</shortDescription><value
+    >Search a user by name, username or email</value></labels>
+    <labels><fullName>AXF_AddPersonAccess_stalled</fullName><language
+    >en_US</language><protected>false</protected><shortDescription
+    >AddPersonAccess stalled</shortDescription><value
+    >No progress for a while. Provisioning may still be running on the server; resume to continue.</value></labels>
+    <labels><fullName>AXF_AddPersonAccess_starting</fullName><language
+    >en_US</language><protected>false</protected><shortDescription
+    >AddPersonAccess starting</shortDescription><value
+    >Starting…</value></labels>
+    <labels><fullName>AXF_AddPersonAccess_statusState</fullName><language
+    >en_US</language><protected>false</protected><shortDescription
+    >AddPersonAccess statusState</shortDescription><value>State</value></labels>
+    <labels><fullName>AXF_AddPersonAccess_statusStep</fullName><language
+    >en_US</language><protected>false</protected><shortDescription
+    >AddPersonAccess statusStep</shortDescription><value>Step</value></labels>
+    <labels><fullName>AXF_AddPersonAccess_statusUnavailable</fullName><language
+    >en_US</language><protected>false</protected><shortDescription
+    >AddPersonAccess statusUnavailable</shortDescription><value
+    >Could not read the progress now. Provisioning may still be running on the server; resume to check.</value></labels>
+    <labels><fullName>AXF_AddPersonAccess_stepNameActivate</fullName><language
+    >en_US</language><protected>false</protected><shortDescription
+    >AddPersonAccess stepName ACTIVATE</shortDescription><value
+    >Activating the user</value></labels>
+    <labels><fullName>AXF_AddPersonAccess_stepNameAssignPsg</fullName><language
+    >en_US</language><protected>false</protected><shortDescription
+    >AddPersonAccess stepName ASSIGN_PSG</shortDescription><value
+    >Assigning access permissions</value></labels>
+    <labels><fullName>AXF_AddPersonAccess_stepNameAssignRole</fullName><language
+    >en_US</language><protected>false</protected><shortDescription
+    >AddPersonAccess stepName ASSIGN_ROLE</shortDescription><value
+    >Assigning the role</value></labels>
+    <labels><fullName
+    >AXF_AddPersonAccess_stepNameCreateOrLinkPerson</fullName><language
+    >en_US</language><protected>false</protected><shortDescription
+    >AddPersonAccess stepName CREATE_OR_LINK_PERSON</shortDescription><value
+    >Confirming the person</value></labels>
+    <labels><fullName
+    >AXF_AddPersonAccess_stepNameCreateOrLinkUser</fullName><language
+    >en_US</language><protected>false</protected><shortDescription
+    >AddPersonAccess stepName CREATE_OR_LINK_USER</shortDescription><value
+    >Creating or linking the user</value></labels>
+    <labels><fullName>AXF_AddPersonAccess_stepNameDone</fullName><language
+    >en_US</language><protected>false</protected><shortDescription
+    >AddPersonAccess stepName DONE</shortDescription><value
+    >Done</value></labels>
+    <labels><fullName
+    >AXF_AddPersonAccess_stepNameSetOwnerSync</fullName><language
+    >en_US</language><protected>false</protected><shortDescription
+    >AddPersonAccess stepName SET_OWNER_SYNC</shortDescription><value
+    >Syncing the responsible owner</value></labels>
+    <labels><fullName>AXF_AddPersonAccess_stepOf</fullName><language
+    >en_US</language><protected>false</protected><shortDescription
+    >AddPersonAccess stepOf</shortDescription><value
+    >Step {0} of {1}</value></labels>
+    <labels><fullName>AXF_AddPersonAccess_stepPerson</fullName><language
+    >en_US</language><protected>false</protected><shortDescription
+    >AddPersonAccess stepPerson</shortDescription><value>Person</value></labels>
+    <labels><fullName>AXF_AddPersonAccess_stepReview</fullName><language
+    >en_US</language><protected>false</protected><shortDescription
+    >AddPersonAccess stepReview</shortDescription><value>Review</value></labels>
+    <labels><fullName>AXF_AddPersonAccess_stepScope</fullName><language
+    >en_US</language><protected>false</protected><shortDescription
+    >AddPersonAccess stepScope</shortDescription><value>Access</value></labels>
+    <labels><fullName>AXF_AddPersonAccess_stepUser</fullName><language
+    >en_US</language><protected>false</protected><shortDescription
+    >AddPersonAccess stepUser</shortDescription><value>User</value></labels>
+    <labels><fullName>AXF_AddPersonAccess_subtitle</fullName><language
+    >en_US</language><protected>false</protected><shortDescription
+    >AddPersonAccess subtitle</shortDescription><value
+    >Creates or links a Salesforce user to a person and applies the access level. Never changes a password or an existing user's profile.</value></labels>
+    <labels><fullName>AXF_AddPersonAccess_title</fullName><language
+    >en_US</language><protected>false</protected><shortDescription
+    >AddPersonAccess title</shortDescription><value
+    >Add a person and grant Axon access</value></labels>
+    <labels><fullName>AXF_AddPersonAccess_watchLimit</fullName><language
+    >en_US</language><protected>false</protected><shortDescription
+    >AddPersonAccess watchLimit</shortDescription><value
+    >Automatic tracking reached its wait limit. Provisioning may still be running on the server; resume to check.</value></labels>
+    <labels>
+        <fullName>AXF_HomeDashboard_filterAll</fullName>
+        <language>en_US</language>
+        <protected>false</protected>
+        <shortDescription>Home dashboard filterAll</shortDescription>
+        <value>All</value>
+    </labels>
+    <labels>
+        <fullName>AXF_HomeDashboard_filterLabel</fullName>
+        <language>en_US</language>
+        <protected>false</protected>
+        <shortDescription>Home dashboard filterLabel</shortDescription>
+        <value>Holder filter</value>
+    </labels>
+    <labels>
+        <fullName>AXF_HomeDashboard_newExpense</fullName>
+        <language>en_US</language>
+        <protected>false</protected>
+        <shortDescription>Home dashboard newExpense</shortDescription>
+        <value>New Expense</value>
+    </labels>
+    <labels>
+        <fullName>AXF_HomeDashboard_newRevenue</fullName>
+        <language>en_US</language>
+        <protected>false</protected>
+        <shortDescription>Home dashboard newRevenue</shortDescription>
+        <value>New Income</value>
+    </labels>
+    <labels>
+        <fullName>AXF_HomeDashboard_monthlyBalance</fullName>
+        <language>en_US</language>
+        <protected>false</protected>
+        <shortDescription>Home dashboard monthlyBalance</shortDescription>
+        <value>Monthly Balance (Current Month)</value>
+    </labels>
+    <labels>
+        <fullName>AXF_HomeDashboard_plannedBalance</fullName>
+        <language>en_US</language>
+        <protected>false</protected>
+        <shortDescription>Home dashboard plannedBalance</shortDescription>
+        <value>Planned Balance for the Month</value>
+    </labels>
+    <labels>
+        <fullName>AXF_HomeDashboard_realizedBalance</fullName>
+        <language>en_US</language>
+        <protected>false</protected>
+        <shortDescription>Home dashboard realizedBalance</shortDescription>
+        <value>Actual Balance</value>
+    </labels>
+    <labels>
+        <fullName>AXF_HomeDashboard_revenuePlannedVsRealized</fullName>
+        <language>en_US</language>
+        <protected>false</protected>
+        <shortDescription
+    >Home dashboard revenuePlannedVsRealized</shortDescription>
+        <value>Income (Planned vs Actual)</value>
+    </labels>
+    <labels>
+        <fullName>AXF_HomeDashboard_expensePlannedVsRealized</fullName>
+        <language>en_US</language>
+        <protected>false</protected>
+        <shortDescription
+    >Home dashboard expensePlannedVsRealized</shortDescription>
+        <value>Expenses (Planned vs Actual)</value>
+    </labels>
+    <labels>
+        <fullName>AXF_HomeDashboard_overdueExpenses</fullName>
+        <language>en_US</language>
+        <protected>false</protected>
+        <shortDescription>Home dashboard overdueExpenses</shortDescription>
+        <value>Overdue Expenses from Previous Months ({0})</value>
+    </labels>
+    <labels>
+        <fullName>AXF_HomeDashboard_overdueExpensesTotal</fullName>
+        <language>en_US</language>
+        <protected>false</protected>
+        <shortDescription>Home dashboard overdueExpensesTotal</shortDescription>
+        <value>Total overdue: {0}</value>
+    </labels>
+    <labels>
+        <fullName>AXF_HomeDashboard_overdueRevenues</fullName>
+        <language>en_US</language>
+        <protected>false</protected>
+        <shortDescription>Home dashboard overdueRevenues</shortDescription>
+        <value>Pending Income from Previous Months ({0})</value>
+    </labels>
+    <labels>
+        <fullName>AXF_HomeDashboard_overdueRevenuesTotal</fullName>
+        <language>en_US</language>
+        <protected>false</protected>
+        <shortDescription>Home dashboard overdueRevenuesTotal</shortDescription>
+        <value>Total receivable overdue: {0}</value>
+    </labels>
+    <labels>
+        <fullName>AXF_HomeDashboard_noOverdueExpenses</fullName>
+        <language>en_US</language>
+        <protected>false</protected>
+        <shortDescription>Home dashboard noOverdueExpenses</shortDescription>
+        <value
+    >No pending expenses from previous months. Congratulations!</value>
+    </labels>
+    <labels>
+        <fullName>AXF_HomeDashboard_noOverdueRevenues</fullName>
+        <language>en_US</language>
+        <protected>false</protected>
+        <shortDescription>Home dashboard noOverdueRevenues</shortDescription>
+        <value>All income from previous months has been received!</value>
+    </labels>
+    <labels>
+        <fullName>AXF_HomeDashboard_monthExpenses</fullName>
+        <language>en_US</language>
+        <protected>false</protected>
+        <shortDescription>Home dashboard monthExpenses</shortDescription>
+        <value>Expenses of the Month</value>
+    </labels>
+    <labels>
+        <fullName>AXF_HomeDashboard_monthRevenues</fullName>
+        <language>en_US</language>
+        <protected>false</protected>
+        <shortDescription>Home dashboard monthRevenues</shortDescription>
+        <value>Income of the Month</value>
+    </labels>
+    <labels>
+        <fullName>AXF_HomeDashboard_categoryFilter</fullName>
+        <language>en_US</language>
+        <protected>false</protected>
+        <shortDescription>Home dashboard categoryFilter</shortDescription>
+        <value>Filter by Category</value>
+    </labels>
+    <labels>
+        <fullName>AXF_HomeDashboard_categoryPlaceholder</fullName>
+        <language>en_US</language>
+        <protected>false</protected>
+        <shortDescription>Home dashboard categoryPlaceholder</shortDescription>
+        <value>Search category (e.g. Energy)...</value>
+    </labels>
+    <labels>
+        <fullName>AXF_HomeDashboard_noMonthExpenses</fullName>
+        <language>en_US</language>
+        <protected>false</protected>
+        <shortDescription>Home dashboard noMonthExpenses</shortDescription>
+        <value>No expenses found this month.</value>
+    </labels>
+    <labels>
+        <fullName>AXF_HomeDashboard_noMonthRevenues</fullName>
+        <language>en_US</language>
+        <protected>false</protected>
+        <shortDescription>Home dashboard noMonthRevenues</shortDescription>
+        <value>No income found this month.</value>
+    </labels>
+    <labels>
+        <fullName>AXF_HomeDashboard_colDescription</fullName>
+        <language>en_US</language>
+        <protected>false</protected>
+        <shortDescription>Home dashboard colDescription</shortDescription>
+        <value>Description</value>
+    </labels>
+    <labels>
+        <fullName>AXF_HomeDashboard_colCategory</fullName>
+        <language>en_US</language>
+        <protected>false</protected>
+        <shortDescription>Home dashboard colCategory</shortDescription>
+        <value>Category</value>
+    </labels>
+    <labels>
+        <fullName>AXF_HomeDashboard_colDueDate</fullName>
+        <language>en_US</language>
+        <protected>false</protected>
+        <shortDescription>Home dashboard colDueDate</shortDescription>
+        <value>Due Date</value>
+    </labels>
+    <labels>
+        <fullName>AXF_HomeDashboard_colAmount</fullName>
+        <language>en_US</language>
+        <protected>false</protected>
+        <shortDescription>Home dashboard colAmount</shortDescription>
+        <value>Amount</value>
+    </labels>
+    <labels>
+        <fullName>AXF_HomeDashboard_colStatus</fullName>
+        <language>en_US</language>
+        <protected>false</protected>
+        <shortDescription>Home dashboard colStatus</shortDescription>
+        <value>Status</value>
+    </labels>
+    <labels>
+        <fullName>AXF_HomeDashboard_colHolder</fullName>
+        <language>en_US</language>
+        <protected>false</protected>
+        <shortDescription>Home dashboard colHolder</shortDescription>
+        <value>Holder</value>
+    </labels>
+    <labels>
+        <fullName>AXF_HomeDashboard_statusSETTLED</fullName>
+        <language>en_US</language>
+        <protected>false</protected>
+        <shortDescription>Home dashboard statusSETTLED</shortDescription>
+        <value>Settled</value>
+    </labels>
+    <labels>
+        <fullName>AXF_HomeDashboard_statusPARTIAL</fullName>
+        <language>en_US</language>
+        <protected>false</protected>
+        <shortDescription>Home dashboard statusPARTIAL</shortDescription>
+        <value>Partial</value>
+    </labels>
+    <labels>
+        <fullName>AXF_HomeDashboard_statusOPEN</fullName>
+        <language>en_US</language>
+        <protected>false</protected>
+        <shortDescription>Home dashboard statusOPEN</shortDescription>
+        <value>Open</value>
+    </labels>
+    <labels>
+        <fullName>AXF_HomeDashboard_statusUNVERIFIED</fullName>
+        <language>en_US</language>
+        <protected>false</protected>
+        <shortDescription>Home dashboard statusUNVERIFIED</shortDescription>
+        <value>Not verified</value>
+    </labels>
+    <labels>
+        <fullName>AXF_HomeDashboard_projectedBalance</fullName>
+        <language>en_US</language>
+        <protected>false</protected>
+        <shortDescription>Home dashboard projectedBalance</shortDescription>
+        <value>Projected Balance</value>
+    </labels>
+    <labels>
+        <fullName>AXF_HomeDashboard_projectedHint</fullName>
+        <language>en_US</language>
+        <protected>false</protected>
+        <shortDescription>Home dashboard projectedHint</shortDescription>
+        <value
+    >Account balances plus the net cash flow surplus of the month.</value>
+    </labels>
+    <labels>
+        <fullName>AXF_HomeDashboard_accountsBalance</fullName>
+        <language>en_US</language>
+        <protected>false</protected>
+        <shortDescription>Home dashboard accountsBalance</shortDescription>
+        <value>Total Balance in Accounts</value>
+    </labels>
+    <labels>
+        <fullName>AXF_HomeDashboard_monthSurplus</fullName>
+        <language>en_US</language>
+        <protected>false</protected>
+        <shortDescription>Home dashboard monthSurplus</shortDescription>
+        <value>Projected Surplus for the Month</value>
+    </labels>
+    <labels>
+        <fullName>AXF_HomeDashboard_openAccount</fullName>
+        <language>en_US</language>
+        <protected>false</protected>
+        <shortDescription>Home dashboard openAccount</shortDescription>
+        <value>Open {0}</value>
+    </labels>
+    <labels>
+        <fullName>AXF_HomeDashboard_refresh</fullName>
+        <language>en_US</language>
+        <protected>false</protected>
+        <shortDescription>Home dashboard refresh</shortDescription>
+        <value>Refresh</value>
+    </labels>
+    <labels>
+        <fullName>AXF_HomeDashboard_loading</fullName>
+        <language>en_US</language>
+        <protected>false</protected>
+        <shortDescription>Home dashboard loading</shortDescription>
+        <value>Loading...</value>
+    </labels>
+    <labels>
+        <fullName>AXF_HomeDashboard_truncated</fullName>
+        <language>en_US</language>
+        <protected>false</protected>
+        <shortDescription>Home dashboard truncated</shortDescription>
+        <value
+    >Only the first entries are shown; filter by holder to see all.</value>
+    </labels>
+    <labels>
+        <fullName>AXF_HomeDashboard_mixedCurrency</fullName>
+        <language>en_US</language>
+        <protected>false</protected>
+        <shortDescription>Home dashboard mixedCurrency</shortDescription>
+        <value>Totals combine different currencies without conversion.</value>
+    </labels>
+    <labels>
+        <fullName>AXF_HomeDashboard_error</fullName>
+        <language>en_US</language>
+        <protected>false</protected>
+        <shortDescription>Home dashboard error</shortDescription>
+        <value>The dashboard could not be loaded.</value>
+    </labels>
+    <labels>
+        <fullName>AXF_HomeDashboard_codeNotAccessible</fullName>
+        <language>en_US</language>
+        <protected>false</protected>
+        <shortDescription>Home dashboard codeNotAccessible</shortDescription>
+        <value>You do not have access to this data.</value>
+    </labels>
+    <labels>
+        <fullName>AXF_HomeDashboard_codeInvalidInput</fullName>
+        <language>en_US</language>
+        <protected>false</protected>
+        <shortDescription>Home dashboard codeInvalidInput</shortDescription>
+        <value>Invalid holder filter.</value>
     </labels>
 </CustomLabels>

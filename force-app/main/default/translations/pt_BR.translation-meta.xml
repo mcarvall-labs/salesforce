@@ -1,4 +1,4 @@
-<?xml version="1.0" encoding="UTF-8"?>
+<?xml version="1.0" encoding="UTF-8" ?>
 <Translations xmlns="http://soap.sforce.com/2006/04/metadata">
     <customApplications>
         <label><!-- Axon Personal Finances --></label>
@@ -77,7 +77,8 @@
         <name>AXF_LBL_ConnectionNotFound</name>
     </customLabels>
     <customLabels>
-        <label>Conexão {0} sincronizada com sucesso. {1} contas atualizadas.</label>
+        <label
+    >Conexão {0} sincronizada com sucesso. {1} contas atualizadas.</label>
         <name>AXF_LBL_ConnectionSyncedSuccess</name>
     </customLabels>
     <customLabels>
@@ -189,7 +190,8 @@
         <name>AXF_LBL_NoMovementsFound</name>
     </customLabels>
     <customLabels>
-        <label>Nenhuma transação encontrada para os filtros selecionados.</label>
+        <label
+    >Nenhuma transação encontrada para os filtros selecionados.</label>
         <name>AXF_LBL_NoTransactionsFound</name>
     </customLabels>
     <customLabels>
@@ -285,7 +287,8 @@
         <name>AXF_LBL_SuccessToastTitle</name>
     </customLabels>
     <customLabels>
-        <label>Iniciar sincronização de todas as conexões ativas com a Pluggy.</label>
+        <label
+    >Iniciar sincronização de todas as conexões ativas com a Pluggy.</label>
         <name>AXF_LBL_SyncAllAccountsDesc</name>
     </customLabels>
     <customLabels>
@@ -309,7 +312,8 @@
         <name>AXF_LBL_SyncNowButton</name>
     </customLabels>
     <customLabels>
-        <label>Atualização das Contas Bancárias e Cartões junto à API da Pluggy.</label>
+        <label
+    >Atualização das Contas Bancárias e Cartões junto à API da Pluggy.</label>
         <name>AXF_LBL_SyncSubtitle</name>
     </customLabels>
     <customLabels>
@@ -325,7 +329,8 @@
         <name>AXF_LBL_SyncingData</name>
     </customLabels>
     <customLabels>
-        <label>Conectando e sincronizando com o Open Finance via Pluggy...</label>
+        <label
+    >Conectando e sincronizando com o Open Finance via Pluggy...</label>
         <name>AXF_LBL_SyncingSpinner</name>
     </customLabels>
     <customLabels>
@@ -351,6 +356,280 @@
     <customLabels>
         <label>Atenção na Sincronização</label>
         <name>AXF_LBL_WarningToastTitle</name>
+    </customLabels>
+    <customLabels><label>Voltar</label><name
+    >AXF_AddPersonAccess_back</name></customLabels>
+    <customLabels><label>Voltar ao formulário</label><name
+    >AXF_AddPersonAccess_backToForm</name></customLabels>
+    <customLabels><label>Adicionar outra pessoa</label><name
+    >AXF_AddPersonAccess_close</name></customLabels>
+    <customLabels><label>Confirmar</label><name
+    >AXF_AddPersonAccess_confirm</name></customLabels>
+    <customLabels><label>Acesso concluído.</label><name
+    >AXF_AddPersonAccess_done</name></customLabels>
+    <customLabels><label>E-mail</label><name
+    >AXF_AddPersonAccess_emailLabel</name></customLabels>
+    <customLabels><label
+    >Não foi possível concluir. Veja a mensagem e retome.</label><name
+    >AXF_AddPersonAccess_failed</name></customLabels>
+    <customLabels><label
+    >Você não tem autorização para conceder acesso ao Axon.</label><name
+    >AXF_AddPersonAccess_forbidden</name></customLabels>
+    <customLabels><label>Sair e continuar depois</label><name
+    >AXF_AddPersonAccess_leave</name></customLabels>
+    <customLabels><label
+    >O provisionamento pode continuar no servidor. Ao voltar, retome pelo mesmo cadastro — nada é duplicado.</label><name
+    >AXF_AddPersonAccess_leaveHint</name></customLabels>
+    <customLabels><label
+    >Não há licença Salesforce disponível para criar um usuário.</label><name
+    >AXF_AddPersonAccess_licenseWarn</name></customLabels>
+    <customLabels><label>Usuário vinculado</label><name
+    >AXF_AddPersonAccess_linkedUser</name></customLabels>
+    <customLabels><label>Criar novo usuário</label><name
+    >AXF_AddPersonAccess_modeCreate</name></customLabels>
+    <customLabels><label>Usuário Salesforce</label><name
+    >AXF_AddPersonAccess_modeLabel</name></customLabels>
+    <customLabels><label>Vincular usuário existente</label><name
+    >AXF_AddPersonAccess_modeLink</name></customLabels>
+    <customLabels><label>Nome</label><name
+    >AXF_AddPersonAccess_nameLabel</name></customLabels>
+    <customLabels><label>Próximo</label><name
+    >AXF_AddPersonAccess_next</name></customLabels>
+    <customLabels><label>Pessoa (Person Account)</label><name
+    >AXF_AddPersonAccess_personLabel</name></customLabels>
+    <customLabels><label>Retoma agora e confere se já terminou.</label><name
+    >AXF_AddPersonAccess_resumeHint</name></customLabels>
+    <customLabels><label>Retomar</label><name
+    >AXF_AddPersonAccess_retry</name></customLabels>
+    <customLabels><label>Provisionando… acompanhe o andamento.</label><name
+    >AXF_AddPersonAccess_running</name></customLabels>
+    <customLabels><label>Todos os dados do Axon (Gestor Financeiro)</label><name
+    >AXF_AddPersonAccess_scopeAll</name></customLabels>
+    <customLabels><label>Nível de acesso</label><name
+    >AXF_AddPersonAccess_scopeLabel</name></customLabels>
+    <customLabels><label
+    >Só os próprios dados e empresas sob responsabilidade (Participante)</label><name
+    >AXF_AddPersonAccess_scopeOwn</name></customLabels>
+    <customLabels><label>Buscar usuário por nome, login ou e-mail</label><name
+    >AXF_AddPersonAccess_searchUser</name></customLabels>
+    <customLabels><label
+    >Sem progresso por um tempo. O provisionamento pode continuar no servidor; retome para continuar.</label><name
+    >AXF_AddPersonAccess_stalled</name></customLabels>
+    <customLabels><label>Iniciando…</label><name
+    >AXF_AddPersonAccess_starting</name></customLabels>
+    <customLabels><label>Situação</label><name
+    >AXF_AddPersonAccess_statusState</name></customLabels>
+    <customLabels><label>Etapa</label><name
+    >AXF_AddPersonAccess_statusStep</name></customLabels>
+    <customLabels><label
+    >Não foi possível consultar o andamento agora. O provisionamento pode continuar no servidor; retome para verificar.</label><name
+    >AXF_AddPersonAccess_statusUnavailable</name></customLabels>
+    <customLabels><label>Ativando o usuário</label><name
+    >AXF_AddPersonAccess_stepNameActivate</name></customLabels>
+    <customLabels><label>Atribuindo as permissões de acesso</label><name
+    >AXF_AddPersonAccess_stepNameAssignPsg</name></customLabels>
+    <customLabels><label>Atribuindo o papel</label><name
+    >AXF_AddPersonAccess_stepNameAssignRole</name></customLabels>
+    <customLabels><label>Confirmando a pessoa</label><name
+    >AXF_AddPersonAccess_stepNameCreateOrLinkPerson</name></customLabels>
+    <customLabels><label>Criando ou vinculando o usuário</label><name
+    >AXF_AddPersonAccess_stepNameCreateOrLinkUser</name></customLabels>
+    <customLabels><label>Concluído</label><name
+    >AXF_AddPersonAccess_stepNameDone</name></customLabels>
+    <customLabels><label>Sincronizando o responsável</label><name
+    >AXF_AddPersonAccess_stepNameSetOwnerSync</name></customLabels>
+    <customLabels><label>Etapa {0} de {1}</label><name
+    >AXF_AddPersonAccess_stepOf</name></customLabels>
+    <customLabels><label>Pessoa</label><name
+    >AXF_AddPersonAccess_stepPerson</name></customLabels>
+    <customLabels><label>Revisar</label><name
+    >AXF_AddPersonAccess_stepReview</name></customLabels>
+    <customLabels><label>Acesso</label><name
+    >AXF_AddPersonAccess_stepScope</name></customLabels>
+    <customLabels><label>Usuário</label><name
+    >AXF_AddPersonAccess_stepUser</name></customLabels>
+    <customLabels><label
+    >Cria ou vincula um usuário Salesforce a uma pessoa e aplica o nível de acesso. Não muda senha nem perfil de usuário existente.</label><name
+    >AXF_AddPersonAccess_subtitle</name></customLabels>
+    <customLabels><label>Adicionar pessoa e dar acesso ao Axon</label><name
+    >AXF_AddPersonAccess_title</name></customLabels>
+    <customLabels><label
+    >O acompanhamento automático atingiu o limite de espera. O provisionamento pode continuar no servidor; retome para verificar.</label><name
+    >AXF_AddPersonAccess_watchLimit</name></customLabels>
+    <customLabels>
+        <label>Filtro por titular</label>
+        <name>AXF_HomeDashboard_filterLabel</name>
+    </customLabels>
+    <customLabels>
+        <label>Nova Despesa</label>
+        <name>AXF_HomeDashboard_newExpense</name>
+    </customLabels>
+    <customLabels>
+        <label>Nova Receita</label>
+        <name>AXF_HomeDashboard_newRevenue</name>
+    </customLabels>
+    <customLabels>
+        <label>Balanço Mensal (Mês Atual)</label>
+        <name>AXF_HomeDashboard_monthlyBalance</name>
+    </customLabels>
+    <customLabels>
+        <label>Saldo Previsto do Mês</label>
+        <name>AXF_HomeDashboard_plannedBalance</name>
+    </customLabels>
+    <customLabels>
+        <label>Saldo Realizado Efetivo</label>
+        <name>AXF_HomeDashboard_realizedBalance</name>
+    </customLabels>
+    <customLabels>
+        <label>Receitas (Previsto vs Realizado)</label>
+        <name>AXF_HomeDashboard_revenuePlannedVsRealized</name>
+    </customLabels>
+    <customLabels>
+        <label>Despesas (Previsto vs Realizado)</label>
+        <name>AXF_HomeDashboard_expensePlannedVsRealized</name>
+    </customLabels>
+    <customLabels>
+        <label>Despesas Vencidas de Meses Anteriores ({0})</label>
+        <name>AXF_HomeDashboard_overdueExpenses</name>
+    </customLabels>
+    <customLabels>
+        <label>Total em atraso: {0}</label>
+        <name>AXF_HomeDashboard_overdueExpensesTotal</name>
+    </customLabels>
+    <customLabels>
+        <label>Receitas Pendentes de Meses Anteriores ({0})</label>
+        <name>AXF_HomeDashboard_overdueRevenues</name>
+    </customLabels>
+    <customLabels>
+        <label>Total a receber em atraso: {0}</label>
+        <name>AXF_HomeDashboard_overdueRevenuesTotal</name>
+    </customLabels>
+    <customLabels>
+        <label>Nenhuma despesa pendente de meses anteriores. Parabéns!</label>
+        <name>AXF_HomeDashboard_noOverdueExpenses</name>
+    </customLabels>
+    <customLabels>
+        <label>Despesas do Mês</label>
+        <name>AXF_HomeDashboard_monthExpenses</name>
+    </customLabels>
+    <customLabels>
+        <label>Receitas do Mês</label>
+        <name>AXF_HomeDashboard_monthRevenues</name>
+    </customLabels>
+    <customLabels>
+        <label>Filtrar por Categoria</label>
+        <name>AXF_HomeDashboard_categoryFilter</name>
+    </customLabels>
+    <customLabels>
+        <label>Buscar categoria (ex: Energia)...</label>
+        <name>AXF_HomeDashboard_categoryPlaceholder</name>
+    </customLabels>
+    <customLabels>
+        <label>Nenhuma despesa encontrada neste mês.</label>
+        <name>AXF_HomeDashboard_noMonthExpenses</name>
+    </customLabels>
+    <customLabels>
+        <label>Nenhuma receita encontrada neste mês.</label>
+        <name>AXF_HomeDashboard_noMonthRevenues</name>
+    </customLabels>
+    <customLabels>
+        <label>Descrição</label>
+        <name>AXF_HomeDashboard_colDescription</name>
+    </customLabels>
+    <customLabels>
+        <label>Categoria</label>
+        <name>AXF_HomeDashboard_colCategory</name>
+    </customLabels>
+    <customLabels>
+        <label>Vencimento</label>
+        <name>AXF_HomeDashboard_colDueDate</name>
+    </customLabels>
+    <customLabels>
+        <label>Valor</label>
+        <name>AXF_HomeDashboard_colAmount</name>
+    </customLabels>
+    <customLabels>
+        <label>Status</label>
+        <name>AXF_HomeDashboard_colStatus</name>
+    </customLabels>
+    <customLabels>
+        <label>Titular</label>
+        <name>AXF_HomeDashboard_colHolder</name>
+    </customLabels>
+    <customLabels>
+        <label>Realizado</label>
+        <name>AXF_HomeDashboard_statusSETTLED</name>
+    </customLabels>
+    <customLabels>
+        <label>Parcial</label>
+        <name>AXF_HomeDashboard_statusPARTIAL</name>
+    </customLabels>
+    <customLabels>
+        <label>Em aberto</label>
+        <name>AXF_HomeDashboard_statusOPEN</name>
+    </customLabels>
+    <customLabels>
+        <label>Não verificado</label>
+        <name>AXF_HomeDashboard_statusUNVERIFIED</name>
+    </customLabels>
+    <customLabels>
+        <label>Saldo Projetado</label>
+        <name>AXF_HomeDashboard_projectedBalance</name>
+    </customLabels>
+    <customLabels>
+        <label>Saldo Total em Contas</label>
+        <name>AXF_HomeDashboard_accountsBalance</name>
+    </customLabels>
+    <customLabels>
+        <label>Sobra Projetada do Mês</label>
+        <name>AXF_HomeDashboard_monthSurplus</name>
+    </customLabels>
+    <customLabels>
+        <label>Abrir {0}</label>
+        <name>AXF_HomeDashboard_openAccount</name>
+    </customLabels>
+    <customLabels>
+        <label>Atualizar</label>
+        <name>AXF_HomeDashboard_refresh</name>
+    </customLabels>
+    <customLabels>
+        <label>Carregando...</label>
+        <name>AXF_HomeDashboard_loading</name>
+    </customLabels>
+    <customLabels>
+        <label>Os totais somam moedas diferentes sem conversão.</label>
+        <name>AXF_HomeDashboard_mixedCurrency</name>
+    </customLabels>
+    <customLabels>
+        <label>Não foi possível carregar o painel.</label>
+        <name>AXF_HomeDashboard_error</name>
+    </customLabels>
+    <customLabels>
+        <label>Você não tem acesso a estes dados.</label>
+        <name>AXF_HomeDashboard_codeNotAccessible</name>
+    </customLabels>
+    <customLabels>
+        <label>Filtro de titular inválido.</label>
+        <name>AXF_HomeDashboard_codeInvalidInput</name>
+    </customLabels>
+    <customLabels>
+        <label>Geral</label>
+        <name>AXF_HomeDashboard_filterAll</name>
+    </customLabels>
+    <customLabels>
+        <label
+    >Todas as receitas de meses anteriores foram devidamente recebidas!</label>
+        <name>AXF_HomeDashboard_noOverdueRevenues</name>
+    </customLabels>
+    <customLabels>
+        <label
+    >Consolidação de saldo em contas + sobra líquida do fluxo de caixa do mês.</label>
+        <name>AXF_HomeDashboard_projectedHint</name>
+    </customLabels>
+    <customLabels>
+        <label
+    >Exibindo apenas os primeiros lançamentos; filtre por titular para ver todos.</label>
+        <name>AXF_HomeDashboard_truncated</name>
     </customLabels>
     <quickActions>
         <aspect>Master</aspect>
