@@ -104,3 +104,26 @@ CustomApplication: AXF_CA_AxonConfiguration
 | AXON_DEV    | Applied     | Visual validation in browser 24/09/2026 — Console nav, correct tabs both apps                                                                                                                                                                                                                                                                                                                                             |
 | AXON_UAT    | Applied     | Visual validation in browser 24/09/2026 — Console nav, correct tabs both apps                                                                                                                                                                                                                                                                                                                                             |
 | AXON_PROD   | **Pending** | Not yet promoted. When promoting this branch to `main`: re-populate `manifest/destructiveChangesPre.xml` with these two `CustomApplication` members, redeploy `AXF_PS_GestorFinanceiro`/`AXF_PS_Participante` in the SAME transaction (app recreation orphans their `applicationVisibilities` otherwise — see AXF-159 PR history for the exact failure modes), and empty the manifest again immediately after confirming. |
+
+## Status: in review — Axon Finance app tabs back to production parity (26/09/2026)
+
+Branch `fix/app-tabs-prod-parity` (review decision in `AXF_Apps_Tabs.xlsx`, rows 1-3:
+"Corrigir — igual produção"). The LWC tabs `AXF_CT_BankStatement`/`AXF_CT_CardStatement`
+(AXF-151/AXF-152) are replaced by the standard object tabs `AXF_OBJ_BankAccount__c` and
+`AXF_OBJ_CreditCard__c` (standard list view + standard record page) and `AXF_HomePage`
+returns to the `main` version. Applied through `manifest/destructiveChangesPost.xml`:
+
+```
+CustomTab: AXF_CT_BankStatement, AXF_CT_CardStatement
+LightningComponentBundle: aXF_LWC_bankStatement, aXF_LWC_cardStatement
+ApexClass: AXF_CLS_CTRL_BankStatement(+Test), AXF_CLS_CTRL_CardStatement(+Test)
+CustomLabel: 39 AXF_BankStatement_*/AXF_CardStatement_* labels used only by those LWCs
+```
+
+Kept on purpose: `ALT_CLS_BankStatementService`/`ALT_CLS_CardStatementService` (used by
+manual entries, reconciliation queue and recurrences) and the shared labels still imported
+by `aXF_LWC_reconciliationQueue`, `aXF_LWC_manualEntries`, `aXF_LWC_entryWizard` and Apex.
+Never deployed to AXON_PROD (not in `main`), so the PROD deletion is a warning-only no-op.
+Companion PermissionSet-only PR `fix/app-tabs-prod-parity-permissionsets` removes the
+controller `classAccesses` and moves the `tabSettings` to the object tabs; merge it after
+this one. Empty the manifest once applied in DEV/UAT.

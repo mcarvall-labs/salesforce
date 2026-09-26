@@ -17,8 +17,8 @@
     <label>Axon Finance</label>
     <navType>Console</navType>
     <tabs>AXF_Home</tabs>
-    <tabs>AXF_CT_BankStatement</tabs>
-    <tabs>AXF_CT_CardStatement</tabs>
+    <tabs>AXF_OBJ_BankAccount__c</tabs>
+    <tabs>AXF_OBJ_CreditCard__c</tabs>
     <tabs>AXF_CT_ReconciliationQueue</tabs>
     <tabs>AXF_CT_BillingComposer</tabs>
     <tabs>AXF_Contracts</tabs>
@@ -30,10 +30,10 @@
     <uiType>Lightning</uiType>
     <workspaceConfig>
         <mappings>
-            <tab>AXF_CT_BankStatement</tab>
+            <tab>AXF_OBJ_BankAccount__c</tab>
         </mappings>
         <mappings>
-            <tab>AXF_CT_CardStatement</tab>
+            <tab>AXF_OBJ_CreditCard__c</tab>
         </mappings>
         <mappings>
             <tab>AXF_CT_ReconciliationQueue</tab>

@@ -10,8 +10,8 @@
     <enableSearch>true</enableSearch>
     <enableSharing>true</enableSharing>
     <enableStreamingApi>true</enableStreamingApi>
-    <label>Cartao de Credito</label>
-    <pluralLabel>Cartao de Creditos</pluralLabel>
+    <label>Credit Card</label>
+    <pluralLabel>Credit Cards</pluralLabel>
     <nameField><displayFormat>CC-{00000}</displayFormat><label
     >Numero</label><type>AutoNumber</type></nameField>
     <sharingModel>Private</sharingModel>

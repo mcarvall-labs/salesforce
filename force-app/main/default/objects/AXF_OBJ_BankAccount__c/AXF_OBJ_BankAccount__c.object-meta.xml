@@ -10,8 +10,8 @@
     <enableSearch>true</enableSearch>
     <enableSharing>true</enableSharing>
     <enableStreamingApi>true</enableStreamingApi>
-    <label>Conta Bancaria</label>
-    <pluralLabel>Conta Bancarias</pluralLabel>
+    <label>Bank Account</label>
+    <pluralLabel>Bank Accounts</pluralLabel>
     <nameField><displayFormat>BA-{00000}</displayFormat><label
     >Numero</label><type>AutoNumber</type></nameField>
     <sharingModel>Private</sharingModel>
