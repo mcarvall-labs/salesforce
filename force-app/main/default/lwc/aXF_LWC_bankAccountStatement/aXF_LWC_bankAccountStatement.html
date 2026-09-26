@@ -1,0 +1,185 @@
+<template>
+    <lightning-card title={labels.title} icon-name="utility:currency">
+        <div class="slds-p-horizontal_medium slds-p-bottom_medium statement-scroll-container">
+
+            <fieldset class="slds-box slds-theme_shade slds-m-bottom_medium statement-filters">
+                <legend class="slds-text-title_caps slds-p-bottom_x-small">{labels.filters}</legend>
+                <div class="slds-grid slds-wrap slds-gutters_small">
+                    <div class="slds-col slds-size_1-of-2 slds-medium-size_1-of-4 slds-p-bottom_small">
+                        <lightning-combobox
+                            label={labels.period}
+                            value={quickPeriod}
+                            options={quickPeriodOptions}
+                            onchange={handleQuickPeriodChange}
+                        ></lightning-combobox>
+                    </div>
+                    <div class="slds-col slds-size_1-of-2 slds-medium-size_1-of-4 slds-p-bottom_small">
+                        <lightning-input
+                            type="date"
+                            label={labels.periodStart}
+                            value={periodStart}
+                            disabled={isPeriodInputDisabled}
+                            onchange={handlePeriodStartChange}
+                        ></lightning-input>
+                    </div>
+                    <div class="slds-col slds-size_1-of-2 slds-medium-size_1-of-4 slds-p-bottom_small">
+                        <lightning-input
+                            type="date"
+                            label={labels.periodEnd}
+                            value={periodEnd}
+                            disabled={isPeriodInputDisabled}
+                            onchange={handlePeriodEndChange}
+                        ></lightning-input>
+                    </div>
+                    <div class="slds-col slds-size_1-of-2 slds-medium-size_1-of-4 slds-p-bottom_small">
+                        <lightning-input
+                            type="text"
+                            label={labels.description}
+                            value={descriptionFilter}
+                            onchange={handleDescriptionChange}
+                        ></lightning-input>
+                    </div>
+                    <div class="slds-col slds-size_1-of-2 slds-medium-size_1-of-4 slds-p-bottom_small">
+                        <lightning-input
+                            type="number"
+                            step="0.01"
+                            label={labels.minValue}
+                            value={valueMin}
+                            onchange={handleValueMinChange}
+                        ></lightning-input>
+                    </div>
+                    <div class="slds-col slds-size_1-of-2 slds-medium-size_1-of-4 slds-p-bottom_small">
+                        <lightning-input
+                            type="number"
+                            step="0.01"
+                            label={labels.maxValue}
+                            value={valueMax}
+                            onchange={handleValueMaxChange}
+                        ></lightning-input>
+                    </div>
+                    <div class="slds-col slds-size_1-of-1 slds-medium-size_1-of-2 slds-p-bottom_small slds-align-bottom">
+                        <lightning-button
+                            variant="brand"
+                            label={labels.apply}
+                            onclick={handleApplyFilters}
+                            class="slds-m-right_x-small"
+                        ></lightning-button>
+                        <lightning-button
+                            variant="neutral"
+                            label={labels.clearFilters}
+                            onclick={handleClearFilters}
+                            class="slds-m-right_x-small"
+                        ></lightning-button>
+                        <c-a-x-f_-l-w-c_pluggy-manual-sync
+                            compact-mode
+                            record-id={recordId}
+                            object-api-name="AXF_OBJ_BankAccount__c"
+                            start-date={periodStart}
+                            end-date={periodEnd}
+                            onsyncdone={handleSyncDone}
+                        ></c-a-x-f_-l-w-c_pluggy-manual-sync>
+                    </div>
+                </div>
+            </fieldset>
+
+            <template if:true={isLoading}>
+                <div class="slds-align_absolute-center slds-p-vertical_large">
+                    <lightning-spinner alternative-text="Loading" size="medium"></lightning-spinner>
+                </div>
+            </template>
+
+            <template if:false={isLoading}>
+                <template if:true={errorMessage}>
+                    <div class="slds-text-color_error slds-p-around_medium">{errorMessage}</div>
+                </template>
+
+                <template if:true={hasTransactions}>
+                    <div class="slds-grid slds-wrap slds-gutters_small slds-m-bottom_medium statement-summary slds-box slds-p-around_small">
+                        <div class="slds-col slds-size_1-of-3 slds-text-align_center">
+                            <p class="slds-text-title_caps slds-text-color_weak">{labels.totalCredits}</p>
+                            <lightning-formatted-number
+                                value={totalCredits}
+                                format-style="currency"
+                                currency-code={currencyCode}
+                                class="slds-text-heading_small slds-text-color_success"
+                            ></lightning-formatted-number>
+                        </div>
+                        <div class="slds-col slds-size_1-of-3 slds-text-align_center">
+                            <p class="slds-text-title_caps slds-text-color_weak">{labels.totalDebits}</p>
+                            <lightning-formatted-number
+                                value={totalDebits}
+                                format-style="currency"
+                                currency-code={currencyCode}
+                                class="slds-text-heading_small slds-text-color_error"
+                            ></lightning-formatted-number>
+                        </div>
+                        <div class="slds-col slds-size_1-of-3 slds-text-align_center">
+                            <p class="slds-text-title_caps slds-text-color_weak">{labels.periodBalance}</p>
+                            <lightning-formatted-number
+                                value={netBalance}
+                                format-style="currency"
+                                currency-code={currencyCode}
+                                class="slds-text-heading_small"
+                            ></lightning-formatted-number>
+                        </div>
+                    </div>
+
+                    <div class="slds-scrollable_x">
+                        <table class="slds-table slds-table_bordered slds-table_striped slds-table_cell-buffer statement-table">
+                            <thead>
+                                <tr class="slds-line-height_reset">
+                                    <th scope="col">{labels.columnDate}</th>
+                                    <th scope="col">{labels.description}</th>
+                                    <th scope="col">{labels.columnCategory}</th>
+                                    <th scope="col" class="slds-text-align_right">{labels.columnAmount}</th>
+                                    <th scope="col" class="slds-text-align_right">{labels.columnBalance}</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <template for:each={transactions} for:item="row">
+                                    <tr key={row.id} data-id={row.id} onclick={handleRowClick} class="statement-row">
+                                        <td>
+                                            <lightning-formatted-date-time
+                                                value={row.transactionDate}
+                                                year="2-digit"
+                                                month="2-digit"
+                                                day="2-digit"
+                                                time-zone="UTC"
+                                            ></lightning-formatted-date-time>
+                                        </td>
+                                        <td class="desc-cell">
+                                            <div class="desc-wrap">
+                                                <template for:each={row.descriptionLines} for:item="line">
+                                                    <span key={line.key}
+                                                        >{line.text}<template if:false={line.isLast}><br /></template></span
+                                                    >
+                                                </template>
+                                            </div>
+                                        </td>
+                                        <td>{row.categoryDisplay}</td>
+                                        <td class="slds-text-align_right">
+                                            <span class={row.amountClass}>{row.amountPrefix}<lightning-formatted-number value={row.amount} format-style="currency" currency-code={currencyCode}></lightning-formatted-number></span>
+                                        </td>
+                                        <td class="slds-text-align_right">
+                                            <lightning-formatted-number value={row.runningBalance} format-style="currency" currency-code={currencyCode}></lightning-formatted-number>
+                                        </td>
+                                    </tr>
+                                </template>
+                            </tbody>
+                        </table>
+                    </div>
+                    <p class="slds-text-body_small slds-text-color_weak slds-p-top_x-small slds-text-align_right">
+                        {labels.showingTransactions} {transactionCount}
+                    </p>
+                </template>
+
+                <template if:true={hasNoTransactions}>
+                    <div class="slds-illustration slds-illustration_small slds-p-around_medium slds-text-align_center">
+                        <lightning-icon icon-name="utility:search" size="medium" class="slds-m-bottom_small"></lightning-icon>
+                        <p>{labels.noTransactionsFound}</p>
+                    </div>
+                </template>
+            </template>
+        </div>
+    </lightning-card>
+</template>

@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<LightningComponentBundle xmlns="http://soap.sforce.com/2006/04/metadata">
+    <apiVersion>67.0</apiVersion>
+    <isExposed>true</isExposed>
+    <masterLabel>AXF Quick Flow Actions (Inclusão Rápida)</masterLabel>
+    <description>Botões de atalho rápido na Home Page para inclusão de despesas e receitas com motor de recorrência.</description>
+    <targets>
+        <target>lightning__HomePage</target>
+        <target>lightning__AppPage</target>
+        <target>lightning__RecordPage</target>
+    </targets>
+</LightningComponentBundle>

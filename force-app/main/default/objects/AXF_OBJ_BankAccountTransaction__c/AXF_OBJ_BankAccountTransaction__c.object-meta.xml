@@ -1,4 +1,4 @@
-<?xml version="1.0" encoding="UTF-8" ?>
+<?xml version="1.0" encoding="UTF-8"?>
 <CustomObject xmlns="http://soap.sforce.com/2006/04/metadata">
     <actionOverrides>
         <actionName>Accept</actionName>
@@ -143,27 +143,25 @@
     <allowInChatterGroups>false</allowInChatterGroups>
     <compactLayoutAssignment>SYSTEM</compactLayoutAssignment>
     <deploymentStatus>Deployed</deploymentStatus>
-    <description
-  >Fato de origem: transacao de conta bancaria importada (Pluggy ou CSV Contabilizei.bank). Valor/moeda/data originais imutaveis. MD para a conta = sharing herdado do owner-sync da Account (Fechamento G1). Identidade: AXF_BAT_EXI_SourceKey__c (UUID Pluggy ou SHA-256 da linha CSV). AXF-15 / AXF-12.</description>
+    <description>Persiste o histÃ³rico de extratos, PIX, TEDs e tarifas importados via API da Pluggy.ai.</description>
     <enableActivities>false</enableActivities>
     <enableBulkApi>true</enableBulkApi>
     <enableFeeds>false</enableFeeds>
-    <enableHistory>true</enableHistory>
+    <enableHistory>false</enableHistory>
     <enableLicensing>false</enableLicensing>
     <enableReports>true</enableReports>
     <enableSearch>true</enableSearch>
     <enableSharing>true</enableSharing>
     <enableStreamingApi>true</enableStreamingApi>
     <externalSharingModel>ControlledByParent</externalSharingModel>
-    <label>Transacao Bancaria</label>
+    <label>Bank Account Transaction</label>
     <nameField>
         <displayFormat>BAT-{00000000}</displayFormat>
-        <label>Numero</label>
-        <trackHistory>false</trackHistory>
+        <label>Transaction Number</label>
         <type>AutoNumber</type>
     </nameField>
-    <pluralLabel>Transacoes Bancarias</pluralLabel>
-    <searchLayouts />
+    <pluralLabel>Bank Account Transactions</pluralLabel>
+    <searchLayouts></searchLayouts>
     <sharingModel>ControlledByParent</sharingModel>
     <visibility>Public</visibility>
 </CustomObject>

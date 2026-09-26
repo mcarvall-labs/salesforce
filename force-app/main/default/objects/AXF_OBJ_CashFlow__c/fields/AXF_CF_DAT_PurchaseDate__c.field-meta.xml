@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<CustomField xmlns="http://soap.sforce.com/2006/04/metadata">
+    <fullName>AXF_CF_DAT_PurchaseDate__c</fullName>
+    <businessStatus>Active</businessStatus>
+    <description>Data da compra/ocorrência original do lançamento.</description>
+    <label>Purchase Date</label>
+    <required>false</required>
+    <trackTrending>false</trackTrending>
+    <type>Date</type>
+</CustomField>

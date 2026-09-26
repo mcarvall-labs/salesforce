@@ -1,9 +1,13 @@
-<?xml version="1.0" encoding="UTF-8" ?>
+<?xml version="1.0" encoding="UTF-8"?>
 <CustomField xmlns="http://soap.sforce.com/2006/04/metadata">
     <fullName>AXF_CCT_TXT_Description__c</fullName>
-    <label>Descricao Original</label>
-    <type>Text</type>
+    <businessStatus>Active</businessStatus>
+    <description>Nome do estabelecimento comercial ou descriÃ§Ã£o do lanÃ§amento.</description>
+    <externalId>false</externalId>
+    <label>Description</label>
     <length>255</length>
     <required>false</required>
-    <description>Descricao original imutavel da transacao.</description>
+    <trackTrending>false</trackTrending>
+    <type>Text</type>
+    <unique>false</unique>
 </CustomField>

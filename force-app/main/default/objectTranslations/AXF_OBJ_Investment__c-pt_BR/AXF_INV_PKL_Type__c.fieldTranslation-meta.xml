@@ -1,0 +1,25 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<CustomFieldTranslation xmlns="http://soap.sforce.com/2006/04/metadata">
+    <label><!-- Type --></label>
+    <name>AXF_INV_PKL_Type__c</name>
+    <picklistValues>
+        <masterLabel>ETF</masterLabel>
+        <translation><!-- ETF --></translation>
+    </picklistValues>
+    <picklistValues>
+        <masterLabel>Equity</masterLabel>
+        <translation><!-- Equity --></translation>
+    </picklistValues>
+    <picklistValues>
+        <masterLabel>Fixed Income</masterLabel>
+        <translation><!-- Fixed Income --></translation>
+    </picklistValues>
+    <picklistValues>
+        <masterLabel>Mutual Fund</masterLabel>
+        <translation><!-- Mutual Fund --></translation>
+    </picklistValues>
+    <picklistValues>
+        <masterLabel>Security</masterLabel>
+        <translation><!-- Security --></translation>
+    </picklistValues>
+</CustomFieldTranslation>

@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<CustomField xmlns="http://soap.sforce.com/2006/04/metadata">
+    <fullName>AXF_CC_DT_LastTransactionSync__c</fullName>
+    <businessStatus>Active</businessStatus>
+    <description>Data e hora da última sincronização de transações (nightly job) concluída com sucesso para este cartão, sem interrupção por rate limit ou governor limit. Usado como dateFrom da próxima sincronização incremental.</description>
+    <label>Last Transaction Sync</label>
+    <required>false</required>
+    <trackTrending>false</trackTrending>
+    <type>DateTime</type>
+</CustomField>

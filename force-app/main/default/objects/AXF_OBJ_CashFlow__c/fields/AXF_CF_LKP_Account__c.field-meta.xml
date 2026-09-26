@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<CustomField xmlns="http://soap.sforce.com/2006/04/metadata">
+    <fullName>AXF_CF_LKP_Account__c</fullName>
+    <businessStatus>Active</businessStatus>
+    <deleteConstraint>Restrict</deleteConstraint>
+    <description>Vínculo Relacional. Associa este lançamento à Conta (titular) responsável.</description>
+    <inlineHelpText>Selecione a conta/titular vinculado a este lançamento.</inlineHelpText>
+    <label>Account</label>
+    <referenceTo>Account</referenceTo>
+    <relationshipLabel>Cash Flow Movements</relationshipLabel>
+    <relationshipName>CashFlowAccountMovements</relationshipName>
+    <required>true</required>
+    <trackTrending>false</trackTrending>
+    <type>Lookup</type>
+</CustomField>

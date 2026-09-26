@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<ValidationRule xmlns="http://soap.sforce.com/2006/04/metadata">
+    <fullName>AXF_IG_VR_AdjustmentAnniversaryImmutable</fullName>
+    <active>true</active>
+    <description>Preserves the original consortium adjustment anniversary after group creation.</description>
+    <errorConditionFormula>AND(
+    NOT(ISNEW()),
+    ISCHANGED(AXF_IG_DAT_AdjustmentAnniversary__c)
+)</errorConditionFormula>
+    <errorDisplayField>AXF_IG_DAT_AdjustmentAnniversary__c</errorDisplayField>
+    <errorMessage>Adjustment Anniversary cannot be changed after the installment group is created.</errorMessage>
+</ValidationRule>

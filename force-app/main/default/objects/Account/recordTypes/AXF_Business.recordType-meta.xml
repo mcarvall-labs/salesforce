@@ -1,9 +1,8 @@
-<?xml version="1.0" encoding="UTF-8" ?>
+<?xml version="1.0" encoding="UTF-8"?>
 <RecordType xmlns="http://soap.sforce.com/2006/04/metadata">
     <fullName>AXF_Business</fullName>
     <active>true</active>
-    <description
-  >Business holder record type required by the Axon access permission sets. AXF-7 / AXF-80.</description>
+    <description>Business holder record type required by the Axon access permission sets. AXF-7 / AXF-80.</description>
     <label>Empresa</label>
     <picklistValues>
         <picklist>AccountSource</picklist>

@@ -1,0 +1,16 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<ListView xmlns="http://soap.sforce.com/2006/04/metadata">
+    <fullName>View_InstallmentsPaid</fullName>
+    <columns>NAME</columns>
+    <columns>AXF_CF_DAT_DueDate__c</columns>
+    <columns>AXF_CF_DAT_PaymentDate__c</columns>
+    <columns>AXF_CF_PKL_Status__c</columns>
+    <columns>AXF_CF_CUR_Value__c</columns>
+    <filterScope>Everything</filterScope>
+    <filters>
+        <field>AXF_CF_PKL_Status__c</field>
+        <operation>equals</operation>
+        <value>PAGA,PAGA_EM_ATRASO,RECEBIDA,RECEBIDA_EM_ATRASO</value>
+    </filters>
+    <label>Parcelas Pagas / Realizadas</label>
+</ListView>

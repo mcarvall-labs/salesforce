@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<CustomField xmlns="http://soap.sforce.com/2006/04/metadata">
+    <fullName>AXF_CF_DAT_PaymentDate__c</fullName>
+    <businessStatus>Active</businessStatus>
+    <description>Data de realização/pagamento efetivo do lançamento. Obrigatória quando o status é PAGA, PAGA_EM_ATRASO, RECEBIDA ou RECEBIDA_EM_ATRASO.</description>
+    <label>Payment Date</label>
+    <required>false</required>
+    <trackTrending>false</trackTrending>
+    <type>Date</type>
+</CustomField>

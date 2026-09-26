@@ -1,0 +1,33 @@
+.alert-card-container {
+    border-radius: 8px;
+    border-left: 4px solid #ea001e;
+    background: #ffffff;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+}
+
+.alert-badge-danger {
+    background-color: #ea001e;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.alert-badge-success {
+    background-color: #2e844a;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.text-danger {
+    color: #ea001e;
+}
+
+.text-overdue-date {
+    color: #ba0517;
+    font-weight: 600;
+}
+
+.table-container {
+    max-height: 250px;
+}

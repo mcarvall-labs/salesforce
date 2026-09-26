@@ -1,0 +1,13 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<CustomField xmlns="http://soap.sforce.com/2006/04/metadata">
+    <fullName>AXF_CF_LKP_InstallmentGroup__c</fullName>
+    <deleteConstraint>SetNull</deleteConstraint>
+    <description>Grupo de parcelamento/recorrência ao qual este lançamento pertence (US-038).</description>
+    <label>Installment Group</label>
+    <referenceTo>AXF_OBJ_InstallmentGroup__c</referenceTo>
+    <relationshipLabel>Cash Flow Movements</relationshipLabel>
+    <relationshipName>AXF_CF_CashFlowMovements</relationshipName>
+    <required>false</required>
+    <trackTrending>false</trackTrending>
+    <type>Lookup</type>
+</CustomField>

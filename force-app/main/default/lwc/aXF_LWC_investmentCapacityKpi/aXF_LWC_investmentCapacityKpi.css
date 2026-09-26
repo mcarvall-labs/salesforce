@@ -1,0 +1,52 @@
+.investment-card-container {
+    border-radius: 8px;
+    background: #ffffff;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+}
+
+.investment-banner {
+    background: linear-gradient(135deg, #1b5e20 0%, #2e844a 100%);
+    border-radius: 8px;
+    color: #ffffff;
+}
+
+.text-investment-total {
+    color: #ffffff;
+}
+
+.text-muted {
+    color: #c8e6c9;
+}
+
+.metric-box {
+    background-color: #f8f9fa;
+    border-radius: 6px;
+    border: 1px solid #e9ecef;
+}
+
+.border-top {
+    border-top: 1px solid #dee2e6;
+}
+
+.account-row {
+    cursor: pointer;
+    border-radius: 4px;
+    transition: background-color 0.15s ease-in-out;
+}
+
+.account-row:hover {
+    background-color: #e9ecef;
+}
+
+.account-name {
+    color: #0176d3;
+    font-weight: 500;
+}
+
+.account-row:hover .account-name {
+    text-decoration: underline;
+}
+
+.account-balance {
+    color: #2e844a;
+}

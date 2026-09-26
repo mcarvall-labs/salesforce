@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<CustomField xmlns="http://soap.sforce.com/2006/04/metadata">
+    <fullName>AXF_CF_LKP_BankAccount__c</fullName>
+    <businessStatus>Active</businessStatus>
+    <deleteConstraint>SetNull</deleteConstraint>
+    <description>Conta bancária vinculada diretamente ao lançamento financeiro para conciliação ou débito automático.</description>
+    <label>Bank Account</label>
+    <referenceTo>AXF_OBJ_BankAccount__c</referenceTo>
+    <relationshipLabel>Cash Flows</relationshipLabel>
+    <relationshipName>CashFlows</relationshipName>
+    <required>false</required>
+    <trackTrending>false</trackTrending>
+    <type>Lookup</type>
+</CustomField>

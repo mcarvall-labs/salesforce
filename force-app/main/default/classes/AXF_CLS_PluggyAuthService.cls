@@ -1,130 +1,88 @@
-/**
- * @description Obtains the Pluggy apiKey server-side. Ported from the legacy develop
- * baseline and regressed for AXF-11 (G4-1 / AC8):
- *  - every System.debug of the request/response/apiKey was removed (they leaked the key);
- *  - no persistent cache: the apiKey is held only for the current Apex transaction
- *    (one POST /auth per transaction, as the G4 investigation recommended);
- *  - error messages are sanitized: endpoint + HTTP status + correlation id only;
- *  - the Named Credential is resolved from the active rotation slot, and an explicit
- *    Named Credential can be passed to test a candidate without touching the live key.
- *
- * Secrets (clientId/clientSecret) live only in AXF_EXC_Pluggy(_Candidate); the apiKey lives
- * only in the in-memory map below for the duration of one request. Neither is ever returned
- * to a client, written to a record, a log, a URL or an error.
- */
 public with sharing class AXF_CLS_PluggyAuthService {
-  private static final Map<String, String> APIKEY_BY_NC = new Map<String, String>();
 
-  /** @description apiKey for the currently active credential slot. */
-  public static String getValidApiKey() {
-    return getValidApiKey(AXF_CLS_PluggySettings.activeNamedCredential());
-  }
+    private static final String NAMED_CREDENTIAL_ENDPOINT = 'callout:AXF_NC_Pluggy_API/auth';
+    private static final String CACHE_PARTITION = 'local.AXFPluggyCache';
+    private static final String CACHE_KEY = 'PluggyApiKey';
+    private static final Integer CACHE_TTL_SECONDS = 7200;
 
-  /**
-   * @description apiKey for a specific Named Credential. Used by rotation to test the
-   * candidate slot without disturbing the live key.
-   */
-  public static String getValidApiKey(String namedCredential) {
-    String cached = APIKEY_BY_NC.get(namedCredential);
-    if (String.isNotBlank(cached)) {
-      return cached;
-    }
-    String apiKey = requestNewApiKey(namedCredential);
-    APIKEY_BY_NC.put(namedCredential, apiKey);
-    return apiKey;
-  }
+    public static String getValidApiKey() {
+        String cachedApiKey = getFromCache();
+        if (String.isNotBlank(cachedApiKey)) {
+            return cachedApiKey;
+        }
 
-  /** @description Forgets the current-transaction apiKey (e.g. after a promotion). */
-  public static void invalidateCache() {
-    APIKEY_BY_NC.clear();
-  }
-
-  private static String requestNewApiKey(String namedCredential) {
-    String correlationId = AXF_CLS_PluggyHttpClient.newCorrelationId();
-
-    HttpRequest req = new HttpRequest();
-    req.setEndpoint('callout:' + namedCredential + '/auth');
-    req.setMethod('POST');
-    req.setHeader('Content-Type', 'application/json');
-    req.setHeader('X-Request-Id', correlationId);
-    // Merge fields are resolved by the platform after send; the literal placeholder text
-    // below is what req.getBody() returns, so it is safe even if inspected.
-    req.setBody(
-      '{"clientId":"{!$Credential.' +
-        externalCredentialFor(namedCredential) +
-        '.clientId}","clientSecret":"{!$Credential.' +
-        externalCredentialFor(namedCredential) +
-        '.clientSecret}"}'
-    );
-    req.setTimeout(120000);
-
-    HttpResponse res = null;
-    try {
-      res = new Http().send(req);
-    } catch (System.CalloutException authFailure) {
-      // A failure in the AUTH phase is an authentication/config problem — most commonly
-      // an External Credential whose clientId/clientSecret parameters were never
-      // provisioned, so the merge fields above fail to resolve with
-      // "Field ... does not exist". It must never be surfaced as a GET /items failure by
-      // the caller: report it as an auth/config error instead.
-      throw new AXF_CLS_PluggyConfigException(
-        credentialConfigError(correlationId)
-      );
+        String apiKey = requestNewApiKey();
+        storeInCache(apiKey);
+        return apiKey;
     }
 
-    if (res.getStatusCode() != 200) {
-      throw new AXF_CLS_PluggyAuthException(
-        AXF_CLS_PluggyHttpClient.sanitizedError(
-          'POST /auth',
-          res.getStatusCode(),
-          correlationId
-        )
-      );
+    private static String requestNewApiKey() {
+        HttpRequest req = new HttpRequest();
+        req.setEndpoint(NAMED_CREDENTIAL_ENDPOINT);
+        req.setMethod('POST');
+        req.setHeader('Content-Type', 'application/json');
+        req.setHeader('Cache-Control', 'no-cache');
+        req.setBody('{"clientId":"{!$Credential.AXF_EXC_Pluggy.clientId}",' + '"clientSecret":"{!$Credential.AXF_EXC_Pluggy.clientSecret}"}');
+
+        // === DEBUG DA REQUISIÇÃO ===
+        System.debug('=== DEBUG DA REQUISIÇÃO ===');
+        System.debug('Endpoint: ' + req.getEndpoint());
+        System.debug('Método: ' + req.getMethod());
+        System.debug('Header Content-Type: ' + req.getHeader('Content-Type'));
+        System.debug('Header Cache-Control: ' + req.getHeader('Cache-Control'));
+        System.debug('Corpo (Body): ' + req.getBody());
+        System.debug('============================');
+
+        HttpResponse res = new Http().send(req);
+
+        // === DEBUG DA RESPOSTA ===
+        System.debug('=== DEBUG DA RESPOSTA ===');
+        System.debug('Status Code: ' + res.getStatusCode());
+        System.debug('Status: ' + res.getStatus());
+        System.debug('Corpo da Resposta (Body): ' + res.getBody());
+        System.debug('==========================');
+
+        if (res.getStatusCode() != 200) {
+            String details = res.getBody();
+            if (details.contains('client keys are invalid')) {
+                throw new AXF_CLS_PluggyAuthException(
+                    'As chaves de cliente (Client ID e Client Secret) registradas na Credencial Externa do Salesforce são inválidas ou expiraram na Pluggy (HTTP 401: client keys are invalid).'
+                );
+            }
+            throw new AXF_CLS_PluggyAuthException('Falha ao autenticar na API da Pluggy (HTTP ' + res.getStatusCode() + '): ' + details);
+        }
+
+        Map<String, Object> responseBody = (Map<String, Object>) JSON.deserializeUntyped(res.getBody());
+        String apiKey = (String) responseBody.get('apiKey');
+
+        // Debug adicional para garantir que a chave foi extraída com sucesso do JSON
+        System.debug('ApiKey Extraída: ' + apiKey);
+
+        if (String.isBlank(apiKey)) {
+            throw new AXF_CLS_PluggyAuthException('A resposta de autenticação da Pluggy não contém um apiKey.');
+        }
+
+        return apiKey;
     }
 
-    String apiKey;
-    try {
-      Map<String, Object> body = (Map<String, Object>) JSON.deserializeUntyped(
-        res.getBody()
-      );
-      apiKey = (String) body.get('apiKey');
-    } catch (Exception parseError) {
-      throw new AXF_CLS_PluggyAuthException(
-        AXF_CLS_PluggyHttpClient.sanitizedError(
-          'POST /auth (resposta ilegivel)',
-          res.getStatusCode(),
-          correlationId
-        )
-      );
+    private static String getFromCache() {
+        try {
+            Cache.OrgPartition partition = Cache.Org.getPartition(CACHE_PARTITION);
+            if (partition.contains(CACHE_KEY)) {
+                return (String) partition.get(CACHE_KEY);
+            }
+        } catch (Cache.Org.OrgCacheException e) {
+            // Partição de cache indisponível ou sem capacidade alocada: segue sem cache.
+        }
+        return null;
     }
 
-    if (String.isBlank(apiKey)) {
-      throw new AXF_CLS_PluggyAuthException(
-        AXF_CLS_PluggyHttpClient.sanitizedError(
-          'POST /auth (apiKey ausente)',
-          res.getStatusCode(),
-          correlationId
-        )
-      );
+    private static void storeInCache(String apiKey) {
+        try {
+            Cache.OrgPartition partition = Cache.Org.getPartition(CACHE_PARTITION);
+            partition.put(CACHE_KEY, apiKey, CACHE_TTL_SECONDS);
+        } catch (Cache.Org.OrgCacheException e) {
+            // Partição de cache indisponível ou sem capacidade alocada: apiKey será obtido novamente na próxima chamada.
+        }
     }
-    return apiKey;
-  }
-
-  private static String externalCredentialFor(String namedCredential) {
-    return AXF_CLS_PluggySettings.NC_CANDIDATE.equals(namedCredential)
-      ? 'AXF_EXC_Pluggy_Candidate'
-      : 'AXF_EXC_Pluggy';
-  }
-
-  /**
-   * @description Sanitized PT-BR message for an auth-phase failure. Names only the
-   * authentication concern, never the credential values or the raw platform error, and
-   * is clearly distinct from a GET /items failure surfaced by the HTTP client.
-   */
-  private static String credentialConfigError(String correlationId) {
-    return 'Falha na autenticacao Pluggy (credencial externa nao configurada ou inacessivel). ' +
-      'Verifique o Client ID e o Client Secret na tela de configuracao. ref ' +
-      correlationId +
-      '. Nenhum dado sensivel e registrado.';
-  }
 }

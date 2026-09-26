@@ -1,0 +1,104 @@
+<template>
+    <div class="slds-card slds-p-around_medium alert-card-container">
+        <!-- Header / Banner -->
+        <div class="slds-media slds-media_center slds-m-bottom_small">
+            <div class="slds-media__figure">
+                <span class={headerBadgeClass}>
+                    <lightning-icon icon-name="utility:warning" size="small" variant="inverse"></lightning-icon>
+                </span>
+            </div>
+            <div class="slds-media__body">
+                <h2 class="slds-card__header-title slds-text-heading_small slds-font-weight_bold text-danger">
+                    Despesas Vencidas de Meses Anteriores ({count})
+                </h2>
+                <p class="slds-text-body_small slds-text-color_weak">
+                    Total em atraso: <span class="slds-font-weight_bold text-amount">{totalFormatted}</span>
+                </p>
+            </div>
+        </div>
+
+        <!-- Content List -->
+        <template if:true={hasRecords}>
+            <div class="table-container slds-scrollable_y">
+                <table class="slds-table slds-table_cell-buffer slds-table_bordered slds-table_striped slds-table_compact">
+                    <thead>
+                        <tr class="slds-line-height_reset">
+                            <th scope="col"><div class="slds-truncate">Descrição</div></th>
+                            <th scope="col"><div class="slds-truncate">Categoria</div></th>
+                            <th scope="col"><div class="slds-truncate">Vencimento</div></th>
+                            <th scope="col"><div class="slds-truncate">Valor (R$)</div></th>
+                            <th scope="col" class="slds-text-align_center"><div class="slds-truncate">Ação</div></th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <template for:each={records} for:item="item">
+                            <tr key={item.Id}>
+                                <td><div class="slds-truncate slds-font-weight_bold">{item.Name}</div></td>
+                                <td><div class="slds-truncate">{item.categoryName}</div></td>
+                                <td>
+                                    <div class="slds-truncate text-overdue-date">
+                                        <lightning-formatted-date-time value={item.AXF_CF_DAT_DueDate__c}></lightning-formatted-date-time>
+                                    </div>
+                                </td>
+                                <td>
+                                    <div class="slds-truncate slds-font-weight_bold text-danger">
+                                        <lightning-formatted-number value={item.AXF_CF_CUR_Value__c} format-style="currency" currency-code="BRL"></lightning-formatted-number>
+                                    </div>
+                                </td>
+                                <td class="slds-text-align_center">
+                                    <button class="slds-button slds-button_success slds-button_compact" onclick={handleOpenSettleModal} data-id={item.Id} data-name={item.Name}>
+                                        <lightning-icon icon-name="utility:check" size="x-small" variant="inverse" class="slds-m-right_xx-small"></lightning-icon>
+                                        Liquidar
+                                    </button>
+                                </td>
+                            </tr>
+                        </template>
+                    </tbody>
+                </table>
+            </div>
+        </template>
+
+        <template if:false={hasRecords}>
+            <div class="slds-illustration slds-illustration_small slds-p-vertical_small">
+                <p class="slds-text-body_regular slds-text-color_success slds-font-weight_bold">
+                    <lightning-icon icon-name="utility:success" size="x-small" variant="success" class="slds-m-right_xx-small"></lightning-icon>
+                    Nenhuma despesa pendente de meses anteriores. Parabéns!
+                </p>
+            </div>
+        </template>
+    </div>
+
+    <!-- MODAL DE LIQUIDAÇÃO -->
+    <template if:true={isModalOpen}>
+        <section role="dialog" tabindex="-1" class="slds-modal slds-fade-in-open" aria-modal="true">
+            <div class="slds-modal__container">
+                <header class="slds-modal__header slds-theme_success slds-theme_alert-texture">
+                    <button class="slds-button slds-button_icon slds-modal__close slds-button_icon-inverse" title="Fechar" onclick={handleCloseModal}>
+                        <lightning-icon icon-name="utility:close" size="small" variant="inverse"></lightning-icon>
+                    </button>
+                    <h2 class="slds-modal__title slds-hyphenate slds-text-heading_medium">
+                        Liquidar Despesa: {selectedRecordName}
+                    </h2>
+                </header>
+                <div class="slds-modal__content slds-p-around_medium">
+                    <p class="slds-m-bottom_small">Confirme a data de pagamento real efetuado para baixar esta despesa:</p>
+                    <lightning-input 
+                        type="date" 
+                        name="paymentDate" 
+                        label="Data de Pagamento (Payment Date)" 
+                        value={paymentDate} 
+                        onchange={handleDateChange} 
+                        required>
+                    </lightning-input>
+                </div>
+                <footer class="slds-modal__footer">
+                    <button class="slds-button slds-button_neutral" onclick={handleCloseModal}>Cancelar</button>
+                    <button class="slds-button slds-button_success" onclick={handleConfirmSettle} disabled={isLoading}>
+                        Confirmar Pagamento
+                    </button>
+                </footer>
+            </div>
+        </section>
+        <div class="slds-backdrop slds-backdrop_open"></div>
+    </template>
+</template>
