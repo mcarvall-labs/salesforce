@@ -27,9 +27,10 @@ private class AXF_CLS_CTRL_CompanyResponsibleTest {
   @IsTest
   static void findAccountsFiltersByRecordType() {
     allow();
-    insert new Account(
-      Name = 'Acme Comercio',
-      RecordTypeId = rt('AXF_Business')
+    AXF_CLS_AxonTestUserFactory.insertWithRecordTypeAccess(
+      new List<Account>{
+        new Account(Name = 'Acme Comercio', RecordTypeId = rt('AXF_Business'))
+      }
     );
     insert new Account(
       LastName = 'Acme Pessoa',
@@ -53,9 +54,13 @@ private class AXF_CLS_CTRL_CompanyResponsibleTest {
   @IsTest
   static void findAccountsRejectsUnsafeEnumerationAndSupportsApostrophe() {
     allow();
-    insert new Account(
-      Name = 'Comércio D\'Ávila',
-      RecordTypeId = rt('AXF_Business')
+    AXF_CLS_AxonTestUserFactory.insertWithRecordTypeAccess(
+      new List<Account>{
+        new Account(
+          Name = 'Comércio D\'Ávila',
+          RecordTypeId = rt('AXF_Business')
+        )
+      }
     );
     System.assertEquals(
       0,
@@ -98,7 +103,9 @@ private class AXF_CLS_CTRL_CompanyResponsibleTest {
       Name = 'Empresa Ctrl',
       RecordTypeId = rt('AXF_Business')
     );
-    insert b;
+    AXF_CLS_AxonTestUserFactory.insertWithRecordTypeAccess(
+      new List<Account>{ b }
+    );
     Account p = new Account(
       LastName = 'Pessoa Ctrl',
       RecordTypeId = rt('PersonAccount')

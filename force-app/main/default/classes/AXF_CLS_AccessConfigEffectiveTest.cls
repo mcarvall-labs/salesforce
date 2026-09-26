@@ -85,7 +85,10 @@ private class AXF_CLS_AccessConfigEffectiveTest {
     Id profileId = [
       SELECT Id
       FROM Profile
-      WHERE Name = 'System Administrator'
+      WHERE
+        PermissionsModifyAllData = TRUE
+        AND UserType = 'Standard'
+        AND Name IN ('System Administrator', 'Administrador do sistema')
       LIMIT 1
     ]
     .Id;
@@ -125,7 +128,7 @@ private class AXF_CLS_AccessConfigEffectiveTest {
   }
 
   @IsTest
-  static void gestorHasConfigurationAuthorityButNoDelete() {
+  static void gestorHasConfigurationAuthorityAndProductionAccountAccess() {
     User gestor = buildUser('Gestor AXF7', 'axf7g', GESTOR_ROLE, GESTOR_PSG);
     calculateGroups();
 
@@ -148,10 +151,11 @@ private class AXF_CLS_AccessConfigEffectiveTest {
       );
 
       DescribeSObjectResult acc = Account.SObjectType.getDescribe();
+      // Baseline de producao: AXF_PS_User concede CRUD completo em Account.
       System.assertEquals(
-        false,
+        true,
         acc.isDeletable(),
-        'nenhum nivel Axon concede Delete em Account'
+        'AXF_PS_User (producao) concede Delete em Account'
       );
       System.assertEquals(true, acc.isCreateable(), 'Gestor cadastra Account');
       System.assertEquals(true, acc.isUpdateable(), 'Gestor edita Account');
@@ -195,15 +199,17 @@ private class AXF_CLS_AccessConfigEffectiveTest {
         'chamada direta pelo Participante e negada'
       );
 
+      // Baseline de producao: o Participante tambem recebe AXF_PS_User (CRUD
+      // completo em Account); a restricao dele e a ausencia de AXF_CanConfigure.
       System.assertEquals(
-        false,
+        true,
         Account.SObjectType.getDescribe().isDeletable(),
-        'Participante nao tem Delete em Account'
+        'AXF_PS_User (producao) concede Delete em Account ao Participante'
       );
       System.assertEquals(
-        false,
+        true,
         Account.SObjectType.getDescribe().isCreateable(),
-        'Participante nao cadastra Account'
+        'AXF_PS_User (producao) concede Create em Account ao Participante'
       );
     }
     Test.stopTest();

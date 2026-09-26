@@ -10,7 +10,12 @@ private class ALT_CLS_AxonAccessProvisioningTest {
   private static final String PARTICIPANTE_PSG = 'AXF_PSG_Participante';
 
   private static User buildStandardUser() {
-    Profile p = [SELECT Id FROM Profile WHERE Name = 'Standard User' LIMIT 1];
+    Profile p = [
+      SELECT Id
+      FROM Profile
+      WHERE Name IN ('Standard User', 'Usuário Padrão')
+      LIMIT 1
+    ];
     String unique =
       'axf7' +
       String.valueOf(Datetime.now().getTime()) +

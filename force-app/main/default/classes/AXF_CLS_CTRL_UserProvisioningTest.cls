@@ -8,7 +8,10 @@ private class AXF_CLS_CTRL_UserProvisioningTest {
     Profile admin = [
       SELECT Id
       FROM Profile
-      WHERE Name = 'System Administrator'
+      WHERE
+        PermissionsModifyAllData = TRUE
+        AND UserType = 'Standard'
+        AND Name IN ('System Administrator', 'Administrador do sistema')
       LIMIT 1
     ];
     PermissionSetGroup psg = [

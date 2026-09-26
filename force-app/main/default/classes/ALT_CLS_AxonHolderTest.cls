@@ -73,23 +73,26 @@ private class ALT_CLS_AxonHolderTest {
 
   @IsTest
   static void createsBusinessHolder() {
-    ALT_CLS_AxonHolder svc = authorizedService();
+    // AXF_Business is only available through the Axon permission set groups.
+    System.runAs(AXF_CLS_AxonTestUserFactory.recordTypeUser()) {
+      ALT_CLS_AxonHolder svc = authorizedService();
 
-    Test.startTest();
-    ALT_CLS_AxonHolder.SaveResult r = svc.saveHolder(
-      businessInput('Padaria do Bairro LTDA')
-    );
-    Test.stopTest();
+      Test.startTest();
+      ALT_CLS_AxonHolder.SaveResult r = svc.saveHolder(
+        businessInput('Padaria do Bairro LTDA')
+      );
+      Test.stopTest();
 
-    System.assertEquals('SUCCEEDED', r.outcome, r.message);
-    Account saved = [
-      SELECT IsPersonAccount, Name, RecordType.DeveloperName
-      FROM Account
-      WHERE Id = :r.accountId
-    ];
-    System.assertEquals(false, saved.IsPersonAccount);
-    System.assertEquals('AXF_Business', saved.RecordType.DeveloperName);
-    System.assertEquals('Padaria do Bairro LTDA', saved.Name);
+      System.assertEquals('SUCCEEDED', r.outcome, r.message);
+      Account saved = [
+        SELECT IsPersonAccount, Name, RecordType.DeveloperName
+        FROM Account
+        WHERE Id = :r.accountId
+      ];
+      System.assertEquals(false, saved.IsPersonAccount);
+      System.assertEquals('AXF_Business', saved.RecordType.DeveloperName);
+      System.assertEquals('Padaria do Bairro LTDA', saved.Name);
+    }
   }
 
   @IsTest
@@ -146,29 +149,32 @@ private class ALT_CLS_AxonHolderTest {
 
   @IsTest
   static void warnsOnDuplicateNameThenCreatesWhenConfirmed() {
-    ALT_CLS_AxonHolder svc = authorizedService();
-    svc.saveHolder(businessInput('Mercado Central'));
+    // AXF_Business is only available through the Axon permission set groups.
+    System.runAs(AXF_CLS_AxonTestUserFactory.recordTypeUser()) {
+      ALT_CLS_AxonHolder svc = authorizedService();
+      svc.saveHolder(businessInput('Mercado Central'));
 
-    ALT_CLS_AxonHolder.SaveResult warn = svc.saveHolder(
-      businessInput('  mercado   central ')
-    );
-    System.assertEquals(
-      'DUPLICATE_WARNING',
-      warn.outcome,
-      'same normalized name warns'
-    );
-    System.assertEquals(1, warn.possibleDuplicates.size());
-    System.assertEquals(null, warn.accountId, 'not created yet');
+      ALT_CLS_AxonHolder.SaveResult warn = svc.saveHolder(
+        businessInput('  mercado   central ')
+      );
+      System.assertEquals(
+        'DUPLICATE_WARNING',
+        warn.outcome,
+        'same normalized name warns'
+      );
+      System.assertEquals(1, warn.possibleDuplicates.size());
+      System.assertEquals(null, warn.accountId, 'not created yet');
 
-    ALT_CLS_AxonHolder.SaveInput confirmed = businessInput('Mercado Central');
-    confirmed.confirmedDespiteDuplicates = true;
-    ALT_CLS_AxonHolder.SaveResult ok = svc.saveHolder(confirmed);
-    System.assertEquals('SUCCEEDED', ok.outcome);
-    System.assertEquals(
-      2,
-      [SELECT COUNT() FROM Account WHERE Name = 'Mercado Central'],
-      'no auto-merge'
-    );
+      ALT_CLS_AxonHolder.SaveInput confirmed = businessInput('Mercado Central');
+      confirmed.confirmedDespiteDuplicates = true;
+      ALT_CLS_AxonHolder.SaveResult ok = svc.saveHolder(confirmed);
+      System.assertEquals('SUCCEEDED', ok.outcome);
+      System.assertEquals(
+        2,
+        [SELECT COUNT() FROM Account WHERE Name = 'Mercado Central'],
+        'no auto-merge'
+      );
+    }
   }
 
   @IsTest
@@ -200,35 +206,41 @@ private class ALT_CLS_AxonHolderTest {
 
   @IsTest
   static void rejectsStaleEdit() {
-    ALT_CLS_AxonHolder svc = authorizedService();
-    ALT_CLS_AxonHolder.SaveResult created = svc.saveHolder(
-      businessInput('Oficina X')
-    );
+    // AXF_Business is only available through the Axon permission set groups.
+    System.runAs(AXF_CLS_AxonTestUserFactory.recordTypeUser()) {
+      ALT_CLS_AxonHolder svc = authorizedService();
+      ALT_CLS_AxonHolder.SaveResult created = svc.saveHolder(
+        businessInput('Oficina X')
+      );
 
-    ALT_CLS_AxonHolder.SaveInput edit = businessInput('Oficina Y');
-    edit.accountId = created.accountId;
-    edit.expectedLastModifiedDate = Datetime.newInstance(2000, 1, 1); // stale
+      ALT_CLS_AxonHolder.SaveInput edit = businessInput('Oficina Y');
+      edit.accountId = created.accountId;
+      edit.expectedLastModifiedDate = Datetime.newInstance(2000, 1, 1); // stale
 
-    ALT_CLS_AxonHolder.SaveResult r = svc.saveHolder(edit);
+      ALT_CLS_AxonHolder.SaveResult r = svc.saveHolder(edit);
 
-    System.assertEquals('CONFLICT', r.outcome);
-    System.assertEquals(
-      'Oficina X',
-      [SELECT Name FROM Account WHERE Id = :created.accountId].Name
-    );
+      System.assertEquals('CONFLICT', r.outcome);
+      System.assertEquals(
+        'Oficina X',
+        [SELECT Name FROM Account WHERE Id = :created.accountId].Name
+      );
+    }
   }
 
   @IsTest
   static void rejectsEditWithoutExpectedTimestamp() {
-    ALT_CLS_AxonHolder svc = authorizedService();
-    ALT_CLS_AxonHolder.SaveResult created = svc.saveHolder(
-      businessInput('Loja A')
-    );
+    // AXF_Business is only available through the Axon permission set groups.
+    System.runAs(AXF_CLS_AxonTestUserFactory.recordTypeUser()) {
+      ALT_CLS_AxonHolder svc = authorizedService();
+      ALT_CLS_AxonHolder.SaveResult created = svc.saveHolder(
+        businessInput('Loja A')
+      );
 
-    ALT_CLS_AxonHolder.SaveInput edit = businessInput('Loja B');
-    edit.accountId = created.accountId; // expectedLastModifiedDate left null
+      ALT_CLS_AxonHolder.SaveInput edit = businessInput('Loja B');
+      edit.accountId = created.accountId; // expectedLastModifiedDate left null
 
-    System.assertEquals('CONFLICT', svc.saveHolder(edit).outcome);
+      System.assertEquals('CONFLICT', svc.saveHolder(edit).outcome);
+    }
   }
 
   @IsTest
@@ -244,18 +256,21 @@ private class ALT_CLS_AxonHolderTest {
 
   @IsTest
   static void listAndGetHolderFilterToHolders() {
-    ALT_CLS_AxonHolder svc = authorizedService();
-    svc.saveHolder(personInput('Diego', 'Alvarez'));
-    svc.saveHolder(businessInput('Transportes Delta'));
+    // AXF_Business is only available through the Axon permission set groups.
+    System.runAs(AXF_CLS_AxonTestUserFactory.recordTypeUser()) {
+      ALT_CLS_AxonHolder svc = authorizedService();
+      svc.saveHolder(personInput('Diego', 'Alvarez'));
+      svc.saveHolder(businessInput('Transportes Delta'));
 
-    List<ALT_CLS_AxonHolder.HolderView> all = svc.listHolders(null);
-    System.assertEquals(2, all.size(), 'both created holders listed');
+      List<ALT_CLS_AxonHolder.HolderView> all = svc.listHolders(null);
+      System.assertEquals(2, all.size(), 'both created holders listed');
 
-    List<ALT_CLS_AxonHolder.HolderView> filtered = svc.listHolders('Delta');
-    System.assertEquals(1, filtered.size());
-    System.assertEquals('BUSINESS', filtered[0].type);
+      List<ALT_CLS_AxonHolder.HolderView> filtered = svc.listHolders('Delta');
+      System.assertEquals(1, filtered.size());
+      System.assertEquals('BUSINESS', filtered[0].type);
 
-    System.assertEquals(null, svc.getHolder(null));
+      System.assertEquals(null, svc.getHolder(null));
+    }
   }
 
   @IsTest
@@ -276,7 +291,12 @@ private class ALT_CLS_AxonHolderTest {
   }
 
   private static User buildStandardUser() {
-    Profile p = [SELECT Id FROM Profile WHERE Name = 'Standard User' LIMIT 1];
+    Profile p = [
+      SELECT Id
+      FROM Profile
+      WHERE Name IN ('Standard User', 'Usuário Padrão')
+      LIMIT 1
+    ];
     User u = new User(
       ProfileId = p.Id,
       LastName = 'Tester',

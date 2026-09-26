@@ -13,7 +13,10 @@ private class ALT_CLS_AxonUserProvisioningTest {
     Profile admin = [
       SELECT Id
       FROM Profile
-      WHERE Name = 'System Administrator'
+      WHERE
+        PermissionsModifyAllData = TRUE
+        AND UserType = 'Standard'
+        AND Name IN ('System Administrator', 'Administrador do sistema')
       LIMIT 1
     ];
     PermissionSetGroup psg = [
@@ -249,7 +252,12 @@ private class ALT_CLS_AxonUserProvisioningTest {
     User cfg = configurator();
     User target;
     System.runAs(new User(Id = UserInfo.getUserId())) {
-      Profile p = [SELECT Id FROM Profile WHERE Name = 'Standard User' LIMIT 1];
+      Profile p = [
+        SELECT Id
+        FROM Profile
+        WHERE Name IN ('Standard User', 'Usuário Padrão')
+        LIMIT 1
+      ];
       target = new User(
         ProfileId = p.Id,
         LastName = 'Inativo',
@@ -299,7 +307,10 @@ private class ALT_CLS_AxonUserProvisioningTest {
       Profile admin = [
         SELECT Id
         FROM Profile
-        WHERE Name = 'System Administrator'
+        WHERE
+          PermissionsModifyAllData = TRUE
+          AND UserType = 'Standard'
+          AND Name IN ('System Administrator', 'Administrador do sistema')
         LIMIT 1
       ];
       target = new User(
@@ -452,12 +463,24 @@ private class ALT_CLS_AxonUserProvisioningTest {
         WHERE Id = :foreignAccId
         WITH USER_MODE
       ];
+      // Baseline de producao: AXF_PS_User concede View All em Account, entao o
+      // escopo OWN_DATA e expresso pela posse (owner sync), nao pela visibilidade.
       System.assertEquals(
-        0,
+        1,
         foreign.size(),
-        'nao ve titular de outro dono (OWD Private)'
+        'AXF_PS_User (producao) concede View All em Account'
       );
     }
+    System.assertEquals(
+      linkedUserId,
+      [SELECT OwnerId FROM Account WHERE Id = :ownPersonId].OwnerId,
+      'OWN_DATA: o Person Account proprio passa a pertencer ao usuario'
+    );
+    System.assertNotEquals(
+      linkedUserId,
+      [SELECT OwnerId FROM Account WHERE Id = :foreignAccId].OwnerId,
+      'OWN_DATA: o titular de outro dono nao e transferido'
+    );
   }
 
   @IsTest
@@ -548,7 +571,10 @@ private class ALT_CLS_AxonUserProvisioningTest {
     Profile admin = [
       SELECT Id
       FROM Profile
-      WHERE Name = 'System Administrator'
+      WHERE
+        PermissionsModifyAllData = TRUE
+        AND UserType = 'Standard'
+        AND Name IN ('System Administrator', 'Administrador do sistema')
       LIMIT 1
     ];
     User u = new User(
@@ -1125,5 +1151,48 @@ private class ALT_CLS_AxonUserProvisioningTest {
       System.assertEquals('SUCCEEDED', apv.AXF_APV_PKL_Status__c);
     }
     Test.stopTest();
+  }
+
+  @IsTest
+  static void resumeCoversTerminalAndMissingStates() {
+    User cfg = configurator();
+    System.runAs(cfg) {
+      Id personId = personAccount('Retomada');
+      Id doneId = seedRequest(
+        personId,
+        'CREATE',
+        'OWN_DATA',
+        'DONE',
+        'SUCCEEDED',
+        null
+      );
+      Id terminalId = seedRequest(
+        personAccount('Terminal'),
+        'CREATE',
+        'OWN_DATA',
+        'CREATE_OR_LINK_USER',
+        'FAILED_TERMINAL',
+        null
+      );
+      ALT_CLS_AxonUserProvisioning svc = new ALT_CLS_AxonUserProvisioning();
+
+      Test.startTest();
+      ALT_CLS_AxonUserProvisioning.Result done = svc.resume(doneId);
+      ALT_CLS_AxonUserProvisioning.Result terminal = svc.resume(terminalId);
+      ALT_CLS_AxonUserProvisioning.Result missing = svc.resume(null);
+      ALT_CLS_AxonUserProvisioning.canConfigureOverride = false;
+      ALT_CLS_AxonUserProvisioning.Result forbidden = svc.resume(doneId);
+      Test.stopTest();
+
+      System.assertEquals('ALREADY_DONE', done.outcome);
+      System.assertEquals('CONFLICT', terminal.outcome);
+      System.assertEquals('NOT_FOUND', missing.outcome);
+      System.assertEquals('FORBIDDEN', forbidden.outcome);
+      System.assertEquals(
+        'ALREADY_DONE',
+        svc.getStatus(doneId).outcome,
+        'getStatus reports a finished request'
+      );
+    }
   }
 }

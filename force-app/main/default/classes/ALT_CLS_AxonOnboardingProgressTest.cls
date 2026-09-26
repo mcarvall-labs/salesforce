@@ -30,7 +30,10 @@ private class ALT_CLS_AxonOnboardingProgressTest {
     Profile admin = [
       SELECT Id
       FROM Profile
-      WHERE Name = 'System Administrator'
+      WHERE
+        PermissionsModifyAllData = TRUE
+        AND UserType = 'Standard'
+        AND Name IN ('System Administrator', 'Administrador do sistema')
       LIMIT 1
     ];
     User u = new User(

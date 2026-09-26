@@ -730,6 +730,14 @@
         <recordType>AXF_OBJ_Category__c.AXF_CAT_RT_Revenue</recordType>
         <visible>true</visible>
     </recordTypeVisibilities>
+    <recordTypeVisibilities>
+        <recordType>Account.AXF_Business</recordType>
+        <visible>true</visible>
+    </recordTypeVisibilities>
+    <recordTypeVisibilities>
+        <recordType>PersonAccount.PersonAccount</recordType>
+        <visible>true</visible>
+    </recordTypeVisibilities>
     <tabSettings>
         <tab>AXF_Home</tab>
         <visibility>Visible</visibility>

@@ -6,7 +6,12 @@
 @IsTest
 private class AXF_CLS_CTRL_AccessLevelConfigTest {
   private static User buildStandardUser() {
-    Profile p = [SELECT Id FROM Profile WHERE Name = 'Standard User' LIMIT 1];
+    Profile p = [
+      SELECT Id
+      FROM Profile
+      WHERE Name IN ('Standard User', 'Usuário Padrão')
+      LIMIT 1
+    ];
     String unique =
       'axf7c' +
       String.valueOf(Datetime.now().getTime()) +
