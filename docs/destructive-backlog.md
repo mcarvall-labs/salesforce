@@ -11,6 +11,39 @@ Jira: [AXF-161](https://axon-personal-finances.atlassian.net/browse/AXF-161) tra
 this end to end. Update this file and that ticket together — never record a
 destructive-cleanup candidate only in chat history or a PR comment.
 
+## Status: applied to DEV — rebaseline on AXON_PROD + AXON - Configuration (26/09/2026)
+
+Owner decision (26/09/2026): the project baseline is the AXON_PROD content plus only the
+AXON - Configuration app and onboarding wizard. The previous rebuild is archived as git tag
+`archive/greenfield-2026-09` (branch `rebaseline/prod-plus-config`). **This supersedes the
+"AXON_PROD legacy Apex classes" section below: those classes are now the baseline and must
+NOT be deleted** (see the list kept below only for the audit trail).
+
+Applied to AXON_DEV on 26/09/2026 (explicitly approved by the owner, each phase dry-run first):
+
+| Phase | Deploy id                   | What                                                                                                                                                                                         |
+| ----- | --------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| 0     | data                        | Rebuild permission set / group assignments removed; rebuild bank accounts, cards, Pluggy connections, account holders and integration runs deleted                                           |
+| 1a    | `0Afaj00000lsOThCAM`        | Account, BankInstitution, BankAccount, CreditCard record pages deactivated (View override -> Default)                                                                                        |
+| 1b    | `0Afaj00000lsOgbCAE`        | 460 code components: all rebuild Apex classes/triggers, LWCs, custom tabs, FlexiPages, both rebuild apps, AXF_PSG__, 10 AXF_PS__, candidate named/external credential, notification types    |
+| 2     | `0Afaj00000lsPZRCA2`        | 1,559 data-model components: 48 rebuild objects (incl. CMDTs, platform event, big object), 83 rebuild fields on kept objects, 1,410 labels, 16 custom permissions, validation rules, layouts |
+| 3     | `0Afaj00000lsU2rCAE`        | Baseline deployed (664 components, RunLocalTests 332/332)                                                                                                                                    |
+| 4     | data + `0Afaj00000lsVF3CAM` | Groups re-assigned; holders moved to PersonAccount; `PersonAccount.AXF_Person` deactivated (record types cannot be deleted through the API — delete it in Setup)                             |
+
+Kept on purpose in AXON_DEV: list view `AXF_OBJ_BankAccountTransaction__c.All` (last filter of the object).
+
+### Candidates still open (not applied)
+
+- `ZZZ_TestNameField` (AXON_PROD only): obsolete debug class, removed from the repository.
+- Production home components no longer used by the Axon Finance app (its home is now the
+  `AXF_Home` dashboard): `AXF_HPL_HomePage`, `aXF_LWC_monthlyBalanceKpi`,
+  `aXF_LWC_overdueExpensesAlert`, `aXF_LWC_overdueRevenuesAlert`, `aXF_LWC_expenseHomeTable`,
+  `aXF_LWC_revenueHomeTable`, `aXF_LWC_investmentCapacityKpi` and their dedicated controllers.
+  Still in the repository — pending owner decision.
+- AXON_PROD will need, at promotion time: Account settings (account teams, contacts to
+  multiple accounts, versioned in `settings/Account.settings-meta.xml`) and the
+  `SalesTeamRole` value `Responsável Financeiro`.
+
 ## Status: pending decision — AXON_PROD legacy Apex classes
 
 Found via `sf org list metadata --metadata-type ApexClass --target-org AXON_PROD`
