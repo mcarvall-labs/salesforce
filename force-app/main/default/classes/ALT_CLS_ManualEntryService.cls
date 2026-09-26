@@ -1197,7 +1197,7 @@ public with sharing class ALT_CLS_ManualEntryService {
    * contract's verified net is used; without it the net of the allocations the user can see, and a
    * truncated or refused read leaves the entries unverified.
    */
-  private static Map<Id, Decimal> nets(Set<Id> ids, Set<Id> unverified) {
+  public static Map<Id, Decimal> nets(Set<Id> ids, Set<Id> unverified) {
     if (ids.isEmpty()) {
       return new Map<Id, Decimal>();
     }

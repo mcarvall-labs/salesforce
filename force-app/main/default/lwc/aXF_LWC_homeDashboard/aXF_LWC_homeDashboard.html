@@ -1,0 +1,558 @@
+<template>
+  <div class="dashboard slds-is-relative">
+    <div
+      class="filter-bar slds-grid slds-grid_vertical-align-center slds-m-bottom_small"
+    >
+      <nav class="slds-tabs_default slds-col" aria-label={labels.filterLabel}>
+        <ul class="slds-tabs_default__nav" role="tablist">
+          <template for:each={tabs} for:item="tab">
+            <li
+              key={tab.key}
+              class={tab.itemClass}
+              title={tab.label}
+              role="presentation"
+            >
+              <a
+                class="slds-tabs_default__link"
+                href="#"
+                role="tab"
+                tabindex={tab.tabIndex}
+                aria-selected={tab.ariaSelected}
+                data-id={tab.key}
+                data-tab
+                onclick={handleTab}
+                >{tab.label}</a
+              >
+            </li>
+          </template>
+        </ul>
+      </nav>
+      <lightning-button-icon
+        icon-name="utility:refresh"
+        variant="border-filled"
+        alternative-text={labels.refresh}
+        title={labels.refresh}
+        onclick={handleRefresh}
+        disabled={loading}
+        class="slds-m-left_small"
+      ></lightning-button-icon>
+    </div>
+
+    <template lwc:if={loading}>
+      <lightning-spinner
+        alternative-text={labels.loading}
+        size="medium"
+      ></lightning-spinner>
+    </template>
+
+    <template lwc:if={error}>
+      <p
+        class="slds-text-color_error slds-m-bottom_small"
+        role="alert"
+        data-error
+      >
+        {error}
+      </p>
+    </template>
+
+    <template lwc:if={data}>
+      <template lwc:if={data.truncated}>
+        <p class="slds-text-color_weak slds-m-bottom_small" data-truncated>
+          {labels.truncated}
+        </p>
+      </template>
+      <template lwc:if={data.mixedCurrency}>
+        <p class="slds-text-color_weak slds-m-bottom_small">
+          {labels.mixedCurrency}
+        </p>
+      </template>
+
+      <div class="slds-grid slds-wrap slds-gutters_small">
+        <div class="slds-col slds-size_1-of-1 slds-large-size_2-of-3">
+          <!-- Balanço mensal -->
+          <div
+            class="card slds-p-around_medium slds-m-bottom_small"
+            data-balance
+          >
+            <div
+              class="slds-grid slds-grid_align-spread slds-grid_vertical-align-center slds-m-bottom_small"
+            >
+              <h2 class="slds-text-heading_small slds-text-title_bold">
+                <lightning-icon
+                  icon-name="utility:chart"
+                  size="small"
+                  class="slds-m-right_x-small"
+                ></lightning-icon>
+                {labels.monthlyBalance}
+              </h2>
+              <span class="slds-badge slds-badge_lightest">{monthLabel}</span>
+            </div>
+            <div class="slds-grid slds-wrap slds-gutters_small">
+              <div
+                class="slds-col slds-size_1-of-1 slds-medium-size_1-of-2 slds-m-bottom_small"
+              >
+                <div class={plannedBoxClass}>
+                  <p class="slds-text-title_bold">{labels.plannedBalance}</p>
+                  <p class="slds-text-heading_medium slds-m-top_xx-small">
+                    <lightning-formatted-number
+                      value={data.plannedBalance}
+                      format-style="currency"
+                      currency-code={currency}
+                    ></lightning-formatted-number>
+                  </p>
+                </div>
+              </div>
+              <div
+                class="slds-col slds-size_1-of-1 slds-medium-size_1-of-2 slds-m-bottom_small"
+              >
+                <div class={realizedBoxClass}>
+                  <p class="slds-text-title_bold">{labels.realizedBalance}</p>
+                  <p class="slds-text-heading_medium slds-m-top_xx-small">
+                    <lightning-formatted-number
+                      value={data.realizedBalance}
+                      format-style="currency"
+                      currency-code={currency}
+                    ></lightning-formatted-number>
+                  </p>
+                </div>
+              </div>
+            </div>
+            <div class="slds-border_top slds-p-top_small slds-grid slds-wrap">
+              <div class="slds-col slds-size_1-of-2">
+                <p class="slds-text-color_weak">
+                  {labels.revenuePlannedVsRealized}
+                </p>
+                <p class="text-success slds-m-top_xx-small">
+                  <lightning-formatted-number
+                    value={data.plannedRevenue}
+                    format-style="currency"
+                    currency-code={currency}
+                  ></lightning-formatted-number>
+                  <span class="slds-text-color_weak"> / </span>
+                  <lightning-formatted-number
+                    value={data.realizedRevenue}
+                    format-style="currency"
+                    currency-code={currency}
+                  ></lightning-formatted-number>
+                </p>
+              </div>
+              <div class="slds-col slds-size_1-of-2">
+                <p class="slds-text-color_weak">
+                  {labels.expensePlannedVsRealized}
+                </p>
+                <p class="text-danger slds-m-top_xx-small">
+                  <lightning-formatted-number
+                    value={data.plannedExpense}
+                    format-style="currency"
+                    currency-code={currency}
+                  ></lightning-formatted-number>
+                  <span class="slds-text-color_weak"> / </span>
+                  <lightning-formatted-number
+                    value={data.realizedExpense}
+                    format-style="currency"
+                    currency-code={currency}
+                  ></lightning-formatted-number>
+                </p>
+              </div>
+            </div>
+          </div>
+
+          <div class="slds-grid slds-wrap slds-gutters_small">
+            <div class="slds-col slds-size_1-of-1 slds-medium-size_1-of-2">
+              <!-- Despesas vencidas -->
+              <div
+                class="card alert-card alert-danger slds-p-around_medium slds-m-bottom_small"
+                data-overdue-expenses
+              >
+                <div class="slds-media slds-media_center slds-m-bottom_small">
+                  <div class="slds-media__figure">
+                    <span class={overdueExpenseBadgeClass}>
+                      <lightning-icon
+                        icon-name="utility:warning"
+                        size="small"
+                        variant="inverse"
+                      ></lightning-icon>
+                    </span>
+                  </div>
+                  <div class="slds-media__body">
+                    <h2 class="slds-text-heading_small text-danger">
+                      {overdueExpensesTitle}
+                    </h2>
+                    <p class="slds-text-body_small slds-text-color_weak">
+                      {overdueExpensesTotal}
+                    </p>
+                  </div>
+                </div>
+                <template lwc:if={hasOverdueExpenses}>
+                  <div class="table-container slds-scrollable">
+                    <table
+                      class="slds-table slds-table_cell-buffer slds-table_bordered slds-table_striped slds-table_compact"
+                    >
+                      <thead>
+                        <tr class="slds-line-height_reset">
+                          <th scope="col">{labels.colDescription}</th>
+                          <th scope="col">{labels.colCategory}</th>
+                          <th scope="col">{labels.colDueDate}</th>
+                          <th scope="col" class="slds-text-align_right">
+                            {labels.colAmount}
+                          </th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        <template for:each={overdueExpenseRows} for:item="row">
+                          <tr key={row.key}>
+                            <th scope="row">
+                              <a
+                                href="#"
+                                data-id={row.recordId}
+                                onclick={handleOpenRecord}
+                                >{row.description}</a
+                              >
+                            </th>
+                            <td>{row.category}</td>
+                            <td class="text-overdue">{row.dateLabel}</td>
+                            <td class="slds-text-align_right text-danger">
+                              {row.residualLabel}
+                            </td>
+                          </tr>
+                        </template>
+                      </tbody>
+                    </table>
+                  </div>
+                </template>
+                <template lwc:else>
+                  <p class="slds-text-color_success" data-no-overdue-expenses>
+                    <lightning-icon
+                      icon-name="utility:success"
+                      size="x-small"
+                      variant="success"
+                      class="slds-m-right_xx-small"
+                    ></lightning-icon>
+                    {labels.noOverdueExpenses}
+                  </p>
+                </template>
+              </div>
+
+              <!-- Despesas do mês -->
+              <div
+                class="card slds-p-around_medium slds-m-bottom_small"
+                data-month-expenses
+              >
+                <h2 class="slds-text-heading_small slds-m-bottom_small">
+                  <lightning-icon
+                    icon-name="utility:moneybag"
+                    size="small"
+                    class="slds-m-right_x-small"
+                  ></lightning-icon>
+                  {labels.monthExpenses}
+                </h2>
+                <lightning-input
+                  type="search"
+                  label={labels.categoryFilter}
+                  placeholder={labels.categoryPlaceholder}
+                  value={expenseCategory}
+                  onchange={handleExpenseCategory}
+                  class="slds-m-bottom_small"
+                  data-expense-category
+                ></lightning-input>
+                <template lwc:if={hasMonthExpenses}>
+                  <div class="table-container slds-scrollable">
+                    <table
+                      class="slds-table slds-table_cell-buffer slds-table_bordered slds-table_striped slds-table_compact"
+                    >
+                      <thead>
+                        <tr class="slds-line-height_reset">
+                          <th scope="col">{labels.colDueDate}</th>
+                          <th scope="col">{labels.colDescription}</th>
+                          <th scope="col">{labels.colCategory}</th>
+                          <th scope="col" class="slds-text-align_right">
+                            {labels.colAmount}
+                          </th>
+                          <th scope="col">{labels.colStatus}</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        <template for:each={monthExpenseRows} for:item="row">
+                          <tr key={row.key} data-expense-row>
+                            <td>{row.dateLabel}</td>
+                            <th scope="row">
+                              <a
+                                href="#"
+                                data-id={row.recordId}
+                                onclick={handleOpenRecord}
+                                >{row.description}</a
+                              >
+                            </th>
+                            <td>{row.category}</td>
+                            <td class="slds-text-align_right">
+                              {row.amountLabel}
+                            </td>
+                            <td>{row.statusLabel}</td>
+                          </tr>
+                        </template>
+                      </tbody>
+                    </table>
+                  </div>
+                </template>
+                <template lwc:else>
+                  <p class="slds-text-color_weak">{labels.noMonthExpenses}</p>
+                </template>
+              </div>
+            </div>
+
+            <div class="slds-col slds-size_1-of-1 slds-medium-size_1-of-2">
+              <!-- Receitas pendentes -->
+              <div
+                class="card alert-card alert-warning slds-p-around_medium slds-m-bottom_small"
+                data-overdue-revenues
+              >
+                <div class="slds-media slds-media_center slds-m-bottom_small">
+                  <div class="slds-media__figure">
+                    <span class={overdueRevenueBadgeClass}>
+                      <lightning-icon
+                        icon-name="utility:warning"
+                        size="small"
+                        variant="inverse"
+                      ></lightning-icon>
+                    </span>
+                  </div>
+                  <div class="slds-media__body">
+                    <h2 class="slds-text-heading_small text-warning">
+                      {overdueRevenuesTitle}
+                    </h2>
+                    <p class="slds-text-body_small slds-text-color_weak">
+                      {overdueRevenuesTotal}
+                    </p>
+                  </div>
+                </div>
+                <template lwc:if={hasOverdueRevenues}>
+                  <div class="table-container slds-scrollable">
+                    <table
+                      class="slds-table slds-table_cell-buffer slds-table_bordered slds-table_striped slds-table_compact"
+                    >
+                      <thead>
+                        <tr class="slds-line-height_reset">
+                          <th scope="col">{labels.colDescription}</th>
+                          <th scope="col">{labels.colCategory}</th>
+                          <th scope="col">{labels.colDueDate}</th>
+                          <th scope="col" class="slds-text-align_right">
+                            {labels.colAmount}
+                          </th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        <template for:each={overdueRevenueRows} for:item="row">
+                          <tr key={row.key}>
+                            <th scope="row">
+                              <a
+                                href="#"
+                                data-id={row.recordId}
+                                onclick={handleOpenRecord}
+                                >{row.description}</a
+                              >
+                            </th>
+                            <td>{row.category}</td>
+                            <td class="text-overdue">{row.dateLabel}</td>
+                            <td class="slds-text-align_right text-success">
+                              {row.residualLabel}
+                            </td>
+                          </tr>
+                        </template>
+                      </tbody>
+                    </table>
+                  </div>
+                </template>
+                <template lwc:else>
+                  <p class="slds-text-color_success" data-no-overdue-revenues>
+                    <lightning-icon
+                      icon-name="utility:success"
+                      size="x-small"
+                      variant="success"
+                      class="slds-m-right_xx-small"
+                    ></lightning-icon>
+                    {labels.noOverdueRevenues}
+                  </p>
+                </template>
+              </div>
+
+              <!-- Receitas do mês -->
+              <div
+                class="card slds-p-around_medium slds-m-bottom_small"
+                data-month-revenues
+              >
+                <h2 class="slds-text-heading_small slds-m-bottom_small">
+                  <lightning-icon
+                    icon-name="utility:currency"
+                    size="small"
+                    class="slds-m-right_x-small"
+                  ></lightning-icon>
+                  {labels.monthRevenues}
+                </h2>
+                <lightning-input
+                  type="search"
+                  label={labels.categoryFilter}
+                  placeholder={labels.categoryPlaceholder}
+                  value={revenueCategory}
+                  onchange={handleRevenueCategory}
+                  class="slds-m-bottom_small"
+                ></lightning-input>
+                <template lwc:if={hasMonthRevenues}>
+                  <div class="table-container slds-scrollable">
+                    <table
+                      class="slds-table slds-table_cell-buffer slds-table_bordered slds-table_striped slds-table_compact"
+                    >
+                      <thead>
+                        <tr class="slds-line-height_reset">
+                          <th scope="col">{labels.colDueDate}</th>
+                          <th scope="col">{labels.colDescription}</th>
+                          <th scope="col">{labels.colCategory}</th>
+                          <th scope="col" class="slds-text-align_right">
+                            {labels.colAmount}
+                          </th>
+                          <th scope="col">{labels.colStatus}</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        <template for:each={monthRevenueRows} for:item="row">
+                          <tr key={row.key}>
+                            <td>{row.dateLabel}</td>
+                            <th scope="row">
+                              <a
+                                href="#"
+                                data-id={row.recordId}
+                                onclick={handleOpenRecord}
+                                >{row.description}</a
+                              >
+                            </th>
+                            <td>{row.category}</td>
+                            <td class="slds-text-align_right">
+                              {row.amountLabel}
+                            </td>
+                            <td>{row.statusLabel}</td>
+                          </tr>
+                        </template>
+                      </tbody>
+                    </table>
+                  </div>
+                </template>
+                <template lwc:else>
+                  <p class="slds-text-color_weak">{labels.noMonthRevenues}</p>
+                </template>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div class="slds-col slds-size_1-of-1 slds-large-size_1-of-3">
+          <div class="quick-actions slds-m-bottom_small">
+            <button
+              class="slds-button slds-button_destructive quick-action"
+              onclick={handleNewExpense}
+              data-new-expense
+            >
+              {labels.newExpense}
+            </button>
+            <button
+              class="slds-button slds-button_success quick-action"
+              onclick={handleNewRevenue}
+              data-new-revenue
+            >
+              {labels.newRevenue}
+            </button>
+          </div>
+
+          <!-- Saldo projetado -->
+          <div
+            class="card slds-p-around_medium slds-m-bottom_small"
+            data-projected
+          >
+            <div
+              class="projected-banner slds-p-around_medium slds-m-bottom_medium"
+            >
+              <p class="slds-text-title_bold">{labels.projectedBalance}</p>
+              <p
+                class="slds-text-heading_large slds-m-top_xx-small"
+                data-projected-value
+              >
+                <lightning-formatted-number
+                  value={data.projectedBalance}
+                  format-style="currency"
+                  currency-code={currency}
+                ></lightning-formatted-number>
+              </p>
+              <p class="slds-text-body_small slds-m-top_xx-small text-muted">
+                {labels.projectedHint}
+              </p>
+            </div>
+            <div class="slds-grid slds-wrap slds-gutters_x-small">
+              <div
+                class="slds-col slds-size_1-of-1 slds-medium-size_1-of-2 slds-m-bottom_small"
+              >
+                <div class="metric-box slds-p-around_small">
+                  <p class="slds-text-color_weak">{labels.accountsBalance}</p>
+                  <p class="slds-text-heading_small slds-m-top_xx-small">
+                    <lightning-formatted-number
+                      value={data.accountsBalance}
+                      format-style="currency"
+                      currency-code={currency}
+                    ></lightning-formatted-number>
+                  </p>
+                  <template lwc:if={hasAccounts}>
+                    <div
+                      class="slds-border_top slds-m-top_small slds-p-top_x-small"
+                    >
+                      <template for:each={accountRows} for:item="acc">
+                        <div
+                          key={acc.key}
+                          class="slds-grid slds-grid_align-spread slds-text-body_small slds-p-vertical_xx-small"
+                        >
+                          <a
+                            href="#"
+                            class="slds-truncate"
+                            title={acc.openLabel}
+                            data-id={acc.bankAccountId}
+                            onclick={handleOpenRecord}
+                            >{acc.name}</a
+                          >
+                          <span class="account-balance slds-m-left_x-small">
+                            <lightning-formatted-number
+                              value={acc.balance}
+                              format-style="currency"
+                              currency-code={acc.currencyIso}
+                            ></lightning-formatted-number>
+                          </span>
+                        </div>
+                      </template>
+                    </div>
+                  </template>
+                </div>
+              </div>
+              <div
+                class="slds-col slds-size_1-of-1 slds-medium-size_1-of-2 slds-m-bottom_small"
+              >
+                <div class="metric-box slds-p-around_small">
+                  <p class="slds-text-color_weak">
+                    <lightning-icon
+                      icon-name="utility:trending"
+                      size="x-small"
+                      variant="success"
+                      class="slds-m-right_xx-small"
+                    ></lightning-icon>
+                    {labels.monthSurplus}
+                  </p>
+                  <p class="slds-text-heading_small slds-m-top_xx-small">
+                    <lightning-formatted-number
+                      value={data.monthSurplus}
+                      format-style="currency"
+                      currency-code={currency}
+                    ></lightning-formatted-number>
+                  </p>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </template>
+  </div>
+</template>

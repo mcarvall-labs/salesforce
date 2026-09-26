@@ -1,63 +1,14 @@
 <?xml version="1.0" encoding="UTF-8" ?>
 <Package xmlns="http://soap.sforce.com/2006/04/metadata">
   <types>
-    <members>AXF_CLS_CTRL_BankStatement</members>
-    <members>AXF_CLS_CTRL_BankStatementTest</members>
-    <members>AXF_CLS_CTRL_CardStatement</members>
-    <members>AXF_CLS_CTRL_CardStatementTest</members>
-    <name>ApexClass</name>
-  </types>
-  <types>
-    <members>AXF_BankStatement_cancel</members>
-    <members>AXF_BankStatement_codeREFRESH_BLOCKED</members>
-    <members>AXF_BankStatement_colAccount</members>
-    <members>AXF_BankStatement_editBalance</members>
-    <members>AXF_BankStatement_noCapability</members>
-    <members>AXF_BankStatement_refreshPending</members>
-    <members>AXF_CardStatement_cardsCaption</members>
-    <members>AXF_CardStatement_closingDayInput</members>
-    <members>AXF_CardStatement_closingSaved</members>
-    <members>AXF_CardStatement_codeCONFLICT</members>
-    <members>AXF_CardStatement_codeINVALID_INPUT</members>
-    <members>AXF_CardStatement_codeNOT_ACCESSIBLE</members>
-    <members>AXF_CardStatement_codeNOT_ALLOWED</members>
-    <members>AXF_CardStatement_codeREJECTED</members>
-    <members>AXF_CardStatement_colAvailableLimit</members>
-    <members>AXF_CardStatement_colCard</members>
-    <members>AXF_CardStatement_colClosingDay</members>
-    <members>AXF_CardStatement_colCreditLimit</members>
-    <members>AXF_CardStatement_colDueDay</members>
-    <members>AXF_CardStatement_dayRange</members>
-    <members>AXF_CardStatement_defineClosing</members>
-    <members>AXF_CardStatement_defineClosingFor</members>
-    <members>AXF_CardStatement_dueDayInput</members>
-    <members>AXF_CardStatement_intro</members>
-    <members>AXF_CardStatement_invoiceCaption</members>
-    <members>AXF_CardStatement_mixedCurrency</members>
-    <members>AXF_CardStatement_newExpense</members>
-    <members>AXF_CardStatement_nextInvoice</members>
-    <members>AXF_CardStatement_noCapability</members>
-    <members>AXF_CardStatement_noCards</members>
-    <members>AXF_CardStatement_noLines</members>
-    <members>AXF_CardStatement_notAvailable</members>
-    <members>AXF_CardStatement_plannedTotal</members>
-    <members>AXF_CardStatement_previousInvoice</members>
-    <members>AXF_CardStatement_title</members>
-    <members>AXF_CardStatement_total</members>
-    <members>AXF_CardStatement_totalPartial</members>
-    <members>AXF_CardStatement_viewInvoice</members>
-    <members>AXF_CardStatement_viewInvoiceFor</members>
-    <name>CustomLabel</name>
-  </types>
-  <types>
     <members>AXF_CT_BankStatement</members>
     <members>AXF_CT_CardStatement</members>
     <name>CustomTab</name>
   </types>
   <types>
-    <members>aXF_LWC_bankStatement</members>
-    <members>aXF_LWC_cardStatement</members>
-    <name>LightningComponentBundle</name>
+    <members>AXF_OBJ_BankAccount__c.All</members>
+    <members>AXF_OBJ_CreditCard__c.All</members>
+    <name>ListView</name>
   </types>
   <version>62.0</version>
 </Package>

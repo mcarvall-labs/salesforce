@@ -4,7 +4,7 @@
     <deleteConstraint>Restrict</deleteConstraint>
     <description
   >Referencia canonica a Instituicao Financeira deste cartao. O nome do provedor permanece preservado em AXF_CC_TXT_InstitutionName__c. AXF-106.</description>
-    <label>Instituicao Financeira</label>
+    <label>Bank Institution</label>
     <referenceTo>AXF_OBJ_BankInstitution__c</referenceTo>
     <relationshipLabel>Cartoes de Credito</relationshipLabel>
     <relationshipName>AXF_REL_InstitutionCreditCards</relationshipName>

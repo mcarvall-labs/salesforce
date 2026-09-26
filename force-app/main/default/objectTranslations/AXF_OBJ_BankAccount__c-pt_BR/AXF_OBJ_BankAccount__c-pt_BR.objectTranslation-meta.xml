@@ -9,4 +9,5 @@
         <value>Contas Correntes</value>
     </caseValues>
     <gender>Feminine</gender>
+    <nameFieldLabel>Nome da Conta Bancária</nameFieldLabel>
 </CustomObjectTranslation>

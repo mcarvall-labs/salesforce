@@ -111,10 +111,24 @@ export default class AxfLwcEntryWizard extends NavigationMixin(
   preselectCreditCardId;
   preselectAccountId;
   preselectDone = false;
+  preselectDirection;
 
   @wire(CurrentPageReference)
   wiredPageReference(pageRef) {
     const state = (pageRef && pageRef.state) || {};
+    // Home dashboard: "Nova Despesa" / "Nova Receita" open the wizard with the nature (and the
+    // filtered holder) chosen; applied once per hand-over so the user can still change them.
+    const direction = ["DEBIT", "CREDIT"].includes(state.c__direction)
+      ? state.c__direction
+      : null;
+    if (direction && direction !== this.preselectDirection) {
+      this.preselectDirection = direction;
+      this.form = {
+        ...this.form,
+        direction,
+        accountId: state.c__accountId || this.form.accountId
+      };
+    }
     const creditCardId = state.c__creditCardId || null;
     const bankAccountId = creditCardId ? null : state.c__bankAccountId || null;
     if (

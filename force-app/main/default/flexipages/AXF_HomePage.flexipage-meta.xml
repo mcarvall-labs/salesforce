@@ -3,25 +3,8 @@
     <flexiPageRegions>
         <itemInstances>
             <componentInstance>
-                <componentName>c:aXF_LWC_contextBar</componentName>
-                <identifier>axf_home_contextBar</identifier>
-            </componentInstance>
-        </itemInstances>
-        <itemInstances>
-            <componentInstance>
-                <componentInstanceProperties>
-                    <name>richTextValue</name>
-                    <value
-          >&lt;p&gt;Bem-vindo ao Axon. As telas do dia a dia (fluxo de caixa, faturas) chegam nas próximas entregas.&lt;/p&gt;&lt;p&gt;Para configurar fontes, titulares, acessos e moeda, abra o aplicativo &lt;b&gt;AXON - Configuration&lt;/b&gt; pelo App Launcher.&lt;/p&gt;</value>
-                </componentInstanceProperties>
-                <componentName>flexipage:richText</componentName>
-                <identifier>axf_home_pointer</identifier>
-            </componentInstance>
-        </itemInstances>
-        <itemInstances>
-            <componentInstance>
-                <componentName>c:aXF_LWC_sourceHealth</componentName>
-                <identifier>axf_home_sourceHealth</identifier>
+                <componentName>c:aXF_LWC_homeDashboard</componentName>
+                <identifier>axf_home_dashboard</identifier>
             </componentInstance>
         </itemInstances>
         <name>main</name>

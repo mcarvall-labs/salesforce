@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="UTF-8" ?>
 <CustomField xmlns="http://soap.sforce.com/2006/04/metadata">
     <fullName>AXF_CC_EXI_PluggyAccountId__c</fullName>
-    <label>Pluggy Account ID</label>
+    <label>Pluggy Credit Card ID</label>
     <type>Text</type>
     <length>64</length>
     <externalId>true</externalId>

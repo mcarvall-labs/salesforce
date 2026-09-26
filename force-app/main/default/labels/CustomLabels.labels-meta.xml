@@ -4156,6 +4156,10 @@
     >false</protected><shortDescription
     >Bank statement intro</shortDescription><value
     >Balances, statement and reconciliation of your accounts and wallets.</value></labels><labels
+  ><fullName>AXF_BankStatement_noCapability</fullName><language
+    >en_US</language><protected>false</protected><shortDescription
+    >Bank statement no Capability</shortDescription><value
+    >You do not have access to the current account screen.</value></labels><labels
   ><fullName>AXF_BankStatement_loading</fullName><language
     >en_US</language><protected>false</protected><shortDescription
     >Bank statement loading</shortDescription><value
@@ -4168,8 +4172,12 @@
     >false</protected><shortDescription
     >Bank statement no Accounts</shortDescription><value
     >No account or wallet is available in your authorized contexts.</value></labels><labels
-  ><fullName>AXF_BankStatement_colHolder</fullName><language
+  ><fullName>AXF_BankStatement_colAccount</fullName><language
     >en_US</language><protected>false</protected><shortDescription
+    >Bank statement col Account</shortDescription><value
+    >Account</value></labels><labels><fullName
+    >AXF_BankStatement_colHolder</fullName><language>en_US</language><protected
+    >false</protected><shortDescription
     >Bank statement col Holder</shortDescription><value
     >Holder</value></labels><labels><fullName
     >AXF_BankStatement_colBalance</fullName><language>en_US</language><protected
@@ -4212,7 +4220,15 @@
     >en_US</language><protected>false</protected><shortDescription
     >Bank statement refresh Running</shortDescription><value
     >A Pluggy refresh is already running; try again in a few minutes.</value></labels><labels
-  ><fullName>AXF_BankStatement_editBalanceFor</fullName><language
+  ><fullName>AXF_BankStatement_refreshPending</fullName><language
+    >en_US</language><protected>false</protected><shortDescription
+    >Bank statement refresh Pending</shortDescription><value
+    >Pluggy refresh started; not all data has been received yet.</value></labels><labels
+  ><fullName>AXF_BankStatement_editBalance</fullName><language
+    >en_US</language><protected>false</protected><shortDescription
+    >Bank statement edit Balance</shortDescription><value
+    >Edit balance</value></labels><labels><fullName
+    >AXF_BankStatement_editBalanceFor</fullName><language
     >en_US</language><protected>false</protected><shortDescription
     >Bank statement edit Balance For</shortDescription><value
     >Edit balance of {0}</value></labels><labels><fullName
@@ -4223,7 +4239,11 @@
     >AXF_BankStatement_save</fullName><language>en_US</language><protected
     >false</protected><shortDescription
     >Bank statement save</shortDescription><value>Save</value></labels><labels
-  ><fullName>AXF_BankStatement_balanceSaved</fullName><language
+  ><fullName>AXF_BankStatement_cancel</fullName><language
+    >en_US</language><protected>false</protected><shortDescription
+    >Bank statement cancel</shortDescription><value
+    >Cancel</value></labels><labels><fullName
+    >AXF_BankStatement_balanceSaved</fullName><language
     >en_US</language><protected>false</protected><shortDescription
     >Bank statement balance Saved</shortDescription><value
     >Balance updated.</value></labels><labels><fullName
@@ -4413,6 +4433,10 @@
     >en_US</language><protected>false</protected><shortDescription
     >Bank statement code R E F R E S H_ F A I L E D</shortDescription><value
     >The Pluggy refresh failed. Try again later.</value></labels><labels
+  ><fullName>AXF_BankStatement_codeREFRESH_BLOCKED</fullName><language
+    >en_US</language><protected>false</protected><shortDescription
+    >Bank statement code R E F R E S H_ B L O C K E D</shortDescription><value
+    >Collection is blocked for this connection.</value></labels><labels
   ><fullName>AXF_BankStatement_filterPeriodIncomplete</fullName><language
     >en_US</language><protected>false</protected><shortDescription
     >Bank statement filterPeriodIncomplete</shortDescription><value
@@ -4943,6 +4967,183 @@
     >Part of the entry was reconciled; choose another Pluggy transaction for the remaining amount.</value>
     </labels>
     <labels>
+        <fullName>AXF_CardStatement_title</fullName>
+        <categories>AxonFinance,LWC,CreditCard</categories>
+        <language>en_US</language>
+        <protected>false</protected>
+        <shortDescription>Credit cards title</shortDescription>
+        <value>Credit cards</value>
+    </labels>
+    <labels>
+        <fullName>AXF_CardStatement_intro</fullName>
+        <categories>AxonFinance,LWC,CreditCard</categories>
+        <language>en_US</language>
+        <protected>false</protected>
+        <shortDescription>Credit cards intro</shortDescription>
+        <value>Limits, invoices and reconciliation of your credit cards.</value>
+    </labels>
+    <labels>
+        <fullName>AXF_CardStatement_noCapability</fullName>
+        <categories>AxonFinance,LWC,CreditCard</categories>
+        <language>en_US</language>
+        <protected>false</protected>
+        <shortDescription>Credit cards no capability</shortDescription>
+        <value>You do not have access to the credit card screen.</value>
+    </labels>
+    <labels>
+        <fullName>AXF_CardStatement_cardsCaption</fullName>
+        <categories>AxonFinance,LWC,CreditCard</categories>
+        <language>en_US</language>
+        <protected>false</protected>
+        <shortDescription>Credit cards caption</shortDescription>
+        <value>Credit cards</value>
+    </labels>
+    <labels>
+        <fullName>AXF_CardStatement_noCards</fullName>
+        <categories>AxonFinance,LWC,CreditCard</categories>
+        <language>en_US</language>
+        <protected>false</protected>
+        <shortDescription>Credit cards empty</shortDescription>
+        <value>No credit card is available in your authorized contexts.</value>
+    </labels>
+    <labels>
+        <fullName>AXF_CardStatement_colCard</fullName>
+        <categories>AxonFinance,LWC,CreditCard</categories>
+        <language>en_US</language>
+        <protected>false</protected>
+        <shortDescription>Credit cards card column</shortDescription>
+        <value>Card</value>
+    </labels>
+    <labels>
+        <fullName>AXF_CardStatement_colCreditLimit</fullName>
+        <categories>AxonFinance,LWC,CreditCard</categories>
+        <language>en_US</language>
+        <protected>false</protected>
+        <shortDescription>Credit cards credit limit column</shortDescription>
+        <value>Credit limit</value>
+    </labels>
+    <labels>
+        <fullName>AXF_CardStatement_colAvailableLimit</fullName>
+        <categories>AxonFinance,LWC,CreditCard</categories>
+        <language>en_US</language>
+        <protected>false</protected>
+        <shortDescription>Credit cards available limit column</shortDescription>
+        <value>Available limit</value>
+    </labels>
+    <labels>
+        <fullName>AXF_CardStatement_colClosingDay</fullName>
+        <categories>AxonFinance,LWC,CreditCard</categories>
+        <language>en_US</language>
+        <protected>false</protected>
+        <shortDescription>Credit cards closing day column</shortDescription>
+        <value>Closing day</value>
+    </labels>
+    <labels>
+        <fullName>AXF_CardStatement_colDueDay</fullName>
+        <categories>AxonFinance,LWC,CreditCard</categories>
+        <language>en_US</language>
+        <protected>false</protected>
+        <shortDescription>Credit cards due day column</shortDescription>
+        <value>Due day</value>
+    </labels>
+    <labels>
+        <fullName>AXF_CardStatement_notAvailable</fullName>
+        <categories>AxonFinance,LWC,CreditCard</categories>
+        <language>en_US</language>
+        <protected>false</protected>
+        <shortDescription>Credit cards value not available</shortDescription>
+        <value>—</value>
+    </labels>
+    <labels>
+        <fullName>AXF_CardStatement_viewInvoice</fullName>
+        <categories>AxonFinance,LWC,CreditCard</categories>
+        <language>en_US</language>
+        <protected>false</protected>
+        <shortDescription>Credit cards view invoice</shortDescription>
+        <value>View invoice</value>
+    </labels>
+    <labels>
+        <fullName>AXF_CardStatement_viewInvoiceFor</fullName>
+        <categories>AxonFinance,LWC,CreditCard</categories>
+        <language>en_US</language>
+        <protected>false</protected>
+        <shortDescription>Credit cards view invoice for</shortDescription>
+        <value>View the invoice of {0}</value>
+    </labels>
+    <labels>
+        <fullName>AXF_CardStatement_defineClosing</fullName>
+        <categories>AxonFinance,LWC,CreditCard</categories>
+        <language>en_US</language>
+        <protected>false</protected>
+        <shortDescription>Credit cards set closing</shortDescription>
+        <value>Set closing</value>
+    </labels>
+    <labels>
+        <fullName>AXF_CardStatement_defineClosingFor</fullName>
+        <categories>AxonFinance,LWC,CreditCard</categories>
+        <language>en_US</language>
+        <protected>false</protected>
+        <shortDescription>Credit cards set closing for</shortDescription>
+        <value>Set the closing of {0}</value>
+    </labels>
+    <labels>
+        <fullName>AXF_CardStatement_closingDayInput</fullName>
+        <categories>AxonFinance,LWC,CreditCard</categories>
+        <language>en_US</language>
+        <protected>false</protected>
+        <shortDescription>Credit cards closing day input</shortDescription>
+        <value>Closing day (1–31)</value>
+    </labels>
+    <labels>
+        <fullName>AXF_CardStatement_dueDayInput</fullName>
+        <categories>AxonFinance,LWC,CreditCard</categories>
+        <language>en_US</language>
+        <protected>false</protected>
+        <shortDescription>Credit cards due day input</shortDescription>
+        <value>Due day (1–31)</value>
+    </labels>
+    <labels>
+        <fullName>AXF_CardStatement_dayRange</fullName>
+        <categories>AxonFinance,LWC,CreditCard</categories>
+        <language>en_US</language>
+        <protected>false</protected>
+        <shortDescription>Credit cards day range</shortDescription>
+        <value>Enter a whole day between 1 and 31.</value>
+    </labels>
+    <labels>
+        <fullName>AXF_CardStatement_closingSaved</fullName>
+        <categories>AxonFinance,LWC,CreditCard</categories>
+        <language>en_US</language>
+        <protected>false</protected>
+        <shortDescription>Credit cards closing saved</shortDescription>
+        <value
+    >Closing saved: the invoices of this card now follow its calendar.</value>
+    </labels>
+    <labels>
+        <fullName>AXF_CardStatement_invoiceCaption</fullName>
+        <categories>AxonFinance,LWC,CreditCard</categories>
+        <language>en_US</language>
+        <protected>false</protected>
+        <shortDescription>Credit cards invoice caption</shortDescription>
+        <value>Invoice of {0} — {1}</value>
+    </labels>
+    <labels>
+        <fullName>AXF_CardStatement_previousInvoice</fullName>
+        <categories>AxonFinance,LWC,CreditCard</categories>
+        <language>en_US</language>
+        <protected>false</protected>
+        <shortDescription>Credit cards previous invoice</shortDescription>
+        <value>Previous invoice</value>
+    </labels>
+    <labels>
+        <fullName>AXF_CardStatement_nextInvoice</fullName>
+        <categories>AxonFinance,LWC,CreditCard</categories>
+        <language>en_US</language>
+        <protected>false</protected>
+        <shortDescription>Credit cards next invoice</shortDescription>
+        <value>Next invoice</value>
+    </labels>
+    <labels>
         <fullName>AXF_CardStatement_invoiceWindow</fullName>
         <categories>AxonFinance,LWC,CreditCard</categories>
         <language>en_US</language>
@@ -4967,6 +5168,22 @@
         <value>Due: {0}</value>
     </labels>
     <labels>
+        <fullName>AXF_CardStatement_total</fullName>
+        <categories>AxonFinance,LWC,CreditCard</categories>
+        <language>en_US</language>
+        <protected>false</protected>
+        <shortDescription>Credit cards invoice total</shortDescription>
+        <value>Invoice total</value>
+    </labels>
+    <labels>
+        <fullName>AXF_CardStatement_plannedTotal</fullName>
+        <categories>AxonFinance,LWC,CreditCard</categories>
+        <language>en_US</language>
+        <protected>false</protected>
+        <shortDescription>Credit cards planned total</shortDescription>
+        <value>Manual entries not reconciled</value>
+    </labels>
+    <labels>
         <fullName>AXF_CardStatement_noCalendar</fullName>
         <categories>AxonFinance,LWC,CreditCard</categories>
         <language>en_US</language>
@@ -4974,6 +5191,81 @@
         <shortDescription>Credit cards no calendar</shortDescription>
         <value
     >No calendar: this card has no closing rule for this month, so the calendar month is shown and no cut-off date is assumed.</value>
+    </labels>
+    <labels>
+        <fullName>AXF_CardStatement_newExpense</fullName>
+        <categories>AxonFinance,LWC,CreditCard</categories>
+        <language>en_US</language>
+        <protected>false</protected>
+        <shortDescription>Credit cards new manual expense</shortDescription>
+        <value>New manual expense</value>
+    </labels>
+    <labels>
+        <fullName>AXF_CardStatement_noLines</fullName>
+        <categories>AxonFinance,LWC,CreditCard</categories>
+        <language>en_US</language>
+        <protected>false</protected>
+        <shortDescription>Credit cards no lines</shortDescription>
+        <value>No transaction in this invoice.</value>
+    </labels>
+    <labels>
+        <fullName>AXF_CardStatement_codeNOT_ACCESSIBLE</fullName>
+        <categories>AxonFinance,LWC,CreditCard</categories>
+        <language>en_US</language>
+        <protected>false</protected>
+        <shortDescription>Credit cards not accessible</shortDescription>
+        <value>This card is not available in your authorized contexts.</value>
+    </labels>
+    <labels>
+        <fullName>AXF_CardStatement_codeNOT_ALLOWED</fullName>
+        <categories>AxonFinance,LWC,CreditCard</categories>
+        <language>en_US</language>
+        <protected>false</protected>
+        <shortDescription>Credit cards not allowed</shortDescription>
+        <value>You are not allowed to set the closing of this card.</value>
+    </labels>
+    <labels>
+        <fullName>AXF_CardStatement_codeCONFLICT</fullName>
+        <categories>AxonFinance,LWC,CreditCard</categories>
+        <language>en_US</language>
+        <protected>false</protected>
+        <shortDescription>Credit cards conflict</shortDescription>
+        <value
+    >The record changed or the card already has a closing rule; the data was reloaded.</value>
+    </labels>
+    <labels>
+        <fullName>AXF_CardStatement_codeINVALID_INPUT</fullName>
+        <categories>AxonFinance,LWC,CreditCard</categories>
+        <language>en_US</language>
+        <protected>false</protected>
+        <shortDescription>Credit cards invalid input</shortDescription>
+        <value>Check the values entered.</value>
+    </labels>
+    <labels>
+        <fullName>AXF_CardStatement_codeREJECTED</fullName>
+        <categories>AxonFinance,LWC,CreditCard</categories>
+        <language>en_US</language>
+        <protected>false</protected>
+        <shortDescription>Credit cards rejected</shortDescription>
+        <value>The change was rejected; nothing was saved.</value>
+    </labels>
+    <labels>
+        <fullName>AXF_CardStatement_totalPartial</fullName>
+        <categories>AxonFinance,LWC,CreditCard</categories>
+        <language>en_US</language>
+        <protected>false</protected>
+        <shortDescription>Credit cards total partial</shortDescription>
+        <value
+    >Partial: the invoice has more transactions than could be read.</value>
+    </labels>
+    <labels>
+        <fullName>AXF_CardStatement_mixedCurrency</fullName>
+        <categories>AxonFinance,LWC,CreditCard</categories>
+        <language>en_US</language>
+        <protected>false</protected>
+        <shortDescription>Credit cards mixed currency</shortDescription>
+        <value
+    >Transactions in another currency are listed but not included in the totals.</value>
     </labels>
     <labels>
         <fullName>AXF_Recurrences_title</fullName>
@@ -6440,5 +6732,311 @@
         <protected>false</protected>
         <shortDescription>Reconciliation queue source column</shortDescription>
         <value>Account or card</value>
+    </labels>
+    <labels>
+        <fullName>AXF_HomeDashboard_filterAll</fullName>
+        <language>en_US</language>
+        <protected>false</protected>
+        <shortDescription>Home dashboard filterAll</shortDescription>
+        <value>All</value>
+    </labels>
+    <labels>
+        <fullName>AXF_HomeDashboard_filterLabel</fullName>
+        <language>en_US</language>
+        <protected>false</protected>
+        <shortDescription>Home dashboard filterLabel</shortDescription>
+        <value>Holder filter</value>
+    </labels>
+    <labels>
+        <fullName>AXF_HomeDashboard_newExpense</fullName>
+        <language>en_US</language>
+        <protected>false</protected>
+        <shortDescription>Home dashboard newExpense</shortDescription>
+        <value>New Expense</value>
+    </labels>
+    <labels>
+        <fullName>AXF_HomeDashboard_newRevenue</fullName>
+        <language>en_US</language>
+        <protected>false</protected>
+        <shortDescription>Home dashboard newRevenue</shortDescription>
+        <value>New Income</value>
+    </labels>
+    <labels>
+        <fullName>AXF_HomeDashboard_monthlyBalance</fullName>
+        <language>en_US</language>
+        <protected>false</protected>
+        <shortDescription>Home dashboard monthlyBalance</shortDescription>
+        <value>Monthly Balance (Current Month)</value>
+    </labels>
+    <labels>
+        <fullName>AXF_HomeDashboard_plannedBalance</fullName>
+        <language>en_US</language>
+        <protected>false</protected>
+        <shortDescription>Home dashboard plannedBalance</shortDescription>
+        <value>Planned Balance for the Month</value>
+    </labels>
+    <labels>
+        <fullName>AXF_HomeDashboard_realizedBalance</fullName>
+        <language>en_US</language>
+        <protected>false</protected>
+        <shortDescription>Home dashboard realizedBalance</shortDescription>
+        <value>Actual Balance</value>
+    </labels>
+    <labels>
+        <fullName>AXF_HomeDashboard_revenuePlannedVsRealized</fullName>
+        <language>en_US</language>
+        <protected>false</protected>
+        <shortDescription
+    >Home dashboard revenuePlannedVsRealized</shortDescription>
+        <value>Income (Planned vs Actual)</value>
+    </labels>
+    <labels>
+        <fullName>AXF_HomeDashboard_expensePlannedVsRealized</fullName>
+        <language>en_US</language>
+        <protected>false</protected>
+        <shortDescription
+    >Home dashboard expensePlannedVsRealized</shortDescription>
+        <value>Expenses (Planned vs Actual)</value>
+    </labels>
+    <labels>
+        <fullName>AXF_HomeDashboard_overdueExpenses</fullName>
+        <language>en_US</language>
+        <protected>false</protected>
+        <shortDescription>Home dashboard overdueExpenses</shortDescription>
+        <value>Overdue Expenses from Previous Months ({0})</value>
+    </labels>
+    <labels>
+        <fullName>AXF_HomeDashboard_overdueExpensesTotal</fullName>
+        <language>en_US</language>
+        <protected>false</protected>
+        <shortDescription>Home dashboard overdueExpensesTotal</shortDescription>
+        <value>Total overdue: {0}</value>
+    </labels>
+    <labels>
+        <fullName>AXF_HomeDashboard_overdueRevenues</fullName>
+        <language>en_US</language>
+        <protected>false</protected>
+        <shortDescription>Home dashboard overdueRevenues</shortDescription>
+        <value>Pending Income from Previous Months ({0})</value>
+    </labels>
+    <labels>
+        <fullName>AXF_HomeDashboard_overdueRevenuesTotal</fullName>
+        <language>en_US</language>
+        <protected>false</protected>
+        <shortDescription>Home dashboard overdueRevenuesTotal</shortDescription>
+        <value>Total receivable overdue: {0}</value>
+    </labels>
+    <labels>
+        <fullName>AXF_HomeDashboard_noOverdueExpenses</fullName>
+        <language>en_US</language>
+        <protected>false</protected>
+        <shortDescription>Home dashboard noOverdueExpenses</shortDescription>
+        <value
+    >No pending expenses from previous months. Congratulations!</value>
+    </labels>
+    <labels>
+        <fullName>AXF_HomeDashboard_noOverdueRevenues</fullName>
+        <language>en_US</language>
+        <protected>false</protected>
+        <shortDescription>Home dashboard noOverdueRevenues</shortDescription>
+        <value>All income from previous months has been received!</value>
+    </labels>
+    <labels>
+        <fullName>AXF_HomeDashboard_monthExpenses</fullName>
+        <language>en_US</language>
+        <protected>false</protected>
+        <shortDescription>Home dashboard monthExpenses</shortDescription>
+        <value>Expenses of the Month</value>
+    </labels>
+    <labels>
+        <fullName>AXF_HomeDashboard_monthRevenues</fullName>
+        <language>en_US</language>
+        <protected>false</protected>
+        <shortDescription>Home dashboard monthRevenues</shortDescription>
+        <value>Income of the Month</value>
+    </labels>
+    <labels>
+        <fullName>AXF_HomeDashboard_categoryFilter</fullName>
+        <language>en_US</language>
+        <protected>false</protected>
+        <shortDescription>Home dashboard categoryFilter</shortDescription>
+        <value>Filter by Category</value>
+    </labels>
+    <labels>
+        <fullName>AXF_HomeDashboard_categoryPlaceholder</fullName>
+        <language>en_US</language>
+        <protected>false</protected>
+        <shortDescription>Home dashboard categoryPlaceholder</shortDescription>
+        <value>Search category (e.g. Energy)...</value>
+    </labels>
+    <labels>
+        <fullName>AXF_HomeDashboard_noMonthExpenses</fullName>
+        <language>en_US</language>
+        <protected>false</protected>
+        <shortDescription>Home dashboard noMonthExpenses</shortDescription>
+        <value>No expenses found this month.</value>
+    </labels>
+    <labels>
+        <fullName>AXF_HomeDashboard_noMonthRevenues</fullName>
+        <language>en_US</language>
+        <protected>false</protected>
+        <shortDescription>Home dashboard noMonthRevenues</shortDescription>
+        <value>No income found this month.</value>
+    </labels>
+    <labels>
+        <fullName>AXF_HomeDashboard_colDescription</fullName>
+        <language>en_US</language>
+        <protected>false</protected>
+        <shortDescription>Home dashboard colDescription</shortDescription>
+        <value>Description</value>
+    </labels>
+    <labels>
+        <fullName>AXF_HomeDashboard_colCategory</fullName>
+        <language>en_US</language>
+        <protected>false</protected>
+        <shortDescription>Home dashboard colCategory</shortDescription>
+        <value>Category</value>
+    </labels>
+    <labels>
+        <fullName>AXF_HomeDashboard_colDueDate</fullName>
+        <language>en_US</language>
+        <protected>false</protected>
+        <shortDescription>Home dashboard colDueDate</shortDescription>
+        <value>Due Date</value>
+    </labels>
+    <labels>
+        <fullName>AXF_HomeDashboard_colAmount</fullName>
+        <language>en_US</language>
+        <protected>false</protected>
+        <shortDescription>Home dashboard colAmount</shortDescription>
+        <value>Amount</value>
+    </labels>
+    <labels>
+        <fullName>AXF_HomeDashboard_colStatus</fullName>
+        <language>en_US</language>
+        <protected>false</protected>
+        <shortDescription>Home dashboard colStatus</shortDescription>
+        <value>Status</value>
+    </labels>
+    <labels>
+        <fullName>AXF_HomeDashboard_colHolder</fullName>
+        <language>en_US</language>
+        <protected>false</protected>
+        <shortDescription>Home dashboard colHolder</shortDescription>
+        <value>Holder</value>
+    </labels>
+    <labels>
+        <fullName>AXF_HomeDashboard_statusSETTLED</fullName>
+        <language>en_US</language>
+        <protected>false</protected>
+        <shortDescription>Home dashboard statusSETTLED</shortDescription>
+        <value>Settled</value>
+    </labels>
+    <labels>
+        <fullName>AXF_HomeDashboard_statusPARTIAL</fullName>
+        <language>en_US</language>
+        <protected>false</protected>
+        <shortDescription>Home dashboard statusPARTIAL</shortDescription>
+        <value>Partial</value>
+    </labels>
+    <labels>
+        <fullName>AXF_HomeDashboard_statusOPEN</fullName>
+        <language>en_US</language>
+        <protected>false</protected>
+        <shortDescription>Home dashboard statusOPEN</shortDescription>
+        <value>Open</value>
+    </labels>
+    <labels>
+        <fullName>AXF_HomeDashboard_statusUNVERIFIED</fullName>
+        <language>en_US</language>
+        <protected>false</protected>
+        <shortDescription>Home dashboard statusUNVERIFIED</shortDescription>
+        <value>Not verified</value>
+    </labels>
+    <labels>
+        <fullName>AXF_HomeDashboard_projectedBalance</fullName>
+        <language>en_US</language>
+        <protected>false</protected>
+        <shortDescription>Home dashboard projectedBalance</shortDescription>
+        <value>Projected Balance</value>
+    </labels>
+    <labels>
+        <fullName>AXF_HomeDashboard_projectedHint</fullName>
+        <language>en_US</language>
+        <protected>false</protected>
+        <shortDescription>Home dashboard projectedHint</shortDescription>
+        <value
+    >Account balances plus the net cash flow surplus of the month.</value>
+    </labels>
+    <labels>
+        <fullName>AXF_HomeDashboard_accountsBalance</fullName>
+        <language>en_US</language>
+        <protected>false</protected>
+        <shortDescription>Home dashboard accountsBalance</shortDescription>
+        <value>Total Balance in Accounts</value>
+    </labels>
+    <labels>
+        <fullName>AXF_HomeDashboard_monthSurplus</fullName>
+        <language>en_US</language>
+        <protected>false</protected>
+        <shortDescription>Home dashboard monthSurplus</shortDescription>
+        <value>Projected Surplus for the Month</value>
+    </labels>
+    <labels>
+        <fullName>AXF_HomeDashboard_openAccount</fullName>
+        <language>en_US</language>
+        <protected>false</protected>
+        <shortDescription>Home dashboard openAccount</shortDescription>
+        <value>Open {0}</value>
+    </labels>
+    <labels>
+        <fullName>AXF_HomeDashboard_refresh</fullName>
+        <language>en_US</language>
+        <protected>false</protected>
+        <shortDescription>Home dashboard refresh</shortDescription>
+        <value>Refresh</value>
+    </labels>
+    <labels>
+        <fullName>AXF_HomeDashboard_loading</fullName>
+        <language>en_US</language>
+        <protected>false</protected>
+        <shortDescription>Home dashboard loading</shortDescription>
+        <value>Loading...</value>
+    </labels>
+    <labels>
+        <fullName>AXF_HomeDashboard_truncated</fullName>
+        <language>en_US</language>
+        <protected>false</protected>
+        <shortDescription>Home dashboard truncated</shortDescription>
+        <value
+    >Only the first entries are shown; filter by holder to see all.</value>
+    </labels>
+    <labels>
+        <fullName>AXF_HomeDashboard_mixedCurrency</fullName>
+        <language>en_US</language>
+        <protected>false</protected>
+        <shortDescription>Home dashboard mixedCurrency</shortDescription>
+        <value>Totals combine different currencies without conversion.</value>
+    </labels>
+    <labels>
+        <fullName>AXF_HomeDashboard_error</fullName>
+        <language>en_US</language>
+        <protected>false</protected>
+        <shortDescription>Home dashboard error</shortDescription>
+        <value>The dashboard could not be loaded.</value>
+    </labels>
+    <labels>
+        <fullName>AXF_HomeDashboard_codeNotAccessible</fullName>
+        <language>en_US</language>
+        <protected>false</protected>
+        <shortDescription>Home dashboard codeNotAccessible</shortDescription>
+        <value>You do not have access to this data.</value>
+    </labels>
+    <labels>
+        <fullName>AXF_HomeDashboard_codeInvalidInput</fullName>
+        <language>en_US</language>
+        <protected>false</protected>
+        <shortDescription>Home dashboard codeInvalidInput</shortDescription>
+        <value>Invalid holder filter.</value>
     </labels>
 </CustomLabels>

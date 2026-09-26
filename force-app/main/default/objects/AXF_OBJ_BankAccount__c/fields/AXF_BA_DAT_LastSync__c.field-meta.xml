@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<CustomField xmlns="http://soap.sforce.com/2006/04/metadata">
+    <fullName>AXF_BA_DAT_LastSync__c</fullName>
+    <description
+  >Data e hora da ultima sincronizacao bem-sucedida via Pluggy (paridade com producao).</description>
+    <label>Last Sync Date</label>
+    <required>false</required>
+    <trackTrending>false</trackTrending>
+    <type>DateTime</type>
+</CustomField>
