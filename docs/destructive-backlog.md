@@ -107,7 +107,7 @@ CustomApplication: AXF_CA_AxonConfiguration
 
 ## Status: in review — Axon Finance app tabs back to production parity (26/09/2026)
 
-Branch `fix/app-tabs-prod-parity` (review decision in `AXF_Apps_Tabs.xlsx`, rows 1-3:
+Branch `fix/axf-151-app-tabs-prod-parity` (review decision in `AXF_Apps_Tabs.xlsx`, rows 1-3:
 "Corrigir — igual produção", option B confirmed by the owner on 26/09/2026). The LWC tabs
 `AXF_CT_BankStatement`/`AXF_CT_CardStatement` (AXF-151/AXF-152) are replaced by the standard
 object tabs of `AXF_OBJ_BankAccount__c`/`AXF_OBJ_CreditCard__c` with the production record
@@ -121,6 +121,6 @@ ListView: AXF_OBJ_BankAccount__c.All, AXF_OBJ_CreditCard__c.All (replaced by Vie
 ```
 
 Never deployed to AXON_PROD (not in `main`), so the PROD deletion is a warning-only no-op.
-Companion PermissionSet-only PR `fix/app-tabs-prod-parity-permissionsets` moves the
+Companion PermissionSet-only PR `fix/axf-151-app-tabs-prod-parity-permissionsets` moves the
 `tabSettings` to the object tabs and grants FLS on the recreated fields; merge it after this
 one. Empty the manifest once applied in DEV/UAT.
