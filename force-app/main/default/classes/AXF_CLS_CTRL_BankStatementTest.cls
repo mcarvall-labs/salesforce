@@ -11,7 +11,13 @@ private class AXF_CLS_CTRL_BankStatementTest {
 
   @TestSetup
   static void setup() {
-    Id profileId = [SELECT Id FROM Profile WHERE Name = 'Standard User' LIMIT 1]
+    Id profileId = [
+      SELECT Id
+      FROM Profile
+      // The standard profile name is translated for a pt_BR running user.
+      WHERE Name IN ('Standard User', 'Usuário Padrão')
+      LIMIT 1
+    ]
     .Id;
     List<User> users = new List<User>();
     for (String alias : new List<String>{ 'axf151c', 'axf151q' }) {

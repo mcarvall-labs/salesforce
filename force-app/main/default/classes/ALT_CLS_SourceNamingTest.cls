@@ -82,4 +82,24 @@ private class ALT_CLS_SourceNamingTest {
     );
     Assert.isNull(ALT_CLS_SourceNaming.standardizedName(null, null, null));
   }
+
+  @IsTest
+  static void renamesBankAccountWhenHolderChanges() {
+    Account first = holder('Ana');
+    Account second = holder('Bruno');
+    AXF_OBJ_BankAccount__c account = new AXF_OBJ_BankAccount__c(
+      AXF_BA_LKP_Account__c = first.Id,
+      AXF_BA_PKL_AvailabilityState__c = 'AVAILABLE',
+      AXF_BA_EXI_ManualKey__c = 'naming-wallet'
+    );
+    insert account;
+    account.AXF_BA_LKP_Account__c = second.Id;
+    Test.startTest();
+    update account;
+    Test.stopTest();
+    Assert.areEqual(
+      'BRUNO',
+      [SELECT Name FROM AXF_OBJ_BankAccount__c WHERE Id = :account.Id].Name
+    );
+  }
 }
