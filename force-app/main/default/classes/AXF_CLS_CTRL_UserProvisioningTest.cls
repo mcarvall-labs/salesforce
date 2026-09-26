@@ -14,15 +14,14 @@ private class AXF_CLS_CTRL_UserProvisioningTest {
         AND Name IN ('System Administrator', 'Administrador do sistema')
       LIMIT 1
     ];
+    // Both groups: the Participante one is assigned by the provisioning chain.
+    AXF_CLS_AxonTestUserFactory.recalculateAxonGroups();
     PermissionSetGroup psg = [
-      SELECT Id, Status
+      SELECT Id
       FROM PermissionSetGroup
       WHERE DeveloperName = 'AXF_PSG_GestorFinanceiro'
       LIMIT 1
     ];
-    if (psg.Status != 'Updated') {
-      Test.calculatePermissionSetGroup(psg.Id);
-    }
     User u = new User(
       ProfileId = admin.Id,
       LastName = 'Ctrl Cfg',

@@ -47,6 +47,8 @@ private class AXF_CLS_AccessConfigEffectiveTest {
       LIMIT 1
     ]
     .Id;
+    // Assignments are refused while the group is not 'Updated'.
+    calculateGroups();
     Id psgId = [
       SELECT Id
       FROM PermissionSetGroup

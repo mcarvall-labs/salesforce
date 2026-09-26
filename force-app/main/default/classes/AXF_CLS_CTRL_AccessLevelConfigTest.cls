@@ -31,19 +31,7 @@ private class AXF_CLS_CTRL_AccessLevelConfigTest {
   }
 
   private static void calculateGroups() {
-    for (PermissionSetGroup psg : [
-      SELECT Id, Status
-      FROM PermissionSetGroup
-      WHERE
-        DeveloperName IN :new Set<String>{
-          'AXF_PSG_GestorFinanceiro',
-          'AXF_PSG_Participante'
-        }
-    ]) {
-      if (psg.Status != 'Updated') {
-        Test.calculatePermissionSetGroup(psg.Id);
-      }
-    }
+    AXF_CLS_AxonTestUserFactory.recalculateAxonGroups();
   }
 
   private static void authorize() {

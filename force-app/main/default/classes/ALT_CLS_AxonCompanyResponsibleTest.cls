@@ -56,7 +56,9 @@ private class ALT_CLS_AxonCompanyResponsibleTest {
       LastName = lastName,
       RecordTypeId = rt('PersonAccount')
     );
-    insert a;
+    AXF_CLS_AxonTestUserFactory.insertWithRecordTypeAccess(
+      new List<Account>{ a }
+    );
     return [SELECT Id, Name, PersonContactId FROM Account WHERE Id = :a.Id];
   }
 
@@ -98,15 +100,13 @@ private class ALT_CLS_AxonCompanyResponsibleTest {
       EmailEncodingKey = 'UTF-8',
       LanguageLocaleKey = 'pt_BR'
     );
+    AXF_CLS_AxonTestUserFactory.recalculateAxonGroups();
     PermissionSetGroup psg = [
-      SELECT Id, Status
+      SELECT Id
       FROM PermissionSetGroup
       WHERE DeveloperName = 'AXF_PSG_Participante'
       LIMIT 1
     ];
-    if (psg.Status != 'Updated') {
-      Test.calculatePermissionSetGroup(psg.Id);
-    }
     System.runAs(new User(Id = UserInfo.getUserId())) {
       insert u;
       insert new PermissionSetAssignment(

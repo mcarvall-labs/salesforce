@@ -20,16 +20,21 @@ private class AXF_CLS_CTRL_HolderTest {
   static void createListAndGetRoundTrip() {
     authorize();
 
+    // PersonAccount is only available through the Axon permission set groups.
+    User configurator = AXF_CLS_AxonTestUserFactory.recordTypeUser();
+    ALT_CLS_AxonHolder.SaveResult saved;
     Test.startTest();
-    ALT_CLS_AxonHolder.SaveResult saved = AXF_CLS_CTRL_Holder.saveHolder(
-      null,
-      'PERSON',
-      'Fabio',
-      'Gomes',
-      null,
-      null,
-      false
-    );
+    System.runAs(configurator) {
+      saved = AXF_CLS_CTRL_Holder.saveHolder(
+        null,
+        'PERSON',
+        'Fabio',
+        'Gomes',
+        null,
+        null,
+        false
+      );
+    }
     Test.stopTest();
 
     System.assertEquals('SUCCEEDED', saved.outcome, saved.message);

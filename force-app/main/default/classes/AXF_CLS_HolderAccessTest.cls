@@ -30,6 +30,7 @@ private class AXF_CLS_HolderAccessTest {
       LIMIT 1
     ]
     .Id;
+    AXF_CLS_AxonTestUserFactory.recalculateAxonGroups();
     Id psgId = [
       SELECT Id
       FROM PermissionSetGroup

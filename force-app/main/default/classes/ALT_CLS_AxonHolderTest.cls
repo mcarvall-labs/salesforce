@@ -33,13 +33,16 @@ private class ALT_CLS_AxonHolderTest {
 
   @IsTest
   static void createsPersonHolderWithoutSideEffects() {
+    // PersonAccount is only available through the Axon permission set groups.
+    User configurator = AXF_CLS_AxonTestUserFactory.recordTypeUser();
     Integer usersBefore = [SELECT COUNT() FROM User];
     ALT_CLS_AxonHolder svc = authorizedService();
 
+    ALT_CLS_AxonHolder.SaveResult r;
     Test.startTest();
-    ALT_CLS_AxonHolder.SaveResult r = svc.saveHolder(
-      personInput('Ana', 'Souza')
-    );
+    System.runAs(configurator) {
+      r = svc.saveHolder(personInput('Ana', 'Souza'));
+    }
     Test.stopTest();
 
     System.assertEquals('SUCCEEDED', r.outcome, r.message);
@@ -59,11 +62,7 @@ private class ALT_CLS_AxonHolderTest {
     System.assertEquals(true, saved.IsPersonAccount, 'pessoa = Person Account');
     System.assertEquals('PersonAccount', saved.RecordType.DeveloperName);
     System.assertEquals('Souza', saved.LastName);
-    System.assertEquals(
-      UserInfo.getUserId(),
-      saved.OwnerId,
-      'owner = configurador'
-    );
+    System.assertEquals(configurator.Id, saved.OwnerId, 'owner = configurador');
     System.assertEquals(
       usersBefore,
       [SELECT COUNT() FROM User],
@@ -180,19 +179,23 @@ private class ALT_CLS_AxonHolderTest {
   @IsTest
   static void editsDescriptiveDataKeepingOwnership() {
     ALT_CLS_AxonHolder svc = authorizedService();
-    ALT_CLS_AxonHolder.SaveResult created = svc.saveHolder(
-      personInput('Carla', 'Dias')
-    );
-    ALT_CLS_AxonHolder.HolderView v = svc.getHolder(created.accountId);
-    Id ownerBefore = v.ownerId;
+    ALT_CLS_AxonHolder.SaveResult created;
+    ALT_CLS_AxonHolder.SaveResult r;
+    Id ownerBefore;
+    // PersonAccount is only available through the Axon permission set groups.
+    System.runAs(AXF_CLS_AxonTestUserFactory.recordTypeUser()) {
+      created = svc.saveHolder(personInput('Carla', 'Dias'));
+      ALT_CLS_AxonHolder.HolderView v = svc.getHolder(created.accountId);
+      ownerBefore = v.ownerId;
 
-    ALT_CLS_AxonHolder.SaveInput edit = personInput('Carla', 'Dias Nogueira');
-    edit.accountId = created.accountId;
-    edit.expectedLastModifiedDate = v.lastModifiedDate;
+      ALT_CLS_AxonHolder.SaveInput edit = personInput('Carla', 'Dias Nogueira');
+      edit.accountId = created.accountId;
+      edit.expectedLastModifiedDate = v.lastModifiedDate;
 
-    Test.startTest();
-    ALT_CLS_AxonHolder.SaveResult r = svc.saveHolder(edit);
-    Test.stopTest();
+      Test.startTest();
+      r = svc.saveHolder(edit);
+      Test.stopTest();
+    }
 
     System.assertEquals('SUCCEEDED', r.outcome, r.message);
     Account after = [

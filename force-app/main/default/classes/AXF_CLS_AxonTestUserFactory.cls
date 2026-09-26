@@ -8,7 +8,34 @@
  */
 @IsTest
 public class AXF_CLS_AxonTestUserFactory {
+  private static final Set<String> AXON_GROUPS = new Set<String>{
+    'AXF_PSG_GestorFinanceiro',
+    'AXF_PSG_Participante'
+  };
   private static User cachedRecordTypeUser;
+  private static Boolean axonGroupsCalculated = false;
+
+  /**
+   * Recalculates both Axon permission set groups once per test transaction.
+   * When the groups are (re)defined by the same deploy that runs the tests,
+   * their Status is not 'Updated' yet: permission set assignments are refused
+   * and ALT_CLS_AxonAccessProvisioning reports the group as recalculating. The
+   * Status read can also be stale, so the recalculation is unconditional.
+   * Call it before Test.startTest().
+   */
+  public static void recalculateAxonGroups() {
+    if (axonGroupsCalculated) {
+      return;
+    }
+    for (PermissionSetGroup psg : [
+      SELECT Id
+      FROM PermissionSetGroup
+      WHERE DeveloperName IN :AXON_GROUPS
+    ]) {
+      Test.calculatePermissionSetGroup(psg.Id);
+    }
+    axonGroupsCalculated = true;
+  }
 
   /** @return the standard "Standard User" profile Id in en_US or pt_BR orgs. */
   public static Id standardProfileId() {
@@ -31,15 +58,13 @@ public class AXF_CLS_AxonTestUserFactory {
     if (cachedRecordTypeUser != null) {
       return cachedRecordTypeUser;
     }
+    recalculateAxonGroups();
     PermissionSetGroup psg = [
-      SELECT Id, Status
+      SELECT Id
       FROM PermissionSetGroup
       WHERE DeveloperName = 'AXF_PSG_GestorFinanceiro'
       LIMIT 1
     ];
-    if (psg.Status != 'Updated') {
-      Test.calculatePermissionSetGroup(psg.Id);
-    }
     User u = new User(
       ProfileId = standardProfileId(),
       LastName = 'Axon RT Owner',

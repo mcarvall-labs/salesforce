@@ -35,15 +35,7 @@ private class ALT_CLS_AxonAccessProvisioningTest {
   }
 
   private static void calculateGroups() {
-    for (PermissionSetGroup psg : [
-      SELECT Id, Status
-      FROM PermissionSetGroup
-      WHERE DeveloperName IN :new Set<String>{ GESTOR_PSG, PARTICIPANTE_PSG }
-    ]) {
-      if (psg.Status != 'Updated') {
-        Test.calculatePermissionSetGroup(psg.Id);
-      }
-    }
+    AXF_CLS_AxonTestUserFactory.recalculateAxonGroups();
   }
 
   @IsTest

@@ -32,9 +32,13 @@ private class AXF_CLS_CTRL_CompanyResponsibleTest {
         new Account(Name = 'Acme Comercio', RecordTypeId = rt('AXF_Business'))
       }
     );
-    insert new Account(
-      LastName = 'Acme Pessoa',
-      RecordTypeId = rt('PersonAccount')
+    AXF_CLS_AxonTestUserFactory.insertWithRecordTypeAccess(
+      new List<Account>{
+        new Account(
+          LastName = 'Acme Pessoa',
+          RecordTypeId = rt('PersonAccount')
+        )
+      }
     );
     Test.startTest();
     List<AXF_CLS_CTRL_CompanyResponsible.AccountOption> biz = AXF_CLS_CTRL_CompanyResponsible.findAccounts(
@@ -110,7 +114,9 @@ private class AXF_CLS_CTRL_CompanyResponsibleTest {
       LastName = 'Pessoa Ctrl',
       RecordTypeId = rt('PersonAccount')
     );
-    insert p;
+    AXF_CLS_AxonTestUserFactory.insertWithRecordTypeAccess(
+      new List<Account>{ p }
+    );
 
     Test.startTest();
     ALT_CLS_AxonCompanyResponsible.ResponsibilityView v = AXF_CLS_CTRL_CompanyResponsible.confirmResponsibility(
