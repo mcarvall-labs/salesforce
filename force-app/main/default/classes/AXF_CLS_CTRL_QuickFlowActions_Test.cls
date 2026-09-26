@@ -48,8 +48,8 @@ private class AXF_CLS_CTRL_QuickFlowActions_Test {
         dto.totalInstallments = 2;
         dto.paymentMethod = 'DEBITO_CONTA';
         dto.bankAccountId = bankAcc.Id;
-        dto.recurrenceType = 'FIXO';
-        dto.forecastingStrategy = 'VALOR_BASE';
+        dto.recurringType = 'FIXO';
+        dto.provisioningStrategy = 'VALOR_BASE';
 
         Test.startTest();
         List<Id> ids = AXF_CLS_CTRL_QuickFlowActions.createCashFlowSeries(dto);

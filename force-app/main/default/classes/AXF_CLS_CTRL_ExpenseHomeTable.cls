@@ -38,8 +38,7 @@ public with sharing class AXF_CLS_CTRL_ExpenseHomeTable {
                 paidValue,
                 paymentDate,
                 bankTransactionId,
-                creditCardTransactionId,
-                consortiumAdjustmentConfirmed
+                creditCardTransactionId
             );
         } catch (IllegalArgumentException e) {
             AuraHandledException handled = new AuraHandledException(e.getMessage());
