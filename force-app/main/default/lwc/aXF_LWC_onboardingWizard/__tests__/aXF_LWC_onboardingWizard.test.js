@@ -4,6 +4,7 @@ import canConfigure from "@salesforce/apex/AXF_CLS_CTRL_OnboardingProgress.canCo
 import getState from "@salesforce/apex/AXF_CLS_CTRL_OnboardingProgress.getState";
 import confirmStep from "@salesforce/apex/AXF_CLS_CTRL_OnboardingProgress.confirmStep";
 import skipStep from "@salesforce/apex/AXF_CLS_CTRL_OnboardingProgress.skipStep";
+import reopenStep from "@salesforce/apex/AXF_CLS_CTRL_OnboardingProgress.reopenStep";
 import complete from "@salesforce/apex/AXF_CLS_CTRL_OnboardingProgress.complete";
 import getOverview from "@salesforce/apex/AXF_CLS_CTRL_SourceHolderConfirmation.getOverview";
 
@@ -394,6 +395,59 @@ describe("c-aXF_LWC_onboardingWizard", () => {
     await flush();
     expect(complete).toHaveBeenCalledTimes(1);
     expect(el.shadowRoot.textContent).toMatch(/concluíd|finished/i);
+  });
+
+  it("lets a stale step be reopened from the completed summary and shows its own body", async () => {
+    canConfigure.mockResolvedValue(true);
+    getState.mockResolvedValue(
+      STEPS({
+        currentStep: "DONE",
+        status: "COMPLETED",
+        version: 12,
+        steps: STEPS().steps.map((s) => {
+          return s.stepKey === "PLUGGY_CREDENTIALS"
+            ? { ...s, status: "STALE" }
+            : s;
+        })
+      })
+    );
+    const el = build();
+    await flush();
+    await flush();
+    await flush();
+
+    // The raw enum never reaches the screen — only the translated label does.
+    expect(el.shadowRoot.textContent).not.toMatch(/\bSTALE\b/);
+    expect(el.shadowRoot.textContent).toMatch(/Desatualizada|Outdated/);
+
+    const reopenBtn = el.shadowRoot.querySelector(
+      'lightning-button[data-step="PLUGGY_CREDENTIALS"]'
+    );
+    expect(reopenBtn).toBeTruthy();
+
+    // The header stays COMPLETED on the server even after a reopen (AXF-88); the
+    // body must still follow `currentStep`, not the header status.
+    reopenStep.mockResolvedValue(
+      STEPS({
+        currentStep: "PLUGGY_CREDENTIALS",
+        status: "COMPLETED",
+        version: 13,
+        steps: STEPS().steps.map((s) => {
+          return s.stepKey === "PLUGGY_CREDENTIALS"
+            ? { ...s, status: "NOT_STARTED" }
+            : s;
+        })
+      })
+    );
+    reopenBtn.click();
+    await flush();
+    await flush();
+
+    expect(reopenStep.mock.calls[0][0].stepKey).toBe("PLUGGY_CREDENTIALS");
+    expect(el.shadowRoot.textContent).not.toMatch(/concluíd|finished/i);
+    expect(
+      el.shadowRoot.querySelector("c-a-x-f_-l-w-c_pluggy-integration-config")
+    ).toBeTruthy();
   });
 
   it("settles the holder step with confirmStep when there is nothing to resolve", async () => {

@@ -50,7 +50,8 @@ const PT = {
     SKIPPED: "Pulada",
     STALE: "Desatualizada — revise",
     NOT_STARTED: "Não iniciada",
-    RESULT_UNKNOWN: "Resultado desconhecido"
+    RESULT_UNKNOWN: "Resultado desconhecido",
+    FAILED: "Falha"
   },
   steps: {
     WELCOME_PREFS: "Boas-vindas",
@@ -96,7 +97,8 @@ const EN = {
     SKIPPED: "Skipped",
     STALE: "Outdated — review",
     NOT_STARTED: "Not started",
-    RESULT_UNKNOWN: "Unknown result"
+    RESULT_UNKNOWN: "Unknown result",
+    FAILED: "Failed"
   },
   steps: {
     WELCOME_PREFS: "Welcome",
@@ -252,10 +254,11 @@ export default class AxfLwcOnboardingWizard extends LightningElement {
     return this.current === "REVIEW";
   }
   get onDone() {
-    return (
-      this.current === "DONE" ||
-      (this.state && this.state.status === "COMPLETED")
-    );
+    // `current` is the single source of truth for what is on screen (AXF-106):
+    // reopening a step from the completed summary moves `current` to that step
+    // even though the header stays COMPLETED, so the body must follow `current`,
+    // never the header status, or a reopened step could never be redone.
+    return this.current === "DONE";
   }
   // ---- AXF-106: the holder step is only presented when it has something to resolve ----
   // `visibleStepKeys` is what the stepper and the navigation use. The step is dropped
@@ -410,6 +413,7 @@ export default class AxfLwcOnboardingWizard extends LightningElement {
     return this.state.steps.map((st) => ({
       ...st,
       label: L.steps[st.stepKey] || st.stepKey,
+      statusLabel: L.statuses[st.status] || st.status,
       done: st.status === "CONFIRMED" || st.status === "SKIPPED",
       stale: st.status === "STALE",
       pending: st.status === "NOT_STARTED" || st.status === "RESULT_UNKNOWN"

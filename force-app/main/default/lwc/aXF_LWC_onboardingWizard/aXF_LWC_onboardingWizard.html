@@ -24,15 +24,13 @@
           <template for:each={stepRows} for:item="r">
             <li key={r.stepKey} class="wizard__review-row">
               <span>{r.label}</span>
-              <span class="wizard__review-status">{r.status}</span>
-              <template lwc:if={r.done}>
-                <lightning-button
-                  variant="base"
-                  label={labels.reopen}
-                  data-step={r.stepKey}
-                  onclick={handleReopen}
-                ></lightning-button>
-              </template>
+              <span class="wizard__review-status">{r.statusLabel}</span>
+              <lightning-button
+                variant="base"
+                label={labels.reopen}
+                data-step={r.stepKey}
+                onclick={handleReopen}
+              ></lightning-button>
             </li>
           </template>
         </ul>
@@ -103,7 +101,7 @@
                     data-review-row
                   >
                     <span>{r.label}</span>
-                    <span class="wizard__review-status">{r.status}</span>
+                    <span class="wizard__review-status">{r.statusLabel}</span>
                   </li>
                 </template>
               </ul>
