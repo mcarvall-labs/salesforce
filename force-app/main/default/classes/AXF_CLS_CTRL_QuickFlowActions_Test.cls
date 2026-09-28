@@ -403,6 +403,128 @@ private class AXF_CLS_CTRL_QuickFlowActions_Test {
   }
 
   @IsTest
+  static void testGetTransactionPrefill_BankAccountAndCreditCard() {
+    System.runAs(AXF_CLS_CashFlowTestFactory.getDomainUser()) {
+      AXF_OBJ_BankAccount__c bankAcc = bankAccount('ACC_TEST_001');
+      AXF_OBJ_CreditCard__c card = creditCard('CARD_TEST_001');
+      AXF_OBJ_BankAccountTransaction__c bat = AXF_CLS_CashFlowTestFactory.buildBankTransaction(
+        bankAcc.Id,
+        'PREFILL_BAT',
+        -150.00,
+        Date.today(),
+        'Supermercado'
+      );
+      insert bat;
+      AXF_OBJ_CreditCardTransaction__c cct = AXF_CLS_CashFlowTestFactory.buildCardTransaction(
+        card.Id,
+        'PREFILL_CCT',
+        900.00,
+        Date.today(),
+        'Estorno'
+      );
+      insert cct;
+
+      Test.startTest();
+      AXF_CLS_CTRL_QuickFlowActions.TransactionPrefillResultDTO bankPrefill = AXF_CLS_CTRL_QuickFlowActions.getTransactionPrefill(
+        bat.Id,
+        false
+      );
+      AXF_CLS_CTRL_QuickFlowActions.TransactionPrefillResultDTO cardPrefill = AXF_CLS_CTRL_QuickFlowActions.getTransactionPrefill(
+        cct.Id,
+        true
+      );
+      Test.stopTest();
+
+      Assert.areEqual('DESPESA', bankPrefill.entryType);
+      Assert.areEqual(150.00, bankPrefill.amount);
+      Assert.areEqual('Supermercado', bankPrefill.description);
+      Assert.areEqual(bankAcc.Id, bankPrefill.bankAccountId);
+      Assert.areEqual(household().Id, bankPrefill.accountId);
+      Assert.areEqual('DEBITO_CONTA', bankPrefill.paymentMethod);
+
+      Assert.areEqual('RECEITA', cardPrefill.entryType);
+      Assert.areEqual(900.00, cardPrefill.amount);
+      Assert.areEqual(card.Id, cardPrefill.creditCardId);
+      Assert.areEqual(household().Id, cardPrefill.accountId);
+      Assert.areEqual('CARTAO_CREDITO', cardPrefill.paymentMethod);
+    }
+  }
+
+  @IsTest
+  static void testCreateCashFlowSeries_ReconcilesSourceTransaction() {
+    System.runAs(AXF_CLS_CashFlowTestFactory.getDomainUser()) {
+      AXF_OBJ_BankAccount__c bankAcc = bankAccount('ACC_TEST_001');
+      AXF_OBJ_BankAccountTransaction__c bat = AXF_CLS_CashFlowTestFactory.buildBankTransaction(
+        bankAcc.Id,
+        'RECONCILE_BAT',
+        -80.00,
+        Date.today(),
+        'Farmacia'
+      );
+      insert bat;
+
+      AXF_CLS_CTRL_QuickFlowActions.CashFlowCreationDTO dto = validDto();
+      dto.paymentMethod = 'DEBITO_CONTA';
+      dto.bankAccountId = bankAcc.Id;
+      dto.amount = 80.00;
+      dto.sourceBankAccountTransactionId = bat.Id;
+
+      Test.startTest();
+      List<Id> ids = AXF_CLS_CTRL_QuickFlowActions.createCashFlowSeries(dto);
+      Test.stopTest();
+
+      Assert.areEqual(1, ids.size());
+      Assert.areEqual(
+        bat.Id,
+        [
+          SELECT AXF_CF_LKP_BankAccountTransaction__c
+          FROM AXF_OBJ_CashFlow__c
+          WHERE Id = :ids[0]
+        ]
+        .AXF_CF_LKP_BankAccountTransaction__c
+      );
+      Assert.areEqual(
+        'RECONCILED',
+        [
+          SELECT AXF_BAT_PKL_ReconciliationStatus__c
+          FROM AXF_OBJ_BankAccountTransaction__c
+          WHERE Id = :bat.Id
+        ]
+        .AXF_BAT_PKL_ReconciliationStatus__c
+      );
+    }
+  }
+
+  @IsTest
+  static void testCreateCashFlowSeries_RejectsMismatchedSourceTransaction() {
+    System.runAs(AXF_CLS_CashFlowTestFactory.getDomainUser()) {
+      AXF_OBJ_BankAccount__c otherBank = bankAccount('ACC_OTHER_001');
+      AXF_OBJ_BankAccountTransaction__c foreignBat = AXF_CLS_CashFlowTestFactory.buildBankTransaction(
+        otherBank.Id,
+        'FOREIGN_BAT',
+        -20.00,
+        Date.today(),
+        'Nao pertence a esta conta'
+      );
+      insert foreignBat;
+
+      AXF_CLS_CTRL_QuickFlowActions.CashFlowCreationDTO dto = validDto();
+      dto.paymentMethod = 'DEBITO_CONTA';
+      dto.bankAccountId = bankAccount('ACC_TEST_001').Id;
+      dto.sourceBankAccountTransactionId = foreignBat.Id;
+
+      Test.startTest();
+      String error = errorFor(dto);
+      Test.stopTest();
+
+      Assert.areEqual(
+        'The source transaction does not belong to the selected Bank Account.',
+        error
+      );
+    }
+  }
+
+  @IsTest
   static void testRecentFinancialOptions() {
     System.runAs(AXF_CLS_CashFlowTestFactory.getDomainUser()) {
       Id accountId = household().Id;

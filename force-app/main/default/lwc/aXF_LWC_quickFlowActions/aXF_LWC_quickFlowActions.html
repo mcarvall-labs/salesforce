@@ -4,12 +4,14 @@
       <button
         class="slds-button slds-button_destructive btn-expense btn-full-width"
         onclick={handleOpenExpenseModal}
+        disabled={isLoadingPrefill}
       >
         Nova Despesa
       </button>
       <button
         class="slds-button slds-button_success btn-revenue btn-full-width"
         onclick={handleOpenRevenueModal}
+        disabled={isLoadingPrefill}
       >
         Nova Receita
       </button>

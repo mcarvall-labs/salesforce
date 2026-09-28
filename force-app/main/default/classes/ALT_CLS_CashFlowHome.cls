@@ -29,6 +29,20 @@ public inherited sharing class ALT_CLS_CashFlowHome {
     public Boolean isPaid;
     public Decimal paidValue;
     public Date paymentDate;
+    public Id sourceBankAccountTransactionId;
+    public Id sourceCreditCardTransactionId;
+  }
+
+  public class TransactionPrefillDTO {
+    public String entryType;
+    public Decimal amount;
+    public String description;
+    public Date transactionDate;
+    public Id accountId;
+    public Id bankAccountId;
+    public Id creditCardId;
+    public String paymentMethod;
+    public String currencyCode;
   }
 
   public List<AXF_OBJ_CashFlow__c> getMonthlyMovements(
@@ -109,6 +123,80 @@ public inherited sharing class ALT_CLS_CashFlowHome {
     ];
   }
 
+  /**
+   * @description Builds the Quick Flow Actions prefill for a bank or credit-card transaction,
+   * resolving the owning Account through the transaction's parent financial account.
+   */
+  public TransactionPrefillDTO getTransactionPrefill(
+    Id transactionId,
+    Boolean isCreditCard
+  ) {
+    if (transactionId == null) {
+      throw new IllegalArgumentException('Transaction ID is required.');
+    }
+
+    TransactionPrefillDTO prefill = new TransactionPrefillDTO();
+    if (isCreditCard == true) {
+      AXF_OBJ_CreditCardTransaction__c txn = [
+        SELECT
+          AXF_CCT_CUR_Amount__c,
+          AXF_CCT_DAT_Date__c,
+          AXF_CCT_TXT_Description__c,
+          AXF_CCT_LKP_CreditCard__c,
+          AXF_CCT_LKP_CreditCard__r.AXF_CC_LKP_Account__c
+        FROM AXF_OBJ_CreditCardTransaction__c
+        WHERE Id = :transactionId
+        WITH USER_MODE
+      ];
+      prefill.amount = txn.AXF_CCT_CUR_Amount__c == null
+        ? null
+        : txn.AXF_CCT_CUR_Amount__c.abs();
+      prefill.entryType = txn.AXF_CCT_CUR_Amount__c != null &&
+        txn.AXF_CCT_CUR_Amount__c < 0
+        ? 'DESPESA'
+        : 'RECEITA';
+      prefill.description = txn.AXF_CCT_TXT_Description__c;
+      prefill.transactionDate = txn.AXF_CCT_DAT_Date__c?.date();
+      prefill.creditCardId = txn.AXF_CCT_LKP_CreditCard__c;
+      prefill.accountId = txn.AXF_CCT_LKP_CreditCard__r.AXF_CC_LKP_Account__c;
+      prefill.paymentMethod = 'CARTAO_CREDITO';
+      // AXF_OBJ_CreditCard__c has no currency configuration field, so credit-card
+      // originated entries always fall back to the running user's default currency.
+      prefill.currencyCode = UserInfo.getDefaultCurrency();
+    } else {
+      AXF_OBJ_BankAccountTransaction__c txn = [
+        SELECT
+          AXF_BAT_CUR_Amount__c,
+          AXF_BAT_DAT_Date__c,
+          AXF_BAT_TXT_Description__c,
+          AXF_BAT_LKP_BankAccount__c,
+          AXF_BAT_LKP_BankAccount__r.AXF_BA_LKP_Account__c,
+          AXF_BAT_LKP_BankAccount__r.AXF_BA_PKL_Currency__c
+        FROM AXF_OBJ_BankAccountTransaction__c
+        WHERE Id = :transactionId
+        WITH USER_MODE
+      ];
+      prefill.amount = txn.AXF_BAT_CUR_Amount__c == null
+        ? null
+        : txn.AXF_BAT_CUR_Amount__c.abs();
+      prefill.entryType = txn.AXF_BAT_CUR_Amount__c != null &&
+        txn.AXF_BAT_CUR_Amount__c < 0
+        ? 'DESPESA'
+        : 'RECEITA';
+      prefill.description = txn.AXF_BAT_TXT_Description__c;
+      prefill.transactionDate = txn.AXF_BAT_DAT_Date__c?.date();
+      prefill.bankAccountId = txn.AXF_BAT_LKP_BankAccount__c;
+      prefill.accountId = txn.AXF_BAT_LKP_BankAccount__r.AXF_BA_LKP_Account__c;
+      prefill.paymentMethod = 'DEBITO_CONTA';
+      prefill.currencyCode = String.isNotBlank(
+          txn.AXF_BAT_LKP_BankAccount__r.AXF_BA_PKL_Currency__c
+        )
+        ? txn.AXF_BAT_LKP_BankAccount__r.AXF_BA_PKL_Currency__c
+        : UserInfo.getDefaultCurrency();
+    }
+    return prefill;
+  }
+
   public void settleCashFlow(
     Id cashFlowId,
     String targetStatus,
@@ -160,8 +248,8 @@ public inherited sharing class ALT_CLS_CashFlowHome {
     }
 
     Id installmentGroupId;
-    if (installmentCount > 1) {
-      String groupType = resolveGroupType(request.paymentMode);
+    String groupType = resolveGroupType(request.paymentMode);
+    if (installmentCount > 1 || groupType == 'RECURRING') {
       String resolvedFinancingType = resolveFinancingType(
         groupType,
         request.paymentMode,
@@ -265,11 +353,53 @@ public inherited sharing class ALT_CLS_CashFlowHome {
     }
 
     Database.insert(entries, AccessLevel.USER_MODE);
+    reconcileSourceTransaction(request, entries[0]);
     List<Id> insertedIds = new List<Id>();
     for (AXF_OBJ_CashFlow__c entry : entries) {
       insertedIds.add(entry.Id);
     }
     return insertedIds;
+  }
+
+  /**
+   * @description Reciprocally links the first occurrence of the series to the originating
+   * bank/credit-card transaction, mirroring ALT_CLS_CashFlowSettlement's coordinated update so
+   * AXF_CLS_TH_Reconciliation's invariant (matching status and links on both sides) is satisfied.
+   */
+  private void reconcileSourceTransaction(
+    CashFlowSeriesRequest request,
+    AXF_OBJ_CashFlow__c firstEntry
+  ) {
+    if (
+      request.sourceBankAccountTransactionId == null &&
+      request.sourceCreditCardTransactionId == null
+    ) {
+      return;
+    }
+    AXF_OBJ_CashFlow__c cashFlowUpdate = new AXF_OBJ_CashFlow__c(
+      Id = firstEntry.Id,
+      AXF_CF_PKL_ReconciliationStatus__c = 'RECONCILED',
+      AXF_CF_LKP_BankAccountTransaction__c = request.sourceBankAccountTransactionId,
+      AXF_CF_LKP_CreditCardTransaction__c = request.sourceCreditCardTransactionId
+    );
+    SObject transactionUpdate = request.sourceBankAccountTransactionId != null
+      ? (SObject) new AXF_OBJ_BankAccountTransaction__c(
+          Id = request.sourceBankAccountTransactionId,
+          AXF_BAT_PKL_ReconciliationStatus__c = 'RECONCILED',
+          AXF_BAT_LKP_CashFlow__c = firstEntry.Id
+        )
+      : (SObject) new AXF_OBJ_CreditCardTransaction__c(
+          Id = request.sourceCreditCardTransactionId,
+          AXF_CCT_PKL_ReconciliationStatus__c = 'RECONCILED',
+          AXF_CCT_LKP_CashFlow__c = firstEntry.Id
+        );
+    ALT_CLS_CashFlowSettlement.serviceOperation = true;
+    try {
+      Database.update(cashFlowUpdate, AccessLevel.USER_MODE);
+      Database.update(transactionUpdate, AccessLevel.USER_MODE);
+    } finally {
+      ALT_CLS_CashFlowSettlement.serviceOperation = false;
+    }
   }
   private static String resolveInitialStatus(
     String entryType,

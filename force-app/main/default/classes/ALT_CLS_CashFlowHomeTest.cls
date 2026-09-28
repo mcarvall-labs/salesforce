@@ -461,6 +461,44 @@ private class ALT_CLS_CashFlowHomeTest {
   }
 
   @IsTest
+  static void createsRecurringGroupEvenWithSingleInitialOccurrence() {
+    System.runAs(AXF_CLS_CashFlowTestFactory.getDomainUser()) {
+      // The Quick Flow Actions popup never collects totalInstallments for
+      // RECORRENTE, so the request always arrives with installments = 1.
+      // The parent AXF_OBJ_InstallmentGroup__c must still be created.
+      ALT_CLS_CashFlowHome.CashFlowSeriesRequest recurring = request(
+        'DESPESA',
+        'RECORRENTE',
+        150,
+        1
+      );
+      recurring.recurringType = 'FIXO';
+      recurring.provisioningStrategy = 'VALOR_BASE';
+
+      Test.startTest();
+      List<Id> ids = new ALT_CLS_CashFlowHome().createCashFlowSeries(recurring);
+      Test.stopTest();
+
+      Assert.areEqual(1, ids.size());
+      AXF_OBJ_CashFlow__c entry = [
+        SELECT
+          AXF_CF_LKP_InstallmentGroup__c,
+          AXF_CF_LKP_InstallmentGroup__r.AXF_IG_PKL_GroupType__c
+        FROM AXF_OBJ_CashFlow__c
+        WHERE Id = :ids[0]
+      ];
+      Assert.isNotNull(
+        entry.AXF_CF_LKP_InstallmentGroup__c,
+        'A recurring entry always gets a parent control group'
+      );
+      Assert.areEqual(
+        'RECURRING',
+        entry.AXF_CF_LKP_InstallmentGroup__r.AXF_IG_PKL_GroupType__c
+      );
+    }
+  }
+
+  @IsTest
   static void createsSacFinancingWithDefaultAdjustmentRate() {
     System.runAs(AXF_CLS_CashFlowTestFactory.getDomainUser()) {
       ALT_CLS_CashFlowHome.CashFlowSeriesRequest sac = request(

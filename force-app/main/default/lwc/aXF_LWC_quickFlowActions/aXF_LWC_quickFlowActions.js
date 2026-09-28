@@ -1,24 +1,34 @@
-import { LightningElement, track, wire } from "lwc";
+import { LightningElement, api, track, wire } from "lwc";
 import { getObjectInfo, getPicklistValues } from "lightning/uiObjectInfoApi";
 import { ShowToastEvent } from "lightning/platformShowToastEvent";
+import { RefreshEvent } from "lightning/refresh";
 import LightningConfirm from "lightning/confirm";
 import createCashFlowSeries from "@salesforce/apex/AXF_CLS_CTRL_QuickFlowActions.createCashFlowSeries";
 import getRecentBankAccounts from "@salesforce/apex/AXF_CLS_CTRL_QuickFlowActions.getRecentBankAccounts";
 import getRecentCreditCards from "@salesforce/apex/AXF_CLS_CTRL_QuickFlowActions.getRecentCreditCards";
+import getTransactionPrefill from "@salesforce/apex/AXF_CLS_CTRL_QuickFlowActions.getTransactionPrefill";
 import CASH_FLOW_OBJECT from "@salesforce/schema/AXF_OBJ_CashFlow__c";
 import PAYMENT_METHOD_FIELD from "@salesforce/schema/AXF_OBJ_CashFlow__c.AXF_CF_PKL_PaymentMethod__c";
 
 const BANK_METHODS = new Set(["DEBITO_CONTA", "TRANSFERENCIA_PIX"]);
-const BRL_FORMATTER = new Intl.NumberFormat("pt-BR", {
-  style: "currency",
-  currency: "BRL"
-});
+const DEFAULT_CURRENCY = "BRL";
+const currencyFormatter = (currencyCode) =>
+  new Intl.NumberFormat("pt-BR", {
+    style: "currency",
+    currency: currencyCode || DEFAULT_CURRENCY
+  });
+const BANK_TRANSACTION_OBJECT = "AXF_OBJ_BankAccountTransaction__c";
+const CREDIT_CARD_TRANSACTION_OBJECT = "AXF_OBJ_CreditCardTransaction__c";
 
 export default class AXF_LWC_quickFlowActions extends LightningElement {
+  @api recordId;
+  @api objectApiName;
   @track isModalOpen = false;
   @track isLoading = false;
+  @track isLoadingPrefill = false;
   @track entryType = "DESPESA";
   @track form = {};
+  prefillData;
   amountDisplay = "";
   paidValueDisplay = "";
   bankAccountOptions = [];
@@ -35,6 +45,57 @@ export default class AXF_LWC_quickFlowActions extends LightningElement {
 
   connectedCallback() {
     this.resetForm();
+    if (this.isTransactionContext) {
+      this.loadTransactionPrefill();
+    }
+  }
+
+  get isTransactionContext() {
+    return (
+      !!this.recordId &&
+      (this.objectApiName === BANK_TRANSACTION_OBJECT ||
+        this.objectApiName === CREDIT_CARD_TRANSACTION_OBJECT)
+    );
+  }
+
+  async loadTransactionPrefill() {
+    this.isLoadingPrefill = true;
+    try {
+      this.prefillData = await getTransactionPrefill({
+        transactionId: this.recordId,
+        isCreditCard: this.objectApiName === CREDIT_CARD_TRANSACTION_OBJECT
+      });
+    } catch (error) {
+      this.showToast(
+        "Erro ao carregar transação",
+        this.errorMessage(error),
+        "error"
+      );
+    } finally {
+      this.isLoadingPrefill = false;
+    }
+  }
+
+  async applyTransactionPrefill() {
+    if (!this.prefillData) {
+      return;
+    }
+    this.form.description = this.prefillData.description || "";
+    this.form.purchaseDate =
+      this.prefillData.transactionDate || this.form.purchaseDate;
+    this.form.firstDueDate =
+      this.prefillData.transactionDate || this.form.firstDueDate;
+    this.form.paymentMethod = this.prefillData.paymentMethod || "";
+    this.form.accountId = this.prefillData.accountId || "";
+    this.form.bankAccountId = this.prefillData.bankAccountId || "";
+    this.form.creditCardId = this.prefillData.creditCardId || "";
+    if (this.prefillData.amount != null) {
+      this.form.amount = this.prefillData.amount;
+      this.amountDisplay = currencyFormatter(
+        this.prefillData.currencyCode
+      ).format(this.prefillData.amount);
+    }
+    await this.loadFinancialAccountOptions();
   }
 
   get categoryRecordType() {
@@ -206,10 +267,12 @@ export default class AXF_LWC_quickFlowActions extends LightningElement {
 
   handleOpenExpenseModal() {
     this.openModal("DESPESA");
+    this.applyTransactionPrefill();
   }
 
   handleOpenRevenueModal() {
     this.openModal("RECEITA");
+    this.applyTransactionPrefill();
   }
 
   openModal(entryType) {
@@ -312,11 +375,18 @@ export default class AXF_LWC_quickFlowActions extends LightningElement {
     }
   }
 
+  parseCurrencyDigits(rawValue) {
+    const digits = String(rawValue || "").replace(/\D/g, "");
+    return digits ? Number(digits) / 100 : null;
+  }
+
   handleCurrencyInput(event) {
     const fieldName = event.target.name;
-    const digits = String(event.target.value || "").replace(/\D/g, "");
-    const amount = digits ? Number(digits) / 100 : null;
-    const displayValue = amount === null ? "" : BRL_FORMATTER.format(amount);
+    const amount = this.parseCurrencyDigits(event.target.value);
+    const displayValue =
+      amount === null
+        ? ""
+        : currencyFormatter(this.prefillData?.currencyCode).format(amount);
 
     this.form[fieldName] = amount;
     if (fieldName === "amount") {
@@ -362,6 +432,10 @@ export default class AXF_LWC_quickFlowActions extends LightningElement {
         return;
       }
       if (fieldName === "amount" || fieldName === "paidValue") {
+        // Currency fields are masked: re-derive the numeric amount from
+        // whatever is currently displayed instead of trusting that every
+        // keystroke's oninput already landed in this.form.
+        this.form[fieldName] = this.parseCurrencyDigits(input.value);
         return;
       }
       this.form[fieldName] =
@@ -415,6 +489,9 @@ export default class AXF_LWC_quickFlowActions extends LightningElement {
       this.dispatchEvent(
         new CustomEvent("refreshdata", { bubbles: true, composed: true })
       );
+      if (this.isTransactionContext) {
+        this.dispatchEvent(new RefreshEvent());
+      }
     } catch (error) {
       this.showToast("Erro ao salvar", this.errorMessage(error), "error");
     } finally {
@@ -453,7 +530,17 @@ export default class AXF_LWC_quickFlowActions extends LightningElement {
       isPaid: this.form.isPaid,
       paidValue: this.form.isPaid ? Number(this.form.paidValue) : null,
       paymentDate: this.form.isPaid ? this.form.paymentDate : null,
-      pastDueConfirmed: this.isPastDueOpen ? this.form.pastDueConfirmed : false
+      pastDueConfirmed: this.isPastDueOpen ? this.form.pastDueConfirmed : false,
+      sourceBankAccountTransactionId:
+        this.isTransactionContext &&
+        this.objectApiName === BANK_TRANSACTION_OBJECT
+          ? this.recordId
+          : null,
+      sourceCreditCardTransactionId:
+        this.isTransactionContext &&
+        this.objectApiName === CREDIT_CARD_TRANSACTION_OBJECT
+          ? this.recordId
+          : null
     };
   }
 

@@ -84,6 +84,10 @@ public with sharing class AXF_CLS_CTRL_QuickFlowActions {
     public Date paymentDate { get; set; }
     @AuraEnabled
     public Boolean pastDueConfirmed { get; set; }
+    @AuraEnabled
+    public String sourceBankAccountTransactionId { get; set; }
+    @AuraEnabled
+    public String sourceCreditCardTransactionId { get; set; }
   }
 
   public class FinancialOptionDTO {
@@ -91,6 +95,27 @@ public with sharing class AXF_CLS_CTRL_QuickFlowActions {
     public String id;
     @AuraEnabled
     public String displayLabel;
+  }
+
+  public class TransactionPrefillResultDTO {
+    @AuraEnabled
+    public String entryType;
+    @AuraEnabled
+    public Decimal amount;
+    @AuraEnabled
+    public String description;
+    @AuraEnabled
+    public Date transactionDate;
+    @AuraEnabled
+    public String accountId;
+    @AuraEnabled
+    public String bankAccountId;
+    @AuraEnabled
+    public String creditCardId;
+    @AuraEnabled
+    public String paymentMethod;
+    @AuraEnabled
+    public String currencyCode;
   }
 
   @AuraEnabled(cacheable=true)
@@ -131,6 +156,30 @@ public with sharing class AXF_CLS_CTRL_QuickFlowActions {
     }
     return accountId;
   }
+  @AuraEnabled(cacheable=true)
+  public static TransactionPrefillResultDTO getTransactionPrefill(
+    Id transactionId,
+    Boolean isCreditCard
+  ) {
+    try {
+      ALT_CLS_CashFlowHome.TransactionPrefillDTO prefill = new ALT_CLS_CashFlowHome()
+        .getTransactionPrefill(transactionId, isCreditCard);
+      TransactionPrefillResultDTO result = new TransactionPrefillResultDTO();
+      result.entryType = prefill.entryType;
+      result.amount = prefill.amount;
+      result.description = prefill.description;
+      result.transactionDate = prefill.transactionDate;
+      result.accountId = prefill.accountId;
+      result.bankAccountId = prefill.bankAccountId;
+      result.creditCardId = prefill.creditCardId;
+      result.paymentMethod = prefill.paymentMethod;
+      result.currencyCode = prefill.currencyCode;
+      return result;
+    } catch (Exception e) {
+      throw handled('Unable to load the transaction.');
+    }
+  }
+
   @AuraEnabled
   public static List<Id> createCashFlowSeries(CashFlowCreationDTO dto) {
     try {
@@ -195,14 +244,32 @@ public with sharing class AXF_CLS_CTRL_QuickFlowActions {
       AXF_OBJ_CreditCard__c.SObjectType,
       'Invalid Credit Card.'
     );
+    Id sourceBankAccountTransactionId = parseOptionalId(
+      dto.sourceBankAccountTransactionId,
+      AXF_OBJ_BankAccountTransaction__c.SObjectType,
+      'Invalid source Bank Account Transaction.'
+    );
+    Id sourceCreditCardTransactionId = parseOptionalId(
+      dto.sourceCreditCardTransactionId,
+      AXF_OBJ_CreditCardTransaction__c.SObjectType,
+      'Invalid source Credit Card Transaction.'
+    );
 
     validatePaymentMethod(dto.paymentMethod, bankAccountId, creditCardId);
     validateModality(dto);
     validateOwnership(accountId, bankAccountId, creditCardId);
+    validateSourceTransaction(
+      sourceBankAccountTransactionId,
+      sourceCreditCardTransactionId,
+      bankAccountId,
+      creditCardId
+    );
     validatePaidFields(dto);
     validatePastDueConfirmation(dto);
 
     ALT_CLS_CashFlowHome.CashFlowSeriesRequest request = new ALT_CLS_CashFlowHome.CashFlowSeriesRequest();
+    request.sourceBankAccountTransactionId = sourceBankAccountTransactionId;
+    request.sourceCreditCardTransactionId = sourceCreditCardTransactionId;
     request.entryType = dto.type;
     request.description = dto.description.trim();
     request.categoryId = categoryId;
@@ -357,6 +424,50 @@ public with sharing class AXF_CLS_CTRL_QuickFlowActions {
     ) {
       throw handled(
         'The selected Credit Card does not belong to the Account holder.'
+      );
+    }
+  }
+
+  private static void validateSourceTransaction(
+    Id sourceBankAccountTransactionId,
+    Id sourceCreditCardTransactionId,
+    Id bankAccountId,
+    Id creditCardId
+  ) {
+    if (
+      sourceBankAccountTransactionId != null &&
+      sourceCreditCardTransactionId != null
+    ) {
+      throw handled('Only one source transaction can be reconciled at a time.');
+    }
+    if (
+      sourceBankAccountTransactionId != null &&
+      [
+        SELECT COUNT()
+        FROM AXF_OBJ_BankAccountTransaction__c
+        WHERE
+          Id = :sourceBankAccountTransactionId
+          AND AXF_BAT_LKP_BankAccount__c = :bankAccountId
+        WITH USER_MODE
+      ] == 0
+    ) {
+      throw handled(
+        'The source transaction does not belong to the selected Bank Account.'
+      );
+    }
+    if (
+      sourceCreditCardTransactionId != null &&
+      [
+        SELECT COUNT()
+        FROM AXF_OBJ_CreditCardTransaction__c
+        WHERE
+          Id = :sourceCreditCardTransactionId
+          AND AXF_CCT_LKP_CreditCard__c = :creditCardId
+        WITH USER_MODE
+      ] == 0
+    ) {
+      throw handled(
+        'The source transaction does not belong to the selected Credit Card.'
       );
     }
   }
