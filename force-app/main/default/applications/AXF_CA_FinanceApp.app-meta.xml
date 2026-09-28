@@ -2,8 +2,8 @@
 <CustomApplication xmlns="http://soap.sforce.com/2006/04/metadata">
     <brand>
         <headerColor>#0A192F</headerColor>
-        <logo>AxonPersonalFinancesLogo</logo>
-        <logoVersion>1</logoVersion>
+        <logo>AxonAppLogo</logo>
+        <logoVersion>3</logoVersion>
         <shouldOverrideOrgTheme>true</shouldOverrideOrgTheme>
     </brand>
     <formFactors>Small</formFactors>
