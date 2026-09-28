@@ -174,10 +174,6 @@ public with sharing class AXF_CLS_PluggyBankAccountSyncQueueable implements Queu
     Id rateLimitedAccountId,
     AXF_CLS_PluggyTxSync_Service.RateLimitException rle
   ) {
-    if (Test.isRunningTest()) {
-      return;
-    }
-
     List<AXF_OBJ_BankAccount__c> retryBatch = new List<AXF_OBJ_BankAccount__c>();
     for (Integer j = rateLimitedIndex; j < accountsToSync.size(); j++) {
       retryBatch.add(new AXF_OBJ_BankAccount__c(Id = accountsToSync[j].Id));
@@ -198,6 +194,11 @@ public with sharing class AXF_CLS_PluggyBankAccountSyncQueueable implements Queu
       rle.resumeCursor,
       nextAttempt
     );
+    // Only the schedule itself is a real side effect the tests must not trigger; the batch/delay
+    // computation above runs either way so coverage exercises it.
+    if (Test.isRunningTest()) {
+      return;
+    }
     Datetime fireTime = Datetime.now().addSeconds(delaySeconds);
     String jobName = 'AXF_PluggyBankAccountRetry_' + Datetime.now().getTime();
     System.schedule(

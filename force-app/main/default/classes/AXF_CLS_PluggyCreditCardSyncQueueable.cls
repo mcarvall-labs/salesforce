@@ -141,25 +141,24 @@ public with sharing class AXF_CLS_PluggyCreditCardSyncQueueable implements Queue
         AXF_CLS_PluggyBillSync_Service.upsertBills(invoicesToUpsert);
       }
 
-      // Chain transition to next step
+      // Chain transition to next step. The decision below always runs (and so is covered by
+      // tests); only the actual enqueue is a real side effect the tests must not trigger.
+      Queueable nextBillsJob;
+      if (!remaining.isEmpty()) {
+        // Continue in BILLS phase for remaining cards
+        nextBillsJob = new AXF_CLS_PluggyCreditCardSyncQueueable(
+          remaining,
+          SyncPhase.BILLS
+        );
+      } else {
+        // All bills for all cards have been upserted. Now run TRANSACTIONS phase.
+        nextBillsJob = new AXF_CLS_PluggyCreditCardSyncQueueable(
+          cardsToSync,
+          SyncPhase.TRANSACTIONS
+        );
+      }
       if (!Test.isRunningTest()) {
-        if (!remaining.isEmpty()) {
-          // Continue in BILLS phase for remaining cards
-          System.enqueueJob(
-            new AXF_CLS_PluggyCreditCardSyncQueueable(
-              remaining,
-              SyncPhase.BILLS
-            )
-          );
-        } else {
-          // All bills for all cards have been upserted. Now run TRANSACTIONS phase.
-          System.enqueueJob(
-            new AXF_CLS_PluggyCreditCardSyncQueueable(
-              cardsToSync,
-              SyncPhase.TRANSACTIONS
-            )
-          );
-        }
+        System.enqueueJob(nextBillsJob);
       }
     } else if (this.phase == SyncPhase.TRANSACTIONS) {
       // PHASE 2: Sync and Upsert Credit Card Transactions using the Account-level method
@@ -255,10 +254,6 @@ public with sharing class AXF_CLS_PluggyCreditCardSyncQueueable implements Queue
     Id rateLimitedCardId,
     AXF_CLS_PluggyTxSync_Service.RateLimitException rle
   ) {
-    if (Test.isRunningTest()) {
-      return;
-    }
-
     List<AXF_OBJ_CreditCard__c> retryBatch = new List<AXF_OBJ_CreditCard__c>();
     for (Integer j = rateLimitedIndex; j < currentBatch.size(); j++) {
       retryBatch.add(new AXF_OBJ_CreditCard__c(Id = currentBatch[j].Id));
@@ -283,6 +278,11 @@ public with sharing class AXF_CLS_PluggyCreditCardSyncQueueable implements Queue
       rle.resumeCursor,
       nextAttempt
     );
+    // Only the schedule itself is a real side effect the tests must not trigger; the batch/delay
+    // computation above runs either way so coverage exercises it.
+    if (Test.isRunningTest()) {
+      return;
+    }
     Datetime fireTime = Datetime.now().addSeconds(delaySeconds);
     String jobName = 'AXF_PluggyCreditCardRetry_' + Datetime.now().getTime();
     System.schedule(
