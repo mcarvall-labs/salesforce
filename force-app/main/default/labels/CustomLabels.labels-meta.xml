@@ -125,22 +125,6 @@
         <value>Date</value>
     </labels>
     <labels>
-        <fullName>AXF_LBL_ColumnReconciled</fullName>
-        <categories>AxonFinance,LWC,CashFlow</categories>
-        <language>en_US</language>
-        <protected>false</protected>
-        <shortDescription>Cash Flow Reconciled Column Label</shortDescription>
-        <value>Reconciled</value>
-    </labels>
-    <labels>
-        <fullName>AXF_LBL_ColumnValue</fullName>
-        <categories>AxonFinance,LWC,CashFlow</categories>
-        <language>en_US</language>
-        <protected>false</protected>
-        <shortDescription>Cash Flow Value Column Label</shortDescription>
-        <value>Value</value>
-    </labels>
-    <labels>
         <fullName>AXF_LBL_ConnectionNotFound</fullName>
         <categories>AxonFinance,Sync</categories>
         <language>en_US</language>
@@ -277,14 +261,6 @@
         <value>Integration Error</value>
     </labels>
     <labels>
-        <fullName>AXF_LBL_ExpensesHomeTitle</fullName>
-        <categories>AxonFinance,LWC,CashFlow</categories>
-        <language>en_US</language>
-        <protected>false</protected>
-        <shortDescription>Expenses Home Table Title</shortDescription>
-        <value>Monthly Expenses</value>
-    </labels>
-    <labels>
         <fullName>AXF_LBL_Filters</fullName>
         <categories>AxonFinance,LWC,Statement</categories>
         <language>en_US</language>
@@ -338,22 +314,6 @@
         <value>Min Value</value>
     </labels>
     <labels>
-        <fullName>AXF_LBL_ModalCancel</fullName>
-        <categories>AxonFinance,LWC,CashFlow</categories>
-        <language>en_US</language>
-        <protected>false</protected>
-        <shortDescription>Modal Cancel Button Label</shortDescription>
-        <value>Cancel</value>
-    </labels>
-    <labels>
-        <fullName>AXF_LBL_ModalSave</fullName>
-        <categories>AxonFinance,LWC,CashFlow</categories>
-        <language>en_US</language>
-        <protected>false</protected>
-        <shortDescription>Modal Save Button Label</shortDescription>
-        <value>Save</value>
-    </labels>
-    <labels>
         <fullName>AXF_LBL_NoAccountsProcessed</fullName>
         <categories>AxonFinance,Sync</categories>
         <language>en_US</language>
@@ -379,14 +339,6 @@
         <value>No invoices found for this Credit Card.</value>
     </labels>
     <labels>
-        <fullName>AXF_LBL_NoMovementsFound</fullName>
-        <categories>AxonFinance,LWC,CashFlow</categories>
-        <language>en_US</language>
-        <protected>false</protected>
-        <shortDescription>No Movements Found Message</shortDescription>
-        <value>No movements found for this month.</value>
-    </labels>
-    <labels>
         <fullName>AXF_LBL_NoTransactionsFound</fullName>
         <categories>AxonFinance,LWC,Statement</categories>
         <language>en_US</language>
@@ -402,14 +354,6 @@
         <protected>false</protected>
         <shortDescription>Open Finance Sync Title</shortDescription>
         <value>Open Finance Synchronization</value>
-    </labels>
-    <labels>
-        <fullName>AXF_LBL_PaymentDate</fullName>
-        <categories>AxonFinance,LWC,CashFlow</categories>
-        <language>en_US</language>
-        <protected>false</protected>
-        <shortDescription>Payment Date Field Label</shortDescription>
-        <value>Payment Date</value>
     </labels>
     <labels>
         <fullName>AXF_LBL_Period</fullName>
@@ -447,64 +391,6 @@
         <value>From</value>
     </labels>
     <labels>
-        <fullName>AXF_LBL_ReconcileWithBankTransaction</fullName>
-        <categories>AxonFinance,LWC,CashFlow</categories>
-        <language>en_US</language>
-        <protected>false</protected>
-        <shortDescription
-    >Reconcile With Bank Transaction Option Label</shortDescription>
-        <value>Reconcile with Bank Transaction</value>
-    </labels>
-    <labels>
-        <fullName>AXF_LBL_ReconcileWithCardTransaction</fullName>
-        <categories>AxonFinance,LWC,CashFlow</categories>
-        <language>en_US</language>
-        <protected>false</protected>
-        <shortDescription
-    >Reconcile With Credit Card Transaction Option Label</shortDescription>
-        <value>Reconcile with Credit Card Transaction</value>
-    </labels>
-    <labels>
-        <fullName>AXF_LBL_RevenuesHomeTitle</fullName>
-        <categories>AxonFinance,LWC,CashFlow</categories>
-        <language>en_US</language>
-        <protected>false</protected>
-        <shortDescription>Revenues Home Table Title</shortDescription>
-        <value>Monthly Revenues</value>
-    </labels>
-    <labels>
-        <fullName>AXF_LBL_SearchTransactionPlaceholder</fullName>
-        <categories>AxonFinance,LWC,CashFlow</categories>
-        <language>en_US</language>
-        <protected>false</protected>
-        <shortDescription>Search Transaction Placeholder</shortDescription>
-        <value>Search transaction...</value>
-    </labels>
-    <labels>
-        <fullName>AXF_LBL_SettleExpenseModalTitle</fullName>
-        <categories>AxonFinance,LWC,CashFlow</categories>
-        <language>en_US</language>
-        <protected>false</protected>
-        <shortDescription>Settle Expense Modal Title</shortDescription>
-        <value>Settle Expense</value>
-    </labels>
-    <labels>
-        <fullName>AXF_LBL_SettleInCash</fullName>
-        <categories>AxonFinance,LWC,CashFlow</categories>
-        <language>en_US</language>
-        <protected>false</protected>
-        <shortDescription>Settle In Cash Option Label</shortDescription>
-        <value>Settle in Cash</value>
-    </labels>
-    <labels>
-        <fullName>AXF_LBL_SettleRevenueModalTitle</fullName>
-        <categories>AxonFinance,LWC,CashFlow</categories>
-        <language>en_US</language>
-        <protected>false</protected>
-        <shortDescription>Settle Revenue Modal Title</shortDescription>
-        <value>Settle Revenue</value>
-    </labels>
-    <labels>
         <fullName>AXF_LBL_ShowingTransactions</fullName>
         <categories>AxonFinance,LWC,Statement</categories>
         <language>en_US</language>
@@ -528,54 +414,6 @@
         <protected>false</protected>
         <shortDescription>Credit Card Statement Status Label</shortDescription>
         <value>Status</value>
-    </labels>
-    <labels>
-        <fullName>AXF_LBL_StatusOverdue</fullName>
-        <categories>AxonFinance,LWC,CashFlow</categories>
-        <language>en_US</language>
-        <protected>false</protected>
-        <shortDescription>Cash Flow Status Overdue</shortDescription>
-        <value>Overdue</value>
-    </labels>
-    <labels>
-        <fullName>AXF_LBL_StatusPaid</fullName>
-        <categories>AxonFinance,LWC,CashFlow</categories>
-        <language>en_US</language>
-        <protected>false</protected>
-        <shortDescription>Cash Flow Status Paid</shortDescription>
-        <value>Paid</value>
-    </labels>
-    <labels>
-        <fullName>AXF_LBL_StatusPaidLate</fullName>
-        <categories>AxonFinance,LWC,CashFlow</categories>
-        <language>en_US</language>
-        <protected>false</protected>
-        <shortDescription>Cash Flow Status Paid Late</shortDescription>
-        <value>Paid Late</value>
-    </labels>
-    <labels>
-        <fullName>AXF_LBL_StatusPending</fullName>
-        <categories>AxonFinance,LWC,CashFlow</categories>
-        <language>en_US</language>
-        <protected>false</protected>
-        <shortDescription>Cash Flow Status Pending</shortDescription>
-        <value>Pending</value>
-    </labels>
-    <labels>
-        <fullName>AXF_LBL_StatusReceived</fullName>
-        <categories>AxonFinance,LWC,CashFlow</categories>
-        <language>en_US</language>
-        <protected>false</protected>
-        <shortDescription>Cash Flow Status Received</shortDescription>
-        <value>Received</value>
-    </labels>
-    <labels>
-        <fullName>AXF_LBL_StatusReceivedLate</fullName>
-        <categories>AxonFinance,LWC,CashFlow</categories>
-        <language>en_US</language>
-        <protected>false</protected>
-        <shortDescription>Cash Flow Status Received Late</shortDescription>
-        <value>Received Late</value>
     </labels>
     <labels>
         <fullName>AXF_LBL_SuccessToastTitle</fullName>

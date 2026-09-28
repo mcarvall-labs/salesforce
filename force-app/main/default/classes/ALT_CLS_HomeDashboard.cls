@@ -1,7 +1,7 @@
 /**
  * @description Axon Finance home dashboard over the production cash-flow model. One holder filter
- * (all holders, or one AXF_*_LKP_Account__c holder) drives every panel, with the production
- * rules of ALT_CLS_InvestmentCapacity and ALT_CLS_CashFlowAlerts:
+ * (all holders, or one AXF_*_LKP_Account__c holder) drives every panel, with the rules of the
+ * production home it replaces:
  * - month = AXF_OBJ_CashFlow__c due this month; realized = PAGA / PAGA_EM_ATRASO (expense) or
  *   RECEBIDA / RECEBIDA_EM_ATRASO (revenue);
  * - overdue = PENDENTE / VENCIDA due before this month;

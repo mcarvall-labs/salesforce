@@ -65,14 +65,6 @@
         <name>AXF_LBL_ColumnDate</name>
     </customLabels>
     <customLabels>
-        <label>Conciliada</label>
-        <name>AXF_LBL_ColumnReconciled</name>
-    </customLabels>
-    <customLabels>
-        <label>Valor</label>
-        <name>AXF_LBL_ColumnValue</name>
-    </customLabels>
-    <customLabels>
         <label>Conexão Pluggy não encontrada para este registro.</label>
         <name>AXF_LBL_ConnectionNotFound</name>
     </customLabels>
@@ -138,10 +130,6 @@
         <name>AXF_LBL_ErrorToastTitle</name>
     </customLabels>
     <customLabels>
-        <label>Despesas do Mês</label>
-        <name>AXF_LBL_ExpensesHomeTitle</name>
-    </customLabels>
-    <customLabels>
         <label>Filtros</label>
         <name>AXF_LBL_Filters</name>
     </customLabels>
@@ -166,14 +154,6 @@
         <name>AXF_LBL_MinValue</name>
     </customLabels>
     <customLabels>
-        <label>Cancelar</label>
-        <name>AXF_LBL_ModalCancel</name>
-    </customLabels>
-    <customLabels>
-        <label>Salvar</label>
-        <name>AXF_LBL_ModalSave</name>
-    </customLabels>
-    <customLabels>
         <label>Nenhuma conta foi processada.</label>
         <name>AXF_LBL_NoAccountsProcessed</name>
     </customLabels>
@@ -186,10 +166,6 @@
         <name>AXF_LBL_NoInvoicesFound</name>
     </customLabels>
     <customLabels>
-        <label>Nenhuma movimentação encontrada para este mês.</label>
-        <name>AXF_LBL_NoMovementsFound</name>
-    </customLabels>
-    <customLabels>
         <label
     >Nenhuma transação encontrada para os filtros selecionados.</label>
         <name>AXF_LBL_NoTransactionsFound</name>
@@ -197,10 +173,6 @@
     <customLabels>
         <label>Sincronização Open Finance</label>
         <name>AXF_LBL_OpenFinanceSync</name>
-    </customLabels>
-    <customLabels>
-        <label>Data de Realização</label>
-        <name>AXF_LBL_PaymentDate</name>
     </customLabels>
     <customLabels>
         <label>Período</label>
@@ -219,34 +191,6 @@
         <name>AXF_LBL_PeriodStart</name>
     </customLabels>
     <customLabels>
-        <label>Conciliar com Transação Bancária</label>
-        <name>AXF_LBL_ReconcileWithBankTransaction</name>
-    </customLabels>
-    <customLabels>
-        <label>Conciliar com Transação de Cartão de Crédito</label>
-        <name>AXF_LBL_ReconcileWithCardTransaction</name>
-    </customLabels>
-    <customLabels>
-        <label>Receitas do Mês</label>
-        <name>AXF_LBL_RevenuesHomeTitle</name>
-    </customLabels>
-    <customLabels>
-        <label>Buscar transação...</label>
-        <name>AXF_LBL_SearchTransactionPlaceholder</name>
-    </customLabels>
-    <customLabels>
-        <label>Liquidar Despesa</label>
-        <name>AXF_LBL_SettleExpenseModalTitle</name>
-    </customLabels>
-    <customLabels>
-        <label>Liquidar em Espécie</label>
-        <name>AXF_LBL_SettleInCash</name>
-    </customLabels>
-    <customLabels>
-        <label>Confirmar Recebimento</label>
-        <name>AXF_LBL_SettleRevenueModalTitle</name>
-    </customLabels>
-    <customLabels>
         <label>Transações exibidas:</label>
         <name>AXF_LBL_ShowingTransactions</name>
     </customLabels>
@@ -257,30 +201,6 @@
     <customLabels>
         <label>Status</label>
         <name>AXF_LBL_Status</name>
-    </customLabels>
-    <customLabels>
-        <label>Vencida</label>
-        <name>AXF_LBL_StatusOverdue</name>
-    </customLabels>
-    <customLabels>
-        <label>Paga</label>
-        <name>AXF_LBL_StatusPaid</name>
-    </customLabels>
-    <customLabels>
-        <label>Paga em Atraso</label>
-        <name>AXF_LBL_StatusPaidLate</name>
-    </customLabels>
-    <customLabels>
-        <label>Pendente</label>
-        <name>AXF_LBL_StatusPending</name>
-    </customLabels>
-    <customLabels>
-        <label>Recebida</label>
-        <name>AXF_LBL_StatusReceived</name>
-    </customLabels>
-    <customLabels>
-        <label>Recebida em Atraso</label>
-        <name>AXF_LBL_StatusReceivedLate</name>
     </customLabels>
     <customLabels>
         <label>Sucesso!</label>

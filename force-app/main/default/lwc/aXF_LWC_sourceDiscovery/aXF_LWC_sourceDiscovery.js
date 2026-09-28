@@ -15,7 +15,7 @@ import LANG from "@salesforce/i18n/lang";
 // only; the language follows the Salesforce user profile (@salesforce/i18n/lang).
 const PT = {
   TITLE: "Descobrir contas e cartões",
-  HELP: "Carrega as contas e cartões autorizados na aplicação Pluggy configurada. Não importa o histórico. O banco e o titular definidos na conexão são aplicados a cada fonte descoberta, que fica liberada para uso.",
+  HELP: "Sincroniza a conexão com a Pluggy: carrega as contas e cartões autorizados e também importa faturas, transações, investimentos e empréstimos. O banco e o titular definidos na conexão são aplicados a todas as fontes descobertas.",
   START: "Descobrir agora",
   RESUME: "Continuar descoberta",
   BUSY: "Consultando a Pluggy…",
@@ -41,7 +41,7 @@ const PT = {
   REGISTER_SAVE: "Registrar",
   REGISTER_TITLE: "Registrar conexão Pluggy",
   REGISTER_HELP:
-    "O conector (por exemplo, MeuPluggy) não identifica o banco: selecione a instituição financeira correta e o titular. Ao descobrir, o banco e o titular escolhidos aqui são aplicados às contas e cartões desta conexão, que ficam liberados para uso. Um titular já confirmado e diferente nunca é sobrescrito — resolva a divergência em Confirmar titulares.",
+    "O conector (por exemplo, MeuPluggy) não identifica o banco: selecione a instituição financeira correta e o titular. Ao descobrir, o titular escolhido aqui é aplicado a todas as contas e cartões desta conexão. O banco da conexão não pode ser trocado depois: para mudar, exclua a conexão e registre de novo.",
   REGISTERING: "Registrando…",
   DISCOVER_ALL: "Descobrir agora",
   DISCOVERING: "Buscando contas e cartões em cada conexão…",
@@ -121,7 +121,7 @@ const PT = {
 
 const EN = {
   TITLE: "Find accounts and cards",
-  HELP: "Loads the accounts and cards authorized on the configured Pluggy application. It does not import history. The bank and holder set on the connection are applied to every discovered source, which becomes available for use.",
+  HELP: "Syncs the connection with Pluggy: loads the authorized accounts and cards and also imports bills, transactions, investments and loans. The bank and holder set on the connection are applied to every discovered source.",
   START: "Discover now",
   RESUME: "Resume discovery",
   BUSY: "Querying Pluggy…",
@@ -147,7 +147,7 @@ const EN = {
   REGISTER_SAVE: "Register",
   REGISTER_TITLE: "Register Pluggy connection",
   REGISTER_HELP:
-    "The connector (for example, MeuPluggy) does not identify the bank: select the right financial institution and the holder. On discovery, the bank and holder chosen here are applied to this connection's accounts and cards, which become available for use. An already confirmed and different holder is never overwritten — resolve the divergence in Confirm holders.",
+    "The connector (for example, MeuPluggy) does not identify the bank: select the right financial institution and the holder. On discovery, the holder chosen here is applied to every account and card of this connection. The connection's bank cannot be changed later: to change it, delete the connection and register it again.",
   REGISTERING: "Registering…",
   DISCOVER_ALL: "Discover now",
   DISCOVERING: "Fetching accounts and cards on each connection…",

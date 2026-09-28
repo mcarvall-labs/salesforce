@@ -1,7 +1,6 @@
 /**
  * @description Covers ALT_CLS_CashFlowHome (monthly movements, transaction search, settlement
- * and series creation) plus its thin entry points AXF_CLS_CTRL_RevenueHomeTable and the legacy
- * AXF_CLS_CashFlowHomeController.
+ * and series creation) by calling the business service directly.
  */
 @IsTest
 private class ALT_CLS_CashFlowHomeTest {
@@ -118,28 +117,22 @@ private class ALT_CLS_CashFlowHomeTest {
       Id salaryId = [SELECT Id FROM AXF_OBJ_Category__c WHERE Name = 'Salario']
       .Id;
 
+      ALT_CLS_CashFlowHome service = new ALT_CLS_CashFlowHome();
+
       Test.startTest();
-      List<AXF_OBJ_CashFlow__c> revenues = AXF_CLS_CTRL_RevenueHomeTable.getMonthlyMovements(
+      List<AXF_OBJ_CashFlow__c> revenues = service.getMonthlyMovements(
         'AXF_CF_RT_Revenue',
         null
       );
-      List<AXF_OBJ_CashFlow__c> salaryOnly = AXF_CLS_CTRL_RevenueHomeTable.getMonthlyMovements(
-        'AXF_CF_RT_Revenue',
-        salaryId
-      );
-      List<AXF_OBJ_CashFlow__c> unknownType = AXF_CLS_CTRL_RevenueHomeTable.getMonthlyMovements(
-        'Unknown_RT',
-        null
-      );
-      List<AXF_OBJ_CashFlow__c> legacyRevenues = AXF_CLS_CashFlowHomeController.getMonthlyMovements(
+      List<AXF_OBJ_CashFlow__c> salaryOnly = service.getMonthlyMovements(
         'AXF_CF_RT_Revenue',
         salaryId
       );
-      List<AXF_OBJ_CashFlow__c> legacyUnknown = AXF_CLS_CashFlowHomeController.getMonthlyMovements(
+      List<AXF_OBJ_CashFlow__c> unknownType = service.getMonthlyMovements(
         'Unknown_RT',
         null
       );
-      List<AXF_OBJ_CashFlow__c> legacyAll = AXF_CLS_CashFlowHomeController.getMonthlyMovements(
+      List<AXF_OBJ_CashFlow__c> expenses = service.getMonthlyMovements(
         'AXF_CF_RT_Expense',
         null
       );
@@ -153,29 +146,26 @@ private class ALT_CLS_CashFlowHomeTest {
       Assert.areEqual(1, salaryOnly.size());
       Assert.areEqual('Salario', salaryOnly[0].Name);
       Assert.isTrue(unknownType.isEmpty());
-      Assert.areEqual(1, legacyRevenues.size());
-      Assert.isTrue(legacyUnknown.isEmpty());
-      Assert.areEqual(1, legacyAll.size());
+      Assert.areEqual(1, expenses.size());
     }
   }
 
   @IsTest
   static void searchesTransactionsByDescription() {
     System.runAs(AXF_CLS_CashFlowTestFactory.getDomainUser()) {
+      ALT_CLS_CashFlowHome service = new ALT_CLS_CashFlowHome();
+
       Test.startTest();
-      List<AXF_OBJ_BankAccountTransaction__c> banks = AXF_CLS_CTRL_RevenueHomeTable.searchBankTransactions(
+      List<AXF_OBJ_BankAccountTransaction__c> banks = service.searchBankTransactions(
         'salario'
       );
-      List<AXF_OBJ_CreditCardTransaction__c> cards = AXF_CLS_CTRL_RevenueHomeTable.searchCreditCardTransactions(
+      List<AXF_OBJ_CreditCardTransaction__c> cards = service.searchCreditCardTransactions(
         'salario'
       );
-      List<AXF_OBJ_BankAccountTransaction__c> noMatch = AXF_CLS_CTRL_RevenueHomeTable.searchBankTransactions(
+      List<AXF_OBJ_BankAccountTransaction__c> noMatch = service.searchBankTransactions(
         'inexistente'
       );
-      List<AXF_OBJ_BankAccountTransaction__c> legacyBanks = AXF_CLS_CashFlowHomeController.searchBankTransactions(
-        'Salario'
-      );
-      List<AXF_OBJ_CreditCardTransaction__c> legacyCards = AXF_CLS_CashFlowHomeController.searchCreditCardTransactions(
+      List<AXF_OBJ_CreditCardTransaction__c> cardsByPrefix = service.searchCreditCardTransactions(
         'Estorno'
       );
       Test.stopTest();
@@ -184,8 +174,7 @@ private class ALT_CLS_CashFlowHomeTest {
       Assert.areEqual(5000, banks[0].AXF_BAT_CUR_Amount__c);
       Assert.areEqual(1, cards.size());
       Assert.isTrue(noMatch.isEmpty());
-      Assert.areEqual(1, legacyBanks.size());
-      Assert.areEqual(1, legacyCards.size());
+      Assert.areEqual(1, cardsByPrefix.size());
     }
   }
 
@@ -212,64 +201,29 @@ private class ALT_CLS_CashFlowHomeTest {
       Id cardTxnId = [SELECT Id FROM AXF_OBJ_CreditCardTransaction__c LIMIT 1]
       .Id;
 
+      ALT_CLS_CashFlowHome service = new ALT_CLS_CashFlowHome();
+
       Test.startTest();
-      AXF_CLS_CTRL_RevenueHomeTable.settleCashFlow(
-        freela.Id,
-        'RECEBIDA',
-        Date.today(),
-        null,
-        null
-      );
+      service.settleCashFlow(freela.Id, 'RECEBIDA', Date.today(), null, null);
+      service.settleCashFlow(expense.Id, 'PAGA', Date.today(), null, null);
       String missingId;
       try {
-        AXF_CLS_CTRL_RevenueHomeTable.settleCashFlow(
-          null,
-          'RECEBIDA',
-          Date.today(),
-          null,
-          null
-        );
-      } catch (AuraHandledException e) {
+        service.settleCashFlow(null, 'RECEBIDA', Date.today(), null, null);
+      } catch (IllegalArgumentException e) {
         missingId = e.getMessage();
       }
-      String linkFailure;
+      Boolean linkFailed = false;
       try {
         // Linking without the reconciliation service violates the reconciliation invariant.
-        AXF_CLS_CTRL_RevenueHomeTable.settleCashFlow(
+        service.settleCashFlow(
           salary.Id,
           'RECEBIDA',
           Date.today(),
           bankTxnId,
           cardTxnId
         );
-      } catch (AuraHandledException e) {
-        linkFailure = e.getMessage();
-      }
-      String serviceNullId;
-      try {
-        new ALT_CLS_CashFlowHome()
-          .settleCashFlow(null, 'PAGA', Date.today(), null, null);
-      } catch (IllegalArgumentException e) {
-        serviceNullId = e.getMessage();
-      }
-      AXF_CLS_CashFlowHomeController.settleCashFlow(
-        expense.Id,
-        'PAGA',
-        Date.today(),
-        null,
-        null
-      );
-      Boolean legacyFailed = false;
-      try {
-        AXF_CLS_CashFlowHomeController.settleCashFlow(
-          salary.Id,
-          'RECEBIDA',
-          Date.today(),
-          bankTxnId,
-          null
-        );
       } catch (DmlException e) {
-        legacyFailed = true;
+        linkFailed = true;
       }
       Test.stopTest();
 
@@ -291,12 +245,8 @@ private class ALT_CLS_CashFlowHomeTest {
         ]
         .AXF_CF_PKL_Status__c
       );
-      // AuraHandledException built without setMessage() exposes a generic message in tests.
-      Assert.isNotNull(missingId, 'A null Cash Flow ID is rejected');
-      Assert.isNotNull(
-        linkFailure,
-        'Invalid reconciliation links are rejected'
-      );
+      Assert.areEqual('Cash Flow ID is required.', missingId);
+      Assert.isTrue(linkFailed, 'Invalid reconciliation links are rejected');
       Assert.areEqual(
         'PENDENTE',
         [
@@ -307,8 +257,6 @@ private class ALT_CLS_CashFlowHomeTest {
         .AXF_CF_PKL_Status__c,
         'Failed settlement leaves the entry untouched'
       );
-      Assert.areEqual('Cash Flow ID is required.', serviceNullId);
-      Assert.isTrue(legacyFailed, 'Legacy controller surfaces the DML failure');
     }
   }
 

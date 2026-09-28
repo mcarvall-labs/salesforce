@@ -1,7 +1,6 @@
 /**
  * @description Covers ALT_CLS_CashFlowSettlement (settlement, recurring forecast maintenance,
- * reconciliation suggestions and unreconcile) through its Aura entry point
- * AXF_CLS_CTRL_ExpenseHomeTable.
+ * reconciliation suggestions and unreconcile) by calling the business service directly.
  */
 @IsTest
 private class ALT_CLS_CashFlowSettlementTest {
@@ -71,16 +70,10 @@ private class ALT_CLS_CashFlowSettlementTest {
     Id cardId
   ) {
     try {
-      AXF_CLS_CTRL_ExpenseHomeTable.settleCashFlow(
-        cashFlowId,
-        paidValue,
-        paymentDate,
-        bankId,
-        cardId,
-        false
-      );
+      new ALT_CLS_CashFlowSettlement()
+        .settleExpense(cashFlowId, paidValue, paymentDate, bankId, cardId);
       return null;
-    } catch (AuraHandledException e) {
+    } catch (IllegalArgumentException e) {
       return e.getMessage();
     }
   }
@@ -141,14 +134,8 @@ private class ALT_CLS_CashFlowSettlementTest {
       insert txn;
 
       Test.startTest();
-      AXF_CLS_CTRL_ExpenseHomeTable.settleCashFlow(
-        entry.Id,
-        98,
-        Date.today(),
-        txn.Id,
-        null,
-        false
-      );
+      new ALT_CLS_CashFlowSettlement()
+        .settleExpense(entry.Id, 98, Date.today(), txn.Id, null);
       Test.stopTest();
 
       AXF_OBJ_CashFlow__c saved = [
@@ -199,20 +186,14 @@ private class ALT_CLS_CashFlowSettlementTest {
       insert txn;
 
       Test.startTest();
-      AXF_CLS_CTRL_ExpenseHomeTable.settleCashFlow(
-        entry.Id,
-        50,
-        Date.today(),
-        null,
-        txn.Id,
-        false
-      );
+      ALT_CLS_CashFlowSettlement service = new ALT_CLS_CashFlowSettlement();
+      service.settleExpense(entry.Id, 50, Date.today(), null, txn.Id);
       AXF_OBJ_CashFlow__c settled = [
         SELECT AXF_CF_PKL_Status__c, AXF_CF_PKL_ReconciliationStatus__c
         FROM AXF_OBJ_CashFlow__c
         WHERE Id = :entry.Id
       ];
-      AXF_CLS_CTRL_ExpenseHomeTable.unreconcile(entry.Id);
+      service.unreconcile(entry.Id);
       Test.stopTest();
 
       Assert.areEqual('PAGA_EM_ATRASO', settled.AXF_CF_PKL_Status__c);
@@ -263,21 +244,21 @@ private class ALT_CLS_CashFlowSettlementTest {
         null,
         null
       );
-      new ALT_CLS_CashFlowSettlement()
-        .settleExpense(entry.Id, 10, Date.today(), txn.Id, null);
+      ALT_CLS_CashFlowSettlement service = new ALT_CLS_CashFlowSettlement();
+      service.settleExpense(entry.Id, 10, Date.today(), txn.Id, null);
 
       Test.startTest();
-      AXF_CLS_CTRL_ExpenseHomeTable.unreconcile(entry.Id);
-      new ALT_CLS_CashFlowSettlement().unreconcile(unlinked.Id);
-      String failure;
+      service.unreconcile(entry.Id);
+      service.unreconcile(unlinked.Id);
+      Boolean failed = false;
       try {
-        AXF_CLS_CTRL_ExpenseHomeTable.unreconcile(null);
-      } catch (AuraHandledException e) {
-        failure = e.getMessage();
+        service.unreconcile(null);
+      } catch (QueryException e) {
+        failed = true;
       }
       Test.stopTest();
 
-      Assert.areEqual('Não foi possível desfazer a conciliação.', failure);
+      Assert.isTrue(failed, 'Unreconciling without a Cash Flow fails');
       Assert.areEqual(
         'UNRECONCILED',
         [
@@ -452,14 +433,19 @@ private class ALT_CLS_CashFlowSettlementTest {
         foreignBankTxn.Id,
         null
       );
-      String unexpected = settleError(
-        (Id) (AXF_OBJ_CashFlow__c.SObjectType.getDescribe().getKeyPrefix() +
-        '000000000000'),
-        10,
-        Date.today(),
-        null,
-        null
-      );
+      Boolean unexpected = false;
+      try {
+        service.settleExpense(
+          (Id) (AXF_OBJ_CashFlow__c.SObjectType.getDescribe().getKeyPrefix() +
+          '000000000000'),
+          10,
+          Date.today(),
+          null,
+          null
+        );
+      } catch (QueryException e) {
+        unexpected = true;
+      }
       Test.stopTest();
 
       Assert.isTrue(missingValue.contains('positive Paid Value'), missingValue);
@@ -470,7 +456,7 @@ private class ALT_CLS_CashFlowSettlementTest {
       Assert.isTrue(cardTaken.contains('already reconciled'), cardTaken);
       Assert.isTrue(cardForeign.contains('another Credit Card'), cardForeign);
       Assert.isTrue(relink.contains('Unreconcile the existing'), relink);
-      Assert.areEqual('Não foi possível liquidar o lançamento.', unexpected);
+      Assert.isTrue(unexpected, 'A missing Cash Flow surfaces a query failure');
     }
   }
 
@@ -667,13 +653,14 @@ private class ALT_CLS_CashFlowSettlementTest {
       };
 
       Test.startTest();
-      List<AXF_CLS_CTRL_ExpenseHomeTable.ReconciliationSuggestionDTO> suggestions = AXF_CLS_CTRL_ExpenseHomeTable.getReconciliationSuggestions(
+      ALT_CLS_CashFlowSettlement service = new ALT_CLS_CashFlowSettlement();
+      List<ALT_CLS_CashFlowSettlement.ReconciliationSuggestion> suggestions = service.getSuggestions(
         entry.Id
       );
       String failure;
       try {
-        AXF_CLS_CTRL_ExpenseHomeTable.getReconciliationSuggestions(null);
-      } catch (AuraHandledException e) {
+        service.getSuggestions(null);
+      } catch (IllegalArgumentException e) {
         failure = e.getMessage();
       }
       Test.stopTest();
@@ -689,50 +676,7 @@ private class ALT_CLS_CashFlowSettlementTest {
       Assert.areEqual(90, suggestions[2].score);
       Assert.areEqual('card later', suggestions[2].description);
       Assert.areEqual('MEDIUM', suggestions[4].confidence);
-      Assert.areEqual(
-        'Não foi possível sugerir transações para conciliação.',
-        failure
-      );
-    }
-  }
-
-  @IsTest
-  static void delegatesQueriesToHomeService() {
-    System.runAs(AXF_CLS_CashFlowTestFactory.getDomainUser()) {
-      AXF_OBJ_BankAccount__c bankAccount = bank('SET_BANK_1');
-      AXF_OBJ_CreditCard__c creditCard = card('SET_CARD_1');
-      insertExpense(40, Date.today(), null, null);
-      insert AXF_CLS_CashFlowTestFactory.buildBankTransaction(
-        bankAccount.Id,
-        'DEL_B',
-        -40,
-        Date.today(),
-        'Padaria central'
-      );
-      insert AXF_CLS_CashFlowTestFactory.buildCardTransaction(
-        creditCard.Id,
-        'DEL_C',
-        40,
-        Date.today(),
-        'Padaria online'
-      );
-
-      Test.startTest();
-      List<AXF_OBJ_CashFlow__c> movements = AXF_CLS_CTRL_ExpenseHomeTable.getMonthlyMovements(
-        'AXF_CF_RT_Expense',
-        null
-      );
-      List<AXF_OBJ_BankAccountTransaction__c> banks = AXF_CLS_CTRL_ExpenseHomeTable.searchBankTransactions(
-        'Padaria'
-      );
-      List<AXF_OBJ_CreditCardTransaction__c> cards = AXF_CLS_CTRL_ExpenseHomeTable.searchCreditCardTransactions(
-        'Padaria'
-      );
-      Test.stopTest();
-
-      Assert.areEqual(1, movements.size());
-      Assert.areEqual(1, banks.size());
-      Assert.areEqual(1, cards.size());
+      Assert.areEqual('Cash Flow ID is required.', failure);
     }
   }
 }

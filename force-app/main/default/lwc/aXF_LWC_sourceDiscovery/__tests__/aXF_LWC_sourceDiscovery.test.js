@@ -426,7 +426,7 @@ describe("c-aXF_LWC_sourceDiscovery", () => {
     expect(text).toMatch(/Confirmar titulares/);
   });
 
-  it("explains that the connection bank and holder are applied on discovery", async () => {
+  it("explains that the holder is applied on discovery and the bank is fixed", async () => {
     const el = buildWizard();
     getConnections.emit([]);
     await flush();
@@ -436,17 +436,16 @@ describe("c-aXF_LWC_sourceDiscovery", () => {
     );
     button(el, /^Registrar conexão$/).click();
     await flush();
-    expect(el.shadowRoot.textContent).toMatch(/nunca é sobrescrito/i);
-    expect(el.shadowRoot.textContent).toMatch(/Confirmar titulares/);
+    expect(el.shadowRoot.textContent).toMatch(/não pode ser trocado depois/i);
   });
 
-  it("offers 'Descobrir agora' and explains that history is not imported", async () => {
+  it("offers 'Descobrir agora' and explains what the sync imports", async () => {
     const el = build();
     getStatus.emit({ state: null, complete: false });
     getDiscovered.emit([]);
     await flush();
     expect(button(el, /Descobrir agora/)).toBeDefined();
-    expect(el.shadowRoot.textContent).toMatch(/Não importa o histórico/i);
+    expect(el.shadowRoot.textContent).toMatch(/importa faturas, transações/i);
   });
 
   it("shows the 'none found' message when discovery completes with zero sources", async () => {

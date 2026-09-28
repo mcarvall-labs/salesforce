@@ -25,26 +25,6 @@
         <enabled>true</enabled>
     </classAccesses>
     <classAccesses>
-        <apexClass>AXF_CLS_CTRL_ExpenseHomeTable</apexClass>
-        <enabled>true</enabled>
-    </classAccesses>
-    <classAccesses>
-        <apexClass>AXF_CLS_CTRL_InvestmentCapacityKPI</apexClass>
-        <enabled>true</enabled>
-    </classAccesses>
-    <classAccesses>
-        <apexClass>AXF_CLS_CTRL_MonthlyBalanceKPI</apexClass>
-        <enabled>true</enabled>
-    </classAccesses>
-    <classAccesses>
-        <apexClass>AXF_CLS_CTRL_OverdueExpensesAlert</apexClass>
-        <enabled>true</enabled>
-    </classAccesses>
-    <classAccesses>
-        <apexClass>AXF_CLS_CTRL_OverdueRevenuesAlert</apexClass>
-        <enabled>true</enabled>
-    </classAccesses>
-    <classAccesses>
         <apexClass>AXF_CLS_CTRL_PluggyManualSync</apexClass>
         <enabled>true</enabled>
     </classAccesses>
@@ -54,10 +34,6 @@
     </classAccesses>
     <classAccesses>
         <apexClass>AXF_CLS_CTRL_RealTimeBalance</apexClass>
-        <enabled>true</enabled>
-    </classAccesses>
-    <classAccesses>
-        <apexClass>AXF_CLS_CTRL_RevenueHomeTable</apexClass>
         <enabled>true</enabled>
     </classAccesses>
     <classAccesses>
