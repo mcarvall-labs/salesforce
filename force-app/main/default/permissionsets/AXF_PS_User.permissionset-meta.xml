@@ -731,6 +731,10 @@
         <visibility>Visible</visibility>
     </tabSettings>
     <tabSettings>
+        <tab>AXF_OBJ_Category__c</tab>
+        <visibility>Visible</visibility>
+    </tabSettings>
+    <tabSettings>
         <tab>AXF_OBJ_CreditCard__c</tab>
         <visibility>Visible</visibility>
     </tabSettings>
