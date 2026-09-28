@@ -13,6 +13,8 @@ public with sharing class AXF_CLS_CTRL_BankAccountStatement {
     public Decimal totalDebits;
     @AuraEnabled
     public Decimal netBalance;
+    @AuraEnabled
+    public String currencyIsoCode;
 
     public StatementResult() {
       this.transactions = new List<TransactionRow>();
@@ -72,6 +74,7 @@ public with sharing class AXF_CLS_CTRL_BankAccountStatement {
     result.totalCredits = businessResult.totalCredits;
     result.totalDebits = businessResult.totalDebits;
     result.netBalance = businessResult.netBalance;
+    result.currencyIsoCode = businessResult.currencyIsoCode;
     for (
       ALT_CLS_BankAccountStatement.TransactionRow row : businessResult.transactions
     ) {

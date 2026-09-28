@@ -94,6 +94,33 @@ private class AXF_CLS_BankAccountStatementTest {
     Assert.areEqual(1000, result.totalCredits);
     Assert.areEqual(-200, result.totalDebits);
     Assert.areEqual(800, result.netBalance);
+    Assert.areEqual(
+      'BRL',
+      result.currencyIsoCode,
+      'Defaults to BRL when the account has no currency set'
+    );
+  }
+
+  @IsTest
+  static void serviceReturnsAccountOwnCurrency() {
+    Id accountId = bankAccountId();
+    update new AXF_OBJ_BankAccount__c(
+      Id = accountId,
+      AXF_BA_PKL_Currency__c = 'USD'
+    );
+    ALT_CLS_BankAccountStatement.StatementResult result;
+    System.runAs(AXF_CLS_AccountCardTestFactory.getUser(USER_KEY)) {
+      Test.startTest();
+      result = new ALT_CLS_BankAccountStatement()
+        .getStatement(accountId, null, null, null, null, null);
+      Test.stopTest();
+    }
+
+    Assert.areEqual(
+      'USD',
+      result.currencyIsoCode,
+      'The statement must respect the currency configured on the bank account record'
+    );
   }
 
   @IsTest
@@ -174,6 +201,7 @@ private class AXF_CLS_BankAccountStatementTest {
     Assert.areEqual(1000, result.totalCredits);
     Assert.areEqual(0, result.totalDebits);
     Assert.areEqual(1000, result.netBalance);
+    Assert.areEqual('BRL', result.currencyIsoCode);
   }
 
   @IsTest

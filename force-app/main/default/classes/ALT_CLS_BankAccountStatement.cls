@@ -9,6 +9,7 @@ public inherited sharing class ALT_CLS_BankAccountStatement {
     public Decimal totalCredits;
     public Decimal totalDebits;
     public Decimal netBalance;
+    public String currencyIsoCode;
 
     public StatementResult() {
       this.transactions = new List<TransactionRow>();
@@ -65,6 +66,18 @@ public inherited sharing class ALT_CLS_BankAccountStatement {
     if (bankAccountId == null) {
       return result;
     }
+
+    List<AXF_OBJ_BankAccount__c> accounts = [
+      SELECT AXF_BA_PKL_Currency__c
+      FROM AXF_OBJ_BankAccount__c
+      WHERE Id = :bankAccountId
+      WITH SECURITY_ENFORCED
+      LIMIT 1
+    ];
+    result.currencyIsoCode = (!accounts.isEmpty() &&
+      String.isNotBlank(accounts[0].AXF_BA_PKL_Currency__c))
+      ? accounts[0].AXF_BA_PKL_Currency__c
+      : 'BRL';
 
     Datetime periodStartDt = periodStart != null
       ? Datetime.newInstance(periodStart, Time.newInstance(0, 0, 0, 0))

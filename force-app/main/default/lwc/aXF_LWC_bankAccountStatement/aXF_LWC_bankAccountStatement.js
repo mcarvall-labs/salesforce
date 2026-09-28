@@ -38,6 +38,7 @@ export default class AXF_LWC_bankAccountStatement extends NavigationMixin(
 ) {
   @api recordId;
 
+  // Falls back to the org currency only until the account's own currency loads.
   currencyCode = ORG_CURRENCY_CODE;
 
   labels = {
@@ -234,6 +235,7 @@ export default class AXF_LWC_bankAccountStatement extends NavigationMixin(
       this.totalCredits = result.totalCredits;
       this.totalDebits = result.totalDebits;
       this.netBalance = result.netBalance;
+      this.currencyCode = result.currencyIsoCode || ORG_CURRENCY_CODE;
     } catch (error) {
       const detail =
         error && error.body ? error.body.message : error && error.message;
