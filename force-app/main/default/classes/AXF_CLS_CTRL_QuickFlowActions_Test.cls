@@ -178,7 +178,11 @@ private class AXF_CLS_CTRL_QuickFlowActions_Test {
       List<Id> ids = AXF_CLS_CTRL_QuickFlowActions.createCashFlowSeries(dto);
       Test.stopTest();
 
-      Assert.areEqual(2, ids.size());
+      Assert.areEqual(
+        ALT_CLS_CashFlowForecast.FUTURE_HORIZON_MONTHS + 1,
+        ids.size(),
+        'A RECORRENTE request always materializes the full forecast horizon'
+      );
       AXF_OBJ_CashFlow__c first = [
         SELECT
           Name,
@@ -189,9 +193,9 @@ private class AXF_CLS_CTRL_QuickFlowActions_Test {
         WHERE Id = :ids[0]
       ];
       Assert.areEqual(
-        'Aluguel recebido (1/2)',
+        'Aluguel recebido',
         first.Name,
-        'Description is trimmed'
+        'Description is trimmed; recurring entries never get an (n/total) suffix'
       );
       Assert.areEqual('RECEBIDA', first.AXF_CF_PKL_Status__c);
       Assert.areEqual(10, first.AXF_CF_CUR_PaidValue__c);

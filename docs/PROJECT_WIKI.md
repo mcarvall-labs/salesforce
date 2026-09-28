@@ -18,7 +18,7 @@ Welcome to the **Axon Finance** Project Wiki. This document serves as the single
 4. [Integration Architecture (Pluggy Open Finance API)](#4-integration-architecture-pluggy-open-finance-api)
    - [4.1 Security & Authentication Architecture](#41-security--authentication-architecture)
    - [4.2 Synchronization Engine (Queueable, Schedulable & Rate Limiting)](#42-synchronization-engine-queueable-schedulable--rate-limiting)
-   - [4.3 Synchronous vs Asynchronous Sync Sequence](#43-synchronous-vs-asynchronous-sync-sequence)
+   - [4.3 Cash Flow Forecast Engine (Recurring & PRICE-Financing Rolling Horizon)](#43-cash-flow-forecast-engine-recurring--price-financing-rolling-horizon)
 5. [Frontend Architecture & Design System (LWC Suite)](#5-frontend-architecture--design-system-lwc-suite)
    - [5.1 Component Hierarchy & Layout Strategy](#51-component-hierarchy--layout-strategy)
    - [5.2 Key LWC Modules Reference](#52-key-lwc-modules-reference)
@@ -135,6 +135,32 @@ erDiagram
   - When Pluggy returns HTTP 429, throws `RateLimitException` with `resumeCursor` and `retryAfterSeconds`.
   - Enqueues `AXF_CLS_PluggyRetryScheduler` to resume execution seamlessly from the exact cursor location.
 
+### 4.3 Cash Flow Forecast Engine (Recurring & PRICE-Financing Rolling Horizon)
+
+- **`ALT_CLS_CashFlowForecast.FUTURE_HORIZON_MONTHS`** (6): every open-ended
+  `RECORRENTE` `AXF_OBJ_InstallmentGroup__c` and every `FINANCIAMENTO`/`PRICE`
+  group must always have entries projected this many months ahead of today.
+- **At creation (`ALT_CLS_CashFlowHome.createCashFlowSeries`):** a new
+  `RECORRENTE` series materializes `FUTURE_HORIZON_MONTHS + 1` occurrences
+  immediately (PRICE financing already did this via
+  `ALT_CLS_PriceFinancing.initialWindow`).
+- **Monthly top-up (`AXF_CLS_CashFlowForecastScheduler`):** a `Schedulable`
+  job that calls `ALT_CLS_CashFlowForecast.extendActiveGroups()`, adding
+  exactly one further occurrence to every active RECURRING or PRICE-financing
+  group whose latest entry is less than `FUTURE_HORIZON_MONTHS` away, keeping
+  pace with time so the horizon never shrinks.
+- **⚠️ Production activation required:** deploying the class does **not**
+  register the CRON job. After promoting to a new org (including `AXON_PROD`),
+  an admin must run once:
+  ```apex
+  AXF_CLS_CashFlowForecastScheduler.scheduleMonthly();
+  ```
+  via anonymous Apex (or Setup → Apex Classes → Schedule Apex, class
+  `AXF_CLS_CashFlowForecastScheduler`, monthly on day 1). Verify with
+  `SELECT Id, CronExpression, NextFireTime FROM CronTrigger WHERE CronJobDetail.Name = 'AXF Cash Flow Forecast - Monthly'`.
+  Scheduled in `AXON_DEV` on 2026-09-28; the same step is still pending for
+  `AXON_PROD`.
+
 ---
 
 ## 5. Frontend Architecture & Design System (LWC Suite)
@@ -192,6 +218,11 @@ cycle rules, review items, work records and the Pluggy webhook event.
 2. **Issue lifecycle:** Keep requirements and acceptance criteria in GitHub Issues.
 3. **Development:** Create `feature/*` and `defect/*` branches from `develop` and integrate changes through pull requests.
 4. **Production:** Promote approved changes from `develop` to `main` and use the protected `PROD` environment.
+5. **Scheduled jobs:** deploying a `Schedulable` class does not register its
+   CRON job. After promoting to a new org, run the class's `scheduleX()`
+   method once (see [4.3](#43-cash-flow-forecast-engine-recurring--price-financing-rolling-horizon)
+   for `AXF_CLS_CashFlowForecastScheduler`; the same applies to
+   `AXF_CLS_PluggyItemSyncScheduler`).
 
 ---
 

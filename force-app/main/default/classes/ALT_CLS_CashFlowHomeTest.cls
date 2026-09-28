@@ -406,7 +406,11 @@ private class ALT_CLS_CashFlowHomeTest {
         FROM AXF_OBJ_CashFlow__c
         WHERE Id = :recurringIds[0]
       ];
-      Assert.areEqual(3, recurringIds.size());
+      Assert.areEqual(
+        7,
+        recurringIds.size(),
+        'RECURRING series are projected FUTURE_HORIZON_MONTHS ahead at creation'
+      );
       Assert.isNull(firstRecurring.AXF_CF_NUM_TotalInstallments__c);
       Assert.isTrue(firstRecurring.AXF_CF_CHK_IsEstimated__c);
       Assert.areEqual(
@@ -464,8 +468,9 @@ private class ALT_CLS_CashFlowHomeTest {
   static void createsRecurringGroupEvenWithSingleInitialOccurrence() {
     System.runAs(AXF_CLS_CashFlowTestFactory.getDomainUser()) {
       // The Quick Flow Actions popup never collects totalInstallments for
-      // RECORRENTE, so the request always arrives with installments = 1.
-      // The parent AXF_OBJ_InstallmentGroup__c must still be created.
+      // RECORRENTE, so the request always arrives with installments = 1; the
+      // parent AXF_OBJ_InstallmentGroup__c must still be created, and the
+      // series must still be projected FUTURE_HORIZON_MONTHS ahead.
       ALT_CLS_CashFlowHome.CashFlowSeriesRequest recurring = request(
         'DESPESA',
         'RECORRENTE',
@@ -479,7 +484,11 @@ private class ALT_CLS_CashFlowHomeTest {
       List<Id> ids = new ALT_CLS_CashFlowHome().createCashFlowSeries(recurring);
       Test.stopTest();
 
-      Assert.areEqual(1, ids.size());
+      Assert.areEqual(
+        ALT_CLS_CashFlowForecast.FUTURE_HORIZON_MONTHS + 1,
+        ids.size(),
+        'A RECORRENTE request always materializes the full forecast horizon'
+      );
       AXF_OBJ_CashFlow__c entry = [
         SELECT
           AXF_CF_LKP_InstallmentGroup__c,

@@ -293,9 +293,17 @@ public inherited sharing class ALT_CLS_CashFlowHome {
     Boolean priceFinancing =
       request.paymentMode == 'FINANCIAMENTO' &&
       request.financingType == 'PRICE';
-    Integer entriesToCreate = priceFinancing
-      ? ALT_CLS_PriceFinancing.initialWindow(installmentCount)
-      : installmentCount;
+    Integer entriesToCreate;
+    if (priceFinancing) {
+      entriesToCreate = ALT_CLS_PriceFinancing.initialWindow(installmentCount);
+    } else if (groupType == 'RECURRING') {
+      // Open-ended recurring series are projected FUTURE_HORIZON_MONTHS ahead
+      // immediately; AXF_CLS_CashFlowForecastScheduler keeps advancing that
+      // horizon by one occurrence per month afterwards.
+      entriesToCreate = ALT_CLS_CashFlowForecast.FUTURE_HORIZON_MONTHS + 1;
+    } else {
+      entriesToCreate = installmentCount;
+    }
     for (Integer index = 0; index < entriesToCreate; index++) {
       Date dueDate = baseDueDate.addMonths(index);
       Boolean isSettledOccurrence = request.isPaid == true && index == 0;
@@ -307,7 +315,8 @@ public inherited sharing class ALT_CLS_CashFlowHome {
       entries.add(
         new AXF_OBJ_CashFlow__c(
           RecordTypeId = recordTypeId,
-          Name = installmentCount > 1
+          Name = (installmentCount > 1 &&
+            groupType != 'RECURRING')
             ? request.description +
               ' (' +
               (index + 1) +
