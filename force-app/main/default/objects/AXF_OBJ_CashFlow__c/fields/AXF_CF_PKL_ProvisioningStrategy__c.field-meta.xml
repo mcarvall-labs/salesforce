@@ -1,8 +1,9 @@
-<?xml version="1.0" encoding="UTF-8"?>
+<?xml version="1.0" encoding="UTF-8" ?>
 <CustomField xmlns="http://soap.sforce.com/2006/04/metadata">
     <fullName>AXF_CF_PKL_ProvisioningStrategy__c</fullName>
     <businessStatus>Active</businessStatus>
-    <description>Estratégia de provisionamento para projeção de lançamentos futuros (Média Móvel, Repetir Último Valor, Manter Valor Base Manual).</description>
+    <description
+  >Estratégia de provisionamento para projeção de lançamentos futuros (Média Móvel, Repetir Último Valor, Manter Valor Base Manual).</description>
     <label>Provisioning Strategy</label>
     <required>false</required>
     <trackTrending>false</trackTrending>

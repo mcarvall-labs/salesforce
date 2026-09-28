@@ -1,8 +1,9 @@
-<?xml version="1.0" encoding="UTF-8"?>
+<?xml version="1.0" encoding="UTF-8" ?>
 <CustomField xmlns="http://soap.sforce.com/2006/04/metadata">
     <fullName>AXF_CON_TXT_SyncErrorMessage__c</fullName>
     <businessStatus>Active</businessStatus>
-    <description>Registra detalhes ou mensagens de erro retornadas no nó &quot;error&quot; da API para facilitar o diagnóstico de falhas de autenticação.</description>
+    <description
+  >Registra detalhes ou mensagens de erro retornadas no nó &quot;error&quot; da API para facilitar o diagnóstico de falhas de autenticação.</description>
     <externalId>false</externalId>
     <label>Sync Error Message</label>
     <length>255</length>
