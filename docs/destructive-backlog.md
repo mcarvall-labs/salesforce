@@ -35,11 +35,13 @@ Kept on purpose in AXON_DEV: list view `AXF_OBJ_BankAccountTransaction__c.All` (
 ### Candidates still open (not applied)
 
 - `ZZZ_TestNameField` (AXON_PROD only): obsolete debug class, removed from the repository.
-- Production home components no longer used by the Axon Finance app (its home is now the
-  `AXF_Home` dashboard): `AXF_HPL_HomePage`, `aXF_LWC_monthlyBalanceKpi`,
-  `aXF_LWC_overdueExpensesAlert`, `aXF_LWC_overdueRevenuesAlert`, `aXF_LWC_expenseHomeTable`,
-  `aXF_LWC_revenueHomeTable`, `aXF_LWC_investmentCapacityKpi` and their dedicated controllers.
-  Still in the repository — pending owner decision.
+- Production home components replaced by the `AXF_Home` dashboard — **applied to AXON_DEV on
+  28/09/2026** (`0Afaj00000m1JwDCAU`, RunLocalTests 321/321): `AXF_HPL_HomePage`,
+  `aXF_LWC_monthlyBalanceKpi`, `aXF_LWC_overdueExpensesAlert`, `aXF_LWC_overdueRevenuesAlert`,
+  `aXF_LWC_expenseHomeTable`, `aXF_LWC_revenueHomeTable`, `aXF_LWC_investmentCapacityKpi`,
+  their controllers, `ALT_CLS_CashFlowAlerts`, `ALT_CLS_InvestmentCapacity`,
+  `AXF_CLS_CashFlowHomeController`, `AXF_CLS_SVC_CashFlowBalance`,
+  `AXF_CLS_SVC_CashFlowSettlement` and 20 labels. Pending for UAT/PROD with the promotion.
 - AXON_PROD will need, at promotion time: Account settings (account teams, contacts to
   multiple accounts, versioned in `settings/Account.settings-meta.xml`) and the
   `SalesTeamRole` value `Responsável Financeiro`.
