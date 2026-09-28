@@ -110,16 +110,52 @@ Only `ApexClass` was checked. Other metadata types (`CustomObject`, `CustomField
 `PermissionSet`, `LWC`, etc.) were **not** compared against AXON_PROD — this list is
 known to be incomplete beyond Apex classes.
 
-### AXON_UAT status (checked 2026-09-17)
+### AXON_UAT status (checked 2026-09-17, ApexClass only)
 
 No drift: every class in `uat` branch is deployed, and the only untracked classes in
 the org are `AXF_CLS_ScratchDebugTest` (likely a manual scratch artifact, low risk)
 and the same 4 `devedapp__` managed-package classes above. No destructive action
-needed for UAT.
+needed for UAT **on ApexClass**. See the LWC/CustomObject finding below — this
+ApexClass-only check does not mean UAT is clean overall.
 
 ### AXON_DEV status
 
-Not yet checked. Pending in AXF-161.
+Checked 2026-09-28 for LWC/CustomObject (see below). Clean. Other metadata types
+(CustomField, PermissionSet, Flow, etc.) still not checked — pending in AXF-161.
+
+## Status: pending decision — greenfield LWC/CustomObject leftovers on AXON_UAT (2026-09-28)
+
+Found while triaging the 208 "could not be mapped automatically" deletions PR #185's CI
+evidence (`aXF_LWC_*` bundles and `objectTranslations/*` for greenfield-only objects,
+removed from `force-app` by the rebaseline). LightningComponentBundle and CustomObject
+deletions are deliberately never auto-resolved by `scripts/ci/salesforce-delivery.mjs`
+(see its `TOP_LEVEL_DESTRUCTIVE_TYPES` comment) — each needed live-org re-verification
+instead of trusting the evidence file, per this doc's own instructions above.
+
+Cross-checked via `sf org list metadata --metadata-type LightningComponentBundle` and
+`--metadata-type CustomObject` against AXON_DEV, AXON_UAT and AXON_PROD:
+
+- **AXON_DEV — clean.** None of the 30 `aXF_LWC_*` bundles or 10 greenfield-only objects
+  (`AXF_CMT_RetentionPolicy__mdt`, `AXF_OBJ_FinancialSchedule__c`,
+  `AXF_OBJ_FinancialTransaction__c`, `AXF_OBJ_FxApplicationSnapshot__c`,
+  `AXF_OBJ_IntegrationRun__c`, `AXF_OBJ_ReconciliationAllocation__c`,
+  `AXF_OBJ_ReviewItem__c`, `AXF_OBJ_ScheduleChange__c`, `AXF_OBJ_ScheduleDefinition__c`,
+  `AXF_OBJ_ScheduleReference__c`) still exist — already removed by this file's 26/09
+  phased rebaseline (phases 1b/2). **No manifest entry needed for DEV.**
+- **AXON_PROD — clean.** Never had the greenfield rebuild. **No manifest entry needed.**
+- **AXON_UAT — still fully live.** All 10 objects and 24 of the 30 LWC bundles are still
+  deployed; UAT was never put through the 26/09 rebaseline DEV got. The 6 bundles NOT
+  found on UAT (`aXF_LWC_bankStatement`, `aXF_LWC_cardStatement`, `aXF_LWC_financings`,
+  `aXF_LWC_manualEntries`, `aXF_LWC_reconciliationQueue`, `aXF_LWC_recurrences`) are later
+  sprint deliverables that never reached the `uat` branch before the owner's pivot.
+
+**Not a simple destructive-changes PR.** UAT is still running the greenfield app, not the
+AXON_PROD-legacy baseline — deleting these 40 components via
+`manifest/destructiveChangesPost.xml` (which applies through the normal
+`develop → uat → main` promotion, with no per-environment phasing) would break UAT's
+current app without the equivalent of DEV's phased, dry-run-first rebaseline. Treat as its
+own owner-approved rebaseline pass on UAT, same method as `docs/destructive-backlog.md`'s
+26/09 DEV entry above, not a manifest entry copied in as-is.
 
 ## Status: applied to DEV/UAT, pending PROD — AXF-159 Console app migration
 
