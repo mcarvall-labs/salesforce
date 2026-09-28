@@ -1,8 +1,9 @@
-<?xml version="1.0" encoding="UTF-8"?>
+<?xml version="1.0" encoding="UTF-8" ?>
 <ValidationRule xmlns="http://soap.sforce.com/2006/04/metadata">
     <fullName>AXF_IG_VR_FinancingConfiguration</fullName>
     <active>true</active>
-    <description>Requires a financing type only for financing installment groups.</description>
+    <description
+  >Requires a financing type only for financing installment groups.</description>
     <errorConditionFormula>OR(
     AND(
         ISPICKVAL(AXF_IG_PKL_GroupType__c, &quot;FINANCING&quot;),
@@ -14,5 +15,6 @@
     )
 )</errorConditionFormula>
     <errorDisplayField>AXF_IG_PKL_FinancingType__c</errorDisplayField>
-    <errorMessage>Financing Type is required only for financing groups.</errorMessage>
+    <errorMessage
+  >Financing Type is required only for financing groups.</errorMessage>
 </ValidationRule>

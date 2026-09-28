@@ -1,7 +1,8 @@
-<?xml version="1.0" encoding="UTF-8"?>
+<?xml version="1.0" encoding="UTF-8" ?>
 <CustomField xmlns="http://soap.sforce.com/2006/04/metadata">
     <fullName>AXF_IG_DAT_LastAdjustmentDate__c</fullName>
-    <description>Stores the effective date of the last confirmed consortium adjustment to prevent duplicate application.</description>
+    <description
+  >Stores the effective date of the last confirmed consortium adjustment to prevent duplicate application.</description>
     <label>Last Adjustment Date</label>
     <required>false</required>
     <trackTrending>false</trackTrending>

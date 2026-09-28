@@ -1,42 +1,45 @@
 <template>
-    <lightning-card title="Saldo em Tempo Real" icon-name="standard:currency">
-        <div class="slds-p-horizontal_small slds-p-bottom_small">
-            <div class={cardCssClass}>
-                <template if:true={hasData}>
-                    <p class="slds-text-heading_medium slds-m-bottom_x-small">
-                        <lightning-formatted-number
-                            value={balance}
-                            format-style="currency"
-                            currency-code={currencyCode}
-                        ></lightning-formatted-number>
-                    </p>
-                    <template if:true={hasLastSync}>
-                        <p class="slds-text-body_small slds-text-color_weak">
-                            Última atualização:
-                            <lightning-formatted-date-time
-                                value={lastSync}
-                                year="numeric"
-                                month="2-digit"
-                                day="2-digit"
-                                hour="2-digit"
-                                minute="2-digit"
-                            ></lightning-formatted-date-time>
-                        </p>
-                    </template>
-                </template>
-            </div>
+  <lightning-card title="Saldo em Tempo Real" icon-name="standard:currency">
+    <div class="slds-p-horizontal_small slds-p-bottom_small">
+      <div class={cardCssClass}>
+        <template if:true={hasData}>
+          <p class="slds-text-heading_medium slds-m-bottom_x-small">
+            <lightning-formatted-number
+              value={balance}
+              format-style="currency"
+              currency-code={currencyCode}
+            ></lightning-formatted-number>
+          </p>
+          <template if:true={hasLastSync}>
+            <p class="slds-text-body_small slds-text-color_weak">
+              Última atualização:
+              <lightning-formatted-date-time
+                value={lastSync}
+                year="numeric"
+                month="2-digit"
+                day="2-digit"
+                hour="2-digit"
+                minute="2-digit"
+              ></lightning-formatted-date-time>
+            </p>
+          </template>
+        </template>
+      </div>
 
-            <lightning-button
-                variant="brand"
-                label="Atualizar Saldo Agora"
-                icon-name="utility:refresh"
-                onclick={handleRefresh}
-                disabled={isLoading}
-            ></lightning-button>
+      <lightning-button
+        variant="brand"
+        label="Atualizar Saldo Agora"
+        icon-name="utility:refresh"
+        onclick={handleRefresh}
+        disabled={isLoading}
+      ></lightning-button>
 
-            <template if:true={isLoading}>
-                <lightning-spinner alternative-text="Atualizando..." size="small"></lightning-spinner>
-            </template>
-        </div>
-    </lightning-card>
+      <template if:true={isLoading}>
+        <lightning-spinner
+          alternative-text="Atualizando..."
+          size="small"
+        ></lightning-spinner>
+      </template>
+    </div>
+  </lightning-card>
 </template>

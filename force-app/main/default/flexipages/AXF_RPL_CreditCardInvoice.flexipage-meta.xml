@@ -1,4 +1,4 @@
-<?xml version="1.0" encoding="UTF-8"?>
+<?xml version="1.0" encoding="UTF-8" ?>
 <FlexiPage xmlns="http://soap.sforce.com/2006/04/metadata">
     <flexiPageRegions>
         <itemInstances>
@@ -13,7 +13,8 @@
                             <value>Delete</value>
                         </valueListItems>
                         <valueListItems>
-                            <value>AXF_OBJ_CreditCardInvoice__c.AXF_CCI_QA_SyncInvoiceTransactions</value>
+                            <value
+              >AXF_OBJ_CreditCardInvoice__c.AXF_CCI_QA_SyncInvoiceTransactions</value>
                         </valueListItems>
                     </valueList>
                 </componentInstanceProperties>
@@ -109,7 +110,8 @@
                     <value>Descending</value>
                 </componentInstanceProperties>
                 <componentName>lst:dynamicRelatedList</componentName>
-                <identifier>lst_dynamicRelatedList_invoiceTransactions</identifier>
+                <identifier
+        >lst_dynamicRelatedList_invoiceTransactions</identifier>
             </componentInstance>
         </itemInstances>
         <name>main</name>

@@ -1,8 +1,9 @@
-<?xml version="1.0" encoding="UTF-8"?>
+<?xml version="1.0" encoding="UTF-8" ?>
 <ValidationRule xmlns="http://soap.sforce.com/2006/04/metadata">
     <fullName>AXF_IG_VR_ConsortiumConfiguration</fullName>
     <active>true</active>
-    <description>Requires consortium adjustment dates to be used only by consortium groups.</description>
+    <description
+  >Requires consortium adjustment dates to be used only by consortium groups.</description>
     <errorConditionFormula>OR(
     AND(
         ISPICKVAL(AXF_IG_PKL_GroupType__c, &quot;CONSORTIUM&quot;),
@@ -17,5 +18,6 @@
     )
 )</errorConditionFormula>
     <errorDisplayField>AXF_IG_DAT_AdjustmentAnniversary__c</errorDisplayField>
-    <errorMessage>Adjustment dates are applicable only to consortium groups, and Adjustment Anniversary is required.</errorMessage>
+    <errorMessage
+  >Adjustment dates are applicable only to consortium groups, and Adjustment Anniversary is required.</errorMessage>
 </ValidationRule>

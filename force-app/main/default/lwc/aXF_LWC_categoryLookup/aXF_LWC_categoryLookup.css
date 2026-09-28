@@ -1,15 +1,15 @@
 .slds-dropdown {
-    z-index: 9001;
+  z-index: 9001;
 }
 
 .new-category-modal {
-    z-index: 9010;
+  z-index: 9010;
 }
 
 .new-category-backdrop {
-    z-index: 9009;
+  z-index: 9009;
 }
 
 .add-category-trigger {
-    margin-top: 0.25rem;
+  margin-top: 0.25rem;
 }

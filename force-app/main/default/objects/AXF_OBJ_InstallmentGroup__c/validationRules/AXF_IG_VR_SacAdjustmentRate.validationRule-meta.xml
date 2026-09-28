@@ -1,8 +1,9 @@
-<?xml version="1.0" encoding="UTF-8"?>
+<?xml version="1.0" encoding="UTF-8" ?>
 <ValidationRule xmlns="http://soap.sforce.com/2006/04/metadata">
     <fullName>AXF_IG_VR_SacAdjustmentRate</fullName>
     <active>true</active>
-    <description>Requires a monthly adjustment rate only for SAC financing groups.</description>
+    <description
+  >Requires a monthly adjustment rate only for SAC financing groups.</description>
     <errorConditionFormula>OR(
     AND(
         ISPICKVAL(AXF_IG_PKL_FinancingType__c, &quot;SAC&quot;),
@@ -14,5 +15,6 @@
     )
 )</errorConditionFormula>
     <errorDisplayField>AXF_IG_PCT_MonthlyAdjustmentRate__c</errorDisplayField>
-    <errorMessage>Monthly Adjustment Rate is required only for SAC financing groups.</errorMessage>
+    <errorMessage
+  >Monthly Adjustment Rate is required only for SAC financing groups.</errorMessage>
 </ValidationRule>
