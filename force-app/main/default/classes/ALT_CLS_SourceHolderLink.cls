@@ -67,9 +67,10 @@ public with sharing class ALT_CLS_SourceHolderLink {
       o.forbidden = true;
       return o;
     }
-    for (AXF_OBJ_BankAccount__c ba : [
+    List<AXF_OBJ_BankAccount__c> accounts = [
       SELECT
         Id,
+        AXF_BA_LKP_PluggyConnection__c,
         AXF_BA_LKP_Account__c,
         AXF_BA_LKP_Account__r.Name,
         AXF_BA_LKP_BankInstitution__r.Name,
@@ -80,12 +81,11 @@ public with sharing class ALT_CLS_SourceHolderLink {
       WITH USER_MODE
       ORDER BY Name
       LIMIT :MAX_ROWS
-    ]) {
-      add(o, bankView(ba));
-    }
-    for (AXF_OBJ_CreditCard__c cc : [
+    ];
+    List<AXF_OBJ_CreditCard__c> cards = [
       SELECT
         Id,
+        AXF_CC_LKP_PluggyConnection__c,
         AXF_CC_LKP_Account__c,
         AXF_CC_LKP_Account__r.Name,
         AXF_CC_LKP_BankInstitution__r.Name,
@@ -95,10 +95,82 @@ public with sharing class ALT_CLS_SourceHolderLink {
       WITH USER_MODE
       ORDER BY Name
       LIMIT :MAX_ROWS
-    ]) {
-      add(o, cardView(cc));
+    ];
+    // The connection's holder is whichever holder its own sources already carry
+    // (same rule as ALT_CLS_PluggySourceSetup.applyHolder): a still-pending source
+    // of a connection that already has a confirmed sibling is pre-filled with that
+    // same holder, never left blank for no reason.
+    Map<Id, Id> holderIdByConnection = new Map<Id, Id>();
+    Map<Id, String> holderNameByConnection = new Map<Id, String>();
+    for (AXF_OBJ_BankAccount__c ba : accounts) {
+      if (
+        ba.AXF_BA_LKP_Account__c != null &&
+        !holderIdByConnection.containsKey(ba.AXF_BA_LKP_PluggyConnection__c)
+      ) {
+        holderIdByConnection.put(
+          ba.AXF_BA_LKP_PluggyConnection__c,
+          ba.AXF_BA_LKP_Account__c
+        );
+        holderNameByConnection.put(
+          ba.AXF_BA_LKP_PluggyConnection__c,
+          ba.AXF_BA_LKP_Account__r?.Name
+        );
+      }
+    }
+    for (AXF_OBJ_CreditCard__c cc : cards) {
+      if (
+        cc.AXF_CC_LKP_Account__c != null &&
+        !holderIdByConnection.containsKey(cc.AXF_CC_LKP_PluggyConnection__c)
+      ) {
+        holderIdByConnection.put(
+          cc.AXF_CC_LKP_PluggyConnection__c,
+          cc.AXF_CC_LKP_Account__c
+        );
+        holderNameByConnection.put(
+          cc.AXF_CC_LKP_PluggyConnection__c,
+          cc.AXF_CC_LKP_Account__r?.Name
+        );
+      }
+    }
+    for (AXF_OBJ_BankAccount__c ba : accounts) {
+      add(
+        o,
+        withSuggestion(
+          bankView(ba),
+          ba.AXF_BA_LKP_PluggyConnection__c,
+          holderIdByConnection,
+          holderNameByConnection
+        )
+      );
+    }
+    for (AXF_OBJ_CreditCard__c cc : cards) {
+      add(
+        o,
+        withSuggestion(
+          cardView(cc),
+          cc.AXF_CC_LKP_PluggyConnection__c,
+          holderIdByConnection,
+          holderNameByConnection
+        )
+      );
     }
     return o;
+  }
+
+  private static AXF_CLS_SourceSetupDTO.SourceView withSuggestion(
+    AXF_CLS_SourceSetupDTO.SourceView v,
+    Id connectionId,
+    Map<Id, Id> holderIdByConnection,
+    Map<Id, String> holderNameByConnection
+  ) {
+    if (v.holderId != null) {
+      v.suggestedHolderId = v.holderId;
+      v.suggestedHolderName = v.holderName;
+    } else {
+      v.suggestedHolderId = holderIdByConnection.get(connectionId);
+      v.suggestedHolderName = holderNameByConnection.get(connectionId);
+    }
+    return v;
   }
 
   public AXF_CLS_SourceSetupDTO.ConfirmResult confirmHolder(

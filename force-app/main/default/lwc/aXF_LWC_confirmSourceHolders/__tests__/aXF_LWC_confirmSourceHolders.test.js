@@ -96,11 +96,48 @@ describe("c-aXF_LWC_confirmSourceHolders", () => {
     expect(el.shadowRoot.textContent).toMatch(/1/);
   });
 
-  it("requires a holder before confirming and then calls Apex", async () => {
+  it("pre-selects the picker from the connection's suggested holder and confirms with one button", async () => {
     confirmHolder.mockResolvedValue({
       outcome: "CONFIRMED",
       message: "Titular confirmado."
     });
+    const el = build();
+    getOverview.emit({
+      forbidden: false,
+      pending: [
+        {
+          sourceId: "a01",
+          kind: "BANK",
+          institutionName: "Banco X",
+          maskedNumber: "1",
+          currencyIsoCode: "BRL",
+          version: 3,
+          suggestedHolderId: "001sugg"
+        }
+      ],
+      released: []
+    });
+    await flush();
+
+    // Pre-filled from the connection's already-linked sibling — no manual pick needed.
+    expect(el.shadowRoot.querySelector("lightning-record-picker").value).toBe(
+      "001sugg"
+    );
+
+    const confirmBtn = el.shadowRoot.querySelector("lightning-button");
+    confirmBtn.click();
+    await flush();
+
+    expect(confirmHolder).toHaveBeenCalledTimes(1);
+    expect(confirmHolder.mock.calls[0][0]).toEqual({
+      sourceId: "a01",
+      kind: "BANK",
+      holderId: "001sugg",
+      expectedVersion: 3
+    });
+  });
+
+  it("requires at least one holder before confirming when nothing is suggested", async () => {
     const el = build();
     getOverview.emit({
       forbidden: false,
@@ -118,8 +155,8 @@ describe("c-aXF_LWC_confirmSourceHolders", () => {
     });
     await flush();
 
-    const btn = el.shadowRoot.querySelector("lightning-button");
-    btn.click();
+    const confirmBtn = el.shadowRoot.querySelector("lightning-button");
+    confirmBtn.click();
     await flush();
     expect(confirmHolder).not.toHaveBeenCalled();
     expect(el.shadowRoot.querySelector("[data-status]").textContent).toMatch(
@@ -132,8 +169,7 @@ describe("c-aXF_LWC_confirmSourceHolders", () => {
         new CustomEvent("change", { detail: { recordId: "001x" } })
       );
     await flush();
-    btn.click();
-    await flush();
+    confirmBtn.click();
     await flush();
 
     expect(confirmHolder).toHaveBeenCalledTimes(1);
@@ -145,7 +181,7 @@ describe("c-aXF_LWC_confirmSourceHolders", () => {
     });
   });
 
-  it("lists released sources with their holder and corrects the holder", async () => {
+  it("lists released sources pre-filled with their current holder and corrects it", async () => {
     confirmHolder.mockResolvedValue({
       outcome: "CORRECTED",
       message: "Titular corrigido."
@@ -163,6 +199,7 @@ describe("c-aXF_LWC_confirmSourceHolders", () => {
           currencyIsoCode: "BRL",
           holderId: "001old",
           holderName: "Ana Souza",
+          suggestedHolderId: "001old",
           version: 1
         }
       ],
@@ -171,23 +208,21 @@ describe("c-aXF_LWC_confirmSourceHolders", () => {
     await flush();
 
     expect(el.shadowRoot.textContent).toMatch(/Ana Souza/);
-    const fix = [...el.shadowRoot.querySelectorAll("lightning-button")].find(
-      (b) => /Corrigir|Fix/.test(b.label)
-    );
-    expect(fix).toBeDefined();
+    const picker = el.shadowRoot.querySelector("lightning-record-picker");
+    expect(picker.value).toBe("001old");
 
-    // nothing selected yet
-    fix.click();
+    const confirmBtn = el.shadowRoot.querySelector("lightning-button");
+    // Unchanged from the current holder: a no-op, nothing to submit.
+    confirmBtn.click();
     await flush();
     expect(confirmHolder).not.toHaveBeenCalled();
 
-    el.shadowRoot
-      .querySelector("lightning-record-picker")
-      .dispatchEvent(
-        new CustomEvent("change", { detail: { recordId: "001new" } })
-      );
+    picker.dispatchEvent(
+      new CustomEvent("change", { detail: { recordId: "001new" } })
+    );
     await flush();
-    fix.click();
+    confirmBtn.click();
+    await flush();
     await flush();
     await flush();
 
@@ -199,7 +234,7 @@ describe("c-aXF_LWC_confirmSourceHolders", () => {
       expectedVersion: 1
     });
     expect(el.shadowRoot.querySelector("[data-status]").textContent).toMatch(
-      /corrigido|corrected/i
+      /confirmado|confirmed/i
     );
   });
 
@@ -264,7 +299,7 @@ describe("c-aXF_LWC_confirmSourceHolders", () => {
     );
   });
 
-  it("disables the row while the confirmation is in flight", async () => {
+  it("disables the confirm button while the batch confirmation is in flight", async () => {
     let resolveConfirm;
     confirmHolder.mockImplementation(
       () =>
@@ -282,7 +317,8 @@ describe("c-aXF_LWC_confirmSourceHolders", () => {
           institutionName: "Banco X",
           maskedNumber: "1",
           currencyIsoCode: "BRL",
-          version: 0
+          version: 0,
+          suggestedHolderId: "001x"
         }
       ],
       released: [],
@@ -290,33 +326,21 @@ describe("c-aXF_LWC_confirmSourceHolders", () => {
     });
     await flush();
 
-    el.shadowRoot
-      .querySelector("lightning-record-picker")
-      .dispatchEvent(
-        new CustomEvent("change", { detail: { recordId: "001x" } })
-      );
-    await flush();
-    await flush();
-
     const confirmButton = () => el.shadowRoot.querySelector("lightning-button");
     expect(confirmButton().disabled).toBeFalsy();
 
     confirmButton().click();
     await flush();
-    await flush();
 
-    // A double submit cannot happen: the row is disabled while the write is in flight.
+    // A double submit cannot happen: the button is disabled while the batch is in flight.
     expect(confirmButton().disabled).toBe(true);
     expect(confirmHolder).toHaveBeenCalledTimes(1);
 
     resolveConfirm({ outcome: "CONFIRMED", message: "Titular confirmado." });
     await flush();
     await flush();
-    await flush();
-    await flush();
-    await flush();
 
-    // ...and the flag clears in the finally block, without waiting for a new wire payload.
+    // ...and it clears once the batch settles, without waiting for a new wire payload.
     expect(confirmButton().disabled).toBeFalsy();
   });
 });

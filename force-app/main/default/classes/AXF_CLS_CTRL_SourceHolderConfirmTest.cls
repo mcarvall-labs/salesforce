@@ -99,10 +99,21 @@ private class AXF_CLS_CTRL_SourceHolderConfirmTest {
     Assert.areEqual('•••• 45-6', released.maskedNumber);
     Assert.areEqual('Banco Teste', released.bankInstitutionName);
     Assert.areEqual(0, released.version);
+    Assert.areEqual(
+      released.holderId,
+      released.suggestedHolderId,
+      'a released source suggests its own current holder'
+    );
+    Id sharedConnectionHolder = holder('Titular Um');
     for (AXF_CLS_SourceSetupDTO.SourceView v : o.pending) {
       Assert.areEqual('CUSTODY', v.availabilityState);
       Assert.isNull(v.holderId);
       Assert.isNotNull(v.currencyIsoCode);
+      Assert.areEqual(
+        sharedConnectionHolder,
+        v.suggestedHolderId,
+        'a pending source of the same connection suggests the sibling holder already linked'
+      );
     }
   }
 

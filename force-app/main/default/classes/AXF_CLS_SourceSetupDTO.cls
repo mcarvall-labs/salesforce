@@ -163,6 +163,12 @@ public with sharing class AXF_CLS_SourceSetupDTO {
     public Id accountHolderId;
     @AuraEnabled
     public Boolean divergent = false;
+    // Pre-fill for the holder picker: the source's own holder when already released,
+    // or its connection's holder (from an already-linked sibling) while still pending.
+    @AuraEnabled
+    public Id suggestedHolderId;
+    @AuraEnabled
+    public String suggestedHolderName;
   }
 
   public class HolderOverview {

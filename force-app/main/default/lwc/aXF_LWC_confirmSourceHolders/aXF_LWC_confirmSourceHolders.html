@@ -61,19 +61,11 @@
                 label={labels.holder}
                 placeholder={labels.holder}
                 object-api-name="Account"
+                value={s.pickerValue}
                 data-source={s.sourceId}
                 onchange={handleHolder}
                 class="slds-var-m-vertical_x-small"
               ></lightning-record-picker>
-              <lightning-button
-                label={labels.confirm}
-                variant="brand"
-                data-source={s.sourceId}
-                data-kind={s.kind}
-                data-version={s.version}
-                onclick={handleConfirm}
-                disabled={s.busy}
-              ></lightning-button>
             </div>
           </template>
         </template>
@@ -108,24 +100,25 @@
                 label={labels.holder}
                 placeholder={labels.holder}
                 object-api-name="Account"
+                value={s.pickerValue}
                 data-source={s.sourceId}
                 onchange={handleHolder}
                 class="slds-var-m-vertical_x-small"
               ></lightning-record-picker>
-              <lightning-button
-                label={labels.fix}
-                data-source={s.sourceId}
-                data-kind={s.kind}
-                data-version={s.version}
-                onclick={handleFix}
-                disabled={s.busy}
-              ></lightning-button>
             </div>
           </template>
         </template>
         <template lwc:else>
           <p class="slds-text-body_small">{labels.noReleased}</p>
         </template>
+
+        <lightning-button
+          label={labels.confirmAll}
+          variant="brand"
+          onclick={handleConfirmAll}
+          disabled={confirmDisabled}
+          class="slds-var-m-top_medium"
+        ></lightning-button>
       </template>
     </div>
   </lightning-card>

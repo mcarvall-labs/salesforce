@@ -7,17 +7,18 @@ import { refreshApex } from "@salesforce/apex";
 const PT = {
   title: "Confirmar titulares das contas e cartões",
   subtitle:
-    "Relacione cada conta ou cartão descoberto à pessoa ou empresa correta. Só fontes com titular confirmado ficam disponíveis para uso.",
+    "Relacione cada conta ou cartão descoberto à pessoa ou empresa correta. O titular já usado na conexão vem pré-selecionado; corrija o que estiver errado e confirme tudo de uma vez. Só fontes com titular confirmado ficam disponíveis para uso.",
   forbidden: "Você não tem autorização para confirmar titulares.",
   pending: "Fontes pendentes",
   released: "Fontes liberadas",
   none: "Nenhuma fonte pendente.",
   holder: "Titular (pessoa ou empresa)",
-  confirm: "Confirmar titular",
+  confirmAll: "Confirmar",
   bank: "Conta bancária",
   card: "Cartão",
   allDone: "Todas as fontes descobertas têm titular confirmado.",
-  pickHolder: "Selecione o titular antes de confirmar.",
+  pickAtLeastOne:
+    "Selecione o titular de ao menos uma fonte antes de confirmar.",
   empty:
     "Nenhuma fonte descoberta ainda. Descubra as contas e cartões para confirmar os titulares.",
   noReleased: "Nenhuma fonte liberada ainda.",
@@ -26,24 +27,26 @@ const PT = {
   currentHolder: "Titular atual",
   unlinked: "Sem titular vinculado",
   divergent: "Divergente do titular da conexão",
-  fix: "Corrigir titular",
   fixHelp:
-    "Trocar o titular mantém o vínculo anterior no histórico e libera a fonte para o novo titular."
+    "Trocar o titular mantém o vínculo anterior no histórico e libera a fonte para o novo titular.",
+  confirmedOne: "1 titular confirmado.",
+  confirmedMany: "{0} titulares confirmados.",
+  genericFail: "Não foi possível confirmar os titulares selecionados."
 };
 const EN = {
   title: "Confirm the account and card holders",
   subtitle:
-    "Link every discovered account or card to the right person or company. Only sources with a confirmed holder become usable.",
+    "Link every discovered account or card to the right person or company. The holder already used on the connection comes pre-selected; fix whatever is wrong and confirm everything at once. Only sources with a confirmed holder become usable.",
   forbidden: "You are not authorized to confirm holders.",
   pending: "Pending sources",
   released: "Released sources",
   none: "No pending source.",
   holder: "Holder (person or company)",
-  confirm: "Confirm holder",
+  confirmAll: "Confirm",
   bank: "Bank account",
   card: "Credit card",
   allDone: "Every discovered source has a confirmed holder.",
-  pickHolder: "Select the holder before confirming.",
+  pickAtLeastOne: "Select the holder of at least one source before confirming.",
   empty:
     "No source discovered yet. Discover the accounts and cards to confirm their holders.",
   noReleased: "No released source yet.",
@@ -52,9 +55,11 @@ const EN = {
   currentHolder: "Current holder",
   unlinked: "No holder linked",
   divergent: "Diverges from the connection holder",
-  fix: "Fix holder",
   fixHelp:
-    "Changing the holder keeps the previous link in history and releases the source to the new holder."
+    "Changing the holder keeps the previous link in history and releases the source to the new holder.",
+  confirmedOne: "1 holder confirmed.",
+  confirmedMany: "{0} holders confirmed.",
+  genericFail: "Could not confirm the selected holders."
 };
 const L = String(LANG || "")
   .toLowerCase()
@@ -72,7 +77,7 @@ export default class AxfLwcConfirmSourceHolders extends LightningElement {
   @track divergent = [];
   @track selection = {};
   message = null;
-  busySourceId = null;
+  busy = false;
   _wired;
 
   @wire(getOverview)
@@ -89,9 +94,22 @@ export default class AxfLwcConfirmSourceHolders extends LightningElement {
     }
     this.loadError = false;
     this.forbidden = result.data.forbidden === true;
-    this.pending = (result.data.pending || []).map((s) => this.decorate(s));
-    this.released = (result.data.released || []).map((s) => this.decorate(s));
-    this.divergent = (result.data.divergent || []).map((s) => this.decorate(s));
+    const rawPending = result.data.pending || [];
+    const rawReleased = result.data.released || [];
+    const rawDivergent = result.data.divergent || [];
+    // Seed the picker with the suggested holder the first time a source is seen —
+    // a value the administrator already picked, or already confirmed on a prior
+    // partial submit, is never clobbered by a fresh read of the overview.
+    const seeded = { ...this.selection };
+    [...rawPending, ...rawReleased].forEach((s) => {
+      if (!(s.sourceId in seeded)) {
+        seeded[s.sourceId] = s.suggestedHolderId || null;
+      }
+    });
+    this.selection = seeded;
+    this.pending = rawPending.map((s) => this.decorate(s));
+    this.released = rawReleased.map((s) => this.decorate(s));
+    this.divergent = rawDivergent.map((s) => this.decorate(s));
     this.loading = false;
   }
 
@@ -104,7 +122,7 @@ export default class AxfLwcConfirmSourceHolders extends LightningElement {
       institutionLabel: s.bankInstitutionName || s.institutionName,
       currentHolderLabel: s.holderName || L.unlinked,
       rowClass: "slds-box slds-box_x-small slds-var-m-bottom_x-small",
-      busy: this.busySourceId === s.sourceId
+      pickerValue: this.selection[s.sourceId] || null
     };
   }
 
@@ -114,6 +132,10 @@ export default class AxfLwcConfirmSourceHolders extends LightningElement {
 
   get hasReleased() {
     return this.released.length > 0;
+  }
+
+  get hasAnySource() {
+    return this.hasPending || this.hasReleased;
   }
 
   get isEmpty() {
@@ -130,60 +152,75 @@ export default class AxfLwcConfirmSourceHolders extends LightningElement {
     return this.released.length;
   }
 
+  get confirmDisabled() {
+    return this.busy || !this.hasAnySource;
+  }
+
   handleHolder(event) {
     const sourceId = event.target.dataset.source;
     this.selection = {
       ...this.selection,
       [sourceId]: event.detail.recordId || null
     };
+    this.pending = this.pending.map((s) => this.decorate(s));
+    this.released = this.released.map((s) => this.decorate(s));
   }
 
-  async handleConfirm(event) {
-    await this.submit(event.target);
-  }
-
-  async handleFix(event) {
-    await this.submit(event.target);
-  }
-
-  // Same contract for a pending confirmation and for fixing an already released
-  // source: the holder, the source version read by the overview and the primitive
-  // controller signature. Correcting supersedes the previous link (AXF-85 AC5).
-  async submit(button) {
-    const sourceId = button.dataset.source;
-    const kind = button.dataset.kind;
-    const version = Number(button.dataset.version);
-    const holderId = this.selection[sourceId];
-    if (!holderId) {
-      this.message = L.pickHolder;
+  // A single confirmation for every change made on this screen (pending sources
+  // that got a holder — suggested or picked — and released sources whose holder
+  // was corrected). A row whose picker still matches its current holder is a
+  // no-op and is never submitted.
+  async handleConfirmAll() {
+    if (this.busy) {
+      return;
+    }
+    const rows = [...this.pending, ...this.released];
+    const toSubmit = rows.filter((s) => {
+      const chosen = this.selection[s.sourceId];
+      return !!chosen && chosen !== s.holderId;
+    });
+    if (toSubmit.length === 0) {
+      this.message = L.pickAtLeastOne;
       this.moveFocusToStatus();
       return;
     }
-    this.busySourceId = sourceId;
-    // Both lists are re-decorated so the row being submitted — pending or released —
-    // takes the busy flag immediately and its button is disabled on the template while
-    // the server call is in flight (review patch: no double submit).
-    this.pending = this.pending.map((s) => this.decorate(s));
-    this.released = this.released.map((s) => this.decorate(s));
-    try {
-      // Primitive params: the controller does not accept the service's inner DTO.
-      const r = await confirmHolder({
-        sourceId,
-        kind,
-        holderId,
-        expectedVersion: version
-      });
-      this.message = r.message;
-      await refreshApex(this._wired);
-    } catch (e) {
-      this.message = (e && e.body && e.body.message) || String(e);
-    } finally {
-      // Clearing the busy source must also clear the per-row flag in the same pass,
-      // otherwise the row stays disabled until the next wire emission (review patch).
-      this.busySourceId = null;
-      this.pending = this.pending.map((s) => this.decorate(s));
-      this.released = this.released.map((s) => this.decorate(s));
+    this.busy = true;
+    this.message = null;
+    let okCount = 0;
+    let failMessage = null;
+    // Sequential: each confirmation is its own transaction, and a failure on one
+    // source must never block the others from being submitted.
+    for (const s of toSubmit) {
+      try {
+        // eslint-disable-next-line no-await-in-loop
+        const r = await confirmHolder({
+          sourceId: s.sourceId,
+          kind: s.kind,
+          holderId: this.selection[s.sourceId],
+          expectedVersion: s.version
+        });
+        if (
+          r.outcome === "CONFIRMED" ||
+          r.outcome === "CORRECTED" ||
+          r.outcome === "ALREADY"
+        ) {
+          okCount += 1;
+        } else if (!failMessage) {
+          failMessage = r.message;
+        }
+      } catch (e) {
+        if (!failMessage) {
+          failMessage = this.extractMessage(e);
+        }
+      }
     }
+    this.busy = false;
+    await refreshApex(this._wired);
+    this.message = failMessage
+      ? failMessage
+      : okCount === 1
+        ? L.confirmedOne
+        : L.confirmedMany.replace("{0}", String(okCount));
     this.moveFocusToStatus();
   }
 
@@ -194,6 +231,10 @@ export default class AxfLwcConfirmSourceHolders extends LightningElement {
       this.loadError = true;
       this.loading = false;
     });
+  }
+
+  extractMessage(e) {
+    return (e && e.body && e.body.message) || L.genericFail;
   }
 
   moveFocusToStatus() {
