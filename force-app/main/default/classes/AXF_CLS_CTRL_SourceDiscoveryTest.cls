@@ -294,6 +294,28 @@ private class AXF_CLS_CTRL_SourceDiscoveryTest {
   }
 
   @IsTest
+  static void startDiscoverySurfacesInvalidCredentialMessage() {
+    Id connId = conn('item-empty').Id;
+    AXF_CLS_SourceSetupDTO.DiscoveryResult r;
+    System.runAs(configurer()) {
+      Test.setMock(
+        HttpCalloutMock.class,
+        new AXF_CLS_SourceSetupTestFactory.PluggyAuthFailureMock()
+      );
+      Test.startTest();
+      r = AXF_CLS_CTRL_SourceDiscovery.startDiscovery(connId);
+      Test.stopTest();
+    }
+    Assert.areEqual('FAILED_TERMINAL', r.state);
+    Assert.isFalse(r.complete);
+    Assert.isTrue(
+      r.message.contains('inválidas'),
+      'an auth rejection must name the credential, not a generic failure: ' +
+      r.message
+    );
+  }
+
+  @IsTest
   static void startDiscoveryReportsPluggyStates() {
     Id connId = conn('item-empty').Id;
     AXF_CLS_SourceSetupTestFactory.PluggyMock mock = new AXF_CLS_SourceSetupTestFactory.PluggyMock();

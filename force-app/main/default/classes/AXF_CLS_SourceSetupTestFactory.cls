@@ -234,4 +234,18 @@ public class AXF_CLS_SourceSetupTestFactory {
       return res;
     }
   }
+
+  /**
+   * @description Simulates Pluggy rejecting the configured Client ID/Secret
+   * (HTTP 401 on /auth), the only case that should ever blame the credential.
+   */
+  public class PluggyAuthFailureMock implements HttpCalloutMock {
+    public HttpResponse respond(HttpRequest req) {
+      HttpResponse res = new HttpResponse();
+      res.setStatusCode(401);
+      res.setHeader('Content-Type', 'application/json');
+      res.setBody('{"message":"client keys are invalid"}');
+      return res;
+    }
+  }
 }

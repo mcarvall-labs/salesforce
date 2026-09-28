@@ -238,12 +238,21 @@ public with sharing class ALT_CLS_PluggySourceSetup {
           new List<AXF_OBJ_PluggyConnection__c>{ conn }
         )
         .execute(null);
+    } catch (AXF_CLS_PluggyAuthException e) {
+      // The only failure that really means "the Client ID/Secret are wrong" —
+      // thrown by AXF_CLS_PluggyAuthService when Pluggy itself rejects them. Its own
+      // message already says which (invalid keys vs. another HTTP failure), so it is
+      // surfaced as-is instead of a one-size-fits-all "check the credentials" text.
+      lastFailure = e.getTypeName() + ': ' + e.getMessage();
+      return failed(r, RUN_TERMINAL, e.getMessage());
     } catch (Exception e) {
+      // Any other failure (DML, trigger, timeout) is never a credential problem —
+      // blaming the credential here would send the admin to fix the wrong thing.
       lastFailure = e.getTypeName() + ': ' + e.getMessage();
       return failed(
         r,
         RUN_TERMINAL,
-        'Não foi possível consultar a Pluggy. Verifique as credenciais da integração e tente novamente.'
+        'Não foi possível concluir a descoberta desta conexão. Tente novamente.'
       );
     }
     conn = load(connectionId);
