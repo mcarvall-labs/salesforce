@@ -12,7 +12,7 @@
     <isNavPersonalizationDisabled>false</isNavPersonalizationDisabled>
     <isNavTabPersistenceDisabled>false</isNavTabPersistenceDisabled>
     <isOmniPinnedViewEnabled>false</isOmniPinnedViewEnabled>
-    <label>Axon Personal Finances</label>
+    <label>AXON</label>
     <navType>Console</navType>
     <tabs>AXF_Home</tabs>
     <tabs>standard-Account</tabs>
@@ -23,6 +23,9 @@
     <tabs>AXF_OBJ_PluggyConnection__c</tabs>
     <uiType>Lightning</uiType>
     <workspaceConfig>
+        <mappings>
+            <tab>AXF_Home</tab>
+        </mappings>
         <mappings>
             <tab>AXF_OBJ_BankAccount__c</tab>
         </mappings>
@@ -40,9 +43,6 @@
         </mappings>
         <mappings>
             <tab>standard-Account</tab>
-        </mappings>
-        <mappings>
-            <tab>AXF_Home</tab>
         </mappings>
     </workspaceConfig>
 </CustomApplication>
