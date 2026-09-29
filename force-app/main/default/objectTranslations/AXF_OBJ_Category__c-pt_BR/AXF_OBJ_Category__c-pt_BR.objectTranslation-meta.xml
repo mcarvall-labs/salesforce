@@ -9,6 +9,13 @@
         <value>Categorias Financeiras</value>
     </caseValues>
     <gender>Feminine</gender>
+    <layouts>
+        <layout>Financial Category Layout</layout>
+        <sections>
+            <label><!-- Links personalizados --></label>
+            <section>Links personalizados</section>
+        </sections>
+    </layouts>
     <nameFieldLabel><!-- Category Name --></nameFieldLabel>
     <recordTypes>
         <label><!-- Despesa --></label>

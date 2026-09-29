@@ -3,7 +3,7 @@
     <flexiPageRegions>
         <itemInstances>
             <componentInstance>
-                <componentName>c:aXF_LWC_onboardingWizard</componentName>
+                <componentName>aXF_LWC_onboardingWizard</componentName>
                 <identifier>axf_confighome_wizard</identifier>
             </componentInstance>
         </itemInstances>

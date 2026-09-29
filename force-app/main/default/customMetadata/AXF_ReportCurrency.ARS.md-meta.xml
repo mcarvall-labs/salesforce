@@ -6,16 +6,20 @@
 >
     <label>ARS</label>
     <protected>false</protected>
-    <values><field>AXF_RCU_TXT_IsoCode__c</field><value
-      xsi:type="xsd:string"
-    >ARS</value></values>
-    <values><field>AXF_RCU_TXT_Label__c</field><value
-      xsi:type="xsd:string"
-    >Peso argentino (ARS)</value></values>
-    <values><field>AXF_RCU_BOL_Active__c</field><value
-      xsi:type="xsd:boolean"
-    >true</value></values>
-    <values><field>AXF_RCU_BOL_SuggestedDefault__c</field><value
-      xsi:type="xsd:boolean"
-    >false</value></values>
+    <values>
+        <field>AXF_RCU_BOL_Active__c</field>
+        <value xsi:type="xsd:boolean">true</value>
+    </values>
+    <values>
+        <field>AXF_RCU_BOL_SuggestedDefault__c</field>
+        <value xsi:type="xsd:boolean">false</value>
+    </values>
+    <values>
+        <field>AXF_RCU_TXT_IsoCode__c</field>
+        <value xsi:type="xsd:string">ARS</value>
+    </values>
+    <values>
+        <field>AXF_RCU_TXT_Label__c</field>
+        <value xsi:type="xsd:string">Peso argentino (ARS)</value>
+    </values>
 </CustomMetadata>

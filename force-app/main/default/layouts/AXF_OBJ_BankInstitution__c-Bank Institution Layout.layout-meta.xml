@@ -21,6 +21,10 @@
                 <behavior>Required</behavior>
                 <field>AXF_BI_EXI_Bank_Number__c</field>
             </layoutItems>
+            <layoutItems>
+                <behavior>Edit</behavior>
+                <field>CurrencyIsoCode</field>
+            </layoutItems>
         </layoutColumns>
         <layoutColumns>
             <layoutItems>

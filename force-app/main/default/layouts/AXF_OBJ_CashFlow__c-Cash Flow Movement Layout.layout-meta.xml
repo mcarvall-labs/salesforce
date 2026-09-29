@@ -30,6 +30,10 @@
                 <behavior>Required</behavior>
                 <field>AXF_CF_LKP_Account__c</field>
             </layoutItems>
+            <layoutItems>
+                <behavior>Edit</behavior>
+                <field>CurrencyIsoCode</field>
+            </layoutItems>
         </layoutColumns>
         <layoutColumns>
             <layoutItems>

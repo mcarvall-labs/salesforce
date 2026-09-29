@@ -9,12 +9,5 @@
         <value>Transações de Cartão de Crédito</value>
     </caseValues>
     <gender>Feminine</gender>
-    <layouts>
-        <layout>Credit Card Transaction Layout</layout>
-        <sections>
-            <label><!-- Reconciliation --></label>
-            <section>Reconciliation</section>
-        </sections>
-    </layouts>
     <nameFieldLabel><!-- Transaction Name --></nameFieldLabel>
 </CustomObjectTranslation>

@@ -20,7 +20,6 @@
     <tabs>AXF_OBJ_BankAccount__c</tabs>
     <tabs>AXF_OBJ_CreditCard__c</tabs>
     <tabs>AXF_OBJ_CashFlow__c</tabs>
-    <tabs>AXF_OBJ_Category__c</tabs>
     <tabs>AXF_OBJ_PluggyConnection__c</tabs>
     <uiType>Lightning</uiType>
     <workspaceConfig>
@@ -35,9 +34,6 @@
         </mappings>
         <mappings>
             <tab>AXF_OBJ_CashFlow__c</tab>
-        </mappings>
-        <mappings>
-            <tab>AXF_OBJ_Category__c</tab>
         </mappings>
         <mappings>
             <tab>AXF_OBJ_CreditCard__c</tab>

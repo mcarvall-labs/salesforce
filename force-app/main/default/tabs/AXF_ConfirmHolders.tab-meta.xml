@@ -2,5 +2,5 @@
 <CustomTab xmlns="http://soap.sforce.com/2006/04/metadata">
     <label>Confirmar titulares</label>
     <lwcComponent>aXF_LWC_confirmSourceHolders</lwcComponent>
-    <motif>Custom19: Postcard</motif>
+    <motif>Custom19: Wrench</motif>
 </CustomTab>

@@ -15,4 +15,8 @@
         <label><!-- Empresa --></label>
         <name>AXF_Business</name>
     </recordTypes>
+    <webLinks>
+        <label><!-- Billing --></label>
+        <name>Billing</name>
+    </webLinks>
 </CustomObjectTranslation>

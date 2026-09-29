@@ -3,7 +3,7 @@
     <flexiPageRegions>
         <itemInstances>
             <componentInstance>
-                <componentName>c:aXF_LWC_homeDashboard</componentName>
+                <componentName>aXF_LWC_homeDashboard</componentName>
                 <identifier>axf_home_dashboard</identifier>
             </componentInstance>
         </itemInstances>

@@ -9,12 +9,5 @@
         <value>Transações de Conta Bancária</value>
     </caseValues>
     <gender>Feminine</gender>
-    <layouts>
-        <layout>Bank Account Transaction Layout</layout>
-        <sections>
-            <label><!-- Reconciliation --></label>
-            <section>Reconciliation</section>
-        </sections>
-    </layouts>
     <nameFieldLabel><!-- Transaction Number --></nameFieldLabel>
 </CustomObjectTranslation>
