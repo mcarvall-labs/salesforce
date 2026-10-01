@@ -1,7 +1,8 @@
 /**
  * @description Bank statement of a bank account: transactions of one month with the running
  * balance after each line. Pluggy sends no balance per line, so it is derived from the current
- * account balance by walking the transactions from newest to oldest.
+ * account balance by walking the transactions from newest to oldest. Transactions without a
+ * date are left out; a missing amount counts as zero.
  */
 public with sharing class ALT_CLS_BankStatement {
   public class Row {
@@ -16,11 +17,13 @@ public with sharing class ALT_CLS_BankStatement {
     public Decimal balance;
     public String currencyCode;
     public String month;
+    public Boolean truncated = false;
     public List<String> months = new List<String>();
     public List<Row> rows = new List<Row>();
   }
 
-  private static final Integer MAX_TRANSACTIONS = 2000;
+  @TestVisible
+  private static Integer maxTransactions = 2000;
 
   public Statement build(Id bankAccountId, String month) {
     AXF_OBJ_BankAccount__c account = [
@@ -34,25 +37,36 @@ public with sharing class ALT_CLS_BankStatement {
     statement.currencyCode = account.CurrencyIsoCode;
     List<Row> all = new List<Row>();
     Decimal running = account.AXF_BA_CUR_Balance__c;
+    Integer fetched = 0;
     for (AXF_OBJ_BankAccountTransaction__c bankTransaction : [
       SELECT
         AXF_BAT_DAT_Date__c,
         AXF_BAT_TXT_Description__c,
         AXF_BAT_CUR_Amount__c
       FROM AXF_OBJ_BankAccountTransaction__c
-      WHERE AXF_BAT_MD_BankAccount__c = :bankAccountId
+      WHERE
+        AXF_BAT_MD_BankAccount__c = :bankAccountId
+        AND AXF_BAT_DAT_Date__c != NULL
       WITH USER_MODE
       ORDER BY AXF_BAT_DAT_Date__c DESC, CreatedDate DESC, Id DESC
-      LIMIT :MAX_TRANSACTIONS
+      LIMIT :(maxTransactions + 1)
     ]) {
+      fetched++;
+      if (fetched > maxTransactions) {
+        statement.truncated = true;
+        break;
+      }
+      Decimal amount = bankTransaction.AXF_BAT_CUR_Amount__c == null
+        ? 0
+        : bankTransaction.AXF_BAT_CUR_Amount__c;
       Row row = new Row();
       row.id = bankTransaction.Id;
       row.transactionDate = bankTransaction.AXF_BAT_DAT_Date__c;
       row.description = bankTransaction.AXF_BAT_TXT_Description__c;
-      row.amount = bankTransaction.AXF_BAT_CUR_Amount__c;
+      row.amount = amount;
       row.runningBalance = running;
       if (running != null) {
-        running -= bankTransaction.AXF_BAT_CUR_Amount__c;
+        running -= amount;
       }
       all.add(row);
       String rowMonth = monthOf(row.transactionDate);

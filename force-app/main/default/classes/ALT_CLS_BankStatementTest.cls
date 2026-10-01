@@ -107,4 +107,54 @@ private class ALT_CLS_BankStatementTest {
       }
     }
   }
+
+  @IsTest
+  static void unknownMonthIsEmptyAndLimitFlagsTruncation() {
+    System.runAs(new User(Id = UserInfo.getUserId())) {
+      Id accountId = accountWithTransactions();
+      System.assertEquals(
+        0,
+        new ALT_CLS_BankStatement().build(accountId, '2020-01').rows.size()
+      );
+      ALT_CLS_BankStatement.maxTransactions = 2;
+      ALT_CLS_BankStatement.Statement s = new ALT_CLS_BankStatement()
+        .build(accountId, null);
+      System.assertEquals(true, s.truncated);
+      System.assertEquals(new List<String>{ '2026-10', '2026-09' }, s.months);
+    }
+  }
+
+  @IsTest
+  static void sameDayTransactionsKeepACoherentRunningBalance() {
+    System.runAs(new User(Id = UserInfo.getUserId())) {
+      Id accountId = accountWithTransactions();
+      insert new List<AXF_OBJ_BankAccountTransaction__c>{
+        tx(accountId, Date.newInstance(2026, 10, 2), -10),
+        tx(accountId, Date.newInstance(2026, 10, 2), -20)
+      };
+      List<ALT_CLS_BankStatement.Row> rows = new ALT_CLS_BankStatement()
+        .build(accountId, '2026-10')
+        .rows;
+      System.assertEquals(3, rows.size());
+      Decimal expected = 1000;
+      for (ALT_CLS_BankStatement.Row row : rows) {
+        System.assertEquals(expected, row.runningBalance);
+        expected -= row.amount;
+      }
+    }
+  }
+
+  @IsTest
+  static void controllerWrapsUnreadableAccount() {
+    System.runAs(new User(Id = UserInfo.getUserId())) {
+      Id accountId = accountWithTransactions();
+      delete [SELECT Id FROM AXF_OBJ_BankAccount__c WHERE Id = :accountId];
+      try {
+        AXF_CLS_CTRL_BankStatement.getStatement(accountId, null);
+        System.assert(false, 'Expected AuraHandledException');
+      } catch (AuraHandledException e) {
+        System.assertNotEquals(null, e.getMessage());
+      }
+    }
+  }
 }

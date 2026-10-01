@@ -90,4 +90,10 @@ describe("c-a-x-f-l-w-c-bank-statement", () => {
       "Não foi possível carregar o extrato."
     );
   });
+
+  it("warns when the statement was truncated", async () => {
+    getStatement.mockResolvedValue({ ...statement, truncated: true });
+    const element = await setup();
+    expect(element.shadowRoot.querySelector('[role="status"]')).not.toBeNull();
+  });
 });
