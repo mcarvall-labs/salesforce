@@ -12,6 +12,14 @@
     <apexClass>AXF_CLS_CTRL_PluggyWizard</apexClass>
     <enabled>true</enabled>
   </classAccesses>
+  <classAccesses>
+    <apexClass>AXF_CLS_CTRL_BankStatement</apexClass>
+    <enabled>true</enabled>
+  </classAccesses>
+  <classAccesses>
+    <apexClass>AXF_CLS_CTRL_CardInvoices</apexClass>
+    <enabled>true</enabled>
+  </classAccesses>
   <customPermissions>
     <enabled>true</enabled>
     <name>AXF_CP_PluggySync</name>
@@ -287,4 +295,12 @@
     <visibility>Visible</visibility>
   </tabSettings>
 
+  <tabSettings>
+    <tab>AXF_OBJ_BankAccount__c</tab>
+    <visibility>Visible</visibility>
+  </tabSettings>
+  <tabSettings>
+    <tab>AXF_OBJ_CreditCard__c</tab>
+    <visibility>Visible</visibility>
+  </tabSettings>
 </PermissionSet>
