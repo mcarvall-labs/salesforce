@@ -1,5 +1,7 @@
 @IsTest
 private class ALT_CLS_PluggyTransactionSyncTest {
+  private static String firstTransactionsUrl;
+
   private class PluggyMock implements HttpCalloutMock {
     public HttpResponse respond(HttpRequest req) {
       HttpResponse res = new HttpResponse();
@@ -11,6 +13,9 @@ private class ALT_CLS_PluggyTransactionSyncTest {
       System.assert(
         req.getEndpoint().contains('/v2/transactions?accountId=acc-1&dateFrom=')
       );
+      if (!req.getEndpoint().contains('&after=')) {
+        firstTransactionsUrl = req.getEndpoint();
+      }
       if (req.getEndpoint().contains('&after=cursor-2')) {
         res.setBody(
           '{"results":[{"id":"tx-3","amount":10,"type":"CREDIT","date":"2026-09-12T00:00:00.000Z","description":"Pix recebido"}],"next":null}'
@@ -155,6 +160,127 @@ private class ALT_CLS_PluggyTransactionSyncTest {
       Test.stopTest();
       System.assertEquals(false, r.success);
       System.assert(r.message.contains('HTTP 500'));
+    }
+  }
+
+  private class EndlessMock implements HttpCalloutMock {
+    public HttpResponse respond(HttpRequest req) {
+      HttpResponse res = new HttpResponse();
+      res.setStatusCode(200);
+      res.setBody(
+        req.getEndpoint().endsWith('/auth')
+          ? '{"apiKey":"abc"}'
+          : '{"results":[{"id":"t","amount":1,"type":"CREDIT","date":"2026-09-10T00:00:00.000Z"}],"next":"more"}'
+      );
+      return res;
+    }
+  }
+
+  private class OddRowsMock implements HttpCalloutMock {
+    public HttpResponse respond(HttpRequest req) {
+      HttpResponse res = new HttpResponse();
+      res.setStatusCode(200);
+      res.setBody(
+        req.getEndpoint().endsWith('/auth')
+          ? '{"apiKey":"abc"}'
+          : '{"results":[' +
+            '{"amount":5,"date":"2026-09-10T00:00:00.000Z"},' +
+            '{"id":"x1","date":"2026-09-10T00:00:00.000Z"},' +
+            '{"id":"x2","amount":-7.5,"date":"2026-09-10T00:00:00.000Z"},' +
+            '{"id":"x3","amount":7.5,"type":"OTHER","date":"2026-09-10T00:00:00.000Z"}' +
+            '],"next":null}'
+      );
+      return res;
+    }
+  }
+
+  @IsTest
+  static void firstRunLooksBackNinetyDays() {
+    System.runAs(new User(Id = UserInfo.getUserId())) {
+      AXF_OBJ_BankAccount__c account = account('acc-1');
+      Test.setMock(HttpCalloutMock.class, new PluggyMock());
+      Test.startTest();
+      new ALT_CLS_PluggyTransactionSync().sync(account.Id);
+      Test.stopTest();
+      System.assert(
+        firstTransactionsUrl.endsWith(
+          'dateFrom=' + String.valueOf(Date.today().addDays(-90))
+        ),
+        firstTransactionsUrl
+      );
+    }
+  }
+
+  @IsTest
+  static void laterRunsStartThreeDaysBeforeTheLastStoredTransaction() {
+    System.runAs(new User(Id = UserInfo.getUserId())) {
+      AXF_OBJ_BankAccount__c account = account('acc-1');
+      insert new AXF_OBJ_BankAccountTransaction__c(
+        AXF_BAT_MD_BankAccount__c = account.Id,
+        AXF_BAT_DAT_Date__c = Date.newInstance(2026, 9, 20),
+        AXF_BAT_CUR_Amount__c = 1,
+        AXF_BAT_EXI_PluggyTransactionId__c = 'old'
+      );
+      Test.setMock(HttpCalloutMock.class, new PluggyMock());
+      Test.startTest();
+      new ALT_CLS_PluggyTransactionSync().sync(account.Id);
+      Test.stopTest();
+      System.assert(
+        firstTransactionsUrl.endsWith('dateFrom=2026-09-17'),
+        firstTransactionsUrl
+      );
+    }
+  }
+
+  @IsTest
+  static void pageCeilingFailsInsteadOfSilentlyCuttingHistory() {
+    System.runAs(new User(Id = UserInfo.getUserId())) {
+      AXF_OBJ_BankAccount__c account = account('acc-1');
+      ALT_CLS_PluggyApi.maxPages = 2;
+      Test.setMock(HttpCalloutMock.class, new EndlessMock());
+      Test.startTest();
+      ALT_CLS_PluggyTransactionSync.Result r = new ALT_CLS_PluggyTransactionSync()
+        .sync(account.Id);
+      Test.stopTest();
+      System.assertEquals(false, r.success);
+      System.assert(r.message.contains('mais de 2 páginas'));
+      System.assertEquals(
+        0,
+        [SELECT COUNT() FROM AXF_OBJ_BankAccountTransaction__c]
+      );
+    }
+  }
+
+  @IsTest
+  static void incompleteRowsAreSkippedAndUnknownTypeKeepsTheSign() {
+    System.runAs(new User(Id = UserInfo.getUserId())) {
+      AXF_OBJ_BankAccount__c account = account('acc-1');
+      Test.setMock(HttpCalloutMock.class, new OddRowsMock());
+      Test.startTest();
+      ALT_CLS_PluggyTransactionSync.Result r = new ALT_CLS_PluggyTransactionSync()
+        .sync(account.Id);
+      Test.stopTest();
+      System.assertEquals(true, r.success, r.message);
+      System.assertEquals(2, r.skipped);
+      System.assertEquals(2, r.transactions);
+      System.assertEquals(
+        -7.5,
+        [
+          SELECT AXF_BAT_CUR_Amount__c
+          FROM AXF_OBJ_BankAccountTransaction__c
+          WHERE AXF_BAT_EXI_PluggyTransactionId__c = 'x2'
+        ]
+        .AXF_BAT_CUR_Amount__c
+      );
+      System.assertEquals(
+        7.5,
+        [
+          SELECT AXF_BAT_CUR_Amount__c
+          FROM AXF_OBJ_BankAccountTransaction__c
+          WHERE AXF_BAT_EXI_PluggyTransactionId__c = 'x3'
+        ]
+        .AXF_BAT_CUR_Amount__c
+      );
     }
   }
 }
