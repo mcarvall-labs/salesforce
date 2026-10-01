@@ -9,6 +9,7 @@ public with sharing class ALT_CLS_PluggyTransactionSync {
     public Boolean success = false;
     public String message;
     public Integer transactions = 0;
+    public Integer skipped = 0;
   }
 
   private static final Integer INITIAL_DAYS = 90;
@@ -45,8 +46,17 @@ public with sharing class ALT_CLS_PluggyTransactionSync {
     }
     Map<String, AXF_OBJ_BankAccountTransaction__c> byPluggyId = new Map<String, AXF_OBJ_BankAccountTransaction__c>();
     for (Object item : items) {
+      Map<String, Object> pluggy = (Map<String, Object>) item;
+      if (
+        pluggy.get('id') == null ||
+        pluggy.get('date') == null ||
+        pluggy.get('amount') == null
+      ) {
+        r.skipped++;
+        continue;
+      }
       AXF_OBJ_BankAccountTransaction__c bankTransaction = toTransaction(
-        (Map<String, Object>) item,
+        pluggy,
         bankAccountId
       );
       byPluggyId.put(
@@ -70,7 +80,11 @@ public with sharing class ALT_CLS_PluggyTransactionSync {
     }
     r.success = true;
     r.transactions = byPluggyId.size();
-    r.message = 'Sincronização concluída.';
+    r.message = r.skipped == 0
+      ? 'Sincronização concluída.'
+      : 'Sincronização concluída; ' +
+        r.skipped +
+        ' transações sem id, data ou valor foram ignoradas.';
     return r;
   }
 
@@ -90,8 +104,8 @@ public with sharing class ALT_CLS_PluggyTransactionSync {
     Map<String, Object> pluggy,
     Id bankAccountId
   ) {
-    Decimal amount = Decimal.valueOf(String.valueOf(pluggy.get('amount')))
-      .abs();
+    Decimal rawAmount = Decimal.valueOf(String.valueOf(pluggy.get('amount')));
+    String type = (String) pluggy.get('type');
     String raw = (String) pluggy.get('descriptionRaw');
     return new AXF_OBJ_BankAccountTransaction__c(
       AXF_BAT_MD_BankAccount__c = bankAccountId,
@@ -100,7 +114,9 @@ public with sharing class ALT_CLS_PluggyTransactionSync {
       AXF_BAT_TXT_Description__c = String.isBlank(raw)
         ? (String) pluggy.get('description')
         : raw,
-      AXF_BAT_CUR_Amount__c = 'DEBIT' == pluggy.get('type') ? -amount : amount,
+      AXF_BAT_CUR_Amount__c = 'DEBIT' == type
+        ? -rawAmount.abs()
+        : ('CREDIT' == type ? rawAmount.abs() : rawAmount),
       AXF_BAT_TXT_PluggyCategory__c = (String) pluggy.get('category')
     );
   }

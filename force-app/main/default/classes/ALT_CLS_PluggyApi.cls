@@ -4,7 +4,8 @@
  */
 public with sharing class ALT_CLS_PluggyApi {
   private static final String BASE = 'callout:AXF_NC_Pluggy_API';
-  private static final Integer MAX_PAGES = 20;
+  @TestVisible
+  private static Integer maxPages = 20;
 
   private String apiKey;
 
@@ -32,23 +33,32 @@ public with sharing class ALT_CLS_PluggyApi {
     return (Map<String, Object>) JSON.deserializeUntyped(res.getBody());
   }
 
-  // Follows the cursor of the v2 endpoints ({results, next}) up to MAX_PAGES pages.
+  // Follows the cursor of the v2 endpoints ({results, next}). Reaching the page ceiling with a
+  // cursor still pending fails instead of returning a partial list: a silent cut would be
+  // skipped forever by the incremental window of the next run.
   public List<Object> getAll(String pathAndQuery) {
     List<Object> all = new List<Object>();
     String cursor;
-    for (Integer page = 0; page < MAX_PAGES; page++) {
+    for (Integer page = 0; page < maxPages; page++) {
       Map<String, Object> body = get(
         cursor == null
           ? pathAndQuery
-          : pathAndQuery + '&after=' + EncodingUtil.urlEncode(cursor, 'UTF-8')
+          : pathAndQuery +
+            (pathAndQuery.contains('?') ? '&' : '?') +
+            'after=' +
+            EncodingUtil.urlEncode(cursor, 'UTF-8')
       );
       all.addAll(results(body));
       cursor = (String) body.get('next');
       if (String.isBlank(cursor)) {
-        break;
+        return all;
       }
     }
-    return all;
+    throw new ALT_CLS_PluggyCredential.PluggyException(
+      'O Pluggy retornou mais de ' +
+        maxPages +
+        ' páginas; nada foi gravado para não perder histórico. Reduza a janela ou aumente o limite.'
+    );
   }
 
   public static List<Object> results(Map<String, Object> page) {
