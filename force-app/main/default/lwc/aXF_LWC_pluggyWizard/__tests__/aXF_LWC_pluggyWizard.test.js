@@ -4,6 +4,8 @@ import getState from "@salesforce/apex/AXF_CLS_CTRL_PluggyWizard.getState";
 import saveCredentials from "@salesforce/apex/AXF_CLS_CTRL_PluggyWizard.saveCredentials";
 import createConnection from "@salesforce/apex/AXF_CLS_CTRL_PluggyWizard.createConnection";
 import testCredentials from "@salesforce/apex/AXF_CLS_CTRL_PluggyWizard.testCredentials";
+import syncConnection from "@salesforce/apex/AXF_CLS_CTRL_PluggyWizard.syncConnection";
+import getLinked from "@salesforce/apex/AXF_CLS_CTRL_PluggyWizard.getLinked";
 
 jest.mock(
   "@salesforce/apex/AXF_CLS_CTRL_PluggyWizard.getState",
@@ -30,14 +32,33 @@ jest.mock(
   }
 );
 
+jest.mock(
+  "@salesforce/apex/AXF_CLS_CTRL_PluggyWizard.syncConnection",
+  () => ({ default: jest.fn() }),
+  { virtual: true }
+);
+jest.mock(
+  "@salesforce/apex/AXF_CLS_CTRL_PluggyWizard.getLinked",
+  () => ({ default: jest.fn() }),
+  { virtual: true }
+);
+
 const flushPromises = () =>
   Array.from({ length: 10 }).reduce(
     (chain) => chain.then(() => undefined),
     Promise.resolve()
   );
 
-async function setup(hasCredentials = false, connectionCount = 0) {
-  getState.mockResolvedValue({ hasCredentials, connectionCount });
+async function setup(
+  hasCredentials = false,
+  connectionCount = 0,
+  latestConnectionId
+) {
+  getState.mockResolvedValue({
+    hasCredentials,
+    connectionCount,
+    latestConnectionId
+  });
   const element = createElement("c-a-x-f-l-w-c-pluggy-wizard", {
     is: AXF_LWC_pluggyWizard
   });
@@ -152,5 +173,42 @@ describe("c-a-x-f-l-w-c-pluggy-wizard", () => {
       element.shadowRoot.querySelector("lightning-progress-indicator")
         .currentStep
     ).toBe("3");
+  });
+
+  it("lists the linked accounts and cards of the latest connection on step 3", async () => {
+    getLinked.mockResolvedValue([
+      {
+        id: "a01",
+        kind: "Conta",
+        name: "Conta Corrente",
+        detail: "0001 / 123"
+      },
+      { id: "a02", kind: "Cartão", name: "Gold", detail: "final 5555" }
+    ]);
+    const element = await setup(true, 1, "a00000000000001");
+    expect(getLinked).toHaveBeenCalledWith({ connectionId: "a00000000000001" });
+    expect(element.shadowRoot.querySelectorAll("tbody tr")).toHaveLength(2);
+  });
+
+  it("syncs the connection from step 3 and shows the result", async () => {
+    getLinked.mockResolvedValue([]);
+    syncConnection.mockResolvedValue({
+      success: true,
+      message: "Sincronização concluída.",
+      items: [{ id: "a01", kind: "Conta", name: "Conta", detail: "- / 1" }]
+    });
+    const element = await setup(true, 1, "a00000000000001");
+    Array.from(element.shadowRoot.querySelectorAll("lightning-button"))
+      .find((b) => b.label === "Sincronizar contas e cartões")
+      .click();
+    await flushPromises();
+    expect(syncConnection).toHaveBeenCalledWith({
+      connectionId: "a00000000000001"
+    });
+    expect(element.shadowRoot.querySelectorAll("tbody tr")).toHaveLength(1);
+    expect(
+      Array.from(element.shadowRoot.querySelectorAll('[role="alert"]')).pop()
+        .textContent
+    ).toBe("Sincronização concluída.");
   });
 });

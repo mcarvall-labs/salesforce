@@ -3,6 +3,8 @@ import getState from "@salesforce/apex/AXF_CLS_CTRL_PluggyWizard.getState";
 import saveCredentials from "@salesforce/apex/AXF_CLS_CTRL_PluggyWizard.saveCredentials";
 import createConnection from "@salesforce/apex/AXF_CLS_CTRL_PluggyWizard.createConnection";
 import testCredentials from "@salesforce/apex/AXF_CLS_CTRL_PluggyWizard.testCredentials";
+import syncConnection from "@salesforce/apex/AXF_CLS_CTRL_PluggyWizard.syncConnection";
+import getLinked from "@salesforce/apex/AXF_CLS_CTRL_PluggyWizard.getLinked";
 
 export default class AXF_LWC_pluggyWizard extends LightningElement {
   hasCredentials = false;
@@ -13,6 +15,11 @@ export default class AXF_LWC_pluggyWizard extends LightningElement {
   isCreating = false;
   connectionMessage;
   connectionSuccess = false;
+  connectionId;
+  linkedItems = [];
+  isSyncing = false;
+  syncMessage;
+  syncSuccess = false;
   isLoading = true;
   isSaving = false;
   clientId = "";
@@ -25,6 +32,10 @@ export default class AXF_LWC_pluggyWizard extends LightningElement {
       const state = await getState();
       this.hasCredentials = state.hasCredentials;
       this.connectionCount = state.connectionCount;
+      this.connectionId = state.latestConnectionId;
+      if (this.connectionId) {
+        this.linkedItems = await getLinked({ connectionId: this.connectionId });
+      }
     } catch {
       this.showResult(
         false,
@@ -79,6 +90,9 @@ export default class AXF_LWC_pluggyWizard extends LightningElement {
       this.connectionMessage = result.message;
       if (result.success) {
         this.connectionCount += 1;
+        this.connectionId = result.connectionId;
+        this.linkedItems = [];
+        this.syncMessage = undefined;
         this.itemId = "";
       }
     } catch {
@@ -86,6 +100,36 @@ export default class AXF_LWC_pluggyWizard extends LightningElement {
       this.connectionMessage = "Não foi possível criar a conexão.";
     } finally {
       this.isCreating = false;
+    }
+  }
+
+  get syncDisabled() {
+    return this.isSyncing || !this.connectionId;
+  }
+
+  get syncClass() {
+    return this.syncSuccess
+      ? "slds-text-color_success"
+      : "slds-text-color_error";
+  }
+
+  get hasLinkedItems() {
+    return this.linkedItems.length > 0;
+  }
+
+  async handleSync() {
+    this.isSyncing = true;
+    this.syncMessage = undefined;
+    try {
+      const result = await syncConnection({ connectionId: this.connectionId });
+      this.syncSuccess = result.success;
+      this.syncMessage = result.message;
+      this.linkedItems = result.items;
+    } catch {
+      this.syncSuccess = false;
+      this.syncMessage = "Não foi possível sincronizar contas e cartões.";
+    } finally {
+      this.isSyncing = false;
     }
   }
 

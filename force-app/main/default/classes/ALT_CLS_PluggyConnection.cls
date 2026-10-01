@@ -47,6 +47,17 @@ public with sharing class ALT_CLS_PluggyConnection {
     return r;
   }
 
+  public Id latestConnectionId() {
+    List<AXF_OBJ_PluggyConnection__c> latest = [
+      SELECT Id
+      FROM AXF_OBJ_PluggyConnection__c
+      WITH USER_MODE
+      ORDER BY CreatedDate DESC
+      LIMIT 1
+    ];
+    return latest.isEmpty() ? null : latest[0].Id;
+  }
+
   public Integer countConnections() {
     return [SELECT COUNT() FROM AXF_OBJ_PluggyConnection__c WITH USER_MODE];
   }

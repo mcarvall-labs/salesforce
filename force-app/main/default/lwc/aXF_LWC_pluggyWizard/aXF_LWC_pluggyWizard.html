@@ -93,6 +93,45 @@
             </template>
           </div>
         </template>
+
+        <template if:true={connectionId}>
+          <div class="slds-m-top_large">
+            <h3 class="slds-text-heading_small">Passo 3: contas e cartões</h3>
+            <p>
+              As contas e cartões da conexão são vinculados ao titular dela.
+            </p>
+            <lightning-button
+              class="slds-m-top_small"
+              variant="brand"
+              label="Sincronizar contas e cartões"
+              disabled={syncDisabled}
+              onclick={handleSync}
+            ></lightning-button>
+            <template if:true={syncMessage}>
+              <p class={syncClass} role="alert">{syncMessage}</p>
+            </template>
+            <template if:true={hasLinkedItems}>
+              <table class="slds-table slds-table_bordered slds-m-top_small">
+                <thead>
+                  <tr>
+                    <th scope="col">Tipo</th>
+                    <th scope="col">Nome</th>
+                    <th scope="col">Detalhe</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <template for:each={linkedItems} for:item="item">
+                    <tr key={item.id}>
+                      <td>{item.kind}</td>
+                      <td>{item.name}</td>
+                      <td>{item.detail}</td>
+                    </tr>
+                  </template>
+                </tbody>
+              </table>
+            </template>
+          </div>
+        </template>
       </template>
     </div>
   </lightning-card>

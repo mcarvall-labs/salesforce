@@ -10,6 +10,13 @@ public with sharing class ALT_CLS_PluggyAccountSync {
     public Integer cards = 0;
   }
 
+  public class Linked {
+    public Id id;
+    public String kind;
+    public String name;
+    public String detail;
+  }
+
   // Record type visibility comes from permission sets, which a test cannot grant.
   @TestVisible
   private static Boolean assignRecordType = true;
@@ -95,6 +102,58 @@ public with sharing class ALT_CLS_PluggyAccountSync {
           .get('AXF_Pluggy')
           .getRecordTypeId()
       : null;
+  }
+
+  public List<Linked> linked(Id connectionId) {
+    List<Linked> items = new List<Linked>();
+    for (AXF_OBJ_BankAccount__c account : [
+      SELECT Id, Name, AXF_BA_TXT_Branch__c, AXF_BA_TXT_Number__c
+      FROM AXF_OBJ_BankAccount__c
+      WHERE AXF_BA_LKP_Connection__c = :connectionId
+      WITH USER_MODE
+      ORDER BY Name
+    ]) {
+      items.add(
+        toLinked(
+          account.Id,
+          'Conta',
+          account.Name,
+          dash(account.AXF_BA_TXT_Branch__c) +
+            ' / ' +
+            dash(account.AXF_BA_TXT_Number__c)
+        )
+      );
+    }
+    for (AXF_OBJ_CreditCard__c card : [
+      SELECT Id, Name, AXF_CC_TXT_LastDigits__c
+      FROM AXF_OBJ_CreditCard__c
+      WHERE AXF_CC_LKP_Connection__c = :connectionId
+      WITH USER_MODE
+      ORDER BY Name
+    ]) {
+      items.add(
+        toLinked(
+          card.Id,
+          'Cartão',
+          card.Name,
+          'final ' + dash(card.AXF_CC_TXT_LastDigits__c)
+        )
+      );
+    }
+    return items;
+  }
+
+  private String dash(String value) {
+    return String.isBlank(value) ? '-' : value;
+  }
+
+  private Linked toLinked(Id id, String kind, String name, String detail) {
+    Linked item = new Linked();
+    item.id = id;
+    item.kind = kind;
+    item.name = name;
+    item.detail = detail;
+    return item;
   }
 
   private String save(List<Database.UpsertResult> results) {
