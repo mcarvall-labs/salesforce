@@ -1,149 +1,615 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="pt-BR">
-<head>
-<meta charset="utf-8">
-<title>Mockup EP-05 — Contratos e Horas</title>
-<style>
-  :root{--blue:#0176d3;--bg:#f3f3f3;--bd:#dddbda;--mut:#706e6b;--ok:#2e844a;--err:#ba0517}
-  *{box-sizing:border-box}
-  body{margin:0;font:14px/1.4 -apple-system,Segoe UI,Arial,sans-serif;background:var(--bg);color:#181818}
-  .nav{background:#fff;border-bottom:3px solid var(--blue);display:flex;align-items:center;gap:4px;padding:0 16px;height:48px}
-  .nav b{margin-right:16px;color:var(--blue)}
-  .nav span{padding:14px 12px;color:#b0adab}.nav span.on{color:#181818;font-weight:600;border-bottom:3px solid var(--blue);margin-bottom:-3px;cursor:pointer}
-  .page{max-width:1000px;margin:20px auto;padding:0 16px}
-  .note{background:#fff8e1;border:1px solid #f0d98c;padding:8px 12px;border-radius:4px;font-size:12px;margin-bottom:16px}
-  .card{background:#fff;border:1px solid var(--bd);border-radius:6px;padding:16px;margin-bottom:16px}
-  table{width:100%;border-collapse:collapse}
-  th,td{text-align:left;padding:8px;border-bottom:1px solid var(--bd)}
-  th{color:var(--mut);font-size:12px;text-transform:uppercase}td.r,th.r{text-align:right}
-  tr.click{cursor:pointer}tr.click:hover{background:#eef4ff}
-  .in{color:var(--ok)}.out{color:var(--err)}
-  .pill{padding:2px 10px;border-radius:12px;color:#fff;font-size:12px}
-  .pend{background:var(--mut)}.real{background:var(--ok)}.ativo{background:var(--ok)}
-  .tag{font-size:11px;padding:1px 8px;border-radius:10px;background:#eef4ff;color:var(--blue)}
-  button,select,input{font:inherit;padding:6px 12px;border:1px solid var(--bd);border-radius:4px;background:#fff}
-  button{cursor:pointer;color:var(--blue)}button.pri{background:var(--blue);color:#fff;border-color:var(--blue)}
-  .top{display:flex;justify-content:space-between;align-items:center;margin-bottom:10px}
-  label{display:block;font-size:12px;color:var(--mut);margin:10px 0 4px}input,select{width:100%}
-  .grid{display:grid;grid-template-columns:1fr 1fr;gap:0 16px}
-  .hdr{display:flex;gap:28px;flex-wrap:wrap;align-items:flex-end}.hdr small{display:block;color:var(--mut);font-size:11px;text-transform:uppercase}
-  .hdr h2{margin:0;font-size:20px}
-  .hide{display:none}
-  .tabs a{padding:6px 12px;cursor:pointer;border-radius:14px;margin-right:4px;color:var(--mut)}.tabs a.on{background:#eef4ff;color:var(--blue);font-weight:600}
-  .bc{font-size:12px;color:var(--mut);margin-bottom:8px}.bc a{color:var(--blue);cursor:pointer}
-  .kpi{display:flex;gap:12px;margin-bottom:12px}.kpi div{flex:1;border:1px solid var(--bd);border-radius:6px;padding:10px}.kpi b{font-size:22px;display:block}
-  .sec{color:var(--mut);font-size:12px;margin-top:8px}
-  .flow{background:#eef4ff;border-radius:6px;padding:10px 12px;font-size:13px;margin-top:10px}
-.ov{position:fixed;inset:0;background:rgba(0,0,0,.5);display:flex;align-items:flex-start;justify-content:center;overflow:auto;padding:24px}
-.paper{background:#fff;width:880px;padding:28px 32px;box-shadow:0 4px 20px rgba(0,0,0,.3);font-family:Georgia,serif;font-size:13px}
-.paper .bar{background:#33333c;color:#ffc000;font-weight:700;font-family:Arial,sans-serif;display:flex;justify-content:space-between;padding:3px 8px;margin-top:10px}
-.paper table th{background:#cfe3da;color:#235;font-size:11px;text-transform:none;text-align:center;border:1px solid #6aa58a}
-.paper table td{border:1px solid #9cc6b3;padding:2px 6px;text-align:center;font-size:12px}
-.paper .tot td{font-weight:700}
-.logo{width:64px;height:64px;border-radius:50%;background:#33333c;color:#ffc000;display:flex;align-items:center;justify-content:center;font:700 14px Arial}
-.closeb{position:sticky;top:0;float:right}
-.hide{display:none!important}</style>
-</head>
-<body>
-<div class="nav"><b>Axon</b>
-  <span>Início</span><span>Lançamentos</span><span class="on" onclick="show('list')">Contratos</span>
-  <span>Conta Bancária</span><span>Cartão de Crédito</span><span>Titulares</span></div>
-<div class="page">
-<div class="note">Mockup de referência (EP-05). Dados fictícios. Abra um contrato de <b>Prestação de Serviço</b> na lista (EUR ou BRL): o timesheet fica dentro da página do contrato (não há tab Horas); digite horários (Tab navega); o botão de fatura só aparece em EUR. No EUR o mês inteiro é faturado antecipado (envio dia 10, recebe até dia 30); no BRL o 1º período vai de 28/08 a 30/09, envia dia 01/10 e recebe dia 15/10. Use <b>Preencher dias úteis</b> e depois <b>Baixar timesheet</b> / <b>Gerar fatura</b> para ver os PDFs (modelos EUR e BRL).</div>
+  <head>
+    <meta charset="utf-8" />
+    <title>Mockup EP-05 — Contratos e Horas</title>
+    <style>
+      :root {
+        --blue: #0176d3;
+        --bg: #f3f3f3;
+        --bd: #dddbda;
+        --mut: #706e6b;
+        --ok: #2e844a;
+        --err: #ba0517;
+      }
+      * {
+        box-sizing: border-box;
+      }
+      body {
+        margin: 0;
+        font:
+          14px/1.4 -apple-system,
+          Segoe UI,
+          Arial,
+          sans-serif;
+        background: var(--bg);
+        color: #181818;
+      }
+      .nav {
+        background: #fff;
+        border-bottom: 3px solid var(--blue);
+        display: flex;
+        align-items: center;
+        gap: 4px;
+        padding: 0 16px;
+        height: 48px;
+      }
+      .nav b {
+        margin-right: 16px;
+        color: var(--blue);
+      }
+      .nav span {
+        padding: 14px 12px;
+        color: #b0adab;
+      }
+      .nav span.on {
+        color: #181818;
+        font-weight: 600;
+        border-bottom: 3px solid var(--blue);
+        margin-bottom: -3px;
+        cursor: pointer;
+      }
+      .page {
+        max-width: 1000px;
+        margin: 20px auto;
+        padding: 0 16px;
+      }
+      .note {
+        background: #fff8e1;
+        border: 1px solid #f0d98c;
+        padding: 8px 12px;
+        border-radius: 4px;
+        font-size: 12px;
+        margin-bottom: 16px;
+      }
+      .card {
+        background: #fff;
+        border: 1px solid var(--bd);
+        border-radius: 6px;
+        padding: 16px;
+        margin-bottom: 16px;
+      }
+      table {
+        width: 100%;
+        border-collapse: collapse;
+      }
+      th,
+      td {
+        text-align: left;
+        padding: 8px;
+        border-bottom: 1px solid var(--bd);
+      }
+      th {
+        color: var(--mut);
+        font-size: 12px;
+        text-transform: uppercase;
+      }
+      td.r,
+      th.r {
+        text-align: right;
+      }
+      tr.click {
+        cursor: pointer;
+      }
+      tr.click:hover {
+        background: #eef4ff;
+      }
+      .in {
+        color: var(--ok);
+      }
+      .out {
+        color: var(--err);
+      }
+      .pill {
+        padding: 2px 10px;
+        border-radius: 12px;
+        color: #fff;
+        font-size: 12px;
+      }
+      .pend {
+        background: var(--mut);
+      }
+      .real {
+        background: var(--ok);
+      }
+      .ativo {
+        background: var(--ok);
+      }
+      .tag {
+        font-size: 11px;
+        padding: 1px 8px;
+        border-radius: 10px;
+        background: #eef4ff;
+        color: var(--blue);
+      }
+      button,
+      select,
+      input {
+        font: inherit;
+        padding: 6px 12px;
+        border: 1px solid var(--bd);
+        border-radius: 4px;
+        background: #fff;
+      }
+      button {
+        cursor: pointer;
+        color: var(--blue);
+      }
+      button.pri {
+        background: var(--blue);
+        color: #fff;
+        border-color: var(--blue);
+      }
+      .top {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 10px;
+      }
+      label {
+        display: block;
+        font-size: 12px;
+        color: var(--mut);
+        margin: 10px 0 4px;
+      }
+      input,
+      select {
+        width: 100%;
+      }
+      .grid {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 0 16px;
+      }
+      .hdr {
+        display: flex;
+        gap: 28px;
+        flex-wrap: wrap;
+        align-items: flex-end;
+      }
+      .hdr small {
+        display: block;
+        color: var(--mut);
+        font-size: 11px;
+        text-transform: uppercase;
+      }
+      .hdr h2 {
+        margin: 0;
+        font-size: 20px;
+      }
+      .hide {
+        display: none;
+      }
+      .tabs a {
+        padding: 6px 12px;
+        cursor: pointer;
+        border-radius: 14px;
+        margin-right: 4px;
+        color: var(--mut);
+      }
+      .tabs a.on {
+        background: #eef4ff;
+        color: var(--blue);
+        font-weight: 600;
+      }
+      .bc {
+        font-size: 12px;
+        color: var(--mut);
+        margin-bottom: 8px;
+      }
+      .bc a {
+        color: var(--blue);
+        cursor: pointer;
+      }
+      .kpi {
+        display: flex;
+        gap: 12px;
+        margin-bottom: 12px;
+      }
+      .kpi div {
+        flex: 1;
+        border: 1px solid var(--bd);
+        border-radius: 6px;
+        padding: 10px;
+      }
+      .kpi b {
+        font-size: 22px;
+        display: block;
+      }
+      .sec {
+        color: var(--mut);
+        font-size: 12px;
+        margin-top: 8px;
+      }
+      .flow {
+        background: #eef4ff;
+        border-radius: 6px;
+        padding: 10px 12px;
+        font-size: 13px;
+        margin-top: 10px;
+      }
+      .ov {
+        position: fixed;
+        inset: 0;
+        background: rgba(0, 0, 0, 0.5);
+        display: flex;
+        align-items: flex-start;
+        justify-content: center;
+        overflow: auto;
+        padding: 24px;
+      }
+      .paper {
+        background: #fff;
+        width: 880px;
+        padding: 28px 32px;
+        box-shadow: 0 4px 20px rgba(0, 0, 0, 0.3);
+        font-family: Georgia, serif;
+        font-size: 13px;
+      }
+      .paper .bar {
+        background: #33333c;
+        color: #ffc000;
+        font-weight: 700;
+        font-family: Arial, sans-serif;
+        display: flex;
+        justify-content: space-between;
+        padding: 3px 8px;
+        margin-top: 10px;
+      }
+      .paper table th {
+        background: #cfe3da;
+        color: #235;
+        font-size: 11px;
+        text-transform: none;
+        text-align: center;
+        border: 1px solid #6aa58a;
+      }
+      .paper table td {
+        border: 1px solid #9cc6b3;
+        padding: 2px 6px;
+        text-align: center;
+        font-size: 12px;
+      }
+      .paper .tot td {
+        font-weight: 700;
+      }
+      .logo {
+        width: 64px;
+        height: 64px;
+        border-radius: 50%;
+        background: #33333c;
+        color: #ffc000;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font: 700 14px Arial;
+      }
+      .closeb {
+        position: sticky;
+        top: 0;
+        float: right;
+      }
+      .hide {
+        display: none !important;
+      }
+    </style>
+  </head>
+  <body>
+    <div class="nav">
+      <b>Axon</b> <span>Início</span><span>Lançamentos</span
+      ><span class="on" onclick="show('list')">Contratos</span>
+      <span>Conta Bancária</span><span>Cartão de Crédito</span
+      ><span>Titulares</span>
+    </div>
+    <div class="page">
+      <div class="note">
+        Mockup de referência (EP-05). Dados fictícios. Abra um contrato de
+        <b>Prestação de Serviço</b> na lista (EUR ou BRL): o timesheet fica
+        dentro da página do contrato (não há tab Horas); digite horários (Tab
+        navega); o botão de fatura só aparece em EUR. No EUR o mês inteiro é
+        faturado antecipado (envio dia 10, recebe até dia 30); no BRL o 1º
+        período vai de 28/08 a 30/09, envia dia 01/10 e recebe dia 15/10. Use
+        <b>Preencher dias úteis</b> e depois <b>Baixar timesheet</b> /
+        <b>Gerar fatura</b> para ver os PDFs (modelos EUR e BRL).
+      </div>
 
-<!-- LISTA -->
-<div id="list">
-  <div class="card">
-    <div class="top"><h2 style="margin:0">Contratos</h2><button class="pri" onclick="show('new')">Novo</button></div>
-    <div class="tabs" style="margin-bottom:8px"><a class="on">Ativos</a><a>Encerrados</a><a>Recorrentes</a><a>Financiamentos</a></div>
-    <table>
-      <tr><th>Nome</th><th>Tipo</th><th>Direção</th><th>Contraparte</th><th class="r">Valor</th><th>Status</th></tr>
-      <tr class="click" onclick="show('fin')"><td>Financiamento do carro</td><td><span class="tag">Financiamento</span></td><td>Despesa</td><td>Banco C6</td><td class="r">R$ 1.840,00 (PRICE)</td><td><span class="pill ativo">Ativo</span></td></tr>
-      <tr class="click" onclick="openSrv('EUR')"><td>Consultoria — Cliente EU</td><td><span class="tag">Prestação de Serviço</span></td><td>Receita</td><td>Cliente EU</td><td class="r">€ 28,00/h</td><td><span class="pill ativo">Ativo</span></td></tr>
-      <tr class="click" onclick="openSrv('BRL')"><td>Consultoria — Cliente BR</td><td><span class="tag">Prestação de Serviço</span></td><td>Receita</td><td>Cliente BR</td><td class="r">R$ 150,00/h</td><td><span class="pill ativo">Ativo</span></td></tr>
-      <tr class="click"><td>Aluguel apto 12</td><td><span class="tag">Recorrente</span></td><td>Receita</td><td>Locatário Silva</td><td class="r">R$ 2.300,00</td><td><span class="pill ativo">Ativo</span></td></tr>
-      <tr class="click"><td>Conta de água</td><td><span class="tag">Recorrente</span></td><td>Despesa</td><td>Sabesp</td><td class="r">~ R$ 98,00 (variável)</td><td><span class="pill ativo">Ativo</span></td></tr>
-      <tr class="click"><td>Notebook parcelado</td><td><span class="tag">Parcelado</span></td><td>Despesa</td><td>Mercado Pago (cartão)</td><td class="r">10 × R$ 1.200,00</td><td><span class="pill ativo">Ativo</span></td></tr>
-      <tr class="click"><td>Consórcio moto</td><td><span class="tag">Consórcio</span></td><td>Despesa</td><td>Sicoob</td><td class="r">60 × R$ 780,00</td><td><span class="pill ativo">Ativo</span></td></tr>
-    </table>
-  </div>
-</div>
+      <!-- LISTA -->
+      <div id="list">
+        <div class="card">
+          <div class="top">
+            <h2 style="margin: 0">Contratos</h2>
+            <button class="pri" onclick="show('new')">Novo</button>
+          </div>
+          <div class="tabs" style="margin-bottom: 8px">
+            <a class="on">Ativos</a><a>Encerrados</a><a>Recorrentes</a
+            ><a>Financiamentos</a>
+          </div>
+          <table>
+            <tr>
+              <th>Nome</th>
+              <th>Tipo</th>
+              <th>Direção</th>
+              <th>Contraparte</th>
+              <th class="r">Valor</th>
+              <th>Status</th>
+            </tr>
+            <tr class="click" onclick="show('fin')">
+              <td>Financiamento do carro</td>
+              <td><span class="tag">Financiamento</span></td>
+              <td>Despesa</td>
+              <td>Banco C6</td>
+              <td class="r">R$ 1.840,00 (PRICE)</td>
+              <td><span class="pill ativo">Ativo</span></td>
+            </tr>
+            <tr class="click" onclick="openSrv('EUR')">
+              <td>Consultoria — Cliente EU</td>
+              <td><span class="tag">Prestação de Serviço</span></td>
+              <td>Receita</td>
+              <td>Cliente EU</td>
+              <td class="r">€ 28,00/h</td>
+              <td><span class="pill ativo">Ativo</span></td>
+            </tr>
+            <tr class="click" onclick="openSrv('BRL')">
+              <td>Consultoria — Cliente BR</td>
+              <td><span class="tag">Prestação de Serviço</span></td>
+              <td>Receita</td>
+              <td>Cliente BR</td>
+              <td class="r">R$ 150,00/h</td>
+              <td><span class="pill ativo">Ativo</span></td>
+            </tr>
+            <tr class="click">
+              <td>Aluguel apto 12</td>
+              <td><span class="tag">Recorrente</span></td>
+              <td>Receita</td>
+              <td>Locatário Silva</td>
+              <td class="r">R$ 2.300,00</td>
+              <td><span class="pill ativo">Ativo</span></td>
+            </tr>
+            <tr class="click">
+              <td>Conta de água</td>
+              <td><span class="tag">Recorrente</span></td>
+              <td>Despesa</td>
+              <td>Sabesp</td>
+              <td class="r">~ R$ 98,00 (variável)</td>
+              <td><span class="pill ativo">Ativo</span></td>
+            </tr>
+            <tr class="click">
+              <td>Notebook parcelado</td>
+              <td><span class="tag">Parcelado</span></td>
+              <td>Despesa</td>
+              <td>Mercado Pago (cartão)</td>
+              <td class="r">10 × R$ 1.200,00</td>
+              <td><span class="pill ativo">Ativo</span></td>
+            </tr>
+            <tr class="click">
+              <td>Consórcio moto</td>
+              <td><span class="tag">Consórcio</span></td>
+              <td>Despesa</td>
+              <td>Sicoob</td>
+              <td class="r">60 × R$ 780,00</td>
+              <td><span class="pill ativo">Ativo</span></td>
+            </tr>
+          </table>
+        </div>
+      </div>
 
-<!-- NOVO -->
-<div id="new" class="hide">
-  <div class="bc"><a onclick="show('list')">◀ Contratos</a></div>
-  <div class="card">
-    <h2 style="margin-top:0">Novo contrato</h2>
-    <label>Tipo de contrato *</label>
-    <select id="tp" onchange="draw()">
-      <option value="rec">Recorrente (assinatura, água, aluguel…)</option><option value="par">Parcelado</option>
-      <option value="con">Consórcio</option><option value="fin">Financiamento</option><option value="srv">Prestação de Serviço (por hora)</option></select>
-    <div class="grid" id="f"></div>
-    <p style="text-align:right"><button onclick="show('list')">Cancelar</button> <button class="pri" onclick="show('list')">Salvar</button></p>
-    <div class="sec">Depois de salvar, use <b>Gerar lançamentos</b> no contrato.</div>
-  </div>
-</div>
+      <!-- NOVO -->
+      <div id="new" class="hide">
+        <div class="bc"><a onclick="show('list')">◀ Contratos</a></div>
+        <div class="card">
+          <h2 style="margin-top: 0">Novo contrato</h2>
+          <label>Tipo de contrato *</label>
+          <select id="tp" onchange="draw()">
+            <option value="rec">Recorrente (assinatura, água, aluguel…)</option>
+            <option value="par">Parcelado</option>
+            <option value="con">Consórcio</option>
+            <option value="fin">Financiamento</option>
+            <option value="srv">Prestação de Serviço (por hora)</option>
+          </select>
+          <div class="grid" id="f"></div>
+          <p style="text-align: right">
+            <button onclick="show('list')">Cancelar</button>
+            <button class="pri" onclick="show('list')">Salvar</button>
+          </p>
+          <div class="sec">
+            Depois de salvar, use <b>Gerar lançamentos</b> no contrato.
+          </div>
+        </div>
+      </div>
 
-<!-- FINANCIAMENTO -->
-<div id="fin" class="hide">
-  <div class="bc"><a onclick="show('list')">◀ Contratos</a></div>
-  <div class="card">
-    <div class="hdr"><div><small>Contrato · Financiamento</small><h2>Financiamento do carro</h2></div>
-      <div><small>Titular</small>Michel Lopes</div><div><small>Sistema</small>PRICE · 1,2% a.m.</div><div><small>Financiado</small>R$ 38.000,00</div><div><small>Parcelas</small>24</div>
-      <div style="margin-left:auto"><button class="pri">Gerar lançamentos</button> <button>Regerar pendentes</button></div></div>
-  </div>
-  <div class="card">
-    <h3 style="margin-top:0">Lançamentos gerados (24)</h3>
-    <table><tr><th>Parcela</th><th>Vencimento</th><th>Status</th><th class="r">Valor</th></tr>
-      <tr><td>1/24</td><td>10/09/2026</td><td><span class="pill real">Realizado</span></td><td class="r out">− 1.840,00</td></tr>
-      <tr><td>2/24</td><td>10/10/2026</td><td><span class="pill pend">Pendente</span></td><td class="r out">− 1.840,00</td></tr>
-      <tr><td>3/24</td><td>10/11/2026</td><td><span class="pill pend">Pendente</span></td><td class="r out">− 1.840,00</td></tr>
-      <tr><td colspan="4" class="sec">… mais 21 parcelas</td></tr></table>
-  </div>
-</div>
+      <!-- FINANCIAMENTO -->
+      <div id="fin" class="hide">
+        <div class="bc"><a onclick="show('list')">◀ Contratos</a></div>
+        <div class="card">
+          <div class="hdr">
+            <div>
+              <small>Contrato · Financiamento</small>
+              <h2>Financiamento do carro</h2>
+            </div>
+            <div><small>Titular</small>Michel Lopes</div>
+            <div><small>Sistema</small>PRICE · 1,2% a.m.</div>
+            <div><small>Financiado</small>R$ 38.000,00</div>
+            <div><small>Parcelas</small>24</div>
+            <div style="margin-left: auto">
+              <button class="pri">Gerar lançamentos</button>
+              <button>Regerar pendentes</button>
+            </div>
+          </div>
+        </div>
+        <div class="card">
+          <h3 style="margin-top: 0">Lançamentos gerados (24)</h3>
+          <table>
+            <tr>
+              <th>Parcela</th>
+              <th>Vencimento</th>
+              <th>Status</th>
+              <th class="r">Valor</th>
+            </tr>
+            <tr>
+              <td>1/24</td>
+              <td>10/09/2026</td>
+              <td><span class="pill real">Realizado</span></td>
+              <td class="r out">− 1.840,00</td>
+            </tr>
+            <tr>
+              <td>2/24</td>
+              <td>10/10/2026</td>
+              <td><span class="pill pend">Pendente</span></td>
+              <td class="r out">− 1.840,00</td>
+            </tr>
+            <tr>
+              <td>3/24</td>
+              <td>10/11/2026</td>
+              <td><span class="pill pend">Pendente</span></td>
+              <td class="r out">− 1.840,00</td>
+            </tr>
+            <tr>
+              <td colspan="4" class="sec">… mais 21 parcelas</td>
+            </tr>
+          </table>
+        </div>
+      </div>
 
-<!-- HORAS -->
-<div id="hours" class="hide">
-  <div class="bc"><a onclick="show('list')">◀ Contratos</a> &nbsp;· <span style="color:#b0adab">mockup: contrato aberto</span></div>
-  <div class="card"><div class="hdr"><div><small>Contrato · Prestação de Serviço</small><h2 id="cn">—</h2></div>
-    <div><small>Titular</small>Empresa Exemplo (PJ)</div><div><small>Cliente</small><span id="cl">—</span></div><div><small>Moeda</small><span id="cm">—</span></div>
-    <div><small>Limite</small><span id="lm">—</span></div><div><small>Calendário de feriados</small><span id="cal">—</span></div><div><small>Receber em</small>Conta PJ · 301 Contabilizei Bank</div></div></div>
-  <div class="card">
-    <div class="sec" style="margin:0 0 6px">Componente <b>axfTimesheet</b> (aparece só neste tipo de contrato)</div>
-    <div class="top"><h2 style="margin:0">Horas do mês</h2>
-      <div><button onclick="fill()">Preencher dias úteis</button> <button onclick="pdf('ts')">Baixar timesheet (PDF)</button> <button class="pri" id="inv" onclick="pdf('inv')">Gerar fatura (PDF)</button></div></div>
-    <div class="grid" style="margin-bottom:8px">
-      <div class="hide"><label>Contrato</label><select id="ct" onchange="ctc()"><option value="EUR">Consultoria — Cliente EU (EUR · 28,00/h)</option><option value="BRL">Consultoria — Cliente BR (BRL · 150,00/h)</option></select></div>
-      <div><label>Mês</label><select><option>Setembro/2026</option><option>Agosto/2026</option></select></div></div>
-    <div class="kpi"><div><small>Horas no mês</small><b id="th">0,00 h</b></div><div><small>Previsão de receita</small><b class="in" id="tv">—</b></div><div><small>Período</small><b style="font-size:16px" id="per">—</b></div><div><small>Máximo / saldo</small><b style="font-size:16px" id="mx">—</b></div><div><small>Envio</small><b style="font-size:16px" id="env">—</b></div><div><small>Recebimento até</small><b style="font-size:16px" id="rcb">—</b></div></div>
-    <table id="tt"></table>
-    <div class="flow" id="plan" style="background:#e7f6ec;margin-bottom:10px"></div>
-    <div class="flow">⌨ Use <b>Tab</b> para ir de Entrada 1 → Saída 1 → Entrada 2 → Saída 2 → próximo dia. Grava ao sair do campo.<br>
-    ⚙ O sistema mantém 1 lançamento de receita por contrato e mês, em <b id="mo">EUR</b>, que aparece em <b>Lançamentos</b> e no dashboard.</div>
-  </div>
-</div>
-</div>
-<div class="ov hide" id="ov" onclick="if(event.target==this)this.classList.add('hide')"><div class="paper" id="pp"></div></div>
+      <!-- HORAS -->
+      <div id="hours" class="hide">
+        <div class="bc">
+          <a onclick="show('list')">◀ Contratos</a> &nbsp;·
+          <span style="color: #b0adab">mockup: contrato aberto</span>
+        </div>
+        <div class="card">
+          <div class="hdr">
+            <div>
+              <small>Contrato · Prestação de Serviço</small>
+              <h2 id="cn">—</h2>
+            </div>
+            <div><small>Titular</small>Empresa Exemplo (PJ)</div>
+            <div><small>Cliente</small><span id="cl">—</span></div>
+            <div><small>Moeda</small><span id="cm">—</span></div>
+            <div><small>Limite</small><span id="lm">—</span></div>
+            <div>
+              <small>Calendário de feriados</small><span id="cal">—</span>
+            </div>
+            <div><small>Receber em</small>Conta PJ · 301 Contabilizei Bank</div>
+          </div>
+        </div>
+        <div class="card">
+          <div class="sec" style="margin: 0 0 6px">
+            Componente <b>axfTimesheet</b> (aparece só neste tipo de contrato)
+          </div>
+          <div class="top">
+            <h2 style="margin: 0">Horas do mês</h2>
+            <div>
+              <button onclick="fill()">Preencher dias úteis</button>
+              <button onclick="pdf('ts')">Baixar timesheet (PDF)</button>
+              <button class="pri" id="inv" onclick="pdf('inv')">
+                Gerar fatura (PDF)
+              </button>
+            </div>
+          </div>
+          <div class="grid" style="margin-bottom: 8px">
+            <div class="hide">
+              <label>Contrato</label
+              ><select id="ct" onchange="ctc()">
+                <option value="EUR">
+                  Consultoria — Cliente EU (EUR · 28,00/h)
+                </option>
+                <option value="BRL">
+                  Consultoria — Cliente BR (BRL · 150,00/h)
+                </option>
+              </select>
+            </div>
+            <div>
+              <label>Mês</label
+              ><select>
+                <option>Setembro/2026</option>
+                <option>Agosto/2026</option>
+              </select>
+            </div>
+          </div>
+          <div class="kpi">
+            <div><small>Horas no mês</small><b id="th">0,00 h</b></div>
+            <div>
+              <small>Previsão de receita</small><b class="in" id="tv">—</b>
+            </div>
+            <div>
+              <small>Período</small><b style="font-size: 16px" id="per">—</b>
+            </div>
+            <div>
+              <small>Máximo / saldo</small
+              ><b style="font-size: 16px" id="mx">—</b>
+            </div>
+            <div>
+              <small>Envio</small><b style="font-size: 16px" id="env">—</b>
+            </div>
+            <div>
+              <small>Recebimento até</small
+              ><b style="font-size: 16px" id="rcb">—</b>
+            </div>
+          </div>
+          <table id="tt"></table>
+          <div
+            class="flow"
+            id="plan"
+            style="background: #e7f6ec; margin-bottom: 10px"
+          ></div>
+          <div class="flow">
+            ⌨ Use <b>Tab</b> para ir de Entrada 1 → Saída 1 → Entrada 2 → Saída
+            2 → próximo dia. Grava ao sair do campo.<br />
+            ⚙ O sistema mantém 1 lançamento de receita por contrato e mês, em
+            <b id="mo">EUR</b>, que aparece em <b>Lançamentos</b> e no
+            dashboard.
+          </div>
+        </div>
+      </div>
+    </div>
+    <div
+      class="ov hide"
+      id="ov"
+      onclick="if (event.target == this) this.classList.add('hide');"
+    >
+      <div class="paper" id="pp"></div>
+    </div>
 
-<script>
-const $=id=>document.getElementById(id);
-function openSrv(c){$("ct").value=c;const e=c=="EUR";$("cn").textContent=e?"Consultoria — Cliente EU":"Consultoria — Cliente BR";$("cl").textContent=e?"Cliente Europeu, S.A. (NIF ••••)":"Cliente Brasil LTDA (CNPJ ••••)";$("cm").textContent=e?"EUR (taxa efetiva 6,07 BRL = cotação 6,20 − spread − IOF)":"BRL";$("lm").textContent=e?"8 h por dia":"80 h por mês";$("cal").textContent=e?"Portugal":"Brasil (07/09 é feriado)";ctc();show("hours")}
-function show(v){["list","new","fin","hours"].forEach(x=>$(x).classList.toggle("hide",x!=v));if(v=="new")draw()}
-const common=`<div><label>Nome *</label><input></div><div><label>Titular *</label><input value="Michel Lopes"></div>
+    <script>
+      const $ = (id) => document.getElementById(id);
+      function openSrv(c) {
+        $("ct").value = c;
+        const e = c == "EUR";
+        $("cn").textContent = e
+          ? "Consultoria — Cliente EU"
+          : "Consultoria — Cliente BR";
+        $("cl").textContent = e
+          ? "Cliente Europeu, S.A. (NIF ••••)"
+          : "Cliente Brasil LTDA (CNPJ ••••)";
+        $("cm").textContent = e
+          ? "EUR (taxa efetiva 6,07 BRL = cotação 6,20 − spread − IOF)"
+          : "BRL";
+        $("lm").textContent = e ? "8 h por dia" : "80 h por mês";
+        $("cal").textContent = e ? "Portugal" : "Brasil (07/09 é feriado)";
+        ctc();
+        show("hours");
+      }
+      function show(v) {
+        ["list", "new", "fin", "hours"].forEach((x) =>
+          $(x).classList.toggle("hide", x != v)
+        );
+        if (v == "new") draw();
+      }
+      const common = `<div><label>Nome *</label><input></div><div><label>Titular *</label><input value="Michel Lopes"></div>
 <div><label>Categoria</label><input placeholder="Buscar…"></div><div><label>Contraparte</label><input placeholder="Cliente, credor, locatário"></div>`;
-const pay=`<div><label>Conta Bancária</label><select><option>—</option><option>077 Banco Inter</option></select></div><div><label>Cartão de Crédito</label><select><option>—</option><option>323 Mercado Pago</option></select></div>`;
-const F={
- rec:`<div><label>Direção *</label><select><option>Despesa</option><option>Receita (ex.: aluguel)</option></select></div><div><label>Valor * (estimado se variável)</label><input></div>
+      const pay = `<div><label>Conta Bancária</label><select><option>—</option><option>077 Banco Inter</option></select></div><div><label>Cartão de Crédito</label><select><option>—</option><option>323 Mercado Pago</option></select></div>`;
+      const F = {
+        rec: `<div><label>Direção *</label><select><option>Despesa</option><option>Receita (ex.: aluguel)</option></select></div><div><label>Valor * (estimado se variável)</label><input></div>
   <div><label>Valor variável</label><select><option>Não</option><option>Sim</option></select></div><div><label>Dia de vencimento *</label><input type="number" min="1" max="31"></div>
   <div><label>Primeiro vencimento *</label><input type="date"></div><div><label>Data de fim</label><input type="date"></div>`,
- par:`<div><label>Direção</label><input value="Despesa" disabled></div><div><label>Valor da parcela *</label><input></div>
+        par: `<div><label>Direção</label><input value="Despesa" disabled></div><div><label>Valor da parcela *</label><input></div>
   <div><label>Nº de parcelas *</label><input type="number"></div><div><label>Primeiro vencimento *</label><input type="date"></div>`,
- con:`<div><label>Direção</label><input value="Despesa" disabled></div><div><label>Valor da parcela *</label><input></div>
+        con: `<div><label>Direção</label><input value="Despesa" disabled></div><div><label>Valor da parcela *</label><input></div>
   <div><label>Nº de parcelas *</label><input type="number"></div><div><label>Primeiro vencimento *</label><input type="date"></div><div><label>Contemplado em</label><input type="date"></div>`,
- fin:`<div><label>Direção</label><input value="Despesa" disabled></div><div><label>Valor financiado *</label><input></div>
+        fin: `<div><label>Direção</label><input value="Despesa" disabled></div><div><label>Valor financiado *</label><input></div>
   <div><label>Taxa mensal (%) *</label><input></div><div><label>Sistema *</label><select><option>PRICE</option><option>SAC</option></select></div>
   <div><label>Nº de parcelas *</label><input type="number"></div><div><label>Primeiro vencimento *</label><input type="date"></div>`,
- srv:`<div><label>Direção</label><input value="Receita" disabled></div><div><label>Moeda *</label><select><option>BRL</option><option>EUR</option></select></div>
+        srv: `<div><label>Direção</label><input value="Receita" disabled></div><div><label>Moeda *</label><select><option>BRL</option><option>EUR</option></select></div>
   <div><label>Valor por hora *</label><input></div><div></div>
   <div><label>Início das atividades *</label><input type="date"></div><div><label>Primeira competência *</label><input type="month"></div>
   <div><label>Mês de envio *</label><select><option>Mês seguinte à competência</option><option>Mesmo mês da competência (antecipado)</option></select></div><div><label>Dia de envio *</label><input type="number" min="1" max="31"></div>
@@ -152,47 +618,195 @@ const F={
   <div><label>Calendário de feriados *</label><select><option>Brasil</option><option>Portugal</option></select></div><div></div>
   <div><label>Limite diário (h)</label><input type="number" placeholder="ex.: 8"></div><div><label>Limite mensal (h)</label><input type="number" placeholder="ex.: 80"></div>
   <div><label>Horário padrão: Entrada 1 / Saída 1</label><input placeholder="06:00 / 12:00"></div><div><label>Horário padrão: Entrada 2 / Saída 2</label><input placeholder="13:00 / 15:00"></div>
-  <div><label>Cliente (Account, Tipo = Cliente) *</label><input placeholder="Buscar cliente…"></div><div><label>Condições de pagamento (Terms)</label><input placeholder="Letter of Credit"></div>`};
-function draw(){$("f").innerHTML=common+F[$("tp").value]+pay}
-const days=[];
-function build(brl){days.length=0;
- if(brl)for(let n=28;n<=31;n++){const w=new Date(2026,7,n).getDay();days.push({d:100+n,l:n+"/08/2026",we:w==0||w==6})}
- for(let d=1;d<=30;d++){const w=new Date(2026,8,d).getDay();days.push({d,l:String(d).padStart(2,"0")+"/09/2026",we:w==0||w==6||(brl&&d==7)})}}
-const TE={"1":["06:00","12:00","13:00","15:00"],"2":["06:00","12:00","13:00","15:00"],"3":["06:00","12:00","13:00","15:00"],"4":["06:00","12:00","13:00","15:00"],"7":["06:00","12:00","13:00","15:00"],"8":["06:00","12:00","13:00","15:00"],"9":["06:00","12:00","13:00","15:00"],"10":["06:00","12:00","13:00","15:00"],"11":["06:00","12:00","13:00","15:00"],"14":["06:00","12:00","13:00","15:00"],"15":["06:00","12:00","13:00","15:00"]};
-const TB={"128":["","","14:00","15:00"],"131":["10:00","11:00","14:00","18:00"],"1":["","","14:00","18:00"],"2":["","","14:00","18:00"],"3":["10:00","10:15","14:00","20:30"],"4":["10:00","10:15","14:00","21:00"],"8":["09:45","10:00","14:00","19:00"],"9":["09:45","10:00","14:00","18:30"],"10":["09:45","10:00","14:00","18:00"],"11":["09:45","10:00","14:00","18:00"],"14":["","","14:00","17:00"],"15":["","","14:00","17:00"]};
-let T=TE;const TODAY=15;
-function mins(a,b){if(!a||!b)return 0;const[h1,m1]=a.split(":").map(Number),[h2,m2]=b.split(":").map(Number);return Math.max(0,(h2*60+m2)-(h1*60+m1))}
-function dayH(r){return(mins(r[0],r[1])+mins(r[2],r[3]))/60}
-function fmt(n){return n.toFixed(2).replace(".",",")}
-function dr(){let t="";
- days.forEach(x=>{const v=T[x.d]||["","","",""];
-  t+=`<tr style="${x.we?'background:#fafaf9;color:#b0adab':''}"><td>${x.l.slice(0,5)}</td>`+
-   v.map((val,k)=>`<td><input type="time" value="${val}" ${x.we?'':''} oninput="T[${x.d}]=T[${x.d}]||['','','','']; T[${x.d}][${k}]=this.value; sum()" style="width:110px;padding:3px 6px"></td>`).join("")+
-   `<td class="r" id="h${x.d}">${fmt(dayH(v))}</td></tr>`});
- $("tt").innerHTML='<tr><th>Dia</th><th>Entrada 1</th><th>Saída 1</th><th>Entrada 2</th><th>Saída 2</th><th class="r">Horas</th></tr>'+t;sum()}
-function sum(){const eurL=$("ct").value=="EUR";let tot=0;days.forEach(x=>{const v=T[x.d]||["","","",""];const h=dayH(v);tot+=h;const e=$("h"+x.d);if(e){e.textContent=fmt(h)+(eurL&&h>8?" ⚠ acima de 8 h (bloqueado)":"");e.style.color=(eurL&&h>8)?"#ba0517":""}});
- const eur=$("ct").value=="EUR",rate=eur?28:150;
- let done=0,left=0;days.forEach(x=>{const v=T[x.d];const h=v?dayH(v):0;if(x.d>=100||x.d<=TODAY)done+=h;else if(!x.we)left++});
- const feriado=0;let msg;
- if(eurL){msg=`<b>Planejador (hoje = 15/09)</b> · Limite diário <b>8 h</b> · Dias úteis restantes: <b>${left}</b> (16/09–30/09) · Previsão se trabalhar 8 h/dia: <b>${fmt(done+left*8)} h</b> (€ ${((done+left*8)*28).toLocaleString("pt-BR",{minimumFractionDigits:2})})`}
- else{const r=80-done;const avg=left?r/left:0;msg=`<b>Planejador (hoje = 15/09)</b> · Lançadas até hoje: <b>${fmt(done)} h</b> de 80 h · Restam: <b>${fmt(Math.max(0,r))} h</b> · Dias úteis restantes: <b>${left}</b> · Média necessária: <b>${left?fmt(Math.max(0,avg)):"—"} h/dia</b>${r<=0?" · ✔ limite do mês atingido":""}`}
- $("plan").innerHTML=msg;
- $("th").textContent=fmt(tot)+" h";$("mx").textContent=eur?"8 h/dia":"80 h / faltam "+fmt(Math.max(0,80-tot))+" h";$("mx").style.color=(!eur&&tot>80)?"#ba0517":"";$("tv").textContent=(eur?"€ ":"R$ ")+(tot*rate).toLocaleString("pt-BR",{minimumFractionDigits:2});}
-function ctc(){const eur=$("ct").value=="EUR";
- $("inv").classList.toggle("hide",!eur);$("mo").textContent=eur?"EUR":"BRL";
- $("env").textContent=eur?"10/09/2026 (antecipado)":"01/10/2026";$("rcb").textContent=eur?"30/09/2026":"15/10/2026";
- $("per").textContent=eur?"01/09 a 30/09":"28/08 a 30/09 (1º período)";T=eur?TE:TB;build(!eur);dr()}
+  <div><label>Cliente (Account, Tipo = Cliente) *</label><input placeholder="Buscar cliente…"></div><div><label>Condições de pagamento (Terms)</label><input placeholder="Letter of Credit"></div>`
+      };
+      function draw() {
+        $("f").innerHTML = common + F[$("tp").value] + pay;
+      }
+      const days = [];
+      function build(brl) {
+        days.length = 0;
+        if (brl)
+          for (let n = 28; n <= 31; n++) {
+            const w = new Date(2026, 7, n).getDay();
+            days.push({ d: 100 + n, l: n + "/08/2026", we: w == 0 || w == 6 });
+          }
+        for (let d = 1; d <= 30; d++) {
+          const w = new Date(2026, 8, d).getDay();
+          days.push({
+            d,
+            l: String(d).padStart(2, "0") + "/09/2026",
+            we: w == 0 || w == 6 || (brl && d == 7)
+          });
+        }
+      }
+      const TE = {
+        1: ["06:00", "12:00", "13:00", "15:00"],
+        2: ["06:00", "12:00", "13:00", "15:00"],
+        3: ["06:00", "12:00", "13:00", "15:00"],
+        4: ["06:00", "12:00", "13:00", "15:00"],
+        7: ["06:00", "12:00", "13:00", "15:00"],
+        8: ["06:00", "12:00", "13:00", "15:00"],
+        9: ["06:00", "12:00", "13:00", "15:00"],
+        10: ["06:00", "12:00", "13:00", "15:00"],
+        11: ["06:00", "12:00", "13:00", "15:00"],
+        14: ["06:00", "12:00", "13:00", "15:00"],
+        15: ["06:00", "12:00", "13:00", "15:00"]
+      };
+      const TB = {
+        128: ["", "", "14:00", "15:00"],
+        131: ["10:00", "11:00", "14:00", "18:00"],
+        1: ["", "", "14:00", "18:00"],
+        2: ["", "", "14:00", "18:00"],
+        3: ["10:00", "10:15", "14:00", "20:30"],
+        4: ["10:00", "10:15", "14:00", "21:00"],
+        8: ["09:45", "10:00", "14:00", "19:00"],
+        9: ["09:45", "10:00", "14:00", "18:30"],
+        10: ["09:45", "10:00", "14:00", "18:00"],
+        11: ["09:45", "10:00", "14:00", "18:00"],
+        14: ["", "", "14:00", "17:00"],
+        15: ["", "", "14:00", "17:00"]
+      };
+      let T = TE;
+      const TODAY = 15;
+      function mins(a, b) {
+        if (!a || !b) return 0;
+        const [h1, m1] = a.split(":").map(Number),
+          [h2, m2] = b.split(":").map(Number);
+        return Math.max(0, h2 * 60 + m2 - (h1 * 60 + m1));
+      }
+      function dayH(r) {
+        return (mins(r[0], r[1]) + mins(r[2], r[3])) / 60;
+      }
+      function fmt(n) {
+        return n.toFixed(2).replace(".", ",");
+      }
+      function dr() {
+        let t = "";
+        days.forEach((x) => {
+          const v = T[x.d] || ["", "", "", ""];
+          t +=
+            `<tr style="${x.we ? "background:#fafaf9;color:#b0adab" : ""}"><td>${x.l.slice(0, 5)}</td>` +
+            v
+              .map(
+                (val, k) =>
+                  `<td><input type="time" value="${val}" ${x.we ? "" : ""} oninput="T[${x.d}]=T[${x.d}]||['','','','']; T[${x.d}][${k}]=this.value; sum()" style="width:110px;padding:3px 6px"></td>`
+              )
+              .join("") +
+            `<td class="r" id="h${x.d}">${fmt(dayH(v))}</td></tr>`;
+        });
+        $("tt").innerHTML =
+          '<tr><th>Dia</th><th>Entrada 1</th><th>Saída 1</th><th>Entrada 2</th><th>Saída 2</th><th class="r">Horas</th></tr>' +
+          t;
+        sum();
+      }
+      function sum() {
+        const eurL = $("ct").value == "EUR";
+        let tot = 0;
+        days.forEach((x) => {
+          const v = T[x.d] || ["", "", "", ""];
+          const h = dayH(v);
+          tot += h;
+          const e = $("h" + x.d);
+          if (e) {
+            e.textContent =
+              fmt(h) + (eurL && h > 8 ? " ⚠ acima de 8 h (bloqueado)" : "");
+            e.style.color = eurL && h > 8 ? "#ba0517" : "";
+          }
+        });
+        const eur = $("ct").value == "EUR",
+          rate = eur ? 28 : 150;
+        let done = 0,
+          left = 0;
+        days.forEach((x) => {
+          const v = T[x.d];
+          const h = v ? dayH(v) : 0;
+          if (x.d >= 100 || x.d <= TODAY) done += h;
+          else if (!x.we) left++;
+        });
+        const feriado = 0;
+        let msg;
+        if (eurL) {
+          msg = `<b>Planejador (hoje = 15/09)</b> · Limite diário <b>8 h</b> · Dias úteis restantes: <b>${left}</b> (16/09–30/09) · Previsão se trabalhar 8 h/dia: <b>${fmt(done + left * 8)} h</b> (€ ${((done + left * 8) * 28).toLocaleString("pt-BR", { minimumFractionDigits: 2 })})`;
+        } else {
+          const r = 80 - done;
+          const avg = left ? r / left : 0;
+          msg = `<b>Planejador (hoje = 15/09)</b> · Lançadas até hoje: <b>${fmt(done)} h</b> de 80 h · Restam: <b>${fmt(Math.max(0, r))} h</b> · Dias úteis restantes: <b>${left}</b> · Média necessária: <b>${left ? fmt(Math.max(0, avg)) : "—"} h/dia</b>${r <= 0 ? " · ✔ limite do mês atingido" : ""}`;
+        }
+        $("plan").innerHTML = msg;
+        $("th").textContent = fmt(tot) + " h";
+        $("mx").textContent = eur
+          ? "8 h/dia"
+          : "80 h / faltam " + fmt(Math.max(0, 80 - tot)) + " h";
+        $("mx").style.color = !eur && tot > 80 ? "#ba0517" : "";
+        $("tv").textContent =
+          (eur ? "€ " : "R$ ") +
+          (tot * rate).toLocaleString("pt-BR", { minimumFractionDigits: 2 });
+      }
+      function ctc() {
+        const eur = $("ct").value == "EUR";
+        $("inv").classList.toggle("hide", !eur);
+        $("mo").textContent = eur ? "EUR" : "BRL";
+        $("env").textContent = eur ? "10/09/2026 (antecipado)" : "01/10/2026";
+        $("rcb").textContent = eur ? "30/09/2026" : "15/10/2026";
+        $("per").textContent = eur
+          ? "01/09 a 30/09"
+          : "28/08 a 30/09 (1º período)";
+        T = eur ? TE : TB;
+        build(!eur);
+        dr();
+      }
 
-function closeOv(){$("ov").classList.add("hide")}
-function fill(){days.forEach(x=>{if(!x.we&&!T[x.d])T[x.d]=["06:00","12:00","13:00","15:00"]});dr()}
-const M=["jan","fev","mar","abr","mai","jun","jul","ago","set","out","nov","dez"];
-function ampm(t){if(!t)return"";let[h,m]=t.split(":").map(Number);const ap=h>=12?"PM":"AM";h=h%12||12;return h+":"+String(m).padStart(2,"0")+" "+ap}
-function hm(n){const m=Math.round(n*60);return Math.floor(m/60)+":"+String(m%60).padStart(2,"0")}
-function pdf(k){const eur=$("ct").value=="EUR";let tot=0,rows=[];
- days.forEach(x=>{const v=T[x.d];const h=v?dayH(v):0;tot+=h;if(v&&h>0)rows.push([x,v,h])});
- let h="";
- if(k=="inv"){const tv=tot*28;const eu=n=>n.toLocaleString("pt-BR",{minimumFractionDigits:2})+" €";
-  h=`<div style="display:flex;align-items:center;gap:24px"><div class="logo">LOGO</div><div style="flex:1;text-align:center"><b>Empresa Exemplo Consultoria LTDA</b><br>CNPJ: 00.000.000/0001-00<br>Rua Exemplo, 100, Bairro, Cidade, UF, Brasil</div></div>
+      function closeOv() {
+        $("ov").classList.add("hide");
+      }
+      function fill() {
+        days.forEach((x) => {
+          if (!x.we && !T[x.d]) T[x.d] = ["06:00", "12:00", "13:00", "15:00"];
+        });
+        dr();
+      }
+      const M = [
+        "jan",
+        "fev",
+        "mar",
+        "abr",
+        "mai",
+        "jun",
+        "jul",
+        "ago",
+        "set",
+        "out",
+        "nov",
+        "dez"
+      ];
+      function ampm(t) {
+        if (!t) return "";
+        let [h, m] = t.split(":").map(Number);
+        const ap = h >= 12 ? "PM" : "AM";
+        h = h % 12 || 12;
+        return h + ":" + String(m).padStart(2, "0") + " " + ap;
+      }
+      function hm(n) {
+        const m = Math.round(n * 60);
+        return Math.floor(m / 60) + ":" + String(m % 60).padStart(2, "0");
+      }
+      function pdf(k) {
+        const eur = $("ct").value == "EUR";
+        let tot = 0,
+          rows = [];
+        days.forEach((x) => {
+          const v = T[x.d];
+          const h = v ? dayH(v) : 0;
+          tot += h;
+          if (v && h > 0) rows.push([x, v, h]);
+        });
+        let h = "";
+        if (k == "inv") {
+          const tv = tot * 28;
+          const eu = (n) =>
+            n.toLocaleString("pt-BR", { minimumFractionDigits: 2 }) + " €";
+          h = `<div style="display:flex;align-items:center;gap:24px"><div class="logo">LOGO</div><div style="flex:1;text-align:center"><b>Empresa Exemplo Consultoria LTDA</b><br>CNPJ: 00.000.000/0001-00<br>Rua Exemplo, 100, Bairro, Cidade, UF, Brasil</div></div>
   <div class="bar"><span></span><span style="color:#ffc000">INVOICE</span><span>#202609</span></div>
   <p style="margin:6px 0"><b>Bill to</b><br><b>Cliente Exemplo, S.A.</b><br>NIF 000000000<br>Avenida Exemplo, 1, Lisboa, Portugal</p>
   <div class="bar"><span>Invoice Date</span><span>Terms</span><span>Due Date</span></div>
@@ -204,25 +818,38 @@ Bank address: Rua Exemplo, 1
 IBAN: XX00 0000 0000 0000
 SWIFT CODE: EXMPBRXX
 Beneficiary name: EMPRESA EXEMPLO CONSULTORIA LTDA</div></div>
-  <div style="width:260px;line-height:1.9;text-align:right">Sub Total ${eu(tv)}<br>Tax 0,00 €<br>Discount 0,00 €<br>Shipping charge 0,00 €<div style="background:#33333c;color:#ffc000;padding:0 8px"><b>Total ${eu(tv)}<br>Balance Due ${eu(tv)}</b></div></div></div>`;}
- else if(eur){
-  h=`<h1 style="text-align:center;font-weight:400;color:#2b6a52;margin:0 0 10px">Time Sheet</h1>
+  <div style="width:260px;line-height:1.9;text-align:right">Sub Total ${eu(tv)}<br>Tax 0,00 €<br>Discount 0,00 €<br>Shipping charge 0,00 €<div style="background:#33333c;color:#ffc000;padding:0 8px"><b>Total ${eu(tv)}<br>Balance Due ${eu(tv)}</b></div></div></div>`;
+        } else if (eur) {
+          h = `<h1 style="text-align:center;font-weight:400;color:#2b6a52;margin:0 0 10px">Time Sheet</h1>
   <table><tr><th>Nome Prestador</th><th>Empresa Exemplo / Prestador Exemplo</th><th>Periodo</th></tr>
   <tr><td></td><td></td><td>01/09/2026 &nbsp; 30/09/2026</td></tr></table>
   <table style="margin-top:8px"><tr><th></th><th>Total Horas Trabalhadas</th><th>Valor Hora</th><th>Valor total / mês</th></tr>
-  <tr><td></td><td>${fmt(tot)}</td><td>28,00</td><td>${(tot*28).toLocaleString("pt-BR",{minimumFractionDigits:2})}</td></tr></table>
+  <tr><td></td><td>${fmt(tot)}</td><td>28,00</td><td>${(tot * 28).toLocaleString("pt-BR", { minimumFractionDigits: 2 })}</td></tr></table>
   <table style="margin-top:8px"><tr><th>Dates(s)</th><th>Time In</th><th>Lunch Start</th><th>Lunch End</th><th>Time Out</th><th>Hours Worked</th></tr>
-  ${rows.map(r=>`<tr><td>${r[0].l}</td><td>${ampm(r[1][0])}</td><td>${ampm(r[1][1])}</td><td>${ampm(r[1][2])}</td><td>${ampm(r[1][3])}</td><td>${fmt(r[2])}</td></tr>`).join("")}
-  <tr class="tot"><td>Total</td><td></td><td></td><td></td><td></td><td>${fmt(tot)}</td></tr></table>`;}
- else{
-  h=`<h1 style="text-align:center;font-weight:400;color:#2b6a52;margin:0 0 10px">Time Sheet</h1>
+  ${rows.map((r) => `<tr><td>${r[0].l}</td><td>${ampm(r[1][0])}</td><td>${ampm(r[1][1])}</td><td>${ampm(r[1][2])}</td><td>${ampm(r[1][3])}</td><td>${fmt(r[2])}</td></tr>`).join("")}
+  <tr class="tot"><td>Total</td><td></td><td></td><td></td><td></td><td>${fmt(tot)}</td></tr></table>`;
+        } else {
+          h = `<h1 style="text-align:center;font-weight:400;color:#2b6a52;margin:0 0 10px">Time Sheet</h1>
   <table><tr><th>Nome Prestador</th><th>Prestador Exemplo</th><th>Periodo</th></tr><tr><td></td><td></td><td>28/08/2026 &nbsp; 30/09/2026</td></tr></table>
   <table style="margin-top:8px"><tr><th>Data</th><th>Entrada</th><th>Saída</th><th>Entrada</th><th>Saída2</th><th>Horas Trabalhadas</th></tr>
-  ${days.filter(x=>!x.we).map(x=>{const v=T[x.d];const hh=v?dayH(v):0;return`<tr><td>${x.l}</td><td>${v?v[0]:""}</td><td>${v?v[1]:""}</td><td>${v?v[2]:""}</td><td>${v?v[3]:""}</td><td>${hh?hm(hh):"–"}</td></tr>`}).join("")}
+  ${days
+    .filter((x) => !x.we)
+    .map((x) => {
+      const v = T[x.d];
+      const hh = v ? dayH(v) : 0;
+      return `<tr><td>${x.l}</td><td>${v ? v[0] : ""}</td><td>${v ? v[1] : ""}</td><td>${v ? v[2] : ""}</td><td>${v ? v[3] : ""}</td><td>${hh ? hm(hh) : "–"}</td></tr>`;
+    })
+    .join("")}
   <tr class="tot"><td colspan="5" style="text-align:right">Total</td><td>${hm(tot)}</td></tr>
-  <tr class="tot"><td colspan="3" style="text-align:left">Máximo mês</td><td style="color:#c00">80:00</td><td style="text-align:left">Faltam</td><td style="color:#c00">${hm(Math.max(0,80-tot))}</td></tr></table>`;}
- $("pp").innerHTML='<button class="closeb" onclick="closeOv()">Fechar</button>'+h;$("ov").classList.remove("hide")}
-build(false);dr();ctc();
-</script>
-</body>
+  <tr class="tot"><td colspan="3" style="text-align:left">Máximo mês</td><td style="color:#c00">80:00</td><td style="text-align:left">Faltam</td><td style="color:#c00">${hm(Math.max(0, 80 - tot))}</td></tr></table>`;
+        }
+        $("pp").innerHTML =
+          '<button class="closeb" onclick="closeOv()">Fechar</button>' + h;
+        $("ov").classList.remove("hide");
+      }
+      build(false);
+      dr();
+      ctc();
+    </script>
+  </body>
 </html>

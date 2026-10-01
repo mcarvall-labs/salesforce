@@ -1,61 +1,216 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="pt-BR">
-<head>
-<meta charset="utf-8">
-<title>Mockup EP-01 — Apps e tabs</title>
-<style>
-  :root{--blue:#0176d3;--bg:#f3f3f3;--bd:#dddbda;--mut:#706e6b;--ok:#2e844a}
-  *{box-sizing:border-box}
-  body{margin:0;font:14px/1.4 -apple-system,Segoe UI,Arial,sans-serif;background:var(--bg);color:#181818}
-  .page{max-width:1000px;margin:20px auto;padding:0 16px}
-  .note{background:#fff8e1;border:1px solid #f0d98c;padding:8px 12px;border-radius:4px;font-size:12px;margin-bottom:16px}
-  .app{background:#fff;border:1px solid var(--bd);border-radius:6px;margin-bottom:20px;overflow:hidden}
-  .nav{border-bottom:3px solid var(--blue);display:flex;align-items:center;gap:2px;padding:0 12px;height:46px}
-  .nav b{margin-right:14px;color:var(--blue)}
-  .nav span{padding:13px 10px;color:#181818}
-  .nav span.on{font-weight:600;border-bottom:3px solid var(--blue);margin-bottom:-3px}
-  .nav span.later{color:#b0adab;border-bottom:1px dashed #ccc;margin-bottom:-1px}
-  .body{padding:16px}
-  table{width:100%;border-collapse:collapse}
-  th,td{text-align:left;padding:8px;border-bottom:1px solid var(--bd)}
-  th{color:var(--mut);font-size:12px;text-transform:uppercase}
-  select{padding:6px 10px;border:1px solid var(--bd);border-radius:4px}
-  .lg{font-size:12px;color:var(--mut);margin:6px 0 0}
-  .tag{font-size:11px;padding:1px 8px;border-radius:10px;background:#eef4ff;color:var(--blue)}
-  .tag.pf{background:#e7f6ec;color:var(--ok)}
-  .empty{color:var(--mut);padding:24px;text-align:center;border:1px dashed var(--bd);border-radius:6px}
-</style>
-</head>
-<body>
-<div class="page">
-<div class="note">Mockup de referência (EP-01). Abas tracejadas chegam nos épicos seguintes. Dados fictícios.</div>
+  <head>
+    <meta charset="utf-8" />
+    <title>Mockup EP-01 — Apps e tabs</title>
+    <style>
+      :root {
+        --blue: #0176d3;
+        --bg: #f3f3f3;
+        --bd: #dddbda;
+        --mut: #706e6b;
+        --ok: #2e844a;
+      }
+      * {
+        box-sizing: border-box;
+      }
+      body {
+        margin: 0;
+        font:
+          14px/1.4 -apple-system,
+          Segoe UI,
+          Arial,
+          sans-serif;
+        background: var(--bg);
+        color: #181818;
+      }
+      .page {
+        max-width: 1000px;
+        margin: 20px auto;
+        padding: 0 16px;
+      }
+      .note {
+        background: #fff8e1;
+        border: 1px solid #f0d98c;
+        padding: 8px 12px;
+        border-radius: 4px;
+        font-size: 12px;
+        margin-bottom: 16px;
+      }
+      .app {
+        background: #fff;
+        border: 1px solid var(--bd);
+        border-radius: 6px;
+        margin-bottom: 20px;
+        overflow: hidden;
+      }
+      .nav {
+        border-bottom: 3px solid var(--blue);
+        display: flex;
+        align-items: center;
+        gap: 2px;
+        padding: 0 12px;
+        height: 46px;
+      }
+      .nav b {
+        margin-right: 14px;
+        color: var(--blue);
+      }
+      .nav span {
+        padding: 13px 10px;
+        color: #181818;
+      }
+      .nav span.on {
+        font-weight: 600;
+        border-bottom: 3px solid var(--blue);
+        margin-bottom: -3px;
+      }
+      .nav span.later {
+        color: #b0adab;
+        border-bottom: 1px dashed #ccc;
+        margin-bottom: -1px;
+      }
+      .body {
+        padding: 16px;
+      }
+      table {
+        width: 100%;
+        border-collapse: collapse;
+      }
+      th,
+      td {
+        text-align: left;
+        padding: 8px;
+        border-bottom: 1px solid var(--bd);
+      }
+      th {
+        color: var(--mut);
+        font-size: 12px;
+        text-transform: uppercase;
+      }
+      select {
+        padding: 6px 10px;
+        border: 1px solid var(--bd);
+        border-radius: 4px;
+      }
+      .lg {
+        font-size: 12px;
+        color: var(--mut);
+        margin: 6px 0 0;
+      }
+      .tag {
+        font-size: 11px;
+        padding: 1px 8px;
+        border-radius: 10px;
+        background: #eef4ff;
+        color: var(--blue);
+      }
+      .tag.pf {
+        background: #e7f6ec;
+        color: var(--ok);
+      }
+      .empty {
+        color: var(--mut);
+        padding: 24px;
+        text-align: center;
+        border: 1px dashed var(--bd);
+        border-radius: 6px;
+      }
+    </style>
+  </head>
+  <body>
+    <div class="page">
+      <div class="note">
+        Mockup de referência (EP-01). Abas tracejadas chegam nos épicos
+        seguintes. Dados fictícios.
+      </div>
 
-<div class="app">
-  <div class="nav"><b>Axon</b>
-    <span class="later">Início</span><span class="later">Lançamentos</span><span class="later">Contratos</span>
-    <span class="later">Conta Bancária</span><span class="later">Cartão de Crédito</span>
-    <span class="on">Titulares</span><span class="later">Relatórios</span></div>
-  <div class="body">
-    <div style="display:flex;justify-content:space-between;margin-bottom:10px">
-      <div><b style="font-size:18px">Titulares</b> &nbsp;
-        <select><option>Todos</option><option>Pessoas</option><option>Empresas</option></select></div>
-      <button style="padding:6px 14px;border:1px solid var(--bd);border-radius:4px;background:#fff;color:var(--blue)">Novo</button>
+      <div class="app">
+        <div class="nav">
+          <b>Axon</b> <span class="later">Início</span
+          ><span class="later">Lançamentos</span
+          ><span class="later">Contratos</span>
+          <span class="later">Conta Bancária</span
+          ><span class="later">Cartão de Crédito</span>
+          <span class="on">Titulares</span><span class="later">Relatórios</span>
+        </div>
+        <div class="body">
+          <div
+            style="
+              display: flex;
+              justify-content: space-between;
+              margin-bottom: 10px;
+            "
+          >
+            <div>
+              <b style="font-size: 18px">Titulares</b> &nbsp;
+              <select>
+                <option>Todos</option>
+                <option>Pessoas</option>
+                <option>Empresas</option>
+              </select>
+            </div>
+            <button
+              style="
+                padding: 6px 14px;
+                border: 1px solid var(--bd);
+                border-radius: 4px;
+                background: #fff;
+                color: var(--blue);
+              "
+            >
+              Novo
+            </button>
+          </div>
+          <table>
+            <tr>
+              <th>Nome</th>
+              <th>Tipo de registro</th>
+              <th>Proprietário</th>
+              <th>Conexões Pluggy</th>
+            </tr>
+            <tr>
+              <td>Michel Lopes</td>
+              <td><span class="tag pf">Pessoa</span></td>
+              <td>Michel</td>
+              <td>2</td>
+            </tr>
+            <tr>
+              <td>Gisele</td>
+              <td><span class="tag pf">Pessoa</span></td>
+              <td>Gisele</td>
+              <td>1</td>
+            </tr>
+            <tr>
+              <td>Empresa X</td>
+              <td><span class="tag">Empresa</span></td>
+              <td>Michel</td>
+              <td>1</td>
+            </tr>
+          </table>
+          <p class="lg">
+            Record Types <b>Pessoa</b> (AXF_Person) e
+            <b>Empresa</b> (AXF_Business). Quem vê o quê: <b>Michel</b> (papel
+            Gestor) vê todas as linhas; <b>Gisele</b> (papel Participante) vê só
+            as dela. Acesso ao app: <b>AXF_PS_Usuario</b>.
+          </p>
+        </div>
+      </div>
+
+      <div class="app">
+        <div class="nav">
+          <b>Axon – Configuração</b> <span class="later">Início</span
+          ><span class="later">Assistente de configuração</span
+          ><span class="later">Conexões</span>
+        </div>
+        <div class="body">
+          <div class="empty">
+            App vazio neste épico. As tabs chegam com o EP-02.<br />Acesso:
+            Permission Set <b>AXF_PS_Configuracao</b> (credenciais só
+            administrador).
+          </div>
+        </div>
+      </div>
     </div>
-    <table>
-      <tr><th>Nome</th><th>Tipo de registro</th><th>Proprietário</th><th>Conexões Pluggy</th></tr>
-      <tr><td>Michel Lopes</td><td><span class="tag pf">Pessoa</span></td><td>Michel</td><td>2</td></tr>
-      <tr><td>Gisele</td><td><span class="tag pf">Pessoa</span></td><td>Gisele</td><td>1</td></tr>
-      <tr><td>Empresa X</td><td><span class="tag">Empresa</span></td><td>Michel</td><td>1</td></tr>
-    </table>
-    <p class="lg">Record Types <b>Pessoa</b> (AXF_Person) e <b>Empresa</b> (AXF_Business). Quem vê o quê: <b>Michel</b> (papel Gestor) vê todas as linhas; <b>Gisele</b> (papel Participante) vê só as dela. Acesso ao app: <b>AXF_PS_Usuario</b>.</p>
-  </div>
-</div>
-
-<div class="app">
-  <div class="nav"><b>Axon – Configuração</b>
-    <span class="later">Início</span><span class="later">Assistente de configuração</span><span class="later">Conexões</span></div>
-  <div class="body"><div class="empty">App vazio neste épico. As tabs chegam com o EP-02.<br>Acesso: Permission Set <b>AXF_PS_Configuracao</b> (credenciais só administrador).</div></div>
-</div>
-</div>
-</body>
+  </body>
 </html>
