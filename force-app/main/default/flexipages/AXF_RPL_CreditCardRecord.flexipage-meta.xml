@@ -23,6 +23,12 @@
                 <identifier>c_aXF_LWC_cardInvoices</identifier>
             </componentInstance>
         </itemInstances>
+        <itemInstances>
+            <componentInstance>
+                <componentName>c:aXF_LWC_statementImport</componentName>
+                <identifier>c_aXF_LWC_statementImport</identifier>
+            </componentInstance>
+        </itemInstances>
         <name>main</name>
         <type>Region</type>
     </flexiPageRegions>
