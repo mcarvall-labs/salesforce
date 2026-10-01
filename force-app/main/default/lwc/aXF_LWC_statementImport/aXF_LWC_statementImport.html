@@ -3,8 +3,8 @@
     <div class="slds-p-horizontal_medium">
       <lightning-input
         type="file"
-        label="Arquivo OFX"
-        accept=".ofx"
+        label="Arquivo OFX ou CSV"
+        accept=".ofx,.csv"
         onchange={handleFile}
       ></lightning-input>
       <template if:true={isBusy}>
