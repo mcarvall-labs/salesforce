@@ -109,4 +109,36 @@ private class ALT_CLS_CardInvoicesTest {
       }
     }
   }
+
+  @IsTest
+  static void userWithoutAccessCannotReadInvoicesOrLines() {
+    User restricted = new User(
+      Alias = 'axfnoacc',
+      Email = 'axfnoacc@example.com',
+      EmailEncodingKey = 'UTF-8',
+      LastName = 'NoAccess',
+      LanguageLocaleKey = 'en_US',
+      LocaleSidKey = 'en_US',
+      ProfileId = [SELECT Id FROM Profile WHERE Name = 'Standard User' LIMIT 1]
+      .Id,
+      TimeZoneSidKey = 'America/Sao_Paulo',
+      Username = 'axfnoacc' + System.currentTimeMillis() + '@example.com'
+    );
+    insert restricted;
+    Integer denied = 0;
+    System.runAs(restricted) {
+      for (Integer i = 0; i < 2; i++) {
+        try {
+          if (i == 0) {
+            new ALT_CLS_CardInvoices().invoices(UserInfo.getUserId());
+          } else {
+            new ALT_CLS_CardInvoices().lines(UserInfo.getUserId());
+          }
+        } catch (QueryException e) {
+          denied++;
+        }
+      }
+    }
+    System.assertEquals(2, denied);
+  }
 }

@@ -26,7 +26,7 @@
         <type>Flexipage</type>
     </actionOverrides>
     <allowInChatterGroups>false</allowInChatterGroups>
-    <compactLayoutAssignment>SYSTEM</compactLayoutAssignment>
+    <compactLayoutAssignment>AXF_CC_Compact</compactLayoutAssignment>
     <deploymentStatus>Deployed</deploymentStatus>
     <description>Cartão de crédito do titular (Pluggy ou manual).</description>
     <enableActivities>false</enableActivities>

@@ -22,6 +22,8 @@ public with sharing class ALT_CLS_CardInvoices {
     public String installment;
   }
 
+  private static final Integer MAX_ROWS = 500;
+
   public List<Invoice> invoices(Id creditCardId) {
     List<Invoice> items = new List<Invoice>();
     for (AXF_OBJ_CreditCardInvoice__c invoice : [
@@ -37,6 +39,7 @@ public with sharing class ALT_CLS_CardInvoices {
       ORDER BY
         AXF_CCI_DAT_DueDate__c DESC NULLS LAST,
         AXF_CCI_TXT_Period__c DESC
+      LIMIT :MAX_ROWS
     ]) {
       Invoice item = new Invoice();
       item.id = invoice.Id;
@@ -64,6 +67,7 @@ public with sharing class ALT_CLS_CardInvoices {
       WHERE AXF_CCT_LKP_Invoice__c = :invoiceId
       WITH USER_MODE
       ORDER BY AXF_CCT_DAT_Date__c DESC, CreatedDate DESC
+      LIMIT :MAX_ROWS
     ]) {
       Line item = new Line();
       item.id = cardTransaction.Id;
