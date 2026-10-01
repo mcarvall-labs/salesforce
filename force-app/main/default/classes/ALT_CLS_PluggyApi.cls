@@ -4,6 +4,7 @@
  */
 public with sharing class ALT_CLS_PluggyApi {
   private static final String BASE = 'callout:AXF_NC_Pluggy_API';
+  private static final Integer MAX_PAGES = 20;
 
   private String apiKey;
 
@@ -29,6 +30,25 @@ public with sharing class ALT_CLS_PluggyApi {
       );
     }
     return (Map<String, Object>) JSON.deserializeUntyped(res.getBody());
+  }
+
+  // Follows the cursor of the v2 endpoints ({results, next}) up to MAX_PAGES pages.
+  public List<Object> getAll(String pathAndQuery) {
+    List<Object> all = new List<Object>();
+    String cursor;
+    for (Integer page = 0; page < MAX_PAGES; page++) {
+      Map<String, Object> body = get(
+        cursor == null
+          ? pathAndQuery
+          : pathAndQuery + '&after=' + EncodingUtil.urlEncode(cursor, 'UTF-8')
+      );
+      all.addAll(results(body));
+      cursor = (String) body.get('next');
+      if (String.isBlank(cursor)) {
+        break;
+      }
+    }
+    return all;
   }
 
   public static List<Object> results(Map<String, Object> page) {
