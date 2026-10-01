@@ -27,7 +27,7 @@
         <viewAllRecords>false</viewAllRecords>
     </objectPermissions>
     <recordTypeVisibilities>
-        <recordType>Account.AXF_Person</recordType>
+        <recordType>PersonAccount.AXF_Person</recordType>
         <visible>true</visible>
     </recordTypeVisibilities>
     <recordTypeVisibilities>
