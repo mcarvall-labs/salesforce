@@ -5,6 +5,10 @@
     <visible>true</visible>
   </applicationVisibilities>
   <classAccesses>
+    <apexClass>AXF_CLS_CTRL_ConnectionDashboard</apexClass>
+    <enabled>true</enabled>
+  </classAccesses>
+  <classAccesses>
     <apexClass>AXF_CLS_CTRL_PluggyWizard</apexClass>
     <enabled>true</enabled>
   </classAccesses>
@@ -59,6 +63,10 @@
     <object>AXF_OBJ_PluggyConnection__c</object>
     <viewAllRecords>false</viewAllRecords>
   </objectPermissions>
+  <tabSettings>
+    <tab>AXF_CT_ConfigHome</tab>
+    <visibility>Visible</visibility>
+  </tabSettings>
   <tabSettings>
     <tab>AXF_CT_PluggyWizard</tab>
     <visibility>Visible</visibility>
