@@ -4,8 +4,6 @@ public with sharing class AXF_CLS_CTRL_PluggyWizard {
     public Boolean hasCredentials;
     @AuraEnabled
     public Integer connectionCount;
-    @AuraEnabled
-    public Id latestConnectionId;
   }
 
   public class StepResult {
@@ -26,15 +24,15 @@ public with sharing class AXF_CLS_CTRL_PluggyWizard {
     public String name;
     @AuraEnabled
     public String detail;
+    @AuraEnabled
+    public String holder;
   }
 
-  public class SyncResult {
+  public class ConnectionOption {
     @AuraEnabled
-    public Boolean success;
+    public Id id;
     @AuraEnabled
-    public String message;
-    @AuraEnabled
-    public List<LinkedItem> items;
+    public String label;
   }
 
   @AuraEnabled(cacheable=false)
@@ -42,8 +40,6 @@ public with sharing class AXF_CLS_CTRL_PluggyWizard {
     WizardState state = new WizardState();
     state.hasCredentials = new ALT_CLS_PluggyCredential().hasCredentials();
     state.connectionCount = new ALT_CLS_PluggyConnection().countConnections();
-    state.latestConnectionId = new ALT_CLS_PluggyConnection()
-      .latestConnectionId();
     return state;
   }
 
@@ -78,17 +74,18 @@ public with sharing class AXF_CLS_CTRL_PluggyWizard {
   }
 
   @AuraEnabled
-  public static SyncResult syncConnection(Id connectionId) {
-    if (connectionId == null) {
-      throw new AuraHandledException('Informe a conexão.');
+  public static List<ConnectionOption> getConnections() {
+    List<ConnectionOption> options = new List<ConnectionOption>();
+    for (
+      ALT_CLS_PluggyConnection.Option option : new ALT_CLS_PluggyConnection()
+        .options()
+    ) {
+      ConnectionOption item = new ConnectionOption();
+      item.id = option.id;
+      item.label = option.label;
+      options.add(item);
     }
-    ALT_CLS_PluggyAccountSync.Result result = new ALT_CLS_PluggyAccountSync()
-      .sync(connectionId);
-    SyncResult syncResult = new SyncResult();
-    syncResult.success = result.success;
-    syncResult.message = result.message;
-    syncResult.items = getLinked(connectionId);
-    return syncResult;
+    return options;
   }
 
   @AuraEnabled
@@ -106,6 +103,7 @@ public with sharing class AXF_CLS_CTRL_PluggyWizard {
       item.kind = linked.kind;
       item.name = linked.name;
       item.detail = linked.detail;
+      item.holder = linked.holder;
       items.add(item);
     }
     return items;

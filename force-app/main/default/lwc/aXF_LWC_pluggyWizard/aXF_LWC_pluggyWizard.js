@@ -3,7 +3,7 @@ import getState from "@salesforce/apex/AXF_CLS_CTRL_PluggyWizard.getState";
 import saveCredentials from "@salesforce/apex/AXF_CLS_CTRL_PluggyWizard.saveCredentials";
 import createConnection from "@salesforce/apex/AXF_CLS_CTRL_PluggyWizard.createConnection";
 import testCredentials from "@salesforce/apex/AXF_CLS_CTRL_PluggyWizard.testCredentials";
-import syncConnection from "@salesforce/apex/AXF_CLS_CTRL_PluggyWizard.syncConnection";
+import getConnections from "@salesforce/apex/AXF_CLS_CTRL_PluggyWizard.getConnections";
 import getLinked from "@salesforce/apex/AXF_CLS_CTRL_PluggyWizard.getLinked";
 
 export default class AXF_LWC_pluggyWizard extends LightningElement {
@@ -17,9 +17,7 @@ export default class AXF_LWC_pluggyWizard extends LightningElement {
   connectionSuccess = false;
   connectionId;
   linkedItems = [];
-  isSyncing = false;
-  syncMessage;
-  syncSuccess = false;
+  connectionOptions = [];
   isLoading = true;
   isSaving = false;
   clientId = "";
@@ -32,10 +30,7 @@ export default class AXF_LWC_pluggyWizard extends LightningElement {
       const state = await getState();
       this.hasCredentials = state.hasCredentials;
       this.connectionCount = state.connectionCount;
-      this.connectionId = state.latestConnectionId;
-      if (this.connectionId) {
-        this.linkedItems = await getLinked({ connectionId: this.connectionId });
-      }
+      await this.loadConnections();
     } catch {
       this.showResult(
         false,
@@ -90,9 +85,8 @@ export default class AXF_LWC_pluggyWizard extends LightningElement {
       this.connectionMessage = result.message;
       if (result.success) {
         this.connectionCount += 1;
-        this.connectionId = result.connectionId;
-        this.linkedItems = [];
-        this.syncMessage = undefined;
+        await this.loadConnections();
+        await this.selectConnection(result.connectionId);
         this.itemId = "";
       }
     } catch {
@@ -103,33 +97,32 @@ export default class AXF_LWC_pluggyWizard extends LightningElement {
     }
   }
 
-  get syncDisabled() {
-    return this.isSyncing || !this.connectionId;
-  }
-
-  get syncClass() {
-    return this.syncSuccess
-      ? "slds-text-color_success"
-      : "slds-text-color_error";
+  async loadConnections() {
+    this.connectionOptions = (await getConnections()).map((option) => ({
+      label: option.label,
+      value: option.id
+    }));
   }
 
   get hasLinkedItems() {
     return this.linkedItems.length > 0;
   }
 
-  async handleSync() {
-    this.isSyncing = true;
-    this.syncMessage = undefined;
+  get hasConnections() {
+    return this.connectionOptions.length > 0;
+  }
+
+  handleConnection(event) {
+    return this.selectConnection(event.detail.value);
+  }
+
+  async selectConnection(connectionId) {
+    this.connectionId = connectionId;
+    this.linkedItems = [];
     try {
-      const result = await syncConnection({ connectionId: this.connectionId });
-      this.syncSuccess = result.success;
-      this.syncMessage = result.message;
-      this.linkedItems = result.items;
+      this.linkedItems = await getLinked({ connectionId });
     } catch {
-      this.syncSuccess = false;
-      this.syncMessage = "Não foi possível sincronizar contas e cartões.";
-    } finally {
-      this.isSyncing = false;
+      this.showResult(false, "Não foi possível listar contas e cartões.");
     }
   }
 

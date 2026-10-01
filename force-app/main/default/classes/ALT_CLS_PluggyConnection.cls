@@ -47,15 +47,26 @@ public with sharing class ALT_CLS_PluggyConnection {
     return r;
   }
 
-  public Id latestConnectionId() {
-    List<AXF_OBJ_PluggyConnection__c> latest = [
-      SELECT Id
+  public class Option {
+    public Id id;
+    public String label;
+  }
+
+  public List<Option> options() {
+    List<Option> options = new List<Option>();
+    for (AXF_OBJ_PluggyConnection__c connection : [
+      SELECT Name
       FROM AXF_OBJ_PluggyConnection__c
       WITH USER_MODE
-      ORDER BY CreatedDate DESC
-      LIMIT 1
-    ];
-    return latest.isEmpty() ? null : latest[0].Id;
+      ORDER BY Name
+      LIMIT 200
+    ]) {
+      Option option = new Option();
+      option.id = connection.Id;
+      option.label = connection.Name;
+      options.add(option);
+    }
+    return options;
   }
 
   public Integer countConnections() {

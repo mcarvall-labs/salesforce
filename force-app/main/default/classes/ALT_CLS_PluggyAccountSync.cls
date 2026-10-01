@@ -15,6 +15,7 @@ public with sharing class ALT_CLS_PluggyAccountSync {
     public String kind;
     public String name;
     public String detail;
+    public String holder;
   }
 
   // Record type visibility comes from permission sets, which a test cannot grant.
@@ -107,7 +108,11 @@ public with sharing class ALT_CLS_PluggyAccountSync {
   public List<Linked> linked(Id connectionId) {
     List<Linked> items = new List<Linked>();
     for (AXF_OBJ_BankAccount__c account : [
-      SELECT Id, Name, AXF_BA_TXT_Branch__c, AXF_BA_TXT_Number__c
+      SELECT
+        Name,
+        AXF_BA_TXT_Branch__c,
+        AXF_BA_TXT_Number__c,
+        AXF_BA_MD_Holder__r.Name
       FROM AXF_OBJ_BankAccount__c
       WHERE AXF_BA_LKP_Connection__c = :connectionId
       WITH USER_MODE
@@ -120,12 +125,13 @@ public with sharing class ALT_CLS_PluggyAccountSync {
           account.Name,
           dash(account.AXF_BA_TXT_Branch__c) +
             ' / ' +
-            dash(account.AXF_BA_TXT_Number__c)
+            dash(account.AXF_BA_TXT_Number__c),
+          account.AXF_BA_MD_Holder__r.Name
         )
       );
     }
     for (AXF_OBJ_CreditCard__c card : [
-      SELECT Id, Name, AXF_CC_TXT_LastDigits__c
+      SELECT Name, AXF_CC_TXT_LastDigits__c, AXF_CC_MD_Holder__r.Name
       FROM AXF_OBJ_CreditCard__c
       WHERE AXF_CC_LKP_Connection__c = :connectionId
       WITH USER_MODE
@@ -136,7 +142,8 @@ public with sharing class ALT_CLS_PluggyAccountSync {
           card.Id,
           'Cartão',
           card.Name,
-          'final ' + dash(card.AXF_CC_TXT_LastDigits__c)
+          'final ' + dash(card.AXF_CC_TXT_LastDigits__c),
+          card.AXF_CC_MD_Holder__r.Name
         )
       );
     }
@@ -147,12 +154,19 @@ public with sharing class ALT_CLS_PluggyAccountSync {
     return String.isBlank(value) ? '-' : value;
   }
 
-  private Linked toLinked(Id id, String kind, String name, String detail) {
+  private Linked toLinked(
+    Id id,
+    String kind,
+    String name,
+    String detail,
+    String holder
+  ) {
     Linked item = new Linked();
     item.id = id;
     item.kind = kind;
     item.name = name;
     item.detail = detail;
+    item.holder = holder;
     return item;
   }
 
