@@ -10,11 +10,14 @@ public with sharing class ALT_CLS_PluggyCardSync {
     public String message;
     public Integer invoices = 0;
     public Integer transactions = 0;
+    public Integer skipped = 0;
+    public Integer withoutInvoice = 0;
   }
 
   private static final Integer INITIAL_DAYS = 90;
   private static final Integer OVERLAP_DAYS = 3;
-  private static final Integer MAX_BILL_PAGES = 20;
+  @TestVisible
+  private static Integer maxBillPages = 20;
 
   public Result sync(Id creditCardId) {
     Result r = new Result();
@@ -48,21 +51,56 @@ public with sharing class ALT_CLS_PluggyCardSync {
       r.message = e.getMessage();
       return r;
     }
+    Map<String, String> existingStatus = new Map<String, String>();
+    for (AXF_OBJ_CreditCardInvoice__c existing : [
+      SELECT AXF_CCI_EXI_PluggyInvoiceId__c, AXF_CCI_PKL_Status__c
+      FROM AXF_OBJ_CreditCardInvoice__c
+      WHERE AXF_CCI_MD_CreditCard__c = :creditCardId
+    ]) {
+      existingStatus.put(
+        existing.AXF_CCI_EXI_PluggyInvoiceId__c,
+        existing.AXF_CCI_PKL_Status__c
+      );
+    }
     Map<String, AXF_OBJ_CreditCardInvoice__c> invoices = new Map<String, AXF_OBJ_CreditCardInvoice__c>();
     for (Object bill : bills) {
+      Map<String, Object> pluggyBill = (Map<String, Object>) bill;
+      if (pluggyBill.get('id') == null || pluggyBill.get('dueDate') == null) {
+        r.skipped++;
+        continue;
+      }
       AXF_OBJ_CreditCardInvoice__c invoice = toInvoice(
-        (Map<String, Object>) bill,
+        pluggyBill,
         creditCardId
       );
+      if (
+        'Paid' == existingStatus.get(invoice.AXF_CCI_EXI_PluggyInvoiceId__c)
+      ) {
+        invoice.AXF_CCI_PKL_Status__c = 'Paid';
+      }
       invoices.put(invoice.AXF_CCI_EXI_PluggyInvoiceId__c, invoice);
     }
+    Set<String> knownInvoices = new Set<String>(existingStatus.keySet());
+    knownInvoices.addAll(invoices.keySet());
     Map<String, AXF_OBJ_CreditCardTransaction__c> transactions = new Map<String, AXF_OBJ_CreditCardTransaction__c>();
     for (Object item : items) {
+      Map<String, Object> pluggy = (Map<String, Object>) item;
+      if (
+        pluggy.get('id') == null ||
+        pluggy.get('date') == null ||
+        pluggy.get('amount') == null
+      ) {
+        r.skipped++;
+        continue;
+      }
       AXF_OBJ_CreditCardTransaction__c cardTransaction = toTransaction(
-        (Map<String, Object>) item,
+        pluggy,
         creditCardId,
-        invoices.keySet()
+        knownInvoices
       );
+      if (cardTransaction.AXF_CCT_LKP_Invoice__r == null) {
+        r.withoutInvoice++;
+      }
       transactions.put(
         cardTransaction.AXF_CCT_EXI_PluggyTransactionId__c,
         cardTransaction
@@ -92,6 +130,15 @@ public with sharing class ALT_CLS_PluggyCardSync {
     r.invoices = invoices.size();
     r.transactions = transactions.size();
     r.message = 'Sincronização concluída.';
+    if (r.skipped > 0) {
+      r.message +=
+        ' ' +
+        r.skipped +
+        ' itens sem id, data ou valor foram ignorados.';
+    }
+    if (r.withoutInvoice > 0) {
+      r.message += ' ' + r.withoutInvoice + ' transações ficaram sem fatura.';
+    }
     return r;
   }
 
@@ -99,9 +146,14 @@ public with sharing class ALT_CLS_PluggyCardSync {
   private List<Object> bills(ALT_CLS_PluggyApi api, String pluggyId) {
     List<Object> all = new List<Object>();
     Integer totalPages = 1;
-    for (
-      Integer page = 1; page <= totalPages && page <= MAX_BILL_PAGES; page++
-    ) {
+    for (Integer page = 1; page <= totalPages; page++) {
+      if (page > maxBillPages) {
+        throw new ALT_CLS_PluggyCredential.PluggyException(
+          'O Pluggy retornou mais de ' +
+            maxBillPages +
+            ' páginas de faturas; nada foi gravado.'
+        );
+      }
       Map<String, Object> body = api.get(
         '/bills?accountId=' + pluggyId + '&page=' + page
       );
@@ -146,9 +198,9 @@ public with sharing class ALT_CLS_PluggyCardSync {
       AXF_CCI_EXI_PluggyInvoiceId__c = (String) pluggy.get('id'),
       AXF_CCI_TXT_Period__c = String.valueOf(due).substring(0, 7),
       AXF_CCI_DAT_DueDate__c = due,
-      AXF_CCI_CUR_TotalAmount__c = Decimal.valueOf(
-        String.valueOf(pluggy.get('totalAmount'))
-      ),
+      AXF_CCI_CUR_TotalAmount__c = pluggy.get('totalAmount') == null
+        ? null
+        : Decimal.valueOf(String.valueOf(pluggy.get('totalAmount'))),
       AXF_CCI_PKL_Status__c = due < Date.today() ? 'Closed' : 'Open'
     );
   }
@@ -179,10 +231,19 @@ public with sharing class ALT_CLS_PluggyCardSync {
       AXF_CCT_TXT_PluggyCategory__c = (String) pluggy.get('category')
     );
     if (metadata != null && metadata.get('installmentNumber') != null) {
-      cardTransaction.AXF_CCT_TXT_Installment__c =
-        String.valueOf(metadata.get('installmentNumber')) +
-        '/' +
-        String.valueOf(metadata.get('totalInstallments'));
+      cardTransaction.AXF_CCT_TXT_Installment__c = String.valueOf(
+        metadata.get('installmentNumber')
+      );
+      if (metadata.get('totalInstallments') != null) {
+        cardTransaction.AXF_CCT_TXT_Installment__c +=
+          '/' + String.valueOf(metadata.get('totalInstallments'));
+      }
+    }
+    if (
+      cardTransaction.AXF_CCT_CUR_AmountBRL__c == null &&
+      'BRL' == pluggy.get('currencyCode')
+    ) {
+      cardTransaction.AXF_CCT_CUR_AmountBRL__c = cardTransaction.AXF_CCT_CUR_Amount__c;
     }
     if (billId != null && syncedBillIds.contains(billId)) {
       cardTransaction.AXF_CCT_LKP_Invoice__r = new AXF_OBJ_CreditCardInvoice__c(
