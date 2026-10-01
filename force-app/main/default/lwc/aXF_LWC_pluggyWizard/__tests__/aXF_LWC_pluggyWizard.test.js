@@ -24,11 +24,11 @@ jest.mock(
   }
 );
 
-const flushPromises = async () => {
-  for (let i = 0; i < 10; i++) {
-    await Promise.resolve();
-  }
-};
+const flushPromises = () =>
+  Array.from({ length: 10 }).reduce(
+    (chain) => chain.then(() => undefined),
+    Promise.resolve()
+  );
 
 async function setup(hasCredentials = false) {
   getState.mockResolvedValue({ hasCredentials });
