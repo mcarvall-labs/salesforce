@@ -1,0 +1,113 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<title>Mockup EP-04 — Lançamentos</title>
+<style>
+  :root{--blue:#0176d3;--bg:#f3f3f3;--bd:#dddbda;--mut:#706e6b;--ok:#2e844a;--err:#ba0517;--warn:#dd7a01}
+  *{box-sizing:border-box}
+  body{margin:0;font:14px/1.4 -apple-system,Segoe UI,Arial,sans-serif;background:var(--bg);color:#181818}
+  .nav{background:#fff;border-bottom:3px solid var(--blue);display:flex;align-items:center;gap:4px;padding:0 16px;height:48px}
+  .nav b{margin-right:16px;color:var(--blue)}
+  .nav span{padding:14px 12px;color:#b0adab}.nav span.on{color:#181818;font-weight:600;border-bottom:3px solid var(--blue);margin-bottom:-3px;cursor:pointer}
+  .page{max-width:1000px;margin:20px auto;padding:0 16px}
+  .note{background:#fff8e1;border:1px solid #f0d98c;padding:8px 12px;border-radius:4px;font-size:12px;margin-bottom:16px}
+  .card{background:#fff;border:1px solid var(--bd);border-radius:6px;padding:16px;margin-bottom:16px}
+  table{width:100%;border-collapse:collapse}
+  th,td{text-align:left;padding:8px;border-bottom:1px solid var(--bd)}
+  th{color:var(--mut);font-size:12px;text-transform:uppercase}td.r,th.r{text-align:right}
+  tr.click{cursor:pointer}tr.click:hover{background:#eef4ff}
+  .in{color:var(--ok)}.out{color:var(--err)}
+  .pill{padding:2px 10px;border-radius:12px;color:#fff;font-size:12px}
+  .pend{background:var(--mut)}.venc{background:var(--err)}.real{background:var(--ok)}
+  button,select,input,textarea{font:inherit;padding:6px 12px;border:1px solid var(--bd);border-radius:4px;background:#fff}
+  button{cursor:pointer;color:var(--blue)}button.pri{background:var(--blue);color:#fff;border-color:var(--blue)}
+  .top{display:flex;justify-content:space-between;align-items:center;margin-bottom:10px}
+  label{display:block;font-size:12px;color:var(--mut);margin:10px 0 4px}
+  input,select,textarea{width:100%}
+  .grid{display:grid;grid-template-columns:1fr 1fr;gap:0 16px}
+  .modal{position:fixed;inset:0;background:rgba(0,0,0,.4);display:flex;align-items:center;justify-content:center}
+  .modal>div{background:#fff;border-radius:8px;padding:20px;width:560px;max-height:90vh;overflow:auto}
+  .hide{display:none}
+  .hdr{display:flex;gap:32px;flex-wrap:wrap;align-items:flex-end}.hdr small{display:block;color:var(--mut);font-size:11px;text-transform:uppercase}
+  .hdr h2{margin:0;font-size:20px}
+  dl{display:grid;grid-template-columns:180px 1fr;gap:8px 16px;margin:0}dt{color:var(--mut)}dd{margin:0}
+  .tabs a{padding:6px 12px;cursor:pointer;border-radius:14px;margin-right:4px;color:var(--mut)}.tabs a.on{background:#eef4ff;color:var(--blue);font-weight:600}
+  .sug{border:1px solid var(--bd);border-radius:4px;background:#fff;margin-top:2px}.sug div{padding:7px 10px;cursor:pointer}.sug div:hover{background:#eef4ff}
+  .bc{font-size:12px;color:var(--mut);margin-bottom:8px}.bc a{color:var(--blue);cursor:pointer}
+</style>
+</head>
+<body>
+<div class="nav"><b>Axon</b>
+  <span>Início</span><span class="on" onclick="show('list')">Lançamentos</span><span>Contratos</span>
+  <span>Conta Bancária</span><span>Cartão de Crédito</span><span>Titulares</span></div>
+<div class="page">
+<div class="note">Mockup de referência (EP-04). Dados fictícios. A tab Categorias fica no app Axon – Configuração. Clique em <b>Novo</b>, em uma linha e em <b>Marcar como realizado</b>; troque as list views.</div>
+
+<div id="list">
+  <div class="card">
+    <div class="top"><h2 style="margin:0">Lançamentos</h2><button class="pri" onclick="openNew()">Novo</button></div>
+    <div class="tabs" style="margin-bottom:8px"><a class="on" onclick="lv(this,0)">A vencer</a><a onclick="lv(this,1)">Vencidos</a><a onclick="lv(this,2)">Realizados do mês</a><a onclick="lv(this,3)">Todos</a></div>
+    <table id="t"></table>
+  </div>
+</div>
+
+<div id="rec" class="hide">
+  <div class="bc"><a onclick="show('list')">◀ Lançamentos</a></div>
+  <div class="card">
+    <div class="hdr"><div><small>Lançamento · Despesa</small><h2>Conta de água</h2></div>
+      <div><small>Vencimento</small>05/10/2026</div><div><small>Status</small><span class="pill pend" id="st">Pendente</span></div>
+      <div style="margin-left:auto;text-align:right"><small>Valor</small><div style="font-size:24px;font-weight:700" class="out">R$ 98,40</div>
+        <button id="mk" onclick="mark()" style="margin-top:6px">Marcar como realizado</button></div></div>
+  </div>
+  <div class="card"><dl>
+    <dt>Titular</dt><dd>Michel Lopes</dd><dt>Categoria</dt><dd>Moradia</dd><dt>Conta Bancária</dt><dd>077 Banco Inter · ••1234</dd>
+    <dt>Cartão de Crédito</dt><dd>—</dd><dt>Data de pagamento</dt><dd id="pd">—</dd><dt>Observação</dt><dd>Valor varia por mês</dd></dl></div>
+</div>
+
+<div class="modal hide" id="m"><div>
+  <h3 style="margin-top:0">Novo lançamento</h3>
+  <div class="grid">
+    <div><label>Tipo *</label><select><option>Despesa</option><option>Receita</option></select></div>
+    <div><label>Valor *</label><input placeholder="R$ 0,00"></div>
+    <div style="grid-column:1/3"><label>Descrição *</label><input placeholder="Ex.: Conta de água"></div>
+    <div><label>Vencimento *</label><input type="date"></div>
+    <div><label>Status</label><select><option>Pendente</option><option>Realizado</option></select></div>
+    <div><label>Titular *</label><input value="Michel Lopes"></div>
+    <div style="position:relative"><label>Categoria</label><input id="cat" placeholder="Buscar categoria…" oninput="sug()" onfocus="sug()" autocomplete="off">
+      <div class="sug hide" id="sg"></div></div>
+    <div><label>Conta Bancária</label><select><option>—</option><option>077 Banco Inter · ••1234</option><option>756 Sicoob · ••9876</option></select></div>
+    <div><label>Cartão de Crédito</label><select><option>—</option><option>323 Mercado Pago · ••5678</option></select></div>
+    <div style="grid-column:1/3"><label>Observação</label><textarea rows="2"></textarea></div>
+  </div>
+  <p style="text-align:right;margin-bottom:0"><button onclick="closeNew()">Cancelar</button> <button class="pri" onclick="closeNew()">Salvar</button></p>
+</div></div>
+</div>
+
+<script>
+const $=id=>document.getElementById(id);
+const rows=[
+ {d:"05/10",n:"Conta de água",c:"Moradia",v:-98.40,s:"pend",g:0},
+ {d:"10/10",n:"Assinatura internet",c:"Serviços",v:-119.90,s:"pend",g:0},
+ {d:"15/10",n:"Serviço prestado — Cliente EU",c:"Serviços",v:3500,s:"pend",g:0},
+ {d:"25/09",n:"Conta de luz",c:"Moradia",v:-212.40,s:"venc",g:1},
+ {d:"20/09",n:"Plano de saúde",c:"Saúde",v:-640,s:"venc",g:1},
+ {d:"28/09",n:"Conta de luz (set)",c:"Moradia",v:-205.10,s:"real",g:2},
+ {d:"01/09",n:"Salário",c:"Salário",v:4200,s:"real",g:2}];
+const lbl={pend:"Pendente",venc:"Vencido",real:"Realizado"};
+function lv(el,f){document.querySelectorAll(".tabs a").forEach(a=>a.classList.remove("on"));el.classList.add("on");draw(f)}
+function draw(f){const r=rows.filter(x=>f==3||x.g==f);
+ $("t").innerHTML='<tr><th>Vencimento</th><th>Descrição</th><th>Categoria</th><th>Status</th><th class="r">Valor</th></tr>'+
+ r.map(x=>`<tr class="click" onclick="show('rec')"><td>${x.d}</td><td>${x.n}</td><td>${x.c}</td><td><span class="pill ${x.s}">${lbl[x.s]}</span></td><td class="r ${x.v<0?'out':'in'}">${x.v<0?'−':'+'} ${Math.abs(x.v).toLocaleString('pt-BR',{minimumFractionDigits:2})}</td></tr>`).join("")}
+function show(v){["list","rec"].forEach(x=>$(x).classList.toggle("hide",x!=v))}
+function openNew(){$("m").classList.remove("hide")}function closeNew(){$("m").classList.add("hide");$("sg").classList.add("hide")}
+const cats=["Moradia","Alimentação","Transporte","Saúde","Lazer","Salário","Serviços"];
+function sug(){const t=$("cat").value.toLowerCase();const m=cats.filter(c=>c.toLowerCase().includes(t));
+ $("sg").innerHTML=m.map(c=>`<div onclick="pick('${c}')">${c}</div>`).join("")+(t&&!cats.some(c=>c.toLowerCase()==t)?`<div onclick="pick('${$("cat").value}')" style="color:var(--blue)">+ Nova categoria "${$("cat").value}"</div>`:"");
+ $("sg").classList.remove("hide")}
+function pick(c){$("cat").value=c;$("sg").classList.add("hide")}
+function mark(){$("st").className="pill real";$("st").textContent="Realizado";$("pd").textContent="30/09/2026";$("mk").classList.add("hide")}
+draw(0);
+</script>
+</body>
+</html>

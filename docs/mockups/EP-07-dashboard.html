@@ -1,0 +1,190 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<title>Mockup EP-07 — Dashboard do Axon (versão enxuta)</title>
+<style>
+  :root{--blue:#0176d3;--bg:#f3f3f3;--bd:#e3e1df;--mut:#706e6b;--ok:#2e844a;--err:#ba0517;--warn:#dd7a01}
+  *{box-sizing:border-box}
+  body{margin:0;font:14px/1.45 -apple-system,Segoe UI,Arial,sans-serif;background:var(--bg);color:#181818}
+  .nav{background:#fff;border-bottom:3px solid var(--blue);display:flex;align-items:center;gap:4px;padding:0 16px;height:48px}
+  .nav b{margin-right:16px;color:var(--blue)}
+  .nav span{padding:14px 12px;color:#b0adab}.nav span.on{color:#181818;font-weight:600;border-bottom:3px solid var(--blue);margin-bottom:-3px}
+  .page{max-width:1000px;margin:18px auto;padding:0 16px}
+  .note{background:#fff8e1;border:1px solid #f0d98c;padding:7px 12px;border-radius:4px;font-size:12px;margin-bottom:14px}
+  .top{display:flex;gap:10px;align-items:center;margin-bottom:14px;flex-wrap:wrap}
+  select,button{font:inherit;padding:6px 12px;border:1px solid var(--bd);border-radius:4px;background:#fff;color:var(--blue);cursor:pointer}
+  button.pri{background:var(--blue);color:#fff;border-color:var(--blue)}
+  .sp{margin-left:auto}
+  a.lk{color:var(--blue);cursor:pointer;font-size:12px}
+  .badge{background:var(--warn);color:#fff;border-radius:10px;padding:0 8px;font-size:12px}
+  .kpis{display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin-bottom:14px}
+  .kpi{background:#fff;border:1px solid var(--bd);border-radius:8px;padding:14px;cursor:default}
+  .kpi.click{cursor:pointer}.kpi.click:hover{box-shadow:0 1px 6px rgba(0,0,0,.15)}.kpi.on{outline:2px solid var(--blue)}
+  .kpi small{display:block;color:var(--mut);font-size:11px;text-transform:uppercase;letter-spacing:.3px}
+  .kpi b{font-size:23px;display:block;margin:2px 0}
+  .kpi em{font-style:normal;font-size:12px;color:var(--mut)}
+  .in{color:var(--ok)}.out{color:var(--err)}
+  .card{background:#fff;border:1px solid var(--bd);border-radius:8px}
+  .tabs{display:flex;gap:2px;border-bottom:1px solid var(--bd);padding:0 12px}
+  .tabs a{padding:11px 14px;cursor:pointer;color:var(--mut);border-bottom:3px solid transparent;margin-bottom:-1px}
+  .tabs a.on{color:#181818;font-weight:600;border-color:var(--blue)}
+  .body{padding:14px}
+  table{width:100%;border-collapse:collapse}
+  th,td{text-align:left;padding:8px;border-bottom:1px solid var(--bd);font-size:13px}
+  th{color:var(--mut);font-size:11px;text-transform:uppercase}td.r,th.r{text-align:right}
+  tr.row{cursor:pointer}tr.row:hover{background:#eef4ff}
+  .pill{padding:1px 9px;border-radius:12px;color:#fff;font-size:11px}.pend{background:var(--mut)}.venc{background:var(--err)}.real{background:var(--ok)}
+  .tag{font-size:11px;padding:1px 8px;border-radius:10px;background:#fdf0e0;color:var(--warn)}
+  .mt{margin-bottom:14px}.mt .h{display:flex;justify-content:space-between;font-size:13px;margin-bottom:3px}
+  .track{height:12px;background:#ececec;border-radius:6px;position:relative;overflow:hidden}
+  .track .p{position:absolute;inset:0 auto 0 0;background:#c9defa}
+  .track .r{position:absolute;inset:0 auto 0 0;background:var(--blue)}
+  .track.over .r{background:var(--err)}.track.warn .r{background:var(--warn)}
+  .sw{display:flex;align-items:center;gap:6px;font-size:12px;color:var(--mut);margin-top:4px;cursor:pointer}
+  .sw i{width:28px;height:16px;border-radius:8px;background:#c9c7c5;position:relative;display:inline-block}
+  .sw i:after{content:"";position:absolute;top:2px;left:2px;width:12px;height:12px;border-radius:50%;background:#fff;transition:.15s}
+  .sw.on i{background:var(--blue)}.sw.on i:after{left:14px}
+  small.m{color:var(--mut)}
+.grid{display:grid;grid-template-columns:2fr 1fr;gap:14px;align-items:start}
+  .side .card{margin-bottom:14px}.side .card .body{padding:12px}
+  .ch{display:flex;justify-content:space-between;align-items:center;padding:11px 14px 0}.ch b{font-size:14px}
+  .ch a{color:var(--blue);font-size:12px;cursor:pointer}
+  .prev{cursor:pointer}.prev:hover{box-shadow:0 1px 8px rgba(0,0,0,.18)}
+  .li{display:flex;justify-content:space-between;padding:5px 0;border-bottom:1px solid var(--bd);font-size:13px}.li:last-child{border:0}
+  .two{display:grid;grid-template-columns:1fr 1fr;gap:6px 26px}
+  .back{margin-bottom:10px}
+  </style>
+</head>
+<body>
+<div class="nav"><b>Axon</b><span class="on">Início</span><span>Lançamentos</span><span>Contratos</span><span>Conciliação</span><span>Conta Bancária</span><span>Cartão de Crédito</span><span>Titulares</span><span>Metas</span><span>Relatórios</span></div>
+<div class="page">
+<div class="note">Mockup EP-07 (v3). Dados fictícios; hoje = 30/09/2026. Troque Titular e Mês, clique em Vencidos/A vencer, use o interruptor do saldo, e clique no card de <b>Metas</b> (embaixo) para ver o completo.</div>
+
+<div class="top">
+  <select id="tt" onchange="draw()"><option value="Todos">Todos (família)</option><option>Michel Lopes</option><option>Gisele</option><option>Empresa X</option></select>
+  <a class="lk" id="lt" onclick="alert('Abre a record page do Titular com listas: Conexões, Contas, Cartões, Contratos, Lançamentos e Metas')">abrir titular ↗</a>
+  <span class="sp"></span>
+  <button onclick="mv(-1)">◀</button><select id="mm" onchange="draw()"><option value="2026-08">Agosto/2026</option><option value="2026-09" selected>Setembro/2026</option><option value="2026-10">Outubro/2026</option><option value="2026-11">Novembro/2026</option></select><button onclick="mv(1)">▶</button>
+  <button class="pri" onclick="nw('Despesa')">+ Despesa</button><button class="pri" onclick="nw('Receita')">+ Receita</button>
+</div>
+
+<div class="kpis" id="kp"></div>
+
+<div id="main">
+<div class="grid">
+  <div class="card"><div class="ch"><b id="lh">Lançamentos do mês</b><a onclick="alert('Abre a tab Lançamentos')">ver todos ↗</a></div><div class="body" id="bd"></div></div>
+  <div class="side">
+    <div class="card prev" onclick="alert('Abre a tab Conciliação')"><div class="ch"><b>A conciliar <span class="badge">7</span></b><a>abrir ↗</a></div><div class="body" id="cc"></div></div>
+    <div class="card prev" onclick="alert('Abre a tab Conta Bancária / Cartão de Crédito')"><div class="ch"><b>Contas e cartões</b><a>abrir ↗</a></div><div class="body" id="ac"></div></div>
+  </div>
+</div>
+<div class="card prev" style="margin-top:14px" onclick="showMetas()"><div class="ch"><b id="mh">Metas</b><a>ver completo ↗</a></div><div class="body" id="mp"></div></div>
+</div>
+<div id="metas" style="display:none">
+  <div class="back"><button onclick="back()">◀ Voltar ao início</button></div>
+  <div class="card"><div class="ch"><b id="mf">Metas</b><a onclick="alert('Abre a tab Metas (list view com edição rápida)')">gerenciar metas ↗</a></div><div class="body" id="mb"></div></div>
+</div>
+</div>
+
+<script>
+const $=id=>document.getElementById(id);
+const TODAY="2026-09-30";
+const D=[
+ {t:"Michel Lopes",d:"2026-09-05",n:"Conta de luz",c:"Moradia",tp:"D",v:212.40,st:"R"},
+ {t:"Michel Lopes",d:"2026-09-10",n:"Assinatura internet",c:"Serviços",tp:"D",v:119.90,st:"R"},
+ {t:"Michel Lopes",d:"2026-09-25",n:"Plano de saúde",c:"Saúde",tp:"D",v:640,st:"P"},
+ {t:"Michel Lopes",d:"2026-09-27",n:"Fatura Mercado Pago 09/2026",c:"Cartão",tp:"D",v:1880,st:"P",fat:1},
+ {t:"Michel Lopes",d:"2026-09-12",n:"Notebook 3/10",c:"Compras",tp:"D",v:1200,st:"R",card:1},
+ {t:"Michel Lopes",d:"2026-09-29",n:"Consultoria Cliente EU (€ 4.928,00)",c:"Serviços",tp:"R",v:28935.20,st:"R"},
+ {t:"Michel Lopes",d:"2026-09-15",n:"Aluguel apto 12",c:"Aluguel",tp:"R",v:2300,st:"R"},
+ {t:"Michel Lopes",d:"2026-10-05",n:"Conta de água",c:"Moradia",tp:"D",v:98.40,st:"P"},
+ {t:"Michel Lopes",d:"2026-10-10",n:"Financiamento do carro 2/24",c:"Transporte",tp:"D",v:1840,st:"P"},
+ {t:"Michel Lopes",d:"2026-10-12",n:"Notebook 4/10",c:"Compras",tp:"D",v:1200,st:"P",card:1},
+ {t:"Michel Lopes",d:"2026-10-15",n:"Consultoria Cliente BR (set)",c:"Serviços",tp:"R",v:2500,st:"P"},
+ {t:"Michel Lopes",d:"2026-10-15",n:"Aluguel apto 12",c:"Aluguel",tp:"R",v:2300,st:"P"},
+ {t:"Michel Lopes",d:"2026-10-30",n:"Consultoria Cliente EU (€ 4.928,00)",c:"Serviços",tp:"R",v:28935.20,st:"P"},
+ {t:"Gisele",d:"2026-09-08",n:"Mercado do mês",c:"Alimentação",tp:"D",v:980,st:"R"},
+ {t:"Gisele",d:"2026-09-28",n:"Academia",c:"Saúde",tp:"D",v:150,st:"P"},
+ {t:"Gisele",d:"2026-10-05",n:"Salário",c:"Salário",tp:"R",v:4200,st:"P"},
+ {t:"Gisele",d:"2026-10-09",n:"Curso de inglês",c:"Educação",tp:"D",v:320,st:"P"},
+ {t:"Empresa X",d:"2026-09-18",n:"Contabilizei",c:"Serviços",tp:"D",v:459,st:"R"},
+ {t:"Empresa X",d:"2026-10-18",n:"Imposto (DAS)",c:"Impostos",tp:"D",v:502.51,st:"P"}];
+const SALDO={"Michel Lopes":4230.55,"Gisele":1800.00,"Empresa X":2150.00};
+const ACC={"Michel Lopes":[["077 Banco Inter ••1234","Saldo","R$ 4.230,55"],["323 Mercado Pago ••5678","Limite disp.","R$ 6.120,00"]],"Gisele":[["341 Itaú ••4321","Saldo","R$ 1.800,00"]],"Empresa X":[["301 Contabilizei Bank","Saldo","R$ 2.150,00"]]};
+// metas de despesa: total opcional + por categoria. "Família" = meta global.
+const META={"Família":{total:9000,c:{Moradia:1500,Alimentação:2500,Saúde:1500}},
+ "Michel Lopes":{total:7000,c:{Moradia:500,Saúde:700,Compras:1500,Transporte:2000,Serviços:300}},
+ "Gisele":{total:2500,c:{Alimentação:1200,Saúde:200,Educação:300}},"Empresa X":{total:1100,c:{Serviços:500,Impostos:600}}};
+let filt="",cur="l",cartaoOn=false;
+const brl=v=>"R$ "+v.toLocaleString("pt-BR",{minimumFractionDigits:2});
+const af=x=>!x.card||x.fat;
+const sum=a=>a.reduce((s,x)=>s+x.v,0);
+function mv(n){const s=$("mm"),i=s.selectedIndex+n;if(i>=0&&i<s.options.length){s.selectedIndex=i;draw()}}
+function nw(t){alert("Abre o formulário padrão de novo Lançamento com Tipo = "+t+" e Titular = "+$("tt").value)}
+function setF(f){filt=filt==f?"":f;draw()}
+function showMetas(){$('main').style.display='none';$('kp').style.display='none';document.querySelector('.top').style.display='none';$('metas').style.display='block';drawMetas()}
+function back(){$('main').style.display='block';$('kp').style.display='grid';document.querySelector('.top').style.display='flex';$('metas').style.display='none'}
+function metasDe(T){ // devolve {total, c}
+ if(T!="Todos")return META[T]||{total:0,c:{}};
+ const c={};Object.entries(META).filter(([k])=>k!="Família").forEach(([k,m])=>Object.entries(m.c).forEach(([cat,v])=>c[cat]=(c[cat]||0)+v));
+ Object.assign(c,META["Família"].c); // meta da família prevalece na categoria
+ return {total:META["Família"].total,c}}
+function draw(){
+ const T=$("tt").value,M=$("mm").value;
+ const rows=D.filter(x=>T=="Todos"||x.t==T), inM=rows.filter(x=>x.d.startsWith(M));
+ const venc=rows.filter(x=>x.st=="P"&&af(x)&&x.d<TODAY);
+ const aven=inM.filter(x=>x.st=="P"&&af(x)&&x.d>=TODAY);
+ const rec=inM.filter(x=>x.tp=="R"),des=inM.filter(x=>x.tp=="D"&&af(x));
+ const recR=sum(rec.filter(x=>x.st=="R")),desR=sum(des.filter(x=>x.st=="R"));
+ const saldoAtual=T=="Todos"?Object.values(SALDO).reduce((a,b)=>a+b,0):SALDO[T];
+ const pend=rows.filter(x=>x.st=="P"&&af(x)&&x.d<=M+"-31");
+ const cartao=sum(inM.filter(x=>x.card&&x.st=="P"));
+ const saldo=saldoAtual+sum(pend.filter(x=>x.tp=="R"))-sum(pend.filter(x=>x.tp=="D"))-(cartaoOn?cartao:0);
+ $("kp").innerHTML=`
+  <div class="kpi click ${filt=="v"?'on':''}" onclick="setF('v')"><small>Vencidos</small><b class="out">${brl(sum(venc))}</b><em>${venc.length} em aberto</em></div>
+  <div class="kpi click ${filt=="a"?'on':''}" onclick="setF('a')"><small>A vencer no mês</small><b>${brl(sum(aven))}</b><em>${aven.length} lançamento(s)</em></div>
+  <div class="kpi"><small>Receitas · Despesas</small><b><span class="in">${brl(recR)}</span></b><em>despesas <span class="out">${brl(desR)}</span> · previsto ${brl(sum(rec))} / ${brl(sum(des))}</em></div>
+  <div class="kpi"><small>Saldo final previsto</small><b class="${saldo<0?'out':'in'}">${brl(saldo)}</b>
+   <div class="sw ${cartaoOn?'on':''}" onclick="cartaoOn=!cartaoOn;draw()"><i></i>incluir cartão previsto (${brl(cartao)})</div></div>`;
+ $("lt").style.display=T=="Todos"?"none":"inline";
+ // lançamentos
+ let L=inM,lab="Lançamentos do mês";
+ if(filt=="v"){L=venc;lab="Vencidos (todos os meses)"}else if(filt=="a"){L=aven;lab="A vencer no mês"}
+ $("lh").textContent=lab+" ("+L.length+")";
+ $("bd").innerHTML=`<table><tr><th>Venc.</th><th>Descrição</th><th>Status</th><th class="r">Valor</th></tr>`+
+  [...L].sort((a,b)=>a.d<b.d?-1:1).map(x=>{const st=x.st=="R"?'<span class="pill real">Realizado</span>':(x.d<TODAY?'<span class="pill venc">Vencido</span>':'<span class="pill pend">Pendente</span>');
+   return `<tr class="row" onclick="alert('Abre o Lançamento${x.fat?' (com o detalhe da fatura)':''}')"><td>${x.d.slice(8)}/${x.d.slice(5,7)}</td><td>${x.n}${x.card?' <span class="tag">cartão</span>':''}${T=="Todos"?' <small class="m">· '+x.t.split(" ")[0]+'</small>':''}</td><td>${st}</td><td class="r ${x.tp=="R"?'in':'out'}">${x.tp=="R"?'+':'−'} ${brl(x.v)}</td></tr>`}).join("")+`</table>`+(filt?'<div style="font-size:12px;color:var(--mut);margin-top:6px">Clique de novo no indicador para limpar o filtro.</div>':'');
+ // a conciliar (prévia)
+ $("cc").innerHTML=[["PIX Recebido — Cliente EU","+ 28.935,20","sugestão ✔"],["Pagamento de fatura cartão","− 1.880,00","sugestão ✔"],["Transferência entre contas","− 500,00","sem par"]].map(x=>`<div class="li"><span>${x[0]}<br><small class="m">${x[2]}</small></span><span>${x[1]}</span></div>`).join("")+`<div style="font-size:12px;color:var(--mut);margin-top:6px">+ 4 outras</div>`;
+ // contas (prévia)
+ const tt=T=="Todos"?Object.keys(ACC):[T];
+ $("ac").innerHTML=tt.map(k=>ACC[k].map(a=>`<div class="li"><span>${a[0]}${T=="Todos"?'<br><small class="m">'+k+'</small>':''}</span><span>${a[2]}<br><small class="m">${a[1]}</small></span></div>`).join("")).join("");
+ drawPrevMetas(des,desR,T);
+}
+function barM(nome,r,p,meta){const pr=meta?r/meta*100:0,pp=meta?p/meta*100:0;const cls=!meta?'':pr>100?'over':pp>100?'warn':'';
+ return `<div class="mt"><div class="h"><span>${nome}${pr>100?' <b class="out">meta estourada</b>':pp>100?' <b style="color:var(--warn)">previsto acima da meta</b>':''}</span><span>${brl(r)} <small class="m">de ${meta?brl(meta):'— (sem meta)'}${meta?' · '+Math.round(pr)+'%':''}</small></span></div>
+ <div class="track ${cls}"><div class="p" style="width:${Math.min(100,pp)}%"></div><div class="r" style="width:${Math.min(100,pr)}%"></div></div></div>`}
+function catsDe(des,T){const m=metasDe(T),cats={};
+ des.forEach(x=>{cats[x.c]=cats[x.c]||{p:0,r:0};cats[x.c].p+=x.v;if(x.st=="R")cats[x.c].r+=x.v});
+ Object.keys(m.c).forEach(c=>{cats[c]=cats[c]||{p:0,r:0}});return {m,cats}}
+function drawPrevMetas(des,desR,T){
+ const {m,cats}=catsDe(des,T);const nome=T=="Todos"?"Família":T;
+ $("mh").textContent="Metas de despesa — "+nome;
+ // prévia: total + 3 categorias com maior uso da meta
+ const top=Object.entries(cats).filter(([k])=>m.c[k]).sort((a,b)=>(b[1].p/m.c[b[0]])-(a[1].p/m.c[a[0]])).slice(0,3);
+ $("mp").innerHTML=`<div class="two"><div>${barM("Total de despesas",desR,sum(des),m.total)}</div><div>`+top.slice(0,1).map(([k,c])=>barM(k,c.r,c.p,m.c[k])).join("")+`</div>`+top.slice(1).map(([k,c])=>`<div>${barM(k,c.r,c.p,m.c[k])}</div>`).join("")+`</div>`;
+}
+function drawMetas(){
+ const T=$("tt").value,M=$("mm").value;
+ const des=D.filter(x=>(T=="Todos"||x.t==T)&&x.d.startsWith(M)&&x.tp=="D"&&af(x));
+ const desR=sum(des.filter(x=>x.st=="R"));const {m,cats}=catsDe(des,T);
+ $("mf").textContent="Metas de despesa — "+(T=="Todos"?"Família":T)+" · "+$("mm").selectedOptions[0].text;
+ $("mb").innerHTML=barM("Total de despesas",desR,sum(des),m.total)+`<hr style="border:0;border-top:1px solid var(--bd);margin:14px 0">`+
+  Object.entries(cats).sort((a,b)=>b[1].r-a[1].r).map(([k,c])=>barM(k,c.r,c.p,m.c[k]||0)).join("")+
+  `<div style="font-size:12px;color:var(--mut)">Barra escura = realizado · clara = previsto · 100% = meta${T=="Todos"?' · em "Todos" vale a meta da Família; sem ela, a soma das metas dos titulares':''}.</div>`;
+}
+draw();
+</script>
+</body>
+</html>

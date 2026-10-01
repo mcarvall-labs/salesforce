@@ -1,0 +1,137 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<title>Mockup EP-06 — Conciliação</title>
+<style>
+  :root{--blue:#0176d3;--bg:#f3f3f3;--bd:#dddbda;--mut:#706e6b;--ok:#2e844a;--err:#ba0517;--warn:#dd7a01}
+  *{box-sizing:border-box}
+  body{margin:0;font:14px/1.4 -apple-system,Segoe UI,Arial,sans-serif;background:var(--bg);color:#181818}
+  .nav{background:#fff;border-bottom:3px solid var(--blue);display:flex;align-items:center;gap:4px;padding:0 16px;height:48px}
+  .nav b{margin-right:16px;color:var(--blue)}
+  .nav span{padding:14px 12px;color:#b0adab}.nav span.on{color:#181818;font-weight:600;border-bottom:3px solid var(--blue);margin-bottom:-3px}
+  .page{max-width:1100px;margin:20px auto;padding:0 16px}
+  .note{background:#fff8e1;border:1px solid #f0d98c;padding:8px 12px;border-radius:4px;font-size:12px;margin-bottom:16px}
+  .card{background:#fff;border:1px solid var(--bd);border-radius:6px;padding:14px;margin-bottom:14px}
+  h3{margin:0 0 8px;font-size:15px}
+  table{width:100%;border-collapse:collapse}
+  th,td{text-align:left;padding:7px 8px;border-bottom:1px solid var(--bd);font-size:13px}
+  th{color:var(--mut);font-size:11px;text-transform:uppercase}td.r,th.r{text-align:right}
+  tr.row{cursor:pointer}tr.row:hover{background:#eef4ff}tr.sel{background:#d8e9ff!important}
+  tr.dis{opacity:.35;cursor:not-allowed}
+  .in{color:var(--ok)}.out{color:var(--err)}
+  button,select{font:inherit;padding:6px 12px;border:1px solid var(--bd);border-radius:4px;background:#fff;color:var(--blue);cursor:pointer}
+  button.pri{background:var(--blue);color:#fff;border-color:var(--blue)}button:disabled{opacity:.45;cursor:not-allowed}
+  .bar{display:flex;gap:10px;align-items:center;flex-wrap:wrap;margin-bottom:12px}
+  .sug{background:#e7f6ec;border:1px solid #b9dfc6;border-radius:6px;padding:10px 12px;margin-bottom:12px;display:flex;justify-content:space-between;align-items:center}
+  .cols{display:grid;grid-template-columns:1fr 1fr;gap:14px}
+  .tag{font-size:11px;padding:1px 8px;border-radius:10px;background:#eef4ff;color:var(--blue)}
+  .tag.card{background:#fdf0e0;color:var(--warn)}.tag.fat{background:#efe7fa;color:#6b3fa0}
+  .match{background:#e7f6ec}
+  .msg{margin-top:10px;padding:8px 12px;border-radius:4px;background:#eef4ff;font-size:13px;min-height:20px}
+  small{color:var(--mut)}
+.ov{position:fixed;inset:0;background:rgba(0,0,0,.45);display:flex;align-items:flex-start;justify-content:center;padding:30px;overflow:auto}.ov>div{background:#fff;border-radius:8px;padding:18px;width:640px}.hide{display:none}a.lnk{color:var(--blue);cursor:pointer;text-decoration:underline;margin-left:6px;font-size:12px}.kv{display:flex;gap:26px;flex-wrap:wrap;margin-bottom:10px}.kv small{display:block;font-size:11px;text-transform:uppercase}</style>
+</head>
+<body>
+<div class="nav"><b>Axon</b><span>Início</span><span>Lançamentos</span><span>Contratos</span><span>Conta Bancária</span><span>Cartão de Crédito</span><span class="on">Conciliação</span><span>Titulares</span></div>
+<div class="page">
+<div class="note">Mockup de referência (EP-06). Dados fictícios. Use os filtros (descrição, valor, tipo) para apontar você mesmo. Clique em um lançamento: só as transações compatíveis ficam ativas (cartão × cartão, conta × conta; fatura × conta). Depois clique em <b>Conciliar</b>.</div>
+
+<div class="card">
+  <div class="bar">
+    <label>Titular <select><option>Michel Lopes</option><option>Todos</option></select></label>
+    <label>Conta/Cartão <select><option>Todos</option></select></label>
+    <label>Mês <select><option>Setembro/2026</option></select></label>
+    <input id="fq" placeholder="Buscar descrição…" oninput="draw()" style="padding:6px;border:1px solid #dddbda;border-radius:4px;width:170px"><input id="fmin" placeholder="Valor mín." oninput="draw()" style="padding:6px;border:1px solid #dddbda;border-radius:4px;width:90px"><input id="fmax" placeholder="Valor máx." oninput="draw()" style="padding:6px;border:1px solid #dddbda;border-radius:4px;width:90px"><label>Tipo <select id="ft" onchange="draw()"><option value="">Todos</option><option value="d">Despesa</option><option value="r">Receita</option></select></label><span style="margin-left:auto"></span>
+    <button class="pri" id="bs" onclick="bulk()">Conciliar sugeridos (6)</button>
+  </div>
+  <div class="sug" id="sg">✔ <span><b>6 sugestões</b> (valor igual, até 7 dias; moedas diferentes com tolerância de 5 %, mesma moeda valor igual). Linhas em verde nas duas listas.</span><span></span></div>
+  <div class="cols">
+    <div><h3>Lançamentos pendentes <small id="nl"></small></h3><table id="L"></table></div>
+    <div><h3>Transações não conciliadas <small id="nt"></small></h3><table id="T"></table></div>
+  </div>
+  <div class="bar" style="margin-top:12px">
+    <button class="pri" id="bc" onclick="conc()" disabled>Conciliar</button>
+    <button id="bi" onclick="ign()" disabled>Ignorar transação</button>
+    <button id="bn" onclick="create()" disabled>Criar lançamento a partir da transação</button>
+    <button onclick="undo()">Desconciliar último</button>
+  </div>
+  <div class="msg" id="m">Selecione um lançamento e/ou uma transação.</div>
+</div>
+
+<div class="card">
+  <h3>Regras visíveis na tela</h3>
+  <ul style="margin:0;padding-left:18px;color:#444;font-size:13px">
+    <li>Lançamento <span class="tag card">Cartão</span> só concilia com transação <span class="tag card">Cartão</span>; sem cartão só com transação da <span class="tag">Conta</span>.</li>
+    <li>O lançamento da <span class="tag fat">Fatura</span> (uma despesa por fatura) concilia com o pagamento na <span class="tag">Conta</span>.</li>
+    <li>Compras no cartão viram Realizadas, mas <b>não afetam caixa</b>: quem afeta é a fatura.</li>
+  </ul>
+</div>
+</div>
+<div class="ov hide" id="ov" onclick="if(event.target==this)closeOv()"><div>
+  <div style="display:flex;justify-content:space-between"><h3 style="margin:0">Detalhes da fatura</h3><button onclick="closeOv()">Fechar</button></div>
+  <p style="color:#706e6b;font-size:12px;margin:2px 0 10px">Componente axfInvoiceTransactions (também usado na lista de faturas do cartão)</p>
+  <div class="kv"><div><small>Cartão</small>323 Mercado Pago · ••5678</div><div><small>Período</small>2026-09</div><div><small>Fechamento</small>20/09/2026</div><div><small>Vencimento</small>27/09/2026</div><div><small>Status</small>Fechada</div><div><small>Total (BRL)</small><b>R$ 1.880,00</b></div></div>
+  <table><tr><th>Data</th><th>Descrição</th><th class="r">Valor original</th><th class="r">Em BRL (fatura)</th></tr>
+   <tr class="row"><td>12/09</td><td>NOTEBOOK LOJA X 03/10</td><td class="r">R$ 1.200,00</td><td class="r out">− 1.200,00</td></tr>
+   <tr class="row"><td>18/09</td><td>SUPERMERCADO Y</td><td class="r">R$ 410,00</td><td class="r out">− 410,00</td></tr>
+   <tr class="row"><td>15/09</td><td>STREAMING SERVICE (EUA)</td><td class="r">US$ 29,90</td><td class="r out">− 170,00</td></tr>
+   <tr class="row"><td>19/09</td><td>DOMÍNIO / HOSPEDAGEM (EUA)</td><td class="r">US$ 18,90</td><td class="r out">− 100,00</td></tr></table>
+  <p style="color:#706e6b;font-size:12px">Clique em uma transação para abrir o registro. O total da fatura e a despesa única são sempre em BRL.</p>
+</div></div>
+
+<script>
+function closeOv(){document.getElementById('ov').classList.add('hide')}
+function openOv(){document.getElementById('ov').classList.remove('hide')}
+const $=id=>document.getElementById(id);
+// kind: conta | cartao | fatura ; cur: moeda
+let L=[
+ {id:1,d:"05/09",n:"Conta de luz",k:"conta",v:-212.40,cur:"BRL"},
+ {id:2,d:"10/09",n:"Assinatura internet",k:"conta",v:-119.90,cur:"BRL"},
+ {id:3,d:"12/09",n:"Notebook 3/10",k:"cartao",v:-1200.00,cur:"BRL"},
+ {id:4,d:"18/09",n:"Supermercado",k:"cartao",v:-420.00,cur:"BRL"},
+ {id:5,d:"27/09",n:"Fatura Mercado Pago 09/2026",k:"fatura",v:-1880.00,cur:"BRL",link:1},
+ {id:8,d:"15/09",n:"Streaming (US$ 29,90)",k:"cartao",v:-29.90,cur:"USD",brl:170.00},
+ {id:6,d:"30/09",n:"Consultoria Cliente EU (€ 4.928,00)",k:"conta",v:4928.00,cur:"EUR",brl:28935.20},
+ {id:7,d:"15/10",n:"Consultoria Cliente BR",k:"conta",v:2500.00,cur:"BRL"}];
+let T=[
+ {id:11,d:"06/09",n:"Pagamento Sabesp/Copel",k:"conta",v:-212.40},
+ {id:12,d:"11/09",n:"Assinatura internet",k:"conta",v:-119.90},
+ {id:13,d:"12/09",n:"NOTEBOOK LOJA X 03/10",k:"cartao",v:-1200.00},
+ {id:14,d:"18/09",n:"SUPERMERCADO Y",k:"cartao",v:-410.00},
+ {id:18,d:"15/09",n:"STREAMING SERVICE (EUA) US$ 29,90",k:"cartao",v:-29.90,cur:"USD",brl:170.00},
+ {id:15,d:"26/09",n:"Pagamento de fatura cartão",k:"conta",v:-1880.00},
+ {id:16,d:"29/09",n:"Recebimento do exterior",k:"conta",v:28935.20},
+ {id:17,d:"20/09",n:"Transferência entre contas",k:"conta",v:-500.00}];
+const sugg={1:11,2:12,3:13,5:15,6:16,8:18}; // id lanç -> id trans
+let sl=null,st=null,hist=[];
+function ok(l,t){if(l.k=="cartao")return t.k=="cartao";return t.k=="conta"}
+function lab(k){return k=="cartao"?'<span class="tag card">Cartão</span>':k=="fatura"?'<span class="tag fat">Fatura</span>':'<span class="tag">Conta</span>'}
+function money(v,c){const s=Math.abs(v).toLocaleString("pt-BR",{minimumFractionDigits:2});return (c=="EUR"?"€ ":c=="USD"?"US$ ":"R$ ")+s}
+function sugLines(){return Object.entries(sugg).filter(([l,t])=>L.some(x=>x.id==l)&&T.some(x=>x.id==t))}
+function num(v){return parseFloat(String(v).replace(',','.'))}
+function fl(a){const q=$('fq').value.toLowerCase(),mn=num($('fmin').value),mx=num($('fmax').value),t=$('ft').value;return a.filter(x=>{const v=Math.abs(x.brl||x.v);return (!q||x.n.toLowerCase().includes(q))&&(isNaN(mn)||v>=mn)&&(isNaN(mx)||v<=mx)&&(!t||(t=='d')==(x.v<0))})}
+function draw(){
+ const S=sugLines();const ls=new Set(S.map(x=>+x[0])),ts=new Set(S.map(x=>+x[1]));
+ $("L").innerHTML='<tr><th>Venc.</th><th>Descrição</th><th>Tipo</th><th class="r">Valor</th></tr>'+fl(L).map(x=>`<tr class="row ${ls.has(x.id)?'match':''} ${sl==x.id?'sel':''}" onclick="pl(${x.id})"><td>${x.d}</td><td>${x.n}${x.link?'<a class="lnk" onclick="event.stopPropagation();openOv()">ver fatura ↗</a>':''}</td><td>${lab(x.k)}</td><td class="r ${x.v<0?'out':'in'}">${x.v<0?'−':'+'} ${money(x.v,x.cur)}</td></tr>`).join("");
+ const cur=L.find(x=>x.id==sl);
+ $("T").innerHTML='<tr><th>Data</th><th>Descrição</th><th>Origem</th><th class="r">Valor</th></tr>'+fl(T).map(x=>{const dis=cur&&!ok(cur,x);return `<tr class="row ${dis?'dis':''} ${ts.has(x.id)?'match':''} ${st==x.id?'sel':''}" onclick="${dis?'':`pt(${x.id})`}"><td>${x.d}</td><td>${x.n}</td><td>${lab(x.k)}</td><td class="r ${x.v<0?'out':'in'}">${x.v<0?'−':'+'} ${x.cur=="USD"?"US$ ":"R$ "}${Math.abs(x.v).toLocaleString("pt-BR",{minimumFractionDigits:2})}${x.cur=="USD"?`<br><small>= R$ ${x.brl.toLocaleString("pt-BR",{minimumFractionDigits:2})} na fatura</small>`:""}</td></tr>`}).join("");
+ $("nl").textContent="("+L.length+")";$("nt").textContent="("+T.length+")";
+ $("bs").textContent=`Conciliar sugeridos (${S.length})`;$("bs").disabled=!S.length;
+ $("sg").style.display=S.length?"flex":"none";
+ $("bc").disabled=!(sl&&st);$("bi").disabled=!st;$("bn").disabled=!st||!!sl}
+function pl(id){sl=sl==id?null:id;if(sl&&st){const c=L.find(x=>x.id==sl),t=T.find(x=>x.id==st);if(!ok(c,t))st=null}
+ const s=sugg[sl];if(sl&&s&&T.some(x=>x.id==s))st=s;draw();msg()}
+function pt(id){st=st==id?null:id;draw();msg()}
+function msg(){const c=L.find(x=>x.id==sl),t=T.find(x=>x.id==st);
+ $("m").textContent=c&&t?`Conciliar "${c.n}" com "${t.n}"${c.cur=="EUR"?" (EUR × BRL: valor convertido dentro de 5 % ✔)":""}.`:"Selecione um lançamento e/ou uma transação."}
+function conc(){const c=L.find(x=>x.id==sl),t=T.find(x=>x.id==st);hist.push({c,t});L=L.filter(x=>x!=c);T=T.filter(x=>x!=t);sl=st=null;
+ $("m").textContent=`✔ "${c.n}" → Realizado em ${t.d}/2026; transação Conciliada.`+(c.k=="cartao"?" (compra no cartão: não afeta caixa)":"")+(c.brl?` Valor realizado (BRL): ${t.v.toLocaleString("pt-BR",{minimumFractionDigits:2})}.`:"");draw()}
+function bulk(){sugLines().forEach(([l,t])=>{const c=L.find(x=>x.id==l),tt=T.find(x=>x.id==t);if(c&&tt){hist.push({c,t:tt});L=L.filter(x=>x!=c);T=T.filter(x=>x!=tt)}});sl=st=null;$("m").textContent="✔ Sugestões conciliadas.";draw()}
+function ign(){const t=T.find(x=>x.id==st);T=T.filter(x=>x!=t);st=null;$("m").textContent=`Transação "${t.n}" marcada como Ignorada.`;draw()}
+function create(){const t=T.find(x=>x.id==st);T=T.filter(x=>x!=t);st=null;$("m").textContent=`✔ Lançamento Realizado criado a partir de "${t.n}" (${t.v<0?"Despesa":"Receita"}), já conciliado. Classifique a categoria.`;draw()}
+function undo(){const h=hist.pop();if(!h){$("m").textContent="Nada para desconciliar.";return}L.unshift(h.c);T.unshift(h.t);$("m").textContent=`Desconciliado: "${h.c.n}" volta a Pendente.`;draw()}
+draw();
+</script>
+</body>
+</html>
