@@ -8,6 +8,12 @@ private class ALT_CLS_StatementImportTest {
     '<STMTTRN>\n<DTPOSTED>xx\n<TRNAMT>abc\n<FITID>A4\n</STMTTRN>\n' +
     '</BANKTRANLIST></STMTRS></STMTTRNRS></BANKMSGSRSV1></OFX>';
 
+  // Record type visibility cannot be granted by DML in a test, so records are created without
+  // one and the manual-only check is exercised directly in dedicated tests.
+  static {
+    ALT_CLS_StatementImport.enforceRecordType = false;
+  }
+
   @TestSetup
   static void setup() {
     ALT_CLS_SyncTestUser.create(
@@ -179,17 +185,6 @@ private class ALT_CLS_StatementImportTest {
     }
   }
 
-  @IsTest
-  static void pluggyRecordTypeIsRejected() {
-    try {
-      ALT_CLS_StatementImport.requireManual('AXF_Pluggy');
-      System.assert(false, 'Expected ImportException');
-    } catch (ALT_CLS_StatementImport.ImportException e) {
-      System.assert(e.getMessage().contains('manual'));
-    }
-    ALT_CLS_StatementImport.requireManual('AXF_Manual');
-  }
-
   private static final String CSV =
     'Data;Descrição;Valor\n' +
     '10/09/2026;Mercado;-35,50\n' +
@@ -271,5 +266,118 @@ private class ALT_CLS_StatementImportTest {
         System.assertNotEquals(null, e.getMessage());
       }
     }
+  }
+
+  @IsTest
+  static void onlyManualRecordTypeIsAccepted() {
+    ALT_CLS_StatementImport.enforceRecordType = true;
+    for (String name : new List<String>{ null, '', 'AXF_Pluggy', 'Other' }) {
+      try {
+        ALT_CLS_StatementImport.requireManual(name);
+        System.assert(false, 'Expected ImportException for ' + name);
+      } catch (ALT_CLS_StatementImport.ImportException e) {
+        System.assert(e.getMessage().contains('manual'));
+      }
+    }
+    System.runAs(new User(Id = UserInfo.getUserId())) {
+      try {
+        new ALT_CLS_StatementImport().preview(manualAccount(), 'a.ofx', OFX);
+        System.assert(false, 'Expected ImportException');
+      } catch (ALT_CLS_StatementImport.ImportException e) {
+        System.assert(e.getMessage().contains('manual'));
+      }
+    }
+  }
+
+  @IsTest
+  static void missingRecordIsRefused() {
+    System.runAs(new User(Id = UserInfo.getUserId())) {
+      Id accountId = manualAccount();
+      delete [SELECT Id FROM AXF_OBJ_BankAccount__c WHERE Id = :accountId];
+      try {
+        new ALT_CLS_StatementImport().preview(accountId, 'a.ofx', OFX);
+        System.assert(false, 'Expected ImportException');
+      } catch (ALT_CLS_StatementImport.ImportException e) {
+        System.assertEquals('Conta ou cartão não encontrado.', e.getMessage());
+      }
+    }
+  }
+
+  @IsTest
+  static void importSkipsLinesAlreadyImportedAndCountsOnlyNewOnes() {
+    System.runAs(new User(Id = UserInfo.getUserId())) {
+      Id accountId = manualAccount();
+      insert new AXF_OBJ_BankAccountTransaction__c(
+        AXF_BAT_MD_BankAccount__c = accountId,
+        AXF_BAT_EXI_PluggyTransactionId__c = 'OFX:' + accountId + ':A1',
+        AXF_BAT_DAT_Date__c = Date.newInstance(2026, 9, 10),
+        AXF_BAT_TXT_Description__c = 'Edited by hand',
+        AXF_BAT_CUR_Amount__c = -1
+      );
+      ALT_CLS_StatementImport.Result r = new ALT_CLS_StatementImport()
+        .importFile(accountId, 'extrato.ofx', OFX);
+      System.assertEquals(true, r.success, r.message);
+      System.assertEquals(1, r.imported);
+      System.assertEquals(
+        'Edited by hand',
+        [
+          SELECT AXF_BAT_TXT_Description__c
+          FROM AXF_OBJ_BankAccountTransaction__c
+          WHERE
+            AXF_BAT_EXI_PluggyTransactionId__c = :('OFX:' + accountId + ':A1')
+        ]
+        .AXF_BAT_TXT_Description__c
+      );
+    }
+  }
+
+  @IsTest
+  static void repeatedFitIdInTheSameFileCountsOnceInPreviewAndImport() {
+    System.runAs(new User(Id = UserInfo.getUserId())) {
+      Id accountId = manualAccount();
+      String twice =
+        '<OFX><STMTTRN>\n<DTPOSTED>20260910\n<TRNAMT>-1\n<FITID>X\n<MEMO>a\n</STMTTRN>' +
+        '<STMTTRN>\n<DTPOSTED>20260910\n<TRNAMT>-1\n<FITID>X\n<MEMO>a\n</STMTTRN></OFX>';
+      ALT_CLS_StatementImport.Preview preview = new ALT_CLS_StatementImport()
+        .preview(accountId, 'a.ofx', twice);
+      System.assertEquals(1, preview.newCount);
+      System.assertEquals(1, preview.duplicateCount);
+      System.assertEquals(
+        1,
+        new ALT_CLS_StatementImport()
+          .importFile(accountId, 'a.ofx', twice)
+          .imported
+      );
+    }
+  }
+
+  @IsTest
+  static void userWithoutAccessCannotImport() {
+    User restricted = new User(
+      Alias = 'axfnoimp',
+      Email = 'axfnoimp@example.com',
+      EmailEncodingKey = 'UTF-8',
+      LastName = 'NoImport',
+      LanguageLocaleKey = 'en_US',
+      LocaleSidKey = 'en_US',
+      ProfileId = [SELECT Id FROM Profile WHERE Name = 'Standard User' LIMIT 1]
+      .Id,
+      TimeZoneSidKey = 'America/Sao_Paulo',
+      Username = 'axfnoimp' + System.currentTimeMillis() + '@example.com'
+    );
+    insert restricted;
+    Id accountId;
+    System.runAs(new User(Id = UserInfo.getUserId())) {
+      accountId = manualAccount();
+    }
+    Boolean refused = false;
+    System.runAs(restricted) {
+      try {
+        new ALT_CLS_StatementImport().importFile(accountId, 'a.ofx', OFX);
+      } catch (Exception e) {
+        refused = true;
+      }
+    }
+    System.assertEquals(true, refused);
   }
 }
