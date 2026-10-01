@@ -95,8 +95,12 @@ public with sharing class ALT_CLS_StatementImport {
     List<Line> lines;
     if (extension == 'ofx') {
       lines = parseOfx(recordId, content);
+    } else if (extension == 'csv') {
+      lines = parseCsv(recordId, content);
     } else {
-      throw new ImportException('Formato não suportado. Use um arquivo OFX.');
+      throw new ImportException(
+        'Formato não suportado. Use um arquivo OFX ou CSV.'
+      );
     }
     if (lines.isEmpty()) {
       throw new ImportException('Nenhuma transação encontrada no arquivo.');
@@ -142,6 +146,128 @@ public with sharing class ALT_CLS_StatementImport {
       lines.add(line);
     }
     return lines;
+  }
+
+  // CSV with the columns date, description and value (header row required; "," or ";").
+  // The key hashes record + date + value + description; identical lines of the same file get an
+  // ordinal so two equal purchases are both kept and importing the file again changes nothing.
+  private List<Line> parseCsv(Id recordId, String content) {
+    List<String> rows = content.split('\\r?\\n');
+    Integer headerIndex = 0;
+    while (headerIndex < rows.size() && String.isBlank(rows[headerIndex])) {
+      headerIndex++;
+    }
+    if (headerIndex == rows.size()) {
+      throw new ImportException('O arquivo está vazio.');
+    }
+    String delimiter = rows[headerIndex].contains(';') ? ';' : ',';
+    List<String> header = splitCsv(rows[headerIndex], delimiter);
+    Integer dateColumn = column(header, new Set<String>{ 'data' });
+    Integer descriptionColumn = column(
+      header,
+      new Set<String>{ 'descricao', 'historico' }
+    );
+    Integer valueColumn = column(header, new Set<String>{ 'valor' });
+    if (dateColumn < 0 || descriptionColumn < 0 || valueColumn < 0) {
+      throw new ImportException(
+        'O CSV deve ter as colunas data, descrição e valor.'
+      );
+    }
+    List<Line> lines = new List<Line>();
+    Map<String, Integer> occurrences = new Map<String, Integer>();
+    for (Integer i = headerIndex + 1; i < rows.size(); i++) {
+      if (String.isBlank(rows[i])) {
+        continue;
+      }
+      List<String> cells = splitCsv(rows[i], delimiter);
+      Line line = new Line();
+      try {
+        line.lineDate = csvDate(cells[dateColumn]);
+        line.description = cells[descriptionColumn];
+        line.amount = csvAmount(cells[valueColumn]);
+        String signature =
+          recordId +
+          '|' +
+          String.valueOf(line.lineDate) +
+          '|' +
+          line.amount +
+          '|' +
+          line.description;
+        Integer ordinal = occurrences.containsKey(signature)
+          ? occurrences.get(signature) + 1
+          : 1;
+        occurrences.put(signature, ordinal);
+        line.key =
+          'CSV:' +
+          EncodingUtil.convertToHex(
+            Crypto.generateDigest(
+              'SHA-256',
+              Blob.valueOf(signature + '|' + ordinal)
+            )
+          );
+      } catch (Exception e) {
+        line.status = INVALID;
+        line.error = 'Linha ' + (i + 1) + ': data ou valor inválido.';
+      }
+      lines.add(line);
+    }
+    return lines;
+  }
+
+  private Integer column(List<String> header, Set<String> names) {
+    for (Integer i = 0; i < header.size(); i++) {
+      String name = header[i]
+        .trim()
+        .toLowerCase()
+        .replace('ç', 'c')
+        .replace('ã', 'a')
+        .replace('ó', 'o')
+        .replace('ú', 'u');
+      if (names.contains(name)) {
+        return i;
+      }
+    }
+    return -1;
+  }
+
+  private List<String> splitCsv(String row, String delimiter) {
+    List<String> cells = new List<String>();
+    String current = '';
+    Boolean quoted = false;
+    for (Integer i = 0; i < row.length(); i++) {
+      String character = row.substring(i, i + 1);
+      if (character == '"') {
+        quoted = !quoted;
+      } else if (character == delimiter && !quoted) {
+        cells.add(current.trim());
+        current = '';
+      } else {
+        current += character;
+      }
+    }
+    cells.add(current.trim());
+    return cells;
+  }
+
+  private Date csvDate(String value) {
+    if (Pattern.matches('\\d{4}-\\d{2}-\\d{2}.*', value)) {
+      return Date.valueOf(value.substring(0, 10));
+    }
+    List<String> parts = value.split('/');
+    return Date.newInstance(
+      Integer.valueOf(parts[2]),
+      Integer.valueOf(parts[1]),
+      Integer.valueOf(parts[0])
+    );
+  }
+
+  // Accepts 1234.56, 1.234,56 and -R$ 35,50.
+  private Decimal csvAmount(String value) {
+    String text = value.replace('R$', '').replace(' ', '');
+    if (text.contains(',')) {
+      text = text.replace('.', '').replace(',', '.');
+    }
+    return Decimal.valueOf(text);
   }
 
   private String tag(String block, String name) {

@@ -189,4 +189,87 @@ private class ALT_CLS_StatementImportTest {
     }
     ALT_CLS_StatementImport.requireManual('AXF_Manual');
   }
+
+  private static final String CSV =
+    'Data;Descrição;Valor\n' +
+    '10/09/2026;Mercado;-35,50\n' +
+    '2026-09-11;"Pix, recebido";1.234,56\n' +
+    '11/09/2026;Café;-5.00\n' +
+    '11/09/2026;Café;-5.00\n' +
+    '\n' +
+    'ontem;Quebrada;abc\n';
+
+  @IsTest
+  static void csvPreviewParsesFormatsAndReportsLineErrors() {
+    System.runAs(new User(Id = UserInfo.getUserId())) {
+      ALT_CLS_StatementImport.Preview preview = new ALT_CLS_StatementImport()
+        .preview(manualAccount(), 'extrato.csv', CSV);
+      System.assertEquals(5, preview.lines.size());
+      System.assertEquals(4, preview.newCount);
+      System.assertEquals(1, preview.errorCount);
+      System.assertEquals(
+        Date.newInstance(2026, 9, 10),
+        preview.lines[0].lineDate
+      );
+      System.assertEquals(-35.5, preview.lines[0].amount);
+      System.assertEquals('Pix, recebido', preview.lines[1].description);
+      System.assertEquals(1234.56, preview.lines[1].amount);
+      System.assertEquals(-5, preview.lines[2].amount);
+      System.assertNotEquals(preview.lines[2].key, preview.lines[3].key);
+      System.assert(preview.lines[4].error.contains('Linha 7'));
+    }
+  }
+
+  @IsTest
+  static void csvImportIsIdempotentIncludingEqualLines() {
+    System.runAs(new User(Id = UserInfo.getUserId())) {
+      Id accountId = manualAccount();
+      ALT_CLS_StatementImport.Result first = new ALT_CLS_StatementImport()
+        .importFile(accountId, 'extrato.csv', CSV);
+      ALT_CLS_StatementImport.Result second = new ALT_CLS_StatementImport()
+        .importFile(accountId, 'extrato.csv', CSV);
+      System.assertEquals(true, first.success, first.message);
+      System.assertEquals(true, second.success, second.message);
+      System.assertEquals(4, first.imported);
+      System.assertEquals(
+        4,
+        [SELECT COUNT() FROM AXF_OBJ_BankAccountTransaction__c]
+      );
+      System.assertEquals(
+        1,
+        new ALT_CLS_StatementImport()
+          .preview(
+            accountId,
+            'outro.csv',
+            'data,historico,valor\n10/09/2026,Novo,1'
+          )
+          .newCount
+      );
+      System.assertEquals(
+        4,
+        new ALT_CLS_StatementImport()
+          .preview(accountId, 'extrato.csv', CSV)
+          .duplicateCount
+      );
+    }
+  }
+
+  @IsTest
+  static void csvWithoutRequiredColumnsIsRejected() {
+    System.runAs(new User(Id = UserInfo.getUserId())) {
+      try {
+        new ALT_CLS_StatementImport()
+          .preview(manualAccount(), 'x.csv', 'data,valor\n10/09/2026,1');
+        System.assert(false, 'Expected ImportException');
+      } catch (ALT_CLS_StatementImport.ImportException e) {
+        System.assert(e.getMessage().contains('colunas'));
+      }
+      try {
+        new ALT_CLS_StatementImport().preview(manualAccount(), 'x.csv', '\n\n');
+        System.assert(false, 'Expected ImportException');
+      } catch (ALT_CLS_StatementImport.ImportException e) {
+        System.assertNotEquals(null, e.getMessage());
+      }
+    }
+  }
 }
