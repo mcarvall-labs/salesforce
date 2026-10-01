@@ -1,0 +1,192 @@
+@IsTest
+private class ALT_CLS_StatementImportTest {
+  private static final String OFX =
+    'OFXHEADER:100\nDATA:OFXSGML\n<OFX><BANKMSGSRSV1><STMTTRNRS><STMTRS><BANKTRANLIST>\n' +
+    '<STMTTRN>\n<TRNTYPE>DEBIT\n<DTPOSTED>20260910120000[-3:BRT]\n<TRNAMT>-35.50\n<FITID>A1\n<MEMO>Mercado\n</STMTTRN>\n' +
+    '<STMTTRN>\n<TRNTYPE>CREDIT\n<DTPOSTED>20260911\n<TRNAMT>100,00\n<FITID>A2\n<NAME>Pix recebido\n</STMTTRN>\n' +
+    '<STMTTRN>\n<TRNTYPE>DEBIT\n<DTPOSTED>20260912\n<TRNAMT>-5\n<MEMO>Sem FITID\n</STMTTRN>\n' +
+    '<STMTTRN>\n<DTPOSTED>xx\n<TRNAMT>abc\n<FITID>A4\n</STMTTRN>\n' +
+    '</BANKTRANLIST></STMTRS></STMTTRNRS></BANKMSGSRSV1></OFX>';
+
+  @TestSetup
+  static void setup() {
+    ALT_CLS_SyncTestUser.create(
+      'axfim',
+      new List<String>{
+        'AXF_OBJ_BankAccount__c',
+        'AXF_OBJ_BankAccountTransaction__c',
+        'AXF_OBJ_CreditCard__c',
+        'AXF_OBJ_CreditCardTransaction__c'
+      }
+    );
+  }
+
+  private static Id holder() {
+    Account holder = new Account(Name = 'Holder');
+    insert holder;
+    return holder.Id;
+  }
+
+  private static Id manualAccount() {
+    AXF_OBJ_BankAccount__c account = new AXF_OBJ_BankAccount__c(
+      Name = 'Conta',
+      AXF_BA_MD_Holder__c = holder(),
+      AXF_BA_PKL_Institution__c = '341',
+      AXF_BA_PKL_Type__c = 'Checking'
+    );
+    insert account;
+    return account.Id;
+  }
+
+  private static Id manualCard() {
+    AXF_OBJ_CreditCard__c card = new AXF_OBJ_CreditCard__c(
+      Name = 'Cartão',
+      AXF_CC_MD_Holder__c = holder(),
+      AXF_CC_PKL_Institution__c = '341'
+    );
+    insert card;
+    return card.Id;
+  }
+
+  @IsTest
+  static void previewClassifiesLinesAndFlagsDuplicates() {
+    System.runAs(new User(Id = UserInfo.getUserId())) {
+      Id accountId = manualAccount();
+      insert new AXF_OBJ_BankAccountTransaction__c(
+        AXF_BAT_MD_BankAccount__c = accountId,
+        AXF_BAT_EXI_PluggyTransactionId__c = 'OFX:' + accountId + ':A1',
+        AXF_BAT_DAT_Date__c = Date.newInstance(2026, 9, 10),
+        AXF_BAT_CUR_Amount__c = -35.5
+      );
+      ALT_CLS_StatementImport.Preview preview = new ALT_CLS_StatementImport()
+        .preview(accountId, 'extrato.OFX', OFX);
+      System.assertEquals(4, preview.lines.size());
+      System.assertEquals(1, preview.newCount);
+      System.assertEquals(1, preview.duplicateCount);
+      System.assertEquals(2, preview.errorCount);
+      System.assertEquals(
+        ALT_CLS_StatementImport.DUPLICATE,
+        preview.lines[0].status
+      );
+      System.assertEquals(-35.5, preview.lines[0].amount);
+      System.assertEquals('Mercado', preview.lines[0].description);
+      System.assertEquals(
+        Date.newInstance(2026, 9, 11),
+        preview.lines[1].lineDate
+      );
+      System.assertEquals(100, preview.lines[1].amount);
+      System.assertEquals('Pix recebido', preview.lines[1].description);
+      System.assert(preview.lines[2].error.contains('FITID'));
+      System.assert(preview.lines[3].error.contains('inválido'));
+    }
+  }
+
+  @IsTest
+  static void importIsIdempotentAndSkipsInvalidLines() {
+    System.runAs(new User(Id = UserInfo.getUserId())) {
+      Id accountId = manualAccount();
+      ALT_CLS_StatementImport.Result first = new ALT_CLS_StatementImport()
+        .importFile(accountId, 'extrato.ofx', OFX);
+      ALT_CLS_StatementImport.Result second = new ALT_CLS_StatementImport()
+        .importFile(accountId, 'extrato.ofx', OFX);
+      System.assertEquals(true, first.success, first.message);
+      System.assertEquals(true, second.success, second.message);
+      System.assertEquals(2, first.imported);
+      System.assertEquals(
+        2,
+        [SELECT COUNT() FROM AXF_OBJ_BankAccountTransaction__c]
+      );
+      System.assertEquals(
+        -35.5,
+        [
+          SELECT AXF_BAT_CUR_Amount__c
+          FROM AXF_OBJ_BankAccountTransaction__c
+          WHERE
+            AXF_BAT_EXI_PluggyTransactionId__c = :('OFX:' + accountId + ':A1')
+        ]
+        .AXF_BAT_CUR_Amount__c
+      );
+    }
+  }
+
+  @IsTest
+  static void importFillsCardTransactions() {
+    System.runAs(new User(Id = UserInfo.getUserId())) {
+      Id cardId = manualCard();
+      ALT_CLS_StatementImport.Result r = new ALT_CLS_StatementImport()
+        .importFile(cardId, 'fatura.ofx', OFX);
+      System.assertEquals(true, r.success, r.message);
+      System.assertEquals(
+        2,
+        [SELECT COUNT() FROM AXF_OBJ_CreditCardTransaction__c]
+      );
+    }
+  }
+
+  @IsTest
+  static void rejectsInvalidTargetsAndFiles() {
+    System.runAs(new User(Id = UserInfo.getUserId())) {
+      Id accountId = manualAccount();
+      List<List<Object>> cases = new List<List<Object>>{
+        new List<Object>{ accountId, 'a.ofx', ' ' },
+        new List<Object>{ accountId, 'a.pdf', OFX },
+        new List<Object>{ accountId, 'a.ofx', '<OFX></OFX>' },
+        new List<Object>{ null, 'a.ofx', OFX },
+        new List<Object>{ holder(), 'a.ofx', OFX }
+      };
+      for (List<Object> c : cases) {
+        try {
+          new ALT_CLS_StatementImport()
+            .preview((Id) c[0], (String) c[1], (String) c[2]);
+          System.assert(false, 'Expected ImportException for ' + c);
+        } catch (ALT_CLS_StatementImport.ImportException e) {
+          System.assertNotEquals(null, e.getMessage());
+        }
+      }
+    }
+  }
+
+  @IsTest
+  static void controllerWrapsPreviewImportAndErrors() {
+    System.runAs(new User(Id = UserInfo.getUserId())) {
+      Id accountId = manualAccount();
+      AXF_CLS_CTRL_StatementImport.PreviewView view = AXF_CLS_CTRL_StatementImport.preview(
+        accountId,
+        'a.ofx',
+        OFX
+      );
+      System.assertEquals(4, view.lines.size());
+      System.assertEquals(2, view.newCount);
+      AXF_CLS_CTRL_StatementImport.ImportView imported = AXF_CLS_CTRL_StatementImport.importStatement(
+        accountId,
+        'a.ofx',
+        OFX
+      );
+      System.assertEquals(true, imported.success);
+      System.assertEquals(2, imported.imported);
+      try {
+        AXF_CLS_CTRL_StatementImport.preview(accountId, 'a.csv', OFX);
+        System.assert(false, 'Expected AuraHandledException');
+      } catch (AuraHandledException e) {
+        System.assertNotEquals(null, e.getMessage());
+      }
+      try {
+        AXF_CLS_CTRL_StatementImport.importStatement(accountId, 'a.csv', OFX);
+        System.assert(false, 'Expected AuraHandledException');
+      } catch (AuraHandledException e) {
+        System.assertNotEquals(null, e.getMessage());
+      }
+    }
+  }
+
+  @IsTest
+  static void pluggyRecordTypeIsRejected() {
+    try {
+      ALT_CLS_StatementImport.requireManual('AXF_Pluggy');
+      System.assert(false, 'Expected ImportException');
+    } catch (ALT_CLS_StatementImport.ImportException e) {
+      System.assert(e.getMessage().contains('manual'));
+    }
+    ALT_CLS_StatementImport.requireManual('AXF_Manual');
+  }
+}
