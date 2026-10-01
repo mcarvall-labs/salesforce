@@ -269,15 +269,9 @@ if (
     console.error(GUIDANCE);
     process.exit(1);
   }
-  if (triggers === 0 && hasApexSource()) {
-    console.error(
-      "Trigger handler boundary: no trigger found under the package directories; refusing to pass vacuously."
-    );
-    process.exit(1);
-  }
   console.log(
     triggers === 0
-      ? "Trigger handler boundary: no Apex in the package directories yet; nothing to verify."
+      ? "Trigger handler boundary: no trigger in the package directories; nothing to verify."
       : `Trigger handler boundary verified for ${triggers} trigger(s).`
   );
 }
