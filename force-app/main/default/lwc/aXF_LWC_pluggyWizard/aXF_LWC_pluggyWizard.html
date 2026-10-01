@@ -63,6 +63,36 @@
             <p class={resultClass} role="alert">{resultMessage}</p>
           </template>
         </div>
+
+        <template if:true={hasCredentials}>
+          <div class="slds-m-top_large">
+            <h3 class="slds-text-heading_small">Passo 2: conexão</h3>
+            <lightning-record-picker
+              label="Titular"
+              object-api-name="Account"
+              onchange={handleHolder}
+            ></lightning-record-picker>
+            <c-a-x-f_-l-w-c_bank-institution-picker
+              required
+              onchange={handleInstitution}
+            ></c-a-x-f_-l-w-c_bank-institution-picker>
+            <lightning-input
+              label="Item Id"
+              value={itemId}
+              onchange={handleItemId}
+            ></lightning-input>
+            <lightning-button
+              class="slds-m-top_small"
+              variant="brand"
+              label="Criar conexão"
+              disabled={connectionDisabled}
+              onclick={handleCreateConnection}
+            ></lightning-button>
+            <template if:true={connectionMessage}>
+              <p class={connectionClass} role="alert">{connectionMessage}</p>
+            </template>
+          </div>
+        </template>
       </template>
     </div>
   </lightning-card>

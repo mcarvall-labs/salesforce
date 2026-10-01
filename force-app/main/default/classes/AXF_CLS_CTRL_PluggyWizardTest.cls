@@ -58,4 +58,23 @@ private class AXF_CLS_CTRL_PluggyWizardTest {
     System.assertEquals(true, r.success);
     System.assertNotEquals(null, r.message);
   }
+
+  @IsTest
+  static void createConnectionRejectsMissingData() {
+    AXF_CLS_CTRL_PluggyWizard.StepResult r = AXF_CLS_CTRL_PluggyWizard.createConnection(
+      null,
+      null,
+      null
+    );
+    System.assertEquals(false, r.success);
+  }
+
+  @IsTest
+  static void stateCountsConnections() {
+    ALT_CLS_PluggyCredential.vaultForTests = new StubVault(true);
+    System.assertEquals(
+      0,
+      AXF_CLS_CTRL_PluggyWizard.getState().connectionCount
+    );
+  }
 }

@@ -5,6 +5,9 @@
  * "Manage Named Credentials" to save and principal access on AXF_EXC_Pluggy to test.
  */
 public with sharing class ALT_CLS_PluggyCredential {
+  public class PluggyException extends Exception {
+  }
+
   public class Result {
     public Boolean success = false;
     public String message;
@@ -84,6 +87,17 @@ public with sharing class ALT_CLS_PluggyCredential {
 
   public Result testAuthentication() {
     Result r = new Result();
+    try {
+      requestApiKey();
+      r.success = true;
+      r.message = 'Autenticação com o Pluggy realizada com sucesso.';
+    } catch (PluggyException e) {
+      r.message = e.getMessage();
+    }
+    return r;
+  }
+
+  public String requestApiKey() {
     HttpRequest req = new HttpRequest();
     req.setEndpoint(AUTH_ENDPOINT);
     req.setMethod('POST');
@@ -95,33 +109,34 @@ public with sharing class ALT_CLS_PluggyCredential {
         EXTERNAL_CREDENTIAL +
         '.clientSecret}"}'
     );
+    HttpResponse res;
     try {
-      HttpResponse res = new Http().send(req);
-      if (res.getStatusCode() == 200 && hasApiKey(res.getBody())) {
-        r.success = true;
-        r.message = 'Autenticação com o Pluggy realizada com sucesso.';
-      } else if (res.getStatusCode() == 401 || res.getStatusCode() == 403) {
-        r.message = 'Client Id ou Client Secret inválidos no Pluggy.';
-      } else {
-        r.message =
-          'O Pluggy respondeu com erro (HTTP ' +
-          res.getStatusCode() +
-          ').';
-      }
+      res = new Http().send(req);
     } catch (Exception e) {
-      r.message =
+      throw new PluggyException(
         'Não foi possível contatar o Pluggy (' +
-        e.getTypeName() +
-        '). Confirme o acesso à credencial AXF_EXC_Pluggy.';
+          e.getTypeName() +
+          '). Confirme o acesso à credencial AXF_EXC_Pluggy.'
+      );
     }
-    return r;
-  }
-
-  private Boolean hasApiKey(String body) {
+    if (res.getStatusCode() == 401 || res.getStatusCode() == 403) {
+      throw new PluggyException(
+        'Client Id ou Client Secret inválidos no Pluggy.'
+      );
+    }
+    if (res.getStatusCode() != 200) {
+      throw new PluggyException(
+        'O Pluggy respondeu com erro (HTTP ' + res.getStatusCode() + ').'
+      );
+    }
     Map<String, Object> parsed = (Map<String, Object>) JSON.deserializeUntyped(
-      body
+      res.getBody()
     );
-    return String.isNotBlank((String) parsed.get('apiKey'));
+    String apiKey = (String) parsed.get('apiKey');
+    if (String.isBlank(apiKey)) {
+      throw new PluggyException('O Pluggy não retornou uma chave de acesso.');
+    }
+    return apiKey;
   }
 
   private ConnectApi.CredentialValueInput valueInput(

@@ -2,6 +2,7 @@ import { createElement } from "lwc";
 import AXF_LWC_pluggyWizard from "c/aXF_LWC_pluggyWizard";
 import getState from "@salesforce/apex/AXF_CLS_CTRL_PluggyWizard.getState";
 import saveCredentials from "@salesforce/apex/AXF_CLS_CTRL_PluggyWizard.saveCredentials";
+import createConnection from "@salesforce/apex/AXF_CLS_CTRL_PluggyWizard.createConnection";
 import testCredentials from "@salesforce/apex/AXF_CLS_CTRL_PluggyWizard.testCredentials";
 
 jest.mock(
@@ -17,6 +18,11 @@ jest.mock(
   }
 );
 jest.mock(
+  "@salesforce/apex/AXF_CLS_CTRL_PluggyWizard.createConnection",
+  () => ({ default: jest.fn() }),
+  { virtual: true }
+);
+jest.mock(
   "@salesforce/apex/AXF_CLS_CTRL_PluggyWizard.testCredentials",
   () => ({ default: jest.fn() }),
   {
@@ -30,8 +36,8 @@ const flushPromises = () =>
     Promise.resolve()
   );
 
-async function setup(hasCredentials = false) {
-  getState.mockResolvedValue({ hasCredentials });
+async function setup(hasCredentials = false, connectionCount = 0) {
+  getState.mockResolvedValue({ hasCredentials, connectionCount });
   const element = createElement("c-a-x-f-l-w-c-pluggy-wizard", {
     is: AXF_LWC_pluggyWizard
   });
@@ -110,5 +116,41 @@ describe("c-a-x-f-l-w-c-pluggy-wizard", () => {
     expect(element.shadowRoot.querySelector('[role="alert"]').textContent).toBe(
       "Sem permissão."
     );
+  });
+
+  it("creates the connection from step 2 and advances to step 3", async () => {
+    createConnection.mockResolvedValue({
+      success: true,
+      message: "Conexão criada."
+    });
+    const element = await setup(true, 0);
+    element.shadowRoot
+      .querySelector("lightning-record-picker")
+      .dispatchEvent(
+        new CustomEvent("change", { detail: { recordId: "001000000000001" } })
+      );
+    element.shadowRoot
+      .querySelector("c-a-x-f_-l-w-c_bank-institution-picker")
+      .dispatchEvent(new CustomEvent("change", { detail: { value: "341" } }));
+    const itemInput = Array.from(
+      element.shadowRoot.querySelectorAll("lightning-input")
+    ).find((i) => i.label === "Item Id");
+    itemInput.value = "item-1";
+    itemInput.dispatchEvent(new CustomEvent("change"));
+    await flushPromises();
+    const create = Array.from(
+      element.shadowRoot.querySelectorAll("lightning-button")
+    ).find((b) => b.label === "Criar conexão");
+    create.click();
+    await flushPromises();
+    expect(createConnection).toHaveBeenCalledWith({
+      holderId: "001000000000001",
+      institution: "341",
+      itemId: "item-1"
+    });
+    expect(
+      element.shadowRoot.querySelector("lightning-progress-indicator")
+        .currentStep
+    ).toBe("3");
   });
 });
