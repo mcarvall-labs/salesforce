@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<CustomApplication xmlns="http://soap.sforce.com/2006/04/metadata">
+    <description
+  >Instalação e manutenção do Axon: assistente de configuração, conexões e categorias.</description>
+    <formFactors>Large</formFactors>
+    <label>Axon – Configuração</label>
+    <navType>Standard</navType>
+    <uiType>Lightning</uiType>
+</CustomApplication>
