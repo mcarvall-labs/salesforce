@@ -18,6 +18,11 @@
         value={searchTerm}
         onchange={handleSearch}
       ></lightning-input>
+      <template if:true={showRequiredError}>
+        <p class="slds-text-color_error" role="alert">
+          Escolha uma instituição.
+        </p>
+      </template>
       <template if:true={error}>
         <p class="slds-text-color_error" role="alert">
           Não foi possível carregar as instituições.
@@ -35,6 +40,7 @@
                 aria-selected={item.ariaSelected}
                 data-value={item.value}
                 onclick={handleSelect}
+                onkeydown={handleKeydown}
               >
                 {item.label}
               </div>
@@ -57,6 +63,7 @@
                   aria-selected={item.ariaSelected}
                   data-value={item.value}
                   onclick={handleSelect}
+                  onkeydown={handleKeydown}
                 >
                   {item.label}
                 </div>

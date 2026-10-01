@@ -74,4 +74,67 @@ describe("c-a-x-f-l-w-c-bank-institution-picker", () => {
     expect(handler).toHaveBeenCalledTimes(1);
     expect(handler.mock.calls[0][0].detail).toEqual({ value: "341" });
   });
+
+  it("selects with Enter and Space from the keyboard", async () => {
+    const element = await setup();
+    const handler = jest.fn();
+    element.addEventListener("change", handler);
+    const option = element.shadowRoot.querySelector('[data-value="341"]');
+    option.dispatchEvent(new KeyboardEvent("keydown", { key: "Enter" }));
+    option.dispatchEvent(new KeyboardEvent("keydown", { key: " " }));
+    option.dispatchEvent(new KeyboardEvent("keydown", { key: "a" }));
+    expect(handler).toHaveBeenCalledTimes(2);
+    expect(handler.mock.calls[0][0].detail).toEqual({ value: "341" });
+  });
+
+  it("shows the pill after a selection and clears it", async () => {
+    const element = await setup();
+    const handler = jest.fn();
+    element.addEventListener("change", handler);
+    element.value = "341";
+    await flush();
+    const pill = element.shadowRoot.querySelector("lightning-pill");
+    expect(pill.label).toBe("341 - Itaú Unibanco");
+    pill.dispatchEvent(new CustomEvent("remove"));
+    await flush();
+    expect(handler.mock.calls[0][0].detail).toEqual({ value: undefined });
+    expect(element.shadowRoot.querySelector("lightning-pill")).toBeNull();
+  });
+
+  it("says when no institution matches the search", async () => {
+    const element = await setup();
+    await search(element, "zzzz");
+    expect(optionValues(element)).toEqual([]);
+    expect(element.shadowRoot.textContent).toContain(
+      "Nenhuma instituição encontrada."
+    );
+  });
+
+  it("shows an error when the institutions cannot be loaded", async () => {
+    const element = createElement("c-a-x-f-l-w-c-bank-institution-picker", {
+      is: AXF_LWC_bankInstitutionPicker
+    });
+    document.body.appendChild(element);
+    getObjectInfo.emit({ defaultRecordTypeId: "012000000000000AAA" });
+    getPicklistValues.error();
+    await flush();
+    expect(
+      element.shadowRoot.querySelector('[role="alert"]').textContent
+    ).toContain("Não foi possível carregar as instituições.");
+  });
+
+  it("reports the required validation to the parent", async () => {
+    const element = await setup();
+    element.required = true;
+    expect(element.checkValidity()).toBe(false);
+    expect(element.reportValidity()).toBe(false);
+    await flush();
+    expect(
+      element.shadowRoot.querySelector('[role="alert"]').textContent
+    ).toContain("Escolha uma instituição.");
+    element.shadowRoot.querySelector('[data-value="341"]').click();
+    await flush();
+    expect(element.checkValidity()).toBe(true);
+    expect(element.reportValidity()).toBe(true);
+  });
 });
