@@ -30,7 +30,11 @@ jest.mock(
   }
 );
 
-const flushPromises = () => new Promise((resolve) => setTimeout(resolve, 0));
+const flushPromises = async () => {
+  for (let i = 0; i < 10; i++) {
+    await Promise.resolve();
+  }
+};
 
 async function setup(hasCredentials = false, connectionCount = 0) {
   getState.mockResolvedValue({ hasCredentials, connectionCount });
