@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<PermissionSet xmlns="http://soap.sforce.com/2006/04/metadata">
+    <applicationVisibilities>
+        <application>AXF_CA_AxonConfiguration</application>
+        <visible>true</visible>
+    </applicationVisibilities>
+    <description
+  >Acesso ao app Axon – Configuração. Credenciais ficam restritas ao administrador.</description>
+    <hasActivationRequired>false</hasActivationRequired>
+    <label>Axon - Configuração</label>
+</PermissionSet>
