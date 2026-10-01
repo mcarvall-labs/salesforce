@@ -1,0 +1,73 @@
+<template>
+  <div class="slds-form-element">
+    <template if:true={hasSelection}>
+      <label class="slds-form-element__label">{label}</label>
+      <div class="slds-pill_container">
+        <lightning-pill
+          label={selectedLabel}
+          onremove={handleClear}
+        ></lightning-pill>
+      </div>
+    </template>
+    <template if:false={hasSelection}>
+      <lightning-input
+        type="search"
+        label={label}
+        required={required}
+        placeholder="Buscar por código ou nome"
+        value={searchTerm}
+        onchange={handleSearch}
+      ></lightning-input>
+      <template if:true={error}>
+        <p class="slds-text-color_error" role="alert">
+          Não foi possível carregar as instituições.
+        </p>
+      </template>
+      <template if:false={isSearching}>
+        <p class="slds-m-top_x-small slds-text-title_caps">Mais usados</p>
+        <ul class="slds-listbox slds-listbox_vertical" role="listbox">
+          <template for:each={priorityItems} for:item="item">
+            <li key={item.value} role="presentation">
+              <div
+                class={item.className}
+                role="option"
+                tabindex="0"
+                aria-selected={item.ariaSelected}
+                data-value={item.value}
+                onclick={handleSelect}
+              >
+                {item.label}
+              </div>
+            </li>
+          </template>
+        </ul>
+      </template>
+      <template if:true={isSearching}>
+        <template if:true={hasSearchItems}>
+          <ul
+            class="slds-listbox slds-listbox_vertical slds-m-top_x-small"
+            role="listbox"
+          >
+            <template for:each={searchItems} for:item="item">
+              <li key={item.value} role="presentation">
+                <div
+                  class={item.className}
+                  role="option"
+                  tabindex="0"
+                  aria-selected={item.ariaSelected}
+                  data-value={item.value}
+                  onclick={handleSelect}
+                >
+                  {item.label}
+                </div>
+              </li>
+            </template>
+          </ul>
+        </template>
+        <template if:false={hasSearchItems}>
+          <p class="slds-m-top_x-small">Nenhuma instituição encontrada.</p>
+        </template>
+      </template>
+    </template>
+  </div>
+</template>
