@@ -107,7 +107,7 @@ private class ALT_CLS_PluggyConnectionTest {
       ];
       System.assertEquals('item-1', saved.AXF_CON_EXI_PluggyItemId__c);
       System.assertEquals('Active', saved.AXF_CON_PKL_Status__c);
-      System.assertEquals('Holder - 341', saved.Name);
+      System.assertEquals('Holder - Itaú Unibanco (341)', saved.Name);
       System.assertEquals(1, new ALT_CLS_PluggyConnection().countConnections());
     }
   }
