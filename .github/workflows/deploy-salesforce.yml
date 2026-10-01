@@ -120,3 +120,33 @@ jobs:
             for (const pr of prs.filter(p => p.merged_at && p.merge_commit_sha === context.sha)) {
               await github.rest.issues.createComment({...context.repo, issue_number: pr.number, body});
             }
+
+  jira:
+    name: Update Jira status
+    # Runs only after a successful deployment, so a failed or pending deploy
+    # never advances a story. A Jira outage must not fail the deployment run.
+    if: needs.deploy.result == 'success'
+    needs: deploy
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    continue-on-error: true
+    permissions:
+      contents: read
+    steps:
+      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4.4.0
+        with:
+          node-version: 22
+      - name: Move issues to the deployed environment status
+        env:
+          RULE: ${{ github.ref_name == 'main' && 'prod' || (github.ref_name == 'uat' && 'uat' || 'dev') }}
+          GH_TOKEN: ${{ github.token }}
+          GITHUB_REPOSITORY: ${{ github.repository }}
+          BEFORE_SHA: ${{ github.event.before }}
+          AFTER_SHA: ${{ github.sha }}
+          JIRA_BASE_URL: ${{ vars.JIRA_BASE_URL }}
+          JIRA_USER_EMAIL: ${{ secrets.JIRA_USER_EMAIL }}
+          JIRA_API_TOKEN: ${{ secrets.JIRA_API_TOKEN }}
+        run: node scripts/ci/jira-status.mjs

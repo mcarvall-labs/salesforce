@@ -1,0 +1,71 @@
+name: Jira status
+
+# Moves the Jira issue named in the branch (AXF-123) as work starts:
+#   branch created and pushed -> Em andamento
+#   pull request opened       -> Em revisão
+# The deployment statuses (No DEV / No UAT / Em PROD) are set by the `jira` job
+# in deploy-salesforce.yml. Lifecycle: agent-docs/rules/project/16-status.md.
+
+on:
+  push:
+    branches: ["feature/**", "bugfix/**"]
+  pull_request:
+    types: [opened, reopened, ready_for_review]
+    branches: [develop]
+
+permissions:
+  contents: read
+
+concurrency:
+  group: jira-status-${{ github.event_name }}-${{ github.ref }}
+  cancel-in-progress: false
+
+jobs:
+  branch-created:
+    name: Branch created -> Em andamento
+    # `created` is true only for the push that creates the branch.
+    if: github.event_name == 'push' && github.event.created
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4.4.0
+        with:
+          node-version: 22
+      - name: Move issue
+        env:
+          RULE: branch
+          REF_NAME: ${{ github.ref_name }}
+          JIRA_BASE_URL: ${{ vars.JIRA_BASE_URL }}
+          JIRA_USER_EMAIL: ${{ secrets.JIRA_USER_EMAIL }}
+          JIRA_API_TOKEN: ${{ secrets.JIRA_API_TOKEN }}
+        run: node scripts/ci/jira-status.mjs
+
+  pull-request-opened:
+    name: Pull request opened -> Em revisão
+    if: >-
+      github.event_name == 'pull_request' &&
+      github.event.pull_request.head.repo.full_name == github.repository
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      # The script comes from the base branch, never from the PR head, because
+      # this job holds the Jira token.
+      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
+        with:
+          ref: ${{ github.event.pull_request.base.sha }}
+          persist-credentials: false
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4.4.0
+        with:
+          node-version: 22
+      - name: Move issue
+        env:
+          RULE: review
+          PR_TITLE: ${{ github.event.pull_request.title }}
+          PR_HEAD_REF: ${{ github.event.pull_request.head.ref }}
+          JIRA_BASE_URL: ${{ vars.JIRA_BASE_URL }}
+          JIRA_USER_EMAIL: ${{ secrets.JIRA_USER_EMAIL }}
+          JIRA_API_TOKEN: ${{ secrets.JIRA_API_TOKEN }}
+        run: node scripts/ci/jira-status.mjs
