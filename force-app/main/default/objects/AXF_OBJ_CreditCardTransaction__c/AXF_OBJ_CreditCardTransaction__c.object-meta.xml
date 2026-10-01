@@ -18,8 +18,13 @@
     >Default</type></actionOverrides>
     <actionOverrides><actionName>Tab</actionName><type
     >Default</type></actionOverrides>
-    <actionOverrides><actionName>View</actionName><type
-    >Default</type></actionOverrides>
+    <actionOverrides>
+        <actionName>View</actionName>
+        <content>AXF_RPL_CreditCardTransactionRecord</content>
+        <formFactor>Large</formFactor>
+        <skipRecordTypeSelect>false</skipRecordTypeSelect>
+        <type>Flexipage</type>
+    </actionOverrides>
     <allowInChatterGroups>false</allowInChatterGroups>
     <compactLayoutAssignment>SYSTEM</compactLayoutAssignment>
     <deploymentStatus>Deployed</deploymentStatus>
