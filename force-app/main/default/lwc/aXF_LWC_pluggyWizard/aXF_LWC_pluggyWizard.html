@@ -1,0 +1,69 @@
+<template>
+  <lightning-card
+    title="Assistente de configuração do Pluggy"
+    icon-name="standard:link"
+  >
+    <div class="slds-p-horizontal_medium">
+      <lightning-progress-indicator current-step={currentStep} type="path">
+        <lightning-progress-step
+          label="Credenciais"
+          value="1"
+        ></lightning-progress-step>
+        <lightning-progress-step
+          label="Conexão"
+          value="2"
+        ></lightning-progress-step>
+        <lightning-progress-step
+          label="Contas e cartões"
+          value="3"
+        ></lightning-progress-step>
+        <lightning-progress-step
+          label="Concluir"
+          value="4"
+        ></lightning-progress-step>
+      </lightning-progress-indicator>
+
+      <template if:true={isLoading}>
+        <lightning-spinner
+          alternative-text="Carregando"
+          size="small"
+        ></lightning-spinner>
+      </template>
+
+      <template if:false={isLoading}>
+        <div class="slds-m-top_medium">
+          <h3 class="slds-text-heading_small">
+            Passo 1: credenciais do Pluggy
+          </h3>
+          <template if:true={hasCredentials}>
+            <p class="slds-text-color_success">
+              Credenciais já configuradas. Preencha novamente para
+              substituí-las.
+            </p>
+          </template>
+          <lightning-input
+            label="Client Id"
+            value={clientId}
+            onchange={handleClientId}
+          ></lightning-input>
+          <lightning-input
+            type="password"
+            label="Client Secret"
+            value={clientSecret}
+            onchange={handleClientSecret}
+          ></lightning-input>
+          <lightning-button
+            class="slds-m-top_small"
+            variant="brand"
+            label="Salvar e testar"
+            disabled={saveDisabled}
+            onclick={handleSaveAndTest}
+          ></lightning-button>
+          <template if:true={resultMessage}>
+            <p class={resultClass} role="alert">{resultMessage}</p>
+          </template>
+        </div>
+      </template>
+    </div>
+  </lightning-card>
+</template>
