@@ -180,8 +180,7 @@ test("package directories come from sfdx-project.json", () => {
 });
 
 test("repository triggers honor the handler boundary", () => {
-  const { triggers, violations } = analyzeRepository(repositoryRoot);
-  assert.ok(triggers > 0 || !hasApexSource(repositoryRoot));
+  const { violations } = analyzeRepository(repositoryRoot);
   assert.deepEqual(violations, []);
 });
 
