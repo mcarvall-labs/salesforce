@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<ValidationRule xmlns="http://soap.sforce.com/2006/04/metadata">
+    <fullName>AXF_BA_VR_PluggyReadOnly</fullName>
+    <active>true</active>
+    <errorConditionFormula
+  >AND(RecordType.DeveloperName = &apos;AXF_Pluggy&apos;, NOT($Permission.AXF_CP_PluggySync))</errorConditionFormula>
+    <errorMessage
+  >Bank accounts of the Pluggy record type are read-only: the sync updates them.</errorMessage>
+</ValidationRule>
