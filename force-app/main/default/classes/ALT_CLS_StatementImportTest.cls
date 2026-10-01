@@ -250,6 +250,60 @@ private class ALT_CLS_StatementImportTest {
   }
 
   @IsTest
+  static void csvAcceptsFormatsAndRejectsAmbiguousOrImpossibleValues() {
+    String bom = String.fromCharArray(new List<Integer>{ 65279 });
+    String content =
+      bom +
+      'data,descricao,valor\n' +
+      '12/09/2026,A,"-R$ 35,50"\n' +
+      '2026-09-12T10:00:00,B,"1,234.56"\n' +
+      '13/09/2026,C,1.234\n' +
+      '31/02/2026,D,10\n' +
+      '10/09/26,E,10\n';
+    System.runAs(new User(Id = UserInfo.getUserId())) {
+      ALT_CLS_StatementImport.Preview preview = new ALT_CLS_StatementImport()
+        .preview(manualAccount(), 'extrato.csv', content);
+      System.assertEquals(5, preview.lines.size());
+      System.assertEquals(2, preview.newCount);
+      System.assertEquals(3, preview.errorCount);
+      System.assertEquals(-35.5, preview.lines[0].amount);
+      System.assertEquals(
+        Date.newInstance(2026, 9, 12),
+        preview.lines[1].lineDate
+      );
+      System.assertEquals(1234.56, preview.lines[1].amount);
+      System.assert(preview.lines[2].error.contains('ambíguo'));
+      System.assert(preview.lines[2].error.contains('1234'));
+      System.assert(preview.lines[3].error.contains('inexistente'));
+      System.assert(preview.lines[4].error.contains('inválida'));
+    }
+  }
+
+  @IsTest
+  static void csvDuplicateDetectionIgnoresAmountScale() {
+    System.runAs(new User(Id = UserInfo.getUserId())) {
+      Id accountId = manualAccount();
+      ALT_CLS_StatementImport.Result first = new ALT_CLS_StatementImport()
+        .importFile(
+          accountId,
+          'a.csv',
+          'data,descricao,valor\n14/09/2026,F,-5'
+        );
+      System.assertEquals(true, first.success, first.message);
+      System.assertEquals(
+        1,
+        new ALT_CLS_StatementImport()
+          .preview(
+            accountId,
+            'b.csv',
+            'data,descricao,valor\n14/09/2026,F,-5.00'
+          )
+          .duplicateCount
+      );
+    }
+  }
+
+  @IsTest
   static void csvWithoutRequiredColumnsIsRejected() {
     System.runAs(new User(Id = UserInfo.getUserId())) {
       try {

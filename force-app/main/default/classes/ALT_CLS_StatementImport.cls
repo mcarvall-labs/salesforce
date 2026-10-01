@@ -153,7 +153,11 @@ public with sharing class ALT_CLS_StatementImport {
   // The key hashes record + date + value + description; identical lines of the same file get an
   // ordinal so two equal purchases are both kept and importing the file again changes nothing.
   private List<Line> parseCsv(Id recordId, String content) {
-    List<String> rows = content.split('\\r?\\n');
+    String bom = String.fromCharArray(new List<Integer>{ 65279 });
+    List<String> rows = (content.startsWith(bom)
+        ? content.substring(1)
+        : content)
+      .split('\\r?\\n');
     Integer headerIndex = 0;
     while (headerIndex < rows.size() && String.isBlank(rows[headerIndex])) {
       headerIndex++;
@@ -191,7 +195,7 @@ public with sharing class ALT_CLS_StatementImport {
           '|' +
           String.valueOf(line.lineDate) +
           '|' +
-          line.amount +
+          line.amount.setScale(2) +
           '|' +
           line.description;
         Integer ordinal = occurrences.containsKey(signature)
@@ -206,6 +210,9 @@ public with sharing class ALT_CLS_StatementImport {
               Blob.valueOf(signature + '|' + ordinal)
             )
           );
+      } catch (ImportException e) {
+        line.status = INVALID;
+        line.error = 'Linha ' + (i + 1) + ': ' + e.getMessage();
       } catch (Exception e) {
         line.status = INVALID;
         line.error = 'Linha ' + (i + 1) + ': data ou valor inválido.';
@@ -250,23 +257,60 @@ public with sharing class ALT_CLS_StatementImport {
     return cells;
   }
 
+  // Accepts dd/mm/yyyy and yyyy-mm-dd (optionally followed by a time). Impossible dates and
+  // two-digit years are rejected: Date.newInstance would roll 31/02 over to March.
   private Date csvDate(String value) {
-    if (Pattern.matches('\\d{4}-\\d{2}-\\d{2}.*', value)) {
-      return Date.valueOf(value.substring(0, 10));
+    Integer year;
+    Integer month;
+    Integer day;
+    Matcher iso = Pattern.compile('(\\d{4})-(\\d{2})-(\\d{2}).*').matcher(value);
+    Matcher br = Pattern.compile('(\\d{1,2})/(\\d{1,2})/(\\d{4})').matcher(value);
+    if (iso.matches()) {
+      year = Integer.valueOf(iso.group(1));
+      month = Integer.valueOf(iso.group(2));
+      day = Integer.valueOf(iso.group(3));
+    } else if (br.matches()) {
+      day = Integer.valueOf(br.group(1));
+      month = Integer.valueOf(br.group(2));
+      year = Integer.valueOf(br.group(3));
+    } else {
+      throw new ImportException(
+        'data inválida (' + value + '); use dd/mm/aaaa ou aaaa-mm-dd.'
+      );
     }
-    List<String> parts = value.split('/');
-    return Date.newInstance(
-      Integer.valueOf(parts[2]),
-      Integer.valueOf(parts[1]),
-      Integer.valueOf(parts[0])
-    );
+    if (month < 1 || month > 12 || day < 1 || day > 31) {
+      throw new ImportException('data inexistente (' + value + ').');
+    }
+    Date result = Date.newInstance(year, month, day);
+    if (result.month() != month || result.day() != day) {
+      throw new ImportException('data inexistente (' + value + ').');
+    }
+    return result;
   }
 
-  // Accepts 1234.56, 1.234,56 and -R$ 35,50.
+  // Accepts 1234.56, 1.234,56, 1,234.56 and -R$ 35,50. The last separator is the decimal one when
+  // both appear. A single separator followed by exactly three digits (1.234) could be a thousands
+  // group or a decimal fraction, so it is rejected instead of guessed.
   private Decimal csvAmount(String value) {
-    String text = value.replace('R$', '').replace(' ', '');
-    if (text.contains(',')) {
-      text = text.replace('.', '').replace(',', '.');
+    String text = value.replace('R$', '')
+      .replace(' ', '')
+      .replace(String.fromCharArray(new List<Integer>{ 160 }), '');
+    Integer comma = text.lastIndexOf(',');
+    Integer dot = text.lastIndexOf('.');
+    if (comma >= 0 && dot >= 0) {
+      text = comma > dot
+        ? text.replace('.', '').replace(',', '.')
+        : text.replace(',', '');
+    } else if (comma >= 0 || dot >= 0) {
+      String separator = comma >= 0 ? ',' : '.';
+      Integer last = Math.max(comma, dot);
+      Boolean repeated = text.indexOf(separator) != last;
+      if (repeated || text.length() - last - 1 == 3) {
+        throw new ImportException(
+          'valor ambíguo (' + value + '); escreva 1234 ou 1234,00 sem separador de milhar.'
+        );
+      }
+      text = text.replace(',', '.');
     }
     return Decimal.valueOf(text);
   }
