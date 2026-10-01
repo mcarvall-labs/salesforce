@@ -1,0 +1,16 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<CustomApplication xmlns="http://soap.sforce.com/2006/04/metadata">
+    <brand>
+        <headerColor>#0A192F</headerColor>
+        <logo>AxonAppLogo</logo>
+        <logoVersion>3</logoVersion>
+        <shouldOverrideOrgTheme>true</shouldOverrideOrgTheme>
+    </brand>
+    <description
+  >Finanças pessoais e familiares: titulares, lançamentos, contratos e conciliação.</description>
+    <formFactors>Large</formFactors>
+    <label>Axon</label>
+    <navType>Standard</navType>
+    <tabs>standard-Account</tabs>
+    <uiType>Lightning</uiType>
+</CustomApplication>
