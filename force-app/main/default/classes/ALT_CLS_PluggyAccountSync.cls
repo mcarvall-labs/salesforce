@@ -114,7 +114,6 @@ public with sharing class ALT_CLS_PluggyAccountSync {
     Map<String, Object> bank = (Map<String, Object>) pluggy.get('bankData');
     String transfer = bank == null ? null : (String) bank.get('transferNumber');
     AXF_OBJ_BankAccount__c account = new AXF_OBJ_BankAccount__c(
-      RecordTypeId = recordTypeId,
       Name = (String) pluggy.get('name'),
       AXF_BA_EXI_PluggyAccountId__c = (String) pluggy.get('id'),
       AXF_BA_MD_Holder__c = connection.AXF_CON_MD_Holder__c,
@@ -130,6 +129,7 @@ public with sharing class ALT_CLS_PluggyAccountSync {
       AXF_BA_CUR_Balance__c = toDecimal(pluggy.get('balance')),
       AXF_BA_DT_LastSync__c = System.now()
     );
+    setRecordType(account, recordTypeId);
     setCurrency(account, pluggy);
     return account;
   }
@@ -147,7 +147,6 @@ public with sharing class ALT_CLS_PluggyAccountSync {
     Date closing = ALT_CLS_PluggyApi.toDate(credit.get('balanceCloseDate'));
     Date due = ALT_CLS_PluggyApi.toDate(credit.get('balanceDueDate'));
     AXF_OBJ_CreditCard__c card = new AXF_OBJ_CreditCard__c(
-      RecordTypeId = recordTypeId,
       Name = (String) pluggy.get('name'),
       AXF_CC_EXI_PluggyCardId__c = (String) pluggy.get('id'),
       AXF_CC_MD_Holder__c = connection.AXF_CON_MD_Holder__c,
@@ -164,8 +163,15 @@ public with sharing class ALT_CLS_PluggyAccountSync {
       AXF_CC_NUM_DueDay__c = due == null ? null : due.day(),
       AXF_CC_DT_LastSync__c = System.now()
     );
+    setRecordType(card, recordTypeId);
     setCurrency(card, pluggy);
     return card;
+  }
+
+  private void setRecordType(SObject record, Id recordTypeId) {
+    if (recordTypeId != null) {
+      record.put('RecordTypeId', recordTypeId);
+    }
   }
 
   private void setCurrency(SObject record, Map<String, Object> pluggy) {

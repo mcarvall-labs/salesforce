@@ -20,6 +20,11 @@
     </recordTypes>
     <validationRules>
         <errorMessage
+    >A conta bancária do Pluggy é somente leitura: ela é atualizada pela sincronização.</errorMessage>
+        <name>AXF_BA_VR_PluggyReadOnly</name>
+    </validationRules>
+    <validationRules>
+        <errorMessage
     >A conexão deve pertencer ao mesmo titular da conta bancária.</errorMessage>
         <name>AXF_BA_VR_ConnectionSameHolder</name>
     </validationRules>

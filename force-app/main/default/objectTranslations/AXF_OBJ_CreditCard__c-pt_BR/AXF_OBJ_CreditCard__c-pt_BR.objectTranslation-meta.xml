@@ -20,6 +20,11 @@
     </recordTypes>
     <validationRules>
         <errorMessage
+    >O cartão de crédito do Pluggy é somente leitura: ele é atualizado pela sincronização.</errorMessage>
+        <name>AXF_CC_VR_PluggyReadOnly</name>
+    </validationRules>
+    <validationRules>
+        <errorMessage
     >A conexão deve pertencer ao mesmo titular do cartão de crédito.</errorMessage>
         <name>AXF_CC_VR_ConnectionSameHolder</name>
     </validationRules>
