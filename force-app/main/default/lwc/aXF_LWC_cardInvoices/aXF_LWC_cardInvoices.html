@@ -1,0 +1,99 @@
+<template>
+  <lightning-card title="Faturas" icon-name="standard:contract">
+    <div class="slds-p-horizontal_medium">
+      <template if:true={isLoading}>
+        <lightning-spinner
+          alternative-text="Carregando"
+          size="small"
+        ></lightning-spinner>
+      </template>
+      <template if:true={errorMessage}>
+        <p class="slds-text-color_error" role="alert">{errorMessage}</p>
+      </template>
+      <template if:false={isLoading}>
+        <template if:false={hasInvoices}>
+          <p>Nenhuma fatura.</p>
+        </template>
+        <template for:each={invoices} for:item="invoice">
+          <div key={invoice.id} class="slds-m-bottom_small">
+            <div class="slds-grid slds-grid_vertical-align-center">
+              <lightning-button-icon
+                class="invoice-toggle"
+                data-id={invoice.id}
+                icon-name={invoice.iconName}
+                variant="bare"
+                alternative-text="Ver transações"
+                onclick={handleToggle}
+              ></lightning-button-icon>
+              <span class="slds-m-left_x-small slds-text-heading_small"
+                >{invoice.period}</span
+              >
+              <span class="slds-m-left_medium">
+                Vencimento:
+                <lightning-formatted-date-time
+                  value={invoice.dueDate}
+                  time-zone="UTC"
+                ></lightning-formatted-date-time>
+              </span>
+              <span class="slds-m-left_medium">
+                <lightning-formatted-number
+                  value={invoice.totalAmount}
+                  format-style="currency"
+                  currency-code={invoice.currencyCode}
+                ></lightning-formatted-number>
+              </span>
+              <span class="slds-m-left_medium">{invoice.statusLabel}</span>
+            </div>
+            <template if:true={invoice.expanded}>
+              <table class="slds-table slds-table_bordered slds-m-top_x-small">
+                <thead>
+                  <tr>
+                    <th scope="col">Data</th>
+                    <th scope="col">Descrição</th>
+                    <th scope="col">Parcela</th>
+                    <th scope="col" class="slds-text-align_right">Valor</th>
+                    <th scope="col" class="slds-text-align_right">
+                      Valor em BRL
+                    </th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <template for:each={invoice.lines} for:item="line">
+                    <tr key={line.id}>
+                      <td>
+                        <lightning-formatted-date-time
+                          value={line.transactionDate}
+                          time-zone="UTC"
+                        ></lightning-formatted-date-time>
+                      </td>
+                      <td>
+                        <a href="#" data-id={line.id} onclick={handleOpen}
+                          >{line.description}</a
+                        >
+                      </td>
+                      <td>{line.installment}</td>
+                      <td class="slds-text-align_right">
+                        <lightning-formatted-number
+                          value={line.amount}
+                          format-style="currency"
+                          currency-code={line.originalCurrency}
+                        ></lightning-formatted-number>
+                      </td>
+                      <td class="slds-text-align_right">
+                        <lightning-formatted-number
+                          value={line.amountBRL}
+                          format-style="currency"
+                          currency-code="BRL"
+                        ></lightning-formatted-number>
+                      </td>
+                    </tr>
+                  </template>
+                </tbody>
+              </table>
+            </template>
+          </div>
+        </template>
+      </template>
+    </div>
+  </lightning-card>
+</template>
