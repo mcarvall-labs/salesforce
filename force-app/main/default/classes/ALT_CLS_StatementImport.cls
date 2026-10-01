@@ -263,8 +263,10 @@ public with sharing class ALT_CLS_StatementImport {
     Integer year;
     Integer month;
     Integer day;
-    Matcher iso = Pattern.compile('(\\d{4})-(\\d{2})-(\\d{2}).*').matcher(value);
-    Matcher br = Pattern.compile('(\\d{1,2})/(\\d{1,2})/(\\d{4})').matcher(value);
+    Matcher iso = Pattern.compile('(\\d{4})-(\\d{2})-(\\d{2}).*')
+      .matcher(value);
+    Matcher br = Pattern.compile('(\\d{1,2})/(\\d{1,2})/(\\d{4})')
+      .matcher(value);
     if (iso.matches()) {
       year = Integer.valueOf(iso.group(1));
       month = Integer.valueOf(iso.group(2));
@@ -307,7 +309,9 @@ public with sharing class ALT_CLS_StatementImport {
       Boolean repeated = text.indexOf(separator) != last;
       if (repeated || text.length() - last - 1 == 3) {
         throw new ImportException(
-          'valor ambíguo (' + value + '); escreva 1234 ou 1234,00 sem separador de milhar.'
+          'valor ambíguo (' +
+            value +
+            '); escreva 1234 ou 1234,00 sem separador de milhar.'
         );
       }
       text = text.replace(',', '.');
