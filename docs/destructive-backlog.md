@@ -104,3 +104,11 @@ CustomApplication: AXF_CA_AxonConfiguration
 | AXON_DEV    | Applied     | Visual validation in browser 24/09/2026 — Console nav, correct tabs both apps                                                                                                                                                                                                                                                                                                                                             |
 | AXON_UAT    | Applied     | Visual validation in browser 24/09/2026 — Console nav, correct tabs both apps                                                                                                                                                                                                                                                                                                                                             |
 | AXON_PROD   | **Pending** | Not yet promoted. When promoting this branch to `main`: re-populate `manifest/destructiveChangesPre.xml` with these two `CustomApplication` members, redeploy `AXF_PS_GestorFinanceiro`/`AXF_PS_Participante` in the SAME transaction (app recreation orphans their `applicationVisibilities` otherwise — see AXF-159 PR history for the exact failure modes), and empty the manifest again immediately after confirming. |
+
+## Status: pending — obsolete Flow `AXF_FLW_PluggyConnectionName` (AXON_DEV)
+
+Replaced by the before-save trigger `AXF_TRG_PluggyConnection` (AXF-178 fix): a Flow cannot
+read a Person Account holder's Name or the institution label. The Flow is deployed with
+status `Obsolete` so it no longer runs. Delete it with a `Flow` entry in
+`manifest/destructiveChangesPost.xml` once the trigger is live in every environment.
+Tracked in AXF-161.

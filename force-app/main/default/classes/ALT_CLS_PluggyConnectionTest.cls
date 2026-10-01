@@ -23,58 +23,11 @@ private class ALT_CLS_PluggyConnectionTest {
 
   @TestSetup
   static void setup() {
-    PermissionSet ps = new PermissionSet(
-      Label = 'Connection Test',
-      Name = 'AXF_Connection_Test'
-    );
-    insert ps;
-    insert new ObjectPermissions(
-      ParentId = ps.Id,
-      SobjectType = 'AXF_OBJ_PluggyConnection__c',
-      PermissionsCreate = true,
-      PermissionsRead = true,
-      PermissionsEdit = true,
-      PermissionsDelete = true
-    );
-    List<FieldPermissions> fields = new List<FieldPermissions>();
-    for (
-      String field : new List<String>{
-        'AXF_CON_EXI_PluggyItemId__c',
-        'AXF_CON_PKL_Status__c'
-      }
-    ) {
-      fields.add(
-        new FieldPermissions(
-          ParentId = ps.Id,
-          SobjectType = 'AXF_OBJ_PluggyConnection__c',
-          Field = 'AXF_OBJ_PluggyConnection__c.' + field,
-          PermissionsRead = true,
-          PermissionsEdit = true
-        )
-      );
-    }
-    insert fields;
-    User u = new User(
-      Alias = 'axfcon',
-      Email = 'axfcon@example.com',
-      EmailEncodingKey = 'UTF-8',
-      LastName = 'Connection',
-      LanguageLocaleKey = 'en_US',
-      LocaleSidKey = 'en_US',
-      ProfileId = [SELECT Id FROM Profile WHERE Name = 'Standard User' LIMIT 1]
-      .Id,
-      TimeZoneSidKey = 'America/Sao_Paulo',
-      Username = 'axfcon' + System.currentTimeMillis() + '@example.com'
-    );
-    insert u;
-    insert new PermissionSetAssignment(
-      AssigneeId = u.Id,
-      PermissionSetId = ps.Id
-    );
+    ALT_CLS_ConnectionTestUser.create('axfcon');
   }
 
   private static User connectionUser() {
-    return [SELECT Id FROM User WHERE Alias = 'axfcon' LIMIT 1];
+    return ALT_CLS_ConnectionTestUser.find('axfcon');
   }
 
   private static Id holder() {
@@ -107,7 +60,7 @@ private class ALT_CLS_PluggyConnectionTest {
       ];
       System.assertEquals('item-1', saved.AXF_CON_EXI_PluggyItemId__c);
       System.assertEquals('Active', saved.AXF_CON_PKL_Status__c);
-      System.assertEquals('Holder - 341', saved.Name);
+      System.assertEquals('Holder - Itaú Unibanco (341)', saved.Name);
       System.assertEquals(1, new ALT_CLS_PluggyConnection().countConnections());
     }
   }
