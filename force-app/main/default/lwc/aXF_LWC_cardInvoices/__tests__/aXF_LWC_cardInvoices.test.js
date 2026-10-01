@@ -93,4 +93,29 @@ describe("c-a-x-f-l-w-c-card-invoices", () => {
       "Não foi possível carregar as faturas."
     );
   });
+
+  it("collapses an expanded invoice without calling the server again", async () => {
+    getInvoices.mockResolvedValue([invoice]);
+    getLines.mockResolvedValue([]);
+    const element = await setup();
+    const toggle = element.shadowRoot.querySelector(".invoice-toggle");
+    toggle.click();
+    await flushPromises();
+    toggle.click();
+    await flushPromises();
+    expect(getLines).toHaveBeenCalledTimes(1);
+    expect(element.shadowRoot.querySelector("tbody")).toBeNull();
+  });
+
+  it("shows an error when the transactions of an invoice fail to load", async () => {
+    getInvoices.mockResolvedValue([invoice]);
+    getLines.mockRejectedValue(new Error("x"));
+    const element = await setup();
+    element.shadowRoot.querySelector(".invoice-toggle").click();
+    await flushPromises();
+    expect(element.shadowRoot.querySelector('[role="alert"]').textContent).toBe(
+      "Não foi possível carregar as transações."
+    );
+    expect(element.shadowRoot.querySelector("tbody")).toBeNull();
+  });
 });

@@ -15,6 +15,7 @@ export default class AXF_LWC_cardInvoices extends NavigationMixin(
 
   async connectedCallback() {
     try {
+      this.errorMessage = undefined;
       const invoices = await getInvoices({ creditCardId: this.recordId });
       this.invoices = invoices.map((invoice) => ({
         ...invoice,
@@ -37,12 +38,19 @@ export default class AXF_LWC_cardInvoices extends NavigationMixin(
   async handleToggle(event) {
     const id = event.currentTarget.dataset.id;
     const invoice = this.invoices.find((i) => i.id === id);
+    if (invoice.loading) {
+      return;
+    }
     if (!invoice.expanded) {
+      invoice.loading = true;
       try {
         invoice.lines = await getLines({ invoiceId: id });
+        this.errorMessage = undefined;
       } catch {
         this.errorMessage = "Não foi possível carregar as transações.";
         return;
+      } finally {
+        invoice.loading = false;
       }
     }
     invoice.expanded = !invoice.expanded;
