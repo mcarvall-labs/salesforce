@@ -15,7 +15,7 @@ private class ALT_CLS_PluggyConnectionSummaryTest {
   }
 
   private static User dashboardUser() {
-    return [SELECT Id FROM User WHERE Alias = 'axfdash' LIMIT 1];
+    return ALT_CLS_ConnectionTestUser.find('axfdash');
   }
 
   @IsTest

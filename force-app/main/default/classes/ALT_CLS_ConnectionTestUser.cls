@@ -1,44 +1,12 @@
 /**
- * @description Test helper: creates a Standard User with CRUD/FLS on
- * AXF_OBJ_PluggyConnection__c through a permission set, so user-mode reads and
- * writes can be exercised under System.runAs.
+ * @description Test helper: creates a Standard User holding the Axon permission sets
+ * (Configuração and Usuário), so user-mode reads and writes on
+ * AXF_OBJ_PluggyConnection__c run with the same access as a real user. The permission
+ * sets come from the deployed metadata, so no permission DML is needed.
  */
 @IsTest
 public class ALT_CLS_ConnectionTestUser {
   public static User create(String alias) {
-    PermissionSet ps = new PermissionSet(
-      Label = 'Connection Test ' + alias,
-      Name = 'AXF_ConnectionTest_' + alias
-    );
-    insert ps;
-    insert new ObjectPermissions(
-      ParentId = ps.Id,
-      SobjectType = 'AXF_OBJ_PluggyConnection__c',
-      PermissionsCreate = true,
-      PermissionsRead = true,
-      PermissionsEdit = true,
-      PermissionsDelete = true
-    );
-    List<FieldPermissions> fields = new List<FieldPermissions>();
-    for (
-      String field : new List<String>{
-        'AXF_CON_EXI_PluggyItemId__c',
-        'AXF_CON_PKL_Status__c',
-        'AXF_CON_DT_LastSyncDatetime__c',
-        'AXF_CON_TAL_SyncErrorMessage__c'
-      }
-    ) {
-      fields.add(
-        new FieldPermissions(
-          ParentId = ps.Id,
-          SobjectType = 'AXF_OBJ_PluggyConnection__c',
-          Field = 'AXF_OBJ_PluggyConnection__c.' + field,
-          PermissionsRead = true,
-          PermissionsEdit = true
-        )
-      );
-    }
-    insert fields;
     User u = new User(
       Alias = alias,
       Email = alias + '@example.com',
@@ -52,10 +20,21 @@ public class ALT_CLS_ConnectionTestUser {
       Username = alias + System.currentTimeMillis() + '@example.com'
     );
     insert u;
-    insert new PermissionSetAssignment(
-      AssigneeId = u.Id,
-      PermissionSetId = ps.Id
-    );
+    List<PermissionSetAssignment> assignments = new List<PermissionSetAssignment>();
+    for (PermissionSet ps : [
+      SELECT Id
+      FROM PermissionSet
+      WHERE Name IN ('AXF_PS_Configuracao', 'AXF_PS_Usuario')
+    ]) {
+      assignments.add(
+        new PermissionSetAssignment(AssigneeId = u.Id, PermissionSetId = ps.Id)
+      );
+    }
+    insert assignments;
     return u;
+  }
+
+  public static User find(String alias) {
+    return [SELECT Id FROM User WHERE Alias = :alias LIMIT 1];
   }
 }

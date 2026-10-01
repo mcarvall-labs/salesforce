@@ -6,7 +6,7 @@ private class AXF_CLS_CTRL_ConnectionDashboardTest {
   }
 
   private static User controllerUser() {
-    return [SELECT Id FROM User WHERE Alias = 'axfctrl' LIMIT 1];
+    return ALT_CLS_ConnectionTestUser.find('axfctrl');
   }
 
   @IsTest
