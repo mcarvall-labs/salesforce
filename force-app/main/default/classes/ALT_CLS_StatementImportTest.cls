@@ -380,4 +380,90 @@ private class ALT_CLS_StatementImportTest {
     }
     System.assertEquals(true, refused);
   }
+
+  private static ALT_CLS_StatementImport.Line firstLine(String csv) {
+    return new ALT_CLS_StatementImport()
+      .preview(manualAccount(), 'a.csv', 'data,descricao,valor\n' + csv)
+      .lines[0];
+  }
+
+  @IsTest
+  static void csvAmountsAcceptBrazilianAndUsFormats() {
+    System.runAs(new User(Id = UserInfo.getUserId())) {
+      Map<String, Decimal> expected = new Map<String, Decimal>{
+        '"1,234.56"' => 1234.56,
+        '"1.234,56"' => 1234.56,
+        '"-R$ 35,50"' => -35.5,
+        '"-R$ 1.000,00"' => -1000,
+        '12.5' => 12.5,
+        '"1.234.567,89"' => 1234567.89
+      };
+      for (String raw : expected.keySet()) {
+        ALT_CLS_StatementImport.Line line = firstLine('10/09/2026,x,' + raw);
+        System.assertEquals(null, line.error, raw);
+        System.assertEquals(expected.get(raw), line.amount, raw);
+      }
+    }
+  }
+
+  @IsTest
+  static void csvAmbiguousAmountIsAnErrorLine() {
+    System.runAs(new User(Id = UserInfo.getUserId())) {
+      for (String raw : new List<String>{ '1.234', '"1,234"' }) {
+        ALT_CLS_StatementImport.Line line = firstLine('10/09/2026,x,' + raw);
+        System.assertEquals(ALT_CLS_StatementImport.INVALID, line.status, raw);
+      }
+    }
+  }
+
+  @IsTest
+  static void csvImpossibleAndShortDatesAreErrorLinesAndIsoWithTimeWorks() {
+    System.runAs(new User(Id = UserInfo.getUserId())) {
+      System.assertEquals(
+        ALT_CLS_StatementImport.INVALID,
+        firstLine('31/02/2026,x,1').status
+      );
+      System.assertEquals(
+        ALT_CLS_StatementImport.INVALID,
+        firstLine('10/09/26,x,1').status
+      );
+      ALT_CLS_StatementImport.Line iso = firstLine('2026-09-10T12:30:00Z,x,1');
+      System.assertEquals(null, iso.error);
+      System.assertEquals(Date.newInstance(2026, 9, 10), iso.lineDate);
+    }
+  }
+
+  @IsTest
+  static void csvDedupeIgnoresTheScaleOfTheAmount() {
+    System.runAs(new User(Id = UserInfo.getUserId())) {
+      Id accountId = manualAccount();
+      new ALT_CLS_StatementImport()
+        .importFile(
+          accountId,
+          'a.csv',
+          'data,descricao,valor\n10/09/2026,Cafe,-5.00'
+        );
+      ALT_CLS_StatementImport.Preview preview = new ALT_CLS_StatementImport()
+        .preview(
+          accountId,
+          'b.csv',
+          'data,descricao,valor\n10/09/2026,Cafe,"-5,0"'
+        );
+      System.assertEquals(1, preview.duplicateCount);
+      System.assertEquals(0, preview.newCount);
+    }
+  }
+
+  @IsTest
+  static void csvWithUtf8BomIsRecognized() {
+    System.runAs(new User(Id = UserInfo.getUserId())) {
+      ALT_CLS_StatementImport.Preview preview = new ALT_CLS_StatementImport()
+        .preview(
+          manualAccount(),
+          'a.csv',
+          '\uFEFFdata,descricao,valor\n10/09/2026,Cafe,-5'
+        );
+      System.assertEquals(1, preview.newCount);
+    }
+  }
 }
