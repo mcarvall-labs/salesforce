@@ -2,7 +2,7 @@
 <RecordType xmlns="http://soap.sforce.com/2006/04/metadata">
     <fullName>AXF_Person</fullName>
     <active>true</active>
-    <label>Pessoa</label>
+    <label>Titular Pessoa Física</label>
     <picklistValues>
         <picklist>AccountSource</picklist>
         <values>

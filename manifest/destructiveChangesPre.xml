@@ -1,9 +1,4 @@
 <?xml version="1.0" encoding="UTF-8" ?>
 <Package xmlns="http://soap.sforce.com/2006/04/metadata">
-  <types>
-    <members>AXF_CA_AxonFinance</members>
-    <members>AXF_CA_AxonConfiguration</members>
-    <name>CustomApplication</name>
-  </types>
   <version>62.0</version>
 </Package>

@@ -1,8 +1,8 @@
 <?xml version="1.0" encoding="UTF-8" ?>
 <RecordType xmlns="http://soap.sforce.com/2006/04/metadata">
-    <fullName>AXF_Business</fullName>
+    <fullName>AXF_Family</fullName>
     <active>true</active>
-    <label>Titular Pessoa Jurídica</label>
+    <label>Família</label>
     <picklistValues>
         <picklist>AccountSource</picklist>
         <values>

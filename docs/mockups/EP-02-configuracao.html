@@ -1,0 +1,507 @@
+<!doctype html>
+<html lang="pt-BR">
+  <head>
+    <meta charset="utf-8" />
+    <title>Mockup EP-02 — Axon · Configuração</title>
+    <style>
+      :root {
+        --blue: #0176d3;
+        --bg: #f3f3f3;
+        --bd: #dddbda;
+        --tx: #181818;
+        --mut: #706e6b;
+        --ok: #2e844a;
+        --err: #ba0517;
+        --warn: #dd7a01;
+      }
+      * {
+        box-sizing: border-box;
+      }
+      body {
+        margin: 0;
+        font:
+          14px/1.4 -apple-system,
+          Segoe UI,
+          Arial,
+          sans-serif;
+        background: var(--bg);
+        color: var(--tx);
+      }
+      .nav {
+        background: #fff;
+        border-bottom: 3px solid var(--blue);
+        display: flex;
+        align-items: center;
+        gap: 4px;
+        padding: 0 16px;
+        height: 48px;
+      }
+      .nav b {
+        margin-right: 16px;
+        color: var(--blue);
+      }
+      .nav a {
+        padding: 14px 12px;
+        cursor: pointer;
+        color: var(--tx);
+        border-bottom: 3px solid transparent;
+        margin-bottom: -3px;
+      }
+      .nav a.on {
+        border-color: var(--blue);
+        font-weight: 600;
+      }
+      .page {
+        max-width: 980px;
+        margin: 20px auto;
+        padding: 0 16px;
+      }
+      .card {
+        background: #fff;
+        border: 1px solid var(--bd);
+        border-radius: 6px;
+        padding: 16px;
+        margin-bottom: 16px;
+      }
+      h2 {
+        margin: 0 0 12px;
+        font-size: 18px;
+      }
+      h3 {
+        margin: 0 0 8px;
+        font-size: 14px;
+      }
+      .row {
+        display: flex;
+        gap: 12px;
+        flex-wrap: wrap;
+      }
+      .kpi {
+        flex: 1;
+        min-width: 150px;
+        border: 1px solid var(--bd);
+        border-radius: 6px;
+        padding: 12px;
+      }
+      .kpi .n {
+        font-size: 28px;
+        font-weight: 700;
+      }
+      table {
+        width: 100%;
+        border-collapse: collapse;
+      }
+      th,
+      td {
+        text-align: left;
+        padding: 8px;
+        border-bottom: 1px solid var(--bd);
+      }
+      th {
+        color: var(--mut);
+        font-size: 12px;
+        text-transform: uppercase;
+      }
+      .pill {
+        padding: 2px 10px;
+        border-radius: 12px;
+        color: #fff;
+        font-size: 12px;
+      }
+      .ok {
+        background: var(--ok);
+      }
+      .err {
+        background: var(--err);
+      }
+      .pause {
+        background: var(--mut);
+      }
+      button {
+        background: #fff;
+        border: 1px solid var(--bd);
+        color: var(--blue);
+        border-radius: 4px;
+        padding: 6px 14px;
+        cursor: pointer;
+        font-size: 13px;
+      }
+      button.pri {
+        background: var(--blue);
+        color: #fff;
+        border-color: var(--blue);
+      }
+      label {
+        display: block;
+        font-size: 12px;
+        color: var(--mut);
+        margin: 12px 0 4px;
+      }
+      input {
+        width: 100%;
+        padding: 8px;
+        border: 1px solid var(--bd);
+        border-radius: 4px;
+        font-size: 14px;
+      }
+      .steps {
+        display: flex;
+        margin-bottom: 20px;
+      }
+      .steps div {
+        flex: 1;
+        text-align: center;
+        padding: 8px;
+        border-bottom: 3px solid var(--bd);
+        color: var(--mut);
+        font-size: 13px;
+      }
+      .steps div.on {
+        border-color: var(--blue);
+        color: var(--blue);
+        font-weight: 600;
+      }
+      .steps div.done {
+        border-color: var(--ok);
+        color: var(--ok);
+      }
+      .dd {
+        border: 1px solid var(--bd);
+        border-radius: 4px;
+        margin-top: 2px;
+        background: #fff;
+        max-height: 220px;
+        overflow: auto;
+      }
+      .dd div {
+        padding: 8px 10px;
+        cursor: pointer;
+      }
+      .dd div:hover {
+        background: #eef4ff;
+      }
+      .dd small {
+        color: var(--mut);
+      }
+      .grp {
+        font-size: 11px;
+        color: var(--mut);
+        text-transform: uppercase;
+        padding: 6px 10px;
+        background: #fafaf9;
+        cursor: default !important;
+      }
+      .note {
+        background: #fff8e1;
+        border: 1px solid #f0d98c;
+        padding: 8px 12px;
+        border-radius: 4px;
+        font-size: 12px;
+        margin-bottom: 16px;
+      }
+      .hide {
+        display: none;
+      }
+      .gen {
+        margin-top: 12px;
+        padding: 8px 12px;
+        background: #eef4ff;
+        border-radius: 4px;
+      }
+    </style>
+  </head>
+  <body>
+    <div class="nav">
+      <b>Axon · Configuração</b>
+      <a class="on" data-v="home">Início</a>
+      <a data-v="wiz">Assistente de configuração</a>
+      <a data-v="con">Conexões</a>
+    </div>
+    <div class="page">
+      <div class="note">
+        Mockup de referência (EP-02). Dados fictícios. Navegue pelas abas, pelos
+        passos do assistente e digite na busca de instituição.
+      </div>
+
+      <!-- HOME -->
+      <div id="home">
+        <div class="card">
+          <div
+            style="
+              display: flex;
+              justify-content: space-between;
+              align-items: center;
+              margin-bottom: 12px;
+            "
+          >
+            <h2 style="margin: 0">Conexões Pluggy</h2>
+            <div>
+              <button>Sincronizar tudo</button>
+              <button class="pri" onclick="go('wiz')">+ Nova conexão</button>
+            </div>
+          </div>
+          <div class="row">
+            <div class="kpi">
+              <div class="n" style="color: var(--ok)">3</div>
+              Ativas
+            </div>
+            <div class="kpi">
+              <div class="n" style="color: var(--err)">1</div>
+              Com erro
+            </div>
+            <div class="kpi">
+              <div class="n" style="color: var(--mut)">0</div>
+              Pausadas
+            </div>
+          </div>
+        </div>
+        <div class="card">
+          <table>
+            <tr>
+              <th>Conexão</th>
+              <th>Status</th>
+              <th>Último sync</th>
+              <th></th>
+            </tr>
+            <tr>
+              <td>Michel Lopes · 077 Banco Inter</td>
+              <td><span class="pill ok">Ativa</span></td>
+              <td>30/09 08:00</td>
+              <td><button>Sincronizar</button></td>
+            </tr>
+            <tr>
+              <td>Michel Lopes · 756 Sicoob</td>
+              <td><span class="pill ok">Ativa</span></td>
+              <td>30/09 08:00</td>
+              <td><button>Sincronizar</button></td>
+            </tr>
+            <tr>
+              <td>Esposa · 341 Itaú Unibanco</td>
+              <td><span class="pill ok">Ativa</span></td>
+              <td>30/09 08:00</td>
+              <td><button>Sincronizar</button></td>
+            </tr>
+            <tr>
+              <td>Empresa X · 301 Contabilizei Bank</td>
+              <td><span class="pill err">Erro</span></td>
+              <td>29/09 08:00</td>
+              <td><button>Ver erro</button></td>
+            </tr>
+          </table>
+        </div>
+        <div
+          class="card"
+          style="
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+          "
+        >
+          <div>
+            Credenciais Pluggy: <b style="color: var(--ok)">✔ configuradas</b>
+          </div>
+          <button>Alterar credenciais <small>(admin)</small></button>
+        </div>
+      </div>
+
+      <!-- WIZARD -->
+      <div id="wiz" class="hide">
+        <div class="card">
+          <h2>Assistente de configuração</h2>
+          <div class="steps" id="steps">
+            <div>1 Credenciais</div>
+            <div>2 Conexão</div>
+            <div>3 Contas e cartões</div>
+            <div>4 Pronto</div>
+          </div>
+
+          <div class="s" data-s="1">
+            <label>Client Id</label
+            ><input placeholder="xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx" />
+            <label>Client Secret</label
+            ><input type="password" value="••••••••••••••••" />
+            <p style="color: var(--mut); font-size: 12px">
+              Gravado em External Credential. Visível só para administrador.
+            </p>
+            <button class="pri" onclick="step(2)">Testar e salvar</button>
+          </div>
+
+          <div class="s hide" data-s="2">
+            <label>Titular (Account / Person Account)</label
+            ><input value="Michel Lopes" />
+            <label>Instituição</label>
+            <input
+              id="q"
+              placeholder="Digite código ou nome: ex. 'inter', '341', 'mercado'"
+              autocomplete="off"
+            />
+            <div class="dd" id="dd"></div>
+            <label>Item Id (cole do meu.pluggy)</label
+            ><input
+              id="item"
+              placeholder="xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx"
+            />
+            <div class="gen">Nome gerado: <b id="gen">—</b></div>
+            <p><button class="pri" onclick="step(3)">Criar conexão</button></p>
+          </div>
+
+          <div class="s hide" data-s="3">
+            <p>Encontrado no Pluggy — titular: <b>Michel Lopes</b></p>
+            <table>
+              <tr>
+                <th></th>
+                <th>Tipo</th>
+                <th>Identificação</th>
+                <th>Vínculo</th>
+              </tr>
+              <tr>
+                <td><input type="checkbox" checked style="width: auto" /></td>
+                <td>Conta corrente</td>
+                <td>Ag 0001 · ••1234</td>
+                <td>Michel Lopes</td>
+              </tr>
+              <tr>
+                <td><input type="checkbox" checked style="width: auto" /></td>
+                <td>Cartão de crédito</td>
+                <td>••5678 · Mastercard</td>
+                <td>Michel Lopes</td>
+              </tr>
+            </table>
+            <p><button class="pri" onclick="step(4)">Importar</button></p>
+          </div>
+
+          <div class="s hide" data-s="4">
+            <h3 style="color: var(--ok)">✔ Tudo pronto</h3>
+            <p>1 conta e 1 cartão vinculados a Michel Lopes.</p>
+            <button class="pri" onclick="go('con')">Ir para Conexões</button>
+            <button onclick="step(1)">Nova conexão</button>
+          </div>
+        </div>
+      </div>
+
+      <!-- CONEXÕES -->
+      <div id="con" class="hide">
+        <div class="card">
+          <h2>
+            Conexões Pluggy
+            <small style="color: var(--mut); font-weight: 400"
+              >· list view padrão</small
+            >
+          </h2>
+          <table>
+            <tr>
+              <th>Nome</th>
+              <th>Titular</th>
+              <th>Instituição</th>
+              <th>Item Id</th>
+              <th>Status</th>
+            </tr>
+            <tr>
+              <td>Michel Lopes · Banco Inter</td>
+              <td>Michel Lopes</td>
+              <td>077</td>
+              <td>a1b2…9f</td>
+              <td><span class="pill ok">Ativa</span></td>
+            </tr>
+            <tr>
+              <td>Michel Lopes · Sicoob</td>
+              <td>Michel Lopes</td>
+              <td>756</td>
+              <td>c3d4…1a</td>
+              <td><span class="pill ok">Ativa</span></td>
+            </tr>
+            <tr>
+              <td>Esposa · Itaú Unibanco</td>
+              <td>Esposa</td>
+              <td>341</td>
+              <td>e5f6…7b</td>
+              <td><span class="pill ok">Ativa</span></td>
+            </tr>
+          </table>
+        </div>
+      </div>
+    </div>
+
+    <script>
+      // Prioritários primeiro (código COMPE).
+      const prio = [
+        ["756", "Sicoob"],
+        ["301", "Contabilizei Bank"],
+        ["341", "Itaú Unibanco"],
+        ["077", "Banco Inter"],
+        ["323", "Mercado Pago"],
+        ["336", "C6 Bank"]
+      ];
+      const outros = [
+        ["001", "Banco do Brasil"],
+        ["033", "Santander"],
+        ["104", "Caixa Econômica Federal"],
+        ["237", "Bradesco"],
+        ["260", "Nu Pagamentos (Nubank)"],
+        ["290", "PagBank"],
+        ["748", "Sicredi"],
+        ["212", "Banco Original"]
+      ];
+      const $ = (id) => document.getElementById(id);
+      let chosen = "";
+      function go(v) {
+        ["home", "wiz", "con"].forEach((x) =>
+          $(x).classList.toggle("hide", x != v)
+        );
+        document
+          .querySelectorAll(".nav a")
+          .forEach((a) => a.classList.toggle("on", a.dataset.v == v));
+      }
+      document
+        .querySelectorAll(".nav a")
+        .forEach((a) => (a.onclick = () => go(a.dataset.v)));
+      function step(n) {
+        document
+          .querySelectorAll(".s")
+          .forEach((s) => s.classList.toggle("hide", s.dataset.s != n));
+        [...$("steps").children].forEach(
+          (d, i) => (d.className = i + 1 < n ? "done" : i + 1 == n ? "on" : "")
+        );
+      }
+      function lbl(c, n) {
+        return c + " - " + n;
+      }
+      function render() {
+        const t = $("q").value.toLowerCase().trim();
+        const f = (l) =>
+          l.filter(([c, n]) => !t || (c + " " + n).toLowerCase().includes(t));
+        const item = ([c, n]) =>
+          `<div data-c="${c}" data-n="${n}">${lbl(c, n)}</div>`;
+        let h = "";
+        const p = f(prio),
+          o = f(outros);
+        if (p.length)
+          h += '<div class="grp">Mais usados</div>' + p.map(item).join("");
+        if (o.length)
+          h += '<div class="grp">Outros</div>' + o.map(item).join("");
+        $("dd").innerHTML = h || '<div class="grp">Nenhum resultado</div>';
+        $("dd")
+          .querySelectorAll("div[data-c]")
+          .forEach(
+            (d) =>
+              (d.onclick = () => {
+                chosen = d.dataset.n;
+                $("q").value = lbl(d.dataset.c, d.dataset.n);
+                $("dd").innerHTML = "";
+                gen();
+              })
+          );
+      }
+      function gen() {
+        $("gen").textContent = chosen ? "Michel Lopes · " + chosen : "—";
+      }
+      $("q").oninput = () => {
+        chosen = "";
+        gen();
+        render();
+      };
+      $("q").onfocus = render;
+      step(1);
+    </script>
+  </body>
+</html>

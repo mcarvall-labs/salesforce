@@ -199,6 +199,20 @@ export function packageDirectories(root) {
   }
 }
 
+export function hasApexSource(root = process.cwd()) {
+  return packageDirectories(root).some((directory) =>
+    ["classes", "triggers"].some((folder) => {
+      const folderPath = path.join(root, directory, folder);
+      return (
+        fs.existsSync(folderPath) &&
+        fs
+          .readdirSync(folderPath)
+          .some((file) => file.endsWith(".cls") || file.endsWith(".trigger"))
+      );
+    })
+  );
+}
+
 export function analyzeRepository(root = process.cwd()) {
   const directories = packageDirectories(root);
   const classDirectories = directories.map((directory) =>
@@ -255,11 +269,15 @@ if (
     console.error(GUIDANCE);
     process.exit(1);
   }
-  if (triggers === 0) {
+  if (triggers === 0 && hasApexSource()) {
     console.error(
       "Trigger handler boundary: no trigger found under the package directories; refusing to pass vacuously."
     );
     process.exit(1);
   }
-  console.log(`Trigger handler boundary verified for ${triggers} trigger(s).`);
+  console.log(
+    triggers === 0
+      ? "Trigger handler boundary: no Apex in the package directories yet; nothing to verify."
+      : `Trigger handler boundary verified for ${triggers} trigger(s).`
+  );
 }
