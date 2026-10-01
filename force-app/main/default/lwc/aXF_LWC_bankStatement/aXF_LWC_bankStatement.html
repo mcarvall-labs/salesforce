@@ -11,6 +11,12 @@
         <p class="slds-text-color_error" role="alert">{errorMessage}</p>
       </template>
       <template if:true={statement}>
+        <template if:true={statement.truncated}>
+          <p class="slds-text-color_weak" role="status">
+            Extrato limitado às transações mais recentes; meses mais antigos não
+            aparecem.
+          </p>
+        </template>
         <template if:true={hasMonths}>
           <lightning-combobox
             label="Mês"

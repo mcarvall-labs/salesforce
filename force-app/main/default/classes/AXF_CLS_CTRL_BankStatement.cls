@@ -20,6 +20,8 @@ public with sharing class AXF_CLS_CTRL_BankStatement {
     @AuraEnabled
     public String month;
     @AuraEnabled
+    public Boolean truncated;
+    @AuraEnabled
     public List<String> months;
     @AuraEnabled
     public List<StatementRow> rows;
@@ -40,6 +42,7 @@ public with sharing class AXF_CLS_CTRL_BankStatement {
     view.balance = statement.balance;
     view.currencyCode = statement.currencyCode;
     view.month = statement.month;
+    view.truncated = statement.truncated;
     view.months = statement.months;
     view.rows = new List<StatementRow>();
     for (ALT_CLS_BankStatement.Row row : statement.rows) {
