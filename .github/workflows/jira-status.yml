@@ -4,7 +4,7 @@ name: Jira status
 #   branch created and pushed -> Em andamento
 #   pull request opened       -> Em revisão
 # The deployment statuses (No DEV / No UAT / Em PROD) are set by the `jira` job
-# in deploy-salesforce.yml. Lifecycle: agent-docs/rules/project/16-status.md.
+# in post-merge-jira-status.yml. Lifecycle: agent-docs/rules/project/16-status.md.
 
 on:
   push:

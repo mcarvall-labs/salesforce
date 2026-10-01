@@ -1,0 +1,51 @@
+<template>
+  <lightning-card title="Conexões Pluggy" icon-name="standard:link">
+    <div class="slds-p-horizontal_medium">
+      <template if:true={isLoading}>
+        <lightning-spinner
+          alternative-text="Carregando"
+          size="small"
+        ></lightning-spinner>
+      </template>
+      <template if:true={error}>
+        <p class="slds-text-color_error" role="alert">
+          Não foi possível carregar as conexões.
+        </p>
+      </template>
+      <template if:true={data}>
+        <div class="slds-grid slds-gutters slds-m-bottom_medium">
+          <div class="slds-col slds-text-align_center">
+            <p class="slds-text-heading_large" data-id="active">
+              {data.active}
+            </p>
+            <p>Ativas</p>
+          </div>
+          <div class="slds-col slds-text-align_center">
+            <p class="slds-text-heading_large" data-id="error">{data.error}</p>
+            <p>Com erro</p>
+          </div>
+          <div class="slds-col slds-text-align_center">
+            <p class="slds-text-heading_large" data-id="paused">
+              {data.paused}
+            </p>
+            <p>Pausadas</p>
+          </div>
+        </div>
+        <template if:true={hasRows}>
+          <lightning-datatable
+            key-field="id"
+            data={rows}
+            columns={columns}
+            hide-checkbox-column
+          ></lightning-datatable>
+        </template>
+        <template if:false={hasRows}>
+          <p>
+            Nenhuma conexão cadastrada. Use o assistente de configuração para
+            criar a primeira.
+          </p>
+        </template>
+      </template>
+    </div>
+  </lightning-card>
+</template>

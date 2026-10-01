@@ -10,10 +10,10 @@
 
 Create feature/bugfix branches from `develop`.
 
-- Opening a PR against `develop` runs quality checks and validates the delta against `AXON_DEV`.
-- Merging into `develop` deploys that same PR's delta to `AXON_DEV`.
-- Promoting `develop` to `uat` via PR validates against `AXON_UAT`, and merging deploys to `AXON_UAT`.
-- After UAT acceptance, promoting `uat` to `main` via PR validates against `AXON_PROD`, and merging deploys to `AXON_PROD`.
+- Opening a PR against `develop` runs quality checks and deploys the delta to `AXON_DEV` **before** merge; that deploy is a required check, so a failed deploy blocks the merge.
+- Promoting `develop` to `uat` via PR (label `deploy-approved`) deploys for real to `AXON_UAT` **before** merge; a failed deploy blocks the merge.
+- After UAT acceptance, promoting `uat` to `main` via PR (label `deploy-approved`) deploys for real to `AXON_PROD` **before** merge, with PROD's required reviewer; a failed deploy blocks the merge.
+- Nothing is deployed after merge. The merge push only advances the Jira status (`post-merge-jira-status.yml`).
 
 ### Sprint labels
 
@@ -45,8 +45,8 @@ normal test-coverage path and reintroduces the race risk.
 
 - `salesforce-ci.yml`: PR creation, reopening and updates targeting develop/uat/main.
   Quality checks plus dry-run delta validation against DEV/UAT/PROD respectively.
-- `deploy-salesforce.yml`: push to develop/uat/main, requiring a merged PR associated
-  with the exact commit. Direct pushes fail closed. Deploy to DEV/UAT/PROD respectively.
+- `post-merge-jira-status.yml`: push to develop/uat/main. It only moves the Jira
+  issues to the deployed-environment status; it does not deploy.
 
 Validation and deployment use `RunSpecifiedTests` for DEV, UAT and PROD alike,
 scoped to the Apex test classes actually relevant to the delta, instead of running
@@ -172,14 +172,7 @@ conclusion as satisfying a required check, so a single job that simply skipped
 itself without the label never actually blocked the native Merge button; the
 always-running gate job does.
 
-Because DEV already deploys for real before merge and that check is on the exact
-merge tree, `deploy-salesforce.yml`'s post-merge run for `develop` compares the
-merge commit's tree against the merged PR's head tree and reports
-`Skipped (redundant)` instead of calling `sf` again when they're identical (a
-clean merge, no conflict resolution changed content) — the guard-rails above it
-(merged-PR-for-this-exact-commit, base ancestry) still run either way. `uat`/`main`
-don't get this shortcut even when `deploy-approved` was used, since that path is
-opt-in per PR rather than guaranteed.
+Because the real deploy happens before merge on the exact merge tree, there is no post-merge deploy for any branch.
 
 This project has a single GitHub user. GitHub does not allow authors to approve
 their own PRs, so the owner merges after reviewing the changes and passing checks.
@@ -198,8 +191,7 @@ silently producing a partial delta with missing components. Deploys are serializ
 per branch.
 
 Deleted files (and rename deletions, seen as delete+add) never enter the
-add/modify delta and are never auto-deployed by either `salesforce-ci.yml` or
-`deploy-salesforce.yml` — that still requires an explicitly approved destructive
+add/modify delta and are never auto-deployed by either `salesforce-ci.yml` — that still requires an explicitly approved destructive
 release with impact analysis and recovery planning, applied as a separate manual
 step. To remove that toil, the pipeline auto-generates the manifest for that
 release: whenever a PR/push deletes force-app files, `salesforce-delivery.mjs`

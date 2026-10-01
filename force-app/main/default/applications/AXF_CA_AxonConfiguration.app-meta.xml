@@ -11,5 +11,8 @@
     <formFactors>Large</formFactors>
     <label>Axon – Configuração</label>
     <navType>Standard</navType>
+    <tabs>AXF_CT_ConfigHome</tabs>
+    <tabs>AXF_CT_PluggyWizard</tabs>
+    <tabs>AXF_OBJ_PluggyConnection__c</tabs>
     <uiType>Lightning</uiType>
 </CustomApplication>
