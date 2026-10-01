@@ -8,7 +8,7 @@
     <filters>
         <field>ACCOUNT.RECORDTYPE</field>
         <operation>equals</operation>
-        <value>Account.AXF_Person</value>
+        <value>PersonAccount.AXF_Person</value>
     </filters>
     <label>Pessoas físicas</label>
 </ListView>
