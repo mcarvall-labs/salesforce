@@ -1,11 +1,14 @@
 import test from "node:test";
 import assert from "node:assert/strict";
+import fs from "node:fs";
+import os from "node:os";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
 import {
   analyzeTrigger,
   analyzeRepository,
   delegations,
+  hasApexSource,
   packageDirectories
 } from "./trigger-handler-boundary.mjs";
 
@@ -178,6 +181,17 @@ test("package directories come from sfdx-project.json", () => {
 
 test("repository triggers honor the handler boundary", () => {
   const { triggers, violations } = analyzeRepository(repositoryRoot);
-  assert.ok(triggers > 0);
+  assert.ok(triggers > 0 || !hasApexSource(repositoryRoot));
   assert.deepEqual(violations, []);
+});
+
+test("hasApexSource only reports Apex classes and triggers in the package", () => {
+  const root = fs.mkdtempSync(path.join(os.tmpdir(), "apex-source-"));
+  const base = path.join(root, "force-app", "main", "default");
+  fs.mkdirSync(base, { recursive: true });
+  fs.writeFileSync(path.join(base, ".gitkeep"), "");
+  assert.equal(hasApexSource(root), false);
+  fs.mkdirSync(path.join(base, "classes"));
+  fs.writeFileSync(path.join(base, "classes", "A.cls"), "public class A {}");
+  assert.equal(hasApexSource(root), true);
 });

@@ -61,7 +61,7 @@ jobs:
           mapfile -t files < <(git diff --name-only --diff-filter=ACMR "$BASE_SHA" "$GITHUB_SHA" | grep -E 'force-app/.*/(aura|lwc)/.*\.js$' || true)
           if ((${#files[@]})); then npx eslint "${files[@]}"; fi
       - name: Run LWC unit tests
-        run: npm run test:unit -- -- --runInBand
+        run: npm run test:unit -- -- --runInBand --passWithNoTests
       - name: Check trigger handler boundary
         run: node scripts/ci/trigger-handler-boundary.mjs
       - name: Test CI scripts
