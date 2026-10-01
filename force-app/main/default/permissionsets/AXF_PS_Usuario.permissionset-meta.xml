@@ -12,6 +12,10 @@
         <apexClass>AXF_CLS_CTRL_CardInvoices</apexClass>
         <enabled>true</enabled>
     </classAccesses>
+    <classAccesses>
+        <apexClass>AXF_CLS_CTRL_StatementImport</apexClass>
+        <enabled>true</enabled>
+    </classAccesses>
     <description
   >Acesso ao app Axon e à tab Titulares. Sem "Ver todos": a visibilidade por registro vem do dono e da hierarquia de papéis.</description>
     <fieldPermissions>
@@ -45,19 +49,19 @@
         <readable>true</readable>
     </fieldPermissions>
     <fieldPermissions>
-        <editable>false</editable>
+        <editable>true</editable>
         <field
     >AXF_OBJ_BankAccountTransaction__c.AXF_BAT_EXI_PluggyTransactionId__c</field>
         <readable>true</readable>
     </fieldPermissions>
     <fieldPermissions>
-        <editable>false</editable>
+        <editable>true</editable>
         <field
     >AXF_OBJ_BankAccountTransaction__c.AXF_BAT_TXT_Description__c</field>
         <readable>true</readable>
     </fieldPermissions>
     <fieldPermissions>
-        <editable>false</editable>
+        <editable>true</editable>
         <field
     >AXF_OBJ_BankAccountTransaction__c.AXF_BAT_TXT_PluggyCategory__c</field>
         <readable>true</readable>
@@ -134,41 +138,41 @@
         <readable>true</readable>
     </fieldPermissions>
     <fieldPermissions>
-        <editable>false</editable>
+        <editable>true</editable>
         <field>AXF_OBJ_CreditCardTransaction__c.AXF_CCT_CUR_AmountBRL__c</field>
         <readable>true</readable>
     </fieldPermissions>
     <fieldPermissions>
-        <editable>false</editable>
+        <editable>true</editable>
         <field
     >AXF_OBJ_CreditCardTransaction__c.AXF_CCT_EXI_PluggyTransactionId__c</field>
         <readable>true</readable>
     </fieldPermissions>
     <fieldPermissions>
-        <editable>false</editable>
+        <editable>true</editable>
         <field>AXF_OBJ_CreditCardTransaction__c.AXF_CCT_LKP_Invoice__c</field>
         <readable>true</readable>
     </fieldPermissions>
     <fieldPermissions>
-        <editable>false</editable>
+        <editable>true</editable>
         <field
     >AXF_OBJ_CreditCardTransaction__c.AXF_CCT_TXT_CurrencyCode__c</field>
         <readable>true</readable>
     </fieldPermissions>
     <fieldPermissions>
-        <editable>false</editable>
+        <editable>true</editable>
         <field
     >AXF_OBJ_CreditCardTransaction__c.AXF_CCT_TXT_Description__c</field>
         <readable>true</readable>
     </fieldPermissions>
     <fieldPermissions>
-        <editable>false</editable>
+        <editable>true</editable>
         <field
     >AXF_OBJ_CreditCardTransaction__c.AXF_CCT_TXT_Installment__c</field>
         <readable>true</readable>
     </fieldPermissions>
     <fieldPermissions>
-        <editable>false</editable>
+        <editable>true</editable>
         <field
     >AXF_OBJ_CreditCardTransaction__c.AXF_CCT_TXT_PluggyCategory__c</field>
         <readable>true</readable>
@@ -203,9 +207,9 @@
         <viewAllRecords>false</viewAllRecords>
     </objectPermissions>
     <objectPermissions>
-        <allowCreate>false</allowCreate>
+        <allowCreate>true</allowCreate>
         <allowDelete>false</allowDelete>
-        <allowEdit>false</allowEdit>
+        <allowEdit>true</allowEdit>
         <allowRead>true</allowRead>
         <modifyAllRecords>false</modifyAllRecords>
         <object>AXF_OBJ_BankAccountTransaction__c</object>
@@ -230,9 +234,9 @@
         <viewAllRecords>false</viewAllRecords>
     </objectPermissions>
     <objectPermissions>
-        <allowCreate>false</allowCreate>
+        <allowCreate>true</allowCreate>
         <allowDelete>false</allowDelete>
-        <allowEdit>false</allowEdit>
+        <allowEdit>true</allowEdit>
         <allowRead>true</allowRead>
         <modifyAllRecords>false</modifyAllRecords>
         <object>AXF_OBJ_CreditCardTransaction__c</object>
