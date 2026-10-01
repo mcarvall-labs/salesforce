@@ -1,5 +1,5 @@
 /**
- * @description Status counters and rows of the holder's Pluggy connections for the
+ * @description Status counters (aggregated over every visible connection, not just the listed rows) and up to 200 rows of the holder's Pluggy connections for the
  * Configuração home dashboard. Reads run in user mode.
  */
 public with sharing class ALT_CLS_PluggyConnectionSummary {
@@ -21,6 +21,22 @@ public with sharing class ALT_CLS_PluggyConnectionSummary {
 
   public Summary summarize() {
     Summary summary = new Summary();
+    for (AggregateResult statusCount : [
+      SELECT AXF_CON_PKL_Status__c status, COUNT(Id) total
+      FROM AXF_OBJ_PluggyConnection__c
+      WITH USER_MODE
+      GROUP BY AXF_CON_PKL_Status__c
+    ]) {
+      Integer total = (Integer) statusCount.get('total');
+      String status = (String) statusCount.get('status');
+      if (status == 'Active') {
+        summary.active = total;
+      } else if (status == 'Error') {
+        summary.error = total;
+      } else if (status == 'Paused') {
+        summary.paused = total;
+      }
+    }
     for (AXF_OBJ_PluggyConnection__c connection : [
       SELECT
         Id,
@@ -42,13 +58,6 @@ public with sharing class ALT_CLS_PluggyConnectionSummary {
       row.lastSync = connection.AXF_CON_DT_LastSyncDatetime__c;
       row.errorMessage = connection.AXF_CON_TAL_SyncErrorMessage__c;
       summary.rows.add(row);
-      if (row.status == 'Active') {
-        summary.active++;
-      } else if (row.status == 'Error') {
-        summary.error++;
-      } else if (row.status == 'Paused') {
-        summary.paused++;
-      }
     }
     return summary;
   }
