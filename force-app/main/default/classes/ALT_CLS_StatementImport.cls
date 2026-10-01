@@ -45,10 +45,13 @@ public with sharing class ALT_CLS_StatementImport {
       }
     }
     Set<String> existing = target.existingKeys(keys);
+    Set<String> seen = new Set<String>();
     Preview preview = new Preview();
     for (Line line : lines) {
       if (line.status == null) {
-        line.status = existing.contains(line.key) ? DUPLICATE : NEW_LINE;
+        line.status = existing.contains(line.key) || !seen.add(line.key)
+          ? DUPLICATE
+          : NEW_LINE;
       }
       if (line.status == NEW_LINE) {
         preview.newCount++;
@@ -65,22 +68,20 @@ public with sharing class ALT_CLS_StatementImport {
   public Result importFile(Id recordId, String fileName, String content) {
     Result result = new Result();
     Target target = target(recordId);
-    Map<String, Line> valid = new Map<String, Line>();
-    for (Line line : parse(recordId, fileName, content)) {
-      if (line.status == null) {
-        valid.put(line.key, line);
+    List<Line> fresh = new List<Line>();
+    for (Line line : preview(recordId, fileName, content).lines) {
+      if (line.status == NEW_LINE) {
+        fresh.add(line);
       }
     }
-    List<Database.UpsertResult> saved = target.save(valid.values());
-    for (Database.UpsertResult item : saved) {
-      if (!item.isSuccess()) {
-        result.message =
-          'Não foi possível importar: ' + item.getErrors()[0].getMessage();
-        return result;
-      }
+    try {
+      target.save(fresh);
+    } catch (DmlException e) {
+      result.message = 'Nada foi importado: ' + e.getDmlMessage(0);
+      return result;
     }
     result.success = true;
-    result.imported = valid.size();
+    result.imported = fresh.size();
     result.message = 'Importação concluída.';
     return result;
   }
@@ -288,9 +289,8 @@ public with sharing class ALT_CLS_StatementImport {
         WHERE Id = :recordId
         WITH USER_MODE
       ];
-      requireManual(
-        accounts.isEmpty() ? null : accounts[0].RecordType.DeveloperName
-      );
+      requireFound(accounts.isEmpty());
+      requireManual(accounts[0].RecordType.DeveloperName);
       return new AccountTarget(recordId);
     }
     if (objectName == 'AXF_OBJ_CreditCard__c') {
@@ -300,16 +300,27 @@ public with sharing class ALT_CLS_StatementImport {
         WHERE Id = :recordId
         WITH USER_MODE
       ];
-      requireManual(cards.isEmpty() ? null : cards[0].RecordType.DeveloperName);
+      requireFound(cards.isEmpty());
+      requireManual(cards[0].RecordType.DeveloperName);
       return new CardTarget(recordId);
     }
     throw new ImportException('Importação disponível só para conta ou cartão.');
   }
 
-  // Records created by the Pluggy sync are read-only in Axon; everything else is manual.
+  // Only AXF_Manual records accept imports; Pluggy ones are synced, and a record without a
+  // record type or that cannot be read is refused rather than assumed manual.
+  private static void requireFound(Boolean missing) {
+    if (missing) {
+      throw new ImportException('Conta ou cartão não encontrado.');
+    }
+  }
+
+  @TestVisible
+  private static Boolean enforceRecordType = true;
+
   @TestVisible
   private static void requireManual(String recordTypeName) {
-    if (recordTypeName == 'AXF_Pluggy') {
+    if (enforceRecordType && recordTypeName != 'AXF_Manual') {
       throw new ImportException(
         'A importação vale só para conta ou cartão manual; os do Pluggy são sincronizados.'
       );
@@ -318,7 +329,7 @@ public with sharing class ALT_CLS_StatementImport {
 
   private abstract class Target {
     public abstract Set<String> existingKeys(Set<String> keys);
-    public abstract List<Database.UpsertResult> save(List<Line> lines);
+    public abstract void save(List<Line> lines);
   }
 
   private class AccountTarget extends Target {
@@ -341,7 +352,7 @@ public with sharing class ALT_CLS_StatementImport {
       return found;
     }
 
-    public override List<Database.UpsertResult> save(List<Line> lines) {
+    public override void save(List<Line> lines) {
       List<AXF_OBJ_BankAccountTransaction__c> records = new List<AXF_OBJ_BankAccountTransaction__c>();
       for (Line line : lines) {
         records.add(
@@ -354,12 +365,7 @@ public with sharing class ALT_CLS_StatementImport {
           )
         );
       }
-      return Database.upsert(
-        records,
-        AXF_OBJ_BankAccountTransaction__c.AXF_BAT_EXI_PluggyTransactionId__c,
-        false,
-        AccessLevel.USER_MODE
-      );
+      insert as user records;
     }
   }
 
@@ -383,7 +389,7 @@ public with sharing class ALT_CLS_StatementImport {
       return found;
     }
 
-    public override List<Database.UpsertResult> save(List<Line> lines) {
+    public override void save(List<Line> lines) {
       List<AXF_OBJ_CreditCardTransaction__c> records = new List<AXF_OBJ_CreditCardTransaction__c>();
       for (Line line : lines) {
         records.add(
@@ -396,12 +402,7 @@ public with sharing class ALT_CLS_StatementImport {
           )
         );
       }
-      return Database.upsert(
-        records,
-        AXF_OBJ_CreditCardTransaction__c.AXF_CCT_EXI_PluggyTransactionId__c,
-        false,
-        AccessLevel.USER_MODE
-      );
+      insert as user records;
     }
   }
 }
