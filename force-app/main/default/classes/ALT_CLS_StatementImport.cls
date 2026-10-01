@@ -153,7 +153,7 @@ public with sharing class ALT_CLS_StatementImport {
   // The key hashes record + date + value + description; identical lines of the same file get an
   // ordinal so two equal purchases are both kept and importing the file again changes nothing.
   private List<Line> parseCsv(Id recordId, String content) {
-    List<String> rows = content.split('\\r?\\n');
+    List<String> rows = content.replace('\uFEFF', '').split('\\r?\\n');
     Integer headerIndex = 0;
     while (headerIndex < rows.size() && String.isBlank(rows[headerIndex])) {
       headerIndex++;
@@ -191,7 +191,7 @@ public with sharing class ALT_CLS_StatementImport {
           '|' +
           String.valueOf(line.lineDate) +
           '|' +
-          line.amount +
+          line.amount.setScale(2).toPlainString() +
           '|' +
           line.description;
         Integer ordinal = occurrences.containsKey(signature)
@@ -250,23 +250,50 @@ public with sharing class ALT_CLS_StatementImport {
     return cells;
   }
 
+  // dd/MM/yyyy or yyyy-MM-dd[Thh:mm...]; impossible dates (31/02) and short years are errors.
   private Date csvDate(String value) {
+    Integer year;
+    Integer month;
+    Integer day;
     if (Pattern.matches('\\d{4}-\\d{2}-\\d{2}.*', value)) {
-      return Date.valueOf(value.substring(0, 10));
+      year = Integer.valueOf(value.substring(0, 4));
+      month = Integer.valueOf(value.substring(5, 7));
+      day = Integer.valueOf(value.substring(8, 10));
+    } else if (Pattern.matches('\\d{1,2}/\\d{1,2}/\\d{4}', value)) {
+      List<String> parts = value.split('/');
+      day = Integer.valueOf(parts[0]);
+      month = Integer.valueOf(parts[1]);
+      year = Integer.valueOf(parts[2]);
+    } else {
+      throw new ImportException('Data inválida: ' + value);
     }
-    List<String> parts = value.split('/');
-    return Date.newInstance(
-      Integer.valueOf(parts[2]),
-      Integer.valueOf(parts[1]),
-      Integer.valueOf(parts[0])
-    );
+    Date parsed = Date.newInstance(year, month, day);
+    if (parsed.month() != month || parsed.day() != day) {
+      throw new ImportException('Data inexistente: ' + value);
+    }
+    return parsed;
   }
 
-  // Accepts 1234.56, 1.234,56 and -R$ 35,50.
+  // Accepts 1234.56, 1,234.56, 1.234,56, 35,50 and -R$ 35,50. A lone separator followed by
+  // exactly three digits (1.234 / 1,234) is ambiguous between decimal and thousands and is
+  // rejected so a wrong amount is never imported silently.
   private Decimal csvAmount(String value) {
     String text = value.replace('R$', '').replace(' ', '');
-    if (text.contains(',')) {
-      text = text.replace('.', '').replace(',', '.');
+    Boolean hasDot = text.contains('.');
+    Boolean hasComma = text.contains(',');
+    if (hasDot && hasComma) {
+      Boolean commaIsDecimal = text.lastIndexOf(',') > text.lastIndexOf('.');
+      text = commaIsDecimal
+        ? text.replace('.', '').replace(',', '.')
+        : text.replace(',', '');
+    } else if (hasComma || hasDot) {
+      String separator = hasComma ? ',' : '.';
+      if (Pattern.matches('-?\\d{1,3}(\\' + separator + '\\d{3})+', text)) {
+        throw new ImportException(
+          'Valor ambíguo (milhar ou decimal): ' + value
+        );
+      }
+      text = hasComma ? text.replace(',', '.') : text;
     }
     return Decimal.valueOf(text);
   }
