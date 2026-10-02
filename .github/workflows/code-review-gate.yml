@@ -1,0 +1,49 @@
+name: Code review gate
+
+# A pull request into `develop` can only merge once every Jira issue it names
+# passed the code review (`/mic_code_review`) and carries `code-review-approved`.
+# An issue whose PR declares manual deployment steps also needs `manual-step`.
+# The Jira label is read live: after the review applies it, re-run this job.
+# Rules: agent-docs/rules/project/16-status.md.
+
+on:
+  pull_request:
+    types: [opened, reopened, synchronize, edited, ready_for_review]
+    branches: [develop]
+
+permissions:
+  contents: read
+  pull-requests: read
+
+concurrency:
+  group: code-review-gate-${{ github.event.pull_request.number }}
+  cancel-in-progress: true
+
+jobs:
+  code-review-gate:
+    name: Code review approved
+    if: github.event.pull_request.head.repo.full_name == github.repository
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      # The script comes from the base branch, never from the PR head, because
+      # this job holds the Jira token.
+      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
+        with:
+          ref: ${{ github.event.pull_request.base.sha }}
+          persist-credentials: false
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4.4.0
+        with:
+          node-version: 22
+      - name: Require code-review-approved on the Jira issues
+        env:
+          PR_NUMBER: ${{ github.event.pull_request.number }}
+          PR_TITLE: ${{ github.event.pull_request.title }}
+          PR_HEAD_REF: ${{ github.event.pull_request.head.ref }}
+          PR_BODY: ${{ github.event.pull_request.body }}
+          GH_TOKEN: ${{ github.token }}
+          GITHUB_REPOSITORY: ${{ github.repository }}
+          JIRA_BASE_URL: ${{ vars.JIRA_BASE_URL }}
+          JIRA_USER_EMAIL: ${{ secrets.JIRA_USER_EMAIL }}
+          JIRA_API_TOKEN: ${{ secrets.JIRA_API_TOKEN }}
+        run: node scripts/ci/code-review-gate.mjs
