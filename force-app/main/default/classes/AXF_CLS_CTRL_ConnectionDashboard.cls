@@ -53,25 +53,31 @@ public with sharing class AXF_CLS_CTRL_ConnectionDashboard {
     return data;
   }
 
-  // Brings the accounts and cards of one connection. Their transactions and invoices come with
-  // the scheduled sync (AXF-184): a callout cannot follow the DML of this one.
+  // "Sincronizar agora": starts the full sync (accounts, cards, transactions, invoices) of one
+  // connection in the background; the dashboard shows the new status when it finishes.
   @AuraEnabled
   public static SyncView syncConnection(Id connectionId) {
     if (connectionId == null) {
       throw new AuraHandledException('Informe a conexão.');
     }
-    ALT_CLS_PluggyAccountSync.Result result = new ALT_CLS_PluggyAccountSync()
-      .sync(connectionId);
+    List<AXF_OBJ_PluggyConnection__c> found = [
+      SELECT AXF_CON_PKL_Status__c
+      FROM AXF_OBJ_PluggyConnection__c
+      WHERE Id = :connectionId
+      WITH USER_MODE
+    ];
     SyncView view = new SyncView();
-    view.success = result.success;
-    view.message = result.success
-      ? result.message +
-        ' ' +
-        result.accounts +
-        ' contas e ' +
-        result.cards +
-        ' cartões.'
-      : result.message;
+    if (found.isEmpty()) {
+      view.success = false;
+      view.message = 'Conexão não encontrada.';
+    } else if (found[0].AXF_CON_PKL_Status__c == 'Paused') {
+      view.success = false;
+      view.message = 'A conexão está pausada.';
+    } else {
+      ALT_CLS_PluggySyncBatch.run(connectionId);
+      view.success = true;
+      view.message = 'Sincronização iniciada. Atualize o painel em instantes.';
+    }
     return view;
   }
 }
