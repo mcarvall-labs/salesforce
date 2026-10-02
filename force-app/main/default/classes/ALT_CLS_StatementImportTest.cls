@@ -717,4 +717,137 @@ private class ALT_CLS_StatementImportTest {
       );
     }
   }
+
+  @IsTest
+  static void identicalLinesAreFlaggedWithTheirRepeatCount() {
+    System.runAs(new User(Id = UserInfo.getUserId())) {
+      ALT_CLS_StatementImport.Preview preview = new ALT_CLS_StatementImport()
+        .preview(
+          manualAccount(),
+          'a.csv',
+          'Data,Descrição,Valor\n14/09/2026,PIX,"-3.000,00"\n14/09/2026,PIX,"-3.000,00"\n15/09/2026,PIX,"-1,00"'
+        );
+      System.assertEquals(3, preview.newCount);
+      System.assertEquals('Linha idêntica repetida: 2×', preview.lines[0].note);
+      System.assertEquals('Linha idêntica repetida: 2×', preview.lines[1].note);
+      System.assertEquals(null, preview.lines[2].note);
+      System.assertNotEquals(preview.lines[0].key, preview.lines[1].key);
+    }
+  }
+
+  @IsTest
+  static void aDayCutInHalfBetweenFilesRaisesAWarning() {
+    System.runAs(new User(Id = UserInfo.getUserId())) {
+      Id accountId = manualAccount();
+      new ALT_CLS_StatementImport()
+        .importFile(
+          accountId,
+          'a.csv',
+          'Data,Descrição,Valor\n13/09/2026,A,-1\n14/09/2026,B,-2\n14/09/2026,C,-3'
+        );
+      ALT_CLS_StatementImport.Preview cut = new ALT_CLS_StatementImport()
+        .preview(
+          accountId,
+          'b.csv',
+          'Data,Descrição,Valor\n14/09/2026,B,-2\n15/09/2026,D,-4'
+        );
+      System.assertEquals(1, cut.warnings.size());
+      System.assert(cut.warnings[0].contains('14/09/2026'), cut.warnings[0]);
+      System.assert(cut.warnings[0].contains('já há 2'), cut.warnings[0]);
+      ALT_CLS_StatementImport.Preview whole = new ALT_CLS_StatementImport()
+        .preview(
+          accountId,
+          'c.csv',
+          'Data,Descrição,Valor\n13/09/2026,A,-1\n14/09/2026,B,-2\n14/09/2026,C,-3'
+        );
+      System.assertEquals(0, whole.warnings.size());
+    }
+  }
+
+  @IsTest
+  static void layoutKeyHeadersDecideWhichColumnsFormTheKey() {
+    System.runAs(new User(Id = UserInfo.getUserId())) {
+      Id accountId = manualAccount();
+      // The test account has institution 341: default layout, key = Data, Valor, Descrição.
+      String first = 'Data,Lançamento,Descrição,Valor\n01/08/2026,PIX,CAFE,-5';
+      String sameKey = 'Data,Lançamento,Descrição,Valor\n01/08/2026,Pagamento,  cafe ,"-5,00"';
+      new ALT_CLS_StatementImport().importFile(accountId, 'a.csv', first);
+      System.assertEquals(
+        1,
+        new ALT_CLS_StatementImport()
+          .preview(accountId, 'b.csv', sameKey)
+          .duplicateCount
+      );
+      // A layout that also keys on Lançamento tells the two apart.
+      ALT_CLS_CsvImportLayout.layoutsForTests = new List<AXF_CsvImportLayout__mdt>{
+        new AXF_CsvImportLayout__mdt(
+          DeveloperName = 'T',
+          AXF_CIL_TXT_DateHeaders__c = 'Data',
+          AXF_CIL_TXT_DescriptionHeaders__c = 'Descrição',
+          AXF_CIL_TXT_ValueHeaders__c = 'Valor',
+          AXF_CIL_TAL_KeyHeaders__c = 'Data, Lançamento, Descrição, Valor'
+        )
+      };
+      ALT_CLS_StatementImport.Preview other = new ALT_CLS_StatementImport()
+        .preview(accountId, 'c.csv', first);
+      ALT_CLS_StatementImport.Preview changed = new ALT_CLS_StatementImport()
+        .preview(accountId, 'd.csv', sameKey);
+      System.assertNotEquals(other.lines[0].key, changed.lines[0].key);
+    }
+  }
+
+  @IsTest
+  static void twoMonthsOfContabilizeiAfterOneMonthAddOnlyTheNewLines() {
+    System.runAs(new User(Id = UserInfo.getUserId())) {
+      Id accountId = manualAccount();
+      ALT_CLS_StatementImport.Result august = new ALT_CLS_StatementImport()
+        .importFile(accountId, 'ago.csv', CONTABILIZEI);
+      System.assertEquals(12, august.imported);
+      String twoMonths =
+        CONTABILIZEI +
+        '02/09/2026,Pessoa Jurídica,PIX,MICHEL CARVALHO LOPES,-,"R$' +
+        NBSP +
+        '3.000,00","-R$' +
+        NBSP +
+        '3.000,00"' +
+        '\r\n' +
+        '14/09/2026,Pessoa Jurídica,PIX,MICHEL CARVALHO LOPES,-,"R$' +
+        NBSP +
+        '3.000,00","-R$' +
+        NBSP +
+        '6.502,51"' +
+        '\r\n' +
+        '14/09/2026,Pessoa Jurídica,PIX,MICHEL CARVALHO LOPES,-,"R$' +
+        NBSP +
+        '3.000,00","-R$' +
+        NBSP +
+        '6.502,51"' +
+        '\r\n';
+      ALT_CLS_StatementImport.Preview preview = new ALT_CLS_StatementImport()
+        .preview(accountId, 'ago-set.csv', twoMonths);
+      System.assertEquals(12, preview.duplicateCount);
+      System.assertEquals(3, preview.newCount);
+      System.assertEquals(2, countNotes(preview));
+      System.assertEquals(
+        3,
+        new ALT_CLS_StatementImport()
+          .importFile(accountId, 'ago-set.csv', twoMonths)
+          .imported
+      );
+      System.assertEquals(
+        15,
+        [SELECT COUNT() FROM AXF_OBJ_BankAccountTransaction__c]
+      );
+    }
+  }
+
+  private static Integer countNotes(ALT_CLS_StatementImport.Preview preview) {
+    Integer notes = 0;
+    for (ALT_CLS_StatementImport.Line line : preview.lines) {
+      if (line.note != null) {
+        notes++;
+      }
+    }
+    return notes;
+  }
 }
