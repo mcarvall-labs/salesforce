@@ -47,6 +47,28 @@ public with sharing class ALT_CLS_PluggyConnection {
     return r;
   }
 
+  public class Option {
+    public Id id;
+    public String label;
+  }
+
+  public List<Option> options() {
+    List<Option> options = new List<Option>();
+    for (AXF_OBJ_PluggyConnection__c connection : [
+      SELECT Name
+      FROM AXF_OBJ_PluggyConnection__c
+      WITH USER_MODE
+      ORDER BY Name
+      LIMIT 200
+    ]) {
+      Option option = new Option();
+      option.id = connection.Id;
+      option.label = connection.Name;
+      options.add(option);
+    }
+    return options;
+  }
+
   public Integer countConnections() {
     return [SELECT COUNT() FROM AXF_OBJ_PluggyConnection__c WITH USER_MODE];
   }

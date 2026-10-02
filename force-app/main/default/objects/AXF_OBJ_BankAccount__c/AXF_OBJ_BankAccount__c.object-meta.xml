@@ -18,10 +18,15 @@
     >Default</type></actionOverrides>
     <actionOverrides><actionName>Tab</actionName><type
     >Default</type></actionOverrides>
-    <actionOverrides><actionName>View</actionName><type
-    >Default</type></actionOverrides>
+    <actionOverrides>
+        <actionName>View</actionName>
+        <content>AXF_RPL_BankAccountRecord</content>
+        <formFactor>Large</formFactor>
+        <skipRecordTypeSelect>false</skipRecordTypeSelect>
+        <type>Flexipage</type>
+    </actionOverrides>
     <allowInChatterGroups>false</allowInChatterGroups>
-    <compactLayoutAssignment>SYSTEM</compactLayoutAssignment>
+    <compactLayoutAssignment>AXF_BA_Compact</compactLayoutAssignment>
     <deploymentStatus>Deployed</deploymentStatus>
     <description>Conta bancária do titular (Pluggy ou manual).</description>
     <enableActivities>false</enableActivities>

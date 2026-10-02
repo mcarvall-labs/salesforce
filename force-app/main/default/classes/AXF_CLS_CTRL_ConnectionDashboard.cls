@@ -25,6 +25,13 @@ public with sharing class AXF_CLS_CTRL_ConnectionDashboard {
     public List<ConnectionRow> rows = new List<ConnectionRow>();
   }
 
+  public class SyncView {
+    @AuraEnabled
+    public Boolean success;
+    @AuraEnabled
+    public String message;
+  }
+
   @AuraEnabled(cacheable=true)
   public static DashboardData getDashboard() {
     ALT_CLS_PluggyConnectionSummary.Summary summary = new ALT_CLS_PluggyConnectionSummary()
@@ -44,5 +51,27 @@ public with sharing class AXF_CLS_CTRL_ConnectionDashboard {
       data.rows.add(row);
     }
     return data;
+  }
+
+  // Brings the accounts and cards of one connection. Their transactions and invoices come with
+  // the scheduled sync (AXF-184): a callout cannot follow the DML of this one.
+  @AuraEnabled
+  public static SyncView syncConnection(Id connectionId) {
+    if (connectionId == null) {
+      throw new AuraHandledException('Informe a conexão.');
+    }
+    ALT_CLS_PluggyAccountSync.Result result = new ALT_CLS_PluggyAccountSync()
+      .sync(connectionId);
+    SyncView view = new SyncView();
+    view.success = result.success;
+    view.message = result.success
+      ? result.message +
+        ' ' +
+        result.accounts +
+        ' contas e ' +
+        result.cards +
+        ' cartões.'
+      : result.message;
+    return view;
   }
 }
