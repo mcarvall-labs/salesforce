@@ -149,7 +149,9 @@ public with sharing class ALT_CLS_StatementImport {
     return lines;
   }
 
-  // CSV with the columns date, description and value (header row required; "," or ";").
+  // CSV with the columns date, description and value, or date, description, entrada and saida
+  // (value = entrada - saida; "-" or empty counts as zero in one of them). Header row required;
+  // "," or ";". Any other column is ignored and stays out of the dedupe key.
   // The key hashes record + date + value + description; identical lines of the same file get an
   // ordinal so two equal purchases are both kept and importing the file again changes nothing.
   private List<Line> parseCsv(Id recordId, String content) {
@@ -169,9 +171,16 @@ public with sharing class ALT_CLS_StatementImport {
       new Set<String>{ 'descricao', 'historico' }
     );
     Integer valueColumn = column(header, new Set<String>{ 'valor' });
-    if (dateColumn < 0 || descriptionColumn < 0 || valueColumn < 0) {
+    Integer inColumn = column(header, new Set<String>{ 'entrada' });
+    Integer outColumn = column(header, new Set<String>{ 'saida' });
+    Boolean splitColumns = valueColumn < 0 && inColumn >= 0 && outColumn >= 0;
+    if (
+      dateColumn < 0 ||
+      descriptionColumn < 0 ||
+      (valueColumn < 0 && !splitColumns)
+    ) {
       throw new ImportException(
-        'O CSV deve ter as colunas data, descrição e valor.'
+        'O CSV deve ter as colunas data, descrição e valor (ou entrada e saída).'
       );
     }
     List<Line> lines = new List<Line>();
@@ -185,7 +194,9 @@ public with sharing class ALT_CLS_StatementImport {
       try {
         line.lineDate = csvDate(cells[dateColumn]);
         line.description = cells[descriptionColumn];
-        line.amount = csvAmount(cells[valueColumn]);
+        line.amount = splitColumns
+          ? splitAmount(cells[inColumn], cells[outColumn])
+          : csvAmount(cells[valueColumn]);
         String signature =
           recordId +
           '|' +
@@ -206,6 +217,9 @@ public with sharing class ALT_CLS_StatementImport {
               Blob.valueOf(signature + '|' + ordinal)
             )
           );
+      } catch (ImportException e) {
+        line.status = INVALID;
+        line.error = 'Linha ' + (i + 1) + ': ' + e.getMessage();
       } catch (Exception e) {
         line.status = INVALID;
         line.error = 'Linha ' + (i + 1) + ': data ou valor inválido.';
@@ -215,6 +229,25 @@ public with sharing class ALT_CLS_StatementImport {
     return lines;
   }
 
+  // Entrada is money in, saida is money out (always written positive): value = entrada - saida.
+  // "-" and empty are empty cells; both empty or both filled is an error for that line.
+  private Decimal splitAmount(String entry, String outflow) {
+    Boolean hasEntry = !isEmptyCell(entry);
+    Boolean hasExit = !isEmptyCell(outflow);
+    if (!hasEntry && !hasExit) {
+      throw new ImportException('Entrada e saída vazias.');
+    }
+    if (hasEntry && hasExit) {
+      throw new ImportException('Entrada e saída preenchidas ao mesmo tempo.');
+    }
+    return hasEntry ? csvAmount(entry) : -csvAmount(outflow);
+  }
+
+  private Boolean isEmptyCell(String value) {
+    String text = value == null ? '' : value.replace('\u00A0', ' ').trim();
+    return text == '' || text == '-';
+  }
+
   private Integer column(List<String> header, Set<String> names) {
     for (Integer i = 0; i < header.size(); i++) {
       String name = header[i]
@@ -222,7 +255,14 @@ public with sharing class ALT_CLS_StatementImport {
         .toLowerCase()
         .replace('ç', 'c')
         .replace('ã', 'a')
+        .replace('á', 'a')
+        .replace('â', 'a')
+        .replace('é', 'e')
+        .replace('ê', 'e')
+        .replace('í', 'i')
         .replace('ó', 'o')
+        .replace('ô', 'o')
+        .replace('õ', 'o')
         .replace('ú', 'u');
       if (names.contains(name)) {
         return i;
@@ -278,7 +318,10 @@ public with sharing class ALT_CLS_StatementImport {
   // exactly three digits (1.234 / 1,234) is ambiguous between decimal and thousands and is
   // rejected so a wrong amount is never imported silently.
   private Decimal csvAmount(String value) {
-    String text = value.replace('R$', '').replace(' ', '');
+    String text = value
+      .replace('\u00A0', '')
+      .replace('R$', '')
+      .replace(' ', '');
     Boolean hasDot = text.contains('.');
     Boolean hasComma = text.contains(',');
     if (hasDot && hasComma) {

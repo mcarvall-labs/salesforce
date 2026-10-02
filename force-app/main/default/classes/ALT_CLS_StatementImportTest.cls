@@ -466,4 +466,255 @@ private class ALT_CLS_StatementImportTest {
       System.assertEquals(1, preview.newCount);
     }
   }
+
+  private static final String NBSP = '\u00A0';
+  private static final String BANK =
+    '\uFEFFData,Categoria,Lançamento,Descrição,Entrada,Saída,Saldo do dia\r\n' +
+    '01/08/2026,Pessoa Jurídica,PIX,MICHEL,-,"R$' +
+    NBSP +
+    '1.000,00","-R$' +
+    NBSP +
+    '1.000,00"\r\n' +
+    '11/08/2026,Pessoa Jurídica,PIX,MICHEL,-,"R$' +
+    NBSP +
+    '1.500,00","-R$' +
+    NBSP +
+    '4.500,00"\r\n' +
+    '11/08/2026,Pessoa Jurídica,PIX,MICHEL,-,"R$' +
+    NBSP +
+    '3.000,00","-R$' +
+    NBSP +
+    '4.500,00"\r\n' +
+    '20/08/2026,Pessoa Jurídica,PIX,CLIENTE,"R$' +
+    NBSP +
+    '10.250,50",-,"R$' +
+    NBSP +
+    '5.750,50"\r\n' +
+    '21/08/2026,Pessoa Jurídica,PIX,SEM VALOR,-,,"R$' +
+    NBSP +
+    '5.750,50"\r\n' +
+    '22/08/2026,Pessoa Jurídica,PIX,DOIS,"R$' +
+    NBSP +
+    '1,00","R$' +
+    NBSP +
+    '2,00",0\r\n' +
+    '23/08/2026,Pessoa Jurídica,PIX,ZERO,"R$' +
+    NBSP +
+    '0,00",-,0\r\n';
+
+  @IsTest
+  static void entradaSaidaCsvIsParsedWithSignedAmounts() {
+    System.runAs(new User(Id = UserInfo.getUserId())) {
+      ALT_CLS_StatementImport.Preview preview = new ALT_CLS_StatementImport()
+        .preview(manualAccount(), 'extrato.csv', BANK);
+      System.assertEquals(7, preview.lines.size());
+      System.assertEquals(-1000, preview.lines[0].amount);
+      System.assertEquals(-1500, preview.lines[1].amount);
+      System.assertEquals(-3000, preview.lines[2].amount);
+      System.assertEquals(10250.5, preview.lines[3].amount);
+      System.assertEquals('CLIENTE', preview.lines[3].description);
+      System.assertEquals(
+        Date.newInstance(2026, 8, 1),
+        preview.lines[0].lineDate
+      );
+      System.assertEquals(0, preview.lines[6].amount);
+      System.assertEquals(5, preview.newCount);
+      System.assertEquals(2, preview.errorCount);
+      System.assertEquals(
+        ALT_CLS_StatementImport.INVALID,
+        preview.lines[4].status
+      );
+      System.assert(
+        preview.lines[4].error.startsWith('Linha 6'),
+        preview.lines[4].error
+      );
+      System.assert(preview.lines[4].error.contains('vazias'));
+      System.assert(
+        preview.lines[5].error.startsWith('Linha 7'),
+        preview.lines[5].error
+      );
+      System.assert(preview.lines[5].error.contains('ao mesmo tempo'));
+    }
+  }
+
+  @IsTest
+  static void entradaSaidaImportKeepsEqualDescriptionsApartAndIsIdempotent() {
+    System.runAs(new User(Id = UserInfo.getUserId())) {
+      Id accountId = manualAccount();
+      ALT_CLS_StatementImport.Result first = new ALT_CLS_StatementImport()
+        .importFile(accountId, 'extrato.csv', BANK);
+      ALT_CLS_StatementImport.Result second = new ALT_CLS_StatementImport()
+        .importFile(accountId, 'extrato.csv', BANK);
+      System.assertEquals(true, first.success, first.message);
+      System.assertEquals(5, first.imported);
+      System.assertEquals(0, second.imported);
+      System.assertEquals(
+        5,
+        [SELECT COUNT() FROM AXF_OBJ_BankAccountTransaction__c]
+      );
+    }
+  }
+
+  @IsTest
+  static void extraColumnsDoNotChangeTheDedupeKey() {
+    System.runAs(new User(Id = UserInfo.getUserId())) {
+      Id accountId = manualAccount();
+      new ALT_CLS_StatementImport()
+        .importFile(
+          accountId,
+          'a.csv',
+          'Data,Categoria,Descrição,Entrada,Saída,Saldo do dia\n01/08/2026,A,CAFE,-,"R$' +
+            NBSP +
+            '5,00",1'
+        );
+      ALT_CLS_StatementImport.Preview preview = new ALT_CLS_StatementImport()
+        .preview(
+          accountId,
+          'b.csv',
+          'Data,Descrição,Saída,Entrada,Lançamento\n01/08/2026,CAFE,5,-,OUTRO'
+        );
+      System.assertEquals(1, preview.duplicateCount);
+      System.assertEquals(0, preview.newCount);
+    }
+  }
+
+  @IsTest
+  static void valueLayoutStillWorksAndEntradaWithoutSaidaIsRejected() {
+    System.runAs(new User(Id = UserInfo.getUserId())) {
+      System.assertEquals(
+        1,
+        new ALT_CLS_StatementImport()
+          .preview(
+            manualAccount(),
+            'a.csv',
+            'Data,Descrição,Valor\n01/08/2026,X,-5,00'
+              .replace('-5,00', '"-5,00"')
+          )
+          .newCount
+      );
+      try {
+        new ALT_CLS_StatementImport()
+          .preview(
+            manualAccount(),
+            'a.csv',
+            'Data,Descrição,Entrada\n01/08/2026,X,5'
+          );
+        System.assert(false, 'Expected ImportException');
+      } catch (ALT_CLS_StatementImport.ImportException e) {
+        System.assert(e.getMessage().contains('entrada e saída'));
+      }
+    }
+  }
+
+  // Statement exported by Contabilizei (checking account, August 2026), as delivered.
+  private static final String CONTABILIZEI =
+    '\uFEFFData,Categoria,Lançamento,Descrição,Entrada,Saída,Saldo do dia\r\n' +
+    '01/08/2026,Pessoa Jurídica,PIX,MICHEL CARVALHO LOPES,-,"R$' +
+    NBSP +
+    '1.000,00","-R$' +
+    NBSP +
+    '1.000,00"\r\n' +
+    '05/08/2026,Pessoa Jurídica,PIX,MICHEL CARVALHO LOPES,-,"R$' +
+    NBSP +
+    '2.500,00","-R$' +
+    NBSP +
+    '2.500,00"\r\n' +
+    '11/08/2026,Pessoa Jurídica,PIX,MICHEL CARVALHO LOPES,-,"R$' +
+    NBSP +
+    '1.500,00","-R$' +
+    NBSP +
+    '4.500,00"\r\n' +
+    '11/08/2026,Pessoa Jurídica,PIX,MICHEL CARVALHO LOPES,-,"R$' +
+    NBSP +
+    '3.000,00","-R$' +
+    NBSP +
+    '4.500,00"\r\n' +
+    '14/08/2026,Pessoa Jurídica,PIX,MICHEL CARVALHO LOPES,-,"R$' +
+    NBSP +
+    '2.000,00","-R$' +
+    NBSP +
+    '2.000,00"\r\n' +
+    '17/08/2026,Pessoa Jurídica,Pagamento,CONTABILIZEI TECNOLOGIA LTDA,-,"R$' +
+    NBSP +
+    '459,00","-R$' +
+    NBSP +
+    '459,00"\r\n' +
+    '18/08/2026,Pessoa Jurídica,PIX,MINISTERIO DA FAZENDA,-,"R$' +
+    NBSP +
+    '502,51","-R$' +
+    NBSP +
+    '20.502,51"\r\n' +
+    '18/08/2026,Pessoa Jurídica,PIX,MICHEL CARVALHO LOPES,-,"R$' +
+    NBSP +
+    '20.000,00","-R$' +
+    NBSP +
+    '20.502,51"\r\n' +
+    '20/08/2026,Pessoa Jurídica,PIX,MICHEL CARVALHO LOPES,-,"R$' +
+    NBSP +
+    '5.500,00","-R$' +
+    NBSP +
+    '5.500,00"\r\n' +
+    '25/08/2026,Pessoa Jurídica,PIX,MICHEL CARVALHO LOPES,-,"R$' +
+    NBSP +
+    '600,00","-R$' +
+    NBSP +
+    '600,00"\r\n' +
+    '27/08/2026,Pessoa Jurídica,PIX,Recebimento do exterior,"R$' +
+    NBSP +
+    '27.896,59",-,"R$' +
+    NBSP +
+    '27.896,59"\r\n' +
+    '28/08/2026,Pessoa Jurídica,PIX,MICHEL CARVALHO LOPES,-,"R$' +
+    NBSP +
+    '1.442,69","-R$' +
+    NBSP +
+    '1.442,69"\r\n';
+
+  @IsTest
+  static void realContabilizeiStatementImportsEveryLineWithTheRightTotal() {
+    System.runAs(new User(Id = UserInfo.getUserId())) {
+      Id accountId = manualAccount();
+      ALT_CLS_StatementImport.Preview preview = new ALT_CLS_StatementImport()
+        .preview(accountId, '31129469_01AGO2026_31AGO2026.csv', CONTABILIZEI);
+      System.assertEquals(12, preview.lines.size());
+      System.assertEquals(12, preview.newCount);
+      System.assertEquals(0, preview.errorCount);
+      ALT_CLS_StatementImport.Result first = new ALT_CLS_StatementImport()
+        .importFile(
+          accountId,
+          '31129469_01AGO2026_31AGO2026.csv',
+          CONTABILIZEI
+        );
+      System.assertEquals(true, first.success, first.message);
+      System.assertEquals(12, first.imported);
+      AggregateResult total = [
+        SELECT SUM(AXF_BAT_CUR_Amount__c) net, COUNT(Id) lines
+        FROM AXF_OBJ_BankAccountTransaction__c
+        WHERE AXF_BAT_MD_BankAccount__c = :accountId
+      ];
+      System.assertEquals(-10607.61, (Decimal) total.get('net'));
+      System.assertEquals(12, (Integer) total.get('lines'));
+      System.assertEquals(
+        2,
+        [
+          SELECT COUNT()
+          FROM AXF_OBJ_BankAccountTransaction__c
+          WHERE
+            AXF_BAT_MD_BankAccount__c = :accountId
+            AND AXF_BAT_DAT_Date__c = 2026-08-11
+        ]
+      );
+      ALT_CLS_StatementImport.Result second = new ALT_CLS_StatementImport()
+        .importFile(
+          accountId,
+          '31129469_01AGO2026_31AGO2026.csv',
+          CONTABILIZEI
+        );
+      System.assertEquals(0, second.imported);
+      System.assertEquals(
+        12,
+        [SELECT COUNT() FROM AXF_OBJ_BankAccountTransaction__c]
+      );
+    }
+  }
 }
