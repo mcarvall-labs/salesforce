@@ -34,7 +34,7 @@ export function hasManualSteps(body) {
     .split(/\r?\n/)
     .filter(
       (line) =>
-        !line.trim().startsWith(">") && !/^s{0,3}[[^]]+]:s/.test(line)
+        !line.trim().startsWith(">") && !/^\s{0,3}\[[^\]]+\]:\s/.test(line)
     )
     .join("")
     .replace(/[\s*_`]/g, "")
