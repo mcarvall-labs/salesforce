@@ -32,7 +32,10 @@ export function hasManualSteps(body) {
   if (!match) return false;
   const answer = match[1]
     .split(/\r?\n/)
-    .filter((line) => !line.trim().startsWith(">"))
+    .filter(
+      (line) =>
+        !line.trim().startsWith(">") && !/^s{0,3}[[^]]+]:s/.test(line)
+    )
     .join("")
     .replace(/[\s*_`]/g, "")
     .toLowerCase();
