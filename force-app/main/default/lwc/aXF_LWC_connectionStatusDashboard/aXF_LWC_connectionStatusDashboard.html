@@ -37,7 +37,11 @@
             data={rows}
             columns={columns}
             hide-checkbox-column
+            onrowaction={handleRowAction}
           ></lightning-datatable>
+          <template if:true={syncMessage}>
+            <p class={syncClass} role="status">{syncMessage}</p>
+          </template>
         </template>
         <template if:false={hasRows}>
           <p>

@@ -1,0 +1,65 @@
+<template>
+  <lightning-card title="Importar extrato ou fatura" icon-name="standard:file">
+    <div class="slds-p-horizontal_medium">
+      <lightning-input
+        type="file"
+        label="Arquivo OFX ou CSV"
+        accept=".ofx,.csv"
+        onchange={handleFile}
+      ></lightning-input>
+      <template if:true={isBusy}>
+        <lightning-spinner
+          alternative-text="Processando"
+          size="small"
+        ></lightning-spinner>
+      </template>
+      <template if:true={message}>
+        <p class={messageClass} role="alert">{message}</p>
+      </template>
+      <template if:true={summary}>
+        <p class="slds-m-top_small">
+          {summary.newCount} novas, {summary.duplicateCount} já importadas,
+          {summary.errorCount} com erro.
+        </p>
+        <table class="slds-table slds-table_bordered slds-m-top_small">
+          <thead>
+            <tr>
+              <th scope="col">Data</th>
+              <th scope="col">Descrição</th>
+              <th scope="col" class="slds-text-align_right">Valor</th>
+              <th scope="col">Situação</th>
+            </tr>
+          </thead>
+          <tbody>
+            <template for:each={rows} for:item="row">
+              <tr key={row.key}>
+                <td>
+                  <lightning-formatted-date-time
+                    value={row.lineDate}
+                    time-zone="UTC"
+                  ></lightning-formatted-date-time>
+                </td>
+                <td>{row.description}</td>
+                <td class="slds-text-align_right">
+                  <lightning-formatted-number
+                    value={row.amount}
+                    format-style="decimal"
+                    minimum-fraction-digits="2"
+                  ></lightning-formatted-number>
+                </td>
+                <td>{row.statusLabel} {row.error}</td>
+              </tr>
+            </template>
+          </tbody>
+        </table>
+        <lightning-button
+          class="slds-m-top_small"
+          variant="brand"
+          label="Confirmar importação"
+          disabled={confirmDisabled}
+          onclick={handleConfirm}
+        ></lightning-button>
+      </template>
+    </div>
+  </lightning-card>
+</template>

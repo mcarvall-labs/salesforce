@@ -93,6 +93,51 @@
             </template>
           </div>
         </template>
+
+        <template if:true={hasConnections}>
+          <div class="slds-m-top_large">
+            <h3 class="slds-text-heading_small">Passo 3: contas e cartões</h3>
+            <p>
+              Contas e cartões já vinculados ao titular da conexão escolhida. A
+              criação dos registros acontece na sincronização.
+            </p>
+            <lightning-combobox
+              label="Conexão"
+              value={connectionId}
+              options={connectionOptions}
+              onchange={handleConnection}
+            ></lightning-combobox>
+            <template if:true={connectionId}>
+              <template if:false={hasLinkedItems}>
+                <p class="slds-m-top_small">
+                  Nenhuma conta ou cartão vinculado ainda.
+                </p>
+              </template>
+              <template if:true={hasLinkedItems}>
+                <table class="slds-table slds-table_bordered slds-m-top_small">
+                  <thead>
+                    <tr>
+                      <th scope="col">Titular</th>
+                      <th scope="col">Tipo</th>
+                      <th scope="col">Nome</th>
+                      <th scope="col">Detalhe</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    <template for:each={linkedItems} for:item="item">
+                      <tr key={item.id}>
+                        <td>{item.holder}</td>
+                        <td>{item.kind}</td>
+                        <td>{item.name}</td>
+                        <td>{item.detail}</td>
+                      </tr>
+                    </template>
+                  </tbody>
+                </table>
+              </template>
+            </template>
+          </div>
+        </template>
       </template>
     </div>
   </lightning-card>

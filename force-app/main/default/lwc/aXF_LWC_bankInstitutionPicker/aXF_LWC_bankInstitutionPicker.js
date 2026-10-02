@@ -21,6 +21,18 @@ export default class AXF_LWC_bankInstitutionPicker extends LightningElement {
   searchTerm = "";
   options = [];
   error;
+  showRequiredError = false;
+
+  @api
+  checkValidity() {
+    return !this.required || this.hasSelection;
+  }
+
+  @api
+  reportValidity() {
+    this.showRequiredError = !this.checkValidity();
+    return !this.showRequiredError;
+  }
 
   @wire(getObjectInfo, { objectApiName: CONNECTION_OBJECT })
   objectInfo;
@@ -92,9 +104,20 @@ export default class AXF_LWC_bankInstitutionPicker extends LightningElement {
   }
 
   handleSelect(event) {
-    const value = event.currentTarget.dataset.value;
+    this.select(event.currentTarget.dataset.value);
+  }
+
+  handleKeydown(event) {
+    if (event.key === "Enter" || event.key === " ") {
+      event.preventDefault();
+      this.select(event.currentTarget.dataset.value);
+    }
+  }
+
+  select(value) {
     this._value = value;
     this.searchTerm = "";
+    this.showRequiredError = false;
     this.dispatchEvent(new CustomEvent("change", { detail: { value } }));
   }
 

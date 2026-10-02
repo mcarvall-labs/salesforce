@@ -3,6 +3,8 @@ import getState from "@salesforce/apex/AXF_CLS_CTRL_PluggyWizard.getState";
 import saveCredentials from "@salesforce/apex/AXF_CLS_CTRL_PluggyWizard.saveCredentials";
 import createConnection from "@salesforce/apex/AXF_CLS_CTRL_PluggyWizard.createConnection";
 import testCredentials from "@salesforce/apex/AXF_CLS_CTRL_PluggyWizard.testCredentials";
+import getConnections from "@salesforce/apex/AXF_CLS_CTRL_PluggyWizard.getConnections";
+import getLinked from "@salesforce/apex/AXF_CLS_CTRL_PluggyWizard.getLinked";
 
 export default class AXF_LWC_pluggyWizard extends LightningElement {
   hasCredentials = false;
@@ -13,6 +15,9 @@ export default class AXF_LWC_pluggyWizard extends LightningElement {
   isCreating = false;
   connectionMessage;
   connectionSuccess = false;
+  connectionId;
+  linkedItems = [];
+  connectionOptions = [];
   isLoading = true;
   isSaving = false;
   clientId = "";
@@ -25,6 +30,7 @@ export default class AXF_LWC_pluggyWizard extends LightningElement {
       const state = await getState();
       this.hasCredentials = state.hasCredentials;
       this.connectionCount = state.connectionCount;
+      await this.loadConnections();
     } catch {
       this.showResult(
         false,
@@ -79,6 +85,8 @@ export default class AXF_LWC_pluggyWizard extends LightningElement {
       this.connectionMessage = result.message;
       if (result.success) {
         this.connectionCount += 1;
+        await this.loadConnections();
+        await this.selectConnection(result.connectionId);
         this.itemId = "";
       }
     } catch {
@@ -86,6 +94,35 @@ export default class AXF_LWC_pluggyWizard extends LightningElement {
       this.connectionMessage = "Não foi possível criar a conexão.";
     } finally {
       this.isCreating = false;
+    }
+  }
+
+  async loadConnections() {
+    this.connectionOptions = (await getConnections()).map((option) => ({
+      label: option.label,
+      value: option.id
+    }));
+  }
+
+  get hasLinkedItems() {
+    return this.linkedItems.length > 0;
+  }
+
+  get hasConnections() {
+    return this.connectionOptions.length > 0;
+  }
+
+  handleConnection(event) {
+    return this.selectConnection(event.detail.value);
+  }
+
+  async selectConnection(connectionId) {
+    this.connectionId = connectionId;
+    this.linkedItems = [];
+    try {
+      this.linkedItems = await getLinked({ connectionId });
+    } catch {
+      this.showResult(false, "Não foi possível listar contas e cartões.");
     }
   }
 
