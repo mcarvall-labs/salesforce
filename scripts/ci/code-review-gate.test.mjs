@@ -66,6 +66,12 @@ test("hasManualSteps: instructions in blockquotes are ignored and a missing sect
     ),
     false
   );
+  assert.equal(
+    hasManualSteps(
+      "## Deployment Steps\n\nNone\n\n\n[AXF-1]: https://x.atlassian.net/browse/AXF-1?atlOrigin=abc"
+    ),
+    false
+  );
   assert.equal(hasManualSteps("## Description\nOnly this.\n"), false);
   assert.equal(hasManualSteps(undefined), false);
 });
