@@ -1,0 +1,8 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<PermissionSetGroup xmlns="http://soap.sforce.com/2006/04/metadata">
+    <description>Perfil Participante: acesso ao app Axon e importação de extrato, sem configuração.</description>
+    <label>Axon - Participante</label>
+    <permissionSets>AXF_PS_Usuario</permissionSets>
+    <permissionSets>AXF_PS_ImportarExtrato</permissionSets>
+    <status>Updated</status>
+</PermissionSetGroup>
