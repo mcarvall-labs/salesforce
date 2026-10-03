@@ -229,7 +229,8 @@ public with sharing class ALT_CLS_StatementImport {
     return lines;
   }
 
-  // Entrada is money in, saida is money out (always written positive): value = entrada - saida.
+  // Entrada is money in, saida is money out: the column defines the sign (value = entrada - saida),
+  // so a sign written in the cell is ignored.
   // "-" and empty are empty cells; both empty or both filled is an error for that line.
   private Decimal splitAmount(String entry, String outflow) {
     Boolean hasEntry = !isEmptyCell(entry);
@@ -240,7 +241,7 @@ public with sharing class ALT_CLS_StatementImport {
     if (hasEntry && hasExit) {
       throw new ImportException('Entrada e saída preenchidas ao mesmo tempo.');
     }
-    return hasEntry ? csvAmount(entry) : -csvAmount(outflow);
+    return hasEntry ? csvAmount(entry).abs() : -csvAmount(outflow).abs();
   }
 
   private Boolean isEmptyCell(String value) {
