@@ -850,4 +850,179 @@ private class ALT_CLS_StatementImportTest {
     }
     return notes;
   }
+
+  @IsTest
+  static void linesImportedByTheBuildBeforeTheLayoutsAreStillDuplicates() {
+    System.runAs(new User(Id = UserInfo.getUserId())) {
+      Id accountId = manualAccount();
+      String legacy = accountId + '|2026-08-01|-5.00|Cafe  Lanche|1';
+      insert new AXF_OBJ_BankAccountTransaction__c(
+        AXF_BAT_MD_BankAccount__c = accountId,
+        AXF_BAT_EXI_PluggyTransactionId__c = 'CSV:' +
+          EncodingUtil.convertToHex(
+            Crypto.generateDigest('SHA-256', Blob.valueOf(legacy))
+          ),
+        AXF_BAT_DAT_Date__c = Date.newInstance(2026, 8, 1),
+        AXF_BAT_TXT_Description__c = 'Cafe  Lanche',
+        AXF_BAT_CUR_Amount__c = -5
+      );
+      ALT_CLS_StatementImport.Preview preview = new ALT_CLS_StatementImport()
+        .preview(
+          accountId,
+          'a.csv',
+          'Data,Descrição,Valor\n01/08/2026,Cafe  Lanche,"-5,00"\n02/08/2026,Outro,"-1,00"'
+        );
+      System.assertEquals(1, preview.duplicateCount);
+      System.assertEquals(1, preview.newCount);
+      System.assertEquals('DUPLICATE', preview.lines[0].status);
+    }
+  }
+
+  @IsTest
+  static void cutWarningCountsOnlyTransactionsImportedFromFiles() {
+    System.runAs(new User(Id = UserInfo.getUserId())) {
+      Id accountId = manualAccount();
+      insert new AXF_OBJ_BankAccountTransaction__c(
+        AXF_BAT_MD_BankAccount__c = accountId,
+        AXF_BAT_EXI_PluggyTransactionId__c = 'pluggy-1',
+        AXF_BAT_DAT_Date__c = Date.newInstance(2026, 9, 14),
+        AXF_BAT_TXT_Description__c = 'Pluggy',
+        AXF_BAT_CUR_Amount__c = -9
+      );
+      ALT_CLS_StatementImport.Preview preview = new ALT_CLS_StatementImport()
+        .preview(
+          accountId,
+          'a.csv',
+          'Data,Descrição,Valor\n14/09/2026,B,-2\n15/09/2026,D,-4'
+        );
+      System.assertEquals(0, preview.warnings.size());
+    }
+  }
+
+  @IsTest
+  static void cardStatementRaisesTheCutWarningToo() {
+    System.runAs(new User(Id = UserInfo.getUserId())) {
+      Id cardId = manualCard();
+      new ALT_CLS_StatementImport()
+        .importFile(
+          cardId,
+          'a.csv',
+          'Data,Descrição,Valor\n14/09/2026,B,-2\n14/09/2026,C,-3'
+        );
+      ALT_CLS_StatementImport.Preview cut = new ALT_CLS_StatementImport()
+        .preview(
+          cardId,
+          'b.csv',
+          'Data,Descrição,Valor\n14/09/2026,B,-2\n15/09/2026,D,-4'
+        );
+      System.assertEquals(1, cut.warnings.size());
+      System.assert(cut.warnings[0].contains('já há 2'), cut.warnings[0]);
+    }
+  }
+
+  @IsTest
+  static void warningsForBothEdgeDaysComeInDateOrder() {
+    System.runAs(new User(Id = UserInfo.getUserId())) {
+      Id accountId = manualAccount();
+      new ALT_CLS_StatementImport()
+        .importFile(
+          accountId,
+          'a.csv',
+          'Data,Descrição,Valor\n13/09/2026,A,-1\n13/09/2026,A2,-1\n15/09/2026,E,-5\n15/09/2026,E2,-5'
+        );
+      ALT_CLS_StatementImport.Preview cut = new ALT_CLS_StatementImport()
+        .preview(
+          accountId,
+          'b.csv',
+          'Data,Descrição,Valor\n13/09/2026,A,-1\n14/09/2026,B,-2\n15/09/2026,E,-5'
+        );
+      System.assertEquals(2, cut.warnings.size());
+      System.assert(cut.warnings[0].contains('13/09/2026'), cut.warnings[0]);
+      System.assert(cut.warnings[1].contains('15/09/2026'), cut.warnings[1]);
+    }
+  }
+
+  @IsTest
+  static void controllerPassesWarningsAndRepeatNotesToTheScreen() {
+    System.runAs(new User(Id = UserInfo.getUserId())) {
+      Id accountId = manualAccount();
+      new ALT_CLS_StatementImport()
+        .importFile(
+          accountId,
+          'a.csv',
+          'Data,Descrição,Valor\n14/09/2026,B,-2\n14/09/2026,C,-3\n14/09/2026,E,-6'
+        );
+      AXF_CLS_CTRL_StatementImport.PreviewView view = AXF_CLS_CTRL_StatementImport.preview(
+        accountId,
+        'b.csv',
+        'Data,Descrição,Valor\n14/09/2026,PIX,-1\n14/09/2026,PIX,-1\n15/09/2026,D,-4'
+      );
+      System.assertEquals(1, view.warnings.size());
+      System.assertEquals('Linha idêntica repetida: 2×', view.lines[0].note);
+    }
+  }
+
+  @IsTest
+  static void shortRowWithAnOptionalKeyColumnIsNotAnErrorLine() {
+    System.runAs(new User(Id = UserInfo.getUserId())) {
+      ALT_CLS_CsvImportLayout.layoutsForTests = new List<AXF_CsvImportLayout__mdt>{
+        new AXF_CsvImportLayout__mdt(
+          DeveloperName = 'T',
+          AXF_CIL_TXT_DateHeaders__c = 'Data',
+          AXF_CIL_TXT_DescriptionHeaders__c = 'Descrição',
+          AXF_CIL_TXT_ValueHeaders__c = 'Valor',
+          AXF_CIL_TAL_KeyHeaders__c = 'Data, Descrição, Valor, Lançamento'
+        )
+      };
+      ALT_CLS_StatementImport.Preview preview = new ALT_CLS_StatementImport()
+        .preview(
+          manualAccount(),
+          'a.csv',
+          'Data,Descrição,Valor,Lançamento\n01/08/2026,X,-5'
+        );
+      System.assertEquals(1, preview.newCount);
+      System.assertEquals(0, preview.errorCount);
+    }
+  }
+
+  @IsTest
+  static void contabilizeiAccountKeysOnLancamentoAndSeparatesLinesThatOnlyDifferThere() {
+    System.runAs(new User(Id = UserInfo.getUserId())) {
+      AXF_OBJ_BankAccount__c account = new AXF_OBJ_BankAccount__c(
+        Name = 'Contabilizei',
+        AXF_BA_MD_Holder__c = holder(),
+        AXF_BA_PKL_Institution__c = '301',
+        AXF_BA_PKL_Type__c = 'Checking'
+      );
+      insert account;
+      String csv =
+        'Data,Categoria,Lançamento,Descrição,Entrada,Saída,Saldo do dia\n' +
+        '01/08/2026,PJ,PIX,TITULAR EXEMPLO,-,"R$' +
+        NBSP +
+        '100,00","-R$' +
+        NBSP +
+        '100,00"\n' +
+        '01/08/2026,PJ,Pagamento,TITULAR EXEMPLO,-,"R$' +
+        NBSP +
+        '100,00","-R$' +
+        NBSP +
+        '200,00"\n';
+      ALT_CLS_StatementImport.Preview preview = new ALT_CLS_StatementImport()
+        .preview(account.Id, 'a.csv', csv);
+      System.assertEquals(2, preview.newCount);
+      System.assertEquals(0, countNotes(preview));
+      System.assertEquals(
+        2,
+        new ALT_CLS_StatementImport()
+          .importFile(account.Id, 'a.csv', csv)
+          .imported
+      );
+      System.assertEquals(
+        2,
+        new ALT_CLS_StatementImport()
+          .preview(account.Id, 'a.csv', csv)
+          .duplicateCount
+      );
+    }
+  }
 }

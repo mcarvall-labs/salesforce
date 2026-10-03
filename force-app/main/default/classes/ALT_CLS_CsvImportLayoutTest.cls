@@ -87,4 +87,14 @@ private class ALT_CLS_CsvImportLayoutTest {
     );
     System.assertEquals('', ALT_CLS_CsvImportLayout.normalizeHeader(null));
   }
+
+  @IsTest
+  static void keyHeadersKeepTheDeclaredOrderWithoutRepeats() {
+    ALT_CLS_CsvImportLayout.layoutsForTests = new List<AXF_CsvImportLayout__mdt>{
+      layout(null, 'Valor, Data, Descrição, data')
+    };
+    List<String> keys = ALT_CLS_CsvImportLayout.forInstitution('341')
+      .keyHeaders;
+    System.assertEquals(new List<String>{ 'valor', 'data', 'descricao' }, keys);
+  }
 }

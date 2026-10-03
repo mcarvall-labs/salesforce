@@ -44,9 +44,7 @@ public with sharing class ALT_CLS_CsvImportLayout {
     layout.valueHeaders = headers(source.AXF_CIL_TXT_ValueHeaders__c);
     layout.entryHeaders = headers(source.AXF_CIL_TXT_EntryHeaders__c);
     layout.exitHeaders = headers(source.AXF_CIL_TXT_ExitHeaders__c);
-    layout.keyHeaders = new List<String>(
-      headers(source.AXF_CIL_TAL_KeyHeaders__c)
-    );
+    layout.keyHeaders = orderedHeaders(source.AXF_CIL_TAL_KeyHeaders__c);
     if (
       layout.dateHeaders.isEmpty() ||
       layout.descriptionHeaders.isEmpty() ||
@@ -80,14 +78,21 @@ public with sharing class ALT_CLS_CsvImportLayout {
   }
 
   private static Set<String> headers(String commaSeparated) {
-    Set<String> normalized = new Set<String>();
+    return new Set<String>(orderedHeaders(commaSeparated));
+  }
+
+  // Declared order, without repeats: the order of the key headers is part of the dedupe key.
+  private static List<String> orderedHeaders(String commaSeparated) {
+    List<String> ordered = new List<String>();
+    Set<String> seen = new Set<String>();
     if (commaSeparated != null) {
       for (String header : commaSeparated.split(',')) {
-        if (!String.isBlank(header)) {
-          normalized.add(normalizeHeader(header));
+        String normalized = normalizeHeader(header);
+        if (!String.isBlank(header) && seen.add(normalized)) {
+          ordered.add(normalized);
         }
       }
     }
-    return normalized;
+    return ordered;
   }
 }

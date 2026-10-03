@@ -17,6 +17,8 @@ public with sharing class ALT_CLS_StatementImport {
     public String error;
     public String note;
     public String signature;
+    // Key the build before the layouts (AXF-245) gave the same line: raw description, no layout.
+    public String legacyKey;
   }
 
   public class Preview {
@@ -45,6 +47,9 @@ public with sharing class ALT_CLS_StatementImport {
     for (Line line : lines) {
       if (line.status == null) {
         keys.add(line.key);
+        if (line.legacyKey != null) {
+          keys.add(line.legacyKey);
+        }
       }
     }
     Set<String> existing = target.existingKeys(keys);
@@ -52,7 +57,9 @@ public with sharing class ALT_CLS_StatementImport {
     Preview preview = new Preview();
     for (Line line : lines) {
       if (line.status == null) {
-        line.status = existing.contains(line.key) || !seen.add(line.key)
+        line.status = existing.contains(line.key) ||
+          (line.legacyKey != null && existing.contains(line.legacyKey)) ||
+          !seen.add(line.key)
           ? DUPLICATE
           : NEW_LINE;
       }
@@ -70,7 +77,8 @@ public with sharing class ALT_CLS_StatementImport {
   }
 
   // The first and the last day of the file may have been cut in half: when that day already has
-  // a different number of imported transactions than the file brings, say so (warning only).
+  // a different number of file-imported (CSV/OFX) transactions than the file brings, say so
+  // (warning only; Pluggy and manual transactions are not counted).
   private List<String> cutWarnings(Target target, List<Line> lines) {
     Map<Date, Integer> perDay = new Map<Date, Integer>();
     for (Line line : lines) {
@@ -87,7 +95,10 @@ public with sharing class ALT_CLS_StatementImport {
     }
     List<Date> days = new List<Date>(perDay.keySet());
     days.sort();
-    Set<Date> edges = new Set<Date>{ days[0], days[days.size() - 1] };
+    List<Date> edges = new List<Date>{ days[0] };
+    if (days.size() > 1) {
+      edges.add(days[days.size() - 1]);
+    }
     for (Date day : edges) {
       Integer imported = target.countOn(day);
       if (imported > 0 && imported != perDay.get(day)) {
@@ -96,7 +107,7 @@ public with sharing class ALT_CLS_StatementImport {
             formatDay(day) +
             ' (limite do arquivo): já há ' +
             imported +
-            ' lançamentos importados e o arquivo traz ' +
+            ' lançamentos de importação e o arquivo traz ' +
             perDay.get(day) +
             '. Confira se o extrato foi cortado no meio do dia.'
         );
@@ -244,6 +255,7 @@ public with sharing class ALT_CLS_StatementImport {
     }
     List<Line> lines = new List<Line>();
     Map<String, Integer> occurrences = new Map<String, Integer>();
+    Map<String, Integer> legacyOccurrences = new Map<String, Integer>();
     for (Integer i = headerIndex + 1; i < rows.size(); i++) {
       if (String.isBlank(rows[i])) {
         continue;
@@ -261,6 +273,9 @@ public with sharing class ALT_CLS_StatementImport {
           ? occurrences.get(line.signature) + 1
           : 1;
         occurrences.put(line.signature, ordinal);
+        if (!splitColumns) {
+          line.legacyKey = legacyKey(recordId, line, legacyOccurrences);
+        }
         line.key =
           'CSV:' +
           EncodingUtil.convertToHex(
@@ -287,6 +302,31 @@ public with sharing class ALT_CLS_StatementImport {
       }
     }
     return lines;
+  }
+
+  // Same key the importer gave a value-column line before the layouts: lines already imported by
+  // that build must still be recognized, so re-importing an overlapping file adds nothing.
+  private String legacyKey(
+    Id recordId,
+    Line line,
+    Map<String, Integer> legacyOccurrences
+  ) {
+    String legacy =
+      recordId +
+      '|' +
+      String.valueOf(line.lineDate) +
+      '|' +
+      line.amount.setScale(2).toPlainString() +
+      '|' +
+      line.description;
+    Integer ordinal = legacyOccurrences.containsKey(legacy)
+      ? legacyOccurrences.get(legacy) + 1
+      : 1;
+    legacyOccurrences.put(legacy, ordinal);
+    return 'CSV:' +
+      EncodingUtil.convertToHex(
+        Crypto.generateDigest('SHA-256', Blob.valueOf(legacy + '|' + ordinal))
+      );
   }
 
   // Key headers that are not in the file are skipped; value, entry and exit headers all stand for
@@ -316,7 +356,7 @@ public with sharing class ALT_CLS_StatementImport {
         parts.add(normalizedText(line.description));
       } else {
         Integer index = column(header, new Set<String>{ keyHeader });
-        if (index >= 0) {
+        if (index >= 0 && index < cells.size()) {
           parts.add(normalizedText(cells[index]));
         }
       }
@@ -509,6 +549,8 @@ public with sharing class ALT_CLS_StatementImport {
         WHERE
           AXF_BAT_MD_BankAccount__c = :accountId
           AND AXF_BAT_DAT_Date__c = :day
+          AND (AXF_BAT_EXI_PluggyTransactionId__c LIKE 'CSV:%'
+          OR AXF_BAT_EXI_PluggyTransactionId__c LIKE 'OFX:%')
         WITH USER_MODE
       ];
     }
@@ -555,7 +597,11 @@ public with sharing class ALT_CLS_StatementImport {
       return [
         SELECT COUNT()
         FROM AXF_OBJ_CreditCardTransaction__c
-        WHERE AXF_CCT_MD_CreditCard__c = :cardId AND AXF_CCT_DAT_Date__c = :day
+        WHERE
+          AXF_CCT_MD_CreditCard__c = :cardId
+          AND AXF_CCT_DAT_Date__c = :day
+          AND (AXF_CCT_EXI_PluggyTransactionId__c LIKE 'CSV:%'
+          OR AXF_CCT_EXI_PluggyTransactionId__c LIKE 'OFX:%')
         WITH USER_MODE
       ];
     }
