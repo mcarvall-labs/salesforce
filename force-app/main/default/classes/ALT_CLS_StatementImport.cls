@@ -15,6 +15,10 @@ public with sharing class ALT_CLS_StatementImport {
     public String key;
     public String status;
     public String error;
+    public String note;
+    public String signature;
+    // Key the build before the layouts (AXF-245) gave the same line: raw description, no layout.
+    public String legacyKey;
   }
 
   public class Preview {
@@ -22,6 +26,7 @@ public with sharing class ALT_CLS_StatementImport {
     public Integer newCount = 0;
     public Integer duplicateCount = 0;
     public Integer errorCount = 0;
+    public List<String> warnings = new List<String>();
   }
 
   public class Result {
@@ -37,11 +42,14 @@ public with sharing class ALT_CLS_StatementImport {
 
   public Preview preview(Id recordId, String fileName, String content) {
     Target target = target(recordId);
-    List<Line> lines = parse(recordId, fileName, content);
+    List<Line> lines = parse(recordId, fileName, content, target.institution);
     Set<String> keys = new Set<String>();
     for (Line line : lines) {
       if (line.status == null) {
         keys.add(line.key);
+        if (line.legacyKey != null) {
+          keys.add(line.legacyKey);
+        }
       }
     }
     Set<String> existing = target.existingKeys(keys);
@@ -49,7 +57,9 @@ public with sharing class ALT_CLS_StatementImport {
     Preview preview = new Preview();
     for (Line line : lines) {
       if (line.status == null) {
-        line.status = existing.contains(line.key) || !seen.add(line.key)
+        line.status = existing.contains(line.key) ||
+          (line.legacyKey != null && existing.contains(line.legacyKey)) ||
+          !seen.add(line.key)
           ? DUPLICATE
           : NEW_LINE;
       }
@@ -62,7 +72,56 @@ public with sharing class ALT_CLS_StatementImport {
       }
       preview.lines.add(line);
     }
+    preview.warnings = cutWarnings(target, lines);
     return preview;
+  }
+
+  // The first and the last day of the file may have been cut in half: when that day already has
+  // a different number of file-imported (CSV/OFX) transactions than the file brings, say so
+  // (warning only; Pluggy and manual transactions are not counted).
+  private List<String> cutWarnings(Target target, List<Line> lines) {
+    Map<Date, Integer> perDay = new Map<Date, Integer>();
+    for (Line line : lines) {
+      if (line.lineDate != null && line.status != INVALID) {
+        perDay.put(
+          line.lineDate,
+          perDay.containsKey(line.lineDate) ? perDay.get(line.lineDate) + 1 : 1
+        );
+      }
+    }
+    List<String> warnings = new List<String>();
+    if (perDay.isEmpty()) {
+      return warnings;
+    }
+    List<Date> days = new List<Date>(perDay.keySet());
+    days.sort();
+    List<Date> edges = new List<Date>{ days[0] };
+    if (days.size() > 1) {
+      edges.add(days[days.size() - 1]);
+    }
+    for (Date day : edges) {
+      Integer imported = target.countOn(day);
+      if (imported > 0 && imported != perDay.get(day)) {
+        warnings.add(
+          'Dia ' +
+            formatDay(day) +
+            ' (limite do arquivo): já há ' +
+            imported +
+            ' lançamentos de importação e o arquivo traz ' +
+            perDay.get(day) +
+            '. Confira se o extrato foi cortado no meio do dia.'
+        );
+      }
+    }
+    return warnings;
+  }
+
+  private String formatDay(Date day) {
+    return String.valueOf(day).substring(8, 10) +
+      '/' +
+      String.valueOf(day).substring(5, 7) +
+      '/' +
+      day.year();
   }
 
   public Result importFile(Id recordId, String fileName, String content) {
@@ -86,7 +145,12 @@ public with sharing class ALT_CLS_StatementImport {
     return result;
   }
 
-  private List<Line> parse(Id recordId, String fileName, String content) {
+  private List<Line> parse(
+    Id recordId,
+    String fileName,
+    String content,
+    String institution
+  ) {
     if (String.isBlank(content)) {
       throw new ImportException('O arquivo está vazio.');
     }
@@ -97,7 +161,11 @@ public with sharing class ALT_CLS_StatementImport {
     if (extension == 'ofx') {
       lines = parseOfx(recordId, content);
     } else if (extension == 'csv') {
-      lines = parseCsv(recordId, content);
+      lines = parseCsv(
+        recordId,
+        content,
+        ALT_CLS_CsvImportLayout.forInstitution(institution)
+      );
     } else {
       throw new ImportException(
         'Formato não suportado. Use um arquivo OFX ou CSV.'
@@ -149,10 +217,17 @@ public with sharing class ALT_CLS_StatementImport {
     return lines;
   }
 
-  // CSV with the columns date, description and value (header row required; "," or ";").
-  // The key hashes record + date + value + description; identical lines of the same file get an
+  // CSV laid out by the institution layout (AXF_CsvImportLayout__mdt): date, description and a
+  // value column, or entrada and saida (value = entrada - saida; "-" or empty counts as zero in
+  // one of them). Header row required; "," or ";". The dedupe key hashes the account plus the
+  // layout's key headers (normalized: ISO date, signed amount with two decimals, upper-case text
+  // without extra spaces); other columns stay out of it. Identical lines of the same file get an
   // ordinal so two equal purchases are both kept and importing the file again changes nothing.
-  private List<Line> parseCsv(Id recordId, String content) {
+  private List<Line> parseCsv(
+    Id recordId,
+    String content,
+    ALT_CLS_CsvImportLayout.Layout layout
+  ) {
     List<String> rows = content.replace('\uFEFF', '').split('\\r?\\n');
     Integer headerIndex = 0;
     while (headerIndex < rows.size() && String.isBlank(rows[headerIndex])) {
@@ -163,19 +238,24 @@ public with sharing class ALT_CLS_StatementImport {
     }
     String delimiter = rows[headerIndex].contains(';') ? ';' : ',';
     List<String> header = splitCsv(rows[headerIndex], delimiter);
-    Integer dateColumn = column(header, new Set<String>{ 'data' });
-    Integer descriptionColumn = column(
-      header,
-      new Set<String>{ 'descricao', 'historico' }
-    );
-    Integer valueColumn = column(header, new Set<String>{ 'valor' });
-    if (dateColumn < 0 || descriptionColumn < 0 || valueColumn < 0) {
+    Integer dateColumn = column(header, layout.dateHeaders);
+    Integer descriptionColumn = column(header, layout.descriptionHeaders);
+    Integer valueColumn = column(header, layout.valueHeaders);
+    Integer inColumn = column(header, layout.entryHeaders);
+    Integer outColumn = column(header, layout.exitHeaders);
+    Boolean splitColumns = valueColumn < 0 && inColumn >= 0 && outColumn >= 0;
+    if (
+      dateColumn < 0 ||
+      descriptionColumn < 0 ||
+      (valueColumn < 0 && !splitColumns)
+    ) {
       throw new ImportException(
-        'O CSV deve ter as colunas data, descrição e valor.'
+        'O CSV deve ter as colunas data, descrição e valor (ou entrada e saída).'
       );
     }
     List<Line> lines = new List<Line>();
     Map<String, Integer> occurrences = new Map<String, Integer>();
+    Map<String, Integer> legacyOccurrences = new Map<String, Integer>();
     for (Integer i = headerIndex + 1; i < rows.size(); i++) {
       if (String.isBlank(rows[i])) {
         continue;
@@ -185,46 +265,136 @@ public with sharing class ALT_CLS_StatementImport {
       try {
         line.lineDate = csvDate(cells[dateColumn]);
         line.description = cells[descriptionColumn];
-        line.amount = csvAmount(cells[valueColumn]);
-        String signature =
-          recordId +
-          '|' +
-          String.valueOf(line.lineDate) +
-          '|' +
-          line.amount.setScale(2).toPlainString() +
-          '|' +
-          line.description;
-        Integer ordinal = occurrences.containsKey(signature)
-          ? occurrences.get(signature) + 1
+        line.amount = splitColumns
+          ? splitAmount(cells[inColumn], cells[outColumn])
+          : csvAmount(cells[valueColumn]);
+        line.signature = signature(recordId, layout, header, cells, line);
+        Integer ordinal = occurrences.containsKey(line.signature)
+          ? occurrences.get(line.signature) + 1
           : 1;
-        occurrences.put(signature, ordinal);
+        occurrences.put(line.signature, ordinal);
+        if (!splitColumns) {
+          line.legacyKey = legacyKey(recordId, line, legacyOccurrences);
+        }
         line.key =
           'CSV:' +
           EncodingUtil.convertToHex(
             Crypto.generateDigest(
               'SHA-256',
-              Blob.valueOf(signature + '|' + ordinal)
+              Blob.valueOf(line.signature + '|' + ordinal)
             )
           );
+      } catch (ImportException e) {
+        line.status = INVALID;
+        line.error = 'Linha ' + (i + 1) + ': ' + e.getMessage();
       } catch (Exception e) {
         line.status = INVALID;
         line.error = 'Linha ' + (i + 1) + ': data ou valor inválido.';
       }
       lines.add(line);
     }
+    for (Line line : lines) {
+      Integer total = line.signature == null
+        ? 0
+        : occurrences.get(line.signature);
+      if (total > 1) {
+        line.note = 'Linha idêntica repetida: ' + total + '×';
+      }
+    }
     return lines;
+  }
+
+  // Same key the importer gave a value-column line before the layouts: lines already imported by
+  // that build must still be recognized, so re-importing an overlapping file adds nothing.
+  private String legacyKey(
+    Id recordId,
+    Line line,
+    Map<String, Integer> legacyOccurrences
+  ) {
+    String legacy =
+      recordId +
+      '|' +
+      String.valueOf(line.lineDate) +
+      '|' +
+      line.amount.setScale(2).toPlainString() +
+      '|' +
+      line.description;
+    Integer ordinal = legacyOccurrences.containsKey(legacy)
+      ? legacyOccurrences.get(legacy) + 1
+      : 1;
+    legacyOccurrences.put(legacy, ordinal);
+    return 'CSV:' +
+      EncodingUtil.convertToHex(
+        Crypto.generateDigest('SHA-256', Blob.valueOf(legacy + '|' + ordinal))
+      );
+  }
+
+  // Key headers that are not in the file are skipped; value, entry and exit headers all stand for
+  // the one signed amount, which enters once.
+  private String signature(
+    Id recordId,
+    ALT_CLS_CsvImportLayout.Layout layout,
+    List<String> header,
+    List<String> cells,
+    Line line
+  ) {
+    List<String> parts = new List<String>{ String.valueOf(recordId) };
+    Boolean amountAdded = false;
+    for (String keyHeader : layout.keyHeaders) {
+      if (layout.dateHeaders.contains(keyHeader)) {
+        parts.add(String.valueOf(line.lineDate));
+      } else if (
+        layout.valueHeaders.contains(keyHeader) ||
+        layout.entryHeaders.contains(keyHeader) ||
+        layout.exitHeaders.contains(keyHeader)
+      ) {
+        if (!amountAdded) {
+          parts.add(line.amount.setScale(2).toPlainString());
+          amountAdded = true;
+        }
+      } else if (layout.descriptionHeaders.contains(keyHeader)) {
+        parts.add(normalizedText(line.description));
+      } else {
+        Integer index = column(header, new Set<String>{ keyHeader });
+        if (index >= 0 && index < cells.size()) {
+          parts.add(normalizedText(cells[index]));
+        }
+      }
+    }
+    return String.join(parts, '|');
+  }
+
+  private String normalizedText(String value) {
+    return value == null
+      ? ''
+      : value.replace('\u00A0', ' ')
+          .trim()
+          .replaceAll('\\s+', ' ')
+          .toUpperCase();
+  }
+
+  // Entrada is money in, saida is money out (always written positive): value = entrada - saida.
+  // "-" and empty are empty cells; both empty or both filled is an error for that line.
+  private Decimal splitAmount(String entry, String outflow) {
+    Boolean hasEntry = !isEmptyCell(entry);
+    Boolean hasExit = !isEmptyCell(outflow);
+    if (!hasEntry && !hasExit) {
+      throw new ImportException('Entrada e saída vazias.');
+    }
+    if (hasEntry && hasExit) {
+      throw new ImportException('Entrada e saída preenchidas ao mesmo tempo.');
+    }
+    return hasEntry ? csvAmount(entry) : -csvAmount(outflow);
+  }
+
+  private Boolean isEmptyCell(String value) {
+    String text = value == null ? '' : value.replace('\u00A0', ' ').trim();
+    return text == '' || text == '-';
   }
 
   private Integer column(List<String> header, Set<String> names) {
     for (Integer i = 0; i < header.size(); i++) {
-      String name = header[i]
-        .trim()
-        .toLowerCase()
-        .replace('ç', 'c')
-        .replace('ã', 'a')
-        .replace('ó', 'o')
-        .replace('ú', 'u');
-      if (names.contains(name)) {
+      if (names.contains(ALT_CLS_CsvImportLayout.normalizeHeader(header[i]))) {
         return i;
       }
     }
@@ -278,7 +448,10 @@ public with sharing class ALT_CLS_StatementImport {
   // exactly three digits (1.234 / 1,234) is ambiguous between decimal and thousands and is
   // rejected so a wrong amount is never imported silently.
   private Decimal csvAmount(String value) {
-    String text = value.replace('R$', '').replace(' ', '');
+    String text = value
+      .replace('\u00A0', '')
+      .replace('R$', '')
+      .replace(' ', '');
     Boolean hasDot = text.contains('.');
     Boolean hasComma = text.contains(',');
     if (hasDot && hasComma) {
@@ -311,25 +484,25 @@ public with sharing class ALT_CLS_StatementImport {
     String objectName = recordId.getSObjectType().getDescribe().getName();
     if (objectName == 'AXF_OBJ_BankAccount__c') {
       List<AXF_OBJ_BankAccount__c> accounts = [
-        SELECT RecordType.DeveloperName
+        SELECT RecordType.DeveloperName, AXF_BA_PKL_Institution__c
         FROM AXF_OBJ_BankAccount__c
         WHERE Id = :recordId
         WITH USER_MODE
       ];
       requireFound(accounts.isEmpty());
       requireManual(accounts[0].RecordType.DeveloperName);
-      return new AccountTarget(recordId);
+      return new AccountTarget(recordId, accounts[0].AXF_BA_PKL_Institution__c);
     }
     if (objectName == 'AXF_OBJ_CreditCard__c') {
       List<AXF_OBJ_CreditCard__c> cards = [
-        SELECT RecordType.DeveloperName
+        SELECT RecordType.DeveloperName, AXF_CC_PKL_Institution__c
         FROM AXF_OBJ_CreditCard__c
         WHERE Id = :recordId
         WITH USER_MODE
       ];
       requireFound(cards.isEmpty());
       requireManual(cards[0].RecordType.DeveloperName);
-      return new CardTarget(recordId);
+      return new CardTarget(recordId, cards[0].AXF_CC_PKL_Institution__c);
     }
     throw new ImportException('Importação disponível só para conta ou cartão.');
   }
@@ -355,15 +528,31 @@ public with sharing class ALT_CLS_StatementImport {
   }
 
   private abstract class Target {
+    public String institution;
     public abstract Set<String> existingKeys(Set<String> keys);
+    public abstract Integer countOn(Date day);
     public abstract void save(List<Line> lines);
   }
 
   private class AccountTarget extends Target {
     private Id accountId;
 
-    AccountTarget(Id accountId) {
+    AccountTarget(Id accountId, String institution) {
       this.accountId = accountId;
+      this.institution = institution;
+    }
+
+    public override Integer countOn(Date day) {
+      return [
+        SELECT COUNT()
+        FROM AXF_OBJ_BankAccountTransaction__c
+        WHERE
+          AXF_BAT_MD_BankAccount__c = :accountId
+          AND AXF_BAT_DAT_Date__c = :day
+          AND (AXF_BAT_EXI_PluggyTransactionId__c LIKE 'CSV:%'
+          OR AXF_BAT_EXI_PluggyTransactionId__c LIKE 'OFX:%')
+        WITH USER_MODE
+      ];
     }
 
     public override Set<String> existingKeys(Set<String> keys) {
@@ -399,8 +588,22 @@ public with sharing class ALT_CLS_StatementImport {
   private class CardTarget extends Target {
     private Id cardId;
 
-    CardTarget(Id cardId) {
+    CardTarget(Id cardId, String institution) {
       this.cardId = cardId;
+      this.institution = institution;
+    }
+
+    public override Integer countOn(Date day) {
+      return [
+        SELECT COUNT()
+        FROM AXF_OBJ_CreditCardTransaction__c
+        WHERE
+          AXF_CCT_MD_CreditCard__c = :cardId
+          AND AXF_CCT_DAT_Date__c = :day
+          AND (AXF_CCT_EXI_PluggyTransactionId__c LIKE 'CSV:%'
+          OR AXF_CCT_EXI_PluggyTransactionId__c LIKE 'OFX:%')
+        WITH USER_MODE
+      ];
     }
 
     public override Set<String> existingKeys(Set<String> keys) {
