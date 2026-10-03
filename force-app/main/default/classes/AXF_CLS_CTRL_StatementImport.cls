@@ -10,6 +10,8 @@ public with sharing class AXF_CLS_CTRL_StatementImport {
     public String status;
     @AuraEnabled
     public String error;
+    @AuraEnabled
+    public String note;
   }
 
   public class PreviewView {
@@ -21,6 +23,8 @@ public with sharing class AXF_CLS_CTRL_StatementImport {
     public Integer duplicateCount;
     @AuraEnabled
     public Integer errorCount;
+    @AuraEnabled
+    public List<String> warnings;
   }
 
   public class ImportView {
@@ -45,6 +49,7 @@ public with sharing class AXF_CLS_CTRL_StatementImport {
       view.newCount = preview.newCount;
       view.duplicateCount = preview.duplicateCount;
       view.errorCount = preview.errorCount;
+      view.warnings = preview.warnings;
       for (ALT_CLS_StatementImport.Line line : preview.lines) {
         LineView item = new LineView();
         item.lineDate = line.lineDate;
@@ -52,6 +57,7 @@ public with sharing class AXF_CLS_CTRL_StatementImport {
         item.amount = line.amount;
         item.status = line.status;
         item.error = line.error;
+        item.note = line.note;
         view.lines.add(item);
       }
       return view;
