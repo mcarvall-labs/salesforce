@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<PermissionSetGroup xmlns="http://soap.sforce.com/2006/04/metadata">
+    <description
+  >Perfil Gestor Financeiro: acesso ao app Axon, importação de extrato, configuração e credenciais do Pluggy.</description>
+    <label>Axon - Gestor Financeiro</label>
+    <permissionSets>AXF_PS_Usuario</permissionSets>
+    <permissionSets>AXF_PS_ImportarExtrato</permissionSets>
+    <permissionSets>AXF_PS_Configuracao</permissionSets>
+    <permissionSets>AXF_PS_ConfiguracaoCredenciais</permissionSets>
+    <status>Updated</status>
+</PermissionSetGroup>
