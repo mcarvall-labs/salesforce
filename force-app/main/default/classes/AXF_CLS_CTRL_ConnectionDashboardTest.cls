@@ -54,20 +54,26 @@ private class AXF_CLS_CTRL_ConnectionDashboardTest {
 
   @IsTest
   static void syncConnectionReportsUnknownConnection() {
-    Account holder = new Account(Name = 'Holder');
-    insert holder;
-    AXF_OBJ_PluggyConnection__c connection = new AXF_OBJ_PluggyConnection__c(
-      AXF_CON_MD_Holder__c = holder.Id,
-      AXF_CON_PKL_Institution__c = '341',
-      AXF_CON_EXI_PluggyItemId__c = 'gone'
+    ALT_CLS_SyncTestUser.create(
+      'axfdunk',
+      new List<String>{ 'AXF_OBJ_PluggyConnection__c' }
     );
-    insert connection;
-    Id missing = connection.Id;
-    delete connection;
-    System.assertEquals(
-      false,
-      AXF_CLS_CTRL_ConnectionDashboard.syncConnection(missing).success
-    );
+    System.runAs(new User(Id = UserInfo.getUserId())) {
+      Account holder = new Account(Name = 'Holder');
+      insert holder;
+      AXF_OBJ_PluggyConnection__c connection = new AXF_OBJ_PluggyConnection__c(
+        AXF_CON_MD_Holder__c = holder.Id,
+        AXF_CON_PKL_Institution__c = '341',
+        AXF_CON_EXI_PluggyItemId__c = 'gone'
+      );
+      insert connection;
+      Id missing = connection.Id;
+      delete connection;
+      System.assertEquals(
+        false,
+        AXF_CLS_CTRL_ConnectionDashboard.syncConnection(missing).success
+      );
+    }
   }
 
   @IsTest
