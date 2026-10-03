@@ -470,17 +470,17 @@ private class ALT_CLS_StatementImportTest {
   private static final String NBSP = '\u00A0';
   private static final String BANK =
     '\uFEFFData,Categoria,Lançamento,Descrição,Entrada,Saída,Saldo do dia\r\n' +
-    '01/08/2026,Pessoa Jurídica,PIX,MICHEL,-,"R$' +
+    '01/08/2026,Pessoa Jurídica,PIX,TITULAR EXEMPLO,-,"R$' +
     NBSP +
     '1.000,00","-R$' +
     NBSP +
     '1.000,00"\r\n' +
-    '11/08/2026,Pessoa Jurídica,PIX,MICHEL,-,"R$' +
+    '11/08/2026,Pessoa Jurídica,PIX,TITULAR EXEMPLO,-,"R$' +
     NBSP +
     '1.500,00","-R$' +
     NBSP +
     '4.500,00"\r\n' +
-    '11/08/2026,Pessoa Jurídica,PIX,MICHEL,-,"R$' +
+    '11/08/2026,Pessoa Jurídica,PIX,TITULAR EXEMPLO,-,"R$' +
     NBSP +
     '3.000,00","-R$' +
     NBSP +
@@ -579,6 +579,30 @@ private class ALT_CLS_StatementImportTest {
   }
 
   @IsTest
+  static void entradaSaidaColumnDefinesTheSignEvenWhenTheCellHasOne() {
+    System.runAs(new User(Id = UserInfo.getUserId())) {
+      Id accountId = manualAccount();
+      ALT_CLS_StatementImport.Result result = new ALT_CLS_StatementImport()
+        .importFile(
+          accountId,
+          'a.csv',
+          'Data,Descrição,Entrada,Saída\n' +
+            '01/08/2026,SAIDA COM SINAL,-,"-5,00"\n' +
+            '02/08/2026,ENTRADA COM SINAL,"-7,00",-\n' +
+            '03/08/2026,SAIDA SEM SINAL,-,"3,00"\n'
+        );
+      System.assertEquals(true, result.success, result.message);
+      System.assertEquals(3, result.imported);
+      AggregateResult total = [
+        SELECT SUM(AXF_BAT_CUR_Amount__c) net
+        FROM AXF_OBJ_BankAccountTransaction__c
+        WHERE AXF_BAT_MD_BankAccount__c = :accountId
+      ];
+      System.assertEquals(-1, total.get('net'));
+    }
+  }
+
+  @IsTest
   static void valueLayoutStillWorksAndEntradaWithoutSaidaIsRejected() {
     System.runAs(new User(Id = UserInfo.getUserId())) {
       System.assertEquals(
@@ -609,52 +633,52 @@ private class ALT_CLS_StatementImportTest {
   // Statement exported by Contabilizei (checking account, August 2026), as delivered.
   private static final String CONTABILIZEI =
     '\uFEFFData,Categoria,Lançamento,Descrição,Entrada,Saída,Saldo do dia\r\n' +
-    '01/08/2026,Pessoa Jurídica,PIX,MICHEL CARVALHO LOPES,-,"R$' +
+    '01/08/2026,Pessoa Jurídica,PIX,TITULAR EXEMPLO,-,"R$' +
     NBSP +
     '1.000,00","-R$' +
     NBSP +
     '1.000,00"\r\n' +
-    '05/08/2026,Pessoa Jurídica,PIX,MICHEL CARVALHO LOPES,-,"R$' +
+    '05/08/2026,Pessoa Jurídica,PIX,TITULAR EXEMPLO,-,"R$' +
     NBSP +
     '2.500,00","-R$' +
     NBSP +
     '2.500,00"\r\n' +
-    '11/08/2026,Pessoa Jurídica,PIX,MICHEL CARVALHO LOPES,-,"R$' +
+    '11/08/2026,Pessoa Jurídica,PIX,TITULAR EXEMPLO,-,"R$' +
     NBSP +
     '1.500,00","-R$' +
     NBSP +
     '4.500,00"\r\n' +
-    '11/08/2026,Pessoa Jurídica,PIX,MICHEL CARVALHO LOPES,-,"R$' +
+    '11/08/2026,Pessoa Jurídica,PIX,TITULAR EXEMPLO,-,"R$' +
     NBSP +
     '3.000,00","-R$' +
     NBSP +
     '4.500,00"\r\n' +
-    '14/08/2026,Pessoa Jurídica,PIX,MICHEL CARVALHO LOPES,-,"R$' +
+    '14/08/2026,Pessoa Jurídica,PIX,TITULAR EXEMPLO,-,"R$' +
     NBSP +
     '2.000,00","-R$' +
     NBSP +
     '2.000,00"\r\n' +
-    '17/08/2026,Pessoa Jurídica,Pagamento,CONTABILIZEI TECNOLOGIA LTDA,-,"R$' +
+    '17/08/2026,Pessoa Jurídica,Pagamento,EMPRESA CONTABIL LTDA,-,"R$' +
     NBSP +
     '459,00","-R$' +
     NBSP +
     '459,00"\r\n' +
-    '18/08/2026,Pessoa Jurídica,PIX,MINISTERIO DA FAZENDA,-,"R$' +
+    '18/08/2026,Pessoa Jurídica,PIX,ORGAO PUBLICO,-,"R$' +
     NBSP +
     '502,51","-R$' +
     NBSP +
     '20.502,51"\r\n' +
-    '18/08/2026,Pessoa Jurídica,PIX,MICHEL CARVALHO LOPES,-,"R$' +
+    '18/08/2026,Pessoa Jurídica,PIX,TITULAR EXEMPLO,-,"R$' +
     NBSP +
     '20.000,00","-R$' +
     NBSP +
     '20.502,51"\r\n' +
-    '20/08/2026,Pessoa Jurídica,PIX,MICHEL CARVALHO LOPES,-,"R$' +
+    '20/08/2026,Pessoa Jurídica,PIX,TITULAR EXEMPLO,-,"R$' +
     NBSP +
     '5.500,00","-R$' +
     NBSP +
     '5.500,00"\r\n' +
-    '25/08/2026,Pessoa Jurídica,PIX,MICHEL CARVALHO LOPES,-,"R$' +
+    '25/08/2026,Pessoa Jurídica,PIX,TITULAR EXEMPLO,-,"R$' +
     NBSP +
     '600,00","-R$' +
     NBSP +
@@ -664,7 +688,7 @@ private class ALT_CLS_StatementImportTest {
     '27.896,59",-,"R$' +
     NBSP +
     '27.896,59"\r\n' +
-    '28/08/2026,Pessoa Jurídica,PIX,MICHEL CARVALHO LOPES,-,"R$' +
+    '28/08/2026,Pessoa Jurídica,PIX,TITULAR EXEMPLO,-,"R$' +
     NBSP +
     '1.442,69","-R$' +
     NBSP +
@@ -675,14 +699,14 @@ private class ALT_CLS_StatementImportTest {
     System.runAs(new User(Id = UserInfo.getUserId())) {
       Id accountId = manualAccount();
       ALT_CLS_StatementImport.Preview preview = new ALT_CLS_StatementImport()
-        .preview(accountId, '31129469_01AGO2026_31AGO2026.csv', CONTABILIZEI);
+        .preview(accountId, '00000000_01AGO2026_31AGO2026.csv', CONTABILIZEI);
       System.assertEquals(12, preview.lines.size());
       System.assertEquals(12, preview.newCount);
       System.assertEquals(0, preview.errorCount);
       ALT_CLS_StatementImport.Result first = new ALT_CLS_StatementImport()
         .importFile(
           accountId,
-          '31129469_01AGO2026_31AGO2026.csv',
+          '00000000_01AGO2026_31AGO2026.csv',
           CONTABILIZEI
         );
       System.assertEquals(true, first.success, first.message);
@@ -707,7 +731,7 @@ private class ALT_CLS_StatementImportTest {
       ALT_CLS_StatementImport.Result second = new ALT_CLS_StatementImport()
         .importFile(
           accountId,
-          '31129469_01AGO2026_31AGO2026.csv',
+          '00000000_01AGO2026_31AGO2026.csv',
           CONTABILIZEI
         );
       System.assertEquals(0, second.imported);
@@ -805,19 +829,19 @@ private class ALT_CLS_StatementImportTest {
       System.assertEquals(12, august.imported);
       String twoMonths =
         CONTABILIZEI +
-        '02/09/2026,Pessoa Jurídica,PIX,MICHEL CARVALHO LOPES,-,"R$' +
+        '02/09/2026,Pessoa Jurídica,PIX,TITULAR EXEMPLO,-,"R$' +
         NBSP +
         '3.000,00","-R$' +
         NBSP +
         '3.000,00"' +
         '\r\n' +
-        '14/09/2026,Pessoa Jurídica,PIX,MICHEL CARVALHO LOPES,-,"R$' +
+        '14/09/2026,Pessoa Jurídica,PIX,TITULAR EXEMPLO,-,"R$' +
         NBSP +
         '3.000,00","-R$' +
         NBSP +
         '6.502,51"' +
         '\r\n' +
-        '14/09/2026,Pessoa Jurídica,PIX,MICHEL CARVALHO LOPES,-,"R$' +
+        '14/09/2026,Pessoa Jurídica,PIX,TITULAR EXEMPLO,-,"R$' +
         NBSP +
         '3.000,00","-R$' +
         NBSP +
