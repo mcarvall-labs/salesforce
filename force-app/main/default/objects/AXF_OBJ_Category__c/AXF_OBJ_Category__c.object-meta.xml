@@ -23,7 +23,8 @@
     <allowInChatterGroups>false</allowInChatterGroups>
     <compactLayoutAssignment>SYSTEM</compactLayoutAssignment>
     <deploymentStatus>Deployed</deploymentStatus>
-    <description>Categoria de lançamento, compartilhada entre os usuários do Axon.</description>
+    <description
+  >Categoria de lançamento, compartilhada entre os usuários do Axon.</description>
     <enableActivities>false</enableActivities>
     <enableBulkApi>true</enableBulkApi>
     <enableFeeds>false</enableFeeds>
