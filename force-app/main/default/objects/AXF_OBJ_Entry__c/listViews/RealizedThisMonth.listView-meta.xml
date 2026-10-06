@@ -5,7 +5,7 @@
     <columns>AXF_ENT_MD_Holder__c</columns>
     <columns>AXF_ENT_PKL_Type__c</columns>
     <columns>AXF_ENT_CUR_Amount__c</columns>
-    <columns>AXF_ENT_DAT_DueDate__c</columns>
+    <columns>AXF_ENT_DAT_PaymentDate__c</columns>
     <columns>AXF_ENT_PKL_Status__c</columns>
     <filters>
         <field>AXF_ENT_PKL_Status__c</field>
