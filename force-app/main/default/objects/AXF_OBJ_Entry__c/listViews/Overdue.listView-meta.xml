@@ -1,0 +1,17 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<ListView xmlns="http://soap.sforce.com/2006/04/metadata">
+    <fullName>Overdue</fullName>
+    <columns>NAME</columns>
+    <columns>AXF_ENT_MD_Holder__c</columns>
+    <columns>AXF_ENT_PKL_Type__c</columns>
+    <columns>AXF_ENT_CUR_Amount__c</columns>
+    <columns>AXF_ENT_DAT_DueDate__c</columns>
+    <columns>AXF_ENT_PKL_Status__c</columns>
+    <filters>
+        <field>AXF_ENT_FOR_Overdue__c</field>
+        <operation>equals</operation>
+        <value>1</value>
+    </filters>
+    <filterScope>Everything</filterScope>
+    <label>Overdue</label>
+</ListView>
