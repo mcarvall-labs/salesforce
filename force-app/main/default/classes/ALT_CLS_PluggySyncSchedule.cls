@@ -7,9 +7,21 @@ public with sharing class ALT_CLS_PluggySyncSchedule implements Schedulable {
   public static final String JOB_NAME = 'Axon - Sync diário Pluggy';
   public static final String DAILY_AT_3AM = '0 0 3 * * ?';
 
+  // Safe to run again: an existing job with the same name is replaced, not duplicated.
   public static Id scheduleDaily() {
+    return scheduleDaily(JOB_NAME);
+  }
+
+  public static Id scheduleDaily(String jobName) {
+    for (CronTrigger existing : [
+      SELECT Id
+      FROM CronTrigger
+      WHERE CronJobDetail.Name = :jobName
+    ]) {
+      System.abortJob(existing.Id);
+    }
     return System.schedule(
-      JOB_NAME,
+      jobName,
       DAILY_AT_3AM,
       new ALT_CLS_PluggySyncSchedule()
     );

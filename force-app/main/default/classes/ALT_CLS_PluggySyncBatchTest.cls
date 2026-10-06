@@ -118,6 +118,16 @@ private class ALT_CLS_PluggySyncBatchTest {
     ];
   }
 
+  // Runs a locator the way the batch does; its binds only resolve inside the locator.
+  private static List<SObject> rows(Database.QueryLocator locator) {
+    List<SObject> found = new List<SObject>();
+    Database.QueryLocatorIterator iterator = locator.iterator();
+    while (iterator.hasNext()) {
+      found.add(iterator.next());
+    }
+    return found;
+  }
+
   // Fails every callout of the transaction and invoice endpoints.
   private class FailingMock implements HttpCalloutMock {
     public HttpResponse respond(HttpRequest req) {
@@ -284,12 +294,11 @@ private class ALT_CLS_PluggySyncBatchTest {
       AXF_OBJ_PluggyConnection__c active = connection('item-a', 'Active');
       connection('item-p', 'Paused');
       AXF_OBJ_PluggyConnection__c failed = connection('item-e', 'Error');
-      Database.QueryLocator all = new ALT_CLS_PluggySyncBatch(null).start(null);
-      Database.QueryLocator one = new ALT_CLS_PluggySyncBatch(failed.Id)
-        .start(null);
-      System.assertEquals(2, Database.query(all.getQuery()).size());
-      System.assert(one.getQuery().contains('AND Id = :connectionFilter'));
-      System.assertNotEquals(null, active.Id);
+      Set<Id> picked = new Map<Id, SObject>(
+          rows(new ALT_CLS_PluggySyncBatch(null).start(null))
+        )
+        .keySet();
+      System.assertEquals(new Set<Id>{ active.Id, failed.Id }, picked);
     }
   }
 
@@ -337,14 +346,12 @@ private class ALT_CLS_PluggySyncBatchTest {
       Set<Id> attempted = new Set<Id>{ good.Id, bad.Id };
       Map<Id, String> errors = new Map<Id, String>{ bad.Id => 'HTTP 500' };
       // Phase 2: the failed first phase leaves 'bad' out; 'unseen' was never attempted.
-      List<AXF_OBJ_BankAccount__c> accounts = Database.query(
-        phase(2, attempted, errors).start(null).getQuery()
-      );
+      List<SObject> accounts = rows(phase(2, attempted, errors).start(null));
       System.assertEquals(1, accounts.size());
-      System.assertEquals(good.Id, accounts[0].AXF_BA_LKP_Connection__c);
+      System.assertEquals(good.Id, accounts[0].get('AXF_BA_LKP_Connection__c'));
       // Phase 3 keeps a connection whose phase 2 failed, and still drops the first-phase failure.
       errors.put(good.Id, 'phase 2 failed');
-      List<AXF_OBJ_CreditCard__c> cards = Database.query(
+      List<SObject> cards = rows(
         new ALT_CLS_PluggySyncBatch(
             null,
             3,
@@ -353,10 +360,9 @@ private class ALT_CLS_PluggySyncBatchTest {
             new Set<Id>{ bad.Id }
           )
           .start(null)
-          .getQuery()
       );
       System.assertEquals(1, cards.size());
-      System.assertEquals(good.Id, cards[0].AXF_CC_LKP_Connection__c);
+      System.assertEquals(good.Id, cards[0].get('AXF_CC_LKP_Connection__c'));
     }
   }
 
@@ -365,8 +371,8 @@ private class ALT_CLS_PluggySyncBatchTest {
     System.runAs(new User(Id = UserInfo.getUserId())) {
       AXF_OBJ_PluggyConnection__c first = connection('item-a', 'Active');
       connection('item-b', 'Active');
-      List<AXF_OBJ_PluggyConnection__c> picked = Database.query(
-        new ALT_CLS_PluggySyncBatch(first.Id).start(null).getQuery()
+      List<SObject> picked = rows(
+        new ALT_CLS_PluggySyncBatch(first.Id).start(null)
       );
       System.assertEquals(1, picked.size());
       System.assertEquals(first.Id, picked[0].Id);
@@ -431,7 +437,7 @@ private class ALT_CLS_PluggySyncBatchTest {
       Test.startTest();
       phase(1, new Set<Id>{ bad.Id }, new Map<Id, String>{ bad.Id => 'x' })
         .finish(null);
-      Test.stopTest();
+      // Before stopTest runs it: only the chained phase 2 is queued.
       System.assertEquals(
         1,
         [
@@ -440,24 +446,30 @@ private class ALT_CLS_PluggySyncBatchTest {
           WHERE ApexClass.Name = 'ALT_CLS_PluggySyncBatch'
         ]
       );
+      Test.stopTest();
     }
   }
 
   @IsTest
   static void scheduleRegistersTheDailyJobAndRunsTheBatch() {
+    // A test name keeps the org's real daily job untouched.
+    String jobName = 'Axon test - Sync diário Pluggy';
     Test.startTest();
-    Id jobId = ALT_CLS_PluggySyncSchedule.scheduleDaily();
+    ALT_CLS_PluggySyncSchedule.scheduleDaily(jobName);
+    // Running it again replaces the job instead of failing on the duplicate name.
+    Id jobId = ALT_CLS_PluggySyncSchedule.scheduleDaily(jobName);
     Test.stopTest();
+    System.assertEquals(
+      1,
+      [SELECT COUNT() FROM CronTrigger WHERE CronJobDetail.Name = :jobName]
+    );
     CronTrigger cron = [
       SELECT CronExpression, CronJobDetail.Name
       FROM CronTrigger
       WHERE Id = :jobId
     ];
     System.assertEquals('0 0 3 * * ?', cron.CronExpression);
-    System.assertEquals(
-      ALT_CLS_PluggySyncSchedule.JOB_NAME,
-      cron.CronJobDetail.Name
-    );
+    System.assertEquals(jobName, cron.CronJobDetail.Name);
     new ALT_CLS_PluggySyncSchedule().execute(null);
   }
 }
