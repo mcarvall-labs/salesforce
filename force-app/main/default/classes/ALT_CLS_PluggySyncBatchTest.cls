@@ -346,7 +346,16 @@ private class ALT_CLS_PluggySyncBatchTest {
       Set<Id> attempted = new Set<Id>{ good.Id, bad.Id };
       Map<Id, String> errors = new Map<Id, String>{ bad.Id => 'HTTP 500' };
       // Phase 2: the failed first phase leaves 'bad' out; 'unseen' was never attempted.
-      List<SObject> accounts = rows(phase(2, attempted, errors).start(null));
+      List<SObject> accounts = rows(
+        new ALT_CLS_PluggySyncBatch(
+            null,
+            2,
+            attempted,
+            errors,
+            new Set<Id>{ bad.Id }
+          )
+          .start(null)
+      );
       System.assertEquals(1, accounts.size());
       System.assertEquals(good.Id, accounts[0].get('AXF_BA_LKP_Connection__c'));
       // Phase 3 keeps a connection whose phase 2 failed, and still drops the first-phase failure.
