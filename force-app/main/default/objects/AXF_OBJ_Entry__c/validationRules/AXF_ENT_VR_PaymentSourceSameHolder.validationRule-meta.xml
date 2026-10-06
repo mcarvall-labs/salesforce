@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<ValidationRule xmlns="http://soap.sforce.com/2006/04/metadata">
+    <fullName>AXF_ENT_VR_PaymentSourceSameHolder</fullName>
+    <active>true</active>
+    <errorConditionFormula
+  >OR(AND(NOT(ISBLANK(AXF_ENT_LKP_BankAccount__c)), AXF_ENT_LKP_BankAccount__r.AXF_BA_MD_Holder__c &lt;&gt; AXF_ENT_MD_Holder__c), AND(NOT(ISBLANK(AXF_ENT_LKP_CreditCard__c)), AXF_ENT_LKP_CreditCard__r.AXF_CC_MD_Holder__c &lt;&gt; AXF_ENT_MD_Holder__c))</errorConditionFormula>
+    <errorDisplayField>AXF_ENT_LKP_BankAccount__c</errorDisplayField>
+    <errorMessage
+  >The bank account or credit card must belong to the same holder as the entry.</errorMessage>
+</ValidationRule>
