@@ -94,6 +94,56 @@ private class AXF_CLS_CTRL_ConnectionDashboardTest {
     );
   }
 
+  // Answers the accounts call of whichever item is asked, with an account id of that item.
+  private class AccountsMock implements HttpCalloutMock {
+    public HttpResponse respond(HttpRequest req) {
+      HttpResponse res = new HttpResponse();
+      res.setStatusCode(200);
+      String url = req.getEndpoint();
+      if (url.endsWith('/auth')) {
+        res.setBody('{"apiKey":"abc"}');
+      } else if (url.contains('/accounts?itemId=')) {
+        String item = url.substringAfter('itemId=');
+        res.setBody(
+          '{"results":[{"id":"acc-' +
+            item +
+            '","type":"BANK","name":"Conta","number":"1","balance":10}]}'
+        );
+      } else {
+        res.setBody('{"results":[],"next":null}');
+      }
+      return res;
+    }
+  }
+
+  @IsTest
+  static void syncConnectionSyncsOnlyTheClickedConnection() {
+    AXF_OBJ_PluggyConnection__c clicked = connection('Active');
+    AXF_OBJ_PluggyConnection__c other = connection('Error');
+    ALT_CLS_PluggySyncBatch.chainNextPhase = false;
+    ALT_CLS_PluggyAccountSync.assignRecordType = false;
+    Test.setMock(HttpCalloutMock.class, new AccountsMock());
+    Test.startTest();
+    AXF_CLS_CTRL_ConnectionDashboard.syncConnection(clicked.Id);
+    Test.stopTest();
+    System.assertEquals(
+      1,
+      [
+        SELECT COUNT()
+        FROM AXF_OBJ_BankAccount__c
+        WHERE AXF_BA_LKP_Connection__c = :clicked.Id
+      ]
+    );
+    System.assertEquals(
+      0,
+      [
+        SELECT COUNT()
+        FROM AXF_OBJ_BankAccount__c
+        WHERE AXF_BA_LKP_Connection__c = :other.Id
+      ]
+    );
+  }
+
   @IsTest
   static void dashboardIsDeniedToAUserWithoutAccess() {
     User restricted = new User(

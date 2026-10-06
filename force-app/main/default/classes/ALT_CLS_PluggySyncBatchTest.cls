@@ -67,7 +67,70 @@ private class ALT_CLS_PluggySyncBatchTest {
     Set<Id> attempted,
     Map<Id, String> errors
   ) {
-    return new ALT_CLS_PluggySyncBatch(null, phase, attempted, errors);
+    return new ALT_CLS_PluggySyncBatch(
+      null,
+      phase,
+      attempted,
+      errors,
+      new Set<Id>()
+    );
+  }
+
+  private static AXF_OBJ_BankAccount__c bankAccount(
+    AXF_OBJ_PluggyConnection__c connection,
+    String pluggyId
+  ) {
+    AXF_OBJ_BankAccount__c account = new AXF_OBJ_BankAccount__c(
+      Name = 'Conta',
+      AXF_BA_MD_Holder__c = connection.AXF_CON_MD_Holder__c,
+      AXF_BA_LKP_Connection__c = connection.Id,
+      AXF_BA_PKL_Institution__c = '341',
+      AXF_BA_PKL_Type__c = 'Checking',
+      AXF_BA_EXI_PluggyAccountId__c = pluggyId
+    );
+    insert account;
+    return account;
+  }
+
+  private static AXF_OBJ_CreditCard__c creditCard(
+    AXF_OBJ_PluggyConnection__c connection,
+    String pluggyId
+  ) {
+    AXF_OBJ_CreditCard__c card = new AXF_OBJ_CreditCard__c(
+      Name = 'Cartão',
+      AXF_CC_MD_Holder__c = connection.AXF_CON_MD_Holder__c,
+      AXF_CC_LKP_Connection__c = connection.Id,
+      AXF_CC_PKL_Institution__c = '341',
+      AXF_CC_EXI_PluggyCardId__c = pluggyId
+    );
+    insert card;
+    return card;
+  }
+
+  private static AXF_OBJ_PluggyConnection__c reload(Id connectionId) {
+    return [
+      SELECT
+        AXF_CON_PKL_Status__c,
+        AXF_CON_TAL_SyncErrorMessage__c,
+        AXF_CON_DT_LastSyncDatetime__c
+      FROM AXF_OBJ_PluggyConnection__c
+      WHERE Id = :connectionId
+    ];
+  }
+
+  // Fails every callout of the transaction and invoice endpoints.
+  private class FailingMock implements HttpCalloutMock {
+    public HttpResponse respond(HttpRequest req) {
+      HttpResponse res = new HttpResponse();
+      if (req.getEndpoint().endsWith('/auth')) {
+        res.setStatusCode(200);
+        res.setBody('{"apiKey":"abc"}');
+      } else {
+        res.setStatusCode(500);
+        res.setBody('{}');
+      }
+      return res;
+    }
   }
 
   @IsTest
@@ -255,6 +318,127 @@ private class ALT_CLS_PluggySyncBatchTest {
           FROM AsyncApexJob
           WHERE ApexClass.Name = 'ALT_CLS_PluggySyncBatch'
         ] >= 1
+      );
+    }
+  }
+
+  @IsTest
+  static void startOfTheLaterPhasesPicksOnlyTheSyncedConnectionsData() {
+    System.runAs(new User(Id = UserInfo.getUserId())) {
+      AXF_OBJ_PluggyConnection__c good = connection('item-good', 'Active');
+      AXF_OBJ_PluggyConnection__c bad = connection('item-bad', 'Active');
+      AXF_OBJ_PluggyConnection__c unseen = connection('item-unseen', 'Active');
+      bankAccount(good, 'acc-good');
+      bankAccount(bad, 'acc-bad');
+      bankAccount(unseen, 'acc-unseen');
+      creditCard(good, 'card-good');
+      creditCard(bad, 'card-bad');
+      creditCard(unseen, 'card-unseen');
+      Set<Id> attempted = new Set<Id>{ good.Id, bad.Id };
+      Map<Id, String> errors = new Map<Id, String>{ bad.Id => 'HTTP 500' };
+      // Phase 2: the failed first phase leaves 'bad' out; 'unseen' was never attempted.
+      List<AXF_OBJ_BankAccount__c> accounts = Database.query(
+        phase(2, attempted, errors).start(null).getQuery()
+      );
+      System.assertEquals(1, accounts.size());
+      System.assertEquals(good.Id, accounts[0].AXF_BA_LKP_Connection__c);
+      // Phase 3 keeps a connection whose phase 2 failed, and still drops the first-phase failure.
+      errors.put(good.Id, 'phase 2 failed');
+      List<AXF_OBJ_CreditCard__c> cards = Database.query(
+        new ALT_CLS_PluggySyncBatch(
+            null,
+            3,
+            attempted,
+            errors,
+            new Set<Id>{ bad.Id }
+          )
+          .start(null)
+          .getQuery()
+      );
+      System.assertEquals(1, cards.size());
+      System.assertEquals(good.Id, cards[0].AXF_CC_LKP_Connection__c);
+    }
+  }
+
+  @IsTest
+  static void startRunsTheFilterAsAQueryForOneConnection() {
+    System.runAs(new User(Id = UserInfo.getUserId())) {
+      AXF_OBJ_PluggyConnection__c first = connection('item-a', 'Active');
+      connection('item-b', 'Active');
+      List<AXF_OBJ_PluggyConnection__c> picked = Database.query(
+        new ALT_CLS_PluggySyncBatch(first.Id).start(null).getQuery()
+      );
+      System.assertEquals(1, picked.size());
+      System.assertEquals(first.Id, picked[0].Id);
+    }
+  }
+
+  @IsTest
+  static void failureInTheTransactionPhaseIsRecordedOnItsConnection() {
+    System.runAs(new User(Id = UserInfo.getUserId())) {
+      AXF_OBJ_PluggyConnection__c good = connection('item-good', 'Active');
+      AXF_OBJ_BankAccount__c account = bankAccount(good, 'acc-1');
+      Map<Id, String> errors = new Map<Id, String>();
+      Test.setMock(HttpCalloutMock.class, new FailingMock());
+      Test.startTest();
+      phase(2, new Set<Id>{ good.Id }, errors)
+        .execute(null, new List<SObject>{ account });
+      Test.stopTest();
+      System.assertEquals(true, errors.containsKey(good.Id));
+      phase(3, new Set<Id>{ good.Id }, errors).finish(null);
+      AXF_OBJ_PluggyConnection__c saved = reload(good.Id);
+      System.assertEquals('Error', saved.AXF_CON_PKL_Status__c);
+      System.assertEquals(null, saved.AXF_CON_DT_LastSyncDatetime__c);
+      System.assertNotEquals(null, saved.AXF_CON_TAL_SyncErrorMessage__c);
+    }
+  }
+
+  @IsTest
+  static void failureInTheCardPhaseIsRecordedOnItsConnection() {
+    System.runAs(new User(Id = UserInfo.getUserId())) {
+      AXF_OBJ_PluggyConnection__c good = connection('item-good', 'Active');
+      AXF_OBJ_CreditCard__c card = creditCard(good, 'card-1');
+      Map<Id, String> errors = new Map<Id, String>();
+      Test.setMock(HttpCalloutMock.class, new FailingMock());
+      Test.startTest();
+      phase(3, new Set<Id>{ good.Id }, errors)
+        .execute(null, new List<SObject>{ card });
+      Test.stopTest();
+      System.assertEquals(true, errors.containsKey(good.Id));
+      phase(3, new Set<Id>{ good.Id }, errors).finish(null);
+      System.assertEquals('Error', reload(good.Id).AXF_CON_PKL_Status__c);
+    }
+  }
+
+  @IsTest
+  static void aDeletedConnectionDoesNotDropTheOthersResult() {
+    System.runAs(new User(Id = UserInfo.getUserId())) {
+      AXF_OBJ_PluggyConnection__c good = connection('item-good', 'Active');
+      AXF_OBJ_PluggyConnection__c gone = connection('item-gone', 'Active');
+      Set<Id> attempted = new Set<Id>{ good.Id, gone.Id };
+      delete gone;
+      phase(3, attempted, new Map<Id, String>()).finish(null);
+      AXF_OBJ_PluggyConnection__c saved = reload(good.Id);
+      System.assertEquals('Active', saved.AXF_CON_PKL_Status__c);
+      System.assertNotEquals(null, saved.AXF_CON_DT_LastSyncDatetime__c);
+    }
+  }
+
+  @IsTest
+  static void firstPhaseChainsTheNextOneKeepingTheFailures() {
+    System.runAs(new User(Id = UserInfo.getUserId())) {
+      AXF_OBJ_PluggyConnection__c bad = connection('item-bad', 'Active');
+      Test.startTest();
+      phase(1, new Set<Id>{ bad.Id }, new Map<Id, String>{ bad.Id => 'x' })
+        .finish(null);
+      Test.stopTest();
+      System.assertEquals(
+        1,
+        [
+          SELECT COUNT()
+          FROM AsyncApexJob
+          WHERE ApexClass.Name = 'ALT_CLS_PluggySyncBatch'
+        ]
       );
     }
   }

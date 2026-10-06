@@ -3,7 +3,8 @@
  * cannot follow DML): 1) accounts and cards of every Active/Error connection, 2) transactions of
  * the synced bank accounts, 3) invoices and transactions of the synced cards. Then each
  * connection gets Status, Last Sync and the error message. Run with scope size 1.
- * A connection whose first phase fails is marked Error and skipped by the later phases.
+ * A connection whose first phase fails is marked Error and skipped by the later phases; a failure
+ * in phase 2 does not stop phase 3 of that connection (they are independent).
  */
 public with sharing class ALT_CLS_PluggySyncBatch implements Database.Batchable<SObject>, Database.AllowsCallouts, Database.Stateful {
   public static final Integer SCOPE_SIZE = 1;
@@ -17,9 +18,17 @@ public with sharing class ALT_CLS_PluggySyncBatch implements Database.Batchable<
   private final Id connectionFilter;
   private final Set<Id> attempted;
   private final Map<Id, String> errors;
+  // Connections whose first phase failed: phases 2 and 3 leave them out.
+  private final Set<Id> skipped;
 
   public ALT_CLS_PluggySyncBatch(Id connectionFilter) {
-    this(connectionFilter, 1, new Set<Id>(), new Map<Id, String>());
+    this(
+      connectionFilter,
+      1,
+      new Set<Id>(),
+      new Map<Id, String>(),
+      new Set<Id>()
+    );
   }
 
   @TestVisible
@@ -27,12 +36,14 @@ public with sharing class ALT_CLS_PluggySyncBatch implements Database.Batchable<
     Id connectionFilter,
     Integer phase,
     Set<Id> attempted,
-    Map<Id, String> errors
+    Map<Id, String> errors,
+    Set<Id> skipped
   ) {
     this.connectionFilter = connectionFilter;
     this.phase = phase;
     this.attempted = attempted;
     this.errors = errors;
+    this.skipped = skipped;
   }
 
   public static Id run(Id connectionFilter) {
@@ -44,10 +55,11 @@ public with sharing class ALT_CLS_PluggySyncBatch implements Database.Batchable<
 
   public Database.QueryLocator start(Database.BatchableContext context) {
     Set<Id> synced = syncedConnections();
+    Id filterId = connectionFilter;
     if (phase == 1) {
       String query = 'SELECT Id FROM AXF_OBJ_PluggyConnection__c WHERE AXF_CON_PKL_Status__c IN (\'Active\', \'Error\')';
-      if (connectionFilter != null) {
-        query += ' AND Id = :connectionFilter';
+      if (filterId != null) {
+        query += ' AND Id = :filterId';
       }
       return Database.getQueryLocator(query);
     }
@@ -85,18 +97,29 @@ public with sharing class ALT_CLS_PluggySyncBatch implements Database.Batchable<
 
   public void finish(Database.BatchableContext context) {
     if (phase < LAST_PHASE) {
-      if (chainNextPhase) {
+      if (!chainNextPhase) {
+        return;
+      }
+      // After phase 1 every error is a first-phase failure.
+      Set<Id> nextSkipped = phase == 1 ? errors.keySet().clone() : skipped;
+      try {
         Database.executeBatch(
           new ALT_CLS_PluggySyncBatch(
             connectionFilter,
             phase + 1,
             attempted,
-            errors
+            errors,
+            nextSkipped
           ),
           SCOPE_SIZE
         );
+        return;
+      } catch (Exception e) {
+        // The chain broke: record what was done and mark the rest as failed.
+        for (Id connectionId : attempted) {
+          fail(connectionId, e.getTypeName() + ': ' + e.getMessage());
+        }
       }
-      return;
     }
     recordResults();
   }
@@ -142,7 +165,7 @@ public with sharing class ALT_CLS_PluggySyncBatch implements Database.Batchable<
 
   private Set<Id> syncedConnections() {
     Set<Id> synced = new Set<Id>(attempted);
-    synced.removeAll(errors.keySet());
+    synced.removeAll(phase == 1 ? errors.keySet() : skipped);
     return synced;
   }
 
@@ -162,6 +185,7 @@ public with sharing class ALT_CLS_PluggySyncBatch implements Database.Batchable<
       }
       updates.add(connection);
     }
-    update updates;
+    // Partial save: one deleted or locked connection must not drop the others' result.
+    Database.update(updates, false);
   }
 }
