@@ -27,7 +27,17 @@
     </validationRules>
     <validationRules>
         <errorMessage
-    >A conta bancária ou o cartão de crédito deve pertencer ao mesmo titular do lançamento.</errorMessage>
-        <name>AXF_ENT_VR_PaymentSourceSameHolder</name>
+    >A conta bancária deve pertencer ao mesmo titular do lançamento.</errorMessage>
+        <name>AXF_ENT_VR_BankAccountSameHolder</name>
+    </validationRules>
+    <validationRules>
+        <errorMessage
+    >O cartão de crédito deve pertencer ao mesmo titular do lançamento.</errorMessage>
+        <name>AXF_ENT_VR_CreditCardSameHolder</name>
+    </validationRules>
+    <validationRules>
+        <errorMessage
+    >A data de pagamento só pode ser preenchida quando o status é Realizado.</errorMessage>
+        <name>AXF_ENT_VR_PaymentDateOnlyRealized</name>
     </validationRules>
 </CustomObjectTranslation>
