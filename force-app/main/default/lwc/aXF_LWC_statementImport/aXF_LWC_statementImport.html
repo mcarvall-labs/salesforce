@@ -21,6 +21,11 @@
           {summary.newCount} novas, {summary.duplicateCount} já importadas,
           {summary.errorCount} com erro.
         </p>
+        <template for:each={summary.warnings} for:item="warning">
+          <p key={warning} class="slds-text-color_weak" role="status">
+            {warning}
+          </p>
+        </template>
         <table class="slds-table slds-table_bordered slds-m-top_small">
           <thead>
             <tr>
@@ -47,7 +52,7 @@
                     minimum-fraction-digits="2"
                   ></lightning-formatted-number>
                 </td>
-                <td>{row.statusLabel} {row.error}</td>
+                <td>{row.statusLabel} {row.error} {row.note}</td>
               </tr>
             </template>
           </tbody>

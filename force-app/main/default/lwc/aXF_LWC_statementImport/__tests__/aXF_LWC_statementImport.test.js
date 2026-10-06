@@ -94,4 +94,32 @@ describe("c-a-x-f-l-w-c-statement-import", () => {
       "Formato não suportado."
     );
   });
+
+  it("shows the cut warnings and the repeated line note of the preview", async () => {
+    preview.mockResolvedValue({
+      newCount: 2,
+      duplicateCount: 0,
+      errorCount: 0,
+      warnings: [
+        "Dia 14/09/2026 (limite do arquivo): já há 1 lançamentos importados e o arquivo traz 2."
+      ],
+      lines: [
+        {
+          lineDate: "2026-09-14",
+          description: "A",
+          amount: -3,
+          status: "NEW",
+          note: "Linha idêntica repetida: 2×"
+        }
+      ]
+    });
+    const element = setup();
+    await pickFile(element);
+    expect(
+      element.shadowRoot.querySelector('[role="status"]').textContent
+    ).toContain("limite do arquivo");
+    expect(element.shadowRoot.querySelector("tbody").textContent).toContain(
+      "Linha idêntica repetida: 2×"
+    );
+  });
 });
