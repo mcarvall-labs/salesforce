@@ -9,7 +9,7 @@
         <restricted>true</restricted>
         <valueSetDefinition>
             <sorted>false</sorted>
-            <value><fullName>Expense</fullName><default>true</default><label
+            <value><fullName>Expense</fullName><default>false</default><label
         >Expense</label></value>
             <value><fullName>Income</fullName><default>false</default><label
         >Income</label></value>

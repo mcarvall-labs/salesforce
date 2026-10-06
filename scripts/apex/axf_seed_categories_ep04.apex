@@ -13,14 +13,16 @@ Map<String, String> typeByName = new Map<String, String>{
 
 Set<String> existing = new Set<String>();
 for (AXF_OBJ_Category__c c : [SELECT Name FROM AXF_OBJ_Category__c WHERE Name IN :typeByName.keySet()]) {
-    existing.add(c.Name);
+    existing.add(c.Name.toLowerCase());
 }
 
 List<AXF_OBJ_Category__c> toInsert = new List<AXF_OBJ_Category__c>();
 for (String name : typeByName.keySet()) {
-    if (!existing.contains(name)) {
+    if (!existing.contains(name.toLowerCase())) {
         toInsert.add(new AXF_OBJ_Category__c(Name = name, AXF_CAT_PKL_Type__c = typeByName.get(name)));
     }
 }
-insert toInsert;
+if (!toInsert.isEmpty()) {
+    insert toInsert;
+}
 System.debug('Categorias inseridas: ' + toInsert.size());
