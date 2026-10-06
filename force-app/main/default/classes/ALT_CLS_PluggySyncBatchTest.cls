@@ -128,6 +128,15 @@ private class ALT_CLS_PluggySyncBatchTest {
     return found;
   }
 
+  // Answers like the Pluggy mock and remembers which accounts were asked for.
+  private class RecordingMock implements HttpCalloutMock {
+    public List<String> urls = new List<String>();
+    public HttpResponse respond(HttpRequest req) {
+      urls.add(req.getEndpoint());
+      return new PluggyMock().respond(req);
+    }
+  }
+
   // Fails every callout of the transaction and invoice endpoints.
   private class FailingMock implements HttpCalloutMock {
     public HttpResponse respond(HttpRequest req) {
@@ -460,6 +469,45 @@ private class ALT_CLS_PluggySyncBatchTest {
   }
 
   @IsTest
+  static void aFirstPhaseFailureKeepsTheConnectionOutOfTheChainedPhase() {
+    System.runAs(new User(Id = UserInfo.getUserId())) {
+      AXF_OBJ_PluggyConnection__c good = connection('item-g', 'Active');
+      AXF_OBJ_PluggyConnection__c failed = connection('item-f', 'Active');
+      bankAccount(good, 'acc-good');
+      bankAccount(failed, 'acc-failed');
+      RecordingMock mock = new RecordingMock();
+      Test.setMock(HttpCalloutMock.class, mock);
+      Test.startTest();
+      // The real hand-over: phase 1 ends with an error and queues phase 2.
+      phase(
+          1,
+          new Set<Id>{ good.Id, failed.Id },
+          new Map<Id, String>{ failed.Id => 'HTTP 500' }
+        )
+        .finish(null);
+      Test.stopTest();
+      String calls = String.join(mock.urls, ' ');
+      System.assert(calls.contains('accountId=acc-good'), calls);
+      System.assert(!calls.contains('acc-failed'), calls);
+    }
+  }
+
+  @IsTest
+  static void scheduledExecuteStartsTheFullSync() {
+    Test.startTest();
+    new ALT_CLS_PluggySyncSchedule().execute(null);
+    System.assertEquals(
+      1,
+      [
+        SELECT COUNT()
+        FROM AsyncApexJob
+        WHERE ApexClass.Name = 'ALT_CLS_PluggySyncBatch'
+      ]
+    );
+    Test.stopTest();
+  }
+
+  @IsTest
   static void scheduleRegistersTheDailyJobAndRunsTheBatch() {
     // A test name keeps the org's real daily job untouched.
     String jobName = 'Axon test - Sync diário Pluggy';
@@ -479,6 +527,9 @@ private class ALT_CLS_PluggySyncBatchTest {
     ];
     System.assertEquals('0 0 3 * * ?', cron.CronExpression);
     System.assertEquals(jobName, cron.CronJobDetail.Name);
-    new ALT_CLS_PluggySyncSchedule().execute(null);
+    System.assertEquals(
+      'Axon - Sync diário Pluggy',
+      ALT_CLS_PluggySyncSchedule.JOB_NAME
+    );
   }
 }
