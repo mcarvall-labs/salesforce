@@ -1,0 +1,183 @@
+<template>
+  <lightning-card title="Timesheet" icon-name="standard:timesheet">
+    <div slot="actions">
+      <lightning-button
+        label="Preencher dias úteis"
+        onclick={handleFill}
+        disabled={isBusy}
+      ></lightning-button>
+    </div>
+    <div class="slds-p-horizontal_medium">
+      <div
+        class="slds-grid slds-grid_vertical-align-center slds-m-bottom_small"
+      >
+        <lightning-button-icon
+          class="previous-month"
+          icon-name="utility:chevronleft"
+          alternative-text="Mês anterior"
+          variant="bare"
+          onclick={handlePrevious}
+        ></lightning-button-icon>
+        <span
+          class="slds-text-heading_small slds-m-horizontal_small month-label"
+          >{monthLabel}</span
+        >
+        <lightning-button-icon
+          class="next-month"
+          icon-name="utility:chevronright"
+          alternative-text="Próximo mês"
+          variant="bare"
+          onclick={handleNext}
+        ></lightning-button-icon>
+      </div>
+
+      <template if:true={isLoading}>
+        <lightning-spinner
+          alternative-text="Carregando"
+          size="small"
+        ></lightning-spinner>
+      </template>
+      <template if:true={errorMessage}>
+        <p class="slds-text-color_error slds-m-bottom_small" role="alert">
+          {errorMessage}
+        </p>
+      </template>
+
+      <template if:true={hasMonth}>
+        <div class="slds-grid slds-wrap slds-m-bottom_small summary">
+          <div class="slds-col slds-size_1-of-2 slds-medium-size_1-of-4">
+            <span class="slds-text-title">Total do mês</span>
+            <p class="slds-text-heading_small total-hours">{totalLabel}</p>
+          </div>
+          <template if:true={hasMonthlyLimit}>
+            <div class="slds-col slds-size_1-of-2 slds-medium-size_1-of-4">
+              <span class="slds-text-title">Máximo do mês</span>
+              <p class="slds-text-heading_small">{monthlyLimitLabel}</p>
+            </div>
+            <div class="slds-col slds-size_1-of-2 slds-medium-size_1-of-4">
+              <span class="slds-text-title">Faltam</span>
+              <p class="slds-text-heading_small missing-hours">
+                {missingLabel}
+              </p>
+            </div>
+          </template>
+          <template if:true={hasDailyLimit}>
+            <div class="slds-col slds-size_1-of-2 slds-medium-size_1-of-4">
+              <span class="slds-text-title">Limite diário</span>
+              <p class="slds-text-heading_small">{dailyLimitLabel}</p>
+            </div>
+          </template>
+        </div>
+
+        <div class="slds-box slds-theme_shade slds-m-bottom_small planner">
+          <p class="slds-text-title">Planejador</p>
+          <p>
+            Lançadas até hoje:
+            <b class="planner-until-today">{planner.untilToday}</b>
+          </p>
+          <p>
+            Dias úteis restantes:
+            <b class="planner-days">{planner.remainingDays}</b>
+          </p>
+          <template if:true={planner.hasRemainingHours}>
+            <p>
+              Horas restantes:
+              <b class="planner-remaining">{planner.remainingHours}</b>
+            </p>
+            <p>
+              Média necessária por dia:
+              <b class="planner-average">{planner.average}</b>
+            </p>
+          </template>
+          <template if:true={planner.hasForecast}>
+            <p>
+              Previsão do mês:
+              <b class="planner-forecast">{planner.forecast}</b>
+            </p>
+          </template>
+          <template if:true={planner.alert}>
+            <p class="slds-text-color_error planner-alert" role="alert">
+              {planner.alert}
+            </p>
+          </template>
+        </div>
+
+        <table class="slds-table slds-table_bordered slds-table_cell-buffer">
+          <thead>
+            <tr>
+              <th scope="col">Dia</th>
+              <th scope="col">Entrada 1</th>
+              <th scope="col">Saída 1</th>
+              <th scope="col">Entrada 2</th>
+              <th scope="col">Saída 2</th>
+              <th scope="col" class="slds-text-align_right">Horas</th>
+            </tr>
+          </thead>
+          <tbody>
+            <template for:each={rows} for:item="row">
+              <tr key={row.workDate} class={row.rowClass}>
+                <th scope="row">{row.label}</th>
+                <td>
+                  <lightning-input
+                    type="time"
+                    variant="label-hidden"
+                    label="Entrada 1"
+                    value={row.in1}
+                    data-date={row.workDate}
+                    data-field="in1"
+                    onchange={handleChange}
+                    onblur={handleBlur}
+                  ></lightning-input>
+                </td>
+                <td>
+                  <lightning-input
+                    type="time"
+                    variant="label-hidden"
+                    label="Saída 1"
+                    value={row.out1}
+                    data-date={row.workDate}
+                    data-field="out1"
+                    onchange={handleChange}
+                    onblur={handleBlur}
+                  ></lightning-input>
+                </td>
+                <td>
+                  <lightning-input
+                    type="time"
+                    variant="label-hidden"
+                    label="Entrada 2"
+                    value={row.in2}
+                    data-date={row.workDate}
+                    data-field="in2"
+                    onchange={handleChange}
+                    onblur={handleBlur}
+                  ></lightning-input>
+                </td>
+                <td>
+                  <lightning-input
+                    type="time"
+                    variant="label-hidden"
+                    label="Saída 2"
+                    value={row.out2}
+                    data-date={row.workDate}
+                    data-field="out2"
+                    onchange={handleChange}
+                    onblur={handleBlur}
+                  ></lightning-input>
+                </td>
+                <td class="slds-text-align_right">
+                  <span class="row-hours">{row.hoursLabel}</span>
+                  <template if:true={row.error}>
+                    <p class="slds-text-color_error row-error" role="alert">
+                      {row.error}
+                    </p>
+                  </template>
+                </td>
+              </tr>
+            </template>
+          </tbody>
+        </table>
+      </template>
+    </div>
+  </lightning-card>
+</template>
