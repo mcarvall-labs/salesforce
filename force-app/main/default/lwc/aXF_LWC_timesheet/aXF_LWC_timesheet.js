@@ -1,7 +1,10 @@
 import { LightningElement, api } from "lwc";
+import { NavigationMixin } from "lightning/navigation";
 import getMonth from "@salesforce/apex/AXF_CLS_CTRL_Timesheet.getMonth";
 import saveDay from "@salesforce/apex/AXF_CLS_CTRL_Timesheet.saveDay";
 import fillWorkdays from "@salesforce/apex/AXF_CLS_CTRL_Timesheet.fillWorkdays";
+import createTimesheetPdf from "@salesforce/apex/AXF_CLS_CTRL_Timesheet.createTimesheetPdf";
+import createInvoicePdf from "@salesforce/apex/AXF_CLS_CTRL_Timesheet.createInvoicePdf";
 import {
   dayHours,
   checkDay,
@@ -35,7 +38,9 @@ function hoursText(value) {
   return `${value.toFixed(2).replace(".", ",")} h`;
 }
 
-export default class AXF_LWC_timesheet extends LightningElement {
+export default class AXF_LWC_timesheet extends NavigationMixin(
+  LightningElement
+) {
   @api recordId;
 
   year;
@@ -59,6 +64,14 @@ export default class AXF_LWC_timesheet extends LightningElement {
 
   get isBusy() {
     return this.isLoading || this.isSaving;
+  }
+
+  get showInvoiceButton() {
+    return (
+      this.hasMonth &&
+      Boolean(this.settings.currencyCode) &&
+      this.settings.currencyCode !== "BRL"
+    );
   }
 
   get hasMonth() {
@@ -334,6 +347,44 @@ export default class AXF_LWC_timesheet extends LightningElement {
       this.saveDate(next);
     } else if (editedDuringSave) {
       this.saveDate(date);
+    }
+  }
+
+  handleTimesheetPdf() {
+    return this.runPdf(createTimesheetPdf);
+  }
+
+  handleInvoicePdf() {
+    return this.runPdf(createInvoicePdf);
+  }
+
+  // Generates the PDF, saves it on the month's entry and opens the download.
+  async runPdf(action) {
+    if (this.hasUnsavedDays) {
+      this.noticeMessage =
+        "Salve ou corrija os horários antes de gerar o documento.";
+      return;
+    }
+    this.isSaving = true;
+    this.errorMessage = undefined;
+    this.noticeMessage = undefined;
+    try {
+      const file = await action({
+        contractId: this.recordId,
+        year: this.year,
+        month: this.month
+      });
+      this.noticeMessage = `${file.title} salvo no lançamento do mês.`;
+      this[NavigationMixin.Navigate]({
+        type: "standard__webPage",
+        attributes: {
+          url: `/sfc/servlet.shepherd/document/download/${file.documentId}`
+        }
+      });
+    } catch (error) {
+      this.errorMessage = this.messageOf(error);
+    } finally {
+      this.isSaving = false;
     }
   }
 

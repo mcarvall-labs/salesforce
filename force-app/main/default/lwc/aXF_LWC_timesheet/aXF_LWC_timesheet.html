@@ -6,6 +6,20 @@
         onclick={handleFill}
         disabled={isBusy}
       ></lightning-button>
+      <lightning-button
+        class="timesheet-pdf slds-m-left_x-small"
+        label="Baixar timesheet (PDF)"
+        onclick={handleTimesheetPdf}
+        disabled={isBusy}
+      ></lightning-button>
+      <template if:true={showInvoiceButton}>
+        <lightning-button
+          class="invoice-pdf slds-m-left_x-small"
+          label="Gerar fatura (PDF)"
+          onclick={handleInvoicePdf}
+          disabled={isBusy}
+        ></lightning-button>
+      </template>
     </div>
     <div class="slds-p-horizontal_medium">
       <div

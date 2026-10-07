@@ -3,6 +3,8 @@ import AXF_LWC_timesheet from "c/aXF_LWC_timesheet";
 import getMonth from "@salesforce/apex/AXF_CLS_CTRL_Timesheet.getMonth";
 import saveDay from "@salesforce/apex/AXF_CLS_CTRL_Timesheet.saveDay";
 import fillWorkdays from "@salesforce/apex/AXF_CLS_CTRL_Timesheet.fillWorkdays";
+import createTimesheetPdf from "@salesforce/apex/AXF_CLS_CTRL_Timesheet.createTimesheetPdf";
+import createInvoicePdf from "@salesforce/apex/AXF_CLS_CTRL_Timesheet.createInvoicePdf";
 
 jest.mock(
   "@salesforce/apex/AXF_CLS_CTRL_Timesheet.getMonth",
@@ -21,6 +23,17 @@ jest.mock(
 );
 
 // Lets the pending promises settle (a macrotask via MessageChannel-free setImmediate substitute).
+jest.mock(
+  "@salesforce/apex/AXF_CLS_CTRL_Timesheet.createTimesheetPdf",
+  () => ({ default: jest.fn() }),
+  { virtual: true }
+);
+jest.mock(
+  "@salesforce/apex/AXF_CLS_CTRL_Timesheet.createInvoicePdf",
+  () => ({ default: jest.fn() }),
+  { virtual: true }
+);
+
 const flush = () => new Promise(process.nextTick);
 
 function month(overrides = {}) {
@@ -334,5 +347,70 @@ describe("c-axf-lwc-timesheet", () => {
     expect(element.shadowRoot.querySelector(".notice").textContent).toContain(
       "2 não couberam no limite mensal"
     );
+  });
+
+  it("generates the timesheet PDF, tells where it was saved and opens the download", async () => {
+    createTimesheetPdf.mockResolvedValue({
+      documentId: "069000000000001AAA",
+      title: "Timesheet-202609.pdf",
+      newVersion: false
+    });
+    const element = await setup();
+    element.shadowRoot
+      .querySelector(".timesheet-pdf")
+      .dispatchEvent(new CustomEvent("click"));
+    await flush();
+    expect(createTimesheetPdf).toHaveBeenCalledWith({
+      contractId: "a00000000000001AAA",
+      year: 2026,
+      month: 9
+    });
+    expect(element.shadowRoot.querySelector(".notice").textContent).toContain(
+      "Timesheet-202609.pdf salvo no lançamento do mês"
+    );
+  });
+
+  it("offers the invoice only for a currency other than BRL", async () => {
+    const real = await setup();
+    expect(real.shadowRoot.querySelector(".invoice-pdf")).toBeNull();
+    while (document.body.firstChild) {
+      document.body.removeChild(document.body.firstChild);
+    }
+    const euro = await setup(month({ currencyCode: "EUR" }));
+    createInvoicePdf.mockResolvedValue({
+      documentId: "069000000000002AAA",
+      title: "Invoice-202609.pdf",
+      newVersion: false
+    });
+    euro.shadowRoot
+      .querySelector(".invoice-pdf")
+      .dispatchEvent(new CustomEvent("click"));
+    await flush();
+    expect(createInvoicePdf).toHaveBeenCalledTimes(1);
+  });
+
+  it("shows the server error when the document cannot be generated", async () => {
+    createTimesheetPdf.mockRejectedValue({
+      body: { message: "Não há lançamento neste mês." }
+    });
+    const element = await setup();
+    element.shadowRoot
+      .querySelector(".timesheet-pdf")
+      .dispatchEvent(new CustomEvent("click"));
+    await flush();
+    expect(
+      element.shadowRoot.querySelector("[role=alert]").textContent
+    ).toContain("Não há lançamento");
+  });
+
+  it("does not generate a document with unsaved hours", async () => {
+    const element = await setup();
+    await type(element, "2026-09-02", "in1", "08:00:00.000");
+    await type(element, "2026-09-02", "out1", "19:00:00.000");
+    element.shadowRoot
+      .querySelector(".timesheet-pdf")
+      .dispatchEvent(new CustomEvent("click"));
+    await flush();
+    expect(createTimesheetPdf).not.toHaveBeenCalled();
   });
 });
