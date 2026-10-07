@@ -20,6 +20,17 @@ private class ALT_CLS_TimesheetTest {
       AXF_CTR_PKL_ReceiptMonth__c = 'SameMonth',
       AXF_CTR_NUM_ReceiptDay__c = 30
     );
+    if (currencyCode != 'BRL') {
+      // A service contract in a foreign currency issues an invoice, so it needs a client.
+      Account client = new Account(
+        Name = 'Cliente',
+        RecordTypeId = Schema.SObjectType.Account.getRecordTypeInfosByDeveloperName()
+          .get('AXF_Customer')
+          .getRecordTypeId()
+      );
+      insert client;
+      c.AXF_CTR_LKP_Client__c = client.Id;
+    }
     insert c;
     return c;
   }
