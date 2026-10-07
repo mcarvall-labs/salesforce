@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<ValidationRule xmlns="http://soap.sforce.com/2006/04/metadata">
+    <fullName>AXF_TME_VR_SecondPeriodOrder</fullName>
+    <active>true</active>
+    <errorConditionFormula
+  >AND(NOT(ISBLANK(AXF_TME_TIM_In2__c)), NOT(ISBLANK(AXF_TME_TIM_Out2__c)), AXF_TME_TIM_Out2__c &lt;= AXF_TME_TIM_In2__c)</errorConditionFormula>
+    <errorDisplayField>AXF_TME_TIM_Out2__c</errorDisplayField>
+    <errorMessage>Time Out 2 must be after Time In 2.</errorMessage>
+</ValidationRule>

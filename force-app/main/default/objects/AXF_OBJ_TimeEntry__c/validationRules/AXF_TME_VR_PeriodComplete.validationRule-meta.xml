@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<ValidationRule xmlns="http://soap.sforce.com/2006/04/metadata">
+    <fullName>AXF_TME_VR_PeriodComplete</fullName>
+    <active>true</active>
+    <errorConditionFormula
+  >OR(ISBLANK(AXF_TME_TIM_In1__c) &lt;&gt; ISBLANK(AXF_TME_TIM_Out1__c), ISBLANK(AXF_TME_TIM_In2__c) &lt;&gt; ISBLANK(AXF_TME_TIM_Out2__c))</errorConditionFormula>
+    <errorDisplayField>AXF_TME_TIM_Out1__c</errorDisplayField>
+    <errorMessage
+  >Fill in both the in and the out time of a period.</errorMessage>
+</ValidationRule>
