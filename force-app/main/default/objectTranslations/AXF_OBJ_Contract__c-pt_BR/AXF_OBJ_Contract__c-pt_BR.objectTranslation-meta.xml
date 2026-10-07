@@ -10,6 +10,10 @@
     </caseValues>
     <gender>Masculine</gender>
     <nameFieldLabel>Nome</nameFieldLabel>
+    <quickActions>
+        <label>Gerar lançamentos</label>
+        <name>AXF_CTR_QA_GenerateEntries</name>
+    </quickActions>
     <recordTypes>
         <label>Recorrente</label>
         <name>AXF_Recurring</name>

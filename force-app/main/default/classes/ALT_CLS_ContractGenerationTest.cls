@@ -1,0 +1,257 @@
+@IsTest
+private class ALT_CLS_ContractGenerationTest {
+  private static Account holder;
+
+  private static Id rt(String developerName) {
+    return Schema.SObjectType.AXF_OBJ_Contract__c.getRecordTypeInfosByDeveloperName()
+      .get(developerName)
+      .getRecordTypeId();
+  }
+
+  private static AXF_OBJ_Contract__c contract(String recordType) {
+    if (holder == null) {
+      holder = new Account(Name = 'Titular');
+      insert holder;
+    }
+    return new AXF_OBJ_Contract__c(
+      Name = 'Contrato',
+      AXF_CTR_MD_Holder__c = holder.Id,
+      RecordTypeId = rt(recordType),
+      AXF_CTR_PKL_Direction__c = 'Expense',
+      AXF_CTR_PKL_Status__c = 'Active',
+      AXF_CTR_DAT_FirstDueDate__c = Date.today().addDays(5),
+      AXF_CTR_CUR_Amount__c = 100
+    );
+  }
+
+  private static List<AXF_OBJ_Entry__c> entries(Id contractId) {
+    return [
+      SELECT
+        Id,
+        Name,
+        AXF_ENT_CUR_Amount__c,
+        AXF_ENT_DAT_DueDate__c,
+        AXF_ENT_DAT_Competence__c,
+        AXF_ENT_NUM_InstallmentNumber__c,
+        AXF_ENT_PKL_Status__c,
+        AXF_ENT_PKL_Type__c,
+        AXF_ENT_LKP_BankAccount__c,
+        AXF_ENT_MD_Holder__c
+      FROM AXF_OBJ_Entry__c
+      WHERE AXF_ENT_LKP_Contract__c = :contractId
+      ORDER BY AXF_ENT_DAT_DueDate__c
+    ];
+  }
+
+  private static ALT_CLS_ContractGeneration.Result run(
+    AXF_OBJ_Contract__c c,
+    Boolean updatePending
+  ) {
+    return new ALT_CLS_ContractGeneration()
+      .generate(new Set<Id>{ c.Id }, updatePending);
+  }
+
+  @IsTest
+  static void recurringGeneratesPendingEntriesAndRerunDoesNotDuplicate() {
+    AXF_OBJ_Contract__c c = contract('AXF_Recurring');
+    c.AXF_CTR_DAT_EndDate__c = Date.today().addMonths(3);
+    insert c;
+    ALT_CLS_ContractGeneration.Result first = run(c, true);
+    List<AXF_OBJ_Entry__c> rows = entries(c.Id);
+    System.assertEquals(first.created, rows.size());
+    System.assert(
+      rows.size() >= 3 && rows.size() <= 4,
+      'entries ' + rows.size()
+    );
+    System.assertEquals('Pending', rows[0].AXF_ENT_PKL_Status__c);
+    System.assertEquals('Expense', rows[0].AXF_ENT_PKL_Type__c);
+    System.assertEquals(holder.Id, rows[0].AXF_ENT_MD_Holder__c);
+    System.assertEquals(null, rows[0].AXF_ENT_NUM_InstallmentNumber__c);
+    ALT_CLS_ContractGeneration.Result second = run(c, true);
+    System.assertEquals(0, second.created);
+    System.assertEquals(0, second.updated);
+    System.assertEquals(rows.size(), entries(c.Id).size());
+  }
+
+  @IsTest
+  static void recurringWithoutEndDateStopsTwelveMonthsAhead() {
+    AXF_OBJ_Contract__c c = contract('AXF_Recurring');
+    insert c;
+    run(c, true);
+    List<AXF_OBJ_Entry__c> rows = entries(c.Id);
+    System.assert(
+      rows.size() >= 12 && rows.size() <= 13,
+      'entries ' + rows.size()
+    );
+    System.assert(
+      rows[rows.size() - 1].AXF_ENT_DAT_DueDate__c <= Date.today().addMonths(12)
+    );
+  }
+
+  @IsTest
+  static void installmentGeneratesEveryParcelOnce() {
+    AXF_OBJ_Contract__c c = contract('AXF_Installment');
+    c.AXF_CTR_NUM_InstallmentCount__c = 6;
+    insert c;
+    System.assertEquals(6, run(c, true).created);
+    List<AXF_OBJ_Entry__c> rows = entries(c.Id);
+    System.assertEquals(1, rows[0].AXF_ENT_NUM_InstallmentNumber__c);
+    System.assertEquals(6, rows[5].AXF_ENT_NUM_InstallmentNumber__c);
+    System.assertEquals(0, run(c, true).created);
+  }
+
+  @IsTest
+  static void consortiumBehavesLikeInstallment() {
+    AXF_OBJ_Contract__c c = contract('AXF_Consortium');
+    c.AXF_CTR_NUM_InstallmentCount__c = 4;
+    insert c;
+    System.assertEquals(4, run(c, false).created);
+  }
+
+  @IsTest
+  static void sourceIsCopiedToTheEntries() {
+    AXF_OBJ_Contract__c c = contract('AXF_Installment');
+    c.AXF_CTR_NUM_InstallmentCount__c = 2;
+    insert c;
+    AXF_OBJ_BankAccount__c bank = new AXF_OBJ_BankAccount__c(
+      Name = 'Conta',
+      AXF_BA_MD_Holder__c = holder.Id,
+      AXF_BA_PKL_Institution__c = '341',
+      AXF_BA_PKL_Type__c = 'Checking'
+    );
+    insert bank;
+    c.AXF_CTR_LKP_BankAccount__c = bank.Id;
+    update c;
+    run(c, true);
+    for (AXF_OBJ_Entry__c e : entries(c.Id)) {
+      System.assertEquals(bank.Id, e.AXF_ENT_LKP_BankAccount__c);
+    }
+  }
+
+  @IsTest
+  static void financingUsesTheScheduleOfTheChosenSystem() {
+    AXF_OBJ_Contract__c c = contract('AXF_Financing');
+    c.AXF_CTR_CUR_Amount__c = null;
+    c.AXF_CTR_CUR_FinancedAmount__c = 12000;
+    c.AXF_CTR_PCT_MonthlyRate__c = 1;
+    c.AXF_CTR_NUM_InstallmentCount__c = 12;
+    c.AXF_CTR_PKL_AmortizationSystem__c = 'SAC';
+    insert c;
+    System.assertEquals(12, run(c, true).created);
+    List<AXF_OBJ_Entry__c> rows = entries(c.Id);
+    System.assertEquals(1120, rows[0].AXF_ENT_CUR_Amount__c);
+    System.assertEquals(1010, rows[11].AXF_ENT_CUR_Amount__c);
+  }
+
+  @IsTest
+  static void regenerateUpdatesOnlyPendingFutureEntries() {
+    AXF_OBJ_Contract__c c = contract('AXF_Installment');
+    c.AXF_CTR_NUM_InstallmentCount__c = 3;
+    insert c;
+    run(c, true);
+    List<AXF_OBJ_Entry__c> rows = entries(c.Id);
+    // Parcel 1 is realized; parcel 2 was edited by hand; parcel 3 stays as generated.
+    rows[0].AXF_ENT_PKL_Status__c = 'Realized';
+    rows[0].AXF_ENT_DAT_PaymentDate__c = Date.today();
+    rows[1].AXF_ENT_CUR_Amount__c = 999;
+    update new List<AXF_OBJ_Entry__c>{ rows[0], rows[1] };
+    c.AXF_CTR_CUR_Amount__c = 150;
+    update c;
+    ALT_CLS_ContractGeneration.Result result = run(c, true);
+    // Parcel 1 is due in 5 days but Realized, so only parcels 2 and 3 change.
+    System.assertEquals(2, result.updated);
+    List<AXF_OBJ_Entry__c> after = entries(c.Id);
+    System.assertEquals(
+      100,
+      after[0].AXF_ENT_CUR_Amount__c,
+      'Realized never changes'
+    );
+    System.assertEquals(
+      150,
+      after[1].AXF_ENT_CUR_Amount__c,
+      'Manual edit is overwritten'
+    );
+    System.assertEquals(150, after[2].AXF_ENT_CUR_Amount__c);
+  }
+
+  @IsTest
+  static void withoutUpdatePendingOnlyMissingEntriesAreAdded() {
+    AXF_OBJ_Contract__c c = contract('AXF_Recurring');
+    c.AXF_CTR_DAT_EndDate__c = Date.today().addMonths(2);
+    insert c;
+    run(c, true);
+    Integer before = entries(c.Id).size();
+    c.AXF_CTR_CUR_Amount__c = 500;
+    c.AXF_CTR_DAT_EndDate__c = Date.today().addMonths(4);
+    update c;
+    ALT_CLS_ContractGeneration.Result result = run(c, false);
+    System.assertEquals(0, result.updated);
+    System.assert(result.created > 0);
+    System.assertEquals(100, entries(c.Id)[0].AXF_ENT_CUR_Amount__c);
+    System.assert(entries(c.Id).size() > before);
+  }
+
+  @IsTest
+  static void incompleteOrClosedContractsAreSkippedWithAMessage() {
+    AXF_OBJ_Contract__c noAmount = contract('AXF_Recurring');
+    noAmount.AXF_CTR_CUR_Amount__c = null;
+    AXF_OBJ_Contract__c closed = contract('AXF_Recurring');
+    closed.AXF_CTR_PKL_Status__c = 'Closed';
+    AXF_OBJ_Contract__c service = contract('AXF_ServiceProvision');
+    AXF_OBJ_Contract__c noCount = contract('AXF_Installment');
+    insert new List<AXF_OBJ_Contract__c>{ noAmount, closed, service, noCount };
+    ALT_CLS_ContractGeneration.Result result = new ALT_CLS_ContractGeneration()
+      .generate(
+        new Set<Id>{ noAmount.Id, closed.Id, service.Id, noCount.Id },
+        true
+      );
+    System.assertEquals(0, result.created);
+    System.assertEquals(4, result.messages.size());
+  }
+
+  @IsTest
+  static void batchAndScheduleExtendOnlyActiveRecurringContracts() {
+    AXF_OBJ_Contract__c recurring = contract('AXF_Recurring');
+    AXF_OBJ_Contract__c installment = contract('AXF_Installment');
+    installment.AXF_CTR_NUM_INSTALLMENTCOUNT__c = 2;
+    insert new List<AXF_OBJ_Contract__c>{ recurring, installment };
+    Test.startTest();
+    ALT_CLS_ContractGenerationBatch.run();
+    Test.stopTest();
+    System.assert(entries(recurring.Id).size() >= 12);
+    System.assertEquals(0, entries(installment.Id).size());
+    System.assertNotEquals(
+      null,
+      ALT_CLS_ContractGenerationSchedule.scheduleMonthly()
+    );
+    // Scheduling again replaces the job instead of duplicating it.
+    ALT_CLS_ContractGenerationSchedule.scheduleMonthly();
+    System.assertEquals(
+      1,
+      [
+        SELECT COUNT()
+        FROM CronTrigger
+        WHERE CronJobDetail.Name = :ALT_CLS_ContractGenerationSchedule.JOB_NAME
+      ]
+    );
+  }
+
+  @IsTest
+  static void controllerReturnsTheSummary() {
+    AXF_OBJ_Contract__c c = contract('AXF_Installment');
+    c.AXF_CTR_NUM_InstallmentCount__c = 3;
+    insert c;
+    AXF_CLS_CTRL_ContractGeneration.Summary summary = AXF_CLS_CTRL_ContractGeneration.generate(
+      c.Id
+    );
+    System.assertEquals(3, summary.created);
+    System.assertEquals(0, summary.updated);
+    Boolean failed = false;
+    try {
+      AXF_CLS_CTRL_ContractGeneration.generate(null);
+    } catch (AuraHandledException e) {
+      failed = true;
+    }
+    System.assert(failed, 'Expected an error without a contract');
+  }
+}
