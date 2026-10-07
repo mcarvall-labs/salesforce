@@ -19,7 +19,7 @@ promoção) e `17-completion-and-pr.md`.
   (nova linha ou marcação de execução). Esse PR é o rastro da US.
 - A linha entra **na posição de execução correta** (depois de tudo de que depende,
   antes de quem depende dela), nunca no fim por conveniência. Renumere se preciso;
-  a coluna *Depende de* explica a ordem.
+  a coluna _Depende de_ explica a ordem.
 - Passo concluído: troque o estado do ambiente por `Feito (AAAA-MM-DD)` e aponte a
   evidência (comentário Jira com print/texto, ou link). Passo que mudou de forma
   fica com o histórico no Jira, não aqui.
@@ -29,7 +29,7 @@ promoção) e `17-completion-and-pr.md`.
 Antes de mover uma US para `No UAT` ou `Em PROD`, e antes de aprovar o code review
 de uma US `manual-step`:
 
-1. Procure a chave da US na coluna *US* de todas as linhas.
+1. Procure a chave da US na coluna _US_ de todas as linhas.
 2. Para o ambiente de destino, toda linha dela e de suas dependências precisa estar
    `Feito (data)` com evidência registrada. `Pendente` ou `Não verificado` **bloqueia**
    a conclusão: reporte, não mova o status.
@@ -45,22 +45,22 @@ no Jira/PRs; tratar como pendente) · `n/a` (não se aplica ao ambiente).
 
 Fase: **Pré** = antes do deploy do PR; **Pós** = depois do deploy; **Externo** =
 fora de org Salesforce. Os passos 3, 4 e 5 só valem depois que a US indicada em
-*Depende de* estiver implantada no org.
+_Depende de_ estiver implantada no org.
 
-| # | US | Fase | Passo (resumo) | Depende de | DEV | UAT | PROD |
-| --- | --- | --- | --- | --- | --- | --- | --- |
-| 1 | EP01 (E1-2) | Pré | [Habilitar Person Account](#1-habilitar-person-account) | — | Feito (antes de 30/09) | Não verificado | Não verificado |
-| 2 | AXF-175 | Pós | [Conferir OWD e hierarquia de papéis](#2-conferir-owd-e-hierarquia-de-papéis) | 1 | Não verificado | Não verificado | Pendente |
-| 3 | AXF-174 | Pós | [Atribuir PSG, papel e dono aos 2 usuários](#3-atribuir-psg-papel-e-dono-aos-2-usuários) | AXF-246 implantada | Feito (2026-10-06) | Feito (2026-10-06) | Pendente |
-| 4 | AXF-175 | Pós | [Teste com 2 logins (isolamento de Titulares)](#4-teste-com-2-logins) | 2, 3 | Não verificado | Não verificado | Pendente |
-| 5 | AXF-179 / AXF-212 | Pós | [Salvar Client Id/Secret do Pluggy](#5-salvar-client-idsecret-do-pluggy) | 3 | Não verificado | Não verificado | Pendente |
-| 6 | AXF-185 | Pós | [Conferir `AXF_CP_PluggySync` em quem sincroniza](#6-conferir-axf_cp_pluggysync) | 3 | Não verificado | Não verificado | Pendente |
-| 7 | AXF-196 | Pós | [Conferir quem importa extrato](#7-conferir-quem-importa-extrato) | 3 | Não verificado | Não verificado | Pendente |
-| 8 | AXF-184 | Pós | [Agendar o sync diário (Anonymous Apex)](#8-agendar-o-sync-diário) | 3, 5 | Não verificado | Não verificado | Pendente |
-| 9 | AXF-161 | Pré | [Remover o Flow `AXF_FLW_PluggyConnectionName`](#9-remover-o-flow-axf_flw_pluggyconnectionname) | — | Feito (antes de 03/10) | Não verificado | Pendente |
-| 10 | EP05 (E5-13) | Pré | [Ativar multimoeda](#10-ativar-multimoeda) | — | Feito (verificado 2026-10-07) | Feito (verificado 2026-10-07) | Pendente |
-| 11 | EP05 (E5-13) / AXF-222 | Pós | [Ativar EUR e USD em Gerenciar moedas](#11-ativar-eur-e-usd) | 10 | Feito (verificado 2026-10-07) | Feito, taxa do USD = 1 (placeholder) | Pendente |
-| 12 | PR #246 | Externo | [Check "Code review approved" como obrigatório em `develop`](#12-check-code-review-approved-obrigatório) | — | n/a | n/a | n/a |
+| #   | US                     | Fase    | Passo (resumo)                                                                                           | Depende de         | DEV                           | UAT                                  | PROD           |
+| --- | ---------------------- | ------- | -------------------------------------------------------------------------------------------------------- | ------------------ | ----------------------------- | ------------------------------------ | -------------- |
+| 1   | EP01 (E1-2)            | Pré     | [Habilitar Person Account](#1-habilitar-person-account)                                                  | —                  | Feito (antes de 30/09)        | Não verificado                       | Não verificado |
+| 2   | AXF-175                | Pós     | [Conferir OWD e hierarquia de papéis](#2-conferir-owd-e-hierarquia-de-papéis)                            | 1                  | Não verificado                | Não verificado                       | Pendente       |
+| 3   | AXF-174                | Pós     | [Atribuir PSG, papel e dono aos 2 usuários](#3-atribuir-psg-papel-e-dono-aos-2-usuários)                 | AXF-246 implantada | Feito (2026-10-06)            | Feito (2026-10-06)                   | Pendente       |
+| 4   | AXF-175                | Pós     | [Teste com 2 logins (isolamento de Titulares)](#4-teste-com-2-logins)                                    | 2, 3               | Não verificado                | Não verificado                       | Pendente       |
+| 5   | AXF-179 / AXF-212      | Pós     | [Salvar Client Id/Secret do Pluggy](#5-salvar-client-idsecret-do-pluggy)                                 | 3                  | Não verificado                | Não verificado                       | Pendente       |
+| 6   | AXF-185                | Pós     | [Conferir `AXF_CP_PluggySync` em quem sincroniza](#6-conferir-axf_cp_pluggysync)                         | 3                  | Não verificado                | Não verificado                       | Pendente       |
+| 7   | AXF-196                | Pós     | [Conferir quem importa extrato](#7-conferir-quem-importa-extrato)                                        | 3                  | Não verificado                | Não verificado                       | Pendente       |
+| 8   | AXF-184                | Pós     | [Agendar o sync diário (Anonymous Apex)](#8-agendar-o-sync-diário)                                       | 3, 5               | Não verificado                | Não verificado                       | Pendente       |
+| 9   | AXF-161                | Pré     | [Remover o Flow `AXF_FLW_PluggyConnectionName`](#9-remover-o-flow-axf_flw_pluggyconnectionname)          | —                  | Feito (antes de 03/10)        | Não verificado                       | Pendente       |
+| 10  | EP05 (E5-13)           | Pré     | [Ativar multimoeda](#10-ativar-multimoeda)                                                               | —                  | Feito (verificado 2026-10-07) | Feito (verificado 2026-10-07)        | Pendente       |
+| 11  | EP05 (E5-13) / AXF-222 | Pós     | [Ativar EUR e USD em Gerenciar moedas](#11-ativar-eur-e-usd)                                             | 10                 | Feito (verificado 2026-10-07) | Feito, taxa do USD = 1 (placeholder) | Pendente       |
+| 12  | PR #246                | Externo | [Check "Code review approved" como obrigatório em `develop`](#12-check-code-review-approved-obrigatório) | —                  | n/a                           | n/a                                  | n/a            |
 
 Estado do passo 11 (GitHub): Feito (2026-10-07), confirmado pela API de branch
 protection de `develop` (checks obrigatórios: `Lint and unit tests`,
@@ -106,10 +106,10 @@ Evidência: comentário na AXF-175 com o resultado por org.
 US sem código (AXF-174). **Pré-requisito:** AXF-246 (PSGs) e AXF-169 a AXF-173
 implantadas no org. Atribuir ao **grupo**, não aos Permission Sets.
 
-| Usuário | Perfil | Papel | PSG |
-| --- | --- | --- | --- |
+| Usuário               | Perfil               | Papel                      | PSG                        |
+| --------------------- | -------------------- | -------------------------- | -------------------------- |
 | Michel Carvalho Lopes | System Administrator | `Axon - Gestor Financeiro` | `AXF_PSG_GestorFinanceiro` |
-| Gisele Lopes | Standard User | `Axon - Participante` | `AXF_PSG_Participante` |
+| Gisele Lopes          | Standard User        | `Axon - Participante`      | `AXF_PSG_Participante`     |
 
 Usernames: DEV `michel.carvalho.lopes@axon.com.dev` e `gisele.lopes@axon.com.dev`;
 UAT `michel.lopes@axon.com.uat` e `giselepsicologaoficial@axon.com.dev`.
