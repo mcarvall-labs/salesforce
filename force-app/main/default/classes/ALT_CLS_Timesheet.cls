@@ -10,6 +10,8 @@
 public with sharing class ALT_CLS_Timesheet {
   public static final String RT_SERVICE = 'AXF_ServiceProvision';
   public static final String NEXT_MONTH = 'NextMonth';
+  // The hours of a service are always income, whatever the Direction picked on the contract.
+  public static final String ENTRY_INCOME = 'Income';
   private static final Integer MS_PER_HOUR = 3600000;
 
   public class TimesheetException extends Exception {
@@ -40,6 +42,8 @@ public with sharing class ALT_CLS_Timesheet {
     public Decimal amount = 0;
     // Null when the month has no hours and its Pending entry was dropped.
     public Id entryId;
+    // True when the month's entry is already Realized: the hours were saved but the amount stays.
+    public Boolean entryLocked = false;
   }
 
   // Decimal hours of one day (two periods), rounded to 2 places like the Hours formula field.
@@ -119,9 +123,10 @@ public with sharing class ALT_CLS_Timesheet {
     Date competence;
     Set<Date> seen = new Set<Date>();
     for (Row row : rows) {
-      if (row.workDate == null) {
+      if (row == null || row.workDate == null) {
         throw new TimesheetException('Informe a data de cada dia.');
       }
+      checkPeriods(row);
       if (!seen.add(row.workDate)) {
         throw new TimesheetException(
           'Há dois apontamentos para o dia ' + row.workDate.format() + '.'
@@ -136,6 +141,29 @@ public with sharing class ALT_CLS_Timesheet {
     return competence;
   }
 
+  // Each period is checked on its own, so a reversed one cannot hide behind a long other one.
+  private static void checkPeriods(Row row) {
+    String day = row.workDate.format();
+    if (
+      (row.in1 == null) != (row.out1 == null) ||
+      (row.in2 == null) != (row.out2 == null)
+    ) {
+      throw new TimesheetException(
+        'O dia ' + day + ' tem um período sem entrada ou sem saída.'
+      );
+    }
+    if (period(row.in1, row.out1) < 0 || period(row.in2, row.out2) < 0) {
+      throw new TimesheetException(
+        'O dia ' + day + ' tem saída antes da entrada.'
+      );
+    }
+    if (row.out1 != null && row.in2 != null && toMs(row.in2) < toMs(row.out1)) {
+      throw new TimesheetException(
+        'O dia ' + day + ' tem a entrada 2 antes da saída 1.'
+      );
+    }
+  }
+
   private static void checkLimits(
     AXF_OBJ_Contract__c contract,
     Date competence,
@@ -146,11 +174,6 @@ public with sharing class ALT_CLS_Timesheet {
     for (Row row : rows) {
       saved.add(row.workDate);
       Decimal day = hours(row);
-      if (day < 0) {
-        throw new TimesheetException(
-          'O dia ' + row.workDate.format() + ' tem saída antes da entrada.'
-        );
-      }
       if (
         contract.AXF_CTR_NUM_DailyLimit__c != null &&
         day > contract.AXF_CTR_NUM_DailyLimit__c
@@ -253,25 +276,35 @@ public with sharing class ALT_CLS_Timesheet {
     result.monthHours = total.get('hours') == null
       ? 0
       : (Decimal) total.get('hours');
-    List<AXF_OBJ_Entry__c> found = [
+    // Any entry of the month that is not Pending (Realized) freezes it; otherwise the Pending one is ours.
+    AXF_OBJ_Entry__c entry;
+    for (AXF_OBJ_Entry__c candidate : [
       SELECT Id, AXF_ENT_PKL_Status__c
       FROM AXF_OBJ_Entry__c
       WHERE
         AXF_ENT_LKP_Contract__c = :contract.Id
         AND AXF_ENT_DAT_Competence__c = :competence
-      LIMIT 1
-    ];
-    AXF_OBJ_Entry__c entry = found.isEmpty() ? null : found[0];
-    if (
-      entry != null &&
-      entry.AXF_ENT_PKL_Status__c != ALT_CLS_ContractGeneration.ENTRY_PENDING
-    ) {
-      result.entryId = entry.Id;
-      return result;
+      ORDER BY CreatedDate
+    ]) {
+      if (
+        candidate.AXF_ENT_PKL_Status__c !=
+        ALT_CLS_ContractGeneration.ENTRY_PENDING
+      ) {
+        result.entryId = candidate.Id;
+        result.entryLocked = true;
+        return result;
+      }
+      if (entry == null) {
+        entry = candidate;
+      }
     }
     if (result.monthHours <= 0) {
       if (entry != null) {
-        delete entry;
+        try {
+          delete entry;
+        } catch (DmlException e) {
+          throw new TimesheetException(e.getDmlMessage(0));
+        }
       }
       return result;
     }
@@ -286,6 +319,14 @@ public with sharing class ALT_CLS_Timesheet {
         'Informe o mês e o dia limite de recebimento do contrato.'
       );
     }
+    if (
+      contract.AXF_CTR_NUM_ReceiptDay__c < 1 ||
+      contract.AXF_CTR_NUM_ReceiptDay__c > 31
+    ) {
+      throw new TimesheetException(
+        'O dia limite de recebimento deve ficar entre 1 e 31.'
+      );
+    }
     result.amount = (result.monthHours * contract.AXF_CTR_CUR_HourlyRate__c)
       .setScale(2, RoundingMode.HALF_UP);
     Integer shift = contract.AXF_CTR_PKL_ReceiptMonth__c == NEXT_MONTH ? 1 : 0;
@@ -298,7 +339,7 @@ public with sharing class ALT_CLS_Timesheet {
         .abbreviate(80),
       AXF_ENT_MD_Holder__c = contract.AXF_CTR_MD_Holder__c,
       AXF_ENT_LKP_Contract__c = contract.Id,
-      AXF_ENT_PKL_Type__c = contract.AXF_CTR_PKL_Direction__c,
+      AXF_ENT_PKL_Type__c = ENTRY_INCOME,
       AXF_ENT_PKL_Status__c = ALT_CLS_ContractGeneration.ENTRY_PENDING,
       AXF_ENT_CUR_Amount__c = result.amount,
       AXF_ENT_DAT_DueDate__c = ALT_CLS_ContractSchedule.monthlyDate(

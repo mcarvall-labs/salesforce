@@ -121,7 +121,7 @@ private class ALT_CLS_TimesheetTest {
   }
 
   @IsTest
-  static void receiptInTheNextMonthClampsTheDay() {
+  static void receiptInTheNextMonthUsesTheReceiptDay() {
     AXF_OBJ_Contract__c c = service('BRL');
     c.AXF_CTR_PKL_ReceiptMonth__c = 'NextMonth';
     c.AXF_CTR_NUM_ReceiptDay__c = 15;
@@ -192,6 +192,7 @@ private class ALT_CLS_TimesheetTest {
     ALT_CLS_Timesheet.Result result = new ALT_CLS_Timesheet()
       .save(c.Id, new List<ALT_CLS_Timesheet.Row>{ day(2, 9, 17) });
     System.assertEquals(entry.Id, result.entryId);
+    System.assertEquals(true, result.entryLocked);
     System.assertEquals(1, monthEntries(c.Id).size());
     System.assertEquals(400, monthEntries(c.Id)[0].AXF_ENT_CUR_Amount__c);
   }
@@ -369,5 +370,71 @@ private class ALT_CLS_TimesheetTest {
         r.getErrors()[0].getStatusCode()
       );
     }
+  }
+
+  @IsTest
+  static void eachPeriodIsCheckedOnItsOwn() {
+    AXF_OBJ_Contract__c c = service('BRL');
+    // The reversed first period (15 to 10) would hide behind a long second one (13 to 19).
+    ALT_CLS_Timesheet.Row mixed = new ALT_CLS_Timesheet.Row(
+      Date.newInstance(2026, 9, 3),
+      Time.newInstance(15, 0, 0, 0),
+      Time.newInstance(10, 0, 0, 0),
+      Time.newInstance(13, 0, 0, 0),
+      Time.newInstance(19, 0, 0, 0)
+    );
+    System.assert(
+      failure(c, new List<ALT_CLS_Timesheet.Row>{ mixed })
+        .contains('saída antes da entrada')
+    );
+    ALT_CLS_Timesheet.Row half = new ALT_CLS_Timesheet.Row(
+      Date.newInstance(2026, 9, 4),
+      Time.newInstance(9, 0, 0, 0),
+      null,
+      null,
+      null
+    );
+    System.assert(
+      failure(c, new List<ALT_CLS_Timesheet.Row>{ half })
+        .contains('sem entrada ou sem saída')
+    );
+    ALT_CLS_Timesheet.Row overlap = new ALT_CLS_Timesheet.Row(
+      Date.newInstance(2026, 9, 5),
+      Time.newInstance(9, 0, 0, 0),
+      Time.newInstance(13, 0, 0, 0),
+      Time.newInstance(12, 0, 0, 0),
+      Time.newInstance(18, 0, 0, 0)
+    );
+    System.assert(
+      failure(c, new List<ALT_CLS_Timesheet.Row>{ overlap })
+        .contains('entrada 2 antes da saída 1')
+    );
+    System.assert(
+      failure(c, new List<ALT_CLS_Timesheet.Row>{ null })
+        .contains('data de cada dia')
+    );
+    System.assertEquals(0, timeEntryCount(c.Id));
+  }
+
+  @IsTest
+  static void theMonthlyEntryIsAlwaysIncomeEvenWithAnExpenseDirection() {
+    AXF_OBJ_Contract__c c = service('BRL');
+    c.AXF_CTR_PKL_Direction__c = 'Expense';
+    update c;
+    new ALT_CLS_Timesheet()
+      .save(c.Id, new List<ALT_CLS_Timesheet.Row>{ day(1, 9, 17) });
+    System.assertEquals('Income', monthEntries(c.Id)[0].AXF_ENT_PKL_Type__c);
+  }
+
+  @IsTest
+  static void aReceiptDayOutsideOneToThirtyOneIsRejected() {
+    AXF_OBJ_Contract__c c = service('BRL');
+    c.AXF_CTR_NUM_ReceiptDay__c = 0;
+    update c;
+    System.assert(
+      failure(c, new List<ALT_CLS_Timesheet.Row>{ day(1, 9, 17) })
+        .contains('entre 1 e 31')
+    );
+    System.assertEquals(0, timeEntryCount(c.Id));
   }
 }
