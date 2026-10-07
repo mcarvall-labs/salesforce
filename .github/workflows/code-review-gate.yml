@@ -1,7 +1,7 @@
 name: Code review gate
 
 # A pull request into `develop` can only merge once every Jira issue it names
-# passed the code review (`/mic_code_review`) and carries `code-review-approved`.
+# passed the code review (`/mic-code-review`) and carries `code-review-approved`.
 # An issue whose PR declares manual deployment steps also needs `manual-step`.
 # The Jira label is read live: after the review applies it, re-run this job.
 # Rules: agent-docs/rules/project/16-status.md.
