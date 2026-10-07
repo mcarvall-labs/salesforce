@@ -23,6 +23,20 @@
                 <identifier>force_relatedListContainer</identifier>
             </componentInstance>
         </itemInstances>
+        <itemInstances>
+            <componentInstance>
+                <componentName>c:aXF_LWC_timesheet</componentName>
+                <identifier>c_aXF_LWC_timesheet</identifier>
+                <visibilityRule>
+                    <criteria>
+                        <leftValue
+            >{!Record.RecordType.DeveloperName}</leftValue>
+                        <operator>EQUAL</operator>
+                        <rightValue>AXF_ServiceProvision</rightValue>
+                    </criteria>
+                </visibilityRule>
+            </componentInstance>
+        </itemInstances>
         <name>main</name>
         <type>Region</type>
     </flexiPageRegions>

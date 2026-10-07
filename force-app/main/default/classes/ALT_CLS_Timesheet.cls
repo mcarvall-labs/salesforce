@@ -46,6 +46,35 @@ public with sharing class ALT_CLS_Timesheet {
     public Boolean entryLocked = false;
   }
 
+  // One calendar day of the month as the timesheet shows it.
+  public class DayView {
+    public Date workDate;
+    public Boolean workingDay;
+    public Time in1;
+    public Time out1;
+    public Time in2;
+    public Time out2;
+    public Decimal hours = 0;
+  }
+
+  public class MonthView {
+    public Date competence;
+    public String currencyCode;
+    public Decimal hourlyRate;
+    public Decimal dailyLimit;
+    public Decimal monthlyLimit;
+    public String holidayCalendar;
+    public Time defaultIn1;
+    public Time defaultOut1;
+    public Time defaultIn2;
+    public Time defaultOut2;
+    public Decimal totalHours = 0;
+    // Set by fillWorkdays: days filled, and working days left empty because they do not fit the monthly limit.
+    public Integer filledDays = 0;
+    public Integer skippedDays = 0;
+    public List<DayView> days = new List<DayView>();
+  }
+
   // Decimal hours of one day (two periods), rounded to 2 places like the Hours formula field.
   public static Decimal hours(Row row) {
     Long ms = period(row.in1, row.out1) + period(row.in2, row.out2);
@@ -66,6 +95,150 @@ public with sharing class ALT_CLS_Timesheet {
       Database.rollback(beforeSave);
       throw e;
     }
+  }
+
+  // Every day of the month, with the saved times and whether it is a working day of the contract's calendar.
+  public MonthView loadMonth(Id contractId, Integer year, Integer month) {
+    AXF_OBJ_Contract__c contract = loadContract(contractId);
+    Date first = firstOfMonth(year, month);
+    Date last = first.addMonths(1).addDays(-1);
+    MonthView view = new MonthView();
+    view.competence = first;
+    view.currencyCode = contract.CurrencyIsoCode;
+    view.hourlyRate = contract.AXF_CTR_CUR_HourlyRate__c;
+    view.dailyLimit = contract.AXF_CTR_NUM_DailyLimit__c;
+    view.monthlyLimit = contract.AXF_CTR_NUM_MonthlyLimit__c;
+    view.holidayCalendar = contract.AXF_CTR_PKL_HolidayCalendar__c;
+    view.defaultIn1 = contract.AXF_CTR_TIM_DefaultIn1__c;
+    view.defaultOut1 = contract.AXF_CTR_TIM_DefaultOut1__c;
+    view.defaultIn2 = contract.AXF_CTR_TIM_DefaultIn2__c;
+    view.defaultOut2 = contract.AXF_CTR_TIM_DefaultOut2__c;
+    Map<Date, AXF_OBJ_TimeEntry__c> saved = new Map<Date, AXF_OBJ_TimeEntry__c>();
+    for (AXF_OBJ_TimeEntry__c entry : [
+      SELECT
+        AXF_TME_DAT_Date__c,
+        AXF_TME_TIM_In1__c,
+        AXF_TME_TIM_Out1__c,
+        AXF_TME_TIM_In2__c,
+        AXF_TME_TIM_Out2__c,
+        AXF_TME_FOR_Hours__c
+      FROM AXF_OBJ_TimeEntry__c
+      WHERE
+        AXF_TME_MD_Contract__c = :contractId
+        AND AXF_TME_FOR_Competence__c = :first
+    ]) {
+      saved.put(entry.AXF_TME_DAT_Date__c, entry);
+    }
+    Set<Date> workingDays = new Set<Date>();
+    try {
+      workingDays.addAll(
+        new ALT_CLS_ContractCalendar()
+          .workingDays(contract.AXF_CTR_PKL_HolidayCalendar__c, first, last)
+      );
+    } catch (ALT_CLS_ContractCalendar.CalendarException e) {
+      throw new TimesheetException(e.getMessage());
+    }
+    for (Date day = first; day <= last; day = day.addDays(1)) {
+      DayView dayView = new DayView();
+      dayView.workDate = day;
+      dayView.workingDay = workingDays.contains(day);
+      AXF_OBJ_TimeEntry__c entry = saved.get(day);
+      if (entry != null) {
+        dayView.in1 = entry.AXF_TME_TIM_In1__c;
+        dayView.out1 = entry.AXF_TME_TIM_Out1__c;
+        dayView.in2 = entry.AXF_TME_TIM_In2__c;
+        dayView.out2 = entry.AXF_TME_TIM_Out2__c;
+        dayView.hours = entry.AXF_TME_FOR_Hours__c == null
+          ? 0
+          : entry.AXF_TME_FOR_Hours__c;
+        view.totalHours += dayView.hours;
+      }
+      view.days.add(dayView);
+    }
+    return view;
+  }
+
+  // Fills the working days that have no times at all with the contract's default schedule, as many as the
+  // monthly limit allows. A day with any time typed is left alone.
+  public MonthView fillWorkdays(Id contractId, Integer year, Integer month) {
+    AXF_OBJ_Contract__c contract = loadContract(contractId);
+    if (
+      contract.AXF_CTR_TIM_DefaultIn1__c == null ||
+      contract.AXF_CTR_TIM_DefaultOut1__c == null
+    ) {
+      throw new TimesheetException('Informe o horário padrão no contrato.');
+    }
+    if (
+      (contract.AXF_CTR_TIM_DefaultIn2__c == null) !=
+      (contract.AXF_CTR_TIM_DefaultOut2__c == null)
+    ) {
+      throw new TimesheetException(
+        'O horário padrão do 2º período está incompleto no contrato.'
+      );
+    }
+    Row template = new Row(
+      Date.today(),
+      contract.AXF_CTR_TIM_DefaultIn1__c,
+      contract.AXF_CTR_TIM_DefaultOut1__c,
+      contract.AXF_CTR_TIM_DefaultIn2__c,
+      contract.AXF_CTR_TIM_DefaultOut2__c
+    );
+    checkPeriods(template);
+    Decimal perDay = hours(template);
+    if (
+      contract.AXF_CTR_NUM_DailyLimit__c != null &&
+      perDay > contract.AXF_CTR_NUM_DailyLimit__c
+    ) {
+      throw new TimesheetException(
+        'O horário padrão passa do limite diário do contrato.'
+      );
+    }
+    MonthView current = loadMonth(contractId, year, month);
+    Decimal allowance = contract.AXF_CTR_NUM_MonthlyLimit__c == null
+      ? null
+      : contract.AXF_CTR_NUM_MonthlyLimit__c - current.totalHours;
+    List<Row> rows = new List<Row>();
+    Integer skipped = 0;
+    for (DayView day : current.days) {
+      Boolean empty =
+        day.in1 == null &&
+        day.out1 == null &&
+        day.in2 == null &&
+        day.out2 == null;
+      if (!day.workingDay || !empty) {
+        continue;
+      }
+      if (allowance != null && perDay > allowance) {
+        skipped++;
+        continue;
+      }
+      if (allowance != null) {
+        allowance -= perDay;
+      }
+      rows.add(
+        new Row(
+          day.workDate,
+          template.in1,
+          template.out1,
+          template.in2,
+          template.out2
+        )
+      );
+    }
+    if (!rows.isEmpty()) {
+      save(contractId, rows);
+    }
+    MonthView result = loadMonth(contractId, year, month);
+    result.filledDays = rows.size();
+    result.skippedDays = skipped;
+    return result;
+  }
+
+  private static Date firstOfMonth(Integer year, Integer month) {
+    if (year == null || month == null || month < 1 || month > 12) {
+      throw new TimesheetException('Mês inválido.');
+    }
+    return Date.newInstance(year, month, 1);
   }
 
   private static Long period(Time startTime, Time endTime) {
@@ -97,7 +270,12 @@ public with sharing class ALT_CLS_Timesheet {
         AXF_CTR_PKL_ReceiptMonth__c,
         AXF_CTR_NUM_ReceiptDay__c,
         AXF_CTR_NUM_DailyLimit__c,
-        AXF_CTR_NUM_MonthlyLimit__c
+        AXF_CTR_NUM_MonthlyLimit__c,
+        AXF_CTR_PKL_HolidayCalendar__c,
+        AXF_CTR_TIM_DefaultIn1__c,
+        AXF_CTR_TIM_DefaultOut1__c,
+        AXF_CTR_TIM_DefaultIn2__c,
+        AXF_CTR_TIM_DefaultOut2__c
       FROM AXF_OBJ_Contract__c
       WHERE Id = :contractId
     ];
