@@ -290,4 +290,21 @@ private class AXF_CLS_CTRL_TimesheetTest {
     );
     System.assertEquals(false, month.days[6].workingDay);
   }
+
+  @IsTest
+  static void pdfsOfAMonthWithoutHoursAreRefused() {
+    AXF_OBJ_Contract__c c = service();
+    Integer refused = 0;
+    try {
+      AXF_CLS_CTRL_Timesheet.createTimesheetPdf(c.Id, 2026, 9);
+    } catch (Exception e) {
+      refused++;
+    }
+    try {
+      AXF_CLS_CTRL_Timesheet.createInvoicePdf(c.Id, 2026, 9);
+    } catch (Exception e) {
+      refused++;
+    }
+    System.assertEquals(2, refused);
+  }
 }
