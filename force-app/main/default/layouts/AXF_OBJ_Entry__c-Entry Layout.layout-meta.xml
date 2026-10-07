@@ -4,7 +4,7 @@
         <customLabel>false</customLabel>
         <detailHeading>false</detailHeading>
         <editHeading>true</editHeading>
-        <label>Information</label>
+        <label>Informações</label>
         <layoutColumns>
             <layoutItems>
                 <behavior>Required</behavior>
@@ -63,7 +63,7 @@
         <customLabel>false</customLabel>
         <detailHeading>false</detailHeading>
         <editHeading>true</editHeading>
-        <label>Notes</label>
+        <label>Observações</label>
         <layoutColumns>
             <layoutItems>
                 <behavior>Edit</behavior>
@@ -96,7 +96,7 @@
     <showRunAssignmentRulesCheckbox>false</showRunAssignmentRulesCheckbox>
     <showSubmitAndAttachButton>false</showSubmitAndAttachButton>
     <summaryLayout>
-        <masterLabel>Entry</masterLabel>
+        <masterLabel>Lançamento</masterLabel>
         <sizeX>4</sizeX>
         <sizeY>0</sizeY>
         <summaryLayoutStyle>Default</summaryLayoutStyle>
