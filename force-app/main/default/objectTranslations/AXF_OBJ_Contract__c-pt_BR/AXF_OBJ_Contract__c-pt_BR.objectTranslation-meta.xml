@@ -1,0 +1,53 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<CustomObjectTranslation xmlns="http://soap.sforce.com/2006/04/metadata">
+    <caseValues>
+        <plural>false</plural>
+        <value>Contrato</value>
+    </caseValues>
+    <caseValues>
+        <plural>true</plural>
+        <value>Contratos</value>
+    </caseValues>
+    <gender>Masculine</gender>
+    <nameFieldLabel>Nome</nameFieldLabel>
+    <recordTypes>
+        <label>Recorrente</label>
+        <name>AXF_Recurring</name>
+    </recordTypes>
+    <recordTypes>
+        <label>Parcelado</label>
+        <name>AXF_Installment</name>
+    </recordTypes>
+    <recordTypes>
+        <label>Consórcio</label>
+        <name>AXF_Consortium</name>
+    </recordTypes>
+    <recordTypes>
+        <label>Financiamento</label>
+        <name>AXF_Financing</name>
+    </recordTypes>
+    <recordTypes>
+        <label>Prestação de Serviço</label>
+        <name>AXF_ServiceProvision</name>
+    </recordTypes>
+    <validationRules>
+        <errorMessage
+    >Preencha a conta bancária ou o cartão de crédito, não os dois.</errorMessage>
+        <name>AXF_CTR_VR_AccountOrCardOnly</name>
+    </validationRules>
+    <validationRules>
+        <errorMessage
+    >A conta bancária deve pertencer ao mesmo titular do contrato.</errorMessage>
+        <name>AXF_CTR_VR_BankAccountSameHolder</name>
+    </validationRules>
+    <validationRules>
+        <errorMessage
+    >O cartão de crédito deve pertencer ao mesmo titular do contrato.</errorMessage>
+        <name>AXF_CTR_VR_CreditCardSameHolder</name>
+    </validationRules>
+    <validationRules>
+        <errorMessage
+    >O dia de vencimento deve estar entre 1 e 31.</errorMessage>
+        <name>AXF_CTR_VR_DueDayRange</name>
+    </validationRules>
+</CustomObjectTranslation>

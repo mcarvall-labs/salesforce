@@ -1,0 +1,13 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<CustomFieldTranslation xmlns="http://soap.sforce.com/2006/04/metadata">
+    <label>Calendário de feriados</label>
+    <picklistValues>
+        <masterLabel>Brazil</masterLabel>
+        <translation>Brasil</translation>
+    </picklistValues>
+    <picklistValues>
+        <masterLabel>Portugal</masterLabel>
+        <translation>Portugal</translation>
+    </picklistValues>
+    <name>AXF_CTR_PKL_HolidayCalendar__c</name>
+</CustomFieldTranslation>

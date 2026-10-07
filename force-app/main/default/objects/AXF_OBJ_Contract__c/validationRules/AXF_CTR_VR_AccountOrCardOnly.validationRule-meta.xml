@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<ValidationRule xmlns="http://soap.sforce.com/2006/04/metadata">
+    <fullName>AXF_CTR_VR_AccountOrCardOnly</fullName>
+    <active>true</active>
+    <errorConditionFormula
+  >AND(NOT(ISBLANK(AXF_CTR_LKP_BankAccount__c)), NOT(ISBLANK(AXF_CTR_LKP_CreditCard__c)))</errorConditionFormula>
+    <errorDisplayField>AXF_CTR_LKP_CreditCard__c</errorDisplayField>
+    <errorMessage
+  >Fill in either the bank account or the credit card, not both.</errorMessage>
+</ValidationRule>
