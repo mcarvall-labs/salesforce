@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<ValidationRule xmlns="http://soap.sforce.com/2006/04/metadata">
+    <fullName>AXF_ENT_VR_AmountPositive</fullName>
+    <active>true</active>
+    <errorConditionFormula
+  >AND(NOT(ISBLANK(AXF_ENT_CUR_Amount__c)), AXF_ENT_CUR_Amount__c &lt;= 0)</errorConditionFormula>
+    <errorDisplayField>AXF_ENT_CUR_Amount__c</errorDisplayField>
+    <errorMessage
+  >The amount must be greater than zero. Use the Type field to set income or expense.</errorMessage>
+</ValidationRule>
