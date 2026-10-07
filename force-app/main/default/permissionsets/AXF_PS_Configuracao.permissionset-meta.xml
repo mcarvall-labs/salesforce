@@ -274,6 +274,15 @@
     <object>AXF_OBJ_CreditCardTransaction__c</object>
     <viewAllRecords>false</viewAllRecords>
   </objectPermissions>
+  <objectPermissions>
+    <allowCreate>true</allowCreate>
+    <allowDelete>false</allowDelete>
+    <allowEdit>true</allowEdit>
+    <allowRead>true</allowRead>
+    <modifyAllRecords>false</modifyAllRecords>
+    <object>AXF_OBJ_Category__c</object>
+    <viewAllRecords>false</viewAllRecords>
+  </objectPermissions>
   <recordTypeVisibilities>
     <recordType>AXF_OBJ_BankAccount__c.AXF_Pluggy</recordType>
     <visible>true</visible>
@@ -301,6 +310,10 @@
   </tabSettings>
   <tabSettings>
     <tab>AXF_OBJ_CreditCard__c</tab>
+    <visibility>Visible</visibility>
+  </tabSettings>
+  <tabSettings>
+    <tab>AXF_OBJ_Category__c</tab>
     <visibility>Visible</visibility>
   </tabSettings>
 </PermissionSet>

@@ -173,6 +173,41 @@
     >AXF_OBJ_CreditCardTransaction__c.AXF_CCT_TXT_PluggyCategory__c</field>
         <readable>true</readable>
     </fieldPermissions>
+    <fieldPermissions>
+      <editable>true</editable>
+      <field>AXF_OBJ_Entry__c.AXF_ENT_DAT_PaymentDate__c</field>
+      <readable>true</readable>
+    </fieldPermissions>
+    <fieldPermissions>
+      <editable>false</editable>
+      <field>AXF_OBJ_Entry__c.AXF_ENT_FOR_Overdue__c</field>
+      <readable>true</readable>
+    </fieldPermissions>
+    <fieldPermissions>
+      <editable>false</editable>
+      <field>AXF_OBJ_Entry__c.AXF_ENT_FOR_SignedAmount__c</field>
+      <readable>true</readable>
+    </fieldPermissions>
+    <fieldPermissions>
+      <editable>true</editable>
+      <field>AXF_OBJ_Entry__c.AXF_ENT_LKP_BankAccount__c</field>
+      <readable>true</readable>
+    </fieldPermissions>
+    <fieldPermissions>
+      <editable>true</editable>
+      <field>AXF_OBJ_Entry__c.AXF_ENT_LKP_Category__c</field>
+      <readable>true</readable>
+    </fieldPermissions>
+    <fieldPermissions>
+      <editable>true</editable>
+      <field>AXF_OBJ_Entry__c.AXF_ENT_LKP_CreditCard__c</field>
+      <readable>true</readable>
+    </fieldPermissions>
+    <fieldPermissions>
+      <editable>true</editable>
+      <field>AXF_OBJ_Entry__c.AXF_ENT_TAL_Notes__c</field>
+      <readable>true</readable>
+    </fieldPermissions>
     <hasActivationRequired>false</hasActivationRequired>
     <label>Axon - Usuário</label>
     <objectPermissions>
@@ -238,6 +273,24 @@
         <object>AXF_OBJ_CreditCardTransaction__c</object>
         <viewAllRecords>false</viewAllRecords>
     </objectPermissions>
+    <objectPermissions>
+      <allowCreate>true</allowCreate>
+      <allowDelete>true</allowDelete>
+      <allowEdit>true</allowEdit>
+      <allowRead>true</allowRead>
+      <modifyAllRecords>false</modifyAllRecords>
+      <object>AXF_OBJ_Entry__c</object>
+      <viewAllRecords>false</viewAllRecords>
+    </objectPermissions>
+    <objectPermissions>
+      <allowCreate>true</allowCreate>
+      <allowDelete>false</allowDelete>
+      <allowEdit>true</allowEdit>
+      <allowRead>true</allowRead>
+      <modifyAllRecords>false</modifyAllRecords>
+      <object>AXF_OBJ_Category__c</object>
+      <viewAllRecords>false</viewAllRecords>
+    </objectPermissions>
     <recordTypeVisibilities>
         <recordType>PersonAccount.AXF_Person</recordType>
         <visible>true</visible>
@@ -282,5 +335,9 @@
     <tabSettings>
         <tab>AXF_OBJ_CreditCard__c</tab>
         <visibility>Visible</visibility>
+    </tabSettings>
+    <tabSettings>
+      <tab>AXF_OBJ_Entry__c</tab>
+      <visibility>Visible</visibility>
     </tabSettings>
 </PermissionSet>
