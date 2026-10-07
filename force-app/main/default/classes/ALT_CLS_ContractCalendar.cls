@@ -23,7 +23,7 @@ public with sharing class ALT_CLS_ContractCalendar {
     if (day == null) {
       return false;
     }
-    if (calendar == null) {
+    if (String.isBlank(calendar)) {
       return !isWeekend(day);
     }
     // Noon GMT falls inside the 08:00 to 18:00 working day of both time zones.
@@ -79,6 +79,7 @@ public with sharing class ALT_CLS_ContractCalendar {
       SELECT Id
       FROM BusinessHours
       WHERE Name = :name AND IsActive = TRUE
+      ORDER BY CreatedDate
       LIMIT 1
     ];
     if (found.isEmpty()) {
