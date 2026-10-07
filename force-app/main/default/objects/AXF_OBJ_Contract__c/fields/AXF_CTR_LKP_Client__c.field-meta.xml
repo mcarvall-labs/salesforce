@@ -3,6 +3,17 @@
     <fullName>AXF_CTR_LKP_Client__c</fullName>
     <label>Client</label>
     <deleteConstraint>SetNull</deleteConstraint>
+    <lookupFilter>
+        <active>true</active>
+        <errorMessage
+    >Choose an account of the Customer record type.</errorMessage>
+        <filterItems>
+            <field>Account.RecordType.DeveloperName</field>
+            <operation>equals</operation>
+            <value>AXF_Customer</value>
+        </filterItems>
+        <isOptional>false</isOptional>
+    </lookupFilter>
     <referenceTo>Account</referenceTo>
     <relationshipLabel>Client Contracts</relationshipLabel>
     <relationshipName>ClientContracts</relationshipName>
