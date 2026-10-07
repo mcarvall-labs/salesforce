@@ -339,11 +339,18 @@ private class ALT_CLS_ContractGenerationTest {
     insert c;
     run(c, true);
     List<AXF_OBJ_Entry__c> rows = entries(c.Id);
+    // Months -6 to +1 of today: 8 entries, the past ones stay Pending.
+    System.assertEquals(8, rows.size());
     System.assertEquals(
       c.AXF_CTR_DAT_FirstDueDate__c,
       rows[0].AXF_ENT_DAT_DueDate__c
     );
-    System.assert(rows.size() >= 7, 'entries ' + rows.size());
+    System.assertEquals('Pending', rows[0].AXF_ENT_PKL_Status__c);
+    // Running again, even with the refresh, adds nothing and leaves the past ones alone.
+    ALT_CLS_ContractGeneration.Result again = run(c, true);
+    System.assertEquals(0, again.created);
+    System.assertEquals(0, again.updated);
+    System.assertEquals(8, entries(c.Id).size());
   }
 
   @IsTest
