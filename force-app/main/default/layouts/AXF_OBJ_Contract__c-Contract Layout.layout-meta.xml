@@ -201,6 +201,15 @@
         </layoutColumns>
         <style>OneColumn</style>
     </layoutSections>
+    <platformActionList>
+        <actionListContext>Record</actionListContext>
+        <platformActionListItems>
+            <actionName
+      >AXF_OBJ_Contract__c.AXF_CTR_QA_GenerateEntries</actionName>
+            <actionType>QuickAction</actionType>
+            <sortOrder>0</sortOrder>
+        </platformActionListItems>
+    </platformActionList>
     <relatedLists>
         <fields>NAME</fields>
         <fields>AXF_ENT_DAT_DueDate__c</fields>
