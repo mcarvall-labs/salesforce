@@ -39,7 +39,10 @@ private class AXF_CLS_ContractValidationTest {
     );
   }
 
-  private static void assertRejected(AXF_OBJ_Contract__c c, String expectedField) {
+  private static void assertRejected(
+    AXF_OBJ_Contract__c c,
+    String expectedField
+  ) {
     Database.SaveResult result = Database.insert(c, false);
     System.assert(!result.isSuccess(), 'Expected the contract to be rejected');
     Database.Error err = result.getErrors()[0];
@@ -146,7 +149,11 @@ private class AXF_CLS_ContractValidationTest {
     insert c;
     System.assertEquals(
       'Income',
-      [SELECT AXF_CTR_PKL_Direction__c FROM AXF_OBJ_Contract__c WHERE Id = :c.Id]
+      [
+        SELECT AXF_CTR_PKL_Direction__c
+        FROM AXF_OBJ_Contract__c
+        WHERE Id = :c.Id
+      ]
       .AXF_CTR_PKL_Direction__c
     );
   }

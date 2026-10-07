@@ -2,7 +2,8 @@
 <RecordType xmlns="http://soap.sforce.com/2006/04/metadata">
     <fullName>AXF_Recurring</fullName>
     <active>true</active>
-    <description>Despesa ou receita que se repete todo mês (assinatura, aluguel).</description>
+    <description
+  >Despesa ou receita que se repete todo mês (assinatura, aluguel).</description>
     <label>Recurring</label>
     <picklistValues>
         <picklist>AXF_CTR_PKL_Direction__c</picklist>
