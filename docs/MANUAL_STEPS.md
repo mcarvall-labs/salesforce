@@ -50,9 +50,9 @@ _Depende de_ estiver implantada no org.
 | #   | US                     | Fase    | Passo (resumo)                                                                                           | Depende de         | DEV                           | UAT                                  | PROD           |
 | --- | ---------------------- | ------- | -------------------------------------------------------------------------------------------------------- | ------------------ | ----------------------------- | ------------------------------------ | -------------- |
 | 1   | EP01 (E1-2)            | Pré     | [Habilitar Person Account](#1-habilitar-person-account)                                                  | —                  | Feito (antes de 30/09)        | Não verificado                       | Não verificado |
-| 2   | AXF-175                | Pós     | [Conferir OWD e hierarquia de papéis](#2-conferir-owd-e-hierarquia-de-papéis)                            | 1                  | Não verificado                | Não verificado                       | Pendente       |
+| 2   | AXF-175                | Pós     | [Conferir OWD e hierarquia de papéis](#2-conferir-owd-e-hierarquia-de-papéis)                            | 1                  | Feito (2026-10-07)            | Feito (2026-10-07)                   | Pendente       |
 | 3   | AXF-174                | Pós     | [Atribuir PSG, papel e dono aos 2 usuários](#3-atribuir-psg-papel-e-dono-aos-2-usuários)                 | AXF-246 implantada | Feito (2026-10-06)            | Feito (2026-10-06)                   | Pendente       |
-| 4   | AXF-175                | Pós     | [Teste com 2 logins (isolamento de Titulares)](#4-teste-com-2-logins)                                    | 2, 3               | Não verificado                | Não verificado                       | Pendente       |
+| 4   | AXF-175                | Pós     | [Teste com 2 logins (isolamento de Titulares)](#4-teste-com-2-logins)                                    | 2, 3               | Feito (2026-10-06)            | Feito (2026-10-06)                   | Pendente       |
 | 5   | AXF-179 / AXF-212      | Pós     | [Salvar Client Id/Secret do Pluggy](#5-salvar-client-idsecret-do-pluggy)                                 | 3                  | Não verificado                | Não verificado                       | Pendente       |
 | 6   | AXF-185                | Pós     | [Conferir `AXF_CP_PluggySync` em quem sincroniza](#6-conferir-axf_cp_pluggysync)                         | 3                  | Não verificado                | Não verificado                       | Pendente       |
 | 7   | AXF-196                | Pós     | [Conferir quem importa extrato](#7-conferir-quem-importa-extrato)                                        | 3                  | Não verificado                | Não verificado                       | Pendente       |
@@ -62,7 +62,7 @@ _Depende de_ estiver implantada no org.
 | 11  | EP05 (E5-13) / AXF-222 | Pós     | [Ativar EUR e USD em Gerenciar moedas](#11-ativar-eur-e-usd)                                             | 10                 | Feito (verificado 2026-10-07) | Feito, taxa do USD = 1 (placeholder) | Pendente       |
 | 12  | PR #246                | Externo | [Check "Code review approved" como obrigatório em `develop`](#12-check-code-review-approved-obrigatório) | —                  | n/a                           | n/a                                  | n/a            |
 
-Estado do passo 11 (GitHub): Feito (2026-10-07), confirmado pela API de branch
+Estado do passo 12 (GitHub): Feito (2026-10-07), confirmado pela API de branch
 protection de `develop` (checks obrigatórios: `Lint and unit tests`,
 `Validate Salesforce delta`, `Code review approved`). Rever se `uat` e `main`
 precisam do mesmo.
@@ -71,9 +71,12 @@ Observações de estado (verificadas em 2026-10-07):
 
 - **AXF-174** tem evidência no Jira (comentário de code review aprovado de 06/10,
   conferido nos dois orgs).
-- **AXF-175** está em `No UAT` mas o Jira só tem o comentário de reprovação de 01/10;
-  **não há evidência** dos passos 2 e 4. Registrar a evidência ou devolver ao
-  `Backlog`.
+- **AXF-175**: passo 2 conferido em 2026-10-07 nos dois orgs (Metadata API: Conta
+  Privado, Contato Controlado pelo pai; papéis e usuários corretos; filhos Axon
+  Controlado pelo pai); comentários na AXF-175. Passo 4: o teste de 2 logins foi
+  executado em 2026-10-06 e a evidência (DEV e UAT) está no code review da AXF-174.
+  Limite do teste: Michel é System Administrator e vê tudo por perfil, então ele não
+  prova a herança pela hierarquia; quem prova o isolamento é o login da Gisele.
 - Passos 5 a 8 constam em PRs mergeados (#212, #253, #252, #259) como "a fazer", sem
   comentário de execução. Tratar como `Não verificado` até haver prova.
 - PROD: nada foi promovido ainda; os passos viram obrigatórios na promoção para
@@ -112,7 +115,7 @@ implantadas no org. Atribuir ao **grupo**, não aos Permission Sets.
 | Gisele Lopes          | Standard User        | `Axon - Participante`      | `AXF_PSG_Participante`     |
 
 Usernames: DEV `michel.carvalho.lopes@axon.com.dev` e `gisele.lopes@axon.com.dev`;
-UAT `michel.lopes@axon.com.uat` e `giselepsicologaoficial@axon.com.dev`.
+UAT `michel.lopes@axon.com.uat` e `gisele.lopes@axon.com.uat`.
 
 1. Setup > Usuários > Grupos de conjuntos de permissões (em cada usuário >
    _Atribuições de grupo de conjunto de permissões_): atribuir o PSG da tabela. Não
@@ -137,7 +140,8 @@ US sem código (AXF-175), depende dos passos 2 e 3.
 - Se falhar: conferir proprietário da Account e que `Axon - Usuário` não tem
   _Ver todos_ em Account (não tem).
 
-Evidência: comentário na AXF-175 com o resultado por org.
+Evidência: comentário na AXF-175 (passo 2) e, para o teste de logins, o comentário da
+AXF-174 (DEV e UAT).
 
 ### 5. Salvar Client Id/Secret do Pluggy
 
