@@ -3,7 +3,7 @@ import { extractKeys } from "./jira-status.mjs";
 
 /**
  * Merge gate for `develop`: every Jira issue named by the pull request must
- * have passed the code review (`/mic_code_review`, which wraps bmad-code-review)
+ * have passed the code review (`/mic-code-review`, which wraps bmad-code-review)
  * and carry the `code-review-approved` label. An issue whose PR declares manual
  * deployment steps must also carry `manual-step`.
  * Rules: agent-docs/rules/project/16-status.md.
@@ -59,11 +59,11 @@ export async function checkIssue({ jira, key, manual, fetchImpl = fetch }) {
   const errors = [];
   if (labels.includes(LABELS.reproved)) {
     errors.push(
-      `${key}: reprovada no code review (${LABELS.reproved}). Corrija e rode /mic_code_review ${key} de novo.`
+      `${key}: reprovada no code review (${LABELS.reproved}). Corrija e rode /mic-code-review ${key} de novo.`
     );
   } else if (!labels.includes(LABELS.approved)) {
     errors.push(
-      `${key}: falta passar pelo code review. Rode /mic_code_review ${key} neste PR; a label ${LABELS.approved} libera o merge.`
+      `${key}: falta passar pelo code review. Rode /mic-code-review ${key} neste PR; a label ${LABELS.approved} libera o merge.`
     );
   }
   if (manual && !labels.includes(LABELS.manual)) {
