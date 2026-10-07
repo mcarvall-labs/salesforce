@@ -157,4 +157,76 @@ private class AXF_CLS_ContractValidationTest {
       .AXF_CTR_PKL_Direction__c
     );
   }
+
+  private static Id accountType(String developerName) {
+    return Schema.SObjectType.Account.getRecordTypeInfosByDeveloperName()
+      .get(developerName)
+      .getRecordTypeId();
+  }
+
+  @IsTest
+  static void aForeignCurrencyServiceContractNeedsAClient() {
+    Account h = holder('Titular');
+    AXF_OBJ_Contract__c eur = contract(h.Id, 'AXF_ServiceProvision');
+    eur.AXF_CTR_PKL_Direction__c = 'Income';
+    eur.CurrencyIsoCode = 'EUR';
+    assertRejected(eur, 'AXF_CTR_LKP_Client__c');
+    // In BRL the invoice is issued outside the system: no client needed.
+    AXF_OBJ_Contract__c brl = contract(h.Id, 'AXF_ServiceProvision');
+    brl.AXF_CTR_PKL_Direction__c = 'Income';
+    brl.CurrencyIsoCode = 'BRL';
+    insert brl;
+    System.assertNotEquals(null, brl.Id);
+    // Other types do not issue invoices.
+    AXF_OBJ_Contract__c recurring = contract(h.Id, 'AXF_Recurring');
+    recurring.CurrencyIsoCode = 'EUR';
+    insert recurring;
+    System.assertNotEquals(null, recurring.Id);
+  }
+
+  @IsTest
+  static void theClientMustBeOfTheCustomerRecordType() {
+    Account h = holder('Titular');
+    Account customer = new Account(
+      Name = 'Cliente',
+      RecordTypeId = accountType('AXF_Customer')
+    );
+    Account family = new Account(
+      Name = 'Familia',
+      RecordTypeId = accountType('AXF_Family')
+    );
+    insert new List<Account>{ customer, family };
+    AXF_OBJ_Contract__c ok = contract(h.Id, 'AXF_ServiceProvision');
+    ok.AXF_CTR_PKL_Direction__c = 'Income';
+    ok.CurrencyIsoCode = 'EUR';
+    ok.AXF_CTR_LKP_Client__c = customer.Id;
+    insert ok;
+    System.assertNotEquals(null, ok.Id);
+    AXF_OBJ_Contract__c wrong = contract(h.Id, 'AXF_ServiceProvision');
+    wrong.AXF_CTR_PKL_Direction__c = 'Income';
+    wrong.CurrencyIsoCode = 'EUR';
+    wrong.AXF_CTR_LKP_Client__c = family.Id;
+    Database.SaveResult result = Database.insert(wrong, false);
+    System.assert(
+      !result.isSuccess(),
+      'A client of another record type must be refused'
+    );
+  }
+
+  @IsTest
+  static void theAccountKeepsTheTaxIdAndThePaymentDetails() {
+    Account issuer = new Account(
+      Name = 'Emitente',
+      AXF_ACC_TXT_TaxId__c = '12.345.678/0001-90',
+      AXF_ACC_TAL_PaymentDetails__c = 'Banco X - IBAN PT50 0000'
+    );
+    insert issuer;
+    Account saved = [
+      SELECT AXF_ACC_TXT_TaxId__c, AXF_ACC_TAL_PaymentDetails__c
+      FROM Account
+      WHERE Id = :issuer.Id
+    ];
+    System.assertEquals('12.345.678/0001-90', saved.AXF_ACC_TXT_TaxId__c);
+    System.assert(saved.AXF_ACC_TAL_PaymentDetails__c.contains('IBAN'));
+  }
 }

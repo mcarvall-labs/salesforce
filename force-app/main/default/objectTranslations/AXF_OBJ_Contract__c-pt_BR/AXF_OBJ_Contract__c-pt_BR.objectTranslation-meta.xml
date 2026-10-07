@@ -36,6 +36,11 @@
     </recordTypes>
     <validationRules>
         <errorMessage
+    >Informe o cliente: um contrato de serviço em moeda diferente de BRL emite fatura.</errorMessage>
+        <name>AXF_CTR_VR_ClientRequiredNonBRL</name>
+    </validationRules>
+    <validationRules>
+        <errorMessage
     >Preencha a conta bancária ou o cartão de crédito, não os dois.</errorMessage>
         <name>AXF_CTR_VR_AccountOrCardOnly</name>
     </validationRules>

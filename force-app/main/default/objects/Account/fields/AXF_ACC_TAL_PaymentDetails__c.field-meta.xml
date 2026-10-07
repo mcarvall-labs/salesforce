@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<CustomField xmlns="http://soap.sforce.com/2006/04/metadata">
+    <fullName>AXF_ACC_TAL_PaymentDetails__c</fullName>
+    <description
+  >Dados para pagamento (banco, endereço, IBAN, SWIFT, beneficiário), usados quando a Account é o emitente da fatura.</description>
+    <label>Payment Details</label>
+    <length>2000</length>
+    <trackTrending>false</trackTrending>
+    <type>LongTextArea</type>
+    <visibleLines>6</visibleLines>
+</CustomField>

@@ -426,6 +426,16 @@
         <field>AXF_OBJ_TimeEntry__c.AXF_TME_FOR_Competence__c</field>
         <readable>true</readable>
     </fieldPermissions>
+    <fieldPermissions>
+        <editable>true</editable>
+        <field>Account.AXF_ACC_TXT_TaxId__c</field>
+        <readable>true</readable>
+    </fieldPermissions>
+    <fieldPermissions>
+        <editable>true</editable>
+        <field>Account.AXF_ACC_TAL_PaymentDetails__c</field>
+        <readable>true</readable>
+    </fieldPermissions>
     <hasActivationRequired>false</hasActivationRequired>
     <label>Axon - Usuário</label>
     <objectPermissions>

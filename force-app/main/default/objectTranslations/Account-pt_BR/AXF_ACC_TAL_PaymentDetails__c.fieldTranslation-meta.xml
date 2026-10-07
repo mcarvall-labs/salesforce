@@ -1,0 +1,5 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<CustomFieldTranslation xmlns="http://soap.sforce.com/2006/04/metadata">
+    <label>Dados para pagamento</label>
+    <name>AXF_ACC_TAL_PaymentDetails__c</name>
+</CustomFieldTranslation>
