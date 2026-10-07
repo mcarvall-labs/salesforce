@@ -152,5 +152,29 @@ describe("timesheetMath", () => {
           .remainingDays
       ).toBe(0);
     });
+
+    it("forecasts the month also when both limits exist", () => {
+      const result = plan({
+        days,
+        today: "2026-09-02",
+        dailyLimit: 8,
+        monthlyLimit: 40
+      });
+      expect(result.forecast).toBe(40);
+      expect(result.remainingHours).toBe(24);
+    });
+
+    it("does not alert or forecast for a month that is over", () => {
+      const result = plan({
+        days,
+        today: "2026-10-01",
+        dailyLimit: 8,
+        monthlyLimit: 80
+      });
+      expect(result.isPastMonth).toBe(true);
+      expect(result.remainingDays).toBe(0);
+      expect(result.overDailyLimit).toBe(false);
+      expect(result.forecast).toBeNull();
+    });
   });
 });

@@ -30,6 +30,10 @@ public with sharing class AXF_CLS_CTRL_Timesheet {
     @AuraEnabled
     public Decimal totalHours;
     @AuraEnabled
+    public Integer filledDays;
+    @AuraEnabled
+    public Integer skippedDays;
+    @AuraEnabled
     public List<DayDto> days = new List<DayDto>();
   }
 
@@ -46,11 +50,13 @@ public with sharing class AXF_CLS_CTRL_Timesheet {
 
   @AuraEnabled
   public static MonthDto getMonth(Id contractId, Integer year, Integer month) {
-    checkAccess(contractId);
+    checkAccess(contractId, false);
     try {
       return toDto(new ALT_CLS_Timesheet().loadMonth(contractId, year, month));
     } catch (ALT_CLS_Timesheet.TimesheetException e) {
       throw fail(e.getMessage());
+    } catch (DmlException e) {
+      throw fail(e.getDmlMessage(0));
     }
   }
 
@@ -64,7 +70,10 @@ public with sharing class AXF_CLS_CTRL_Timesheet {
     String in2,
     String out2
   ) {
-    checkAccess(contractId);
+    checkAccess(contractId, true);
+    if (workDate == null) {
+      throw fail('Informe a data.');
+    }
     try {
       ALT_CLS_Timesheet.Row row = new ALT_CLS_Timesheet.Row(
         workDate,
@@ -83,6 +92,8 @@ public with sharing class AXF_CLS_CTRL_Timesheet {
       return dto;
     } catch (ALT_CLS_Timesheet.TimesheetException e) {
       throw fail(e.getMessage());
+    } catch (DmlException e) {
+      throw fail(e.getDmlMessage(0));
     }
   }
 
@@ -92,29 +103,37 @@ public with sharing class AXF_CLS_CTRL_Timesheet {
     Integer year,
     Integer month
   ) {
-    checkAccess(contractId);
+    checkAccess(contractId, true);
     try {
       return toDto(
         new ALT_CLS_Timesheet().fillWorkdays(contractId, year, month)
       );
     } catch (ALT_CLS_Timesheet.TimesheetException e) {
       throw fail(e.getMessage());
+    } catch (DmlException e) {
+      throw fail(e.getDmlMessage(0));
     }
   }
 
-  private static void checkAccess(Id contractId) {
+  private static void checkAccess(Id contractId, Boolean forWrite) {
     if (contractId == null) {
       throw fail('Informe o contrato.');
     }
-    if (!Schema.sObjectType.AXF_OBJ_Contract__c.isUpdateable()) {
+    if (forWrite && !Schema.sObjectType.AXF_OBJ_Contract__c.isUpdateable()) {
       throw fail('Você não tem permissão para apontar horas.');
     }
-    List<AXF_OBJ_Contract__c> visible = [
-      SELECT Id
-      FROM AXF_OBJ_Contract__c
-      WHERE Id = :contractId
-      WITH USER_MODE
-    ];
+    List<AXF_OBJ_Contract__c> visible = new List<AXF_OBJ_Contract__c>();
+    try {
+      visible = [
+        SELECT Id
+        FROM AXF_OBJ_Contract__c
+        WHERE Id = :contractId
+        WITH USER_MODE
+      ];
+    } catch (QueryException e) {
+      // A user with no access to the object at all gets this instead of an empty list.
+      visible.clear();
+    }
     if (visible.isEmpty()) {
       throw fail('Contrato não encontrado.');
     }
@@ -134,6 +153,8 @@ public with sharing class AXF_CLS_CTRL_Timesheet {
     dto.dailyLimit = view.dailyLimit;
     dto.monthlyLimit = view.monthlyLimit;
     dto.totalHours = view.totalHours;
+    dto.filledDays = view.filledDays;
+    dto.skippedDays = view.skippedDays;
     for (ALT_CLS_Timesheet.DayView day : view.days) {
       DayDto item = new DayDto();
       item.workDate = day.workDate;
@@ -154,7 +175,7 @@ public with sharing class AXF_CLS_CTRL_Timesheet {
       return null;
     }
     List<String> parts = text.trim().split(':');
-    if (parts.size() < 2) {
+    if (parts.size() < 2 || String.isBlank(parts[1])) {
       throw new ALT_CLS_Timesheet.TimesheetException(
         'Horário inválido: ' + text + '.'
       );

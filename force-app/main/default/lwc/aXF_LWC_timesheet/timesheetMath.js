@@ -79,6 +79,10 @@ export function plan({ days, today, dailyLimit, monthlyLimit }) {
   const remainingDays = days.filter(
     (day) => day.workingDay && day.workDate > today
   ).length;
+  const lastDay = days.length ? days[days.length - 1].workDate : null;
+  const isPastMonth = lastDay !== null && today > lastDay;
+  const hasDaily = dailyLimit !== null && dailyLimit !== undefined;
+  const hasMonthly = monthlyLimit !== null && monthlyLimit !== undefined;
   const result = {
     hoursUntilToday,
     remainingDays,
@@ -86,23 +90,23 @@ export function plan({ days, today, dailyLimit, monthlyLimit }) {
     averagePerDay: null,
     forecast: null,
     overDailyLimit: false,
-    finished: false
+    finished: false,
+    isPastMonth
   };
-  if (monthlyLimit !== null && monthlyLimit !== undefined) {
+  if (hasDaily && !isPastMonth) {
+    // Working days left x daily limit, on top of what is already logged.
+    result.forecast = round2(hoursUntilToday + remainingDays * dailyLimit);
+  }
+  if (hasMonthly) {
     result.remainingHours = round2(Math.max(monthlyLimit - hoursUntilToday, 0));
     result.finished = result.remainingHours === 0;
     if (remainingDays > 0) {
       result.averagePerDay = round2(result.remainingHours / remainingDays);
-      result.overDailyLimit =
-        dailyLimit !== null &&
-        dailyLimit !== undefined &&
-        result.averagePerDay > dailyLimit;
-    } else if (result.remainingHours > 0) {
-      // No working day is left but hours are: the target cannot be met.
+      result.overDailyLimit = hasDaily && result.averagePerDay > dailyLimit;
+    } else if (result.remainingHours > 0 && !isPastMonth) {
+      // No working day is left in the current month but hours are: the target cannot be met.
       result.overDailyLimit = true;
     }
-  } else if (dailyLimit !== null && dailyLimit !== undefined) {
-    result.forecast = round2(hoursUntilToday + remainingDays * dailyLimit);
   }
   return result;
 }

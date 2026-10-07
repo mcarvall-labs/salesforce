@@ -229,4 +229,109 @@ describe("c-axf-lwc-timesheet", () => {
     ).toContain("não está ativo");
     expect(element.shadowRoot.querySelector("table")).toBeNull();
   });
+
+  it("does not count a rejected day in the totals", async () => {
+    const element = await setup();
+    await type(element, "2026-09-02", "in1", "08:00:00.000");
+    await type(element, "2026-09-02", "out1", "19:00:00.000");
+    expect(element.shadowRoot.querySelector(".row-error")).not.toBeNull();
+    expect(element.shadowRoot.querySelector(".total-hours").textContent).toBe(
+      "8,00 h"
+    );
+  });
+
+  it("does not leave the month while a day is unsaved", async () => {
+    const element = await setup();
+    await type(element, "2026-09-02", "in1", "08:00:00.000");
+    await type(element, "2026-09-02", "out1", "19:00:00.000");
+    getMonth.mockClear();
+    element.shadowRoot
+      .querySelector(".next-month")
+      .dispatchEvent(new CustomEvent("click"));
+    await flush();
+    expect(getMonth).not.toHaveBeenCalled();
+    expect(element.shadowRoot.querySelector(".notice").textContent).toContain(
+      "antes de mudar de mês"
+    );
+  });
+
+  it("keeps the day dirty when it was edited during the save and saves it again", async () => {
+    let release;
+    saveDay.mockImplementationOnce(
+      () =>
+        new Promise((resolve) => {
+          release = () => resolve({ entryLocked: false });
+        })
+    );
+    const element = await setup();
+    await type(element, "2026-09-02", "in1", "09:00:00.000");
+    const first = type(element, "2026-09-02", "out1", "12:00:00.000");
+    await flush();
+    // The user changes the out time while the first call is still running.
+    input(element, "2026-09-02", "out1").dispatchEvent(
+      new CustomEvent("change", { detail: { value: "13:00:00.000" } })
+    );
+    await flush();
+    release();
+    await first;
+    await flush();
+    await flush();
+    expect(saveDay).toHaveBeenCalledTimes(2);
+    expect(saveDay).toHaveBeenLastCalledWith(
+      expect.objectContaining({ workDate: "2026-09-02", out1: "13:00:00.000" })
+    );
+  });
+
+  it("saves a day left while another save was running", async () => {
+    let release;
+    saveDay.mockImplementationOnce(
+      () =>
+        new Promise((resolve) => {
+          release = () => resolve({ entryLocked: false });
+        })
+    );
+    const element = await setup();
+    await type(element, "2026-09-02", "in1", "09:00:00.000");
+    const first = type(element, "2026-09-02", "out1", "12:00:00.000");
+    await flush();
+    await type(element, "2026-09-03", "in1", "09:00:00.000");
+    await type(element, "2026-09-03", "out1", "12:00:00.000");
+    expect(saveDay).toHaveBeenCalledTimes(1);
+    release();
+    await first;
+    await flush();
+    await flush();
+    expect(saveDay).toHaveBeenCalledTimes(2);
+    expect(saveDay).toHaveBeenLastCalledWith(
+      expect.objectContaining({ workDate: "2026-09-03" })
+    );
+  });
+
+  it("tells the user when the month entry is already realized", async () => {
+    saveDay.mockResolvedValue({ entryLocked: true });
+    const element = await setup();
+    await type(element, "2026-09-02", "in1", "09:00:00.000");
+    await type(element, "2026-09-02", "out1", "12:00:00.000");
+    expect(element.shadowRoot.querySelector(".notice").textContent).toContain(
+      "já foi realizado"
+    );
+  });
+
+  it("shows the expected amount and how many days the fill skipped", async () => {
+    const element = await setup();
+    expect(element.shadowRoot.querySelector(".amount").textContent).toMatch(
+      /400,00/
+    );
+    const filled = month();
+    filled.filledDays = 3;
+    filled.skippedDays = 2;
+    fillWorkdays.mockResolvedValue(filled);
+    element.shadowRoot
+      .querySelector("lightning-button")
+      .dispatchEvent(new CustomEvent("click"));
+    await flush();
+    expect(element.shadowRoot.querySelector(".notice").textContent).toContain(
+      "2 não couberam no limite mensal"
+    );
+  });
 });

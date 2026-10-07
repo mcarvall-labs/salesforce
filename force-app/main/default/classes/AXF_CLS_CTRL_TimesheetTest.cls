@@ -100,18 +100,99 @@ private class AXF_CLS_CTRL_TimesheetTest {
     System.assertEquals(null, month.days[5].in1, 'Sunday stays empty');
     // 1 + 21 working days x 8 h
     System.assertEquals(1 + 21 * 8, month.totalHours);
+    System.assertEquals(21, month.filledDays);
   }
 
   @IsTest
-  static void aMonthlyLimitStopsTheFill() {
+  static void aMonthlyLimitFillsAsManyDaysAsFit() {
     AXF_OBJ_Contract__c c = service();
+    // 100 h limit and 8 h a day: 12 working days fit, the rest of the 22 are skipped.
+    AXF_CLS_CTRL_Timesheet.MonthDto month = AXF_CLS_CTRL_Timesheet.fillWorkdays(
+      c.Id,
+      2026,
+      9
+    );
+    System.assertEquals(12, month.filledDays);
+    System.assertEquals(10, month.skippedDays);
+    System.assertEquals(96, month.totalHours);
+  }
+
+  @IsTest
+  static void aDayWithAnyTimeIsNotOverwrittenByTheFill() {
+    AXF_OBJ_Contract__c c = service();
+    c.AXF_CTR_NUM_MonthlyLimit__c = null;
+    update c;
+    // Only the second period typed: the day is left alone.
+    AXF_CLS_CTRL_Timesheet.saveDay(
+      c.Id,
+      Date.newInstance(2026, 9, 2),
+      null,
+      null,
+      '14:00',
+      '16:00'
+    );
+    AXF_CLS_CTRL_Timesheet.MonthDto month = AXF_CLS_CTRL_Timesheet.fillWorkdays(
+      c.Id,
+      2026,
+      9
+    );
+    System.assertEquals(2, month.days[1].hours);
+    System.assertEquals(21, month.filledDays);
+  }
+
+  @IsTest
+  static void aDefaultScheduleAboveTheDailyLimitIsRejected() {
+    AXF_OBJ_Contract__c c = service();
+    c.AXF_CTR_NUM_DailyLimit__c = 6;
+    update c;
     String message;
     try {
       AXF_CLS_CTRL_Timesheet.fillWorkdays(c.Id, 2026, 9);
     } catch (AuraHandledException e) {
       message = e.getMessage();
     }
-    System.assert(message.contains('limite mensal'), message);
+    System.assert(message.contains('limite diário'), message);
+  }
+
+  @IsTest
+  static void aUserWithoutAccessToTheContractIsRefused() {
+    AXF_OBJ_Contract__c c = service();
+    User outsider = new User(
+      Alias = 'tsout',
+      Email = 'tsout@example.com',
+      EmailEncodingKey = 'UTF-8',
+      LastName = 'Outsider',
+      LanguageLocaleKey = 'en_US',
+      LocaleSidKey = 'en_US',
+      ProfileId = [SELECT Id FROM Profile WHERE Name = 'Standard User' LIMIT 1]
+      .Id,
+      TimeZoneSidKey = 'America/Sao_Paulo',
+      Username = 'tsout' + System.currentTimeMillis() + '@example.com'
+    );
+    insert outsider;
+    String writeMessage;
+    String readMessage;
+    System.runAs(outsider) {
+      try {
+        AXF_CLS_CTRL_Timesheet.saveDay(
+          c.Id,
+          Date.newInstance(2026, 9, 1),
+          '09:00',
+          '12:00',
+          null,
+          null
+        );
+      } catch (AuraHandledException e) {
+        writeMessage = e.getMessage();
+      }
+      try {
+        AXF_CLS_CTRL_Timesheet.getMonth(c.Id, 2026, 9);
+      } catch (AuraHandledException e) {
+        readMessage = e.getMessage();
+      }
+    }
+    System.assert(writeMessage.contains('permissão'), writeMessage);
+    System.assert(readMessage.contains('não encontrado'), readMessage);
     System.assertEquals(0, [SELECT COUNT() FROM AXF_OBJ_TimeEntry__c]);
   }
 

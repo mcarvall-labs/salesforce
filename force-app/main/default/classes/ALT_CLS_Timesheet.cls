@@ -69,6 +69,9 @@ public with sharing class ALT_CLS_Timesheet {
     public Time defaultIn2;
     public Time defaultOut2;
     public Decimal totalHours = 0;
+    // Set by fillWorkdays: days filled, and working days left empty because they do not fit the monthly limit.
+    public Integer filledDays = 0;
+    public Integer skippedDays = 0;
     public List<DayView> days = new List<DayView>();
   }
 
@@ -126,18 +129,19 @@ public with sharing class ALT_CLS_Timesheet {
     ]) {
       saved.put(entry.AXF_TME_DAT_Date__c, entry);
     }
-    ALT_CLS_ContractCalendar calendar = new ALT_CLS_ContractCalendar();
+    Set<Date> workingDays = new Set<Date>();
+    try {
+      workingDays.addAll(
+        new ALT_CLS_ContractCalendar()
+          .workingDays(contract.AXF_CTR_PKL_HolidayCalendar__c, first, last)
+      );
+    } catch (ALT_CLS_ContractCalendar.CalendarException e) {
+      throw new TimesheetException(e.getMessage());
+    }
     for (Date day = first; day <= last; day = day.addDays(1)) {
       DayView dayView = new DayView();
       dayView.workDate = day;
-      try {
-        dayView.workingDay = calendar.isWorkingDay(
-          contract.AXF_CTR_PKL_HolidayCalendar__c,
-          day
-        );
-      } catch (ALT_CLS_ContractCalendar.CalendarException e) {
-        throw new TimesheetException(e.getMessage());
-      }
+      dayView.workingDay = workingDays.contains(day);
       AXF_OBJ_TimeEntry__c entry = saved.get(day);
       if (entry != null) {
         dayView.in1 = entry.AXF_TME_TIM_In1__c;
@@ -154,7 +158,8 @@ public with sharing class ALT_CLS_Timesheet {
     return view;
   }
 
-  // Fills the working days that still have no times with the contract's default schedule.
+  // Fills the working days that have no times at all with the contract's default schedule, as many as the
+  // monthly limit allows. A day with any time typed is left alone.
   public MonthView fillWorkdays(Id contractId, Integer year, Integer month) {
     AXF_OBJ_Contract__c contract = loadContract(contractId);
     if (
@@ -163,30 +168,70 @@ public with sharing class ALT_CLS_Timesheet {
     ) {
       throw new TimesheetException('Informe o horário padrão no contrato.');
     }
+    if (
+      (contract.AXF_CTR_TIM_DefaultIn2__c == null) !=
+      (contract.AXF_CTR_TIM_DefaultOut2__c == null)
+    ) {
+      throw new TimesheetException(
+        'O horário padrão do 2º período está incompleto no contrato.'
+      );
+    }
+    Row template = new Row(
+      Date.today(),
+      contract.AXF_CTR_TIM_DefaultIn1__c,
+      contract.AXF_CTR_TIM_DefaultOut1__c,
+      contract.AXF_CTR_TIM_DefaultIn2__c,
+      contract.AXF_CTR_TIM_DefaultOut2__c
+    );
+    checkPeriods(template);
+    Decimal perDay = hours(template);
+    if (
+      contract.AXF_CTR_NUM_DailyLimit__c != null &&
+      perDay > contract.AXF_CTR_NUM_DailyLimit__c
+    ) {
+      throw new TimesheetException(
+        'O horário padrão passa do limite diário do contrato.'
+      );
+    }
     MonthView current = loadMonth(contractId, year, month);
+    Decimal allowance = contract.AXF_CTR_NUM_MonthlyLimit__c == null
+      ? null
+      : contract.AXF_CTR_NUM_MonthlyLimit__c - current.totalHours;
     List<Row> rows = new List<Row>();
+    Integer skipped = 0;
     for (DayView day : current.days) {
-      if (
-        day.workingDay &&
-        day.hours == 0 &&
+      Boolean empty =
         day.in1 == null &&
-        day.out1 == null
-      ) {
-        rows.add(
-          new Row(
-            day.workDate,
-            contract.AXF_CTR_TIM_DefaultIn1__c,
-            contract.AXF_CTR_TIM_DefaultOut1__c,
-            contract.AXF_CTR_TIM_DefaultIn2__c,
-            contract.AXF_CTR_TIM_DefaultOut2__c
-          )
-        );
+        day.out1 == null &&
+        day.in2 == null &&
+        day.out2 == null;
+      if (!day.workingDay || !empty) {
+        continue;
       }
+      if (allowance != null && perDay > allowance) {
+        skipped++;
+        continue;
+      }
+      if (allowance != null) {
+        allowance -= perDay;
+      }
+      rows.add(
+        new Row(
+          day.workDate,
+          template.in1,
+          template.out1,
+          template.in2,
+          template.out2
+        )
+      );
     }
     if (!rows.isEmpty()) {
       save(contractId, rows);
     }
-    return loadMonth(contractId, year, month);
+    MonthView result = loadMonth(contractId, year, month);
+    result.filledDays = rows.size();
+    result.skippedDays = skipped;
+    return result;
   }
 
   private static Date firstOfMonth(Integer year, Integer month) {

@@ -46,6 +46,9 @@ export default class AXF_LWC_timesheet extends LightningElement {
   settings;
   days = [];
   errors = {};
+  loadSeq = 0;
+  pendingDates = [];
+  noticeMessage;
 
   connectedCallback() {
     const now = new Date();
@@ -66,6 +69,13 @@ export default class AXF_LWC_timesheet extends LightningElement {
     return `${MONTHS[this.month - 1]} de ${this.year}`;
   }
 
+  // Totals and planner use what is saved: a row that was rejected does not count.
+  get countedDays() {
+    return this.days.map((day) =>
+      this.errors[day.workDate] && day.saved ? { ...day, ...day.saved } : day
+    );
+  }
+
   get todayIso() {
     const now = new Date();
     return `${now.getFullYear()}-${pad(now.getMonth() + 1)}-${pad(now.getDate())}`;
@@ -80,7 +90,20 @@ export default class AXF_LWC_timesheet extends LightningElement {
   }
 
   get totalLabel() {
-    return hoursText(totalHours(this.days));
+    return hoursText(totalHours(this.countedDays));
+  }
+
+  get amountLabel() {
+    const amount =
+      totalHours(this.countedDays) * (this.settings.hourlyRate || 0);
+    return new Intl.NumberFormat("pt-BR", {
+      style: "currency",
+      currency: this.settings.currencyCode || "BRL"
+    }).format(amount);
+  }
+
+  get hasRate() {
+    return this.hasMonth && this.settings.hourlyRate != null;
   }
 
   get monthlyLimitLabel() {
@@ -93,7 +116,7 @@ export default class AXF_LWC_timesheet extends LightningElement {
 
   get missingLabel() {
     const missing = Math.max(
-      this.settings.monthlyLimit - totalHours(this.days),
+      this.settings.monthlyLimit - totalHours(this.countedDays),
       0
     );
     return hoursText(missing);
@@ -104,7 +127,7 @@ export default class AXF_LWC_timesheet extends LightningElement {
       return {};
     }
     const result = plan({
-      days: this.days,
+      days: this.countedDays,
       today: this.todayIso,
       dailyLimit: this.settings.dailyLimit,
       monthlyLimit: this.settings.monthlyLimit
@@ -145,21 +168,31 @@ export default class AXF_LWC_timesheet extends LightningElement {
   }
 
   async load() {
+    const seq = ++this.loadSeq;
     this.isLoading = true;
     this.errorMessage = undefined;
+    this.noticeMessage = undefined;
     try {
       const month = await getMonth({
         contractId: this.recordId,
         year: this.year,
         month: this.month
       });
+      if (seq !== this.loadSeq) {
+        return;
+      }
       this.apply(month);
     } catch (error) {
+      if (seq !== this.loadSeq) {
+        return;
+      }
       this.errorMessage = this.messageOf(error);
       this.settings = undefined;
       this.days = [];
     } finally {
-      this.isLoading = false;
+      if (seq === this.loadSeq) {
+        this.isLoading = false;
+      }
     }
   }
 
@@ -178,6 +211,12 @@ export default class AXF_LWC_timesheet extends LightningElement {
       out1: day.out1,
       in2: day.in2,
       out2: day.out2,
+      saved: {
+        in1: day.in1,
+        out1: day.out1,
+        in2: day.in2,
+        out2: day.out2
+      },
       dirty: false
     }));
   }
@@ -194,7 +233,16 @@ export default class AXF_LWC_timesheet extends LightningElement {
     this.shiftMonth(1);
   }
 
+  get hasUnsavedDays() {
+    return this.days.some((day) => day.dirty || this.errors[day.workDate]);
+  }
+
   shiftMonth(delta) {
+    if (this.hasUnsavedDays || this.isSaving) {
+      this.noticeMessage =
+        "Salve ou corrija os horários deste mês antes de mudar de mês.";
+      return;
+    }
     const moved = new Date(this.year, this.month - 1 + delta, 1);
     this.year = moved.getFullYear();
     this.month = moved.getMonth() + 1;
@@ -213,10 +261,20 @@ export default class AXF_LWC_timesheet extends LightningElement {
   }
 
   // The day is saved when the user leaves a field, as long as no period is left half filled.
-  async handleBlur(event) {
-    const { date } = event.target.dataset;
+  handleBlur(event) {
+    this.saveDate(event.target.dataset.date);
+  }
+
+  async saveDate(date) {
+    if (this.isSaving) {
+      // Another save is running: remember the day and save it right after.
+      if (!this.pendingDates.includes(date)) {
+        this.pendingDates = [...this.pendingDates, date];
+      }
+      return;
+    }
     const day = this.days.find((item) => item.workDate === date);
-    if (!day || !day.dirty || this.isSaving) {
+    if (!day || !day.dirty) {
       return;
     }
     const check = checkDay(day);
@@ -227,7 +285,7 @@ export default class AXF_LWC_timesheet extends LightningElement {
       check.error ||
       limitError(
         day,
-        this.days,
+        this.countedDays,
         this.settings.dailyLimit,
         this.settings.monthlyLimit
       );
@@ -235,29 +293,51 @@ export default class AXF_LWC_timesheet extends LightningElement {
       this.errors = { ...this.errors, [date]: problem };
       return;
     }
+    const sent = { in1: day.in1, out1: day.out1, in2: day.in2, out2: day.out2 };
+    let editedDuringSave = false;
     this.isSaving = true;
+    this.noticeMessage = undefined;
     try {
-      await saveDay({
+      const result = await saveDay({
         contractId: this.recordId,
         workDate: date,
-        in1: day.in1,
-        out1: day.out1,
-        in2: day.in2,
-        out2: day.out2
+        ...sent
       });
       const { [date]: removed, ...rest } = this.errors;
       this.errors = rest;
-      this.days = this.days.map((item) =>
-        item.workDate === date ? { ...item, dirty: false } : item
-      );
+      this.days = this.days.map((item) => {
+        if (item.workDate !== date) {
+          return item;
+        }
+        // An edit made while the call was running keeps the day dirty.
+        const same = FIELDS.every((field) => item[field] === sent[field]);
+        editedDuringSave = !same;
+        return { ...item, saved: sent, dirty: !same };
+      });
+      if (result && result.entryLocked) {
+        this.noticeMessage =
+          "O lançamento deste mês já foi realizado: as horas foram gravadas, mas o valor não muda.";
+      }
     } catch (error) {
       this.errors = { ...this.errors, [date]: this.messageOf(error) };
     } finally {
       this.isSaving = false;
     }
+    const next = this.pendingDates.shift();
+    this.pendingDates = [...this.pendingDates];
+    if (next) {
+      this.saveDate(next);
+    } else if (editedDuringSave) {
+      this.saveDate(date);
+    }
   }
 
   async handleFill() {
+    if (this.hasUnsavedDays) {
+      this.noticeMessage =
+        "Salve ou corrija os horários antes de preencher os dias úteis.";
+      return;
+    }
     this.isSaving = true;
     this.errorMessage = undefined;
     try {
@@ -267,6 +347,10 @@ export default class AXF_LWC_timesheet extends LightningElement {
         month: this.month
       });
       this.apply(month);
+      this.noticeMessage =
+        month.skippedDays > 0
+          ? `${month.filledDays} dia(s) preenchido(s); ${month.skippedDays} não couberam no limite mensal.`
+          : `${month.filledDays} dia(s) preenchido(s).`;
     } catch (error) {
       this.errorMessage = this.messageOf(error);
     } finally {
