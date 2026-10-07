@@ -146,7 +146,7 @@ private class ALT_CLS_ContractScheduleTest {
   }
 
   @IsTest
-  static void recurringStartsAtTheCurrentMonthWhenTheFirstDueDateIsOld() {
+  static void recurringStartsAtTheFirstDueDateEvenWhenItIsInThePast() {
     List<ALT_CLS_ContractSchedule.Item> items = ALT_CLS_ContractSchedule.recurring(
       Date.newInstance(2026, 1, 10),
       10,
@@ -154,8 +154,21 @@ private class ALT_CLS_ContractScheduleTest {
       Date.newInstance(2026, 10, 7),
       50
     );
+    System.assertEquals(12, items.size());
+    System.assertEquals(Date.newInstance(2026, 1, 10), items[0].dueDate);
+    System.assertEquals(Date.newInstance(2026, 12, 10), items[11].dueDate);
+  }
+
+  @IsTest
+  static void recurringSkipsTheFirstMonthWhenTheDueDayHasAlreadyPassed() {
+    List<ALT_CLS_ContractSchedule.Item> items = ALT_CLS_ContractSchedule.recurring(
+      Date.newInstance(2026, 1, 20),
+      10,
+      Date.newInstance(2026, 4, 10),
+      Date.newInstance(2026, 10, 7),
+      50
+    );
+    System.assertEquals(Date.newInstance(2026, 2, 10), items[0].dueDate);
     System.assertEquals(3, items.size());
-    System.assertEquals(Date.newInstance(2026, 10, 10), items[0].dueDate);
-    System.assertEquals(Date.newInstance(2026, 12, 10), items[2].dueDate);
   }
 }

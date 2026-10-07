@@ -332,15 +332,25 @@ private class ALT_CLS_ContractGenerationTest {
   }
 
   @IsTest
-  static void recurringDoesNotBackfillPastMonths() {
+  static void recurringStartsAtTheFirstDueDateOfTheContract() {
     AXF_OBJ_Contract__c c = contract('AXF_Recurring');
     c.AXF_CTR_DAT_FirstDueDate__c = Date.today().addMonths(-6);
     c.AXF_CTR_DAT_EndDate__c = Date.today().addMonths(1);
     insert c;
     run(c, true);
-    for (AXF_OBJ_Entry__c e : entries(c.Id)) {
-      System.assert(e.AXF_ENT_DAT_DueDate__c >= Date.today().toStartOfMonth());
-    }
+    List<AXF_OBJ_Entry__c> rows = entries(c.Id);
+    // Months -6 to +1 of today: 8 entries, the past ones stay Pending.
+    System.assertEquals(8, rows.size());
+    System.assertEquals(
+      c.AXF_CTR_DAT_FirstDueDate__c,
+      rows[0].AXF_ENT_DAT_DueDate__c
+    );
+    System.assertEquals('Pending', rows[0].AXF_ENT_PKL_Status__c);
+    // Running again, even with the refresh, adds nothing and leaves the past ones alone.
+    ALT_CLS_ContractGeneration.Result again = run(c, true);
+    System.assertEquals(0, again.created);
+    System.assertEquals(0, again.updated);
+    System.assertEquals(8, entries(c.Id).size());
   }
 
   @IsTest
