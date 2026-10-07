@@ -71,9 +71,10 @@ export default class AXF_LWC_timesheet extends LightningElement {
 
   // Totals and planner use what is saved: a row that was rejected does not count.
   get countedDays() {
-    return this.days.map((day) =>
-      this.errors[day.workDate] && day.saved ? { ...day, ...day.saved } : day
-    );
+    return this.days.map((day) => {
+      const rejected = this.errors[day.workDate] && day.saved;
+      return rejected ? { ...day, ...day.saved } : day;
+    });
   }
 
   get todayIso() {
@@ -255,9 +256,12 @@ export default class AXF_LWC_timesheet extends LightningElement {
       return;
     }
     const value = event.detail.value || null;
-    this.days = this.days.map((day) =>
-      day.workDate === date ? { ...day, [field]: value, dirty: true } : day
-    );
+    this.days = this.days.map((day) => {
+      if (day.workDate !== date) {
+        return day;
+      }
+      return { ...day, [field]: value, dirty: true };
+    });
   }
 
   // The day is saved when the user leaves a field, as long as no period is left half filled.
@@ -303,7 +307,8 @@ export default class AXF_LWC_timesheet extends LightningElement {
         workDate: date,
         ...sent
       });
-      const { [date]: removed, ...rest } = this.errors;
+      const rest = { ...this.errors };
+      delete rest[date];
       this.errors = rest;
       this.days = this.days.map((item) => {
         if (item.workDate !== date) {

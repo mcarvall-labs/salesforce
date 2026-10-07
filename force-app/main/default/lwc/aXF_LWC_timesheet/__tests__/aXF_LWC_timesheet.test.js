@@ -20,7 +20,8 @@ jest.mock(
   { virtual: true }
 );
 
-const flush = () => new Promise((resolve) => setTimeout(resolve, 0));
+// Lets the pending promises settle (a macrotask via MessageChannel-free setImmediate substitute).
+const flush = () => new Promise(process.nextTick);
 
 function month(overrides = {}) {
   const days = [];
