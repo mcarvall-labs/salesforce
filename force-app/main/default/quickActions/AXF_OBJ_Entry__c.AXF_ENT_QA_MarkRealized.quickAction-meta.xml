@@ -1,0 +1,25 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<QuickAction xmlns="http://soap.sforce.com/2006/04/metadata">
+    <fieldOverrides>
+        <field>AXF_ENT_PKL_Status__c</field>
+        <literalValue>Realized</literalValue>
+    </fieldOverrides>
+    <fieldOverrides>
+        <field>AXF_ENT_DAT_PaymentDate__c</field>
+        <formula>TODAY()</formula>
+    </fieldOverrides>
+    <label>Mark as Realized</label>
+    <optionsCreateFeedItem>false</optionsCreateFeedItem>
+    <quickActionLayout>
+        <layoutSectionStyle>TwoColumnsLeftToRight</layoutSectionStyle>
+        <quickActionLayoutColumns>
+            <quickActionLayoutItems>
+                <emptySpace>false</emptySpace>
+                <field>AXF_ENT_DAT_PaymentDate__c</field>
+                <uiBehavior>Required</uiBehavior>
+            </quickActionLayoutItems>
+        </quickActionLayoutColumns>
+        <quickActionLayoutColumns />
+    </quickActionLayout>
+    <type>Update</type>
+</QuickAction>

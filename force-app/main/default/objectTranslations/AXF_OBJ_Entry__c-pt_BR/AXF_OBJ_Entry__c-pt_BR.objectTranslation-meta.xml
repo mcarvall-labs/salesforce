@@ -10,6 +10,10 @@
     </caseValues>
     <gender>Masculine</gender>
     <nameFieldLabel>Descrição</nameFieldLabel>
+    <quickActions>
+        <label>Marcar como realizado</label>
+        <name>AXF_ENT_QA_MarkRealized</name>
+    </quickActions>
     <validationRules>
         <errorMessage
     >O valor deve ser maior que zero. Use o campo Tipo para definir receita ou despesa.</errorMessage>
