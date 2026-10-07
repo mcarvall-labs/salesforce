@@ -40,12 +40,14 @@ public with sharing class ALT_CLS_ContractSchedule {
     Date horizon = today.addMonths(RECURRING_HORIZON_MONTHS);
     Date last = (endDate != null && endDate < horizon) ? endDate : horizon;
     Integer day = dueDay != null ? dueDay : firstDueDate.day();
+    // Past months are not back-filled: the first entry is the one of the current month.
+    Date floor = today.toStartOfMonth();
     List<Item> items = new List<Item>();
     Integer offset = 0;
     Date due = monthlyDate(firstDueDate, offset, day);
     // A first due date before the due day of its own month still counts as the first item.
     while (due <= last) {
-      if (due >= firstDueDate) {
+      if (due >= firstDueDate && due >= floor) {
         items.add(new Item(items.size() + 1, due, amount));
       }
       offset++;

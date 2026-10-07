@@ -219,7 +219,9 @@ ALT_CLS_ContractGenerationSchedule.scheduleMonthly();
 
 Roda no dia 1 de cada mês, às 04:00, e estende os Lançamentos Pendentes dos contratos
 Recorrentes Ativos até 12 meses à frente (não reescreve os existentes). É seguro repetir
-(substitui o job existente). Evidência: Setup > Jobs agendados com o job
+(substitui o job existente). O job roda com o acesso de quem agendou: agendar com
+um usuário que enxergue todos os contratos (PSG Gestor) e que seja mantido ativo; o
+horário é o do fuso da org. Evidência: Setup > Jobs agendados com o job
 "Axon - Geração mensal de lançamentos dos contratos".
 
 ## Analisado e não necessário

@@ -144,4 +144,18 @@ private class ALT_CLS_ContractScheduleTest {
     System.assertEquals(333.33, items[0].amount);
     System.assertEquals(333.34, items[2].amount);
   }
+
+  @IsTest
+  static void recurringStartsAtTheCurrentMonthWhenTheFirstDueDateIsOld() {
+    List<ALT_CLS_ContractSchedule.Item> items = ALT_CLS_ContractSchedule.recurring(
+      Date.newInstance(2026, 1, 10),
+      10,
+      Date.newInstance(2026, 12, 10),
+      Date.newInstance(2026, 10, 7),
+      50
+    );
+    System.assertEquals(3, items.size());
+    System.assertEquals(Date.newInstance(2026, 10, 10), items[0].dueDate);
+    System.assertEquals(Date.newInstance(2026, 12, 10), items[2].dueDate);
+  }
 }

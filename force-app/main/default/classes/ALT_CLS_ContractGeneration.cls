@@ -90,7 +90,7 @@ public with sharing class ALT_CLS_ContractGeneration {
   private static String validate(AXF_OBJ_Contract__c contract) {
     String type = contract.RecordType.DeveloperName;
     if (contract.AXF_CTR_PKL_Status__c != STATUS_ACTIVE) {
-      return 'contrato encerrado, nada a gerar.';
+      return 'contrato não está ativo, nada a gerar.';
     }
     if (
       type != RT_RECURRING &&
@@ -109,7 +109,10 @@ public with sharing class ALT_CLS_ContractGeneration {
         contract.AXF_CTR_CUR_FinancedAmount__c <= 0 ||
         contract.AXF_CTR_PCT_MonthlyRate__c == null ||
         contract.AXF_CTR_PCT_MonthlyRate__c < 0 ||
-        contract.AXF_CTR_PKL_AmortizationSystem__c == null
+        (contract.AXF_CTR_PKL_AmortizationSystem__c !=
+        ALT_CLS_ContractSchedule.SAC &&
+        contract.AXF_CTR_PKL_AmortizationSystem__c !=
+        ALT_CLS_ContractSchedule.PRICE)
       ) {
         return 'informe valor financiado, taxa mensal e sistema (SAC ou PRICE).';
       }

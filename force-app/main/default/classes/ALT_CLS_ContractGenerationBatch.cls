@@ -4,8 +4,12 @@
  * existing entry, so the real amount a user typed on a variable bill survives; changing amounts
  * and dates is the job of the "Gerar lançamentos" action.
  */
-public with sharing class ALT_CLS_ContractGenerationBatch implements Database.Batchable<SObject> {
+public with sharing class ALT_CLS_ContractGenerationBatch implements Database.Batchable<SObject>, Database.Stateful {
   public static final Integer SCOPE_SIZE = 10;
+
+  // Skipped contracts and failed saves of the whole run, logged in finish().
+  @TestVisible
+  private final List<String> messages = new List<String>();
 
   public static Id run() {
     return Database.executeBatch(
@@ -30,10 +34,17 @@ public with sharing class ALT_CLS_ContractGenerationBatch implements Database.Ba
     Database.BatchableContext context,
     List<AXF_OBJ_Contract__c> scope
   ) {
-    new ALT_CLS_ContractGeneration()
+    ALT_CLS_ContractGeneration.Result result = new ALT_CLS_ContractGeneration()
       .generate(new Map<Id, AXF_OBJ_Contract__c>(scope).keySet(), false);
+    messages.addAll(result.messages);
   }
 
   public void finish(Database.BatchableContext context) {
+    if (!messages.isEmpty()) {
+      System.debug(
+        LoggingLevel.WARN,
+        'Contract generation: ' + String.join(messages, ' | ')
+      );
+    }
   }
 }
