@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<CustomField xmlns="http://soap.sforce.com/2006/04/metadata">
+    <fullName>AXF_TME_FOR_Competence__c</fullName>
+    <label>Competence</label>
+    <formula
+  >DATE(YEAR(AXF_TME_DAT_Date__c), MONTH(AXF_TME_DAT_Date__c), 1)</formula>
+    <formulaTreatBlanksAs>BlankAsZero</formulaTreatBlanksAs>
+    <trackTrending>false</trackTrending>
+    <type>Date</type>
+</CustomField>
