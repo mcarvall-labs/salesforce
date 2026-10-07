@@ -37,6 +37,15 @@ public with sharing class AXF_CLS_CTRL_Timesheet {
     public List<DayDto> days = new List<DayDto>();
   }
 
+  public class PdfDto {
+    @AuraEnabled
+    public Id documentId;
+    @AuraEnabled
+    public String title;
+    @AuraEnabled
+    public Boolean newVersion;
+  }
+
   public class SaveDto {
     @AuraEnabled
     public Decimal dayHours;
@@ -113,6 +122,53 @@ public with sharing class AXF_CLS_CTRL_Timesheet {
     } catch (DmlException e) {
       throw fail(e.getDmlMessage(0));
     }
+  }
+
+  // Renders the monthly timesheet PDF and saves it as a File on the month's entry.
+  @AuraEnabled
+  public static PdfDto createTimesheetPdf(
+    Id contractId,
+    Integer year,
+    Integer month
+  ) {
+    checkAccess(contractId, true);
+    try {
+      return toDto(
+        new ALT_CLS_TimesheetDocument().saveTimesheet(contractId, year, month)
+      );
+    } catch (ALT_CLS_TimesheetDocument.DocumentException e) {
+      throw fail(e.getMessage());
+    } catch (ALT_CLS_Timesheet.TimesheetException e) {
+      throw fail(e.getMessage());
+    }
+  }
+
+  // Renders the monthly invoice PDF (foreign currency only), saves it as a File on the month's
+  // entry and writes the invoice number (YYYYMM) on it.
+  @AuraEnabled
+  public static PdfDto createInvoicePdf(
+    Id contractId,
+    Integer year,
+    Integer month
+  ) {
+    checkAccess(contractId, true);
+    try {
+      return toDto(
+        new ALT_CLS_TimesheetDocument().saveInvoice(contractId, year, month)
+      );
+    } catch (ALT_CLS_TimesheetDocument.DocumentException e) {
+      throw fail(e.getMessage());
+    } catch (ALT_CLS_Timesheet.TimesheetException e) {
+      throw fail(e.getMessage());
+    }
+  }
+
+  private static PdfDto toDto(ALT_CLS_TimesheetDocument.SavedFile saved) {
+    PdfDto dto = new PdfDto();
+    dto.documentId = saved.documentId;
+    dto.title = saved.title;
+    dto.newVersion = saved.isNewVersion;
+    return dto;
   }
 
   private static void checkAccess(Id contractId, Boolean forWrite) {

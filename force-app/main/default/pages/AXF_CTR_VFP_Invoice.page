@@ -1,0 +1,161 @@
+<apex:page
+  controller="AXF_CLS_CTRL_InvoicePdf"
+  renderAs="pdf"
+  applyHtmlTag="false"
+  showHeader="false"
+  sidebar="false"
+  standardStylesheets="false"
+>
+  <html>
+    <head>
+      <style>
+        @page {
+          size: A4 landscape;
+          margin: 14mm;
+        }
+        body {
+          font-family: Arial, Helvetica, sans-serif;
+          font-size: 11px;
+          color: #222;
+        }
+        table {
+          width: 100%;
+          border-collapse: collapse;
+        }
+        .band {
+          background: #0a192f;
+          color: #fff;
+          padding: 6px 10px;
+          font-size: 18px;
+          font-weight: bold;
+        }
+        .items th {
+          background: #e8e8e8;
+          border: 1px solid #999;
+          padding: 5px 6px;
+          text-align: left;
+        }
+        .items td {
+          border: 1px solid #999;
+          padding: 5px 6px;
+        }
+        .right {
+          text-align: right;
+        }
+        .totals td {
+          padding: 3px 6px;
+        }
+        .error {
+          color: #b00020;
+        }
+        img.logo {
+          height: 48px;
+        }
+      </style>
+    </head>
+    <body>
+      <apex:outputPanel rendered="{!NOT(ISBLANK(error))}"
+        ><p class="error">{!error}</p></apex:outputPanel
+      >
+      <apex:outputPanel rendered="{!ISBLANK(error)}">
+        <table>
+          <tr>
+            <td style="width: 60%">
+              <img class="logo" src="{!$Resource.AXF_SR_InvoiceLogo}" /><br />
+              <b>{!view.issuerName}</b
+              ><br />{!view.issuerTaxId}<br />{!view.issuerAddress}
+            </td>
+            <td class="right">
+              <div class="band">INVOICE #{!view.invoiceNumber}</div>
+            </td>
+          </tr>
+        </table>
+        <br />
+        <table>
+          <tr>
+            <td style="width: 50%">
+              <b>Bill to</b
+              ><br />{!view.billToName}<br />{!view.billToTaxId}<br />{!view.billToAddress}
+            </td>
+            <td>
+              <table>
+                <tr>
+                  <td><b>Invoice Date</b></td>
+                  <td><b>Terms</b></td>
+                  <td><b>Due Date</b></td>
+                </tr>
+                <tr>
+                  <td>{!view.invoiceDate}</td>
+                  <td>{!view.terms}</td>
+                  <td>{!view.dueDate}</td>
+                </tr>
+              </table>
+            </td>
+          </tr>
+        </table>
+        <br />
+        <table class="items">
+          <thead>
+            <tr>
+              <th>#</th>
+              <th>Item &amp; Description</th>
+              <th class="right">Qty</th>
+              <th class="right">Rate</th>
+              <th class="right">Amount</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td>1</td>
+              <td>{!view.description}</td>
+              <td class="right">{!view.quantity}</td>
+              <td class="right">{!view.rate}</td>
+              <td class="right">{!view.amount}</td>
+            </tr>
+          </tbody>
+        </table>
+        <br />
+        <table>
+          <tr>
+            <td style="width: 55%">
+              <b>Payment Information</b><br />
+              <apex:outputText
+                value="{!view.paymentInformation}"
+                escape="true"
+                style="white-space: pre-wrap"
+              />
+            </td>
+            <td>
+              <table class="totals">
+                <tr>
+                  <td>Sub Total</td>
+                  <td class="right">{!view.amount}</td>
+                </tr>
+                <tr>
+                  <td>Tax</td>
+                  <td class="right">{!view.zero}</td>
+                </tr>
+                <tr>
+                  <td>Discount</td>
+                  <td class="right">{!view.zero}</td>
+                </tr>
+                <tr>
+                  <td>Shipping charge</td>
+                  <td class="right">{!view.zero}</td>
+                </tr>
+                <tr>
+                  <td><b>Total</b></td>
+                  <td class="right"><b>{!view.amount}</b></td>
+                </tr>
+                <tr>
+                  <td><b>Balance Due</b></td>
+                  <td class="right"><b>{!view.amount}</b></td>
+                </tr>
+              </table>
+            </td>
+          </tr>
+        </table>
+      </apex:outputPanel>
+    </body>
+  </html>
+</apex:page>

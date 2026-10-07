@@ -20,6 +20,14 @@
         <apexClass>AXF_CLS_CTRL_Timesheet</apexClass>
         <enabled>true</enabled>
     </classAccesses>
+    <classAccesses>
+        <apexClass>AXF_CLS_CTRL_TimesheetPdf</apexClass>
+        <enabled>true</enabled>
+    </classAccesses>
+    <classAccesses>
+        <apexClass>AXF_CLS_CTRL_InvoicePdf</apexClass>
+        <enabled>true</enabled>
+    </classAccesses>
     <description
   >Acesso ao app Axon e à tab Titulares. Sem "Ver todos": a visibilidade por registro vem do dono e da hierarquia de papéis.</description>
     <fieldPermissions>
@@ -537,6 +545,14 @@
         <object>AXF_OBJ_TimeEntry__c</object>
         <viewAllRecords>false</viewAllRecords>
     </objectPermissions>
+    <pageAccesses>
+        <apexPage>AXF_CTR_VFP_Timesheet</apexPage>
+        <enabled>true</enabled>
+    </pageAccesses>
+    <pageAccesses>
+        <apexPage>AXF_CTR_VFP_Invoice</apexPage>
+        <enabled>true</enabled>
+    </pageAccesses>
     <recordTypeVisibilities>
         <recordType>PersonAccount.AXF_Person</recordType>
         <visible>true</visible>
