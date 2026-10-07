@@ -127,6 +127,7 @@ private class ALT_CLS_FxRateTest {
       parameter('EUR', 1, 0),
       parameter('USD', 0, 0)
     };
+    service.currencyCodes = new List<String>{ 'EUR', 'USD' };
     List<ALT_CLS_FxRate.Outcome> outcomes = service.updateAll();
     for (ALT_CLS_FxRate.Outcome outcome : outcomes) {
       System.assertEquals(null, outcome.error, outcome.isoCode);
@@ -144,7 +145,7 @@ private class ALT_CLS_FxRateTest {
   }
 
   @IsTest
-  static void aCurrencyWithoutParametersIsLeftAlone() {
+  static void aCurrencyWithoutParametersIsReportedAsAFailure() {
     Router router = new Router();
     router.bulletinByDay.put('10-07-2026', closing('5.5958'));
     Test.setMock(HttpCalloutMock.class, router);
@@ -153,9 +154,16 @@ private class ALT_CLS_FxRateTest {
     service.writer = writer;
     service.today = Date.newInstance(2026, 10, 7);
     service.parameterRecords = new List<AXF_FxParameter__mdt>{
-      parameter('EUR', 1, 0)
+      parameter(' eur ', 1, 0)
     };
-    service.updateAll();
+    service.currencyCodes = new List<String>{ 'EUR', 'USD' };
+    List<ALT_CLS_FxRate.Outcome> outcomes = service.updateAll();
+    // The code of the parameter is trimmed and upper-cased; USD has none and fails visibly.
+    System.assertEquals(null, outcomes[0].error);
+    System.assert(
+      outcomes[1].error.contains('Sem parâmetro'),
+      outcomes[1].error
+    );
     System.assertEquals(1, writer.written.size());
     System.assert(!writer.written.containsKey('USD'));
   }
@@ -173,6 +181,7 @@ private class ALT_CLS_FxRateTest {
     service.parameterRecords = new List<AXF_FxParameter__mdt>{
       parameter('EUR', 0, 0)
     };
+    service.currencyCodes = new List<String>{ 'EUR' };
     service.updateAll();
     System.assertEquals(
       ALT_CLS_FxRate.nativeRate(5.5),
@@ -192,6 +201,7 @@ private class ALT_CLS_FxRateTest {
     service.parameterRecords = new List<AXF_FxParameter__mdt>{
       parameter('EUR', 1, 0)
     };
+    service.currencyCodes = new List<String>{ 'EUR' };
     List<ALT_CLS_FxRate.Outcome> outcomes = service.updateAll();
     System.assert(outcomes[0].error.contains('Sem boletim'), outcomes[0].error);
     System.assertEquals(0, writer.written.size());
@@ -210,6 +220,7 @@ private class ALT_CLS_FxRateTest {
     service.parameterRecords = new List<AXF_FxParameter__mdt>{
       parameter('EUR', 1, 0)
     };
+    service.currencyCodes = new List<String>{ 'EUR' };
     List<ALT_CLS_FxRate.Outcome> outcomes = service.updateAll();
     System.assert(outcomes[0].error.contains('503'), outcomes[0].error);
     System.assertEquals(0, writer.written.size());
@@ -226,12 +237,13 @@ private class ALT_CLS_FxRateTest {
     service.parameterRecords = new List<AXF_FxParameter__mdt>{
       parameter('EUR', 1, 0)
     };
+    service.currencyCodes = new List<String>{ 'EUR' };
     List<ALT_CLS_FxRate.Outcome> outcomes = service.updateAll();
     System.assertEquals('A org recusou a taxa.', outcomes[0].error);
   }
 
   @IsTest
-  static void aZeroedEffectiveRateIsNeverWritten() {
+  static void aSpreadOfOneHundredPercentIsRejected() {
     Router router = new Router();
     router.bulletinByDay.put('10-07-2026', closing('5.5958'));
     Test.setMock(HttpCalloutMock.class, router);
@@ -242,8 +254,12 @@ private class ALT_CLS_FxRateTest {
     service.parameterRecords = new List<AXF_FxParameter__mdt>{
       parameter('EUR', 100, 0)
     };
+    service.currencyCodes = new List<String>{ 'EUR' };
     List<ALT_CLS_FxRate.Outcome> outcomes = service.updateAll();
-    System.assert(outcomes[0].error.contains('zerada'), outcomes[0].error);
+    System.assert(
+      outcomes[0].error.contains('fora da faixa'),
+      outcomes[0].error
+    );
     System.assertEquals(0, writer.written.size());
   }
 
@@ -251,7 +267,14 @@ private class ALT_CLS_FxRateTest {
   static void theRestWriterPatchesTheCurrencyOfThisOrg() {
     Router router = new Router();
     Test.setMock(HttpCalloutMock.class, router);
-    new ALT_CLS_FxRateRestWriter().write('EUR', 0.18051);
+    String foreign = [
+      SELECT IsoCode
+      FROM CurrencyType
+      WHERE IsCorporate = FALSE AND IsActive = TRUE
+      LIMIT 1
+    ]
+    .IsoCode;
+    new ALT_CLS_FxRateRestWriter().write(foreign, 0.18051);
     System.assertEquals('PATCH', router.methods[0]);
     System.assert(
       router.urls[0].startsWith('callout:AXF_NC_Salesforce_Rest/services/data/')
@@ -265,8 +288,15 @@ private class ALT_CLS_FxRateTest {
     Router router = new Router();
     router.restStatus = 400;
     Test.setMock(HttpCalloutMock.class, router);
+    String foreign = [
+      SELECT IsoCode
+      FROM CurrencyType
+      WHERE IsCorporate = FALSE AND IsActive = TRUE
+      LIMIT 1
+    ]
+    .IsoCode;
     try {
-      new ALT_CLS_FxRateRestWriter().write('EUR', 0.18);
+      new ALT_CLS_FxRateRestWriter().write(foreign, 0.18);
       System.assert(false, 'Expected an error');
     } catch (ALT_CLS_FxRate.FxException e) {
       System.assert(e.getMessage().contains('400'), e.getMessage());
@@ -327,5 +357,103 @@ private class ALT_CLS_FxRateTest {
       failure = e.getMessage();
     }
     System.assert(failure.contains('Sem boletim'), failure);
+  }
+
+  @IsTest
+  static void aMixedRunUpdatesWhatItCanAndReportsTheRest() {
+    Router router = new Router();
+    router.bulletinByDay.put('10-07-2026', closing('5.5958'));
+    Test.setMock(HttpCalloutMock.class, router);
+    RecordingWriter writer = new RecordingWriter();
+    ALT_CLS_FxRate service = new ALT_CLS_FxRate();
+    service.writer = writer;
+    service.today = Date.newInstance(2026, 10, 7);
+    service.parameterRecords = new List<AXF_FxParameter__mdt>{
+      parameter('EUR', 1, 0),
+      parameter('USD', 150, 0)
+    };
+    service.currencyCodes = new List<String>{ 'EUR', 'USD' };
+    List<ALT_CLS_FxRate.Outcome> outcomes = service.updateAll();
+    System.assertEquals(null, outcomes[0].error);
+    System.assert(
+      outcomes[1].error.contains('fora da faixa'),
+      outcomes[1].error
+    );
+    System.assert(writer.written.containsKey('EUR'));
+    System.assert(!writer.written.containsKey('USD'));
+  }
+
+  @IsTest
+  static void aNegativeIofIsRejectedInsteadOfInflatingTheRate() {
+    Router router = new Router();
+    router.bulletinByDay.put('10-07-2026', closing('5.5958'));
+    Test.setMock(HttpCalloutMock.class, router);
+    RecordingWriter writer = new RecordingWriter();
+    ALT_CLS_FxRate service = new ALT_CLS_FxRate();
+    service.writer = writer;
+    service.today = Date.newInstance(2026, 10, 7);
+    service.parameterRecords = new List<AXF_FxParameter__mdt>{
+      parameter('EUR', 1, -3)
+    };
+    service.currencyCodes = new List<String>{ 'EUR' };
+    System.assert(service.updateAll()[0].error.contains('IOF'));
+    System.assertEquals(0, writer.written.size());
+  }
+
+  private class ThrowingMock implements HttpCalloutMock {
+    public HttpResponse respond(HttpRequest request) {
+      throw new CalloutException('unreachable');
+    }
+  }
+
+  @IsTest
+  static void anUnreachableServiceAndAMalformedBodyLeaveThePreviousRate() {
+    RecordingWriter writer = new RecordingWriter();
+    ALT_CLS_FxRate service = new ALT_CLS_FxRate();
+    service.writer = writer;
+    service.today = Date.newInstance(2026, 10, 7);
+    service.parameterRecords = new List<AXF_FxParameter__mdt>{
+      parameter('EUR', 1, 0)
+    };
+    service.currencyCodes = new List<String>{ 'EUR' };
+    Test.setMock(HttpCalloutMock.class, new ThrowingMock());
+    System.assert(
+      service.updateAll()[0].error.contains('Não foi possível contatar')
+    );
+    Router router = new Router();
+    router.bulletinByDay.put('10-07-2026', 'not json');
+    Test.setMock(HttpCalloutMock.class, router);
+    System.assertNotEquals(null, service.updateAll()[0].error);
+    System.assertEquals(0, writer.written.size());
+  }
+
+  @IsTest
+  static void aClosingRowWithoutAQuoteDoesNotHideALaterOne() {
+    System.assertEquals(
+      5.5,
+      ALT_CLS_FxRate.closingQuoteOf(
+        '{"value":[{"cotacaoCompra":null,"tipoBoletim":"Fechamento PTAX"},{"cotacaoCompra":5.5,"tipoBoletim":"Fechamento PTAX"}]}'
+      )
+    );
+  }
+
+  @IsTest
+  static void theRestWriterRefusesTheCorporateCurrency() {
+    Router router = new Router();
+    Test.setMock(HttpCalloutMock.class, router);
+    String corporate = [
+      SELECT IsoCode
+      FROM CurrencyType
+      WHERE IsCorporate = TRUE
+      LIMIT 1
+    ]
+    .IsoCode;
+    try {
+      new ALT_CLS_FxRateRestWriter().write(corporate, 1);
+      System.assert(false, 'Expected an error');
+    } catch (ALT_CLS_FxRate.FxException e) {
+      System.assert(e.getMessage().contains('não existe'), e.getMessage());
+    }
+    System.assertEquals(0, router.urls.size());
   }
 }

@@ -36,6 +36,9 @@ public with sharing class ALT_CLS_FxRate {
   // Test seam: custom metadata records are not visible to a validation-only deploy.
   @TestVisible
   private List<AXF_FxParameter__mdt> parameterRecords;
+  // Test seam: the active foreign currencies (CurrencyType rows cannot be created in a test).
+  @TestVisible
+  private List<String> currencyCodes;
 
   // Effective BRL per foreign unit.
   public static Decimal effectiveRate(
@@ -66,19 +69,35 @@ public with sharing class ALT_CLS_FxRate {
           FROM AXF_FxParameter__mdt
         ];
     for (AXF_FxParameter__mdt p : records) {
-      parameters.put(p.AXF_FXP_TXT_CurrencyCode__c, p);
+      parameters.put(p.AXF_FXP_TXT_CurrencyCode__c.trim().toUpperCase(), p);
+    }
+    List<String> codes = currencyCodes;
+    if (codes == null) {
+      codes = new List<String>();
+      for (CurrencyType currencyType : [
+        SELECT IsoCode
+        FROM CurrencyType
+        WHERE IsActive = TRUE AND IsCorporate = FALSE
+        ORDER BY IsoCode
+      ]) {
+        codes.add(currencyType.IsoCode);
+      }
     }
     List<Outcome> outcomes = new List<Outcome>();
-    for (CurrencyType currencyType : [
-      SELECT IsoCode
-      FROM CurrencyType
-      WHERE IsActive = TRUE AND IsCorporate = FALSE
-    ]) {
-      AXF_FxParameter__mdt parameter = parameters.get(currencyType.IsoCode);
+    for (String code : codes) {
+      AXF_FxParameter__mdt parameter = parameters.get(code);
       if (parameter == null) {
+        // An active currency nobody configured must show up as a failure, not be skipped silently.
+        Outcome missing = new Outcome();
+        missing.isoCode = code;
+        missing.error =
+          'Sem parâmetro de câmbio (spread e IOF) para ' +
+          code +
+          '.';
+        outcomes.add(missing);
         continue;
       }
-      outcomes.add(updateOne(currencyType.IsoCode, parameter));
+      outcomes.add(updateOne(code, parameter));
     }
     return outcomes;
   }
@@ -87,6 +106,8 @@ public with sharing class ALT_CLS_FxRate {
     Outcome outcome = new Outcome();
     outcome.isoCode = isoCode;
     try {
+      checkPercent(parameter.AXF_FXP_PCT_Spread__c, 'Spread', isoCode);
+      checkPercent(parameter.AXF_FXP_PCT_Iof__c, 'IOF', isoCode);
       outcome.quote = closingQuote(isoCode);
       outcome.effectiveRate = effectiveRate(
         outcome.quote,
@@ -99,11 +120,26 @@ public with sharing class ALT_CLS_FxRate {
         );
       }
       outcome.nativeRate = nativeRate(outcome.effectiveRate);
+      if (outcome.nativeRate <= 0) {
+        throw new FxException('A taxa nativa de ' + isoCode + ' ficou zerada.');
+      }
       writer.write(isoCode, outcome.nativeRate);
     } catch (Exception e) {
       outcome.error = e.getMessage();
     }
     return outcome;
+  }
+
+  private static void checkPercent(
+    Decimal value,
+    String label,
+    String isoCode
+  ) {
+    if (value != null && (value < 0 || value >= 100)) {
+      throw new FxException(
+        label + ' de ' + isoCode + ' fora da faixa (0 a 100 %).'
+      );
+    }
   }
 
   // Buy quote of the last "Fechamento PTAX" bulletin, looking back over weekends and holidays.
@@ -123,7 +159,7 @@ public with sharing class ALT_CLS_FxRate {
       HttpRequest request = new HttpRequest();
       request.setEndpoint(url);
       request.setMethod('GET');
-      request.setTimeout(30000);
+      request.setTimeout(15000);
       HttpResponse response;
       try {
         response = new Http().send(request);
@@ -168,7 +204,7 @@ public with sharing class ALT_CLS_FxRate {
       if (bulletin != null && bulletin.startsWith(CLOSING_BULLETIN)) {
         Object value = item.get('cotacaoCompra');
         if (value == null) {
-          return null;
+          continue;
         }
         Decimal quote = Decimal.valueOf(String.valueOf(value));
         if (quote <= 0) {

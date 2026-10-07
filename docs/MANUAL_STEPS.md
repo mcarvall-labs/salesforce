@@ -248,8 +248,10 @@ AXF-219. Uma vez por org, depois do passo 14, como o mesmo usuário:
 ALT_CLS_FxRateSchedule.scheduleDaily();
 ```
 
-Roda de segunda a sexta às 14:00 (fuso da org), depois do boletim de Fechamento do PTAX. É
-seguro repetir (substitui o job existente). Spread e IOF ficam em Setup > Metadados
+Roda de segunda a sexta às 14:00 no fuso do usuário que agendou (use um usuário em
+America/Sao_Paulo), depois do boletim de Fechamento do PTAX. É
+seguro repetir (substitui o job existente). Spread e IOF vêm do repositório (`customMetadata/AXF_FxParameter.*`): um novo deploy
+sobrescreve valores editados no Setup, então mude também o arquivo. Spread e IOF ficam em Setup > Metadados
 Personalizados > "FX Parameter" (EUR: 1,00 % e 0 %; **USD entra zerado: informar os valores**).
 Evidência: Setup > Jobs agendados com "Axon - Atualização diária do câmbio (PTAX)".
 

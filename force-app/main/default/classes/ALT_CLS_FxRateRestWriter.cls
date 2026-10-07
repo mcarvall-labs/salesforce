@@ -11,7 +11,7 @@ public with sharing class ALT_CLS_FxRateRestWriter implements ALT_CLS_FxRate.Rat
     List<CurrencyType> found = [
       SELECT Id
       FROM CurrencyType
-      WHERE IsoCode = :isoCode
+      WHERE IsoCode = :isoCode AND IsActive = TRUE AND IsCorporate = FALSE
       LIMIT 1
     ];
     if (found.isEmpty()) {
@@ -51,6 +51,8 @@ public with sharing class ALT_CLS_FxRateRestWriter implements ALT_CLS_FxRate.Rat
           isoCode +
           ' (HTTP ' +
           response.getStatusCode() +
+          ' ' +
+          String.valueOf(response.getBody()).left(200) +
           ').'
       );
     }
