@@ -67,7 +67,11 @@ export default class AXF_LWC_timesheet extends NavigationMixin(
   }
 
   get showInvoiceButton() {
-    return this.hasMonth && this.settings.currencyCode !== "BRL";
+    return (
+      this.hasMonth &&
+      Boolean(this.settings.currencyCode) &&
+      this.settings.currencyCode !== "BRL"
+    );
   }
 
   get hasMonth() {
@@ -363,6 +367,7 @@ export default class AXF_LWC_timesheet extends NavigationMixin(
     }
     this.isSaving = true;
     this.errorMessage = undefined;
+    this.noticeMessage = undefined;
     try {
       const file = await action({
         contractId: this.recordId,

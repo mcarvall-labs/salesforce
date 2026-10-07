@@ -140,6 +140,10 @@ public with sharing class AXF_CLS_CTRL_Timesheet {
       throw fail(e.getMessage());
     } catch (ALT_CLS_Timesheet.TimesheetException e) {
       throw fail(e.getMessage());
+    } catch (DmlException e) {
+      throw fail(e.getDmlMessage(0));
+    } catch (QueryException e) {
+      throw fail('Não foi possível ler os dados do documento.');
     }
   }
 
@@ -160,6 +164,10 @@ public with sharing class AXF_CLS_CTRL_Timesheet {
       throw fail(e.getMessage());
     } catch (ALT_CLS_Timesheet.TimesheetException e) {
       throw fail(e.getMessage());
+    } catch (DmlException e) {
+      throw fail(e.getDmlMessage(0));
+    } catch (QueryException e) {
+      throw fail('Não foi possível ler os dados do documento.');
     }
   }
 

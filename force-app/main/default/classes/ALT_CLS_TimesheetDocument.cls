@@ -175,11 +175,28 @@ public with sharing class ALT_CLS_TimesheetDocument {
 
   // ---------- views ----------
 
+  private static void checkCompetence(Integer year, Integer month) {
+    if (
+      year == null ||
+      month == null ||
+      month < 1 ||
+      month > 12 ||
+      year < 2000
+    ) {
+      throw new DocumentException('Competência inválida.');
+    }
+  }
+
+  private static String dashIfBlank(String value) {
+    return String.isBlank(value) ? '–' : value;
+  }
+
   public TimesheetView timesheetView(
     Id contractId,
     Integer year,
     Integer month
   ) {
+    checkCompetence(year, month);
     AXF_OBJ_Contract__c contract = loadContract(contractId);
     Date first = Date.newInstance(year, month, 1);
     Date last = first.addMonths(1).addDays(-1);
@@ -212,7 +229,9 @@ public with sharing class ALT_CLS_TimesheetDocument {
         : contract.AXF_CTR_CUR_HourlyRate__c),
       contract.CurrencyIsoCode
     );
-    view.hasMaxHours = contract.AXF_CTR_NUM_MonthlyLimit__c != null;
+    view.hasMaxHours =
+      contract.AXF_CTR_NUM_MonthlyLimit__c != null &&
+      contract.AXF_CTR_NUM_MonthlyLimit__c > 0;
     if (view.hasMaxHours) {
       view.maxHours = hoursAsHhmm(contract.AXF_CTR_NUM_MonthlyLimit__c);
       view.missingHours = hoursAsHhmm(
@@ -231,24 +250,28 @@ public with sharing class ALT_CLS_TimesheetDocument {
         continue;
       }
       Line line = new Line();
-      line.workDate = english
-        ? shortDate(day.workDate)
-        : periodDate(day.workDate);
-      line.in1 = day.hours == 0
-        ? '–'
-        : (english ? amPm(day.in1) : hhmm(day.in1));
-      line.out1 = day.hours == 0
-        ? '–'
-        : (english ? amPm(day.out1) : hhmm(day.out1));
-      line.in2 = day.hours == 0
-        ? '–'
-        : (english ? amPm(day.in2) : hhmm(day.in2));
-      line.out2 = day.hours == 0
-        ? '–'
-        : (english ? amPm(day.out2) : hhmm(day.out2));
-      line.hours = day.hours == 0
-        ? '–'
-        : (english ? decimalHours(day.hours) : hoursAsHhmm(day.hours));
+      line.workDate = periodDate(day.workDate);
+      if (day.hours == 0) {
+        line.in1 = '–';
+        line.out1 = '–';
+        line.in2 = '–';
+        line.out2 = '–';
+        line.hours = '–';
+      } else if (english) {
+        // One period only: it is Time In and Time Out, and there is no lunch.
+        Boolean singlePeriod = day.in2 == null && day.out2 == null;
+        line.in1 = amPm(day.in1);
+        line.out1 = singlePeriod ? '–' : amPm(day.out1);
+        line.in2 = singlePeriod ? '–' : amPm(day.in2);
+        line.out2 = singlePeriod ? amPm(day.out1) : amPm(day.out2);
+        line.hours = decimalHours(day.hours);
+      } else {
+        line.in1 = dashIfBlank(hhmm(day.in1));
+        line.out1 = dashIfBlank(hhmm(day.out1));
+        line.in2 = dashIfBlank(hhmm(day.in2));
+        line.out2 = dashIfBlank(hhmm(day.out2));
+        line.hours = hoursAsHhmm(day.hours);
+      }
       view.lines.add(line);
     }
     if (!english) {
@@ -258,6 +281,7 @@ public with sharing class ALT_CLS_TimesheetDocument {
   }
 
   public InvoiceView invoiceView(Id contractId, Integer year, Integer month) {
+    checkCompetence(year, month);
     AXF_OBJ_Contract__c contract = loadContract(contractId);
     if (contract.CurrencyIsoCode == BRL) {
       throw new DocumentException(
@@ -274,7 +298,15 @@ public with sharing class ALT_CLS_TimesheetDocument {
     }
     ALT_CLS_Timesheet.MonthView monthView = new ALT_CLS_Timesheet()
       .loadMonth(contractId, year, month);
-    Account issuer = [
+    if (
+      monthView.totalHours <= 0 ||
+      contract.AXF_CTR_CUR_HourlyRate__c == null
+    ) {
+      throw new DocumentException(
+        'A fatura precisa de horas no mês e do valor por hora do contrato.'
+      );
+    }
+    List<Account> issuers = [
       SELECT
         Name,
         BillingStreet,
@@ -287,7 +319,7 @@ public with sharing class ALT_CLS_TimesheetDocument {
       FROM Account
       WHERE Id = :contract.AXF_CTR_MD_Holder__c
     ];
-    Account client = [
+    List<Account> clients = [
       SELECT
         Name,
         BillingStreet,
@@ -299,6 +331,13 @@ public with sharing class ALT_CLS_TimesheetDocument {
       FROM Account
       WHERE Id = :contract.AXF_CTR_LKP_Client__c
     ];
+    if (issuers.isEmpty() || clients.isEmpty()) {
+      throw new DocumentException(
+        'Não foi possível ler o titular ou o cliente do contrato.'
+      );
+    }
+    Account issuer = issuers[0];
+    Account client = clients[0];
     Integer shift = contract.AXF_CTR_PKL_SendMonth__c ==
       ALT_CLS_Timesheet.NEXT_MONTH
       ? 1
@@ -339,6 +378,8 @@ public with sharing class ALT_CLS_TimesheetDocument {
   // ---------- files ----------
 
   public SavedFile saveTimesheet(Id contractId, Integer year, Integer month) {
+    // Validates the data before rendering, so the File is never a page that only says why it failed.
+    timesheetView(contractId, year, month);
     AXF_OBJ_Entry__c entry = requireEntry(contractId, year, month);
     String title =
       'Timesheet-' +

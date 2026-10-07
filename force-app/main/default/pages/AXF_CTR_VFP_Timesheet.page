@@ -58,11 +58,11 @@
         <table class="meta">
           <tr>
             <td>
-              <b>{!IF(view.english, 'Provider', 'Nome Prestador')}:</b>
+              <b>Nome Prestador:</b>
               {!view.providerName}
             </td>
             <td>
-              <b>{!IF(view.english, 'Period', 'Periodo')}:</b>
+              <b>Periodo:</b>
               {!view.periodStart} - {!view.periodEnd}
             </td>
           </tr>
@@ -71,16 +71,16 @@
         <apex:outputPanel rendered="{!view.english}">
           <table class="meta">
             <tr>
-              <td><b>Total Hours Worked:</b> {!view.totalHours}</td>
-              <td><b>Hourly Rate:</b> {!view.hourlyRate}</td>
-              <td><b>Total value / month:</b> {!view.totalValue}</td>
+              <td><b>Total Horas Trabalhadas:</b> {!view.totalHours}</td>
+              <td><b>Valor Hora:</b> {!view.hourlyRate}</td>
+              <td><b>Valor total / mês:</b> {!view.totalValue}</td>
             </tr>
           </table>
           <br />
           <table>
             <thead>
               <tr>
-                <th>Date(s)</th>
+                <th>Dates(s)</th>
                 <th>Time In</th>
                 <th>Lunch Start</th>
                 <th>Lunch End</th>

@@ -139,7 +139,12 @@ private class ALT_CLS_TimesheetDocumentTest {
     System.assertEquals('01/09/2026', view.periodStart);
     System.assertEquals('30/09/2026', view.periodEnd);
     System.assertEquals(2, view.lines.size());
+    // One period only: Time In and Time Out, with the lunch columns as dashes.
     System.assertEquals('9:00 AM', view.lines[0].in1);
+    System.assertEquals('–', view.lines[0].out1);
+    System.assertEquals('–', view.lines[0].in2);
+    System.assertEquals('5:00 PM', view.lines[0].out2);
+    System.assertEquals('01/09/2026', view.lines[0].workDate);
     System.assertEquals('8,00', view.lines[0].hours);
     System.assertEquals('12,00', view.totalHours);
     System.assertEquals('616,00 €', view.hourlyRate);
@@ -169,6 +174,14 @@ private class ALT_CLS_TimesheetDocumentTest {
     System.assert(hasDash);
     System.assertEquals('01/09/2026', view.lines[0].workDate);
     System.assertEquals('9:00', view.lines[0].in1);
+    // September 2026 has 22 working days and no line is dated on a weekend.
+    System.assertEquals(22, view.lines.size());
+    for (ALT_CLS_TimesheetDocument.Line line : view.lines) {
+      System.assertNotEquals('05/09/2026', line.workDate);
+      System.assertNotEquals('06/09/2026', line.workDate);
+    }
+    // A one-period day keeps the empty columns as dashes in the Portuguese model.
+    System.assertEquals('–', view.lines[0].in2);
   }
 
   @IsTest
@@ -377,5 +390,76 @@ private class ALT_CLS_TimesheetDocumentTest {
       message = e.getMessage();
     }
     System.assert(message.contains('Não há horas'), message);
+  }
+
+  @IsTest
+  static void anInvalidCompetenceIsRejected() {
+    AXF_OBJ_Contract__c c = service('EUR', true);
+    String message;
+    try {
+      new ALT_CLS_TimesheetDocument().timesheetView(c.Id, 2026, 13);
+    } catch (ALT_CLS_TimesheetDocument.DocumentException e) {
+      message = e.getMessage();
+    }
+    System.assert(message.contains('inválida'), message);
+  }
+
+  @IsTest
+  static void theTimesheetPdfIsValidatedBeforeItIsRendered() {
+    Account a = new Account(Name = 'Titular');
+    insert a;
+    AXF_OBJ_Contract__c recurring = new AXF_OBJ_Contract__c(
+      Name = 'Assinatura',
+      AXF_CTR_MD_Holder__c = a.Id,
+      RecordTypeId = Schema.SObjectType.AXF_OBJ_Contract__c.getRecordTypeInfosByDeveloperName()
+        .get('AXF_Recurring')
+        .getRecordTypeId(),
+      AXF_CTR_PKL_Direction__c = 'Expense',
+      AXF_CTR_PKL_Status__c = 'Active'
+    );
+    insert recurring;
+    // An entry exists for the month, but the contract is not a service: no File is created.
+    insert new AXF_OBJ_Entry__c(
+      Name = 'x',
+      AXF_ENT_MD_Holder__c = a.Id,
+      AXF_ENT_LKP_Contract__c = recurring.Id,
+      AXF_ENT_CUR_Amount__c = 10,
+      AXF_ENT_DAT_DueDate__c = Date.newInstance(2026, 9, 10),
+      AXF_ENT_DAT_Competence__c = Date.newInstance(2026, 9, 1),
+      AXF_ENT_PKL_Type__c = 'Expense',
+      AXF_ENT_PKL_Status__c = 'Pending'
+    );
+    try {
+      new ALT_CLS_TimesheetDocument().saveTimesheet(recurring.Id, 2026, 9);
+      System.assert(false, 'Expected an error');
+    } catch (ALT_CLS_TimesheetDocument.DocumentException e) {
+      System.assert(e.getMessage().contains('prestação de serviço'));
+    }
+    System.assertEquals(0, [SELECT COUNT() FROM ContentVersion]);
+  }
+
+  @IsTest
+  static void anInvoiceNeedsHoursAndARate() {
+    AXF_OBJ_Contract__c c = service('EUR', true);
+    c.AXF_CTR_CUR_HourlyRate__c = null;
+    update c;
+    // The entry of the month exists (created by hours logged earlier with a rate).
+    insert new AXF_OBJ_Entry__c(
+      Name = 'x',
+      AXF_ENT_MD_Holder__c = holder.Id,
+      AXF_ENT_LKP_Contract__c = c.Id,
+      AXF_ENT_CUR_Amount__c = 10,
+      AXF_ENT_DAT_DueDate__c = Date.newInstance(2026, 9, 30),
+      AXF_ENT_DAT_Competence__c = Date.newInstance(2026, 9, 1),
+      AXF_ENT_PKL_Type__c = 'Income',
+      AXF_ENT_PKL_Status__c = 'Pending'
+    );
+    String message;
+    try {
+      new ALT_CLS_TimesheetDocument().invoiceView(c.Id, 2026, 9);
+    } catch (ALT_CLS_TimesheetDocument.DocumentException e) {
+      message = e.getMessage();
+    }
+    System.assert(message.contains('horas no mês'), message);
   }
 }
