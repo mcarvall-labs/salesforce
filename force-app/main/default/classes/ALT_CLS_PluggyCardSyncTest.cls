@@ -178,7 +178,9 @@ private class ALT_CLS_PluggyCardSyncTest {
         res.setBody('{"apiKey":"abc"}');
       } else if (url.contains('/bills?accountId=card-1&page=1')) {
         res.setBody(
-          '{"totalPages":2,"page":1,"results":[{"id":"bill-1","dueDate":"2026-10-05T00:00:00.000Z","totalAmount":10},{"id":"bill-bad","totalAmount":1}]}'
+          '{"totalPages":2,"page":1,"results":[{"id":"bill-1","dueDate":"' +
+            String.valueOf(Date.today().addDays(30)) +
+            'T00:00:00.000Z","totalAmount":10},{"id":"bill-bad","totalAmount":1}]}'
         );
       } else if (url.contains('/bills?accountId=card-1&page=2')) {
         res.setBody(
