@@ -103,6 +103,7 @@ private class ALT_CLS_PluggyAccountSyncTest {
       System.assertEquals(2, [SELECT COUNT() FROM AXF_OBJ_BankAccount__c]);
       AXF_OBJ_CreditCard__c card = [
         SELECT
+          Name,
           AXF_CC_TXT_Brand__c,
           AXF_CC_TXT_Level__c,
           AXF_CC_TXT_LastDigits__c,
@@ -113,6 +114,10 @@ private class ALT_CLS_PluggyAccountSyncTest {
         FROM AXF_OBJ_CreditCard__c
       ];
       System.assertEquals('VISA', card.AXF_CC_TXT_Brand__c);
+      System.assert(
+        card.Name.endsWith(' - VISA (5555)') && !card.Name.startsWith('341'),
+        card.Name
+      );
       System.assertEquals('GOLD', card.AXF_CC_TXT_Level__c);
       System.assertEquals('5555', card.AXF_CC_TXT_LastDigits__c);
       System.assertEquals(5000, card.AXF_CC_CUR_Limit__c);
