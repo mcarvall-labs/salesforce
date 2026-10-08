@@ -1,0 +1,152 @@
+<apex:page
+  controller="AXF_CLS_CTRL_TimesheetPdf"
+  renderAs="pdf"
+  applyHtmlTag="false"
+  showHeader="false"
+  sidebar="false"
+  standardStylesheets="false"
+>
+  <html>
+    <head>
+      <style>
+        @page {
+          size: A4 landscape;
+          margin: 14mm;
+        }
+        body {
+          font-family: Arial, Helvetica, sans-serif;
+          font-size: 11px;
+          color: #222;
+        }
+        h1 {
+          font-size: 22px;
+          margin: 0 0 10px 0;
+        }
+        table {
+          width: 100%;
+          border-collapse: collapse;
+        }
+        th,
+        td {
+          border: 1px solid #999;
+          padding: 4px 6px;
+          text-align: center;
+        }
+        th {
+          background: #e8e8e8;
+        }
+        .meta td {
+          border: none;
+          text-align: left;
+          padding: 2px 0;
+        }
+        .total td {
+          font-weight: bold;
+          background: #f3f3f3;
+        }
+        .error {
+          color: #b00020;
+        }
+      </style>
+    </head>
+    <body>
+      <apex:outputPanel rendered="{!NOT(ISBLANK(error))}"
+        ><p class="error">{!error}</p></apex:outputPanel
+      >
+      <apex:outputPanel rendered="{!ISBLANK(error)}">
+        <h1>Time Sheet</h1>
+        <table class="meta">
+          <tr>
+            <td>
+              <b>Nome Prestador:</b>
+              {!view.providerName}
+            </td>
+            <td>
+              <b>Periodo:</b>
+              {!view.periodStart} - {!view.periodEnd}
+            </td>
+          </tr>
+        </table>
+        <br />
+        <apex:outputPanel rendered="{!view.english}">
+          <table class="meta">
+            <tr>
+              <td><b>Total Horas Trabalhadas:</b> {!view.totalHours}</td>
+              <td><b>Valor Hora:</b> {!view.hourlyRate}</td>
+              <td><b>Valor total / mês:</b> {!view.totalValue}</td>
+            </tr>
+          </table>
+          <br />
+          <table>
+            <thead>
+              <tr>
+                <th>Dates(s)</th>
+                <th>Time In</th>
+                <th>Lunch Start</th>
+                <th>Lunch End</th>
+                <th>Time Out</th>
+                <th>Hours Worked</th>
+              </tr>
+            </thead>
+            <tbody>
+              <apex:repeat value="{!view.lines}" var="line">
+                <tr>
+                  <td>{!line.workDate}</td>
+                  <td>{!line.in1}</td>
+                  <td>{!line.out1}</td>
+                  <td>{!line.in2}</td>
+                  <td>{!line.out2}</td>
+                  <td>{!line.hours}</td>
+                </tr>
+              </apex:repeat>
+              <tr class="total">
+                <td colspan="5">Total</td>
+                <td>{!view.totalHours}</td>
+              </tr>
+            </tbody>
+          </table>
+        </apex:outputPanel>
+        <apex:outputPanel rendered="{!NOT(view.english)}">
+          <table>
+            <thead>
+              <tr>
+                <th>Data</th>
+                <th>Entrada</th>
+                <th>Saída</th>
+                <th>Entrada</th>
+                <th>Saída2</th>
+                <th>Horas Trabalhadas</th>
+              </tr>
+            </thead>
+            <tbody>
+              <apex:repeat value="{!view.lines}" var="line">
+                <tr>
+                  <td>{!line.workDate}</td>
+                  <td>{!line.in1}</td>
+                  <td>{!line.out1}</td>
+                  <td>{!line.in2}</td>
+                  <td>{!line.out2}</td>
+                  <td>{!line.hours}</td>
+                </tr>
+              </apex:repeat>
+              <tr class="total">
+                <td colspan="5">Total</td>
+                <td>{!view.totalHours}</td>
+              </tr>
+              <apex:outputPanel rendered="{!view.hasMaxHours}" layout="none">
+                <tr class="total">
+                  <td colspan="5">Máximo mês</td>
+                  <td>{!view.maxHours}</td>
+                </tr>
+                <tr class="total">
+                  <td colspan="5">Faltam</td>
+                  <td>{!view.missingHours}</td>
+                </tr>
+              </apex:outputPanel>
+            </tbody>
+          </table>
+        </apex:outputPanel>
+      </apex:outputPanel>
+    </body>
+  </html>
+</apex:page>

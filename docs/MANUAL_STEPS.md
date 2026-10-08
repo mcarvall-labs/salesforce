@@ -209,6 +209,52 @@ AXF-222 (EP05-H18). Setup > Gerenciar moedas: moedas ativas **BRL** (corporativa
 Concluído: ver estado acima. Se for criada outra branch de integração, repetir em
 Settings > Branches.
 
+### 13. Agendar a geração mensal dos contratos
+
+AXF-211. Uma vez por org, como usuário do PSG Gestor, executar o Anonymous Apex:
+
+```apex
+ALT_CLS_ContractGenerationSchedule.scheduleMonthly();
+```
+
+Roda no dia 1 de cada mês, às 04:00, e estende os Lançamentos Pendentes dos contratos
+Recorrentes Ativos até 12 meses à frente (não reescreve os existentes). É seguro repetir
+(substitui o job existente). O job roda com o acesso de quem agendou: agendar com
+um usuário que enxergue todos os contratos (PSG Gestor) e que seja mantido ativo; o
+horário é o do fuso da org. Evidência: Setup > Jobs agendados com o job
+"Axon - Geração mensal de lançamentos dos contratos".
+
+### 14. Credencial para o serviço do câmbio gravar a taxa
+
+AXF-219. O Apex não grava `CurrencyType`; o serviço grava pela API REST desta própria org
+através da Named Credential `AXF_NC_Salesforce_Rest`, que precisa existir em cada org:
+
+1. Setup > Credenciais Nomeadas > Credenciais Externas > Nova: protocolo OAuth 2.0 (fluxo
+   _Client Credentials_ com um External Client App com escopo `api` e "Run As" um usuário
+   administrador), principal nomeado.
+2. Nova Credencial Nomeada `AXF_NC_Salesforce_Rest`: URL = o My Domain da org
+   (`https://<dominio>.my.salesforce.com`), ligada à credencial externa acima.
+3. Dar acesso ao principal (Permission Set com "External Credential Principal Access") a quem
+   agenda o job.
+
+Sem isso o job falha ao gravar e a taxa anterior permanece. Evidência: executar
+`System.enqueueJob(new ALT_CLS_FxRateJob());` e conferir `CurrencyType` (taxa do EUR mudou).
+
+### 15. Agendar a atualização diária do câmbio
+
+AXF-219. Uma vez por org, depois do passo 14, como o mesmo usuário:
+
+```apex
+ALT_CLS_FxRateSchedule.scheduleDaily();
+```
+
+Roda de segunda a sexta às 14:00 no fuso do usuário que agendou (use um usuário em
+America/Sao_Paulo), depois do boletim de Fechamento do PTAX. É
+seguro repetir (substitui o job existente). Spread e IOF vêm do repositório (`customMetadata/AXF_FxParameter.*`): um novo deploy
+sobrescreve valores editados no Setup, então mude também o arquivo. Spread e IOF ficam em Setup > Metadados
+Personalizados > "FX Parameter" (EUR: 1,00 % e 0 %; **USD entra zerado: informar os valores**).
+Evidência: Setup > Jobs agendados com "Axon - Atualização diária do câmbio (PTAX)".
+
 ## Analisado e não necessário
 
 Verificado em 2026-10-07 (consulta aos orgs e a `force-app`/definição EP-01 a EP-07):

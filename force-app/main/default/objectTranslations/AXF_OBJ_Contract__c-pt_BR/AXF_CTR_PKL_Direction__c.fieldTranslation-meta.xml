@@ -1,0 +1,13 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<CustomFieldTranslation xmlns="http://soap.sforce.com/2006/04/metadata">
+    <label>Direção</label>
+    <picklistValues>
+        <masterLabel>Expense</masterLabel>
+        <translation>Despesa</translation>
+    </picklistValues>
+    <picklistValues>
+        <masterLabel>Income</masterLabel>
+        <translation>Receita</translation>
+    </picklistValues>
+    <name>AXF_CTR_PKL_Direction__c</name>
+</CustomFieldTranslation>

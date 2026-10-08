@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<CustomField xmlns="http://soap.sforce.com/2006/04/metadata">
+    <fullName>AXF_FXP_TXT_CurrencyCode__c</fullName>
+    <description>ISO code of the foreign currency (EUR, USD).</description>
+    <fieldManageability>SubscriberControlled</fieldManageability>
+    <label>Currency Code</label>
+    <length>3</length>
+    <required>true</required>
+    <unique>true</unique>
+    <caseSensitive>false</caseSensitive>
+    <type>Text</type>
+</CustomField>
