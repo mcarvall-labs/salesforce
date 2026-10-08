@@ -14,84 +14,102 @@
         <template if:false={hasInvoices}>
           <p>Nenhuma fatura.</p>
         </template>
-        <template for:each={invoices} for:item="invoice">
-          <div key={invoice.id} class="slds-m-bottom_small">
-            <div class="slds-grid slds-grid_vertical-align-center">
-              <lightning-button-icon
-                class="invoice-toggle"
-                data-id={invoice.id}
-                icon-name={invoice.iconName}
-                variant="bare"
-                alternative-text="Ver transações"
-                onclick={handleToggle}
-              ></lightning-button-icon>
-              <span class="slds-m-left_x-small slds-text-heading_small"
-                >{invoice.period}</span
-              >
-              <span class="slds-m-left_medium">
-                Vencimento:
-                <lightning-formatted-date-time
-                  value={invoice.dueDate}
-                  time-zone="UTC"
-                ></lightning-formatted-date-time>
-              </span>
-              <span class="slds-m-left_medium">
-                <lightning-formatted-number
-                  value={invoice.totalAmount}
-                  format-style="currency"
-                  currency-code={invoice.currencyCode}
-                ></lightning-formatted-number>
-              </span>
-              <span class="slds-m-left_medium">{invoice.statusLabel}</span>
-            </div>
-            <template if:true={invoice.expanded}>
-              <table class="slds-table slds-table_bordered slds-m-top_x-small">
-                <thead>
-                  <tr>
-                    <th scope="col">Data</th>
-                    <th scope="col">Descrição</th>
-                    <th scope="col">Parcela</th>
-                    <th scope="col" class="slds-text-align_right">Valor</th>
-                    <th scope="col" class="slds-text-align_right">
-                      Valor em BRL
-                    </th>
-                  </tr>
-                </thead>
-                <tbody>
-                  <template for:each={invoice.lines} for:item="line">
-                    <tr key={line.id}>
-                      <td>
-                        <lightning-formatted-date-time
-                          value={line.transactionDate}
-                          time-zone="UTC"
-                        ></lightning-formatted-date-time>
-                      </td>
-                      <td>
-                        <a href="#" data-id={line.id} onclick={handleOpen}
-                          >{line.description}</a
-                        >
-                      </td>
-                      <td>{line.installment}</td>
-                      <td class="slds-text-align_right">
-                        <lightning-formatted-number
-                          value={line.amount}
-                          format-style="currency"
-                          currency-code={line.originalCurrency}
-                        ></lightning-formatted-number>
-                      </td>
-                      <td class="slds-text-align_right">
-                        <lightning-formatted-number
-                          value={line.amountBRL}
-                          format-style="currency"
-                          currency-code="BRL"
-                        ></lightning-formatted-number>
-                      </td>
-                    </tr>
-                  </template>
-                </tbody>
-              </table>
-            </template>
+        <template lwc:if={hasInvoices}>
+          <div
+            class="slds-grid slds-grid_vertical-align-center slds-m-bottom_small"
+          >
+            <lightning-button-icon
+              class="invoice-previous"
+              icon-name="utility:chevronleft"
+              variant="bare"
+              alternative-text="Fatura anterior"
+              disabled={isFirst}
+              onclick={handlePrevious}
+            ></lightning-button-icon>
+            <span
+              class="invoice-period slds-m-horizontal_small slds-text-heading_small"
+              >{selected.period}</span
+            >
+            <lightning-button-icon
+              class="invoice-next"
+              icon-name="utility:chevronright"
+              variant="bare"
+              alternative-text="Próxima fatura"
+              disabled={isLast}
+              onclick={handleNext}
+            ></lightning-button-icon>
+            <span class="slds-m-left_medium">
+              Vencimento:
+              <lightning-formatted-date-time
+                value={selected.dueDate}
+                time-zone="UTC"
+              ></lightning-formatted-date-time>
+            </span>
+            <span class="slds-m-left_medium">
+              <lightning-formatted-number
+                value={selected.totalAmount}
+                format-style="currency"
+                currency-code={selected.currencyCode}
+              ></lightning-formatted-number>
+            </span>
+            <span class="slds-m-left_medium">{selected.statusLabel}</span>
           </div>
+          <template lwc:if={isLoadingLines}>
+            <lightning-spinner
+              alternative-text="Carregando"
+              size="small"
+            ></lightning-spinner>
+          </template>
+          <template lwc:elseif={hasLines}>
+            <table class="slds-table slds-table_bordered slds-m-top_x-small">
+              <thead>
+                <tr>
+                  <th scope="col">Data</th>
+                  <th scope="col">Descrição</th>
+                  <th scope="col">Parcela</th>
+                  <th scope="col" class="slds-text-align_right">Valor</th>
+                  <th scope="col" class="slds-text-align_right">
+                    Valor em BRL
+                  </th>
+                </tr>
+              </thead>
+              <tbody>
+                <template for:each={lines} for:item="line">
+                  <tr key={line.id}>
+                    <td>
+                      <lightning-formatted-date-time
+                        value={line.transactionDate}
+                        time-zone="UTC"
+                      ></lightning-formatted-date-time>
+                    </td>
+                    <td>
+                      <a href="#" data-id={line.id} onclick={handleOpen}
+                        >{line.description}</a
+                      >
+                    </td>
+                    <td>{line.installment}</td>
+                    <td class="slds-text-align_right">
+                      <lightning-formatted-number
+                        value={line.amount}
+                        format-style="currency"
+                        currency-code={line.originalCurrency}
+                      ></lightning-formatted-number>
+                    </td>
+                    <td class="slds-text-align_right">
+                      <lightning-formatted-number
+                        value={line.amountBRL}
+                        format-style="currency"
+                        currency-code="BRL"
+                      ></lightning-formatted-number>
+                    </td>
+                  </tr>
+                </template>
+              </tbody>
+            </table>
+          </template>
+          <template lwc:else>
+            <p>Nenhuma transação nesta fatura.</p>
+          </template>
         </template>
       </template>
     </div>

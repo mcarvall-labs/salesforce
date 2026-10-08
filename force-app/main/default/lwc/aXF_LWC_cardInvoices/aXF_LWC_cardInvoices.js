@@ -10,54 +10,100 @@ export default class AXF_LWC_cardInvoices extends NavigationMixin(
 ) {
   @api recordId;
   invoices = [];
+  selectedIndex = -1;
+  lines = [];
   isLoading = true;
+  isLoadingLines = false;
   errorMessage;
 
   async connectedCallback() {
     try {
       this.errorMessage = undefined;
       const invoices = await getInvoices({ creditCardId: this.recordId });
-      this.invoices = invoices.map((invoice) => ({
-        ...invoice,
-        statusLabel: STATUS_LABELS[invoice.status] || invoice.status,
-        expanded: false,
-        lines: [],
-        iconName: "utility:chevronright"
-      }));
+      this.invoices = [...invoices]
+        .sort((a, b) => (a.period || "").localeCompare(b.period || ""))
+        .map((invoice) => ({
+          ...invoice,
+          statusLabel: STATUS_LABELS[invoice.status] || invoice.status
+        }));
+      this.selectedIndex = this.defaultIndex();
     } catch {
       this.errorMessage = "Não foi possível carregar as faturas.";
     } finally {
       this.isLoading = false;
     }
+    if (this.selectedIndex >= 0) {
+      await this.loadLines();
+    }
+  }
+
+  // Fatura do mês atual; sem ela, a mais próxima (anterior se existir, senão a primeira posterior).
+  defaultIndex() {
+    if (!this.invoices.length) {
+      return -1;
+    }
+    const now = new Date();
+    const current = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, "0")}`;
+    let index = -1;
+    this.invoices.forEach((invoice, i) => {
+      if ((invoice.period || "") <= current) {
+        index = i;
+      }
+    });
+    return index >= 0 ? index : 0;
   }
 
   get hasInvoices() {
     return this.invoices.length > 0;
   }
 
-  async handleToggle(event) {
-    const id = event.currentTarget.dataset.id;
-    const invoice = this.invoices.find((i) => i.id === id);
-    if (invoice.loading) {
+  get selected() {
+    return this.invoices[this.selectedIndex];
+  }
+
+  get hasLines() {
+    return this.lines.length > 0;
+  }
+
+  get isFirst() {
+    return this.selectedIndex <= 0;
+  }
+
+  get isLast() {
+    return this.selectedIndex >= this.invoices.length - 1;
+  }
+
+  handlePrevious() {
+    this.select(this.selectedIndex - 1);
+  }
+
+  handleNext() {
+    this.select(this.selectedIndex + 1);
+  }
+
+  async select(index) {
+    if (index < 0 || index >= this.invoices.length || this.isLoadingLines) {
       return;
     }
-    if (!invoice.expanded) {
-      invoice.loading = true;
-      try {
-        invoice.lines = await getLines({ invoiceId: id });
+    this.selectedIndex = index;
+    await this.loadLines();
+  }
+
+  async loadLines() {
+    const invoiceId = this.selected.id;
+    this.isLoadingLines = true;
+    try {
+      const lines = await getLines({ invoiceId });
+      if (this.selected.id === invoiceId) {
+        this.lines = lines;
         this.errorMessage = undefined;
-      } catch {
-        this.errorMessage = "Não foi possível carregar as transações.";
-        return;
-      } finally {
-        invoice.loading = false;
       }
+    } catch {
+      this.lines = [];
+      this.errorMessage = "Não foi possível carregar as transações.";
+    } finally {
+      this.isLoadingLines = false;
     }
-    invoice.expanded = !invoice.expanded;
-    invoice.iconName = invoice.expanded
-      ? "utility:chevrondown"
-      : "utility:chevronright";
-    this.invoices = [...this.invoices];
   }
 
   handleOpen(event) {
