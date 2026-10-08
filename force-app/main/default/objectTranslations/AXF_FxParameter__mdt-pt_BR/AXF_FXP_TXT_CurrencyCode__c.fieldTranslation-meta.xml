@@ -1,0 +1,5 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<CustomFieldTranslation xmlns="http://soap.sforce.com/2006/04/metadata">
+    <label>Código da moeda</label>
+    <name>AXF_FXP_TXT_CurrencyCode__c</name>
+</CustomFieldTranslation>

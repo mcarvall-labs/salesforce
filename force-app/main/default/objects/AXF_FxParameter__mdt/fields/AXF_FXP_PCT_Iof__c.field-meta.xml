@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<CustomField xmlns="http://soap.sforce.com/2006/04/metadata">
+    <fullName>AXF_FXP_PCT_Iof__c</fullName>
+    <description>IOF charged on the exchange.</description>
+    <fieldManageability>SubscriberControlled</fieldManageability>
+    <label>IOF (%)</label>
+    <precision>6</precision>
+    <scale>4</scale>
+    <required>true</required>
+    <type>Percent</type>
+</CustomField>

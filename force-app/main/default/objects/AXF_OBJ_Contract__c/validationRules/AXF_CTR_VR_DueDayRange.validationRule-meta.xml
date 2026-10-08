@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<ValidationRule xmlns="http://soap.sforce.com/2006/04/metadata">
+    <fullName>AXF_CTR_VR_DueDayRange</fullName>
+    <active>true</active>
+    <errorConditionFormula
+  >AND(NOT(ISBLANK(AXF_CTR_NUM_DueDay__c)), OR(AXF_CTR_NUM_DueDay__c &lt; 1, AXF_CTR_NUM_DueDay__c &gt; 31))</errorConditionFormula>
+    <errorDisplayField>AXF_CTR_NUM_DueDay__c</errorDisplayField>
+    <errorMessage>The due day must be between 1 and 31.</errorMessage>
+</ValidationRule>

@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<ValidationRule xmlns="http://soap.sforce.com/2006/04/metadata">
+    <fullName>AXF_CTR_VR_ClientRequiredNonBRL</fullName>
+    <active>true</active>
+    <errorConditionFormula
+  >AND(RecordType.DeveloperName = 'AXF_ServiceProvision', TEXT(CurrencyIsoCode) &lt;&gt; 'BRL', ISBLANK(AXF_CTR_LKP_Client__c))</errorConditionFormula>
+    <errorDisplayField>AXF_CTR_LKP_Client__c</errorDisplayField>
+    <errorMessage
+  >Choose the client: a service contract in a currency other than BRL issues an invoice.</errorMessage>
+</ValidationRule>
