@@ -1,5 +1,14 @@
 <template>
   <lightning-card title="Extrato" icon-name="standard:account">
+    <lightning-button
+      slot="actions"
+      class="sync-button"
+      variant="brand"
+      icon-name="utility:sync"
+      label={syncLabel}
+      disabled={isSyncing}
+      onclick={handleSync}
+    ></lightning-button>
     <div class="slds-p-horizontal_medium">
       <template if:true={isLoading}>
         <lightning-spinner
@@ -18,12 +27,47 @@
           </p>
         </template>
         <template if:true={hasMonths}>
-          <lightning-combobox
-            label="Mês"
-            value={statement.month}
-            options={monthOptions}
-            onchange={handleMonth}
-          ></lightning-combobox>
+          <div
+            class="slds-grid slds-grid_align-center slds-grid_vertical-align-center slds-m-bottom_x-small"
+          >
+            <lightning-button-icon
+              class="month-previous"
+              icon-name="utility:chevronleft"
+              variant="border"
+              alternative-text="Mês anterior"
+              disabled={isOldest}
+              onclick={handlePrevious}
+            ></lightning-button-icon>
+            <span
+              class="month-label slds-m-horizontal_medium slds-text-heading_small slds-text-align_center"
+              >{monthLabel}</span
+            >
+            <lightning-button-icon
+              class="month-next"
+              icon-name="utility:chevronright"
+              variant="border"
+              alternative-text="Próximo mês"
+              disabled={isNewest}
+              onclick={handleNext}
+            ></lightning-button-icon>
+          </div>
+          <p
+            class="month-summary slds-text-align_center slds-text-color_weak slds-m-bottom_small"
+          >
+            Entradas
+            <lightning-formatted-number
+              value={totalIn}
+              format-style="currency"
+              currency-code={statement.currencyCode}
+            ></lightning-formatted-number>
+            · Saídas
+            <lightning-formatted-number
+              value={totalOut}
+              format-style="currency"
+              currency-code={statement.currencyCode}
+            ></lightning-formatted-number>
+            · {rowCount} transações
+          </p>
         </template>
         <template if:false={hasRows}>
           <p class="slds-m-top_small">Nenhuma transação no período.</p>

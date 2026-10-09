@@ -219,15 +219,22 @@ public with sharing class ALT_CLS_PluggyAccountSync {
     String last = (String) pluggy.get('number');
     Date closing = ALT_CLS_PluggyApi.toDate(credit.get('balanceCloseDate'));
     Date due = ALT_CLS_PluggyApi.toDate(credit.get('balanceDueDate'));
+    String brand = (String) credit.get('brand');
+    String lastDigits = String.isBlank(last) ? null : last.right(4);
     AXF_OBJ_CreditCard__c card = new AXF_OBJ_CreditCard__c(
-      Name = (String) pluggy.get('name'),
+      Name = cardName(
+        connection.AXF_CON_PKL_Institution__c,
+        brand,
+        lastDigits,
+        (String) pluggy.get('name')
+      ),
       AXF_CC_EXI_PluggyCardId__c = (String) pluggy.get('id'),
       AXF_CC_MD_Holder__c = connection.AXF_CON_MD_Holder__c,
       AXF_CC_LKP_Connection__c = connection.Id,
       AXF_CC_PKL_Institution__c = connection.AXF_CON_PKL_Institution__c,
-      AXF_CC_TXT_Brand__c = (String) credit.get('brand'),
+      AXF_CC_TXT_Brand__c = brand,
       AXF_CC_TXT_Level__c = (String) credit.get('level'),
-      AXF_CC_TXT_LastDigits__c = String.isBlank(last) ? null : last.right(4),
+      AXF_CC_TXT_LastDigits__c = lastDigits,
       AXF_CC_CUR_Limit__c = toDecimal(credit.get('creditLimit')),
       AXF_CC_CUR_AvailableLimit__c = toDecimal(
         credit.get('availableCreditLimit')
@@ -239,6 +246,42 @@ public with sharing class ALT_CLS_PluggyAccountSync {
     setRecordType(card, recordTypeId);
     setCurrency(card, pluggy);
     return card;
+  }
+
+  // "C6 Bank - MASTERCARD (1818)": institution label without its code prefix
+  private String cardName(
+    String code,
+    String brand,
+    String lastDigits,
+    String fallback
+  ) {
+    String label = null;
+    for (
+      Schema.PicklistEntry entry : AXF_OBJ_CreditCard__c.AXF_CC_PKL_Institution__c.getDescribe()
+        .getPicklistValues()
+    ) {
+      if (entry.getValue() == code) {
+        label = entry.getLabel();
+      }
+    }
+    String prefix = code + ' - ';
+    String bank = label != null && label.startsWith(prefix)
+      ? label.substring(prefix.length())
+      : label;
+    if (
+      String.isBlank(bank) ||
+      (String.isBlank(brand) && String.isBlank(lastDigits))
+    ) {
+      return fallback;
+    }
+    String name = bank;
+    if (!String.isBlank(brand)) {
+      name += ' - ' + brand;
+    }
+    if (!String.isBlank(lastDigits)) {
+      name += ' (' + lastDigits + ')';
+    }
+    return name.left(80);
   }
 
   private void setRecordType(SObject record, Id recordTypeId) {

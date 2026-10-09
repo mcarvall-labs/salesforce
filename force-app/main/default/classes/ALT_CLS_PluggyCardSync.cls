@@ -20,6 +20,12 @@ public with sharing class ALT_CLS_PluggyCardSync {
   private static Integer maxBillPages = 20;
 
   public Result sync(Id creditCardId) {
+    return sync(creditCardId, null, null);
+  }
+
+  // Manual window (fromDate/toDate, both inclusive) for the transactions; invoices are always
+  // re-read in full. Idempotent by Pluggy Id.
+  public Result sync(Id creditCardId, Date fromDate, Date toDate) {
     Result r = new Result();
     List<AXF_OBJ_CreditCard__c> found = [
       SELECT AXF_CC_EXI_PluggyCardId__c
@@ -45,7 +51,10 @@ public with sharing class ALT_CLS_PluggyCardSync {
         '/v2/transactions?accountId=' +
           pluggyId +
           '&dateFrom=' +
-          String.valueOf(startDate(creditCardId))
+          String.valueOf(
+            fromDate == null ? startDate(creditCardId) : fromDate
+          ) +
+          (toDate == null ? '' : '&dateTo=' + String.valueOf(toDate))
       );
     } catch (ALT_CLS_PluggyCredential.PluggyException e) {
       r.message = e.getMessage();

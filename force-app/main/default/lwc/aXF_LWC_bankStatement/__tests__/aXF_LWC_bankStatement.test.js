@@ -2,6 +2,14 @@ import { createElement } from "lwc";
 import AXF_LWC_bankStatement from "c/aXF_LWC_bankStatement";
 import getStatement from "@salesforce/apex/AXF_CLS_CTRL_BankStatement.getStatement";
 
+import syncPeriod from "@salesforce/apex/AXF_CLS_CTRL_PluggySync.syncPeriod";
+
+jest.mock(
+  "@salesforce/apex/AXF_CLS_CTRL_PluggySync.syncPeriod",
+  () => ({ default: jest.fn() }),
+  { virtual: true }
+);
+
 jest.mock(
   "@salesforce/apex/AXF_CLS_CTRL_BankStatement.getStatement",
   () => ({ default: jest.fn() }),
@@ -61,21 +69,6 @@ describe("c-a-x-f-l-w-c-bank-statement", () => {
     );
   });
 
-  it("reloads the statement when the month changes", async () => {
-    getStatement.mockResolvedValue(statement);
-    const element = await setup();
-    element.shadowRoot
-      .querySelector("lightning-combobox")
-      .dispatchEvent(
-        new CustomEvent("change", { detail: { value: "2026-09" } })
-      );
-    await flushPromises();
-    expect(getStatement).toHaveBeenLastCalledWith({
-      bankAccountId: "a00000000000001",
-      month: "2026-09"
-    });
-  });
-
   it("shows an empty message without transactions", async () => {
     getStatement.mockResolvedValue({ ...statement, months: [], rows: [] });
     const element = await setup();
@@ -95,5 +88,45 @@ describe("c-a-x-f-l-w-c-bank-statement", () => {
     getStatement.mockResolvedValue({ ...statement, truncated: true });
     const element = await setup();
     expect(element.shadowRoot.querySelector('[role="status"]')).not.toBeNull();
+  });
+  it("navigates to the older month with the arrows", async () => {
+    getStatement.mockResolvedValue(statement);
+    const element = await setup();
+    expect(element.shadowRoot.querySelector(".month-label").textContent).toBe(
+      "Outubro/2026"
+    );
+    expect(element.shadowRoot.querySelector(".month-next").disabled).toBe(true);
+    element.shadowRoot.querySelector(".month-previous").click();
+    expect(getStatement).toHaveBeenLastCalledWith({
+      bankAccountId: "a00000000000001",
+      month: "2026-09"
+    });
+  });
+
+  it("syncs the displayed month with Pluggy and reloads it", async () => {
+    getStatement.mockResolvedValue(statement);
+    syncPeriod.mockResolvedValue({ success: true, transactions: 2 });
+    const element = await setup();
+    element.shadowRoot.querySelector(".sync-button").click();
+    await flushPromises();
+    expect(syncPeriod).toHaveBeenCalledWith({
+      recordId: "a00000000000001",
+      periodStart: "2026-10-01",
+      periodEnd: "2026-10-31"
+    });
+    expect(getStatement).toHaveBeenLastCalledWith({
+      bankAccountId: "a00000000000001",
+      month: "2026-10"
+    });
+    expect(getStatement).toHaveBeenCalledTimes(2);
+  });
+
+  it("keeps the statement when the sync fails", async () => {
+    getStatement.mockResolvedValue(statement);
+    syncPeriod.mockResolvedValue({ success: false, message: "Pluggy fora" });
+    const element = await setup();
+    element.shadowRoot.querySelector(".sync-button").click();
+    await flushPromises();
+    expect(getStatement).toHaveBeenCalledTimes(1);
   });
 });
