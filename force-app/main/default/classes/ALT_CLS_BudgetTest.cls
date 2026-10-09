@@ -4,7 +4,7 @@ private class ALT_CLS_BudgetTest {
   static void setup() {
     ALT_CLS_SyncTestUser.create(
       'axfbdg',
-      new List<String>{ 'AXF_OBJ_Budget__c' }
+      new List<String>{ 'AXF_OBJ_Budget__c', 'AXF_OBJ_Category__c' }
     );
   }
 
@@ -45,6 +45,41 @@ private class ALT_CLS_BudgetTest {
       ];
       System.assertEquals(null, saved.AXF_BDG_LKP_Category__c);
       System.assertEquals(null, saved.AXF_BDG_DAT_EndMonth__c);
+    }
+  }
+
+  @IsTest
+  static void acceptsEndMonthEqualToStartMonth() {
+    System.runAs(actor()) {
+      AXF_OBJ_Budget__c record = budget(holder());
+      record.AXF_BDG_DAT_EndMonth__c = record.AXF_BDG_DAT_StartMonth__c;
+      insert record;
+      System.assertNotEquals(null, record.Id);
+    }
+  }
+
+  @IsTest
+  static void keepsCategoryAndBlocksItsDeletion() {
+    System.runAs(actor()) {
+      AXF_OBJ_Category__c category = new AXF_OBJ_Category__c(
+        Name = 'Mercado',
+        AXF_CAT_PKL_Type__c = 'Expense'
+      );
+      insert category;
+      AXF_OBJ_Budget__c record = budget(holder());
+      record.AXF_BDG_LKP_Category__c = category.Id;
+      insert record;
+      System.assertEquals(
+        category.Id,
+        [
+          SELECT AXF_BDG_LKP_Category__c
+          FROM AXF_OBJ_Budget__c
+          WHERE Id = :record.Id
+        ]
+        .AXF_BDG_LKP_Category__c
+      );
+      Database.DeleteResult result = Database.delete(category, false);
+      System.assert(!result.isSuccess(), 'Category in use must not be deleted');
     }
   }
 
