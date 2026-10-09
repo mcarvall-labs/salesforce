@@ -2,6 +2,8 @@ import { createElement } from "lwc";
 import AXF_LWC_cardInvoices from "c/aXF_LWC_cardInvoices";
 import getInvoices from "@salesforce/apex/AXF_CLS_CTRL_CardInvoices.getInvoices";
 import getLines from "@salesforce/apex/AXF_CLS_CTRL_CardInvoices.getLines";
+import { publish } from "lightning/messageService";
+import syncPeriod from "@salesforce/apex/AXF_CLS_CTRL_PluggySync.syncPeriod";
 
 jest.mock(
   "@salesforce/apex/AXF_CLS_CTRL_CardInvoices.getInvoices",
@@ -13,6 +15,31 @@ jest.mock(
   () => ({ default: jest.fn() }),
   { virtual: true }
 );
+
+jest.mock(
+  "@salesforce/apex/AXF_CLS_CTRL_PluggySync.syncPeriod",
+  () => ({ default: jest.fn() }),
+  { virtual: true }
+);
+
+const MONTHS = [
+  "Janeiro",
+  "Fevereiro",
+  "Março",
+  "Abril",
+  "Maio",
+  "Junho",
+  "Julho",
+  "Agosto",
+  "Setembro",
+  "Outubro",
+  "Novembro",
+  "Dezembro"
+];
+const label = (value) => {
+  const [year, month] = value.split("-");
+  return `${MONTHS[Number(month) - 1]}/${year}`;
+};
 
 const flushPromises = () =>
   Array.from({ length: 10 }).reduce(
@@ -78,8 +105,15 @@ describe("c-a-x-f-l-w-c-card-invoices", () => {
     expect(getInvoices).toHaveBeenCalledWith({
       creditCardId: "a03000000000001"
     });
-    expect(periodOf(element)).toBe(current.period);
-    expect(element.shadowRoot.textContent).toContain("Aberta");
+    expect(periodOf(element).trim()).toBe(label(current.period));
+    expect(element.shadowRoot.querySelector(".invoice-status").label).toBe(
+      "Aberta"
+    );
+    expect(publish).toHaveBeenLastCalledWith(
+      undefined,
+      expect.anything(),
+      expect.objectContaining({ period: current.period, statusLabel: "Aberta" })
+    );
     expect(getLines).toHaveBeenCalledWith({ invoiceId: current.id });
     expect(element.shadowRoot.querySelector("tbody a").textContent).toBe(
       "Loja"
@@ -94,7 +128,7 @@ describe("c-a-x-f-l-w-c-card-invoices", () => {
     const element = await setup();
     element.shadowRoot.querySelector(".invoice-previous").click();
     await flushPromises();
-    expect(periodOf(element)).toBe(previous.period);
+    expect(periodOf(element).trim()).toBe(label(previous.period));
     expect(getLines).toHaveBeenLastCalledWith({ invoiceId: previous.id });
     expect(element.shadowRoot.querySelector(".invoice-previous").disabled).toBe(
       true
@@ -103,7 +137,7 @@ describe("c-a-x-f-l-w-c-card-invoices", () => {
     await flushPromises();
     element.shadowRoot.querySelector(".invoice-next").click();
     await flushPromises();
-    expect(periodOf(element)).toBe(next.period);
+    expect(periodOf(element).trim()).toBe(label(next.period));
     expect(getLines).toHaveBeenLastCalledWith({ invoiceId: next.id });
     expect(element.shadowRoot.querySelector(".invoice-next").disabled).toBe(
       true
@@ -117,7 +151,7 @@ describe("c-a-x-f-l-w-c-card-invoices", () => {
     ]);
     getLines.mockResolvedValue([]);
     const element = await setup();
-    expect(periodOf(element)).toBe(previous.period);
+    expect(periodOf(element).trim()).toBe(label(previous.period));
     expect(element.shadowRoot.textContent).toContain("Nenhuma transação");
   });
 
@@ -144,5 +178,31 @@ describe("c-a-x-f-l-w-c-card-invoices", () => {
       "Não foi possível carregar as transações."
     );
     expect(element.shadowRoot.querySelector("tbody")).toBeNull();
+  });
+  it("syncs the selected invoice window with Pluggy and reloads", async () => {
+    getInvoices.mockResolvedValue([current]);
+    getLines.mockResolvedValue([]);
+    syncPeriod.mockResolvedValue({ success: true, transactions: 4 });
+    const element = await setup();
+    element.shadowRoot.querySelector(".sync-button").click();
+    await flushPromises();
+    const [year, month] = current.period.split("-").map(Number);
+    const previousMonth = new Date(year, month - 2, 1);
+    expect(syncPeriod).toHaveBeenCalledWith({
+      recordId: "a03000000000001",
+      periodStart: `${previousMonth.getFullYear()}-${String(previousMonth.getMonth() + 1).padStart(2, "0")}-01`,
+      periodEnd: `${year}-${String(month).padStart(2, "0")}-${new Date(year, month, 0).getDate()}`
+    });
+    expect(getInvoices).toHaveBeenCalledTimes(2);
+  });
+
+  it("does not reload when the sync fails", async () => {
+    getInvoices.mockResolvedValue([current]);
+    getLines.mockResolvedValue([]);
+    syncPeriod.mockResolvedValue({ success: false, message: "Pluggy fora" });
+    const element = await setup();
+    element.shadowRoot.querySelector(".sync-button").click();
+    await flushPromises();
+    expect(getInvoices).toHaveBeenCalledTimes(1);
   });
 });
