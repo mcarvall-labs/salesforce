@@ -50,7 +50,7 @@
         font-weight: 600;
       }
       .page {
-        max-width: 1000px;
+        max-width: 1100px;
         margin: 20px auto;
         padding: 0 16px;
       }
@@ -71,7 +71,8 @@
         margin: 0;
         font-size: 20px;
       }
-      .hdr small {
+      .hdr small,
+      small.sec {
         display: block;
         color: var(--mut);
         font-size: 11px;
@@ -134,28 +135,6 @@
       .aberta {
         background: #dd7a01;
       }
-      .fechada {
-        background: var(--blue);
-      }
-      .paga {
-        background: var(--ok);
-      }
-      .inv {
-        border: 1px solid var(--bd);
-        border-radius: 6px;
-        margin-bottom: 8px;
-      }
-      .inv > .top {
-        display: flex;
-        justify-content: space-between;
-        align-items: center;
-        padding: 10px 12px;
-        cursor: pointer;
-        background: #fafaf9;
-      }
-      .inv .body {
-        padding: 0 12px 8px;
-      }
       .hide {
         display: none;
       }
@@ -165,7 +144,7 @@
         padding: 8px 12px;
         border-radius: 4px;
         font-size: 12px;
-        margin-bottom: 16px;
+        margin-bottom: 12px;
       }
       .bc {
         font-size: 12px;
@@ -178,7 +157,7 @@
       }
       dl {
         display: grid;
-        grid-template-columns: 180px 1fr;
+        grid-template-columns: 150px 1fr;
         gap: 8px 16px;
         margin: 0;
       }
@@ -188,9 +167,73 @@
       dd {
         margin: 0;
       }
-      .sec {
+      .grid {
+        display: grid;
+        grid-template-columns: 1fr 300px;
+        gap: 16px;
+        align-items: start;
+      }
+      .side h3 {
+        font-size: 12px;
         color: var(--mut);
+        text-transform: uppercase;
+      }
+      .side dl {
+        grid-template-columns: 105px 1fr;
+      }
+      .tools {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 8px;
+      }
+      .nav2 {
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        gap: 12px;
+        margin-bottom: 12px;
+      }
+      .nav2 .lbl {
+        min-width: 190px;
+        text-align: center;
+        font-weight: 600;
+        font-size: 15px;
+      }
+      .nav2 button {
+        width: 34px;
+      }
+      .ctr {
+        text-align: center;
+      }
+      .sub {
+        color: var(--mut);
+        font-size: 12px;
+      }
+      .tools .btns {
+        display: flex;
+        gap: 8px;
+      }
+      button.brand {
+        background: var(--blue);
+        color: #fff;
+        border-color: var(--blue);
+      }
+      .syncinfo {
         font-size: 11px;
+        color: var(--mut);
+        text-align: right;
+        margin: -2px 0 8px;
+      }
+      .modes {
+        display: flex;
+        gap: 8px;
+        margin-bottom: 12px;
+      }
+      .modes button.on {
+        background: var(--blue);
+        color: #fff;
+        border-color: var(--blue);
       }
     </style>
   </head>
@@ -202,12 +245,96 @@
     </div>
     <div class="page">
       <div class="note">
-        Mockup de referência (EP-03). Dados fictícios. Clique em uma linha para
-        abrir a transação; clique numa fatura para expandir.
+        Mockup EP-03 — Record Pages de Conta Bancária e Cartão de Crédito. Dados
+        fictícios. <b>Atual (DEV)</b> = como está no AXON_DEV em 09/10/2026
+        (Highlights Panel + coluna principal + Detail Panel lateral).
+        <b>Proposta</b> = navegação centralizada no card principal, botão
+        Sincronizar Pluggy (período selecionado) e datas de
+        fechamento/vencimento no painel lateral. Clique numa linha para abrir a
+        transação.
+      </div>
+      <div class="modes">
+        <button data-m="atual">Atual (DEV)</button>
+        <button data-m="prop" class="on">Proposta</button>
       </div>
 
-      <!-- CONTA -->
-      <div id="conta">
+      <!-- CONTA — ATUAL -->
+      <div id="conta-atual" class="hide">
+        <div class="card hdr">
+          <div>
+            <small>Conta bancária</small>
+            <h2>077 Banco Inter · ••1234</h2>
+          </div>
+          <div><small>Titular</small>Michel Lopes</div>
+          <div><small>Instituição</small>Banco Inter</div>
+          <div style="margin-left: auto; text-align: right">
+            <small>Saldo atual</small>
+            <div class="bal">R$ 4.230,55</div>
+          </div>
+        </div>
+        <div class="grid">
+          <div>
+            <div class="card">
+              <h3>Extrato</h3>
+              <div style="max-width: 220px; margin-bottom: 8px">
+                <small class="sec">Mês</small>
+                <select style="width: 100%">
+                  <option>Setembro/2026</option>
+                  <option>Agosto/2026</option>
+                </select>
+              </div>
+              <table>
+                <tr>
+                  <th>Data</th>
+                  <th>Descrição</th>
+                  <th class="r">Valor</th>
+                  <th class="r">Saldo</th>
+                </tr>
+                <tr class="click" onclick="tx('conta')">
+                  <td>29/09</td>
+                  <td>PIX Recebido — Cliente EU</td>
+                  <td class="r in">+ 3.500,00</td>
+                  <td class="r">4.230,55</td>
+                </tr>
+                <tr class="click" onclick="tx('conta')">
+                  <td>28/09</td>
+                  <td>Conta de luz</td>
+                  <td class="r out">− 212,40</td>
+                  <td class="r">730,55</td>
+                </tr>
+                <tr class="click" onclick="tx('conta')">
+                  <td>25/09</td>
+                  <td>Pagamento de fatura cartão</td>
+                  <td class="r out">− 1.830,00</td>
+                  <td class="r">942,95</td>
+                </tr>
+              </table>
+            </div>
+            <div class="card">
+              <h3>Importar extrato ou fatura</h3>
+              Arquivo OFX ou CSV: <button>Escolher arquivo</button>
+            </div>
+          </div>
+          <div class="card side">
+            <h3>Detalhes</h3>
+            <dl>
+              <dt>Nome</dt>
+              <dd>077 Banco Inter · ••1234</dd>
+              <dt>Agência</dt>
+              <dd>0001</dd>
+              <dt>Conta</dt>
+              <dd>1234567-8</dd>
+              <dt>Tipo</dt>
+              <dd>Conta corrente</dd>
+              <dt>Moeda</dt>
+              <dd>BRL</dd>
+            </dl>
+          </div>
+        </div>
+      </div>
+
+      <!-- CONTA — PROPOSTA -->
+      <div id="conta-prop">
         <div class="card hdr">
           <div>
             <small>Conta bancária</small>
@@ -220,150 +347,260 @@
             <div class="bal">R$ 4.230,55</div>
           </div>
         </div>
-        <div class="card">
-          <div
-            style="
-              display: flex;
-              justify-content: space-between;
-              margin-bottom: 8px;
-            "
-          >
-            <h3>Extrato</h3>
-            <div>
-              <button>⬆ Importar CSV/OFX</button> <button>◀</button>
-              <select>
-                <option>Setembro/2026</option>
-                <option>Agosto/2026</option>
-              </select>
-              <button>▶</button>
+        <div class="grid">
+          <div class="card">
+            <div class="tools">
+              <h3 style="margin: 0">Extrato</h3>
+              <div class="btns">
+                <button class="brand" onclick="sync(this)">
+                  ⟳ Sincronizar Pluggy
+                </button>
+                <button>⬆ Importar OFX/CSV</button>
+              </div>
             </div>
+            <div class="syncinfo">
+              Atualiza Setembro/2026 · última sincronização 09/10 07:40
+            </div>
+            <div class="nav2">
+              <button title="Mês anterior">◀</button>
+              <div class="lbl">Setembro/2026</div>
+              <button title="Próximo mês">▶</button>
+            </div>
+            <div class="ctr sub" style="margin: -6px 0 12px">
+              Entradas <b class="in">+ 3.500,00</b> · Saídas
+              <b class="out">− 2.162,30</b> · 8 transações
+            </div>
+            <table>
+              <tr>
+                <th>Data</th>
+                <th>Descrição</th>
+                <th>Categoria Pluggy</th>
+                <th class="r">Valor</th>
+                <th class="r">Saldo</th>
+              </tr>
+              <tr class="click" onclick="tx('conta')">
+                <td>29/09</td>
+                <td>PIX Recebido — Cliente EU</td>
+                <td>Transferência</td>
+                <td class="r in">+ 3.500,00</td>
+                <td class="r">4.230,55</td>
+              </tr>
+              <tr class="click" onclick="tx('conta')">
+                <td>28/09</td>
+                <td>Conta de luz</td>
+                <td>Utilidades</td>
+                <td class="r out">− 212,40</td>
+                <td class="r">730,55</td>
+              </tr>
+              <tr class="click" onclick="tx('conta')">
+                <td>25/09</td>
+                <td>Pagamento de fatura cartão</td>
+                <td>Cartão</td>
+                <td class="r out">− 1.830,00</td>
+                <td class="r">942,95</td>
+              </tr>
+              <tr class="click" onclick="tx('conta')">
+                <td>22/09</td>
+                <td>Assinatura internet</td>
+                <td>Serviços</td>
+                <td class="r out">− 119,90</td>
+                <td class="r">2.772,95</td>
+              </tr>
+            </table>
           </div>
-          <table>
-            <tr>
-              <th>Data</th>
-              <th>Descrição</th>
-              <th>Categoria Pluggy</th>
-              <th class="r">Valor</th>
-              <th class="r">Saldo</th>
-            </tr>
-            <tr class="click" onclick="tx('conta')">
-              <td>29/09</td>
-              <td>PIX Recebido — Cliente EU</td>
-              <td>Transferência</td>
-              <td class="r in">+ 3.500,00</td>
-              <td class="r">4.230,55</td>
-            </tr>
-            <tr class="click" onclick="tx('conta')">
-              <td>28/09</td>
-              <td>Conta de luz</td>
-              <td>Utilidades</td>
-              <td class="r out">− 212,40</td>
-              <td class="r">730,55</td>
-            </tr>
-            <tr class="click" onclick="tx('conta')">
-              <td>25/09</td>
-              <td>Pagamento de fatura cartão</td>
-              <td>Cartão</td>
-              <td class="r out">− 1.830,00</td>
-              <td class="r">942,95</td>
-            </tr>
-            <tr class="click" onclick="tx('conta')">
-              <td>22/09</td>
-              <td>Assinatura internet</td>
-              <td>Serviços</td>
-              <td class="r out">− 119,90</td>
-              <td class="r">2.772,95</td>
-            </tr>
-          </table>
-          <div class="sec" style="margin-top: 8px">
-            Saldo por linha calculado a partir do saldo atual da conta.
+          <div class="card side">
+            <h3>Detalhes</h3>
+            <dl>
+              <dt>Tipo</dt>
+              <dd>Conta corrente</dd>
+              <dt>Moeda</dt>
+              <dd>BRL</dd>
+              <dt>Instituição</dt>
+              <dd>Banco Inter</dd>
+              <dt>Sincronizada</dt>
+              <dd>09/10 07:40</dd>
+            </dl>
           </div>
         </div>
       </div>
 
-      <!-- CARTÃO -->
-      <div id="cartao" class="hide">
+      <!-- CARTÃO — ATUAL -->
+      <div id="cartao-atual" class="hide">
         <div class="card hdr">
           <div>
             <small>Cartão de crédito</small>
-            <h2>323 Mercado Pago · ••5678</h2>
+            <h2>323 Mercado Pago - Mastercard (5678)</h2>
           </div>
           <div><small>Titular</small>Michel Lopes</div>
-          <div><small>Bandeira</small>Mastercard · Gold</div>
-          <div><small>Fecha / Vence</small>dia 20 / dia 27</div>
+          <div><small>Limite</small>R$ 8.000,00</div>
           <div style="margin-left: auto; text-align: right">
             <small>Limite disponível</small>
             <div class="bal">R$ 6.120,00</div>
-            <span class="sec">de R$ 8.000,00</span>
           </div>
         </div>
-        <div class="card">
-          <h3>Faturas</h3>
-          <div class="inv">
-            <div class="top" onclick="tg(this)">
-              <span>▾ <b>2026-09</b> · vence 27/09</span
-              ><span
-                ><b>R$ 1.880,00</b>
-                <span class="pill aberta">Aberta</span></span
+        <div class="grid">
+          <div>
+            <div class="card">
+              <h3>Faturas</h3>
+              <div
+                style="
+                  display: flex;
+                  align-items: center;
+                  gap: 12px;
+                  margin-bottom: 8px;
+                "
               >
-            </div>
-            <div class="body">
+                <button>◀</button>
+                <b>2026-09</b>
+                <span>Vencimento: 27/09/2026</span>
+                <b>R$ 1.880,00</b>
+                <span class="pill aberta">Aberta</span>
+                <button>▶</button>
+              </div>
               <table>
                 <tr>
                   <th>Data</th>
                   <th>Descrição</th>
                   <th>Parcela</th>
                   <th class="r">Valor</th>
+                  <th class="r">Valor em BRL</th>
                 </tr>
                 <tr class="click" onclick="tx('cartao')">
                   <td>18/09</td>
                   <td>Supermercado</td>
                   <td></td>
                   <td class="r out">− 420,00</td>
+                  <td class="r">− 420,00</td>
                 </tr>
                 <tr class="click" onclick="tx('cartao')">
                   <td>12/09</td>
                   <td>Notebook</td>
                   <td>3/10</td>
                   <td class="r out">− 1.200,00</td>
-                </tr>
-                <tr class="click" onclick="tx('cartao')">
-                  <td>05/09</td>
-                  <td>Streaming</td>
-                  <td></td>
-                  <td class="r out">− 260,00</td>
+                  <td class="r">− 1.200,00</td>
                 </tr>
               </table>
+            </div>
+            <div class="card">
+              <h3>Importar extrato ou fatura</h3>
+              Arquivo OFX ou CSV: <button>Escolher arquivo</button>
             </div>
           </div>
-          <div class="inv">
-            <div class="top" onclick="tg(this)">
-              <span>▸ <b>2026-08</b> · venceu 27/08</span
-              ><span
-                ><b>R$ 1.830,00</b> <span class="pill paga">Paga</span></span
-              >
+          <div class="card side">
+            <h3>Detalhes</h3>
+            <dl>
+              <dt>Nome</dt>
+              <dd>323 Mercado Pago - Mastercard (5678)</dd>
+              <dt>Bandeira</dt>
+              <dd>Mastercard</dd>
+              <dt>Dia fechamento</dt>
+              <dd>20</dd>
+              <dt>Dia vencimento</dt>
+              <dd>27</dd>
+            </dl>
+          </div>
+        </div>
+      </div>
+
+      <!-- CARTÃO — PROPOSTA -->
+      <div id="cartao-prop" class="hide">
+        <div class="card hdr">
+          <div>
+            <small>Cartão de crédito</small>
+            <h2>323 Mercado Pago - Mastercard (5678)</h2>
+          </div>
+          <div><small>Titular</small>Michel Lopes</div>
+          <div><small>Limite</small>R$ 8.000,00</div>
+          <div style="margin-left: auto; text-align: right">
+            <small>Limite disponível</small>
+            <div class="bal">R$ 6.120,00</div>
+          </div>
+        </div>
+        <div class="grid">
+          <div class="card">
+            <div class="tools">
+              <h3 style="margin: 0">Faturas</h3>
+              <div class="btns">
+                <button class="brand" onclick="sync(this)">
+                  ⟳ Sincronizar Pluggy
+                </button>
+                <button>⬆ Importar fatura OFX/CSV</button>
+              </div>
             </div>
-            <div class="body hide">
-              <table>
-                <tr>
-                  <th>Data</th>
-                  <th>Descrição</th>
-                  <th>Parcela</th>
-                  <th class="r">Valor</th>
-                </tr>
-                <tr class="click" onclick="tx('cartao')">
-                  <td>12/08</td>
-                  <td>Notebook</td>
-                  <td>2/10</td>
-                  <td class="r out">− 1.200,00</td>
-                </tr>
-                <tr class="click" onclick="tx('cartao')">
-                  <td>03/08</td>
-                  <td>Farmácia</td>
-                  <td></td>
-                  <td class="r out">− 630,00</td>
-                </tr>
-              </table>
+            <div class="syncinfo">
+              Atualiza a fatura de Setembro/2026 · última sincronização 09/10
+              07:40
+            </div>
+            <div class="nav2">
+              <button title="Fatura anterior">◀</button>
+              <div class="lbl">
+                Setembro/2026<br /><span class="pill aberta">Aberta</span>
+              </div>
+              <button title="Próxima fatura">▶</button>
+            </div>
+            <div class="ctr" style="margin: -4px 0 12px">
+              <div class="bal">R$ 1.880,00</div>
+              <div class="sub">3 compras · fatura 1 de 6</div>
+            </div>
+            <table>
+              <tr>
+                <th>Data</th>
+                <th>Descrição</th>
+                <th>Parcela</th>
+                <th class="r">Valor</th>
+                <th class="r">Valor em BRL</th>
+              </tr>
+              <tr class="click" onclick="tx('cartao')">
+                <td>18/09</td>
+                <td>Supermercado</td>
+                <td></td>
+                <td class="r out">− 420,00</td>
+                <td class="r">− 420,00</td>
+              </tr>
+              <tr class="click" onclick="tx('cartao')">
+                <td>12/09</td>
+                <td>Notebook</td>
+                <td>3/10</td>
+                <td class="r out">− 1.200,00</td>
+                <td class="r">− 1.200,00</td>
+              </tr>
+              <tr class="click" onclick="tx('cartao')">
+                <td>05/09</td>
+                <td>Streaming</td>
+                <td></td>
+                <td class="r out">− 260,00</td>
+                <td class="r">− 260,00</td>
+              </tr>
+            </table>
+          </div>
+          <div>
+            <div class="card side">
+              <h3>Fatura selecionada</h3>
+              <dl>
+                <dt>Competência</dt>
+                <dd>2026-09</dd>
+                <dt>Fecha em</dt>
+                <dd>20/09/2026</dd>
+                <dt>Vence em</dt>
+                <dd><b>27/09/2026</b></dd>
+                <dt>Total</dt>
+                <dd>R$ 1.880,00</dd>
+                <dt>Situação</dt>
+                <dd>Aberta</dd>
+              </dl>
+            </div>
+            <div class="card side">
+              <h3>Detalhes do cartão</h3>
+              <dl>
+                <dt>Bandeira</dt>
+                <dd>Mastercard</dd>
+                <dt>Fechamento</dt>
+                <dd>todo dia 20</dd>
+                <dt>Vencimento</dt>
+                <dd>todo dia 27</dd>
+                <dt>Moeda</dt>
+                <dd>BRL</dd>
+              </dl>
             </div>
           </div>
         </div>
@@ -384,39 +621,53 @@
             </div>
           </div>
         </div>
-        <div class="card">
-          <dl id="txdl"></dl>
-        </div>
+        <div class="card"><dl id="txdl"></dl></div>
       </div>
     </div>
 
     <script>
       const $ = (id) => document.getElementById(id);
-      let cur = "conta";
-      function go(v) {
-        cur = v;
-        ["conta", "cartao", "tx"].forEach((x) =>
-          $(x).classList.toggle("hide", x != v)
-        );
+      let view = "conta",
+        mode = "prop",
+        last = "conta";
+      function render() {
+        [
+          "conta-atual",
+          "conta-prop",
+          "cartao-atual",
+          "cartao-prop",
+          "tx"
+        ].forEach((x) => $(x).classList.add("hide"));
+        $(view === "tx" ? "tx" : view + "-" + mode).classList.remove("hide");
         document
           .querySelectorAll(".nav a")
-          .forEach((a) => a.classList.toggle("on", a.dataset.v == v));
+          .forEach((a) =>
+            a.classList.toggle(
+              "on",
+              a.dataset.v == (view === "tx" ? last : view)
+            )
+          );
+        document
+          .querySelectorAll(".modes button")
+          .forEach((b) => b.classList.toggle("on", b.dataset.m == mode));
       }
-      document
-        .querySelectorAll(".nav a")
-        .forEach((a) => (a.onclick = () => go(a.dataset.v)));
-      function tg(el) {
-        const b = el.nextElementSibling;
-        b.classList.toggle("hide");
-        el.firstElementChild.firstChild.textContent = b.classList.contains(
-          "hide"
-        )
-          ? "▸ "
-          : "▾ ";
-      }
-      let origin = "conta";
+      document.querySelectorAll(".nav a").forEach(
+        (a) =>
+          (a.onclick = () => {
+            view = last = a.dataset.v;
+            render();
+          })
+      );
+      document.querySelectorAll(".modes button").forEach(
+        (b) =>
+          (b.onclick = () => {
+            mode = b.dataset.m;
+            if (view === "tx") view = last;
+            render();
+          })
+      );
       function tx(from) {
-        origin = from;
+        last = from;
         if (from === "conta") {
           $("txd").textContent = "Conta de luz";
           $("txv").textContent = "− R$ 212,40";
@@ -426,13 +677,24 @@
           $("txd").textContent = "Notebook";
           $("txv").textContent = "− R$ 1.200,00";
           $("txdl").innerHTML =
-            `<dt>Data</dt><dd>12/09/2026</dd><dt>Parcela</dt><dd>3/10</dd><dt>Categoria Pluggy</dt><dd>Compras</dd><dt>Cartão</dt><dd>323 Mercado Pago · ••5678</dd><dt>Fatura</dt><dd>2026-09</dd><dt>Titular</dt><dd>Michel Lopes</dd><dt>Pluggy Transaction Id</dt><dd>7b2e…c4</dd>`;
+            `<dt>Data</dt><dd>12/09/2026</dd><dt>Parcela</dt><dd>3/10</dd><dt>Categoria Pluggy</dt><dd>Compras</dd><dt>Cartão</dt><dd>323 Mercado Pago - Mastercard (5678)</dd><dt>Fatura</dt><dd>2026-09</dd><dt>Titular</dt><dd>Michel Lopes</dd><dt>Pluggy Transaction Id</dt><dd>7b2e…c4</dd>`;
         }
-        go("tx");
+        view = "tx";
+        render();
+      }
+      function sync(b) {
+        b.disabled = true;
+        b.textContent = "⟳ Sincronizando…";
+        setTimeout(() => {
+          b.disabled = false;
+          b.textContent = "⟳ Sincronizar Pluggy";
+        }, 1500);
       }
       function back() {
-        go(origin);
+        view = last;
+        render();
       }
+      render();
     </script>
   </body>
 </html>
