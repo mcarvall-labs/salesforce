@@ -185,6 +185,11 @@ public with sharing class ALT_CLS_ReconciliationSuggestions {
     ) {
       return;
     }
+    // Reconciling realizes the BRL value of the invoice, so a foreign card purchase without it
+    // cannot be confirmed and is not offered.
+    if (card != null && amountBRL == null && currencyCode != BRL) {
+      return;
+    }
     Boolean same = entry.CurrencyIsoCode == currencyCode;
     Decimal gap;
     if (same) {

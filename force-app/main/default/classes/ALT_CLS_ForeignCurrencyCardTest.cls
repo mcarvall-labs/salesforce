@@ -123,6 +123,10 @@ private class ALT_CLS_ForeignCurrencyCardTest {
         105.5,
         new ALT_CLS_CardInvoices().invoices(card.Id)[0].totalAmount
       );
+      System.assertEquals(
+        'BRL',
+        new ALT_CLS_CardInvoices().invoices(card.Id)[0].currencyCode
+      );
     }
   }
 
@@ -175,16 +179,117 @@ private class ALT_CLS_ForeignCurrencyCardTest {
   }
 
   @IsTest
-  static void purchaseWithoutTheInvoiceBrlAmountIsNeitherSuggestedNorReconciledAgainstReais() {
+  static void purchaseWithoutTheInvoiceBrlAmountIsNotSuggestedAndNotReconciled() {
     System.runAs(new User(Id = UserInfo.getUserId())) {
       base();
       AXF_OBJ_CreditCardTransaction__c purchase = dollarPurchase(null);
-      AXF_OBJ_Entry__c reais = entry(105.5, 'BRL');
+      // 103 BRL would be inside 5 % of the rate-derived value, yet the pair cannot be confirmed.
+      AXF_OBJ_Entry__c reais = entry(103, 'BRL');
+      AXF_OBJ_Entry__c dollars = entry(20, 'USD');
       System.assertEquals(0, suggest().size());
-      ALT_CLS_Reconciliation.Outcome outcome = reconcile(reais, purchase);
+      for (
+        AXF_OBJ_Entry__c candidate : new List<AXF_OBJ_Entry__c>{
+          reais,
+          dollars
+        }
+      ) {
+        ALT_CLS_Reconciliation.Outcome outcome = reconcile(candidate, purchase);
+        System.assertEquals(false, outcome.success);
+        System.assert(outcome.message.contains('moeda estrangeira'));
+        System.assertEquals(
+          'Pending',
+          reload(candidate.Id).AXF_ENT_PKL_Status__c
+        );
+      }
+      System.assertNotEquals(
+        'Reconciled',
+        [
+          SELECT AXF_CCT_PKL_ReconciliationStatus__c
+          FROM AXF_OBJ_CreditCardTransaction__c
+          WHERE Id = :purchase.Id
+        ]
+        .AXF_CCT_PKL_ReconciliationStatus__c
+      );
+    }
+  }
+
+  @IsTest
+  static void toleranceIsFivePercentOfTheInvoiceBrl() {
+    System.runAs(new User(Id = UserInfo.getUserId())) {
+      base();
+      dollarPurchase(-100);
+      AXF_OBJ_Entry__c inside = entry(104.9, 'BRL');
+      System.assertEquals(1, suggest().size());
+      delete inside;
+      AXF_OBJ_Entry__c outside = entry(105.2, 'BRL');
+      System.assertEquals(0, suggest().size());
+      delete outside;
+      entry(95.1, 'BRL');
+      System.assertEquals(1, suggest().size());
+    }
+  }
+
+  @IsTest
+  static void dollarEntryNeedsTheSameDollarAmount() {
+    System.runAs(new User(Id = UserInfo.getUserId())) {
+      base();
+      dollarPurchase(-105.5);
+      entry(20.5, 'USD');
+      System.assertEquals(0, suggest().size());
+    }
+  }
+
+  @IsTest
+  static void foreignGuardFallsBackToTheRecordCurrency() {
+    System.runAs(new User(Id = UserInfo.getUserId())) {
+      base();
+      AXF_OBJ_CreditCardTransaction__c purchase = new AXF_OBJ_CreditCardTransaction__c(
+        AXF_CCT_MD_CreditCard__c = card.Id,
+        AXF_CCT_LKP_Invoice__c = invoice.Id,
+        AXF_CCT_DAT_Date__c = DAY,
+        AXF_CCT_CUR_Amount__c = -20,
+        CurrencyIsoCode = 'USD'
+      );
+      insert purchase;
+      ALT_CLS_Reconciliation.Outcome outcome = reconcile(
+        entry(20, 'USD'),
+        purchase
+      );
       System.assertEquals(false, outcome.success);
       System.assert(outcome.message.contains('moeda estrangeira'));
-      System.assertEquals('Pending', reload(reais.Id).AXF_ENT_PKL_Status__c);
+    }
+  }
+
+  @IsTest
+  static void createdEntryIsAnExpenseRealizedAndLinked() {
+    System.runAs(new User(Id = UserInfo.getUserId())) {
+      base();
+      AXF_OBJ_CreditCardTransaction__c purchase = dollarPurchase(-105.5);
+      ALT_CLS_ReconciliationActions.Outcome outcome = new ALT_CLS_ReconciliationActions()
+        .createEntries(null, new List<Id>{ purchase.Id })[0];
+      AXF_OBJ_Entry__c created = [
+        SELECT
+          AXF_ENT_PKL_Type__c,
+          AXF_ENT_PKL_Status__c,
+          AXF_ENT_LKP_CreditCardTransaction__c
+        FROM AXF_OBJ_Entry__c
+        WHERE Id = :outcome.entryId
+      ];
+      System.assertEquals('Expense', created.AXF_ENT_PKL_Type__c);
+      System.assertEquals('Realized', created.AXF_ENT_PKL_Status__c);
+      System.assertEquals(
+        purchase.Id,
+        created.AXF_ENT_LKP_CreditCardTransaction__c
+      );
+      System.assertEquals(
+        'Reconciled',
+        [
+          SELECT AXF_CCT_PKL_ReconciliationStatus__c
+          FROM AXF_OBJ_CreditCardTransaction__c
+          WHERE Id = :purchase.Id
+        ]
+        .AXF_CCT_PKL_ReconciliationStatus__c
+      );
     }
   }
 
