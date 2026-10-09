@@ -1,7 +1,7 @@
 /**
  * @description Suggests Entry (Lançamento) x transaction pairs to reconcile (E6-5); nothing is
  * saved or reconciled here, the user confirms each pair (or the batch) afterwards. A pair is
- * suggested when the Entry is Pending, the transaction is Pending (and not linked), the payment
+ * suggested when the Entry is Pending and due inside the requested range, the transaction is Pending or without status (and not linked), the payment
  * rules of ALT_CLS_Reconciliation allow it (E6-2: card Entry x card transaction, Entry without
  * card x bank transaction, invoice Entry x bank transaction), the Account/Card matches (any
  * account of the holder when the Entry has none, which is also the invoice case), the transaction
@@ -35,7 +35,12 @@ public with sharing class ALT_CLS_ReconciliationSuggestions {
   }
 
   public List<Suggestion> suggest(Id holderId, Date fromDate, Date toDate) {
-    if (holderId == null || fromDate == null || toDate == null) {
+    if (
+      holderId == null ||
+      fromDate == null ||
+      toDate == null ||
+      fromDate > toDate
+    ) {
       return new List<Suggestion>();
     }
     Date earliest = fromDate.addDays(-WINDOW_DAYS);
@@ -54,8 +59,9 @@ public with sharing class ALT_CLS_ReconciliationSuggestions {
         AND AXF_ENT_PKL_Status__c = 'Pending'
         AND AXF_ENT_LKP_BankAccountTransaction__c = NULL
         AND AXF_ENT_LKP_CreditCardTransaction__c = NULL
-        AND AXF_ENT_DAT_DueDate__c >= :earliest
-        AND AXF_ENT_DAT_DueDate__c <= :latest
+        AND AXF_ENT_DAT_DueDate__c >= :fromDate
+        AND AXF_ENT_DAT_DueDate__c <= :toDate
+        AND AXF_ENT_CUR_Amount__c != NULL
       WITH USER_MODE
       ORDER BY AXF_ENT_DAT_DueDate__c, Id
       LIMIT :MAX_ROWS
@@ -106,7 +112,7 @@ public with sharing class ALT_CLS_ReconciliationSuggestions {
       ORDER BY AXF_CCT_DAT_Date__c, Id
       LIMIT :MAX_ROWS
     ];
-    Map<String, Decimal> rates = rates(entries);
+    Map<String, Decimal> rates = rates(entries, banks, cards);
     Map<Id, Candidate> bestByEntry = new Map<Id, Candidate>();
     List<Candidate> all = new List<Candidate>();
     for (AXF_OBJ_Entry__c entry : entries) {
@@ -180,7 +186,7 @@ public with sharing class ALT_CLS_ReconciliationSuggestions {
     } else {
       Decimal transactionBRL = amountBRL != null
         ? amountBRL.abs()
-        : (BRL == currencyCode ? amount.abs() : null);
+        : toBRL(amount.abs(), currencyCode, rates);
       Decimal entryBRL = toBRL(
         entry.AXF_ENT_CUR_Amount__c.abs(),
         entry.CurrencyIsoCode,
@@ -264,16 +270,26 @@ public with sharing class ALT_CLS_ReconciliationSuggestions {
     return rate == null || rate == 0 ? null : amount / rate;
   }
 
-  private Map<String, Decimal> rates(List<AXF_OBJ_Entry__c> entries) {
+  private Map<String, Decimal> rates(
+    List<AXF_OBJ_Entry__c> entries,
+    List<AXF_OBJ_BankAccountTransaction__c> banks,
+    List<AXF_OBJ_CreditCardTransaction__c> cards
+  ) {
     if (rateOverride != null) {
       return rateOverride;
     }
     Set<String> foreign = new Set<String>();
     for (AXF_OBJ_Entry__c entry : entries) {
-      if (entry.CurrencyIsoCode != BRL) {
-        foreign.add(entry.CurrencyIsoCode);
-      }
+      foreign.add(entry.CurrencyIsoCode);
     }
+    for (AXF_OBJ_BankAccountTransaction__c bank : banks) {
+      foreign.add(bank.CurrencyIsoCode);
+    }
+    for (AXF_OBJ_CreditCardTransaction__c card : cards) {
+      foreign.add(cardCurrency(card));
+    }
+    foreign.remove(BRL);
+    foreign.remove(null);
     Map<String, Decimal> rates = new Map<String, Decimal>();
     if (!foreign.isEmpty()) {
       for (CurrencyType type : [

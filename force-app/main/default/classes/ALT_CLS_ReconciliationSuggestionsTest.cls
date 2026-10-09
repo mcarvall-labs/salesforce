@@ -287,4 +287,147 @@ private class ALT_CLS_ReconciliationSuggestionsTest {
       );
     }
   }
+
+  @IsTest
+  static void nearerDateBeatsSmallerAmountGapThenGapBreaksTies() {
+    System.runAs(new User(Id = UserInfo.getUserId())) {
+      base();
+      AXF_OBJ_Entry__c entry = entry(100, 'BRL', null, null);
+      AXF_OBJ_BankAccountTransaction__c nearer = bank(-100.004, DUE);
+      bank(-100, DUE.addDays(3));
+      List<ALT_CLS_ReconciliationSuggestions.Suggestion> found = suggest();
+      System.assertEquals(1, found.size());
+      System.assertEquals(nearer.Id, found[0].bankTransactionId);
+      System.assertEquals(entry.Id, found[0].entryId);
+      delete nearer;
+      AXF_OBJ_BankAccountTransaction__c sameDayLoose = bank(
+        -100.004,
+        DUE.addDays(1)
+      );
+      AXF_OBJ_BankAccountTransaction__c sameDayExact = bank(
+        -100,
+        DUE.addDays(1)
+      );
+      found = suggest();
+      System.assertEquals(1, found.size());
+      System.assertEquals(sameDayExact.Id, found[0].bankTransactionId);
+      System.assertNotEquals(sameDayLoose.Id, found[0].bankTransactionId);
+    }
+  }
+
+  @IsTest
+  static void entriesOutsideTheRequestedRangeAreNotSuggested() {
+    System.runAs(new User(Id = UserInfo.getUserId())) {
+      base();
+      entry(100, 'BRL', null, null);
+      bank(-100, DUE);
+      System.assertEquals(
+        0,
+        new ALT_CLS_ReconciliationSuggestions()
+          .suggest(holder.Id, DUE.addDays(1), DUE.addDays(30))
+          .size()
+      );
+      System.assertEquals(
+        0,
+        new ALT_CLS_ReconciliationSuggestions()
+          .suggest(holder.Id, DUE.addDays(30), DUE.addDays(-30))
+          .size()
+      );
+    }
+  }
+
+  @IsTest
+  static void usesTheRealCurrencyRatesWhenNotOverridden() {
+    System.runAs(new User(Id = UserInfo.getUserId())) {
+      base();
+      ALT_CLS_ReconciliationSuggestions.rateOverride = null;
+      Decimal rate = [
+        SELECT ConversionRate
+        FROM CurrencyType
+        WHERE IsoCode = 'USD' AND IsActive = TRUE
+      ]
+      .ConversionRate;
+      entry((100 * rate).setScale(2), 'USD', null, null);
+      AXF_OBJ_BankAccountTransaction__c bank = bank(-100, DUE);
+      List<ALT_CLS_ReconciliationSuggestions.Suggestion> found = suggest();
+      System.assertEquals(1, found.size());
+      System.assertEquals(bank.Id, found[0].bankTransactionId);
+      System.assertEquals(true, found[0].crossCurrency);
+    }
+  }
+
+  @IsTest
+  static void bankTransactionInAnotherForeignCurrencyIsComparedInBrl() {
+    System.runAs(new User(Id = UserInfo.getUserId())) {
+      base();
+      ALT_CLS_ReconciliationSuggestions.rateOverride = new Map<String, Decimal>{
+        'USD' => 0.2,
+        'EUR' => 0.1
+      };
+      // EUR 10 is BRL 100 and USD 20 is BRL 100.
+      entry(10, 'EUR', null, null);
+      AXF_OBJ_BankAccountTransaction__c usd = new AXF_OBJ_BankAccountTransaction__c(
+        AXF_BAT_MD_BankAccount__c = account.Id,
+        AXF_BAT_DAT_Date__c = DUE,
+        AXF_BAT_CUR_Amount__c = -20,
+        CurrencyIsoCode = 'USD'
+      );
+      insert usd;
+      List<ALT_CLS_ReconciliationSuggestions.Suggestion> found = suggest();
+      System.assertEquals(1, found.size());
+      System.assertEquals(usd.Id, found[0].bankTransactionId);
+    }
+  }
+
+  @IsTest
+  static void unknownCurrencyYieldsNoSuggestion() {
+    System.runAs(new User(Id = UserInfo.getUserId())) {
+      base();
+      ALT_CLS_ReconciliationSuggestions.rateOverride = new Map<String, Decimal>();
+      entry(20, 'USD', null, null);
+      bank(-100, DUE);
+      System.assertEquals(0, suggest().size());
+    }
+  }
+
+  @IsTest
+  static void settledOtherHolderAndLinkedCardRecordsAreNotSuggested() {
+    System.runAs(new User(Id = UserInfo.getUserId())) {
+      base();
+      AXF_OBJ_Entry__c settled = entry(100, 'BRL', null, null);
+      settled.AXF_ENT_PKL_Status__c = 'Realized';
+      settled.AXF_ENT_DAT_PaymentDate__c = DUE;
+      update settled;
+      AXF_OBJ_Entry__c cardEntry = entry(50, 'BRL', card.Id, null);
+      insert new AXF_OBJ_CreditCardTransaction__c(
+        AXF_CCT_MD_CreditCard__c = card.Id,
+        AXF_CCT_DAT_Date__c = DUE,
+        AXF_CCT_CUR_Amount__c = -50,
+        AXF_CCT_CUR_AmountBRL__c = -50,
+        AXF_CCT_TXT_CurrencyCode__c = 'BRL',
+        AXF_CCT_PKL_ReconciliationStatus__c = 'Reconciled'
+      );
+      AXF_OBJ_CreditCardTransaction__c owned = purchase(-50, -50, 'BRL', DUE);
+      AXF_OBJ_Entry__c owner = entry(50, 'BRL', card.Id, null);
+      owner.AXF_ENT_LKP_CreditCardTransaction__c = owned.Id;
+      update owner;
+      Account otherHolder = new Account(Name = 'Outro');
+      insert otherHolder;
+      AXF_OBJ_BankAccount__c foreign = new AXF_OBJ_BankAccount__c(
+        Name = 'Alheia',
+        AXF_BA_MD_Holder__c = otherHolder.Id,
+        AXF_BA_PKL_Institution__c = '341',
+        AXF_BA_PKL_Type__c = 'Checking'
+      );
+      insert foreign;
+      insert new AXF_OBJ_BankAccountTransaction__c(
+        AXF_BAT_MD_BankAccount__c = foreign.Id,
+        AXF_BAT_DAT_Date__c = DUE,
+        AXF_BAT_CUR_Amount__c = -100
+      );
+      bank(-100, DUE.addDays(20));
+      System.assertEquals(0, suggest().size());
+      System.assertNotEquals(null, cardEntry.Id);
+    }
+  }
 }
