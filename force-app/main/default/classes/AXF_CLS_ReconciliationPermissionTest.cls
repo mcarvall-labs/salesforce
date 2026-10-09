@@ -113,9 +113,14 @@ private class AXF_CLS_ReconciliationPermissionTest {
     List<ApexClass> controllers = [
       SELECT Name
       FROM ApexClass
-      WHERE Name IN ('AXF_CLS_CTRL_Reconciliation', 'AXF_CLS_CTRL_PluggySync')
+      WHERE
+        Name IN (
+          'AXF_CLS_CTRL_Reconciliation',
+          'AXF_CLS_CTRL_PluggySync',
+          'AXF_CLS_CTRL_InvoiceTransactions'
+        )
     ];
-    System.assertEquals(2, controllers.size());
+    System.assertEquals(3, controllers.size());
     for (ApexClass apexClass : controllers) {
       System.assert(
         classes.contains(apexClass.Id),
