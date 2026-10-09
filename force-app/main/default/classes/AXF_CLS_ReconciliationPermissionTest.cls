@@ -110,11 +110,13 @@ private class AXF_CLS_ReconciliationPermissionTest {
     ]) {
       classes.add(access.SetupEntityId);
     }
-    for (ApexClass apexClass : [
+    List<ApexClass> controllers = [
       SELECT Name
       FROM ApexClass
       WHERE Name IN ('AXF_CLS_CTRL_Reconciliation', 'AXF_CLS_CTRL_PluggySync')
-    ]) {
+    ];
+    System.assertEquals(2, controllers.size());
+    for (ApexClass apexClass : controllers) {
       System.assert(
         classes.contains(apexClass.Id),
         apexClass.Name + ' is not granted'
@@ -187,6 +189,58 @@ private class AXF_CLS_ReconciliationPermissionTest {
         AXF_CLS_CTRL_Reconciliation.getData(data.holder.Id, '2026-10')
           .entries.size()
       );
+    }
+  }
+
+  // Least privilege: the set updates transactions but never creates or deletes them, and the
+  // invoice link of an Entry stays read only.
+  @IsTest
+  static void permissionSetDoesNotGrantMoreThanTheScreenNeeds() {
+    User user = axonUser();
+    System.runAs(user) {
+      for (
+        Schema.DescribeSObjectResult describe : new List<Schema.DescribeSObjectResult>{
+          AXF_OBJ_BankAccountTransaction__c.SObjectType.getDescribe(),
+          AXF_OBJ_CreditCardTransaction__c.SObjectType.getDescribe()
+        }
+      ) {
+        System.assertEquals(true, describe.isUpdateable(), describe.getName());
+        System.assertEquals(false, describe.isCreateable(), describe.getName());
+        System.assertEquals(false, describe.isDeletable(), describe.getName());
+      }
+      Schema.DescribeFieldResult invoice = AXF_OBJ_Entry__c.AXF_ENT_LKP_Invoice__c.getDescribe();
+      System.assertEquals(true, invoice.isAccessible());
+      System.assertEquals(false, invoice.isUpdateable());
+      System.assertEquals(
+        true,
+        AXF_OBJ_Entry__c.AXF_ENT_LKP_BankAccountTransaction__c.getDescribe()
+          .isUpdateable()
+      );
+    }
+  }
+
+  @IsTest
+  static void userWithoutThePermissionSetIsDenied() {
+    User user = new User(
+      Alias = 'axfnops',
+      Email = 'axfnops@example.com',
+      EmailEncodingKey = 'UTF-8',
+      LastName = 'NoPermissionSet',
+      LanguageLocaleKey = 'en_US',
+      LocaleSidKey = 'en_US',
+      ProfileId = [SELECT Id FROM Profile WHERE Name = 'Standard User' LIMIT 1]
+      .Id,
+      TimeZoneSidKey = 'America/Sao_Paulo',
+      Username = 'axfnops' + System.currentTimeMillis() + '@example.com'
+    );
+    insert user;
+    System.runAs(user) {
+      try {
+        AXF_CLS_CTRL_Reconciliation.getHolders();
+        System.assert(false, 'expected AuraHandledException');
+      } catch (AuraHandledException e) {
+        System.assertNotEquals(null, e.getMessage());
+      }
     }
   }
 }

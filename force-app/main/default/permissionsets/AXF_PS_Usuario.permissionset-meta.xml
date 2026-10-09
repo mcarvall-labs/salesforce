@@ -253,11 +253,6 @@
         <readable>true</readable>
     </fieldPermissions>
     <fieldPermissions>
-        <editable>false</editable>
-        <field>AXF_OBJ_Entry__c.AXF_ENT_FOR_AffectsCash__c</field>
-        <readable>true</readable>
-    </fieldPermissions>
-    <fieldPermissions>
         <editable>true</editable>
         <field
     >AXF_OBJ_BankAccountTransaction__c.AXF_BAT_PKL_ReconciliationStatus__c</field>
