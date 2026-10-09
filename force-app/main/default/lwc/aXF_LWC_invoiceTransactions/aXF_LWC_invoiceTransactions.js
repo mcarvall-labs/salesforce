@@ -7,6 +7,8 @@ const STATUS_LABELS = { Open: "Aberta", Closed: "Fechada", Paid: "Paga" };
 export default class AXF_LWC_invoiceTransactions extends NavigationMixin(
   LightningElement
 ) {
+  // On the Entry record page the card disappears when the Entry is not an invoice Entry.
+  @api hideWhenNotInvoice = false;
   invoice;
   isLoading = true;
   errorMessage;
@@ -54,6 +56,10 @@ export default class AXF_LWC_invoiceTransactions extends NavigationMixin(
 
   get hasLines() {
     return this.hasInvoice && this.invoice.lines.length > 0;
+  }
+
+  get showCard() {
+    return !(this.hideWhenNotInvoice && !this.hasInvoice && !this.errorMessage);
   }
 
   get showNoInvoice() {

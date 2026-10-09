@@ -189,4 +189,46 @@ describe("c-a-x-f-l-w-c-invoice-transactions", () => {
       "2026-11"
     );
   });
+
+  it("hides the whole card for a non-invoice entry when asked to", async () => {
+    getInvoice.mockResolvedValue(null);
+    const element = createElement("c-a-x-f-l-w-c-invoice-transactions", {
+      is: AXF_LWC_invoiceTransactions
+    });
+    element.recordId = "e1";
+    element.hideWhenNotInvoice = true;
+    document.body.appendChild(element);
+    await flushPromises();
+    expect(element.shadowRoot.querySelector("lightning-card")).toBeNull();
+  });
+
+  it("keeps the card for an invoice entry even when set to hide", async () => {
+    getInvoice.mockResolvedValue(invoice);
+    const element = createElement("c-a-x-f-l-w-c-invoice-transactions", {
+      is: AXF_LWC_invoiceTransactions
+    });
+    element.recordId = "e1";
+    element.hideWhenNotInvoice = true;
+    document.body.appendChild(element);
+    await flushPromises();
+    expect(element.shadowRoot.querySelector("lightning-card")).not.toBeNull();
+  });
+
+  it("does not show the card while loading when it is set to hide", async () => {
+    let release;
+    getInvoice.mockImplementation(
+      () => new Promise((resolve) => (release = () => resolve(null)))
+    );
+    const element = createElement("c-a-x-f-l-w-c-invoice-transactions", {
+      is: AXF_LWC_invoiceTransactions
+    });
+    element.recordId = "e1";
+    element.hideWhenNotInvoice = true;
+    document.body.appendChild(element);
+    await flushPromises();
+    expect(element.shadowRoot.querySelector("lightning-card")).toBeNull();
+    release();
+    await flushPromises();
+    expect(element.shadowRoot.querySelector("lightning-card")).toBeNull();
+  });
 });
