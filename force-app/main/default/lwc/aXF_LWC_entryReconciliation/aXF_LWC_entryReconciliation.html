@@ -1,0 +1,74 @@
+<template>
+  <lightning-card title="Conciliação" icon-name="standard:reconciliation">
+    <div class="slds-p-horizontal_medium">
+      <template lwc:if={isLoading}>
+        <lightning-spinner
+          alternative-text="Carregando"
+          size="small"
+        ></lightning-spinner>
+      </template>
+      <template lwc:if={errorMessage}>
+        <p class="slds-text-color_error" role="alert">{errorMessage}</p>
+      </template>
+      <template lwc:if={showPending}>
+        <p class="pending slds-text-color_weak">
+          Este lançamento ainda não foi conciliado. Use a tela Conciliação.
+        </p>
+      </template>
+      <template lwc:if={isReconciled}>
+        <dl class="reconciled slds-list_horizontal slds-wrap">
+          <dt class="slds-item_label slds-text-color_weak">Conciliado com</dt>
+          <dd class="slds-item_detail source">{sourceLabel}</dd>
+          <dt class="slds-item_label slds-text-color_weak">Transação</dt>
+          <dd class="slds-item_detail">
+            <a
+              class="open-transaction"
+              href="#"
+              data-id={data.transactionId}
+              onclick={handleOpen}
+              >{data.description}</a
+            >
+          </dd>
+          <dt class="slds-item_label slds-text-color_weak">Data</dt>
+          <dd class="slds-item_detail">
+            <lightning-formatted-date-time
+              value={data.transactionDate}
+              time-zone="UTC"
+            ></lightning-formatted-date-time>
+          </dd>
+          <dt class="slds-item_label slds-text-color_weak">Valor</dt>
+          <dd class="slds-item_detail">
+            <lightning-formatted-number
+              value={data.amount}
+              format-style="currency"
+              currency-code={data.currencyCode}
+            ></lightning-formatted-number>
+            <template lwc:if={hasBRL}>
+              (<lightning-formatted-number
+                class="brl"
+                value={data.amountBRL}
+                format-style="currency"
+                currency-code="BRL"
+              ></lightning-formatted-number
+              >)
+            </template>
+          </dd>
+          <dt class="slds-item_label slds-text-color_weak">Valor realizado</dt>
+          <dd class="slds-item_detail">
+            <lightning-formatted-number
+              value={data.realizedAmountBRL}
+              format-style="currency"
+              currency-code="BRL"
+            ></lightning-formatted-number>
+          </dd>
+        </dl>
+        <lightning-button
+          class="undo slds-m-top_small"
+          label="Desconciliar"
+          disabled={cannotUndo}
+          onclick={handleUndo}
+        ></lightning-button>
+      </template>
+    </div>
+  </lightning-card>
+</template>

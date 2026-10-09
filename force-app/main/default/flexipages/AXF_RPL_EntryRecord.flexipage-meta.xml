@@ -13,6 +13,22 @@
     <flexiPageRegions>
         <itemInstances>
             <componentInstance>
+                <componentName>c:aXF_LWC_invoiceTransactions</componentName>
+                <identifier>c_aXF_LWC_invoiceTransactions</identifier>
+                <componentInstanceProperties>
+                    <name>hideWhenNotInvoice</name>
+                    <value>true</value>
+                </componentInstanceProperties>
+            </componentInstance>
+        </itemInstances>
+        <itemInstances>
+            <componentInstance>
+                <componentName>c:aXF_LWC_entryReconciliation</componentName>
+                <identifier>c_aXF_LWC_entryReconciliation</identifier>
+            </componentInstance>
+        </itemInstances>
+        <itemInstances>
+            <componentInstance>
                 <componentName>force:detailPanel</componentName>
                 <identifier>force_detailPanel</identifier>
             </componentInstance>
