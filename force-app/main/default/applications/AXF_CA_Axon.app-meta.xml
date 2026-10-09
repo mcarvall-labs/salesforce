@@ -16,5 +16,6 @@
     <tabs>AXF_OBJ_BankAccount__c</tabs>
     <tabs>AXF_OBJ_CreditCard__c</tabs>
     <tabs>AXF_OBJ_Contract__c</tabs>
+    <tabs>AXF_CT_Reconciliation</tabs>
     <uiType>Lightning</uiType>
 </CustomApplication>
