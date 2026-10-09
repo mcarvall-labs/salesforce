@@ -206,17 +206,18 @@ public with sharing class ALT_CLS_Reconciliation {
       ) {
         outcome.message = 'O lançamento não está conciliado.';
       } else {
-        changes.entries.add(
-          new AXF_OBJ_Entry__c(
-            Id = entry.Id,
-            AXF_ENT_PKL_Status__c = ENTRY_PENDING,
-            AXF_ENT_DAT_PaymentDate__c = null,
-            AXF_ENT_NUM_RealizedAmountBRL__c = null,
-            AXF_ENT_LKP_BankAccountTransaction__c = null,
-            AXF_ENT_LKP_CreditCardTransaction__c = null,
-            AXF_ENT_LKP_BankAccount__c = filledAccount(entry, bankTransactions)
-          )
+        AXF_OBJ_Entry__c undo = new AXF_OBJ_Entry__c(
+          Id = entry.Id,
+          AXF_ENT_PKL_Status__c = ENTRY_PENDING,
+          AXF_ENT_DAT_PaymentDate__c = null,
+          AXF_ENT_NUM_RealizedAmountBRL__c = null,
+          AXF_ENT_LKP_BankAccountTransaction__c = null,
+          AXF_ENT_LKP_CreditCardTransaction__c = null
         );
+        if (clearsAccount(entry, bankTransactions)) {
+          undo.AXF_ENT_LKP_BankAccount__c = null;
+        }
+        changes.entries.add(undo);
         // Only a transaction that is Reconciled goes back to Pending: an Ignored one stays.
         Id bankId = entry.AXF_ENT_LKP_BankAccountTransaction__c;
         if (
@@ -257,18 +258,16 @@ public with sharing class ALT_CLS_Reconciliation {
   // The account of the reconciled transaction goes back to empty on an Entry without card. An
   // account typed by the user before reconciling is the same account (reconcile only accepts a
   // transaction of the Entry's account), so the two cannot be told apart and both are cleared.
-  private Id filledAccount(
+  private Boolean clearsAccount(
     AXF_OBJ_Entry__c entry,
     Map<Id, AXF_OBJ_BankAccountTransaction__c> bankTransactions
   ) {
     AXF_OBJ_BankAccountTransaction__c bank = bankTransactions.get(
       entry.AXF_ENT_LKP_BankAccountTransaction__c
     );
-    Boolean filledByReconcile =
-      bank != null &&
+    return bank != null &&
       entry.AXF_ENT_LKP_CreditCard__c == null &&
       entry.AXF_ENT_LKP_BankAccount__c == bank.AXF_BAT_MD_BankAccount__c;
-    return filledByReconcile ? null : entry.AXF_ENT_LKP_BankAccount__c;
   }
 
   // Entry rows and their transactions go in together: when a transaction fails to save, the
@@ -416,6 +415,9 @@ public with sharing class ALT_CLS_Reconciliation {
       return 'O lançamento já está realizado ou conciliado.';
     }
     Decimal signed = signedAmount(pair, bankTransactions, cardTransactions);
+    if (signed == 0) {
+      return 'A transação tem valor zero.';
+    }
     if (signed != null && !sameDirection(entry, signed)) {
       return 'Despesa só concilia com saída (débito) e receita só com entrada (crédito).';
     }

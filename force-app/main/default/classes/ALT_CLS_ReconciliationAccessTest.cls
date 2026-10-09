@@ -229,6 +229,13 @@ private class ALT_CLS_ReconciliationAccessTest {
         new List<Id>{ data.entry.Id }
       )[0];
       System.assertEquals(true, undone.success, '' + undone.message);
+      AXF_OBJ_Entry__c restored = [
+        SELECT AXF_ENT_PKL_Status__c, AXF_ENT_LKP_BankAccount__c
+        FROM AXF_OBJ_Entry__c
+        WHERE Id = :data.entry.Id
+      ];
+      System.assertEquals('Pending', restored.AXF_ENT_PKL_Status__c);
+      System.assertEquals(null, restored.AXF_ENT_LKP_BankAccount__c);
       ALT_CLS_ReconciliationActions.Outcome created = new ALT_CLS_ReconciliationActions()
         .createEntries(null, new List<Id>{ data.purchase.Id })[0];
       System.assertEquals(true, created.success, '' + created.message);

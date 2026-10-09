@@ -782,4 +782,46 @@ private class ALT_CLS_ReconciliationTest {
       );
     }
   }
+
+  @IsTest
+  static void zeroAmountTransactionIsRejectedWithItsOwnMessage() {
+    System.runAs(new User(Id = UserInfo.getUserId())) {
+      base();
+      AXF_OBJ_BankAccountTransaction__c zero = new AXF_OBJ_BankAccountTransaction__c(
+        AXF_BAT_MD_BankAccount__c = account.Id,
+        AXF_BAT_DAT_Date__c = Date.newInstance(2026, 10, 7),
+        AXF_BAT_CUR_Amount__c = 0
+      );
+      insert zero;
+      System.assert(
+        reconcileMessage(entry(null, null), zero.Id, null)
+          .contains('valor zero')
+      );
+    }
+  }
+
+  @IsTest
+  static void incomeWithACardEntryOnlyReconcilesWithACardRefund() {
+    System.runAs(new User(Id = UserInfo.getUserId())) {
+      base();
+      AXF_OBJ_Entry__c cardIncome = entry(card.Id, null);
+      cardIncome.AXF_ENT_PKL_Type__c = 'Income';
+      update cardIncome;
+      System.assert(
+        reconcileMessage(cardIncome, null, cardTransaction(-20, -20).Id)
+          .contains('receita só com entrada')
+      );
+      ALT_CLS_Reconciliation.Outcome ok = new ALT_CLS_Reconciliation()
+        .reconcile(
+          new List<ALT_CLS_Reconciliation.Pair>{
+            new ALT_CLS_Reconciliation.Pair(
+              cardIncome.Id,
+              null,
+              cardTransaction(20, 20).Id
+            )
+          }
+        )[0];
+      System.assertEquals(true, ok.success, '' + ok.message);
+    }
+  }
 }
