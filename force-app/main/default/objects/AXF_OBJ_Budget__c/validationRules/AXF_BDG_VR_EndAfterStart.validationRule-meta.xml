@@ -5,6 +5,5 @@
     <errorConditionFormula
   >AND(NOT(ISBLANK(AXF_BDG_DAT_EndMonth__c)), NOT(ISBLANK(AXF_BDG_DAT_StartMonth__c)), AXF_BDG_DAT_EndMonth__c &lt; AXF_BDG_DAT_StartMonth__c)</errorConditionFormula>
     <errorDisplayField>AXF_BDG_DAT_EndMonth__c</errorDisplayField>
-    <errorMessage
-  >The end month cannot be before the start month.</errorMessage>
+    <errorMessage>The end month cannot be before the start month.</errorMessage>
 </ValidationRule>

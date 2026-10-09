@@ -5,6 +5,5 @@
     <errorConditionFormula
   >TEXT(CurrencyIsoCode) &lt;&gt; &quot;BRL&quot;</errorConditionFormula>
     <errorDisplayField>AXF_BDG_CUR_Amount__c</errorDisplayField>
-    <errorMessage
-  >Budgets must be in BRL.</errorMessage>
+    <errorMessage>Budgets must be in BRL.</errorMessage>
 </ValidationRule>

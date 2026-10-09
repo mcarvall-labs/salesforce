@@ -5,6 +5,5 @@
     <errorConditionFormula
   >AND(NOT(ISBLANK(AXF_BDG_CUR_Amount__c)), AXF_BDG_CUR_Amount__c &lt;= 0)</errorConditionFormula>
     <errorDisplayField>AXF_BDG_CUR_Amount__c</errorDisplayField>
-    <errorMessage
-  >The monthly amount must be greater than zero.</errorMessage>
+    <errorMessage>The monthly amount must be greater than zero.</errorMessage>
 </ValidationRule>

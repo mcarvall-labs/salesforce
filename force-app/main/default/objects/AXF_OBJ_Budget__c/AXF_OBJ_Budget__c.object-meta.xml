@@ -21,7 +21,8 @@
     <allowInChatterGroups>false</allowInChatterGroups>
     <compactLayoutAssignment>AXF_BDG_Compact</compactLayoutAssignment>
     <deploymentStatus>Deployed</deploymentStatus>
-    <description>Meta mensal de despesa do titular, total ou por categoria (EP-07).</description>
+    <description
+  >Meta mensal de despesa do titular, total ou por categoria (EP-07).</description>
     <enableActivities>false</enableActivities>
     <enableBulkApi>true</enableBulkApi>
     <enableFeeds>false</enableFeeds>
