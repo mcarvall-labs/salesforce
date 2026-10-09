@@ -12,6 +12,8 @@ private class ALT_CLS_ForeignCurrencyCardTest {
       'axffc',
       new List<String>{
         'AXF_OBJ_Entry__c',
+        'AXF_OBJ_BankAccount__c',
+        'AXF_OBJ_BankAccountTransaction__c',
         'AXF_OBJ_CreditCard__c',
         'AXF_OBJ_CreditCardInvoice__c',
         'AXF_OBJ_CreditCardTransaction__c'
