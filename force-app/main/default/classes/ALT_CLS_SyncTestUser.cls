@@ -7,6 +7,16 @@
 @IsTest
 public class ALT_CLS_SyncTestUser {
   public static User create(String alias, List<String> objectNames) {
+    return create(alias, objectNames, UserInfo.getUserId());
+  }
+
+  // Same permission set, assigned to the given user (for example a restricted one, to exercise
+  // sharing and enforcement).
+  public static User create(
+    String alias,
+    List<String> objectNames,
+    Id assigneeId
+  ) {
     PermissionSet ps = new PermissionSet(
       Label = 'Sync Test ' + alias,
       Name = 'AXF_SyncTest_' + alias
@@ -49,9 +59,9 @@ public class ALT_CLS_SyncTestUser {
     insert objects;
     insert fields;
     insert new PermissionSetAssignment(
-      AssigneeId = UserInfo.getUserId(),
+      AssigneeId = assigneeId,
       PermissionSetId = ps.Id
     );
-    return new User(Id = UserInfo.getUserId());
+    return new User(Id = assigneeId);
   }
 }

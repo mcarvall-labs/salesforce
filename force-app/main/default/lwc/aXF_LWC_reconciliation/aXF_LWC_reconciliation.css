@@ -1,0 +1,16 @@
+.reconciliation-row {
+  cursor: pointer;
+}
+
+.suggested-row {
+  background-color: #e5f5ea;
+}
+
+.selected-row {
+  box-shadow: inset 3px 0 0 #0176d3;
+}
+
+.blocked-row {
+  cursor: not-allowed;
+  opacity: 0.45;
+}
