@@ -62,6 +62,12 @@
               ></lightning-formatted-number>
             </div>
             <div class="slds-text-color_weak">{lineCount} compras</div>
+            <template lwc:if={isProjected}>
+              <div class="slds-text-color_weak projected-note">
+                Previsão calculada pelas parcelas já lançadas; o valor real vem
+                do banco quando a fatura for emitida.
+              </div>
+            </template>
           </div>
           <template lwc:if={isLoadingLines}>
             <lightning-spinner
@@ -83,8 +89,8 @@
                 </tr>
               </thead>
               <tbody>
-                <template for:each={lines} for:item="line">
-                  <tr key={line.id}>
+                <template for:each={rows} for:item="line">
+                  <tr key={line.key} class={line.rowClass}>
                     <td>
                       <lightning-formatted-date-time
                         value={line.transactionDate}
@@ -92,9 +98,12 @@
                       ></lightning-formatted-date-time>
                     </td>
                     <td>
-                      <a href="#" data-id={line.id} onclick={handleOpen}
-                        >{line.description}</a
-                      >
+                      <template lwc:if={line.isLink}>
+                        <a href="#" data-id={line.id} onclick={handleOpen}
+                          >{line.description}</a
+                        >
+                      </template>
+                      <template lwc:else>{line.description}</template>
                     </td>
                     <td>{line.installment}</td>
                     <td class="slds-text-align_right">

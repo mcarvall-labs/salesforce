@@ -205,4 +205,37 @@ describe("c-a-x-f-l-w-c-card-invoices", () => {
     await flushPromises();
     expect(getInvoices).toHaveBeenCalledTimes(1);
   });
+  it("shows projected invoices from their own lines without loading them", async () => {
+    getInvoices.mockResolvedValue([
+      {
+        ...next,
+        id: null,
+        status: "Projected",
+        projected: true,
+        lines: [
+          {
+            description: "KABUM",
+            amount: -100,
+            amountBRL: -100,
+            installment: "4/5",
+            projected: true
+          }
+        ]
+      },
+      current
+    ]);
+    getLines.mockResolvedValue([]);
+    const element = await setup();
+    element.shadowRoot.querySelector(".invoice-next").click();
+    await flushPromises();
+    expect(element.shadowRoot.querySelector(".invoice-status").label).toBe(
+      "Prevista"
+    );
+    expect(getLines).toHaveBeenCalledTimes(1);
+    expect(element.shadowRoot.querySelector(".projected-note")).not.toBeNull();
+    expect(element.shadowRoot.querySelector("tbody a")).toBeNull();
+    expect(element.shadowRoot.querySelector("tbody").textContent).toContain(
+      "KABUM"
+    );
+  });
 });
