@@ -32,7 +32,8 @@ private class AXF_CLS_CTRL_PluggySyncTest {
         'AXF_OBJ_BankAccountTransaction__c',
         'AXF_OBJ_CreditCard__c',
         'AXF_OBJ_CreditCardInvoice__c',
-        'AXF_OBJ_CreditCardTransaction__c'
+        'AXF_OBJ_CreditCardTransaction__c',
+        'AXF_OBJ_Entry__c'
       }
     );
   }

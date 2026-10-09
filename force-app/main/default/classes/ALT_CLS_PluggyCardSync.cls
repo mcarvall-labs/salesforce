@@ -3,6 +3,9 @@
  * card: upserts by Pluggy Id, links each transaction to its invoice by the bill id and stores the
  * signed amount in the original currency plus the converted amount Pluggy reports
  * (amountInAccountCurrency) as the BRL amount. Same window rule as the account transactions.
+ * Each invoice also keeps one expense Entry (Lançamento) in BRL, created and refreshed (due date
+ * and total) while it is Pending, so the dashboard shows the card as a single expense (E6-3); a
+ * Realized one (paid and reconciled) is left alone.
  */
 public with sharing class ALT_CLS_PluggyCardSync {
   public class Result {
@@ -12,6 +15,7 @@ public with sharing class ALT_CLS_PluggyCardSync {
     public Integer transactions = 0;
     public Integer skipped = 0;
     public Integer withoutInvoice = 0;
+    public Integer invoiceEntries = 0;
   }
 
   private static final Integer INITIAL_DAYS = 90;
@@ -135,6 +139,13 @@ public with sharing class ALT_CLS_PluggyCardSync {
       r.message = 'Não foi possível salvar faturas e transações: ' + failure;
       return r;
     }
+    try {
+      r.invoiceEntries = syncInvoiceEntries(creditCardId, invoices.keySet());
+    } catch (DmlException e) {
+      r.message =
+        'Não foi possível salvar o lançamento da fatura: ' + e.getMessage();
+      return r;
+    }
     r.success = true;
     r.invoices = invoices.size();
     r.transactions = transactions.size();
@@ -149,6 +160,112 @@ public with sharing class ALT_CLS_PluggyCardSync {
       r.message += ' ' + r.withoutInvoice + ' transações ficaram sem fatura.';
     }
     return r;
+  }
+
+  // One Pending expense Entry per invoice, in BRL (the invoice total is always BRL). Existing
+  // Pending ones follow the invoice due date and total; Realized ones are never touched.
+  private Integer syncInvoiceEntries(
+    Id creditCardId,
+    Set<String> pluggyInvoiceIds
+  ) {
+    if (pluggyInvoiceIds.isEmpty()) {
+      return 0;
+    }
+    AXF_OBJ_CreditCard__c card = [
+      SELECT Name, AXF_CC_MD_Holder__c
+      FROM AXF_OBJ_CreditCard__c
+      WHERE Id = :creditCardId
+    ];
+    List<AXF_OBJ_CreditCardInvoice__c> savedInvoices = [
+      SELECT
+        AXF_CCI_TXT_Period__c,
+        AXF_CCI_DAT_DueDate__c,
+        AXF_CCI_CUR_TotalAmount__c
+      FROM AXF_OBJ_CreditCardInvoice__c
+      WHERE
+        AXF_CCI_MD_CreditCard__c = :creditCardId
+        AND AXF_CCI_EXI_PluggyInvoiceId__c IN :pluggyInvoiceIds
+    ];
+    Set<Id> invoiceIds = new Set<Id>();
+    for (AXF_OBJ_CreditCardInvoice__c saved : savedInvoices) {
+      invoiceIds.add(saved.Id);
+    }
+    Map<Id, AXF_OBJ_Entry__c> entryByInvoice = new Map<Id, AXF_OBJ_Entry__c>();
+    List<AXF_OBJ_Entry__c> existingEntries = [
+      SELECT
+        AXF_ENT_PKL_Status__c,
+        AXF_ENT_LKP_Invoice__c,
+        AXF_ENT_CUR_Amount__c,
+        AXF_ENT_DAT_DueDate__c
+      FROM AXF_OBJ_Entry__c
+      WHERE AXF_ENT_LKP_Invoice__c IN :invoiceIds
+    ];
+    for (AXF_OBJ_Entry__c entry : existingEntries) {
+      AXF_OBJ_Entry__c kept = entryByInvoice.get(entry.AXF_ENT_LKP_Invoice__c);
+      if (kept == null || kept.AXF_ENT_PKL_Status__c == 'Pending') {
+        entryByInvoice.put(entry.AXF_ENT_LKP_Invoice__c, entry);
+      }
+    }
+    List<AXF_OBJ_Entry__c> toInsert = new List<AXF_OBJ_Entry__c>();
+    List<AXF_OBJ_Entry__c> toUpdate = new List<AXF_OBJ_Entry__c>();
+    for (AXF_OBJ_CreditCardInvoice__c invoice : savedInvoices) {
+      Decimal total = invoice.AXF_CCI_CUR_TotalAmount__c;
+      if (
+        total == null ||
+        total <= 0 ||
+        invoice.AXF_CCI_DAT_DueDate__c == null
+      ) {
+        continue;
+      }
+      AXF_OBJ_Entry__c existing = entryByInvoice.get(invoice.Id);
+      if (existing == null) {
+        toInsert.add(
+          new AXF_OBJ_Entry__c(
+            Name = ('Fatura ' +
+              card.Name +
+              ' ' +
+              invoice.AXF_CCI_TXT_Period__c)
+              .abbreviate(80),
+            AXF_ENT_MD_Holder__c = card.AXF_CC_MD_Holder__c,
+            AXF_ENT_PKL_Type__c = 'Expense',
+            AXF_ENT_PKL_Status__c = 'Pending',
+            CurrencyIsoCode = 'BRL',
+            AXF_ENT_CUR_Amount__c = total,
+            AXF_ENT_DAT_DueDate__c = invoice.AXF_CCI_DAT_DueDate__c,
+            AXF_ENT_LKP_CreditCard__c = creditCardId,
+            AXF_ENT_LKP_Invoice__c = invoice.Id
+          )
+        );
+      } else if (
+        existing.AXF_ENT_PKL_Status__c == 'Pending' &&
+        (existing.AXF_ENT_CUR_Amount__c != total ||
+        existing.AXF_ENT_DAT_DueDate__c != invoice.AXF_CCI_DAT_DueDate__c)
+      ) {
+        toUpdate.add(
+          new AXF_OBJ_Entry__c(
+            Id = existing.Id,
+            AXF_ENT_CUR_Amount__c = total,
+            AXF_ENT_DAT_DueDate__c = invoice.AXF_CCI_DAT_DueDate__c
+          )
+        );
+      }
+    }
+    String failure = firstEntryFailure(Database.insert(toInsert, false));
+    String updateFailure = firstEntryFailure(Database.update(toUpdate, false));
+    failure = failure == null ? updateFailure : failure;
+    if (failure != null) {
+      throw new DmlException(failure);
+    }
+    return toInsert.size() + toUpdate.size();
+  }
+
+  private String firstEntryFailure(List<Database.SaveResult> results) {
+    for (Database.SaveResult result : results) {
+      if (!result.isSuccess()) {
+        return result.getErrors()[0].getMessage();
+      }
+    }
+    return null;
   }
 
   // /bills is page-paginated ({total, totalPages, page, results}), unlike /v2/transactions.
