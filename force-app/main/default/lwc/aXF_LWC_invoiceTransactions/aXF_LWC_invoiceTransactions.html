@@ -1,102 +1,108 @@
 <template>
-  <lightning-card title="Fatura do cartão" icon-name="standard:contract">
-    <div class="slds-p-horizontal_medium">
-      <template lwc:if={isLoading}>
-        <lightning-spinner
-          alternative-text="Carregando"
-          size="small"
-        ></lightning-spinner>
-      </template>
-      <template lwc:if={errorMessage}>
-        <p class="slds-text-color_error" role="alert">{errorMessage}</p>
-      </template>
-      <template lwc:if={showNoInvoice}>
-        <p class="no-invoice slds-text-color_weak">
-          Este lançamento não é de uma fatura.
-        </p>
-      </template>
-      <template lwc:if={hasInvoice}>
-        <dl class="invoice-data slds-list_horizontal slds-wrap">
-          <dt class="slds-item_label slds-text-color_weak">Cartão</dt>
-          <dd class="slds-item_detail card-name">{invoice.cardName}</dd>
-          <dt class="slds-item_label slds-text-color_weak">Período</dt>
-          <dd class="slds-item_detail period">{invoice.period}</dd>
-          <dt class="slds-item_label slds-text-color_weak">Fechamento</dt>
-          <dd class="slds-item_detail">
-            <lightning-formatted-date-time
-              value={invoice.closingDate}
-              time-zone="UTC"
-            ></lightning-formatted-date-time>
-          </dd>
-          <dt class="slds-item_label slds-text-color_weak">Vencimento</dt>
-          <dd class="slds-item_detail">
-            <lightning-formatted-date-time
-              value={invoice.dueDate}
-              time-zone="UTC"
-            ></lightning-formatted-date-time>
-          </dd>
-          <dt class="slds-item_label slds-text-color_weak">Total</dt>
-          <dd class="slds-item_detail">
-            <lightning-formatted-number
-              value={invoice.totalAmount}
-              format-style="currency"
-              currency-code={invoice.currencyCode}
-            ></lightning-formatted-number>
-          </dd>
-          <dt class="slds-item_label slds-text-color_weak">Situação</dt>
-          <dd class="slds-item_detail status">{statusLabel}</dd>
-        </dl>
-        <template lwc:if={hasLines}>
-          <table class="lines slds-table slds-table_bordered slds-m-top_small">
-            <thead>
-              <tr>
-                <th scope="col">Data</th>
-                <th scope="col">Descrição</th>
-                <th scope="col">Parcela</th>
-                <th scope="col" class="slds-text-align_right">Valor</th>
-                <th scope="col" class="slds-text-align_right">Valor em BRL</th>
-              </tr>
-            </thead>
-            <tbody>
-              <template for:each={lines} for:item="line">
-                <tr key={line.id}>
-                  <td>
-                    <lightning-formatted-date-time
-                      value={line.transactionDate}
-                      time-zone="UTC"
-                    ></lightning-formatted-date-time>
-                  </td>
-                  <td>
-                    <a href="#" data-id={line.id} onclick={handleOpen}
-                      >{line.description}</a
-                    >
-                  </td>
-                  <td>{line.installment}</td>
-                  <td class="slds-text-align_right">
-                    <lightning-formatted-number
-                      value={line.amount}
-                      format-style="currency"
-                      currency-code={line.originalCurrency}
-                    ></lightning-formatted-number>
-                  </td>
-                  <td class="slds-text-align_right">
-                    <template lwc:if={line.hasBRL}>
-                      <lightning-formatted-number
-                        value={line.amountBRL}
-                        format-style="currency"
-                        currency-code="BRL"
-                      ></lightning-formatted-number>
-                    </template>
-                  </td>
+  <template lwc:if={showCard}>
+    <lightning-card title="Fatura do cartão" icon-name="standard:contract">
+      <div class="slds-p-horizontal_medium">
+        <template lwc:if={isLoading}>
+          <lightning-spinner
+            alternative-text="Carregando"
+            size="small"
+          ></lightning-spinner>
+        </template>
+        <template lwc:if={errorMessage}>
+          <p class="slds-text-color_error" role="alert">{errorMessage}</p>
+        </template>
+        <template lwc:if={showNoInvoice}>
+          <p class="no-invoice slds-text-color_weak">
+            Este lançamento não é de uma fatura.
+          </p>
+        </template>
+        <template lwc:if={hasInvoice}>
+          <dl class="invoice-data slds-list_horizontal slds-wrap">
+            <dt class="slds-item_label slds-text-color_weak">Cartão</dt>
+            <dd class="slds-item_detail card-name">{invoice.cardName}</dd>
+            <dt class="slds-item_label slds-text-color_weak">Período</dt>
+            <dd class="slds-item_detail period">{invoice.period}</dd>
+            <dt class="slds-item_label slds-text-color_weak">Fechamento</dt>
+            <dd class="slds-item_detail">
+              <lightning-formatted-date-time
+                value={invoice.closingDate}
+                time-zone="UTC"
+              ></lightning-formatted-date-time>
+            </dd>
+            <dt class="slds-item_label slds-text-color_weak">Vencimento</dt>
+            <dd class="slds-item_detail">
+              <lightning-formatted-date-time
+                value={invoice.dueDate}
+                time-zone="UTC"
+              ></lightning-formatted-date-time>
+            </dd>
+            <dt class="slds-item_label slds-text-color_weak">Total</dt>
+            <dd class="slds-item_detail">
+              <lightning-formatted-number
+                value={invoice.totalAmount}
+                format-style="currency"
+                currency-code={invoice.currencyCode}
+              ></lightning-formatted-number>
+            </dd>
+            <dt class="slds-item_label slds-text-color_weak">Situação</dt>
+            <dd class="slds-item_detail status">{statusLabel}</dd>
+          </dl>
+          <template lwc:if={hasLines}>
+            <table
+              class="lines slds-table slds-table_bordered slds-m-top_small"
+            >
+              <thead>
+                <tr>
+                  <th scope="col">Data</th>
+                  <th scope="col">Descrição</th>
+                  <th scope="col">Parcela</th>
+                  <th scope="col" class="slds-text-align_right">Valor</th>
+                  <th scope="col" class="slds-text-align_right">
+                    Valor em BRL
+                  </th>
                 </tr>
-              </template>
-            </tbody>
-          </table>
+              </thead>
+              <tbody>
+                <template for:each={lines} for:item="line">
+                  <tr key={line.id}>
+                    <td>
+                      <lightning-formatted-date-time
+                        value={line.transactionDate}
+                        time-zone="UTC"
+                      ></lightning-formatted-date-time>
+                    </td>
+                    <td>
+                      <a href="#" data-id={line.id} onclick={handleOpen}
+                        >{line.description}</a
+                      >
+                    </td>
+                    <td>{line.installment}</td>
+                    <td class="slds-text-align_right">
+                      <lightning-formatted-number
+                        value={line.amount}
+                        format-style="currency"
+                        currency-code={line.originalCurrency}
+                      ></lightning-formatted-number>
+                    </td>
+                    <td class="slds-text-align_right">
+                      <template lwc:if={line.hasBRL}>
+                        <lightning-formatted-number
+                          value={line.amountBRL}
+                          format-style="currency"
+                          currency-code="BRL"
+                        ></lightning-formatted-number>
+                      </template>
+                    </td>
+                  </tr>
+                </template>
+              </tbody>
+            </table>
+          </template>
+          <template lwc:else>
+            <p class="slds-m-top_small">Nenhuma transação nesta fatura.</p>
+          </template>
         </template>
-        <template lwc:else>
-          <p class="slds-m-top_small">Nenhuma transação nesta fatura.</p>
-        </template>
-      </template>
-    </div>
-  </lightning-card>
+      </div>
+    </lightning-card>
+  </template>
 </template>

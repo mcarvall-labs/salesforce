@@ -85,6 +85,31 @@ public with sharing class AXF_CLS_CTRL_Reconciliation {
     public Id lastReconciledEntryId;
   }
 
+  // What the Entry record page shows: the transaction the Entry is reconciled with.
+  public class EntryReconciliationView {
+    @AuraEnabled
+    public Boolean reconciled = false;
+    // account or card
+    @AuraEnabled
+    public String source;
+    @AuraEnabled
+    public Id transactionId;
+    @AuraEnabled
+    public Date transactionDate;
+    @AuraEnabled
+    public String description;
+    @AuraEnabled
+    public Decimal amount;
+    @AuraEnabled
+    public String currencyCode;
+    @AuraEnabled
+    public Decimal amountBRL;
+    @AuraEnabled
+    public Decimal realizedAmountBRL;
+    @AuraEnabled
+    public Date paymentDate;
+  }
+
   public class PairInput {
     @AuraEnabled
     public Id entryId;
@@ -299,6 +324,67 @@ public with sharing class AXF_CLS_CTRL_Reconciliation {
       throw new AuraHandledException(FAILED);
     }
     return views;
+  }
+
+  @AuraEnabled
+  public static EntryReconciliationView getEntryReconciliation(Id entryId) {
+    if (entryId == null) {
+      throw new AuraHandledException('Informe o lançamento.');
+    }
+    EntryReconciliationView view = new EntryReconciliationView();
+    try {
+      List<AXF_OBJ_Entry__c> entries = [
+        SELECT
+          AXF_ENT_NUM_RealizedAmountBRL__c,
+          AXF_ENT_DAT_PaymentDate__c,
+          AXF_ENT_LKP_BankAccountTransaction__c,
+          AXF_ENT_LKP_BankAccountTransaction__r.AXF_BAT_DAT_Date__c,
+          AXF_ENT_LKP_BankAccountTransaction__r.AXF_BAT_TXT_Description__c,
+          AXF_ENT_LKP_BankAccountTransaction__r.AXF_BAT_CUR_Amount__c,
+          AXF_ENT_LKP_BankAccountTransaction__r.CurrencyIsoCode,
+          AXF_ENT_LKP_CreditCardTransaction__c,
+          AXF_ENT_LKP_CreditCardTransaction__r.AXF_CCT_DAT_Date__c,
+          AXF_ENT_LKP_CreditCardTransaction__r.AXF_CCT_TXT_Description__c,
+          AXF_ENT_LKP_CreditCardTransaction__r.AXF_CCT_CUR_Amount__c,
+          AXF_ENT_LKP_CreditCardTransaction__r.AXF_CCT_CUR_AmountBRL__c,
+          AXF_ENT_LKP_CreditCardTransaction__r.AXF_CCT_TXT_CurrencyCode__c,
+          AXF_ENT_LKP_CreditCardTransaction__r.CurrencyIsoCode
+        FROM AXF_OBJ_Entry__c
+        WHERE Id = :entryId
+        WITH USER_MODE
+      ];
+      if (entries.isEmpty()) {
+        throw new AuraHandledException('Lançamento não encontrado.');
+      }
+      AXF_OBJ_Entry__c entry = entries[0];
+      view.realizedAmountBRL = entry.AXF_ENT_NUM_RealizedAmountBRL__c;
+      view.paymentDate = entry.AXF_ENT_DAT_PaymentDate__c;
+      if (entry.AXF_ENT_LKP_BankAccountTransaction__c != null) {
+        AXF_OBJ_BankAccountTransaction__c bank = entry.AXF_ENT_LKP_BankAccountTransaction__r;
+        view.reconciled = true;
+        view.source = 'account';
+        view.transactionId = bank.Id;
+        view.transactionDate = bank.AXF_BAT_DAT_Date__c;
+        view.description = bank.AXF_BAT_TXT_Description__c;
+        view.amount = bank.AXF_BAT_CUR_Amount__c;
+        view.currencyCode = bank.CurrencyIsoCode;
+      } else if (entry.AXF_ENT_LKP_CreditCardTransaction__c != null) {
+        AXF_OBJ_CreditCardTransaction__c card = entry.AXF_ENT_LKP_CreditCardTransaction__r;
+        view.reconciled = true;
+        view.source = 'card';
+        view.transactionId = card.Id;
+        view.transactionDate = card.AXF_CCT_DAT_Date__c;
+        view.description = card.AXF_CCT_TXT_Description__c;
+        view.amount = card.AXF_CCT_CUR_Amount__c;
+        view.amountBRL = card.AXF_CCT_CUR_AmountBRL__c;
+        view.currencyCode = String.isBlank(card.AXF_CCT_TXT_CurrencyCode__c)
+          ? card.CurrencyIsoCode
+          : card.AXF_CCT_TXT_CurrencyCode__c;
+      }
+    } catch (QueryException e) {
+      throw new AuraHandledException(DENIED);
+    }
+    return view;
   }
 
   private static OutcomeView view(

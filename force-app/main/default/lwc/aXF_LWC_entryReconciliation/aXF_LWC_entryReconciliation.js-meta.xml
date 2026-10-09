@@ -2,7 +2,7 @@
 <LightningComponentBundle xmlns="http://soap.sforce.com/2006/04/metadata">
   <apiVersion>67.0</apiVersion>
   <isExposed>true</isExposed>
-  <masterLabel>Transações da fatura</masterLabel>
+  <masterLabel>Conciliação do lançamento</masterLabel>
   <targets>
     <target>lightning__RecordPage</target>
   </targets>
@@ -10,14 +10,7 @@
     <targetConfig targets="lightning__RecordPage">
       <objects>
         <object>AXF_OBJ_Entry__c</object>
-        <object>AXF_OBJ_CreditCardInvoice__c</object>
       </objects>
-      <property
-        name="hideWhenNotInvoice"
-        type="Boolean"
-        label="Esconder quando não for lançamento de fatura"
-        default="false"
-      />
     </targetConfig>
   </targetConfigs>
 </LightningComponentBundle>

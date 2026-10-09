@@ -244,4 +244,54 @@ private class AXF_CLS_CTRL_ReconciliationTest {
       );
     }
   }
+
+  @IsTest
+  static void entryRecordPageShowsTheReconciledTransaction() {
+    System.runAs(new User(Id = UserInfo.getUserId())) {
+      base();
+      AXF_OBJ_Entry__c bankEntry = entry(null, 100);
+      AXF_OBJ_Entry__c cardEntry = entry(card.Id, 30);
+      AXF_OBJ_Entry__c open = entry(null, 5);
+      AXF_OBJ_BankAccountTransaction__c debit = bank(-100);
+      AXF_OBJ_CreditCardTransaction__c purchase = purchase(-30);
+      AXF_CLS_CTRL_Reconciliation.PairInput bankPair = new AXF_CLS_CTRL_Reconciliation.PairInput();
+      bankPair.entryId = bankEntry.Id;
+      bankPair.bankTransactionId = debit.Id;
+      AXF_CLS_CTRL_Reconciliation.PairInput cardPair = new AXF_CLS_CTRL_Reconciliation.PairInput();
+      cardPair.entryId = cardEntry.Id;
+      cardPair.cardTransactionId = purchase.Id;
+      AXF_CLS_CTRL_Reconciliation.reconcile(
+        new List<AXF_CLS_CTRL_Reconciliation.PairInput>{ bankPair, cardPair }
+      );
+      AXF_CLS_CTRL_Reconciliation.EntryReconciliationView onBank = AXF_CLS_CTRL_Reconciliation.getEntryReconciliation(
+        bankEntry.Id
+      );
+      System.assertEquals(true, onBank.reconciled);
+      System.assertEquals('account', onBank.source);
+      System.assertEquals(debit.Id, onBank.transactionId);
+      System.assertEquals(-100, onBank.amount);
+      System.assertEquals('Pagamento', onBank.description);
+      System.assertEquals(100, onBank.realizedAmountBRL);
+      System.assertEquals(DUE, onBank.paymentDate);
+      AXF_CLS_CTRL_Reconciliation.EntryReconciliationView onCard = AXF_CLS_CTRL_Reconciliation.getEntryReconciliation(
+        cardEntry.Id
+      );
+      System.assertEquals('card', onCard.source);
+      System.assertEquals(purchase.Id, onCard.transactionId);
+      System.assertEquals(-30, onCard.amountBRL);
+      System.assertEquals('BRL', onCard.currencyCode);
+      System.assertEquals(
+        false,
+        AXF_CLS_CTRL_Reconciliation.getEntryReconciliation(open.Id).reconciled
+      );
+      for (Id id : new List<Id>{ null, holder.Id }) {
+        try {
+          AXF_CLS_CTRL_Reconciliation.getEntryReconciliation(id);
+          System.assert(false, 'expected AuraHandledException');
+        } catch (AuraHandledException e) {
+          System.assertNotEquals(null, e.getMessage());
+        }
+      }
+    }
+  }
 }
