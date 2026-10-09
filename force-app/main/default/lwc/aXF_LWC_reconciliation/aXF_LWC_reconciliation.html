@@ -77,6 +77,26 @@
             onchange={handleFilter}
           ></lightning-input>
         </div>
+        <div class="slds-col slds-size_1-of-2 slds-medium-size_1-of-6">
+          <lightning-input
+            class="date-from-filter"
+            type="date"
+            label="De"
+            data-filter="dateFrom"
+            value={filters.dateFrom}
+            onchange={handleFilter}
+          ></lightning-input>
+        </div>
+        <div class="slds-col slds-size_1-of-2 slds-medium-size_1-of-6">
+          <lightning-input
+            class="date-to-filter"
+            type="date"
+            label="Até"
+            data-filter="dateTo"
+            value={filters.dateTo}
+            onchange={handleFilter}
+          ></lightning-input>
+        </div>
         <div class="slds-col slds-size_1-of-1 slds-medium-size_1-of-6">
           <lightning-combobox
             class="type-filter"
@@ -126,6 +146,9 @@
                   class={entry.rowClass}
                   data-id={entry.id}
                   onclick={handleEntryClick}
+                  onkeydown={handleRowKey}
+                  tabindex="0"
+                  aria-selected={entry.isSelected}
                 >
                   <td>
                     <lightning-formatted-date-time
@@ -178,6 +201,10 @@
                   class={transaction.rowClass}
                   data-id={transaction.id}
                   onclick={handleTransactionClick}
+                  onkeydown={handleRowKey}
+                  tabindex="0"
+                  aria-selected={transaction.isSelected}
+                  aria-disabled={transaction.blocked}
                 >
                   <td>
                     <lightning-formatted-date-time

@@ -64,14 +64,27 @@ export function isCompatible(entry, transaction) {
   return true;
 }
 
-function matchesCommon(filters, text, value) {
+function matchesDates(filters, day) {
+  if (filters.dateFrom && (!day || day < filters.dateFrom)) {
+    return false;
+  }
+  if (filters.dateTo && (!day || day > filters.dateTo)) {
+    return false;
+  }
+  return true;
+}
+
+function matchesCommon(filters, text, value, day) {
+  if (!matchesDates(filters, day)) {
+    return false;
+  }
   if (
     filters.text &&
     !(text || "").toLowerCase().includes(filters.text.toLowerCase())
   ) {
     return false;
   }
-  const amount = Math.abs(value);
+  const amount = Math.abs(value || 0);
   if (filters.min !== "" && amount < Number(filters.min)) {
     return false;
   }
@@ -85,14 +98,18 @@ function matchesCommon(filters, text, value) {
 export function matchesEntry(entry, filters) {
   if (filters.source) {
     const [kind, id] = filters.source.split(":");
-    if ((kind === "card" ? entry.cardId : entry.accountId) !== id) {
+    const unnamed = !entry.accountId && !entry.cardId;
+    if (
+      (kind === "card" ? entry.cardId : entry.accountId) !== id &&
+      !(kind === "account" && unnamed)
+    ) {
       return false;
     }
   }
   if (filters.type && entry.type !== filters.type) {
     return false;
   }
-  return matchesCommon(filters, entry.name, entry.amount);
+  return matchesCommon(filters, entry.name, entry.amount, entry.dueDate);
 }
 
 export function matchesTransaction(transaction, filters) {
@@ -109,5 +126,10 @@ export function matchesTransaction(transaction, filters) {
   if (filters.type === "Income" && transaction.amount <= 0) {
     return false;
   }
-  return matchesCommon(filters, transaction.description, transaction.amount);
+  return matchesCommon(
+    filters,
+    transaction.description,
+    transaction.amount,
+    transaction.transactionDate
+  );
 }

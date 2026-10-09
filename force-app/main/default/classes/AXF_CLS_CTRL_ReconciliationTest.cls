@@ -214,4 +214,34 @@ private class AXF_CLS_CTRL_ReconciliationTest {
       );
     }
   }
+
+  @IsTest
+  static void linkedBankTransactionStillPendingIsNotListedAndNullListsAreHarmless() {
+    System.runAs(new User(Id = UserInfo.getUserId())) {
+      base();
+      AXF_OBJ_BankAccountTransaction__c linked = bank(-100);
+      AXF_OBJ_BankAccountTransaction__c free = bank(-40);
+      AXF_OBJ_Entry__c owner = entry(null, 100);
+      owner.AXF_ENT_LKP_BankAccountTransaction__c = linked.Id;
+      update owner;
+      AXF_CLS_CTRL_Reconciliation.ScreenData data = AXF_CLS_CTRL_Reconciliation.getData(
+        holder.Id,
+        '2026-10'
+      );
+      System.assertEquals(1, data.transactions.size());
+      System.assertEquals(free.Id, data.transactions[0].id);
+      System.assertEquals(
+        0,
+        AXF_CLS_CTRL_Reconciliation.unreconcile(null).size()
+      );
+      System.assertEquals(
+        0,
+        AXF_CLS_CTRL_Reconciliation.ignoreTransactions(null, null).size()
+      );
+      System.assertEquals(
+        0,
+        AXF_CLS_CTRL_Reconciliation.createEntries(null, null).size()
+      );
+    }
+  }
 }

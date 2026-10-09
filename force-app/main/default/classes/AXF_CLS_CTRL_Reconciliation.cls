@@ -108,6 +108,7 @@ public with sharing class AXF_CLS_CTRL_Reconciliation {
   private static final Integer MAX_ROWS = 500;
   private static final Integer WINDOW_DAYS = 7;
   private static final String DENIED = 'Sem acesso para concluir esta ação.';
+  private static final String FAILED = 'Não foi possível concluir agora; tente novamente.';
 
   @AuraEnabled
   public static List<HolderView> getHolders() {
@@ -119,7 +120,9 @@ public with sharing class AXF_CLS_CTRL_Reconciliation {
         WITH USER_MODE
         LIMIT :MAX_ROWS
       ]) {
-        ids.add(account.AXF_BA_MD_Holder__c);
+        if (account.AXF_BA_MD_Holder__c != null) {
+          ids.add(account.AXF_BA_MD_Holder__c);
+        }
       }
       for (AXF_OBJ_CreditCard__c card : [
         SELECT AXF_CC_MD_Holder__c
@@ -127,10 +130,14 @@ public with sharing class AXF_CLS_CTRL_Reconciliation {
         WITH USER_MODE
         LIMIT :MAX_ROWS
       ]) {
-        ids.add(card.AXF_CC_MD_Holder__c);
+        if (card.AXF_CC_MD_Holder__c != null) {
+          ids.add(card.AXF_CC_MD_Holder__c);
+        }
       }
     } catch (QueryException e) {
       throw new AuraHandledException(DENIED);
+    } catch (DmlException e) {
+      throw new AuraHandledException(FAILED);
     }
     List<HolderView> holders = new List<HolderView>();
     for (Account holder : [
@@ -180,6 +187,8 @@ public with sharing class AXF_CLS_CTRL_Reconciliation {
       data.lastReconciledEntryId = lastReconciled(holderId);
     } catch (QueryException e) {
       throw new AuraHandledException(DENIED);
+    } catch (DmlException e) {
+      throw new AuraHandledException(FAILED);
     }
     return data;
   }
@@ -210,6 +219,8 @@ public with sharing class AXF_CLS_CTRL_Reconciliation {
       }
     } catch (QueryException e) {
       throw new AuraHandledException(DENIED);
+    } catch (DmlException e) {
+      throw new AuraHandledException(FAILED);
     }
     return views;
   }
@@ -228,6 +239,8 @@ public with sharing class AXF_CLS_CTRL_Reconciliation {
       }
     } catch (QueryException e) {
       throw new AuraHandledException(DENIED);
+    } catch (DmlException e) {
+      throw new AuraHandledException(FAILED);
     }
     return views;
   }
@@ -254,6 +267,8 @@ public with sharing class AXF_CLS_CTRL_Reconciliation {
       }
     } catch (QueryException e) {
       throw new AuraHandledException(DENIED);
+    } catch (DmlException e) {
+      throw new AuraHandledException(FAILED);
     }
     return views;
   }
@@ -280,6 +295,8 @@ public with sharing class AXF_CLS_CTRL_Reconciliation {
       }
     } catch (QueryException e) {
       throw new AuraHandledException(DENIED);
+    } catch (DmlException e) {
+      throw new AuraHandledException(FAILED);
     }
     return views;
   }
@@ -413,13 +430,11 @@ public with sharing class AXF_CLS_CTRL_Reconciliation {
         OR AXF_BAT_PKL_ReconciliationStatus__c = 'Pending')
         AND AXF_BAT_DAT_Date__c >= :earliest
         AND AXF_BAT_DAT_Date__c <= :latest
+        AND Id NOT IN :linked
       WITH USER_MODE
       ORDER BY AXF_BAT_DAT_Date__c, Id
       LIMIT :MAX_ROWS
     ]) {
-      if (linked.contains(bank.Id)) {
-        continue;
-      }
       TransactionView view = new TransactionView();
       view.id = bank.Id;
       view.source = 'account';
@@ -456,13 +471,11 @@ public with sharing class AXF_CLS_CTRL_Reconciliation {
         OR AXF_CCT_PKL_ReconciliationStatus__c = 'Pending')
         AND AXF_CCT_DAT_Date__c >= :earliest
         AND AXF_CCT_DAT_Date__c <= :latest
+        AND Id NOT IN :linked
       WITH USER_MODE
       ORDER BY AXF_CCT_DAT_Date__c, Id
       LIMIT :MAX_ROWS
     ]) {
-      if (linked.contains(card.Id)) {
-        continue;
-      }
       TransactionView view = new TransactionView();
       view.id = card.Id;
       view.source = 'card';

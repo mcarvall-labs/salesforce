@@ -24,7 +24,17 @@ export default class AXF_LWC_reconciliation extends NavigationMixin(
   holderId;
   month = monthOptions(new Date())[6].value;
   data = { sources: [], entries: [], transactions: [], suggestions: [] };
-  filters = { source: "", text: "", min: "", max: "", type: "" };
+  filters = {
+    source: "",
+    text: "",
+    min: "",
+    max: "",
+    type: "",
+    dateFrom: "",
+    dateTo: ""
+  };
+  requestId = 0;
+  monthChoices = monthOptions(new Date());
   selectedEntryId;
   selectedTransactionId;
   isLoading = true;
@@ -50,17 +60,25 @@ export default class AXF_LWC_reconciliation extends NavigationMixin(
   async load() {
     this.isLoading = true;
     this.errorMessage = undefined;
+    const request = ++this.requestId;
+    this.selectedEntryId = undefined;
+    this.selectedTransactionId = undefined;
     try {
-      this.data = await getData({
+      const data = await getData({
         holderId: this.holderId,
         month: this.month
       });
-      this.selectedEntryId = undefined;
-      this.selectedTransactionId = undefined;
+      if (request === this.requestId) {
+        this.data = data;
+      }
     } catch (error) {
-      this.errorMessage = this.messageOf(error);
+      if (request === this.requestId) {
+        this.errorMessage = this.messageOf(error);
+      }
     } finally {
-      this.isLoading = false;
+      if (request === this.requestId) {
+        this.isLoading = false;
+      }
     }
   }
 
@@ -79,7 +97,7 @@ export default class AXF_LWC_reconciliation extends NavigationMixin(
   }
 
   get monthOptions() {
-    return monthOptions(new Date());
+    return this.monthChoices;
   }
 
   get sourceOptions() {
@@ -100,13 +118,34 @@ export default class AXF_LWC_reconciliation extends NavigationMixin(
     ];
   }
 
+  // Suggestions whose Entry and transaction are both listed and not hidden by the filters.
+  get visibleSuggestions() {
+    const entries = new Set(
+      this.data.entries
+        .filter((entry) => matchesEntry(entry, this.filters))
+        .map((entry) => entry.id)
+    );
+    const transactions = new Set(
+      this.data.transactions
+        .filter((transaction) => matchesTransaction(transaction, this.filters))
+        .map((transaction) => transaction.id)
+    );
+    return this.data.suggestions.filter(
+      (suggestion) =>
+        entries.has(suggestion.entryId) &&
+        transactions.has(
+          suggestion.bankTransactionId || suggestion.cardTransactionId
+        )
+    );
+  }
+
   get suggestedEntryIds() {
-    return new Set(this.data.suggestions.map((s) => s.entryId));
+    return new Set(this.visibleSuggestions.map((s) => s.entryId));
   }
 
   get suggestedTransactionIds() {
     return new Set(
-      this.data.suggestions.map(
+      this.visibleSuggestions.map(
         (s) => s.bankTransactionId || s.cardTransactionId
       )
     );
@@ -132,7 +171,9 @@ export default class AXF_LWC_reconciliation extends NavigationMixin(
           ...entry,
           kindLabel: KIND_LABELS[kind],
           isInvoice: kind === "invoice",
-          signedAmount: entry.type === "Expense" ? -entry.amount : entry.amount,
+          isSelected: entry.id === this.selectedEntryId,
+          signedAmount:
+            (entry.type === "Expense" ? -1 : 1) * (entry.amount || 0),
           rowClass: this.rowClass(
             entry.id === this.selectedEntryId,
             suggested.has(entry.id),
@@ -156,6 +197,7 @@ export default class AXF_LWC_reconciliation extends NavigationMixin(
             Boolean(transaction.amountBRL) &&
             transaction.currencyCode !== "BRL",
           blocked,
+          isSelected: transaction.id === this.selectedTransactionId,
           rowClass: this.rowClass(
             transaction.id === this.selectedTransactionId,
             suggested.has(transaction.id),
@@ -185,7 +227,7 @@ export default class AXF_LWC_reconciliation extends NavigationMixin(
   }
 
   get suggestionCount() {
-    return this.data.suggestions.length;
+    return this.visibleSuggestions.length;
   }
 
   get hasSuggestions() {
@@ -235,6 +277,7 @@ export default class AXF_LWC_reconciliation extends NavigationMixin(
 
   handleHolder(event) {
     this.holderId = event.detail.value;
+    this.filters = { ...this.filters, source: "" };
     this.load();
   }
 
@@ -275,11 +318,19 @@ export default class AXF_LWC_reconciliation extends NavigationMixin(
     const id = event.currentTarget.dataset.id;
     const transaction = this.data.transactions.find((item) => item.id === id);
     const entry = this.selectedEntry;
-    if (entry && !isCompatible(entry, transaction)) {
+    if (!transaction || (entry && !isCompatible(entry, transaction))) {
       return;
     }
     this.selectedTransactionId =
       id === this.selectedTransactionId ? undefined : id;
+  }
+
+  // Rows are keyboard operable: Enter or Space selects like a click.
+  handleRowKey(event) {
+    if (event.key === "Enter" || event.key === " ") {
+      event.preventDefault();
+      event.currentTarget.click();
+    }
   }
 
   handleOpenEntry(event) {
@@ -317,7 +368,7 @@ export default class AXF_LWC_reconciliation extends NavigationMixin(
     return this.run(
       () =>
         reconcile({
-          pairs: this.data.suggestions.map((suggestion) => ({
+          pairs: this.visibleSuggestions.map((suggestion) => ({
             entryId: suggestion.entryId,
             bankTransactionId: suggestion.bankTransactionId,
             cardTransactionId: suggestion.cardTransactionId
@@ -362,7 +413,7 @@ export default class AXF_LWC_reconciliation extends NavigationMixin(
     this.isWorking = true;
     this.infoMessage = undefined;
     try {
-      const outcomes = await action();
+      const outcomes = (await action()) || [];
       const failed = outcomes.filter((outcome) => !outcome.success);
       const done = outcomes.length - failed.length;
       this.toast(done, failed, successMessage);

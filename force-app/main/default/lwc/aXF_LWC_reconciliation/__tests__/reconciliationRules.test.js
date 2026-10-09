@@ -170,3 +170,60 @@ describe("monthOptions", () => {
     expect(options[12].value).toBe("2027-04");
   });
 });
+
+describe("date range and unnamed accounts", () => {
+  const dated = { ...accountEntry, dueDate: "2026-10-10" };
+  const datedTransaction = { ...debit, transactionDate: "2026-10-10" };
+
+  it("keeps only rows inside the date range", () => {
+    expect(matchesEntry(dated, { ...noFilters, dateFrom: "2026-10-10" })).toBe(
+      true
+    );
+    expect(matchesEntry(dated, { ...noFilters, dateFrom: "2026-10-11" })).toBe(
+      false
+    );
+    expect(matchesEntry(dated, { ...noFilters, dateTo: "2026-10-09" })).toBe(
+      false
+    );
+    expect(
+      matchesTransaction(datedTransaction, {
+        ...noFilters,
+        dateFrom: "2026-10-01",
+        dateTo: "2026-10-10"
+      })
+    ).toBe(true);
+    expect(
+      matchesTransaction(datedTransaction, {
+        ...noFilters,
+        dateTo: "2026-10-09"
+      })
+    ).toBe(false);
+    expect(
+      matchesTransaction(debit, { ...noFilters, dateFrom: "2026-10-01" })
+    ).toBe(false);
+  });
+
+  it("shows entries without a named account under any account filter", () => {
+    expect(
+      matchesEntry(accountEntry, { ...noFilters, source: "account:a1" })
+    ).toBe(true);
+    expect(
+      matchesEntry(
+        { ...accountEntry, accountId: "a2" },
+        { ...noFilters, source: "account:a1" }
+      )
+    ).toBe(false);
+    expect(
+      matchesEntry(cardEntry, { ...noFilters, source: "account:a1" })
+    ).toBe(false);
+  });
+
+  it("treats a missing amount as zero in the value filters", () => {
+    expect(
+      matchesEntry(
+        { ...accountEntry, amount: null },
+        { ...noFilters, min: "1" }
+      )
+    ).toBe(false);
+  });
+});

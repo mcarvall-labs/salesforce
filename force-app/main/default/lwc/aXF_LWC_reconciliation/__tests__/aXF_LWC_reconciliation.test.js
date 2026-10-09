@@ -230,4 +230,91 @@ describe("c-a-x-f-l-w-c-reconciliation", () => {
     expect(element.shadowRoot.textContent).toContain("Nenhum titular");
     expect(getData).not.toHaveBeenCalled();
   });
+
+  it("filters by date range and drops the source filter when the holder changes", async () => {
+    getHolders.mockResolvedValue([
+      { id: "h1", name: "Michel" },
+      { id: "h2", name: "Ana" }
+    ]);
+    const element = await setup();
+    element.shadowRoot
+      .querySelector(".date-from-filter")
+      .dispatchEvent(
+        new CustomEvent("change", { detail: { value: "2026-10-11" } })
+      );
+    await flushPromises();
+    expect(rows(element, "entries")).toHaveLength(1);
+    expect(rows(element, "transactions")).toHaveLength(1);
+    element.shadowRoot
+      .querySelector(".source-filter")
+      .dispatchEvent(
+        new CustomEvent("change", { detail: { value: "card:c1" } })
+      );
+    element.shadowRoot
+      .querySelector(".holder-filter")
+      .dispatchEvent(new CustomEvent("change", { detail: { value: "h2" } }));
+    await flushPromises();
+    expect(getData).toHaveBeenLastCalledWith({
+      holderId: "h2",
+      month: expect.any(String)
+    });
+    expect(element.shadowRoot.querySelector(".source-filter").value).toBe("");
+  });
+
+  it("only submits suggestions that are still listed", async () => {
+    getData.mockResolvedValue({
+      ...data,
+      suggestions: [
+        { entryId: "e1", bankTransactionId: "t1", cardTransactionId: null },
+        { entryId: "gone", bankTransactionId: "t9", cardTransactionId: null }
+      ]
+    });
+    const element = await setup();
+    expect(button(element, "suggest-all").label).toBe(
+      "Conciliar sugeridos (1)"
+    );
+    button(element, "suggest-all").click();
+    await flushPromises();
+    expect(reconcile).toHaveBeenCalledWith({
+      pairs: [
+        { entryId: "e1", bankTransactionId: "t1", cardTransactionId: null }
+      ]
+    });
+  });
+
+  it("selects a row with the keyboard and ignores a click on a missing transaction", async () => {
+    const element = await setup();
+    const row = rows(element, "entries")[0];
+    row.dispatchEvent(new KeyboardEvent("keydown", { key: "Enter" }));
+    await flushPromises();
+    expect(rows(element, "entries")[0].className).toContain("selected-row");
+    expect(rows(element, "entries")[0].getAttribute("aria-selected")).toBe(
+      "true"
+    );
+  });
+
+  it("keeps the newest response when loads overlap", async () => {
+    getHolders.mockResolvedValue([
+      { id: "h1", name: "Michel" },
+      { id: "h2", name: "Ana" }
+    ]);
+    let releaseFirst;
+    getData
+      .mockImplementationOnce(
+        () => new Promise((resolve) => (releaseFirst = () => resolve(data)))
+      )
+      .mockResolvedValueOnce({ ...data, entries: [data.entries[0]] });
+    const element = createElement("c-a-x-f-l-w-c-reconciliation", {
+      is: AXF_LWC_reconciliation
+    });
+    document.body.appendChild(element);
+    await flushPromises();
+    element.shadowRoot
+      .querySelector(".holder-filter")
+      .dispatchEvent(new CustomEvent("change", { detail: { value: "h2" } }));
+    await flushPromises();
+    releaseFirst();
+    await flushPromises();
+    expect(rows(element, "entries")).toHaveLength(1);
+  });
 });
