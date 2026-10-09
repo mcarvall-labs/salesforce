@@ -432,4 +432,91 @@ private class ALT_CLS_PluggyCardSyncTest {
       );
     }
   }
+
+  private class ZeroBillMock implements HttpCalloutMock {
+    public HttpResponse respond(HttpRequest req) {
+      HttpResponse res = new HttpResponse();
+      res.setStatusCode(200);
+      String url = req.getEndpoint();
+      if (url.endsWith('/auth')) {
+        res.setBody('{"apiKey":"abc"}');
+      } else if (url.contains('/bills?')) {
+        res.setBody(
+          '{"total":1,"totalPages":1,"page":1,"results":[{"id":"bill-0","dueDate":"2026-10-05T00:00:00.000Z","totalAmount":0}]}'
+        );
+      } else {
+        res.setBody('{"results":[],"next":null}');
+      }
+      return res;
+    }
+  }
+
+  @IsTest
+  static void invoiceWithoutAmountGetsNoEntry() {
+    System.runAs(new User(Id = UserInfo.getUserId())) {
+      AXF_OBJ_CreditCard__c card = card('card-1');
+      Test.setMock(HttpCalloutMock.class, new ZeroBillMock());
+      Test.startTest();
+      ALT_CLS_PluggyCardSync.Result r = new ALT_CLS_PluggyCardSync()
+        .sync(card.Id);
+      Test.stopTest();
+      System.assertEquals(true, r.success, '' + r.message);
+      System.assertEquals(1, r.invoices);
+      System.assertEquals(0, r.invoiceEntries);
+      System.assertEquals(0, [SELECT COUNT() FROM AXF_OBJ_Entry__c]);
+    }
+  }
+
+  @IsTest
+  static void pendingEntryAlreadyUpToDateIsNotRewritten() {
+    System.runAs(new User(Id = UserInfo.getUserId())) {
+      AXF_OBJ_CreditCard__c card = card('card-1');
+      AXF_OBJ_Entry__c entry = entryOnExistingInvoice(card, 'Pending');
+      entry.AXF_ENT_CUR_Amount__c = 1234.56;
+      entry.AXF_ENT_DAT_DueDate__c = Date.newInstance(2026, 10, 5);
+      update entry;
+      Test.setMock(HttpCalloutMock.class, new PluggyMock());
+      Test.startTest();
+      ALT_CLS_PluggyCardSync.Result r = new ALT_CLS_PluggyCardSync()
+        .sync(card.Id);
+      Test.stopTest();
+      System.assertEquals(true, r.success, '' + r.message);
+      System.assertEquals(0, r.invoiceEntries);
+    }
+  }
+
+  @IsTest
+  static void duplicateEntriesOnTheInvoiceKeepTheRealizedOneUntouched() {
+    System.runAs(new User(Id = UserInfo.getUserId())) {
+      AXF_OBJ_CreditCard__c card = card('card-1');
+      AXF_OBJ_Entry__c realized = entryOnExistingInvoice(card, 'Realized');
+      insert new AXF_OBJ_Entry__c(
+        Name = 'Fatura duplicada',
+        AXF_ENT_MD_Holder__c = card.AXF_CC_MD_Holder__c,
+        AXF_ENT_PKL_Type__c = 'Expense',
+        AXF_ENT_PKL_Status__c = 'Pending',
+        AXF_ENT_CUR_Amount__c = 500,
+        AXF_ENT_DAT_DueDate__c = Date.newInstance(2026, 1, 1),
+        AXF_ENT_LKP_CreditCard__c = card.Id,
+        AXF_ENT_LKP_Invoice__c = realized.AXF_ENT_LKP_Invoice__c
+      );
+      Test.setMock(HttpCalloutMock.class, new PluggyMock());
+      Test.startTest();
+      ALT_CLS_PluggyCardSync.Result r = new ALT_CLS_PluggyCardSync()
+        .sync(card.Id);
+      Test.stopTest();
+      System.assertEquals(true, r.success, '' + r.message);
+      System.assertEquals(0, r.invoiceEntries);
+      System.assertEquals(2, [SELECT COUNT() FROM AXF_OBJ_Entry__c]);
+      System.assertEquals(
+        500,
+        [
+          SELECT AXF_ENT_CUR_Amount__c
+          FROM AXF_OBJ_Entry__c
+          WHERE AXF_ENT_PKL_Status__c = 'Pending'
+        ]
+        .AXF_ENT_CUR_Amount__c
+      );
+    }
+  }
 }

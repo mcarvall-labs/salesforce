@@ -192,12 +192,19 @@ public with sharing class ALT_CLS_PluggyCardSync {
     }
     Map<Id, AXF_OBJ_Entry__c> entryByInvoice = new Map<Id, AXF_OBJ_Entry__c>();
     List<AXF_OBJ_Entry__c> existingEntries = [
-      SELECT AXF_ENT_PKL_Status__c, AXF_ENT_LKP_Invoice__c
+      SELECT
+        AXF_ENT_PKL_Status__c,
+        AXF_ENT_LKP_Invoice__c,
+        AXF_ENT_CUR_Amount__c,
+        AXF_ENT_DAT_DueDate__c
       FROM AXF_OBJ_Entry__c
       WHERE AXF_ENT_LKP_Invoice__c IN :invoiceIds
     ];
     for (AXF_OBJ_Entry__c entry : existingEntries) {
-      entryByInvoice.put(entry.AXF_ENT_LKP_Invoice__c, entry);
+      AXF_OBJ_Entry__c kept = entryByInvoice.get(entry.AXF_ENT_LKP_Invoice__c);
+      if (kept == null || kept.AXF_ENT_PKL_Status__c == 'Pending') {
+        entryByInvoice.put(entry.AXF_ENT_LKP_Invoice__c, entry);
+      }
     }
     List<AXF_OBJ_Entry__c> toInsert = new List<AXF_OBJ_Entry__c>();
     List<AXF_OBJ_Entry__c> toUpdate = new List<AXF_OBJ_Entry__c>();
@@ -229,7 +236,11 @@ public with sharing class ALT_CLS_PluggyCardSync {
             AXF_ENT_LKP_Invoice__c = invoice.Id
           )
         );
-      } else if (existing.AXF_ENT_PKL_Status__c == 'Pending') {
+      } else if (
+        existing.AXF_ENT_PKL_Status__c == 'Pending' &&
+        (existing.AXF_ENT_CUR_Amount__c != total ||
+        existing.AXF_ENT_DAT_DueDate__c != invoice.AXF_CCI_DAT_DueDate__c)
+      ) {
         toUpdate.add(
           new AXF_OBJ_Entry__c(
             Id = existing.Id,
@@ -240,9 +251,8 @@ public with sharing class ALT_CLS_PluggyCardSync {
       }
     }
     String failure = firstEntryFailure(Database.insert(toInsert, false));
-    failure = failure == null
-      ? firstEntryFailure(Database.update(toUpdate, false))
-      : failure;
+    String updateFailure = firstEntryFailure(Database.update(toUpdate, false));
+    failure = failure == null ? updateFailure : failure;
     if (failure != null) {
       throw new DmlException(failure);
     }
