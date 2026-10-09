@@ -463,8 +463,9 @@ public with sharing class ALT_CLS_Reconciliation {
     }
     if (
       card.AXF_CCT_CUR_AmountBRL__c == null &&
-      card.AXF_CCT_TXT_CurrencyCode__c != null &&
-      card.AXF_CCT_TXT_CurrencyCode__c != 'BRL'
+      (String.isBlank(card.AXF_CCT_TXT_CurrencyCode__c)
+        ? card.CurrencyIsoCode
+        : card.AXF_CCT_TXT_CurrencyCode__c) != 'BRL'
     ) {
       return 'A transação do cartão em moeda estrangeira não tem valor em BRL.';
     }
@@ -560,6 +561,7 @@ public with sharing class ALT_CLS_Reconciliation {
           AXF_CCT_CUR_Amount__c,
           AXF_CCT_CUR_AmountBRL__c,
           AXF_CCT_TXT_CurrencyCode__c,
+          CurrencyIsoCode,
           AXF_CCT_MD_CreditCard__c,
           AXF_CCT_PKL_ReconciliationStatus__c
         FROM AXF_OBJ_CreditCardTransaction__c

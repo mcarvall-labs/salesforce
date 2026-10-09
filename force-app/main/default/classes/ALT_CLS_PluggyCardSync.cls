@@ -196,7 +196,8 @@ public with sharing class ALT_CLS_PluggyCardSync {
         AXF_ENT_PKL_Status__c,
         AXF_ENT_LKP_Invoice__c,
         AXF_ENT_CUR_Amount__c,
-        AXF_ENT_DAT_DueDate__c
+        AXF_ENT_DAT_DueDate__c,
+        CurrencyIsoCode
       FROM AXF_OBJ_Entry__c
       WHERE AXF_ENT_LKP_Invoice__c IN :invoiceIds
     ];
@@ -238,12 +239,14 @@ public with sharing class ALT_CLS_PluggyCardSync {
         );
       } else if (
         existing.AXF_ENT_PKL_Status__c == 'Pending' &&
-        (existing.AXF_ENT_CUR_Amount__c != total ||
+        (existing.CurrencyIsoCode != 'BRL' ||
+        existing.AXF_ENT_CUR_Amount__c != total ||
         existing.AXF_ENT_DAT_DueDate__c != invoice.AXF_CCI_DAT_DueDate__c)
       ) {
         toUpdate.add(
           new AXF_OBJ_Entry__c(
             Id = existing.Id,
+            CurrencyIsoCode = 'BRL',
             AXF_ENT_CUR_Amount__c = total,
             AXF_ENT_DAT_DueDate__c = invoice.AXF_CCI_DAT_DueDate__c
           )
@@ -327,6 +330,7 @@ public with sharing class ALT_CLS_PluggyCardSync {
       AXF_CCI_CUR_TotalAmount__c = pluggy.get('totalAmount') == null
         ? null
         : Decimal.valueOf(String.valueOf(pluggy.get('totalAmount'))),
+      CurrencyIsoCode = 'BRL',
       AXF_CCI_PKL_Status__c = due < Date.today() ? 'Closed' : 'Open'
     );
   }
@@ -350,12 +354,16 @@ public with sharing class ALT_CLS_PluggyCardSync {
         ? (String) pluggy.get('description')
         : raw,
       AXF_CCT_CUR_Amount__c = signed(pluggy.get('amount'), debit),
-      AXF_CCT_CUR_AmountBRL__c = pluggy.get('amountInAccountCurrency') == null
-        ? null
-        : signed(pluggy.get('amountInAccountCurrency'), debit),
       AXF_CCT_TXT_CurrencyCode__c = (String) pluggy.get('currencyCode'),
       AXF_CCT_TXT_PluggyCategory__c = (String) pluggy.get('category')
     );
+    // Only set when Pluggy sends it: an explicit null would erase a BRL amount stored before.
+    if (pluggy.get('amountInAccountCurrency') != null) {
+      cardTransaction.AXF_CCT_CUR_AmountBRL__c = signed(
+        pluggy.get('amountInAccountCurrency'),
+        debit
+      );
+    }
     if (metadata != null && metadata.get('installmentNumber') != null) {
       cardTransaction.AXF_CCT_TXT_Installment__c = String.valueOf(
         metadata.get('installmentNumber')
