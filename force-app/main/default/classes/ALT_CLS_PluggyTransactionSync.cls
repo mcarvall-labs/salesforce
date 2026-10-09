@@ -16,6 +16,12 @@ public with sharing class ALT_CLS_PluggyTransactionSync {
   private static final Integer OVERLAP_DAYS = 3;
 
   public Result sync(Id bankAccountId) {
+    return sync(bankAccountId, null, null);
+  }
+
+  // Manual window (fromDate/toDate, both inclusive): re-reads the period regardless of what is
+  // already stored. The upsert by Pluggy Transaction Id keeps it idempotent.
+  public Result sync(Id bankAccountId, Date fromDate, Date toDate) {
     Result r = new Result();
     List<AXF_OBJ_BankAccount__c> found = [
       SELECT AXF_BA_EXI_PluggyAccountId__c
@@ -38,7 +44,10 @@ public with sharing class ALT_CLS_PluggyTransactionSync {
               'UTF-8'
             ) +
             '&dateFrom=' +
-            String.valueOf(startDate(bankAccountId))
+            String.valueOf(
+              fromDate == null ? startDate(bankAccountId) : fromDate
+            ) +
+            (toDate == null ? '' : '&dateTo=' + String.valueOf(toDate))
         );
     } catch (ALT_CLS_PluggyCredential.PluggyException e) {
       r.message = e.getMessage();

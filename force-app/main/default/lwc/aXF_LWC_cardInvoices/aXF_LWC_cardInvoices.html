@@ -1,5 +1,14 @@
 <template>
   <lightning-card title="Faturas" icon-name="standard:contract">
+    <lightning-button
+      slot="actions"
+      class="sync-button"
+      variant="brand"
+      icon-name="utility:sync"
+      label={syncLabel}
+      disabled={isSyncing}
+      onclick={handleSync}
+    ></lightning-button>
     <div class="slds-p-horizontal_medium">
       <template if:true={isLoading}>
         <lightning-spinner
@@ -16,43 +25,43 @@
         </template>
         <template lwc:if={hasInvoices}>
           <div
-            class="slds-grid slds-grid_vertical-align-center slds-m-bottom_small"
+            class="slds-grid slds-grid_align-center slds-grid_vertical-align-center slds-m-bottom_x-small"
           >
             <lightning-button-icon
               class="invoice-previous"
               icon-name="utility:chevronleft"
-              variant="bare"
+              variant="border"
               alternative-text="Fatura anterior"
               disabled={isFirst}
               onclick={handlePrevious}
             ></lightning-button-icon>
-            <span
-              class="invoice-period slds-m-horizontal_small slds-text-heading_small"
-              >{selected.period}</span
-            >
+            <div class="slds-m-horizontal_medium slds-text-align_center">
+              <div class="invoice-period slds-text-heading_small">
+                {periodLabel}
+              </div>
+              <lightning-badge
+                class="invoice-status"
+                label={selected.statusLabel}
+              ></lightning-badge>
+            </div>
             <lightning-button-icon
               class="invoice-next"
               icon-name="utility:chevronright"
-              variant="bare"
+              variant="border"
               alternative-text="Próxima fatura"
               disabled={isLast}
               onclick={handleNext}
             ></lightning-button-icon>
-            <span class="slds-m-left_medium">
-              Vencimento:
-              <lightning-formatted-date-time
-                value={selected.dueDate}
-                time-zone="UTC"
-              ></lightning-formatted-date-time>
-            </span>
-            <span class="slds-m-left_medium">
+          </div>
+          <div class="slds-text-align_center slds-m-bottom_small">
+            <div class="invoice-total slds-text-heading_large">
               <lightning-formatted-number
                 value={selected.totalAmount}
                 format-style="currency"
                 currency-code={selected.currencyCode}
               ></lightning-formatted-number>
-            </span>
-            <span class="slds-m-left_medium">{selected.statusLabel}</span>
+            </div>
+            <div class="slds-text-color_weak">{lineCount} compras</div>
           </div>
           <template lwc:if={isLoadingLines}>
             <lightning-spinner
