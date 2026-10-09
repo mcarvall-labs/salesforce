@@ -13,6 +13,10 @@
         <enabled>true</enabled>
     </classAccesses>
     <classAccesses>
+        <apexClass>AXF_CLS_CTRL_InvoiceTransactions</apexClass>
+        <enabled>true</enabled>
+    </classAccesses>
+    <classAccesses>
         <apexClass>AXF_CLS_CTRL_PluggySync</apexClass>
         <enabled>true</enabled>
     </classAccesses>
