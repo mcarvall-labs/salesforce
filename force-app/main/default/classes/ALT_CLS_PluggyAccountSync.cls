@@ -268,7 +268,10 @@ public with sharing class ALT_CLS_PluggyAccountSync {
     String bank = label != null && label.startsWith(prefix)
       ? label.substring(prefix.length())
       : label;
-    if (String.isBlank(bank) || (String.isBlank(brand) && String.isBlank(lastDigits))) {
+    if (
+      String.isBlank(bank) ||
+      (String.isBlank(brand) && String.isBlank(lastDigits))
+    ) {
       return fallback;
     }
     String name = bank;
