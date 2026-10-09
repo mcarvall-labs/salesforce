@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<ValidationRule xmlns="http://soap.sforce.com/2006/04/metadata">
+    <fullName>AXF_BDG_VR_EndMonthFirstDay</fullName>
+    <active>true</active>
+    <errorConditionFormula
+  >AND(NOT(ISBLANK(AXF_BDG_DAT_EndMonth__c)), DAY(AXF_BDG_DAT_EndMonth__c) &lt;&gt; 1)</errorConditionFormula>
+    <errorDisplayField>AXF_BDG_DAT_EndMonth__c</errorDisplayField>
+    <errorMessage
+  >The end month must be the first day of the month.</errorMessage>
+</ValidationRule>

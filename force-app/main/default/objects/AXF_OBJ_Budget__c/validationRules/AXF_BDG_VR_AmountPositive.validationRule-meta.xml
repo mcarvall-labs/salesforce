@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<ValidationRule xmlns="http://soap.sforce.com/2006/04/metadata">
+    <fullName>AXF_BDG_VR_AmountPositive</fullName>
+    <active>true</active>
+    <errorConditionFormula
+  >AND(NOT(ISBLANK(AXF_BDG_CUR_Amount__c)), AXF_BDG_CUR_Amount__c &lt;= 0)</errorConditionFormula>
+    <errorDisplayField>AXF_BDG_CUR_Amount__c</errorDisplayField>
+    <errorMessage
+  >The monthly amount must be greater than zero.</errorMessage>
+</ValidationRule>
