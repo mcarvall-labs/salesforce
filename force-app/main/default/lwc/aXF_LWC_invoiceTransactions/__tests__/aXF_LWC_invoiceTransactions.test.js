@@ -2,6 +2,23 @@ import { createElement } from "lwc";
 import AXF_LWC_invoiceTransactions from "c/aXF_LWC_invoiceTransactions";
 import getInvoice from "@salesforce/apex/AXF_CLS_CTRL_InvoiceTransactions.getInvoice";
 
+const mockNavigate = jest.fn();
+jest.mock(
+  "lightning/navigation",
+  () => {
+    const Navigate = Symbol("Navigate");
+    const NavigationMixin = (Base) =>
+      class extends Base {
+        [Navigate](pageReference) {
+          mockNavigate(pageReference);
+        }
+      };
+    NavigationMixin.Navigate = Navigate;
+    return { NavigationMixin };
+  },
+  { virtual: true }
+);
+
 jest.mock(
   "@salesforce/apex/AXF_CLS_CTRL_InvoiceTransactions.getInvoice",
   () => ({ default: jest.fn() }),
@@ -120,5 +137,56 @@ describe("c-a-x-f-l-w-c-invoice-transactions", () => {
       "Sem acesso à fatura."
     );
     expect(element.shadowRoot.querySelector(".no-invoice")).toBeNull();
+  });
+
+  it("shows the closing date, due date and the total in BRL", async () => {
+    getInvoice.mockResolvedValue(invoice);
+    const element = await setup();
+    const dates = element.shadowRoot.querySelectorAll(
+      "dl.invoice-data lightning-formatted-date-time"
+    );
+    expect(dates[0].value).toBe("2026-10-01");
+    expect(dates[1].value).toBe("2026-10-10");
+    const total = element.shadowRoot.querySelector(
+      "dl.invoice-data lightning-formatted-number"
+    );
+    expect(total.value).toBe(300);
+    expect(total.currencyCode).toBe("BRL");
+  });
+
+  it("labels the closed and paid statuses", async () => {
+    getInvoice.mockResolvedValue({ ...invoice, status: "Closed" });
+    let element = await setup();
+    expect(element.shadowRoot.querySelector(".status").textContent).toBe(
+      "Fechada"
+    );
+    document.body.removeChild(element);
+    getInvoice.mockResolvedValue({ ...invoice, status: "Paid" });
+    element = await setup();
+    expect(element.shadowRoot.querySelector(".status").textContent).toBe(
+      "Paga"
+    );
+  });
+
+  it("navigates to the clicked transaction", async () => {
+    getInvoice.mockResolvedValue(invoice);
+    const element = await setup();
+    element.shadowRoot.querySelectorAll("table.lines a")[1].click();
+    const pageReference = mockNavigate.mock.calls[0][0];
+    expect(pageReference.type).toBe("standard__recordPage");
+    expect(pageReference.attributes.recordId).toBe("t2");
+    expect(pageReference.attributes.actionName).toBe("view");
+  });
+
+  it("reloads when the record changes", async () => {
+    getInvoice.mockResolvedValue(invoice);
+    const element = await setup();
+    getInvoice.mockResolvedValue({ ...invoice, period: "2026-11" });
+    element.recordId = "e2";
+    await flushPromises();
+    expect(getInvoice).toHaveBeenLastCalledWith({ recordId: "e2" });
+    expect(element.shadowRoot.querySelector(".period").textContent).toBe(
+      "2026-11"
+    );
   });
 });

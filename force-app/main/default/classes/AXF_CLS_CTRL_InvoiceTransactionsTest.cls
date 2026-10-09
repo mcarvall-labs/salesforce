@@ -81,6 +81,7 @@ private class AXF_CLS_CTRL_InvoiceTransactionsTest {
       System.assertEquals(Date.newInstance(2026, 10, 1), view.closingDate);
       System.assertEquals(Date.newInstance(2026, 10, 10), view.dueDate);
       System.assertEquals(300, view.totalAmount);
+      System.assertEquals('BRL', view.currencyCode);
       System.assertEquals('Open', view.status);
       System.assertEquals(2, view.lines.size());
       Map<String, AXF_CLS_CTRL_InvoiceTransactions.LineView> byText = new Map<String, AXF_CLS_CTRL_InvoiceTransactions.LineView>();

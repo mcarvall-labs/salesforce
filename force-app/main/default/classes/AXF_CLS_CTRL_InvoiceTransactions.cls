@@ -85,7 +85,8 @@ public with sharing class AXF_CLS_CTRL_InvoiceTransactions {
       view.closingDate = invoices[0].AXF_CCI_DAT_ClosingDate__c;
       view.dueDate = invoices[0].AXF_CCI_DAT_DueDate__c;
       view.totalAmount = invoices[0].AXF_CCI_CUR_TotalAmount__c;
-      view.currencyCode = invoices[0].CurrencyIsoCode;
+      // The invoice total is always in BRL (E6-11).
+      view.currencyCode = 'BRL';
       view.status = invoices[0].AXF_CCI_PKL_Status__c;
       for (
         ALT_CLS_CardInvoices.Line line : new ALT_CLS_CardInvoices()

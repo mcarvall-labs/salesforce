@@ -7,21 +7,44 @@ const STATUS_LABELS = { Open: "Aberta", Closed: "Fechada", Paid: "Paga" };
 export default class AXF_LWC_invoiceTransactions extends NavigationMixin(
   LightningElement
 ) {
-  // Id of the invoice Entry or of the invoice itself.
-  @api recordId;
   invoice;
   isLoading = true;
   errorMessage;
+  currentId;
+  requestId = 0;
 
-  async connectedCallback() {
+  // Id of the invoice Entry or of the invoice itself; a new value reloads the component.
+  @api
+  get recordId() {
+    return this.currentId;
+  }
+  set recordId(value) {
+    if (value !== this.currentId) {
+      this.currentId = value;
+      this.load();
+    }
+  }
+
+  async load() {
+    const request = ++this.requestId;
+    this.isLoading = true;
+    this.errorMessage = undefined;
     try {
-      this.invoice = await getInvoice({ recordId: this.recordId });
+      const invoice = await getInvoice({ recordId: this.currentId });
+      if (request === this.requestId) {
+        this.invoice = invoice;
+      }
     } catch (error) {
-      this.errorMessage =
-        (error && error.body && error.body.message) ||
-        "Não foi possível carregar a fatura.";
+      if (request === this.requestId) {
+        this.invoice = undefined;
+        this.errorMessage =
+          (error && error.body && error.body.message) ||
+          "Não foi possível carregar a fatura.";
+      }
     } finally {
-      this.isLoading = false;
+      if (request === this.requestId) {
+        this.isLoading = false;
+      }
     }
   }
 
