@@ -27,4 +27,36 @@ public without sharing class ALT_CLS_ReconciliationLinks {
     }
     return linked;
   }
+
+  // Linked bank transactions of one holder inside a date window, for the reconciliation screen.
+  public Set<Id> linkedBank(Id holderId, Date fromDate, Date toDate) {
+    Set<Id> linked = new Set<Id>();
+    for (AXF_OBJ_Entry__c entry : [
+      SELECT AXF_ENT_LKP_BankAccountTransaction__c
+      FROM AXF_OBJ_Entry__c
+      WHERE
+        AXF_ENT_LKP_BankAccountTransaction__r.AXF_BAT_MD_BankAccount__r.AXF_BA_MD_Holder__c = :holderId
+        AND AXF_ENT_LKP_BankAccountTransaction__r.AXF_BAT_DAT_Date__c >= :fromDate
+        AND AXF_ENT_LKP_BankAccountTransaction__r.AXF_BAT_DAT_Date__c <= :toDate
+    ]) {
+      linked.add(entry.AXF_ENT_LKP_BankAccountTransaction__c);
+    }
+    return linked;
+  }
+
+  // Same for credit card transactions.
+  public Set<Id> linkedCard(Id holderId, Date fromDate, Date toDate) {
+    Set<Id> linked = new Set<Id>();
+    for (AXF_OBJ_Entry__c entry : [
+      SELECT AXF_ENT_LKP_CreditCardTransaction__c
+      FROM AXF_OBJ_Entry__c
+      WHERE
+        AXF_ENT_LKP_CreditCardTransaction__r.AXF_CCT_MD_CreditCard__r.AXF_CC_MD_Holder__c = :holderId
+        AND AXF_ENT_LKP_CreditCardTransaction__r.AXF_CCT_DAT_Date__c >= :fromDate
+        AND AXF_ENT_LKP_CreditCardTransaction__r.AXF_CCT_DAT_Date__c <= :toDate
+    ]) {
+      linked.add(entry.AXF_ENT_LKP_CreditCardTransaction__c);
+    }
+    return linked;
+  }
 }
