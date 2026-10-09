@@ -13,6 +13,14 @@
         <enabled>true</enabled>
     </classAccesses>
     <classAccesses>
+        <apexClass>AXF_CLS_CTRL_PluggySync</apexClass>
+        <enabled>true</enabled>
+    </classAccesses>
+    <classAccesses>
+        <apexClass>AXF_CLS_CTRL_Reconciliation</apexClass>
+        <enabled>true</enabled>
+    </classAccesses>
+    <classAccesses>
         <apexClass>AXF_CLS_CTRL_ContractGeneration</apexClass>
         <enabled>true</enabled>
     </classAccesses>
@@ -29,7 +37,7 @@
         <enabled>true</enabled>
     </classAccesses>
     <description
-  >Acesso ao app Axon e à tab Titulares. Sem "Ver todos": a visibilidade por registro vem do dono e da hierarquia de papéis.</description>
+  >Acesso ao app Axon, à tab Titulares e à tela de Conciliação. Sem "Ver todos": a visibilidade por registro vem do dono e da hierarquia de papéis.</description>
     <fieldPermissions>
         <editable>true</editable>
         <field>AXF_OBJ_BankAccount__c.AXF_BA_CUR_Balance__c</field>
@@ -223,6 +231,38 @@
       <editable>true</editable>
       <field>AXF_OBJ_Entry__c.AXF_ENT_TAL_Notes__c</field>
       <readable>true</readable>
+    </fieldPermissions>
+    <fieldPermissions>
+        <editable>true</editable>
+        <field>AXF_OBJ_Entry__c.AXF_ENT_NUM_RealizedAmountBRL__c</field>
+        <readable>true</readable>
+    </fieldPermissions>
+    <fieldPermissions>
+        <editable>true</editable>
+        <field>AXF_OBJ_Entry__c.AXF_ENT_LKP_BankAccountTransaction__c</field>
+        <readable>true</readable>
+    </fieldPermissions>
+    <fieldPermissions>
+        <editable>true</editable>
+        <field>AXF_OBJ_Entry__c.AXF_ENT_LKP_CreditCardTransaction__c</field>
+        <readable>true</readable>
+    </fieldPermissions>
+    <fieldPermissions>
+        <editable>false</editable>
+        <field>AXF_OBJ_Entry__c.AXF_ENT_LKP_Invoice__c</field>
+        <readable>true</readable>
+    </fieldPermissions>
+    <fieldPermissions>
+        <editable>true</editable>
+        <field
+    >AXF_OBJ_BankAccountTransaction__c.AXF_BAT_PKL_ReconciliationStatus__c</field>
+        <readable>true</readable>
+    </fieldPermissions>
+    <fieldPermissions>
+        <editable>true</editable>
+        <field
+    >AXF_OBJ_CreditCardTransaction__c.AXF_CCT_PKL_ReconciliationStatus__c</field>
+        <readable>true</readable>
     </fieldPermissions>
     <fieldPermissions>
         <editable>true</editable>
@@ -476,7 +516,7 @@
     <objectPermissions>
         <allowCreate>false</allowCreate>
         <allowDelete>false</allowDelete>
-        <allowEdit>false</allowEdit>
+        <allowEdit>true</allowEdit>
         <allowRead>true</allowRead>
         <modifyAllRecords>false</modifyAllRecords>
         <object>AXF_OBJ_BankAccountTransaction__c</object>
@@ -503,7 +543,7 @@
     <objectPermissions>
         <allowCreate>false</allowCreate>
         <allowDelete>false</allowDelete>
-        <allowEdit>false</allowEdit>
+        <allowEdit>true</allowEdit>
         <allowRead>true</allowRead>
         <modifyAllRecords>false</modifyAllRecords>
         <object>AXF_OBJ_CreditCardTransaction__c</object>
@@ -624,6 +664,10 @@
     </tabSettings>
     <tabSettings>
         <tab>AXF_OBJ_Contract__c</tab>
+        <visibility>Visible</visibility>
+    </tabSettings>
+    <tabSettings>
+        <tab>AXF_CT_Reconciliation</tab>
         <visibility>Visible</visibility>
     </tabSettings>
 </PermissionSet>
