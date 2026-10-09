@@ -48,6 +48,7 @@ public with sharing class ALT_CLS_ReconciliationSuggestions {
     List<AXF_OBJ_Entry__c> entries = [
       SELECT
         CurrencyIsoCode,
+        AXF_ENT_PKL_Type__c,
         AXF_ENT_CUR_Amount__c,
         AXF_ENT_DAT_DueDate__c,
         AXF_ENT_LKP_BankAccount__c,
@@ -174,6 +175,14 @@ public with sharing class ALT_CLS_ReconciliationSuggestions {
   ) {
     Integer apart = Math.abs(entry.AXF_ENT_DAT_DueDate__c.daysBetween(day));
     if (apart > WINDOW_DAYS || amount == null) {
+      return;
+    }
+    // Expense only with an outflow (debit), income only with an inflow (credit).
+    if (
+      (entry.AXF_ENT_PKL_Type__c == 'Expense' && amount >= 0) ||
+      (entry.AXF_ENT_PKL_Type__c != 'Expense' &&
+      amount <= 0)
+    ) {
       return;
     }
     Boolean same = entry.CurrencyIsoCode == currencyCode;

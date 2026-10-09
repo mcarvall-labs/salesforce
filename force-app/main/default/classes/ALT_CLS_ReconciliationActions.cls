@@ -17,29 +17,6 @@ public with sharing class ALT_CLS_ReconciliationActions {
     public String message;
   }
 
-  private without sharing class LinkLookup {
-    Set<Id> linked(Set<Id> bankIds, Set<Id> cardIds) {
-      Set<Id> linked = new Set<Id>();
-      for (AXF_OBJ_Entry__c entry : [
-        SELECT
-          AXF_ENT_LKP_BankAccountTransaction__c,
-          AXF_ENT_LKP_CreditCardTransaction__c
-        FROM AXF_OBJ_Entry__c
-        WHERE
-          AXF_ENT_LKP_BankAccountTransaction__c IN :bankIds
-          OR AXF_ENT_LKP_CreditCardTransaction__c IN :cardIds
-      ]) {
-        if (entry.AXF_ENT_LKP_BankAccountTransaction__c != null) {
-          linked.add(entry.AXF_ENT_LKP_BankAccountTransaction__c);
-        }
-        if (entry.AXF_ENT_LKP_CreditCardTransaction__c != null) {
-          linked.add(entry.AXF_ENT_LKP_CreditCardTransaction__c);
-        }
-      }
-      return linked;
-    }
-  }
-
   // The transactions of one call, locked, with the reason each one cannot be acted on.
   private class Batch {
     List<Outcome> outcomes = new List<Outcome>();
@@ -284,7 +261,7 @@ public with sharing class ALT_CLS_ReconciliationActions {
     cardSet.remove(null);
     batch.banks = lockBank(bankSet);
     batch.cards = lockCard(cardSet);
-    batch.linked = new LinkLookup().linked(bankSet, cardSet);
+    batch.linked = new ALT_CLS_ReconciliationLinks().linked(bankSet, cardSet);
     for (Id id : requested) {
       Outcome outcome = new Outcome();
       outcome.transactionId = id;

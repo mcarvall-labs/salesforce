@@ -430,4 +430,32 @@ private class ALT_CLS_ReconciliationSuggestionsTest {
       System.assertNotEquals(null, cardEntry.Id);
     }
   }
+
+  @IsTest
+  static void expenseIsNotSuggestedForAnInflowNorIncomeForAnOutflow() {
+    System.runAs(new User(Id = UserInfo.getUserId())) {
+      base();
+      AXF_OBJ_Entry__c expense = entry(100, 'BRL', null, null);
+      AXF_OBJ_BankAccountTransaction__c inflow = bank(100, DUE);
+      System.assertEquals(0, suggest().size());
+      delete inflow;
+      AXF_OBJ_BankAccountTransaction__c outflow = bank(-100, DUE);
+      AXF_OBJ_Entry__c income = entry(100, 'BRL', null, null);
+      income.AXF_ENT_PKL_Type__c = 'Income';
+      update income;
+      List<ALT_CLS_ReconciliationSuggestions.Suggestion> found = suggest();
+      System.assertEquals(1, found.size());
+      System.assertEquals(expense.Id, found[0].entryId);
+      System.assertEquals(outflow.Id, found[0].bankTransactionId);
+      AXF_OBJ_BankAccountTransaction__c credit = bank(100, DUE);
+      found = suggest();
+      System.assertEquals(2, found.size());
+      for (ALT_CLS_ReconciliationSuggestions.Suggestion item : found) {
+        System.assertEquals(
+          item.entryId == income.Id ? credit.Id : outflow.Id,
+          item.bankTransactionId
+        );
+      }
+    }
+  }
 }

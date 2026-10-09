@@ -705,4 +705,81 @@ private class ALT_CLS_ReconciliationTest {
       );
     }
   }
+
+  @IsTest
+  static void expenseOnlyReconcilesWithOutflowAndIncomeWithInflow() {
+    System.runAs(new User(Id = UserInfo.getUserId())) {
+      base();
+      AXF_OBJ_Entry__c expense = entry(null, null);
+      AXF_OBJ_Entry__c income = entry(null, null);
+      income.AXF_ENT_PKL_Type__c = 'Income';
+      update income;
+      AXF_OBJ_BankAccountTransaction__c debit = bankTransaction();
+      AXF_OBJ_BankAccountTransaction__c credit = new AXF_OBJ_BankAccountTransaction__c(
+        AXF_BAT_MD_BankAccount__c = account.Id,
+        AXF_BAT_DAT_Date__c = Date.newInstance(2026, 10, 7),
+        AXF_BAT_CUR_Amount__c = 100
+      );
+      insert credit;
+      System.assert(
+        reconcileMessage(expense, credit.Id, null)
+          .contains('Despesa só concilia')
+      );
+      System.assert(
+        reconcileMessage(income, debit.Id, null)
+          .contains('receita só com entrada')
+      );
+      ALT_CLS_Reconciliation.Outcome ok = new ALT_CLS_Reconciliation()
+        .reconcile(
+          new List<ALT_CLS_Reconciliation.Pair>{
+            new ALT_CLS_Reconciliation.Pair(income.Id, credit.Id, null),
+            new ALT_CLS_Reconciliation.Pair(expense.Id, debit.Id, null)
+          }
+        )[0];
+      System.assertEquals(true, ok.success, '' + ok.message);
+      System.assertEquals('Realized', reload(expense.Id).AXF_ENT_PKL_Status__c);
+      System.assertEquals('Realized', reload(income.Id).AXF_ENT_PKL_Status__c);
+    }
+  }
+
+  @IsTest
+  static void cardRefundDoesNotReconcileWithAnExpense() {
+    System.runAs(new User(Id = UserInfo.getUserId())) {
+      base();
+      AXF_OBJ_Entry__c cardExpense = entry(card.Id, null);
+      AXF_OBJ_CreditCardTransaction__c refund = cardTransaction(20, 20);
+      System.assert(
+        reconcileMessage(cardExpense, null, refund.Id)
+          .contains('Despesa só concilia')
+      );
+    }
+  }
+
+  @IsTest
+  static void undoClearsTheAccountOfTheTransactionButKeepsTheCard() {
+    System.runAs(new User(Id = UserInfo.getUserId())) {
+      base();
+      AXF_OBJ_Entry__c bare = entry(null, null);
+      AXF_OBJ_Entry__c withCard = entry(card.Id, null);
+      AXF_OBJ_BankAccountTransaction__c bank = bankTransaction();
+      AXF_OBJ_CreditCardTransaction__c purchase = cardTransaction(-20, -20);
+      ALT_CLS_Reconciliation service = new ALT_CLS_Reconciliation();
+      service.reconcile(
+        new List<ALT_CLS_Reconciliation.Pair>{
+          new ALT_CLS_Reconciliation.Pair(bare.Id, bank.Id, null),
+          new ALT_CLS_Reconciliation.Pair(withCard.Id, null, purchase.Id)
+        }
+      );
+      System.assertEquals(
+        account.Id,
+        reload(bare.Id).AXF_ENT_LKP_BankAccount__c
+      );
+      service.unreconcile(new List<Id>{ bare.Id, withCard.Id });
+      System.assertEquals(null, reload(bare.Id).AXF_ENT_LKP_BankAccount__c);
+      System.assertEquals(
+        card.Id,
+        reload(withCard.Id).AXF_ENT_LKP_CreditCard__c
+      );
+    }
+  }
 }

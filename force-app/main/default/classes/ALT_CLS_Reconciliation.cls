@@ -6,8 +6,8 @@
  * from the bank account, so it reconciles with a bank account transaction. Reconciling turns the
  * Entry into Realized with the transaction date and the realized amount in BRL, and the
  * transaction into Reconciled; undoing clears the link, the payment date and the realized amount,
- * returns the Entry to Pending and the transaction to Pending (the account filled in by the
- * reconciliation stays). Batches are partial: each pair succeeds or fails on its own, with the
+ * returns the Entry to Pending and the transaction to Pending, and clears the bank account
+ * of an Entry without card. Batches are partial: each pair succeeds or fails on its own, with the
  * reason in its result. Runs with the caller's sharing and CRUD/FLS; only the duplicate-link check
  * ignores sharing, because a transaction linked to an Entry the caller cannot see is still linked.
  */
@@ -36,31 +36,6 @@ public with sharing class ALT_CLS_Reconciliation {
     Map<Id, AXF_OBJ_BankAccountTransaction__c> banks = new Map<Id, AXF_OBJ_BankAccountTransaction__c>();
     Map<Id, AXF_OBJ_CreditCardTransaction__c> cards = new Map<Id, AXF_OBJ_CreditCardTransaction__c>();
     Map<Id, Id> entryByTransaction = new Map<Id, Id>();
-  }
-
-  // Duplicate-link lookup only: runs without sharing so an Entry hidden from the caller still
-  // counts as the owner of the transaction.
-  private without sharing class LinkLookup {
-    Set<Id> linked(Set<Id> bankIds, Set<Id> cardIds) {
-      Set<Id> linked = new Set<Id>();
-      for (AXF_OBJ_Entry__c entry : [
-        SELECT
-          AXF_ENT_LKP_BankAccountTransaction__c,
-          AXF_ENT_LKP_CreditCardTransaction__c
-        FROM AXF_OBJ_Entry__c
-        WHERE
-          AXF_ENT_LKP_BankAccountTransaction__c IN :bankIds
-          OR AXF_ENT_LKP_CreditCardTransaction__c IN :cardIds
-      ]) {
-        if (entry.AXF_ENT_LKP_BankAccountTransaction__c != null) {
-          linked.add(entry.AXF_ENT_LKP_BankAccountTransaction__c);
-        }
-        if (entry.AXF_ENT_LKP_CreditCardTransaction__c != null) {
-          linked.add(entry.AXF_ENT_LKP_CreditCardTransaction__c);
-        }
-      }
-      return linked;
-    }
   }
 
   private static final String ENTRY_PENDING = 'Pending';
@@ -118,7 +93,7 @@ public with sharing class ALT_CLS_Reconciliation {
     Map<Id, AXF_OBJ_CreditCardTransaction__c> cardTransactions = lockCard(
       cardIds
     );
-    Set<Id> linked = new LinkLookup().linked(bankIds, cardIds);
+    Set<Id> linked = new ALT_CLS_ReconciliationLinks().linked(bankIds, cardIds);
     Changes changes = new Changes();
     for (Pair pair : candidates) {
       Outcome outcome = byEntry.get(pair.entryId);
@@ -238,7 +213,8 @@ public with sharing class ALT_CLS_Reconciliation {
             AXF_ENT_DAT_PaymentDate__c = null,
             AXF_ENT_NUM_RealizedAmountBRL__c = null,
             AXF_ENT_LKP_BankAccountTransaction__c = null,
-            AXF_ENT_LKP_CreditCardTransaction__c = null
+            AXF_ENT_LKP_CreditCardTransaction__c = null,
+            AXF_ENT_LKP_BankAccount__c = filledAccount(entry, bankTransactions)
           )
         );
         // Only a transaction that is Reconciled goes back to Pending: an Ignored one stays.
@@ -276,6 +252,23 @@ public with sharing class ALT_CLS_Reconciliation {
     }
     save(changes, byEntry);
     return outcomes;
+  }
+
+  // The account of the reconciled transaction goes back to empty on an Entry without card. An
+  // account typed by the user before reconciling is the same account (reconcile only accepts a
+  // transaction of the Entry's account), so the two cannot be told apart and both are cleared.
+  private Id filledAccount(
+    AXF_OBJ_Entry__c entry,
+    Map<Id, AXF_OBJ_BankAccountTransaction__c> bankTransactions
+  ) {
+    AXF_OBJ_BankAccountTransaction__c bank = bankTransactions.get(
+      entry.AXF_ENT_LKP_BankAccountTransaction__c
+    );
+    Boolean filledByReconcile =
+      bank != null &&
+      entry.AXF_ENT_LKP_CreditCard__c == null &&
+      entry.AXF_ENT_LKP_BankAccount__c == bank.AXF_BAT_MD_BankAccount__c;
+    return filledByReconcile ? null : entry.AXF_ENT_LKP_BankAccount__c;
   }
 
   // Entry rows and their transactions go in together: when a transaction fails to save, the
@@ -382,6 +375,29 @@ public with sharing class ALT_CLS_Reconciliation {
     byEntry.get(entryId).message = result.getErrors()[0].getMessage();
   }
 
+  // Amount of the transaction of the pair with its sign (debit negative); null when not found.
+  private Decimal signedAmount(
+    Pair pair,
+    Map<Id, AXF_OBJ_BankAccountTransaction__c> bankTransactions,
+    Map<Id, AXF_OBJ_CreditCardTransaction__c> cardTransactions
+  ) {
+    if (pair.bankTransactionId != null) {
+      AXF_OBJ_BankAccountTransaction__c bank = bankTransactions.get(
+        pair.bankTransactionId
+      );
+      return bank == null ? null : bank.AXF_BAT_CUR_Amount__c;
+    }
+    AXF_OBJ_CreditCardTransaction__c card = cardTransactions.get(
+      pair.cardTransactionId
+    );
+    return card == null ? null : card.AXF_CCT_CUR_Amount__c;
+  }
+
+  // Expense with an outflow (debit) and income with an inflow (credit), nothing else.
+  private Boolean sameDirection(AXF_OBJ_Entry__c entry, Decimal signed) {
+    return entry.AXF_ENT_PKL_Type__c == 'Expense' ? signed < 0 : signed > 0;
+  }
+
   private String check(
     Pair pair,
     AXF_OBJ_Entry__c entry,
@@ -398,6 +414,10 @@ public with sharing class ALT_CLS_Reconciliation {
       entry.AXF_ENT_LKP_CreditCardTransaction__c != null
     ) {
       return 'O lançamento já está realizado ou conciliado.';
+    }
+    Decimal signed = signedAmount(pair, bankTransactions, cardTransactions);
+    if (signed != null && !sameDirection(entry, signed)) {
+      return 'Despesa só concilia com saída (débito) e receita só com entrada (crédito).';
     }
     Boolean byCard =
       entry.AXF_ENT_LKP_CreditCard__c != null &&
@@ -498,6 +518,7 @@ public with sharing class ALT_CLS_Reconciliation {
       [
         SELECT
           AXF_ENT_PKL_Status__c,
+          AXF_ENT_PKL_Type__c,
           AXF_ENT_MD_Holder__c,
           AXF_ENT_LKP_BankAccount__c,
           AXF_ENT_LKP_CreditCard__c,
