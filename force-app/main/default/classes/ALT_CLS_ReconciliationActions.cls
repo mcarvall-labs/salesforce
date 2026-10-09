@@ -51,6 +51,7 @@ public with sharing class ALT_CLS_ReconciliationActions {
     List<Id> eligible = new List<Id>();
   }
 
+  private static final Integer MAX_ATTEMPTS = 4;
   private static final String PENDING = 'Pending';
   private static final String IGNORED = 'Ignored';
   private static final String RECONCILED = 'Reconciled';
@@ -98,39 +99,90 @@ public with sharing class ALT_CLS_ReconciliationActions {
   public List<Outcome> createEntries(List<Id> bankIds, List<Id> cardIds) {
     Batch batch = open(bankIds, cardIds);
     Map<Id, AXF_OBJ_Entry__c> entries = new Map<Id, AXF_OBJ_Entry__c>();
+    List<Id> buildable = new List<Id>();
     for (Id id : batch.eligible) {
-      if (batch.banks.containsKey(id)) {
-        entries.put(id, fromBank(batch.banks.get(id)));
+      String blocker = createBlocker(batch, id);
+      if (blocker != null) {
+        batch.byTransaction.get(id).message = blocker;
       } else {
-        entries.put(id, fromCard(batch.cards.get(id)));
+        buildable.add(id);
+        entries.put(
+          id,
+          batch.banks.containsKey(id)
+            ? fromBank(batch.banks.get(id))
+            : fromCard(batch.cards.get(id))
+        );
       }
     }
     // Entries and the Reconciled mark of their transactions go in together; a transaction that
-    // fails to save rolls the attempt back and it is retried without that one.
+    // fails to save rolls the attempt back and it is retried without that one, a few times at most
+    // (each attempt spends DML statements).
     Set<Id> excluded = new Set<Id>();
-    for (Integer attempt = 0; attempt <= entries.size(); attempt++) {
+    Boolean saved = false;
+    for (Integer attempt = 0; attempt < MAX_ATTEMPTS && !saved; attempt++) {
       List<Id> ids = new List<Id>();
-      for (Id id : batch.eligible) {
+      for (Id id : buildable) {
         if (!excluded.contains(id)) {
           ids.add(id);
         }
       }
       if (ids.isEmpty()) {
+        saved = true;
         break;
       }
       Savepoint point = Database.setSavepoint();
       Set<Id> failed = insertAndMark(ids, entries, batch);
-      if (failed.isEmpty()) {
-        break;
+      saved = failed.isEmpty();
+      if (!saved) {
+        Database.rollback(point);
+        // Everything of the attempt is undone: only a clean retry reports success again.
+        for (Id id : ids) {
+          batch.byTransaction.get(id).success = false;
+          batch.byTransaction.get(id).entryId = null;
+        }
+        excluded.addAll(failed);
       }
-      Database.rollback(point);
-      excluded.addAll(failed);
-      for (Id id : failed) {
-        batch.byTransaction.get(id).success = false;
-        batch.byTransaction.get(id).entryId = null;
+    }
+    if (!saved) {
+      for (Id id : buildable) {
+        Outcome outcome = batch.byTransaction.get(id);
+        if (!outcome.success && outcome.message == null) {
+          outcome.message = 'Não foi possível salvar agora; tente novamente.';
+        }
       }
     }
     return batch.outcomes;
+  }
+
+  // Reasons only creating an Entry cares about (ignoring a transaction does not need them).
+  private String createBlocker(Batch batch, Id id) {
+    if (batch.banks.containsKey(id)) {
+      AXF_OBJ_BankAccountTransaction__c bank = batch.banks.get(id);
+      if (bank.AXF_BAT_MD_BankAccount__r == null) {
+        return 'A conta da transação não está acessível.';
+      }
+      if (bank.CurrencyIsoCode != 'BRL') {
+        return 'A transação da conta em moeda estrangeira não tem valor em BRL.';
+      }
+      return null;
+    }
+    AXF_OBJ_CreditCardTransaction__c card = batch.cards.get(id);
+    if (card.AXF_CCT_MD_CreditCard__r == null) {
+      return 'O cartão da transação não está acessível.';
+    }
+    if (
+      card.AXF_CCT_CUR_AmountBRL__c == null &&
+      effectiveCurrency(card) != 'BRL'
+    ) {
+      return 'A transação do cartão em moeda estrangeira não tem valor em BRL.';
+    }
+    return null;
+  }
+
+  private String effectiveCurrency(AXF_OBJ_CreditCardTransaction__c card) {
+    return String.isBlank(card.AXF_CCT_TXT_CurrencyCode__c)
+      ? card.CurrencyIsoCode
+      : card.AXF_CCT_TXT_CurrencyCode__c;
   }
 
   private Set<Id> insertAndMark(
@@ -264,13 +316,6 @@ public with sharing class ALT_CLS_ReconciliationActions {
       status = card.AXF_CCT_PKL_ReconciliationStatus__c;
       day = card.AXF_CCT_DAT_Date__c;
       amount = card.AXF_CCT_CUR_Amount__c;
-      if (
-        card.AXF_CCT_CUR_AmountBRL__c == null &&
-        card.AXF_CCT_TXT_CurrencyCode__c != null &&
-        card.AXF_CCT_TXT_CurrencyCode__c != 'BRL'
-      ) {
-        return 'A transação do cartão em moeda estrangeira não tem valor em BRL.';
-      }
     } else {
       return 'Transação não encontrada ou sem acesso.';
     }
@@ -280,7 +325,7 @@ public with sharing class ALT_CLS_ReconciliationActions {
     if (batch.linked.contains(id)) {
       return 'A transação já está ligada a um lançamento.';
     }
-    if (day == null || amount == null) {
+    if (day == null || amount == null || amount == 0) {
       return 'A transação não tem data ou valor.';
     }
     return null;

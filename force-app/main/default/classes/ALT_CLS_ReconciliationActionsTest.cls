@@ -298,4 +298,53 @@ private class ALT_CLS_ReconciliationActionsTest {
       );
     }
   }
+
+  @IsTest
+  static void aFailingEntryRollsBackAndTheRestStillGetTheirEntries() {
+    System.runAs(new User(Id = UserInfo.getUserId())) {
+      base();
+      AXF_OBJ_BankAccountTransaction__c good = bank(-10, null);
+      AXF_OBJ_CreditCardTransaction__c goodCard = purchase(-5, -5, 'BRL', null);
+      // JPY is not an active currency in the org, so the Entry insert fails for this one.
+      AXF_OBJ_CreditCardTransaction__c bad = purchase(-1000, -35, 'JPY', null);
+      List<ALT_CLS_ReconciliationActions.Outcome> outcomes = new ALT_CLS_ReconciliationActions()
+        .createEntries(
+          new List<Id>{ good.Id },
+          new List<Id>{ bad.Id, goodCard.Id }
+        );
+      System.assertEquals(true, outcomes[0].success, '' + outcomes[0].message);
+      System.assertEquals(false, outcomes[1].success);
+      System.assertNotEquals(null, outcomes[1].message);
+      System.assertEquals(null, outcomes[1].entryId);
+      System.assertEquals(true, outcomes[2].success, '' + outcomes[2].message);
+      System.assertEquals(2, [SELECT COUNT() FROM AXF_OBJ_Entry__c]);
+      System.assertEquals('Reconciled', bankStatus(good.Id));
+      System.assertEquals('Reconciled', cardStatus(goodCard.Id));
+      System.assertNotEquals('Reconciled', cardStatus(bad.Id));
+    }
+  }
+
+  @IsTest
+  static void zeroAmountAndForeignBankTransactionsDoNotBecomeEntries() {
+    System.runAs(new User(Id = UserInfo.getUserId())) {
+      base();
+      AXF_OBJ_BankAccountTransaction__c zero = bank(0, null);
+      AXF_OBJ_BankAccountTransaction__c usd = new AXF_OBJ_BankAccountTransaction__c(
+        AXF_BAT_MD_BankAccount__c = account.Id,
+        AXF_BAT_DAT_Date__c = Date.newInstance(2026, 10, 7),
+        AXF_BAT_CUR_Amount__c = -20,
+        CurrencyIsoCode = 'USD'
+      );
+      insert usd;
+      List<ALT_CLS_ReconciliationActions.Outcome> outcomes = new ALT_CLS_ReconciliationActions()
+        .createEntries(new List<Id>{ zero.Id, usd.Id }, null);
+      System.assertEquals(false, outcomes[0].success);
+      System.assertEquals(false, outcomes[1].success);
+      System.assert(outcomes[1].message.contains('moeda estrangeira'));
+      System.assertEquals(0, [SELECT COUNT() FROM AXF_OBJ_Entry__c]);
+      ALT_CLS_ReconciliationActions.Outcome ignored = new ALT_CLS_ReconciliationActions()
+        .ignore(new List<Id>{ usd.Id }, null)[0];
+      System.assertEquals(true, ignored.success, '' + ignored.message);
+    }
+  }
 }
