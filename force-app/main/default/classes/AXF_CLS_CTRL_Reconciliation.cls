@@ -89,6 +89,9 @@ public with sharing class AXF_CLS_CTRL_Reconciliation {
   public class EntryReconciliationView {
     @AuraEnabled
     public Boolean reconciled = false;
+    // The Entry is Realized: only then can the reconciliation be undone.
+    @AuraEnabled
+    public Boolean canUndo = false;
     // account or card
     @AuraEnabled
     public String source;
@@ -335,6 +338,7 @@ public with sharing class AXF_CLS_CTRL_Reconciliation {
     try {
       List<AXF_OBJ_Entry__c> entries = [
         SELECT
+          AXF_ENT_PKL_Status__c,
           AXF_ENT_NUM_RealizedAmountBRL__c,
           AXF_ENT_DAT_PaymentDate__c,
           AXF_ENT_LKP_BankAccountTransaction__c,
@@ -359,27 +363,33 @@ public with sharing class AXF_CLS_CTRL_Reconciliation {
       AXF_OBJ_Entry__c entry = entries[0];
       view.realizedAmountBRL = entry.AXF_ENT_NUM_RealizedAmountBRL__c;
       view.paymentDate = entry.AXF_ENT_DAT_PaymentDate__c;
+      view.canUndo = entry.AXF_ENT_PKL_Status__c == 'Realized';
       if (entry.AXF_ENT_LKP_BankAccountTransaction__c != null) {
-        AXF_OBJ_BankAccountTransaction__c bank = entry.AXF_ENT_LKP_BankAccountTransaction__r;
         view.reconciled = true;
         view.source = 'account';
-        view.transactionId = bank.Id;
-        view.transactionDate = bank.AXF_BAT_DAT_Date__c;
-        view.description = bank.AXF_BAT_TXT_Description__c;
-        view.amount = bank.AXF_BAT_CUR_Amount__c;
-        view.currencyCode = bank.CurrencyIsoCode;
+        view.transactionId = entry.AXF_ENT_LKP_BankAccountTransaction__c;
+        AXF_OBJ_BankAccountTransaction__c bank = entry.AXF_ENT_LKP_BankAccountTransaction__r;
+        // The transaction can be hidden from the user even when the Entry is visible.
+        if (bank != null) {
+          view.transactionDate = bank.AXF_BAT_DAT_Date__c;
+          view.description = bank.AXF_BAT_TXT_Description__c;
+          view.amount = bank.AXF_BAT_CUR_Amount__c;
+          view.currencyCode = bank.CurrencyIsoCode;
+        }
       } else if (entry.AXF_ENT_LKP_CreditCardTransaction__c != null) {
-        AXF_OBJ_CreditCardTransaction__c card = entry.AXF_ENT_LKP_CreditCardTransaction__r;
         view.reconciled = true;
         view.source = 'card';
-        view.transactionId = card.Id;
-        view.transactionDate = card.AXF_CCT_DAT_Date__c;
-        view.description = card.AXF_CCT_TXT_Description__c;
-        view.amount = card.AXF_CCT_CUR_Amount__c;
-        view.amountBRL = card.AXF_CCT_CUR_AmountBRL__c;
-        view.currencyCode = String.isBlank(card.AXF_CCT_TXT_CurrencyCode__c)
-          ? card.CurrencyIsoCode
-          : card.AXF_CCT_TXT_CurrencyCode__c;
+        view.transactionId = entry.AXF_ENT_LKP_CreditCardTransaction__c;
+        AXF_OBJ_CreditCardTransaction__c card = entry.AXF_ENT_LKP_CreditCardTransaction__r;
+        if (card != null) {
+          view.transactionDate = card.AXF_CCT_DAT_Date__c;
+          view.description = card.AXF_CCT_TXT_Description__c;
+          view.amount = card.AXF_CCT_CUR_Amount__c;
+          view.amountBRL = card.AXF_CCT_CUR_AmountBRL__c;
+          view.currencyCode = String.isBlank(card.AXF_CCT_TXT_CurrencyCode__c)
+            ? card.CurrencyIsoCode
+            : card.AXF_CCT_TXT_CurrencyCode__c;
+        }
       }
     } catch (QueryException e) {
       throw new AuraHandledException(DENIED);

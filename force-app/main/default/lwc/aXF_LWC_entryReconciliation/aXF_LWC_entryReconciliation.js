@@ -13,29 +13,46 @@ const SOURCE_LABELS = {
 export default class AXF_LWC_entryReconciliation extends NavigationMixin(
   LightningElement
 ) {
-  @api recordId;
   data;
   isLoading = true;
   isWorking = false;
   errorMessage;
+  currentId;
+  requestId = 0;
 
-  connectedCallback() {
-    return this.load();
+  // A new Entry reloads the card (the page can be reused while navigating).
+  @api
+  get recordId() {
+    return this.currentId;
+  }
+  set recordId(value) {
+    if (value !== this.currentId) {
+      this.currentId = value;
+      this.load();
+    }
   }
 
   async load() {
+    const request = ++this.requestId;
     this.isLoading = true;
     this.errorMessage = undefined;
     try {
-      this.data = await getEntryReconciliation({ entryId: this.recordId });
+      const data = await getEntryReconciliation({ entryId: this.currentId });
+      if (request === this.requestId) {
+        this.data = data;
+      }
     } catch (error) {
-      this.data = undefined;
-      this.errorMessage = this.messageOf(
-        error,
-        "Não foi possível carregar a conciliação."
-      );
+      if (request === this.requestId) {
+        this.data = undefined;
+        this.errorMessage = this.messageOf(
+          error,
+          "Não foi possível carregar a conciliação."
+        );
+      }
     } finally {
-      this.isLoading = false;
+      if (request === this.requestId) {
+        this.isLoading = false;
+      }
     }
   }
 
@@ -63,10 +80,17 @@ export default class AXF_LWC_entryReconciliation extends NavigationMixin(
     );
   }
 
+  get cannotUndo() {
+    return this.isWorking || !this.data || !this.data.canUndo;
+  }
+
   async handleUndo() {
+    if (this.isWorking) {
+      return;
+    }
     this.isWorking = true;
     try {
-      const outcome = (await unreconcile({ entryIds: [this.recordId] }))[0];
+      const outcome = (await unreconcile({ entryIds: [this.currentId] }))[0];
       if (outcome && outcome.success) {
         this.dispatchEvent(
           new ShowToastEvent({
@@ -74,7 +98,12 @@ export default class AXF_LWC_entryReconciliation extends NavigationMixin(
             variant: "success"
           })
         );
-        await notifyRecordUpdateAvailable([{ recordId: this.recordId }]);
+        // Refreshing the page data is best effort: the undo is already saved.
+        try {
+          await notifyRecordUpdateAvailable([{ recordId: this.currentId }]);
+        } catch {
+          // ignored on purpose
+        }
         await this.load();
       } else {
         this.dispatchEvent(

@@ -59,12 +59,7 @@ export default class AXF_LWC_invoiceTransactions extends NavigationMixin(
   }
 
   get showCard() {
-    return !(
-      this.hideWhenNotInvoice &&
-      !this.isLoading &&
-      !this.hasInvoice &&
-      !this.errorMessage
-    );
+    return !(this.hideWhenNotInvoice && !this.hasInvoice && !this.errorMessage);
   }
 
   get showNoInvoice() {

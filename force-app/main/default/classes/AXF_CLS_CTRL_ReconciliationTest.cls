@@ -294,4 +294,43 @@ private class AXF_CLS_CTRL_ReconciliationTest {
       }
     }
   }
+
+  @IsTest
+  static void entryRecordPageRoundTripAndStaleLink() {
+    System.runAs(new User(Id = UserInfo.getUserId())) {
+      base();
+      AXF_OBJ_Entry__c pending = entry(null, 100);
+      AXF_OBJ_BankAccountTransaction__c debit = bank(-100);
+      AXF_CLS_CTRL_Reconciliation.PairInput pair = new AXF_CLS_CTRL_Reconciliation.PairInput();
+      pair.entryId = pending.Id;
+      pair.bankTransactionId = debit.Id;
+      AXF_CLS_CTRL_Reconciliation.reconcile(
+        new List<AXF_CLS_CTRL_Reconciliation.PairInput>{ pair }
+      );
+      AXF_CLS_CTRL_Reconciliation.EntryReconciliationView done = AXF_CLS_CTRL_Reconciliation.getEntryReconciliation(
+        pending.Id
+      );
+      System.assertEquals(true, done.reconciled);
+      System.assertEquals(true, done.canUndo);
+      System.assertEquals(DUE, done.transactionDate);
+      System.assertEquals('BRL', done.currencyCode);
+      System.assertEquals(null, done.amountBRL);
+      AXF_CLS_CTRL_Reconciliation.unreconcile(new List<Id>{ pending.Id });
+      AXF_CLS_CTRL_Reconciliation.EntryReconciliationView undone = AXF_CLS_CTRL_Reconciliation.getEntryReconciliation(
+        pending.Id
+      );
+      System.assertEquals(false, undone.reconciled);
+      System.assertEquals(false, undone.canUndo);
+      System.assertEquals(null, undone.realizedAmountBRL);
+      System.assertEquals(null, undone.paymentDate);
+      AXF_OBJ_Entry__c stale = entry(null, 7);
+      stale.AXF_ENT_LKP_BankAccountTransaction__c = debit.Id;
+      update stale;
+      AXF_CLS_CTRL_Reconciliation.EntryReconciliationView staleView = AXF_CLS_CTRL_Reconciliation.getEntryReconciliation(
+        stale.Id
+      );
+      System.assertEquals(true, staleView.reconciled);
+      System.assertEquals(false, staleView.canUndo);
+    }
+  }
 }
