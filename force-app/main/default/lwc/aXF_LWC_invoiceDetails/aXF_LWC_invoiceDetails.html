@@ -1,0 +1,44 @@
+<template>
+  <lightning-card title="Fatura selecionada" icon-name="standard:contract">
+    <div class="slds-p-horizontal_medium">
+      <template lwc:if={invoice}>
+        <dl class="slds-list_horizontal slds-wrap">
+          <dt class="slds-item_label slds-text-color_weak slds-truncate">
+            Competência
+          </dt>
+          <dd class="slds-item_detail slds-truncate invoice-period">
+            {invoice.period}
+          </dd>
+          <dt class="slds-item_label slds-text-color_weak slds-truncate">
+            Vence em
+          </dt>
+          <dd class="slds-item_detail slds-truncate invoice-due">
+            <b>
+              <lightning-formatted-date-time
+                value={invoice.dueDate}
+                time-zone="UTC"
+              ></lightning-formatted-date-time>
+            </b>
+          </dd>
+          <dt class="slds-item_label slds-text-color_weak slds-truncate">
+            Total
+          </dt>
+          <dd class="slds-item_detail slds-truncate">
+            <lightning-formatted-number
+              value={invoice.totalAmount}
+              format-style="currency"
+              currency-code={invoice.currencyCode}
+            ></lightning-formatted-number>
+          </dd>
+          <dt class="slds-item_label slds-text-color_weak slds-truncate">
+            Situação
+          </dt>
+          <dd class="slds-item_detail slds-truncate">{invoice.statusLabel}</dd>
+        </dl>
+      </template>
+      <template lwc:else>
+        <p class="slds-text-color_weak">Nenhuma fatura selecionada.</p>
+      </template>
+    </div>
+  </lightning-card>
+</template>

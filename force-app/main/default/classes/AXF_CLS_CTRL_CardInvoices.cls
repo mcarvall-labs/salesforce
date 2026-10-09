@@ -12,6 +12,10 @@ public with sharing class AXF_CLS_CTRL_CardInvoices {
     public String status;
     @AuraEnabled
     public String currencyCode;
+    @AuraEnabled
+    public Boolean projected;
+    @AuraEnabled
+    public List<LineView> lines;
   }
 
   public class LineView {
@@ -29,6 +33,8 @@ public with sharing class AXF_CLS_CTRL_CardInvoices {
     public String originalCurrency;
     @AuraEnabled
     public String installment;
+    @AuraEnabled
+    public Boolean projected;
   }
 
   @AuraEnabled
@@ -48,6 +54,13 @@ public with sharing class AXF_CLS_CTRL_CardInvoices {
       view.totalAmount = invoice.totalAmount;
       view.status = invoice.status;
       view.currencyCode = invoice.currencyCode;
+      view.projected = invoice.projected;
+      if (invoice.lines != null) {
+        view.lines = new List<LineView>();
+        for (ALT_CLS_CardInvoices.Line line : invoice.lines) {
+          view.lines.add(toView(line));
+        }
+      }
       views.add(view);
     }
     return views;
@@ -63,16 +76,22 @@ public with sharing class AXF_CLS_CTRL_CardInvoices {
       ALT_CLS_CardInvoices.Line line : new ALT_CLS_CardInvoices()
         .lines(invoiceId)
     ) {
-      LineView view = new LineView();
-      view.id = line.id;
-      view.transactionDate = line.transactionDate;
-      view.description = line.description;
-      view.amount = line.amount;
-      view.amountBRL = line.amountBRL;
-      view.originalCurrency = line.originalCurrency;
-      view.installment = line.installment;
+      LineView view = toView(line);
       views.add(view);
     }
     return views;
+  }
+
+  private static LineView toView(ALT_CLS_CardInvoices.Line line) {
+    LineView view = new LineView();
+    view.id = line.id;
+    view.transactionDate = line.transactionDate;
+    view.description = line.description;
+    view.amount = line.amount;
+    view.amountBRL = line.amountBRL;
+    view.originalCurrency = line.originalCurrency;
+    view.installment = line.installment;
+    view.projected = line.projected;
+    return view;
   }
 }
