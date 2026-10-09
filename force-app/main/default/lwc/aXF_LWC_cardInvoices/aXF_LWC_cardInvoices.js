@@ -21,7 +21,12 @@ const MONTH_NAMES = [
   "Novembro",
   "Dezembro"
 ];
-const STATUS_LABELS = { Open: "Aberta", Closed: "Fechada", Paid: "Paga" };
+const STATUS_LABELS = {
+  Open: "Aberta",
+  Closed: "Fechada",
+  Paid: "Paga",
+  Projected: "Prevista"
+};
 
 export default class AXF_LWC_cardInvoices extends NavigationMixin(
   LightningElement
@@ -102,6 +107,19 @@ export default class AXF_LWC_cardInvoices extends NavigationMixin(
 
   get lineCount() {
     return this.lines.length;
+  }
+
+  get rows() {
+    return this.lines.map((line, index) => ({
+      ...line,
+      key: line.id || `projected-${index}`,
+      isLink: Boolean(line.id),
+      rowClass: line.projected ? "slds-text-color_weak projected-line" : ""
+    }));
+  }
+
+  get isProjected() {
+    return Boolean(this.selected && this.selected.projected);
   }
 
   get syncLabel() {
@@ -210,6 +228,11 @@ export default class AXF_LWC_cardInvoices extends NavigationMixin(
   }
 
   async loadLines() {
+    if (this.selected.projected) {
+      this.lines = this.selected.lines || [];
+      this.errorMessage = undefined;
+      return;
+    }
     const invoiceId = this.selected.id;
     this.isLoadingLines = true;
     try {
