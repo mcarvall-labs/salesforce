@@ -836,4 +836,27 @@ describe("c-a-x-f-l-w-c-dashboard", () => {
     expect(text(element, ".source-row")).toContain("Saldo —");
     expect(text(element, ".source-row")).not.toContain("R$ 0,00");
   });
+
+  it("puts the indicators and the month list in the centre and the previews in the right column", async () => {
+    const element = await mount();
+    const main = element.shadowRoot.querySelector(
+      ".dashboard-grid .main-column"
+    );
+    const side = element.shadowRoot.querySelector(
+      ".dashboard-grid .side-column"
+    );
+    expect(main.querySelector(".kpis")).not.toBeNull();
+    expect(main.querySelector(".entries")).not.toBeNull();
+    expect(main.querySelector(".pending-card")).toBeNull();
+    expect(side.querySelector(".pending-card")).not.toBeNull();
+    expect(side.querySelector(".sources-card")).not.toBeNull();
+    expect(side.querySelector(".kpis")).toBeNull();
+  });
+
+  it("keeps the goals card below both columns", async () => {
+    const element = await mount();
+    const grid = element.shadowRoot.querySelector(".dashboard-grid");
+    expect(grid.querySelector(".budget")).toBeNull();
+    expect(element.shadowRoot.querySelector(".budget")).not.toBeNull();
+  });
 });

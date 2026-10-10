@@ -94,3 +94,16 @@
 .source-row {
   margin-top: 0.25rem;
 }
+
+.dashboard-grid {
+  display: grid;
+  grid-template-columns: minmax(0, 2fr) minmax(16rem, 1fr);
+  gap: 1rem;
+  align-items: start;
+}
+
+@media (max-width: 62rem) {
+  .dashboard-grid {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}
