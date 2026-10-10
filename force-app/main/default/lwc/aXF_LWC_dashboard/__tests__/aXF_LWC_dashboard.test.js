@@ -45,7 +45,6 @@ const summary = {
 };
 
 const budget = {
-  cardForecast: 65,
   total: { name: "Total de despesas", realized: 90, planned: 140, goal: 500 },
   rows: [
     {
@@ -312,7 +311,7 @@ describe("c-a-x-f-l-w-c-dashboard", () => {
     let element = await mount();
     expect(text(element, ".card-forecast-line")).toContain("R$ 65,00");
     document.body.removeChild(element);
-    getBudget.mockResolvedValue({ ...budget, cardForecast: 0 });
+    getSummary.mockResolvedValue({ ...summary, cardForecast: 0 });
     element = await mount();
     expect(element.shadowRoot.querySelector(".card-forecast-line")).toBeNull();
   });
@@ -329,6 +328,33 @@ describe("c-a-x-f-l-w-c-dashboard", () => {
     expect(getBudget.mock.calls[2][0].month).toBe(
       getSummary.mock.calls[2][0].month
     );
+  });
+
+  it("shows the percentage of the goal used next to each bar", async () => {
+    const element = await mount();
+    expect(text(element, ".budget-values")).toContain("meta R$ 500,00 · 28%");
+  });
+
+  it("ignores a stale goals response", async () => {
+    let resolveFirst;
+    getBudget.mockImplementationOnce(
+      () => new Promise((resolve) => (resolveFirst = resolve))
+    );
+    const element = await mount();
+    getBudget.mockResolvedValueOnce({
+      ...budget,
+      total: { ...budget.total, name: "Novo total" }
+    });
+    element.shadowRoot
+      .querySelector(".holder-filter")
+      .dispatchEvent(new CustomEvent("change", { detail: { value: "001A" } }));
+    await flushPromises();
+    resolveFirst({
+      ...budget,
+      total: { ...budget.total, name: "Velho total" }
+    });
+    await flushPromises();
+    expect(text(element, ".budget-name")).toContain("Novo total");
   });
 
   it("shows a goals error without hiding the indicators", async () => {

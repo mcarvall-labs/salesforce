@@ -116,6 +116,21 @@ private class AXF_CLS_CTRL_DashboardBudgetTest {
         expense(holder.Id, fun.Id, 'Realized', 30),
         expense(holder.Id, null, 'Pending', 10)
       };
+      Account other = holder('Outro', 'AXF_Person');
+      AXF_OBJ_Entry__c income = expense(holder.Id, food.Id, 'Realized', 1000);
+      income.AXF_ENT_PKL_Type__c = 'Income';
+      AXF_OBJ_Entry__c before = expense(holder.Id, food.Id, 'Realized', 2000);
+      before.AXF_ENT_DAT_DueDate__c = start.addDays(-1);
+      before.AXF_ENT_DAT_PaymentDate__c = before.AXF_ENT_DAT_DueDate__c;
+      AXF_OBJ_Entry__c after = expense(holder.Id, food.Id, 'Realized', 3000);
+      after.AXF_ENT_DAT_DueDate__c = start.addMonths(1);
+      after.AXF_ENT_DAT_PaymentDate__c = after.AXF_ENT_DAT_DueDate__c;
+      insert new List<AXF_OBJ_Entry__c>{
+        income,
+        before,
+        after,
+        expense(other.Id, food.Id, 'Realized', 4000)
+      };
       insert new List<AXF_OBJ_Budget__c>{
         goal(holder.Id, food.Id, 120, start),
         goal(holder.Id, null, 500, start)
@@ -158,7 +173,21 @@ private class AXF_CLS_CTRL_DashboardBudgetTest {
         goal(holder.Id, food.Id, 999, start.addMonths(1)),
         ended
       };
+      AXF_OBJ_Category__c last = category('Ultimo mes');
+      AXF_OBJ_Budget__c endsNow = goal(
+        holder.Id,
+        last.Id,
+        33,
+        start.addMonths(-2)
+      );
+      endsNow.AXF_BDG_DAT_EndMonth__c = start;
+      insert endsNow;
       ALT_CLS_DashboardBudget.View result = view(holder.Id);
+      System.assertEquals(
+        33,
+        line(result, last.Id).goal,
+        'Ends in the month shown'
+      );
       System.assertEquals(150, line(result, food.Id).goal);
       System.assertEquals(null, line(result, old.Id), 'Ended goal is out');
     }
@@ -184,11 +213,23 @@ private class AXF_CLS_CTRL_DashboardBudgetTest {
       System.assertEquals(400, line(all, food.Id).goal, 'Family goal wins');
       System.assertEquals(50, line(all, fun.Id).goal, 'No family goal: sums');
       System.assertEquals(100, line(view(first.Id), food.Id).goal);
+      System.assertEquals(null, all.total.goal, 'No total goal anywhere');
+      insert new List<AXF_OBJ_Budget__c>{
+        goal(first.Id, null, 300, start),
+        goal(second.Id, null, 200, start)
+      };
+      System.assertEquals(
+        500,
+        view(null).total.goal,
+        'Holders total goals sum'
+      );
+      insert goal(family.Id, null, 800, start);
+      System.assertEquals(800, view(null).total.goal, 'Family total goal wins');
     }
   }
 
   @IsTest
-  static void cardPurchaseNotInAnInvoiceIsOnlyTheForecastLine() {
+  static void cardPurchaseNotInAnInvoiceIsLeftOut() {
     System.runAs(new User(Id = UserInfo.getUserId())) {
       Account holder = holder('Titular', 'AXF_Business');
       AXF_OBJ_CreditCard__c card = new AXF_OBJ_CreditCard__c(
@@ -204,7 +245,6 @@ private class AXF_CLS_CTRL_DashboardBudgetTest {
         expense(holder.Id, null, 'Pending', 15)
       };
       ALT_CLS_DashboardBudget.View result = view(holder.Id);
-      System.assertEquals(80, result.cardForecast);
       System.assertEquals(15, result.total.planned);
     }
   }

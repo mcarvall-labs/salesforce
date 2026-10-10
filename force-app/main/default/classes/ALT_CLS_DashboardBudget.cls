@@ -28,8 +28,6 @@ public with sharing class ALT_CLS_DashboardBudget {
     public Row total = new Row();
     @AuraEnabled
     public List<Row> rows = new List<Row>();
-    @AuraEnabled
-    public Decimal cardForecast = 0;
   }
 
   private static final String FAMILY = 'AXF_Family';
@@ -66,10 +64,9 @@ public with sharing class ALT_CLS_DashboardBudget {
         ? 0
         : entry.AXF_ENT_CUR_Amount__c;
       Boolean pending = entry.AXF_ENT_PKL_Status__c == 'Pending';
+      // Card purchases not yet in an invoice are the forecast card line, which comes from the
+      // summary (one source for the balance switch and the goals card).
       if (entry.AXF_ENT_FOR_AffectsCash__c != true) {
-        if (pending) {
-          view.cardForecast += amount;
-        }
         continue;
       }
       String key = keyOf(entry.AXF_ENT_LKP_Category__c);
@@ -133,6 +130,8 @@ public with sharing class ALT_CLS_DashboardBudget {
         ? 0
         : budget.AXF_BDG_CUR_Amount__c;
       Boolean family =
+        budget.AXF_BDG_MD_Holder__r != null &&
+        budget.AXF_BDG_MD_Holder__r.RecordType != null &&
         budget.AXF_BDG_MD_Holder__r.RecordType.DeveloperName == FAMILY;
       Map<String, Decimal> target = family ? familyGoals : holderGoals;
       target.put(key, (target.containsKey(key) ? target.get(key) : 0) + amount);
@@ -181,7 +180,7 @@ public with sharing class ALT_CLS_DashboardBudget {
   private class ByPlannedDescending implements System.Comparator<Row> {
     public Integer compare(Row first, Row second) {
       if (first.planned == second.planned) {
-        return 0;
+        return (first.name ?? '').compareTo(second.name ?? '');
       }
       return first.planned > second.planned ? -1 : 1;
     }

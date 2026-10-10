@@ -265,7 +265,7 @@ export default class AXF_LWC_dashboard extends LightningElement {
       if (!hasGoal) {
         return 0;
       }
-      return Math.min(100, Math.round((value / row.goal) * 100));
+      return Math.max(0, Math.min(100, Math.round((value / row.goal) * 100)));
     };
     const over = hasGoal && row.realized > row.goal;
     const warning = hasGoal && row.planned > row.goal;
@@ -276,7 +276,9 @@ export default class AXF_LWC_dashboard extends LightningElement {
       isTotal,
       realizedText: this.money(row.realized),
       plannedText: this.money(row.planned),
-      goalText: hasGoal ? this.money(row.goal) : "sem meta",
+      goalText: hasGoal
+        ? `meta ${this.money(row.goal)} · ${Math.round((row.planned / row.goal) * 100)}%`
+        : "sem meta",
       realizedStyle: `width: ${percent(row.realized)}%`,
       plannedStyle: `width: ${percent(row.planned)}%`,
       ratio: hasGoal ? row.planned / row.goal : 0,
@@ -302,7 +304,7 @@ export default class AXF_LWC_dashboard extends LightningElement {
     const [total, ...categories] = rows;
     const closest = categories
       .filter((row) => row.hasGoal)
-      .sort((a, b) => b.ratio - a.ratio)
+      .sort((a, b) => b.ratio - a.ratio || b.planned - a.planned)
       .slice(0, 3);
     return [total, ...closest];
   }
@@ -311,12 +313,13 @@ export default class AXF_LWC_dashboard extends LightningElement {
     return this.budgetExpanded ? "Ver menos" : "Ver todas as categorias";
   }
 
+  // Same figure as the "incluir cartão previsto" switch (one source: the summary).
   get cardForecastLine() {
-    return this.money(this.budget.cardForecast);
+    return this.money(this.summary.cardForecast);
   }
 
   get showCardForecast() {
-    return this.budget && this.budget.cardForecast !== 0;
+    return !!this.budget && !!this.summary && !!this.summary.cardForecast;
   }
 
   handleBudgetToggle() {
