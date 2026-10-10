@@ -45,7 +45,7 @@
         <enabled>true</enabled>
     </classAccesses>
     <description
-  >Acesso ao app Axon, à tab Titulares e à tela de Conciliação. Sem "Ver todos": a visibilidade por registro vem do dono e da hierarquia de papéis.</description>
+  >Acesso ao app Axon: Início (dashboard), Titulares com listas relacionadas, Lançamentos, Contratos, Contas, Cartões, Metas, Relatórios e tela de Conciliação. Sem "Ver todos": a visibilidade por registro vem do dono e da hierarquia de papéis.</description>
     <fieldPermissions>
         <editable>true</editable>
         <field>AXF_OBJ_BankAccount__c.AXF_BA_CUR_Balance__c</field>
@@ -511,11 +511,6 @@
         <editable>false</editable>
         <field
     >AXF_OBJ_PluggyConnection__c.AXF_CON_DT_LastSyncDatetime__c</field>
-        <readable>true</readable>
-    </fieldPermissions>
-    <fieldPermissions>
-        <editable>false</editable>
-        <field>AXF_OBJ_PluggyConnection__c.AXF_CON_EXI_PluggyItemId__c</field>
         <readable>true</readable>
     </fieldPermissions>
     <fieldPermissions>
