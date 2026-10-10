@@ -228,6 +228,48 @@
         </platformActionListItems>
     </platformActionList>
     <relatedObjects>ParentId</relatedObjects>
+    <relatedLists>
+        <fields>NAME</fields>
+        <fields>AXF_CON_PKL_Institution__c</fields>
+        <fields>AXF_CON_PKL_Status__c</fields>
+        <fields>AXF_CON_DT_LastSyncDatetime__c</fields>
+        <relatedList
+    >AXF_OBJ_PluggyConnection__c.AXF_CON_MD_Holder__c</relatedList>
+    </relatedLists>
+    <relatedLists>
+        <fields>NAME</fields>
+        <fields>AXF_BA_PKL_Institution__c</fields>
+        <fields>AXF_BA_CUR_Balance__c</fields>
+        <relatedList>AXF_OBJ_BankAccount__c.AXF_BA_MD_Holder__c</relatedList>
+    </relatedLists>
+    <relatedLists>
+        <fields>NAME</fields>
+        <fields>AXF_CC_PKL_Institution__c</fields>
+        <fields>AXF_CC_CUR_AvailableLimit__c</fields>
+        <fields>AXF_CC_CUR_Limit__c</fields>
+        <relatedList>AXF_OBJ_CreditCard__c.AXF_CC_MD_Holder__c</relatedList>
+    </relatedLists>
+    <relatedLists>
+        <fields>NAME</fields>
+        <fields>RECORDTYPE</fields>
+        <fields>AXF_CTR_CUR_Amount__c</fields>
+        <relatedList>AXF_OBJ_Contract__c.AXF_CTR_MD_Holder__c</relatedList>
+    </relatedLists>
+    <relatedLists>
+        <fields>NAME</fields>
+        <fields>AXF_ENT_DAT_DueDate__c</fields>
+        <fields>AXF_ENT_CUR_Amount__c</fields>
+        <fields>AXF_ENT_PKL_Type__c</fields>
+        <fields>AXF_ENT_PKL_Status__c</fields>
+        <relatedList>AXF_OBJ_Entry__c.AXF_ENT_MD_Holder__c</relatedList>
+    </relatedLists>
+    <relatedLists>
+        <fields>NAME</fields>
+        <fields>AXF_BDG_LKP_Category__c</fields>
+        <fields>AXF_BDG_CUR_Amount__c</fields>
+        <fields>AXF_BDG_DAT_StartMonth__c</fields>
+        <relatedList>AXF_OBJ_Budget__c.AXF_BDG_MD_Holder__c</relatedList>
+    </relatedLists>
     <showEmailCheckbox>false</showEmailCheckbox>
     <showHighlightsPanel>false</showHighlightsPanel>
     <showInteractionLogPanel>false</showInteractionLogPanel>

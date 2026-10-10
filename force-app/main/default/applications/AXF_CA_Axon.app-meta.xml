@@ -11,11 +11,14 @@
     <formFactors>Large</formFactors>
     <label>Axon</label>
     <navType>Standard</navType>
+    <tabs>AXF_CT_Home</tabs>
     <tabs>standard-Account</tabs>
     <tabs>AXF_OBJ_Entry__c</tabs>
     <tabs>AXF_OBJ_BankAccount__c</tabs>
     <tabs>AXF_OBJ_CreditCard__c</tabs>
     <tabs>AXF_OBJ_Contract__c</tabs>
     <tabs>AXF_CT_Reconciliation</tabs>
+    <tabs>AXF_OBJ_Budget__c</tabs>
+    <tabs>standard-report</tabs>
     <uiType>Lightning</uiType>
 </CustomApplication>

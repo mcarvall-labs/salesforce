@@ -61,6 +61,10 @@ _Depende de_ estiver implantada no org.
 | 10  | EP05 (E5-13)           | Pré     | [Ativar multimoeda](#10-ativar-multimoeda)                                                               | —                  | Feito (verificado 2026-10-07) | Feito (verificado 2026-10-07)        | Pendente       |
 | 11  | EP05 (E5-13) / AXF-222 | Pós     | [Ativar EUR e USD em Gerenciar moedas](#11-ativar-eur-e-usd)                                             | 10                 | Feito (verificado 2026-10-07) | Feito, taxa do USD = 1 (placeholder) | Pendente       |
 | 12  | PR #246                | Externo | [Check "Code review approved" como obrigatório em `develop`](#12-check-code-review-approved-obrigatório) | —                  | n/a                           | n/a                                  | n/a            |
+| 16  | AXF-243                | Pós     | [Atribuir os papéis Axon e ter a conta Família](#16-papéis-axon-e-conta-família-meta-global)             | 3                  | Feito (2026-10-10)            | Pendente (regra chega na promoção)   | Pendente       |
+| 17  | AXF-238                | Pós     | [Conferir a tab Início com usuário só Participante](#17-conferir-a-tab-início)                           | 16, AXF-241        | Não verificado                | Pendente                             | Pendente       |
+| 18  | AXF-239                | Pós     | [Conferir a atribuição de layout da página do Titular](#18-layout-da-página-do-titular)                  | 3                  | Não verificado                | Pendente                             | Pendente       |
+| 19  | AXF-240                | Pós     | [Conferir Run Reports e a pasta Axon dos relatórios](#19-relatórios-axon)                                | 3, AXF-241         | Feito como admin (2026-10-10) | Pendente                             | Pendente       |
 
 Estado do passo 12 (GitHub): Feito (2026-10-07), confirmado pela API de branch
 protection de `develop` (checks obrigatórios: `Lint and unit tests`,
@@ -254,6 +258,46 @@ seguro repetir (substitui o job existente). Spread e IOF vêm do repositório (`
 sobrescreve valores editados no Setup, então mude também o arquivo. Spread e IOF ficam em Setup > Metadados
 Personalizados > "FX Parameter" (EUR: 1,00 % e 0 %; **USD entra zerado: informar os valores**).
 Evidência: Setup > Jobs agendados com "Axon - Atualização diária do câmbio (PTAX)".
+
+### 16. Papéis Axon e conta Família (meta global)
+
+AXF-243. A Sharing Rule `AXF_Account_FamiliaParaTodos` compartilha em leitura e gravação
+as Accounts do Record Type **Família** com `Axon - Gestor Financeiro` e subordinados
+(inclui `Axon - Participante`). O deploy cria os papéis se não existirem (agora versionados
+em `roles/`) e a regra; o resto é manual:
+
+1. Papéis atribuídos aos usuários (passo 3): Michel em `Axon - Gestor Financeiro`, Gisele em
+   `Axon - Participante`. **PROD não tem os papéis antes do deploy.**
+2. Criar a Account **Família** (Record Type Família, dono Michel), fora da lista de Titulares.
+3. OWD de Account **Privado** (passo 2); com OWD aberto a regra não faz efeito.
+
+Evidência: `SELECT UserOrGroupId, AccountAccessLevel, RowCause FROM AccountShare WHERE
+AccountId = '<id da Família>'` deve mostrar linhas com causa `Rule` para os grupos dos
+dois papéis. DEV conferido em 2026-10-10 ("Família Lopes"); UAT já tem os papéis e uma
+conta Família, falta a regra (vem com a promoção).
+
+### 17. Conferir a tab Início
+
+AXF-238 (depende da AXF-241 implantada). A tab **Início** é a primeira do app Axon e abre
+o dashboard. Entrar com um usuário que tenha **só** `AXF_PSG_Participante` (Gisele) e
+conferir: a tab Início aparece e abre o dashboard; os indicadores, a lista do mês, as prévias
+e as Metas carregam só os Titulares dela. Evidência: print em comentário na AXF-238.
+
+### 18. Layout da página do Titular
+
+AXF-239. A página do Titular (`AXF_RPL_AccountRecord`) é a visualização padrão do Account e
+mostra as listas Conexões, Contas, Cartões, Contratos, Lançamentos e Metas, que vêm do
+layout. Conferir nos perfis que o Record Type **Titular Pessoa Física** usa o layout
+`Person Account Layout` e os demais (Pessoa Jurídica, Cliente, Família) o `Account Layout`;
+os dois já trazem as 6 listas no deploy. Evidência: abrir um Titular de cada tipo.
+
+### 19. Relatórios Axon
+
+AXF-240 (depende da AXF-241). A pasta **Axon** (3 relatórios) é compartilhada com
+`Axon_Gestor_Financeiro` e subordinados; o Permission Set `Axon - Usuário` concede Run
+Reports e a tab Relatórios. Conferir com a Gisele que a tab Relatórios mostra a pasta Axon e
+que os 3 relatórios executam. DEV: relatórios executados como administrador em 2026-10-10
+com dados temporários (já apagados); falta o login de usuário comum.
 
 ## Analisado e não necessário
 
