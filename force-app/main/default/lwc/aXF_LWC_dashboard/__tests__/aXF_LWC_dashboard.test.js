@@ -30,6 +30,8 @@ const summary = {
   dueSoonCount: 3,
   income: 311,
   expense: 120,
+  incomeRealized: 11,
+  expenseRealized: 20,
   cardForecast: 65,
   projectedBalance: 1167,
   projectedBalanceWithCard: -50
@@ -70,11 +72,20 @@ describe("c-a-x-f-l-w-c-dashboard", () => {
     const call = getSummary.mock.calls[0][0];
     expect(call.holderId).toBeNull();
     expect(call.month).toMatch(/^\d{4}-\d{2}-01$/);
-    expect(text(element, ".kpi-overdue")).toContain("30,00");
+    expect(text(element, ".kpi-overdue")).toContain("R$ 30,00");
+    expect(text(element, ".kpi-overdue")).not.toContain("-R$");
+    expect(
+      element.shadowRoot.querySelector(".kpi-overdue .out")
+    ).not.toBeNull();
     expect(text(element, ".kpi-overdue")).toContain("2 em aberto");
-    expect(text(element, ".kpi-due-soon")).toContain("200,00");
-    expect(text(element, ".kpi-flow")).toContain("311,00");
-    expect(text(element, ".kpi-flow")).toContain("120,00");
+    expect(text(element, ".kpi-due-soon")).toContain("-R$ 200,00");
+    expect(text(element, ".kpi-due-soon")).toContain("3 lançamentos");
+    expect(element.shadowRoot.querySelector(".kpi-due-soon .out")).toBeNull();
+    expect(text(element, ".kpi-flow")).toContain("R$ 11,00");
+    expect(text(element, ".kpi-flow")).toContain("despesas R$ 20,00");
+    expect(text(element, ".planned")).toContain(
+      "previsto R$ 311,00 / R$ 120,00"
+    );
     expect(text(element, ".kpi-projected")).toContain("1.167,00");
   });
 
@@ -142,13 +153,63 @@ describe("c-a-x-f-l-w-c-dashboard", () => {
       () => new Promise((resolve) => (resolveFirst = resolve))
     );
     const element = await mount();
-    getSummary.mockResolvedValueOnce({ ...summary, income: 999 });
+    getSummary.mockResolvedValueOnce({ ...summary, incomeRealized: 999 });
     element.shadowRoot
       .querySelector(".holder-filter")
       .dispatchEvent(new CustomEvent("change", { detail: { value: "001A" } }));
     await flushPromises();
-    resolveFirst({ ...summary, income: 1 });
+    resolveFirst({ ...summary, incomeRealized: 1 });
     await flushPromises();
     expect(text(element, ".kpi-flow")).toContain("999,00");
+  });
+
+  it("shows the holders error and keeps it when the summary reloads", async () => {
+    getHolders.mockRejectedValue({ body: { message: "Sem titulares" } });
+    const element = await mount();
+    expect(text(element, ".holders-error")).toContain("Sem titulares");
+    element.shadowRoot.querySelector(".next-month").click();
+    await flushPromises();
+    expect(text(element, ".holders-error")).toContain("Sem titulares");
+    expect(element.shadowRoot.querySelector(".kpis")).not.toBeNull();
+  });
+
+  it("copes with Apex returning no holders", async () => {
+    getHolders.mockResolvedValue(null);
+    const element = await mount();
+    const combo = element.shadowRoot.querySelector(".holder-filter");
+    expect(combo.options.map((option) => option.label)).toEqual(["Todos"]);
+  });
+
+  it("rolls the year over with the month arrows", async () => {
+    jest.useFakeTimers().setSystemTime(new Date(2026, 11, 15));
+    const element = await mount();
+    expect(getSummary.mock.calls[0][0].month).toBe("2026-12-01");
+    element.shadowRoot.querySelector(".next-month").click();
+    await flushPromises();
+    expect(getSummary.mock.calls[1][0].month).toBe("2027-01-01");
+    element.shadowRoot.querySelector(".previous-month").click();
+    element.shadowRoot.querySelector(".previous-month").click();
+    await flushPromises();
+    expect(getSummary.mock.calls[3][0].month).toBe("2026-11-01");
+    const combo = element.shadowRoot.querySelector(".month-select");
+    expect(combo.options.map((option) => option.value)).toContain("2027-01-01");
+    jest.useRealTimers();
+  });
+
+  it("ignores a stale rejection", async () => {
+    let rejectFirst;
+    getSummary.mockImplementationOnce(
+      () => new Promise((resolve, reject) => (rejectFirst = reject))
+    );
+    const element = await mount();
+    getSummary.mockResolvedValueOnce({ ...summary, incomeRealized: 555 });
+    element.shadowRoot
+      .querySelector(".holder-filter")
+      .dispatchEvent(new CustomEvent("change", { detail: { value: "001A" } }));
+    await flushPromises();
+    rejectFirst({ body: { message: "Antigo" } });
+    await flushPromises();
+    expect(element.shadowRoot.querySelector(".error")).toBeNull();
+    expect(text(element, ".kpi-flow")).toContain("555,00");
   });
 });

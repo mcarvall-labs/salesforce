@@ -134,6 +134,8 @@ private class AXF_CLS_CTRL_DashboardTest {
       System.assertEquals(2, result.dueSoonCount);
       System.assertEquals(311, result.income, 'Pending 300 + realized 11');
       System.assertEquals(120, result.expense, 'Pending 100 + realized 20');
+      System.assertEquals(11, result.incomeRealized);
+      System.assertEquals(20, result.expenseRealized);
       System.assertEquals(65, result.cardForecast, 'Today 60 + overdue 5');
       System.assertEquals(1000, result.currentBalance);
       System.assertEquals(1167, result.projectedBalance);

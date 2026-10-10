@@ -30,6 +30,7 @@ export default class AXF_LWC_dashboard extends LightningElement {
   includeCard = false;
   isLoading = true;
   errorMessage;
+  holdersError;
   requestId = 0;
 
   connectedCallback() {
@@ -39,9 +40,9 @@ export default class AXF_LWC_dashboard extends LightningElement {
 
   async loadHolders() {
     try {
-      this.holders = await getHolders();
+      this.holders = (await getHolders()) || [];
     } catch (error) {
-      this.errorMessage = this.messageOf(
+      this.holdersError = this.messageOf(
         error,
         "Não foi possível carregar os titulares."
       );
@@ -108,19 +109,35 @@ export default class AXF_LWC_dashboard extends LightningElement {
   }
 
   money(value) {
-    return new Intl.NumberFormat("pt-BR", {
-      style: "currency",
-      currency: this.currency
-    }).format(value || 0);
+    try {
+      return new Intl.NumberFormat("pt-BR", {
+        style: "currency",
+        currency: this.currency
+      }).format(value || 0);
+    } catch {
+      return String(value || 0);
+    }
   }
 
   get hasSummary() {
     return !!this.summary;
   }
 
+  // Net to pay: expenses minus income. Positive (more to pay than to receive) is shown in red.
+  get overdueNet() {
+    return this.summary.overdueExpense - this.summary.overdueIncome;
+  }
+
+  get dueSoonNet() {
+    return this.summary.dueSoonExpense - this.summary.dueSoonIncome;
+  }
+
   get overdueTotal() {
-    const s = this.summary;
-    return this.money(s.overdueExpense - s.overdueIncome);
+    return this.money(this.overdueNet);
+  }
+
+  get overdueClass() {
+    return this.overdueNet > 0 ? "kpi-value out" : "kpi-value";
   }
 
   get overdueCaption() {
@@ -128,25 +145,36 @@ export default class AXF_LWC_dashboard extends LightningElement {
   }
 
   get dueSoonTotal() {
-    const s = this.summary;
-    return this.money(s.dueSoonExpense - s.dueSoonIncome);
+    return this.money(this.dueSoonNet);
+  }
+
+  get dueSoonClass() {
+    return this.dueSoonNet > 0 ? "kpi-value out" : "kpi-value";
   }
 
   get dueSoonCaption() {
-    return `${this.summary.dueSoonCount} lançamento(s)`;
+    const count = this.summary.dueSoonCount;
+    return `${count} ${count === 1 ? "lançamento" : "lançamentos"}`;
   }
 
   get incomeTotal() {
-    return this.money(this.summary.income);
+    return this.money(this.summary.incomeRealized);
   }
 
   get expenseTotal() {
-    return this.money(this.summary.expense);
+    return this.money(this.summary.expenseRealized);
+  }
+
+  get plannedCaption() {
+    return `previsto ${this.money(this.summary.income)} / ${this.money(this.summary.expense)}`;
   }
 
   get projectedValue() {
     const s = this.summary;
-    return this.includeCard ? s.projectedBalanceWithCard : s.projectedBalance;
+    const value = this.includeCard
+      ? s.projectedBalanceWithCard
+      : s.projectedBalance;
+    return value == null ? 0 : value;
   }
 
   get projectedTotal() {

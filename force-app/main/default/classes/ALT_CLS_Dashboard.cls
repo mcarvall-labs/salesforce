@@ -43,6 +43,10 @@ public with sharing class ALT_CLS_Dashboard {
     @AuraEnabled
     public Decimal expense = 0;
     @AuraEnabled
+    public Decimal incomeRealized = 0;
+    @AuraEnabled
+    public Decimal expenseRealized = 0;
+    @AuraEnabled
     public Decimal currentBalance = 0;
     @AuraEnabled
     public Decimal cardForecast = 0;
@@ -122,6 +126,13 @@ public with sharing class ALT_CLS_Dashboard {
             summary.expense += amount;
           } else {
             summary.income += amount;
+          }
+          if (!pending) {
+            if (expense) {
+              summary.expenseRealized += amount;
+            } else {
+              summary.incomeRealized += amount;
+            }
           }
         }
         if (pending && (due < today || due <= monthEnd)) {
