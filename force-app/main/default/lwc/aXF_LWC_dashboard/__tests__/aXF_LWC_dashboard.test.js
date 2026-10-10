@@ -4,6 +4,8 @@ import getHolders from "@salesforce/apex/AXF_CLS_CTRL_Dashboard.getHolders";
 import getSummary from "@salesforce/apex/AXF_CLS_CTRL_Dashboard.getSummary";
 import getBudget from "@salesforce/apex/AXF_CLS_CTRL_Dashboard.getBudget";
 import getEntries from "@salesforce/apex/AXF_CLS_CTRL_Dashboard.getEntries";
+import getPending from "@salesforce/apex/AXF_CLS_CTRL_Dashboard.getPending";
+import getSources from "@salesforce/apex/AXF_CLS_CTRL_Dashboard.getSources";
 
 jest.mock(
   "@salesforce/apex/AXF_CLS_CTRL_Dashboard.getHolders",
@@ -41,6 +43,16 @@ jest.mock(
         .join(",")
     )
   }),
+  { virtual: true }
+);
+jest.mock(
+  "@salesforce/apex/AXF_CLS_CTRL_Dashboard.getPending",
+  () => ({ default: jest.fn() }),
+  { virtual: true }
+);
+jest.mock(
+  "@salesforce/apex/AXF_CLS_CTRL_Dashboard.getSources",
+  () => ({ default: jest.fn() }),
   { virtual: true }
 );
 jest.mock(
@@ -152,6 +164,52 @@ const entryList = {
   ]
 };
 
+const pending = {
+  total: 12,
+  suggestions: 2,
+  truncated: false,
+  items: [
+    {
+      id: "t1",
+      source: "account",
+      transactionDate: "2026-10-09",
+      description: "Mercado Livre",
+      amount: -89.9,
+      suggested: true
+    },
+    {
+      id: "t2",
+      source: "card",
+      transactionDate: "2026-10-08",
+      description: "Streaming",
+      amount: -30,
+      suggested: false
+    }
+  ]
+};
+
+const sources = {
+  accounts: [
+    {
+      id: "a1",
+      name: "Inter ••1234",
+      kind: "account",
+      value: 4230.55,
+      holderName: "Michel"
+    }
+  ],
+  cards: [
+    {
+      id: "c1",
+      name: "Mercado Pago ••5678",
+      kind: "card",
+      value: 6120,
+      limitTotal: 8000,
+      holderName: "Michel"
+    }
+  ]
+};
+
 const holders = [
   { id: "001A", name: "Michel" },
   { id: "001B", name: "Gisele" }
@@ -175,6 +233,8 @@ describe("c-a-x-f-l-w-c-dashboard", () => {
     getSummary.mockResolvedValue(summary);
     getBudget.mockResolvedValue(budget);
     getEntries.mockResolvedValue(entryList);
+    getPending.mockResolvedValue(pending);
+    getSources.mockResolvedValue(sources);
   });
 
   afterEach(() => {
@@ -625,5 +685,155 @@ describe("c-a-x-f-l-w-c-dashboard", () => {
       getSummary.mock.calls[getSummary.mock.calls.length - 1][0].month
     );
     expect(last.month).not.toBe(getEntries.mock.calls[0][0].month);
+  });
+
+  it("shows the count, the suggestions and the three most recent open transactions", async () => {
+    const element = await mount();
+    expect(text(element, ".pending-title")).toContain("A conciliar (12)");
+    expect(text(element, ".pending-caption")).toContain("2 com sugestões");
+    const rows = [...element.shadowRoot.querySelectorAll(".pending-row")];
+    expect(rows).toHaveLength(2);
+    expect(rows[0].textContent).toContain("Mercado Livre");
+    expect(rows[0].textContent).toContain("sugestão");
+    expect(rows[0].textContent.replace(/\s+/g, " ")).toContain("-R$ 89,90");
+    expect(rows[1].textContent).toContain("Cartão");
+    expect(getPending.mock.calls[0][0].holderId).toBeNull();
+  });
+
+  it("opens the Conciliação tab from the preview", async () => {
+    const element = await mount();
+    element.shadowRoot.querySelector(".pending-title").click();
+    expect(mockNavigate).toHaveBeenLastCalledWith({
+      type: "standard__navItemPage",
+      attributes: { apiName: "AXF_CT_Reconciliation" }
+    });
+    element.shadowRoot.querySelector(".pending-open").click();
+    expect(mockNavigate).toHaveBeenCalledTimes(2);
+  });
+
+  it("shows balance and available limit and opens the account, the card and their tabs", async () => {
+    const element = await mount();
+    const rows = [...element.shadowRoot.querySelectorAll(".source-row")];
+    expect(rows).toHaveLength(2);
+    expect(rows[0].textContent.replace(/\s+/g, " ")).toContain(
+      "Saldo R$ 4.230,55"
+    );
+    expect(rows[1].textContent.replace(/\s+/g, " ")).toContain(
+      "Limite disp. R$ 6.120,00"
+    );
+    rows[0].querySelector(".source-link").click();
+    expect(mockNavigate).toHaveBeenLastCalledWith({
+      type: "standard__recordPage",
+      attributes: {
+        recordId: "a1",
+        objectApiName: "AXF_OBJ_BankAccount__c",
+        actionName: "view"
+      }
+    });
+    element.shadowRoot.querySelector(".open-cards").click();
+    expect(mockNavigate).toHaveBeenLastCalledWith({
+      type: "standard__objectPage",
+      attributes: {
+        objectApiName: "AXF_OBJ_CreditCard__c",
+        actionName: "list"
+      },
+      state: { filterName: "Recent" }
+    });
+    element.shadowRoot.querySelector(".open-accounts").click();
+    expect(
+      mockNavigate.mock.calls[mockNavigate.mock.calls.length - 1][0].attributes
+        .objectApiName
+    ).toBe("AXF_OBJ_BankAccount__c");
+  });
+
+  it("reloads the previews with the holder and the month", async () => {
+    const element = await mount();
+    element.shadowRoot
+      .querySelector(".holder-filter")
+      .dispatchEvent(new CustomEvent("change", { detail: { value: "001B" } }));
+    await flushPromises();
+    expect(getPending.mock.calls[1][0].holderId).toBe("001B");
+    expect(getSources.mock.calls[1][0].holderId).toBe("001B");
+    element.shadowRoot.querySelector(".next-month").click();
+    await flushPromises();
+    expect(getPending.mock.calls[2][0].month).toBe(
+      getSummary.mock.calls[2][0].month
+    );
+  });
+
+  it("shows the empty states and the truncation mark", async () => {
+    getPending.mockResolvedValue({
+      total: 0,
+      suggestions: 0,
+      truncated: false,
+      items: []
+    });
+    getSources.mockResolvedValue({ accounts: [], cards: [] });
+    let element = await mount();
+    expect(text(element, ".pending-empty")).toContain("Nada a conciliar");
+    expect(text(element, ".sources-empty")).toContain(
+      "Nenhuma conta ou cartão"
+    );
+    document.body.removeChild(element);
+    getPending.mockResolvedValue({ ...pending, truncated: true });
+    element = await mount();
+    expect(text(element, ".pending-title")).toContain("A conciliar (12+)");
+  });
+
+  it("shows an error per preview without hiding the other one or the indicators", async () => {
+    getPending.mockRejectedValue({
+      body: { message: "Sem acesso às pendências" }
+    });
+    const element = await mount();
+    expect(text(element, ".pending-error")).toContain(
+      "Sem acesso às pendências"
+    );
+    expect(element.shadowRoot.querySelector(".pending-card")).toBeNull();
+    expect(element.shadowRoot.querySelectorAll(".source-row")).toHaveLength(2);
+    expect(element.shadowRoot.querySelector(".kpis")).not.toBeNull();
+    document.body.removeChild(element);
+    getPending.mockResolvedValue(pending);
+    getSources.mockRejectedValue({ body: { message: "Sem acesso às contas" } });
+    const second = await mount();
+    expect(text(second, ".sources-error")).toContain("Sem acesso às contas");
+    expect(second.shadowRoot.querySelectorAll(".pending-row")).toHaveLength(2);
+  });
+
+  it("ignores an older previews response", async () => {
+    let resolveFirst;
+    getPending.mockImplementationOnce(
+      () => new Promise((resolve) => (resolveFirst = resolve))
+    );
+    const element = await mount();
+    getPending.mockResolvedValueOnce({ ...pending, total: 99 });
+    element.shadowRoot
+      .querySelector(".holder-filter")
+      .dispatchEvent(new CustomEvent("change", { detail: { value: "001A" } }));
+    await flushPromises();
+    resolveFirst({ ...pending, total: 1 });
+    await flushPromises();
+    expect(text(element, ".pending-title")).toContain("(99)");
+  });
+
+  it("marks partial suggestions and shows the owner of each source for all holders", async () => {
+    getPending.mockResolvedValue({ ...pending, suggestionsPartial: true });
+    const element = await mount();
+    expect(text(element, ".pending-caption")).toContain("(parcial)");
+    expect(text(element, ".source-link")).toContain("Inter ••1234 · Michel");
+    element.shadowRoot
+      .querySelector(".holder-filter")
+      .dispatchEvent(new CustomEvent("change", { detail: { value: "001B" } }));
+    await flushPromises();
+    expect(text(element, ".source-link")).not.toContain("· Michel");
+  });
+
+  it("shows a dash when a balance or limit is missing", async () => {
+    getSources.mockResolvedValue({
+      accounts: [{ id: "a2", name: "Sem saldo", kind: "account", value: null }],
+      cards: []
+    });
+    const element = await mount();
+    expect(text(element, ".source-row")).toContain("Saldo —");
+    expect(text(element, ".source-row")).not.toContain("R$ 0,00");
   });
 });

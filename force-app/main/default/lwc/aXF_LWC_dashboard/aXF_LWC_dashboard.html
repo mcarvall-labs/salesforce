@@ -166,6 +166,132 @@
         </div>
       </template>
 
+      <div class="side-column slds-m-top_medium">
+        <template lwc:if={pendingError}>
+          <p class="pending-error slds-text-color_error" role="alert">
+            {pendingError}
+          </p>
+        </template>
+        <template lwc:if={hasPending}>
+          <div class="pending-card slds-box">
+            <div class="slds-grid slds-grid_align-spread">
+              <a
+                class="pending-title slds-text-title"
+                href="#"
+                onclick={handleOpenReconciliation}
+                >{pendingTitle}</a
+              >
+              <a
+                class="pending-open"
+                href="#"
+                onclick={handleOpenReconciliation}
+                >Abrir conciliação</a
+              >
+            </div>
+            <template lwc:if={pendingCaption}>
+              <p class="pending-caption slds-text-color_weak">
+                {pendingCaption}
+              </p>
+            </template>
+            <template lwc:if={hasPendingItems}>
+              <ul>
+                <template for:each={pendingItems} for:item="item">
+                  <li
+                    key={item.key}
+                    class="pending-row slds-grid slds-grid_align-spread slds-m-top_x-small"
+                  >
+                    <div>
+                      <p>{item.description}</p>
+                      <p class="slds-text-color_weak">
+                        <lightning-formatted-date-time
+                          value={item.transactionDate}
+                          time-zone="UTC"
+                        ></lightning-formatted-date-time>
+                        · {item.sourceText} {item.suggestionText}
+                      </p>
+                    </div>
+                    <span class={item.amountClass}>{item.amountText}</span>
+                  </li>
+                </template>
+              </ul>
+            </template>
+            <template lwc:if={noPendingMessage}>
+              <p class="pending-empty slds-text-color_weak">
+                {noPendingMessage}
+              </p>
+            </template>
+          </div>
+        </template>
+
+        <template lwc:if={sourcesError}>
+          <p class="sources-error slds-text-color_error" role="alert">
+            {sourcesError}
+          </p>
+        </template>
+        <template lwc:if={hasSources}>
+          <div class="sources-card slds-box slds-m-top_small">
+            <p class="slds-text-title">Contas e cartões</p>
+            <template lwc:if={hasAccounts}>
+              <div class="slds-grid slds-grid_align-spread slds-m-top_x-small">
+                <span class="slds-text-color_weak">Contas</span>
+                <a class="open-accounts" href="#" onclick={handleOpenAccounts}
+                  >ver todas</a
+                >
+              </div>
+              <ul>
+                <template for:each={accountRows} for:item="row">
+                  <li
+                    key={row.key}
+                    class="source-row slds-grid slds-grid_align-spread"
+                  >
+                    <a
+                      class="source-link"
+                      href="#"
+                      data-id={row.id}
+                      data-object={row.objectApiName}
+                      onclick={handleOpenSource}
+                      >{row.name}{row.holderText}</a
+                    >
+                    <span>{row.label} {row.valueText}</span>
+                  </li>
+                </template>
+              </ul>
+            </template>
+            <template lwc:if={hasCards}>
+              <div class="slds-grid slds-grid_align-spread slds-m-top_x-small">
+                <span class="slds-text-color_weak">Cartões</span>
+                <a class="open-cards" href="#" onclick={handleOpenCards}
+                  >ver todos</a
+                >
+              </div>
+              <ul>
+                <template for:each={cardRows} for:item="row">
+                  <li
+                    key={row.key}
+                    class="source-row slds-grid slds-grid_align-spread"
+                  >
+                    <a
+                      class="source-link"
+                      href="#"
+                      data-id={row.id}
+                      data-object={row.objectApiName}
+                      onclick={handleOpenSource}
+                      >{row.name}{row.holderText}</a
+                    >
+                    <span>{row.label} {row.valueText}</span>
+                  </li>
+                </template>
+              </ul>
+            </template>
+            <template lwc:if={noSourcesMessage}>
+              <p class="sources-empty slds-text-color_weak">
+                {noSourcesMessage}
+              </p>
+            </template>
+          </div>
+        </template>
+      </div>
+
       <template lwc:if={budgetError}>
         <p
           class="budget-error slds-text-color_error slds-m-top_small"

@@ -32,6 +32,29 @@ public with sharing class AXF_CLS_CTRL_Dashboard {
     }
   }
 
+  // A conciliar preview: count and the 3 most recent open transactions of the month.
+  @AuraEnabled
+  public static ALT_CLS_DashboardPreview.Pending getPending(
+    Id holderId,
+    Date month
+  ) {
+    try {
+      return new ALT_CLS_DashboardPreview().pending(holderId, month);
+    } catch (Exception e) {
+      throw aura(e);
+    }
+  }
+
+  // Contas e cartões preview: balance of the accounts and available limit of the cards.
+  @AuraEnabled
+  public static ALT_CLS_DashboardPreview.Sources getSources(Id holderId) {
+    try {
+      return new ALT_CLS_DashboardPreview().sources(holderId);
+    } catch (Exception e) {
+      throw aura(e);
+    }
+  }
+
   // Expenses of the month by category against the goals (E7-5); same filters as getSummary.
   @AuraEnabled
   public static ALT_CLS_DashboardBudget.View getBudget(

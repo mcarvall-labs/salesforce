@@ -85,3 +85,12 @@
   font-weight: 700;
   white-space: nowrap;
 }
+
+.pending-amount {
+  font-weight: 700;
+  white-space: nowrap;
+}
+
+.source-row {
+  margin-top: 0.25rem;
+}
