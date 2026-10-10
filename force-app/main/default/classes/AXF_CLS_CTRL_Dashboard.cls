@@ -18,6 +18,19 @@ public with sharing class AXF_CLS_CTRL_Dashboard {
     }
   }
 
+  // Expenses of the month by category against the goals (E7-5); same filters as getSummary.
+  @AuraEnabled
+  public static ALT_CLS_DashboardBudget.View getBudget(
+    Id holderId,
+    Date month
+  ) {
+    try {
+      return new ALT_CLS_DashboardBudget().build(holderId, month);
+    } catch (Exception e) {
+      throw aura(e);
+    }
+  }
+
   // setMessage is what the LWC reads; the constructor message alone arrives as a generic error.
   private static AuraHandledException aura(Exception e) {
     AuraHandledException result = new AuraHandledException(e.getMessage());

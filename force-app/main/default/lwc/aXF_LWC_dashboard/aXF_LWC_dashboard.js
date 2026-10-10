@@ -1,6 +1,7 @@
 import { LightningElement } from "lwc";
 import getHolders from "@salesforce/apex/AXF_CLS_CTRL_Dashboard.getHolders";
 import getSummary from "@salesforce/apex/AXF_CLS_CTRL_Dashboard.getSummary";
+import getBudget from "@salesforce/apex/AXF_CLS_CTRL_Dashboard.getBudget";
 
 const ALL = "";
 const MONTHS_AROUND = 6;
@@ -32,6 +33,9 @@ export default class AXF_LWC_dashboard extends LightningElement {
   errorMessage;
   holdersError;
   requestId = 0;
+  budget;
+  budgetError;
+  budgetExpanded = false;
 
   connectedCallback() {
     this.loadHolders();
@@ -49,8 +53,30 @@ export default class AXF_LWC_dashboard extends LightningElement {
     }
   }
 
+  async loadBudget(request) {
+    this.budgetError = undefined;
+    try {
+      const budget = await getBudget({
+        holderId: this.holderId || null,
+        month: this.month
+      });
+      if (request === this.requestId) {
+        this.budget = budget;
+      }
+    } catch (error) {
+      if (request === this.requestId) {
+        this.budget = undefined;
+        this.budgetError = this.messageOf(
+          error,
+          "Não foi possível carregar as metas."
+        );
+      }
+    }
+  }
+
   async loadSummary() {
     const request = ++this.requestId;
+    this.loadBudget(request);
     this.isLoading = true;
     this.errorMessage = undefined;
     try {
@@ -217,5 +243,86 @@ export default class AXF_LWC_dashboard extends LightningElement {
 
   handleCardToggle(event) {
     this.includeCard = event.detail.checked;
+  }
+
+  // Budget bars (E7-5): dark = realized, light = planned, 100 % = goal. Orange when the planned
+  // passes the goal, red when the realized does. A category without goal has no bar.
+  get hasBudget() {
+    return !!this.budget;
+  }
+
+  get budgetRows() {
+    if (!this.budget) {
+      return [];
+    }
+    const rows = [this.budget.total, ...this.budget.rows];
+    return rows.map((row, index) => this.barOf(row, index === 0));
+  }
+
+  barOf(row, isTotal) {
+    const hasGoal = row.goal != null && row.goal > 0;
+    const percent = (value) => {
+      if (!hasGoal) {
+        return 0;
+      }
+      return Math.max(0, Math.min(100, Math.round((value / row.goal) * 100)));
+    };
+    const over = hasGoal && row.realized > row.goal;
+    const warning = hasGoal && row.planned > row.goal;
+    return {
+      key: isTotal ? "total" : row.categoryId || "none",
+      name: row.name,
+      hasGoal,
+      isTotal,
+      realizedText: this.money(row.realized),
+      plannedText: this.money(row.planned),
+      goalText: hasGoal
+        ? `meta ${this.money(row.goal)} · ${Math.round((row.planned / row.goal) * 100)}%`
+        : "sem meta",
+      realizedStyle: `width: ${percent(row.realized)}%`,
+      plannedStyle: `width: ${percent(row.planned)}%`,
+      ratio: hasGoal ? row.planned / row.goal : 0,
+      barClass: over
+        ? "budget-bar over"
+        : warning
+          ? "budget-bar warning"
+          : "budget-bar",
+      alert: over
+        ? "Realizado acima da meta"
+        : warning
+          ? "Previsto acima da meta"
+          : undefined
+    };
+  }
+
+  // Preview: the total and the three categories closest to their goal; the toggle shows all.
+  get visibleBudgetRows() {
+    const rows = this.budgetRows;
+    if (this.budgetExpanded) {
+      return rows;
+    }
+    const [total, ...categories] = rows;
+    const closest = categories
+      .filter((row) => row.hasGoal)
+      .sort((a, b) => b.ratio - a.ratio || b.planned - a.planned)
+      .slice(0, 3);
+    return [total, ...closest];
+  }
+
+  get budgetToggleLabel() {
+    return this.budgetExpanded ? "Ver menos" : "Ver todas as categorias";
+  }
+
+  // Same figure as the "incluir cartão previsto" switch (one source: the summary).
+  get cardForecastLine() {
+    return this.money(this.summary.cardForecast);
+  }
+
+  get showCardForecast() {
+    return !!this.budget && !!this.summary && !!this.summary.cardForecast;
+  }
+
+  handleBudgetToggle() {
+    this.budgetExpanded = !this.budgetExpanded;
   }
 }
