@@ -10,6 +10,9 @@
         <field>AXF_OBJ_Entry__c$AXF_ENT_PKL_Type__c</field>
     </columns>
     <columns>
+        <field>AXF_OBJ_Entry__c$AXF_ENT_FOR_Overdue__c</field>
+    </columns>
+    <columns>
         <field>AXF_OBJ_Entry__c$AXF_ENT_LKP_Category__c</field>
     </columns>
     <columns>
@@ -23,6 +26,13 @@
   >Lançamentos pendentes de cada titular; o total soma o valor com sinal (despesa negativa, receita positiva). Troque o período no filtro de data de vencimento.</description>
     <filter>
         <criteriaItems>
+            <column>AXF_OBJ_Entry__c$AXF_ENT_FOR_AffectsCash__c</column>
+            <columnToColumn>false</columnToColumn>
+            <isUnlocked>true</isUnlocked>
+            <operator>equals</operator>
+            <value>1</value>
+        </criteriaItems>
+        <criteriaItems>
             <column>AXF_OBJ_Entry__c$AXF_ENT_PKL_Status__c</column>
             <columnToColumn>false</columnToColumn>
             <isUnlocked>true</isUnlocked>
@@ -32,7 +42,7 @@
     </filter>
     <format>Summary</format>
     <groupingsDown>
-        <dateGranularity>Day</dateGranularity>
+        
         <field>AXF_OBJ_Entry__c$AXF_ENT_MD_Holder__c</field>
         <sortOrder>Asc</sortOrder>
     </groupingsDown>
@@ -48,6 +58,6 @@
     <showSubTotals>true</showSubTotals>
     <timeFrameFilter>
         <dateColumn>AXF_OBJ_Entry__c$AXF_ENT_DAT_DueDate__c</dateColumn>
-        <interval>INTERVAL_CURFY</interval>
+        <interval>INTERVAL_CUSTOM</interval>
     </timeFrameFilter>
 </Report>

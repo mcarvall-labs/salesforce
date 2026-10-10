@@ -31,7 +31,7 @@
         <sortOrder>Asc</sortOrder>
     </groupingsDown>
     <groupingsDown>
-        <dateGranularity>Day</dateGranularity>
+        
         <field>AXF_OBJ_Entry__c$AXF_ENT_PKL_Type__c</field>
         <sortOrder>Asc</sortOrder>
     </groupingsDown>
