@@ -1,6 +1,9 @@
 import { LightningElement } from "lwc";
+import { NavigationMixin } from "lightning/navigation";
+import { encodeDefaultFieldValues } from "lightning/pageReferenceUtils";
 import getHolders from "@salesforce/apex/AXF_CLS_CTRL_Dashboard.getHolders";
 import getSummary from "@salesforce/apex/AXF_CLS_CTRL_Dashboard.getSummary";
+import getEntries from "@salesforce/apex/AXF_CLS_CTRL_Dashboard.getEntries";
 import getBudget from "@salesforce/apex/AXF_CLS_CTRL_Dashboard.getBudget";
 
 const ALL = "";
@@ -23,7 +26,14 @@ const MONTH_NAMES = [
 const pad = (value) => String(value).padStart(2, "0");
 const monthKey = (year, month) => `${year}-${pad(month + 1)}-01`;
 
-export default class AXF_LWC_dashboard extends LightningElement {
+const FILTER_TITLES = {
+  OVERDUE: "Vencidos (todos os meses)",
+  DUE_SOON: "A vencer no mês"
+};
+
+export default class AXF_LWC_dashboard extends NavigationMixin(
+  LightningElement
+) {
   holders = [];
   holderId = ALL;
   month = monthKey(new Date().getFullYear(), new Date().getMonth());
@@ -33,6 +43,11 @@ export default class AXF_LWC_dashboard extends LightningElement {
   errorMessage;
   holdersError;
   requestId = 0;
+  entries = [];
+  entriesTruncated = false;
+  entriesError;
+  listFilter;
+  entriesRequestId = 0;
   budget;
   budgetError;
   budgetExpanded = false;
@@ -74,9 +89,35 @@ export default class AXF_LWC_dashboard extends LightningElement {
     }
   }
 
+  async loadEntries() {
+    const request = ++this.entriesRequestId;
+    this.entriesError = undefined;
+    try {
+      const result = await getEntries({
+        holderId: this.holderId || null,
+        month: this.month,
+        filter: this.listFilter || null
+      });
+      if (request === this.entriesRequestId) {
+        this.entries = result.rows || [];
+        this.entriesTruncated = !!result.truncated;
+      }
+    } catch (error) {
+      if (request === this.entriesRequestId) {
+        this.entries = [];
+        this.entriesTruncated = false;
+        this.entriesError = this.messageOf(
+          error,
+          "Não foi possível carregar os lançamentos."
+        );
+      }
+    }
+  }
+
   async loadSummary() {
     const request = ++this.requestId;
     this.loadBudget(request);
+    this.loadEntries();
     this.isLoading = true;
     this.errorMessage = undefined;
     try {
@@ -324,5 +365,145 @@ export default class AXF_LWC_dashboard extends LightningElement {
 
   handleBudgetToggle() {
     this.budgetExpanded = !this.budgetExpanded;
+  }
+
+  // Clicking Vencidos or A vencer filters the month list; clicking it again clears the filter.
+  handleOverdueClick(event) {
+    event.preventDefault();
+    this.toggleFilter("OVERDUE");
+  }
+
+  handleDueSoonClick(event) {
+    event.preventDefault();
+    this.toggleFilter("DUE_SOON");
+  }
+
+  toggleFilter(filter) {
+    this.listFilter = this.listFilter === filter ? undefined : filter;
+    this.loadEntries();
+  }
+
+  handleClearFilter() {
+    this.listFilter = undefined;
+    this.loadEntries();
+  }
+
+  get overdueKpiClass() {
+    return this.kpiClass("OVERDUE", "kpi-overdue");
+  }
+
+  get dueSoonKpiClass() {
+    return this.kpiClass("DUE_SOON", "kpi-due-soon");
+  }
+
+  kpiClass(filter, name) {
+    const active = this.listFilter === filter ? " kpi-active" : "";
+    return `kpi ${name} kpi-click slds-box slds-m-right_small${active}`;
+  }
+
+  get isOverduePressed() {
+    return this.listFilter === "OVERDUE";
+  }
+
+  get isDueSoonPressed() {
+    return this.listFilter === "DUE_SOON";
+  }
+
+  get showEntries() {
+    return this.hasSummary || this.hasEntries || !!this.entriesError;
+  }
+
+  get listTitle() {
+    return FILTER_TITLES[this.listFilter] || "Lançamentos do mês";
+  }
+
+  get hasListFilter() {
+    return !!this.listFilter;
+  }
+
+  get hasEntries() {
+    return this.entries.length > 0;
+  }
+
+  get entryRows() {
+    return this.entries.map((entry) => ({
+      ...entry,
+      key: entry.id,
+      amountText: this.money(this.signedAmount(entry)),
+      amountClass: this.amountClass(entry),
+      statusText: this.statusText(entry),
+      detail: [entry.holderName, entry.categoryName].filter(Boolean).join(" · ")
+    }));
+  }
+
+  signedAmount(entry) {
+    const value = entry.amount || 0;
+    return entry.type === "Expense" ? -value : value;
+  }
+
+  amountClass(entry) {
+    if (entry.type === "Expense") {
+      return "entry-amount out";
+    }
+    return entry.type === "Income" ? "entry-amount in" : "entry-amount";
+  }
+
+  statusText(entry) {
+    if (entry.overdue) {
+      return "Vencido";
+    }
+    if (entry.forecastCard) {
+      return "Cartão previsto";
+    }
+    if (entry.status === "Realized") {
+      return "Realizado";
+    }
+    return entry.status === "Pending" ? "Pendente" : entry.status || "";
+  }
+
+  get noEntriesMessage() {
+    return !this.hasEntries && !this.entriesError
+      ? "Nenhum lançamento neste filtro."
+      : undefined;
+  }
+
+  get entriesCaption() {
+    return this.entriesTruncated
+      ? "Mostrando os primeiros lançamentos; refine pelo titular."
+      : undefined;
+  }
+
+  // The invoice expense opens the Entry page, which carries the invoice detail (EP-06).
+  handleEntryClick(event) {
+    event.preventDefault();
+    this[NavigationMixin.Navigate]({
+      type: "standard__recordPage",
+      attributes: {
+        recordId: event.currentTarget.dataset.id,
+        objectApiName: "AXF_OBJ_Entry__c",
+        actionName: "view"
+      }
+    });
+  }
+
+  handleNewExpense() {
+    this.openNewEntry("Expense");
+  }
+
+  handleNewIncome() {
+    this.openNewEntry("Income");
+  }
+
+  // The standard form opens with the Type and the filtered holder already filled in.
+  openNewEntry(type) {
+    const values = { AXF_ENT_PKL_Type__c: type };
+    if (this.holderId) {
+      values.AXF_ENT_MD_Holder__c = this.holderId;
+    }
+    this[NavigationMixin.Navigate]({
+      type: "standard__objectPage",
+      attributes: { objectApiName: "AXF_OBJ_Entry__c", actionName: "new" },
+      state: { defaultFieldValues: encodeDefaultFieldValues(values) }
+    });
   }
 }

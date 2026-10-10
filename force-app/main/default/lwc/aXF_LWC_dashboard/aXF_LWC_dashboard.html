@@ -30,6 +30,20 @@
             onclick={handleNextMonth}
           ></lightning-button-icon>
         </div>
+        <div class="new-entry slds-col_bump-left">
+          <lightning-button
+            class="new-expense slds-m-right_x-small"
+            variant="brand"
+            label="+ Despesa"
+            onclick={handleNewExpense}
+          ></lightning-button>
+          <lightning-button
+            class="new-income"
+            variant="brand"
+            label="+ Receita"
+            onclick={handleNewIncome}
+          ></lightning-button>
+        </div>
       </div>
 
       <div class="slds-is-relative slds-m-top_small">
@@ -56,16 +70,26 @@
 
       <template lwc:if={hasSummary}>
         <div class="kpis slds-grid slds-wrap slds-m-top_medium">
-          <div class="kpi kpi-overdue slds-box slds-m-right_small">
+          <button
+            type="button"
+            class={overdueKpiClass}
+            aria-pressed={isOverduePressed}
+            onclick={handleOverdueClick}
+          >
             <p class="slds-text-title">Vencidos</p>
             <p class={overdueClass}>{overdueTotal}</p>
             <p class="slds-text-color_weak">{overdueCaption}</p>
-          </div>
-          <div class="kpi kpi-due-soon slds-box slds-m-right_small">
+          </button>
+          <button
+            type="button"
+            class={dueSoonKpiClass}
+            aria-pressed={isDueSoonPressed}
+            onclick={handleDueSoonClick}
+          >
             <p class="slds-text-title">A vencer no mês</p>
             <p class={dueSoonClass}>{dueSoonTotal}</p>
             <p class="slds-text-color_weak">{dueSoonCaption}</p>
-          </div>
+          </button>
           <div class="kpi kpi-flow slds-box slds-m-right_small">
             <p class="slds-text-title">Receitas · Despesas</p>
             <p class="kpi-value in">{incomeTotal}</p>
@@ -87,6 +111,61 @@
           </div>
         </div>
       </template>
+      <template lwc:if={showEntries}>
+        <div class="entries slds-box slds-m-top_medium">
+          <div class="slds-grid slds-grid_align-spread">
+            <p class="entries-title slds-text-title">{listTitle}</p>
+            <template lwc:if={hasListFilter}>
+              <lightning-button
+                class="clear-filter"
+                variant="base"
+                label="Limpar filtro"
+                onclick={handleClearFilter}
+              ></lightning-button>
+            </template>
+          </div>
+          <template lwc:if={entriesError}>
+            <p class="entries-error slds-text-color_error" role="alert">
+              {entriesError}
+            </p>
+          </template>
+          <template lwc:if={hasEntries}>
+            <ul class="entries-list">
+              <template for:each={entryRows} for:item="entry">
+                <li
+                  key={entry.key}
+                  class="entry-row slds-grid slds-grid_align-spread slds-m-top_x-small"
+                >
+                  <div>
+                    <a
+                      class="entry-link"
+                      href="#"
+                      data-id={entry.id}
+                      onclick={handleEntryClick}
+                      >{entry.name}</a
+                    >
+                    <p class="slds-text-color_weak">
+                      <lightning-formatted-date-time
+                        value={entry.dueDate}
+                        time-zone="UTC"
+                      ></lightning-formatted-date-time>
+                      · {entry.statusText} · {entry.detail}
+                    </p>
+                  </div>
+                  <span class={entry.amountClass}>{entry.amountText}</span>
+                </li>
+              </template>
+            </ul>
+          </template>
+          <template lwc:if={entriesCaption}>
+            <p class="entries-caption slds-text-color_weak">{entriesCaption}</p>
+          </template>
+          <template lwc:if={noEntriesMessage}>
+            <p class="entries-empty slds-text-color_weak">{noEntriesMessage}</p>
+          </template>
+        </div>
+      </template>
+
       <template lwc:if={budgetError}>
         <p
           class="budget-error slds-text-color_error slds-m-top_small"

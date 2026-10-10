@@ -3,6 +3,7 @@ import AXF_LWC_dashboard from "c/aXF_LWC_dashboard";
 import getHolders from "@salesforce/apex/AXF_CLS_CTRL_Dashboard.getHolders";
 import getSummary from "@salesforce/apex/AXF_CLS_CTRL_Dashboard.getSummary";
 import getBudget from "@salesforce/apex/AXF_CLS_CTRL_Dashboard.getBudget";
+import getEntries from "@salesforce/apex/AXF_CLS_CTRL_Dashboard.getEntries";
 
 jest.mock(
   "@salesforce/apex/AXF_CLS_CTRL_Dashboard.getHolders",
@@ -15,6 +16,38 @@ jest.mock(
   { virtual: true }
 );
 
+const mockNavigate = jest.fn();
+jest.mock(
+  "lightning/navigation",
+  () => {
+    const Navigate = Symbol("Navigate");
+    const NavigationMixin = (Base) =>
+      class extends Base {
+        [Navigate](pageReference) {
+          mockNavigate(pageReference);
+        }
+      };
+    NavigationMixin.Navigate = Navigate;
+    return { NavigationMixin };
+  },
+  { virtual: true }
+);
+jest.mock(
+  "lightning/pageReferenceUtils",
+  () => ({
+    encodeDefaultFieldValues: jest.fn((values) =>
+      Object.entries(values)
+        .map(([field, value]) => `${field}=${value}`)
+        .join(",")
+    )
+  }),
+  { virtual: true }
+);
+jest.mock(
+  "@salesforce/apex/AXF_CLS_CTRL_Dashboard.getEntries",
+  () => ({ default: jest.fn() }),
+  { virtual: true }
+);
 jest.mock(
   "@salesforce/apex/AXF_CLS_CTRL_Dashboard.getBudget",
   () => ({ default: jest.fn() }),
@@ -74,6 +107,51 @@ const budget = {
   ]
 };
 
+const entryList = {
+  truncated: false,
+  rows: [
+    {
+      id: "e1",
+      name: "Aluguel",
+      dueDate: "2026-10-05",
+      amount: 1500,
+      type: "Expense",
+      status: "Pending",
+      holderName: "Michel",
+      categoryName: "Casa",
+      overdue: true,
+      forecastCard: false,
+      invoice: false
+    },
+    {
+      id: "e2",
+      name: "Salário",
+      dueDate: "2026-10-10",
+      amount: 5000,
+      type: "Income",
+      status: "Realized",
+      holderName: "Gisele",
+      categoryName: null,
+      overdue: false,
+      forecastCard: false,
+      invoice: false
+    },
+    {
+      id: "e3",
+      name: "Streaming",
+      dueDate: "2026-10-12",
+      amount: 30,
+      type: "Expense",
+      status: "Pending",
+      holderName: "Michel",
+      categoryName: "Lazer",
+      overdue: false,
+      forecastCard: true,
+      invoice: false
+    }
+  ]
+};
+
 const holders = [
   { id: "001A", name: "Michel" },
   { id: "001B", name: "Gisele" }
@@ -96,6 +174,7 @@ describe("c-a-x-f-l-w-c-dashboard", () => {
     getHolders.mockResolvedValue(holders);
     getSummary.mockResolvedValue(summary);
     getBudget.mockResolvedValue(budget);
+    getEntries.mockResolvedValue(entryList);
   });
 
   afterEach(() => {
@@ -363,5 +442,188 @@ describe("c-a-x-f-l-w-c-dashboard", () => {
     expect(text(element, ".budget-error")).toContain("Sem acesso às metas");
     expect(element.shadowRoot.querySelector(".kpis")).not.toBeNull();
     expect(element.shadowRoot.querySelector(".budget")).toBeNull();
+  });
+
+  it("lists the month entries with sign, status and holder", async () => {
+    const element = await mount();
+    expect(getEntries.mock.calls[0][0].filter).toBeNull();
+    expect(text(element, ".entries-title")).toContain("Lançamentos do mês");
+    const rows = [...element.shadowRoot.querySelectorAll(".entry-row")];
+    expect(rows).toHaveLength(3);
+    expect(rows[0].textContent).toContain("Aluguel");
+    expect(rows[0].textContent).toContain("Vencido");
+    expect(rows[0].textContent.replace(/\s+/g, " ")).toContain("-R$ 1.500,00");
+    expect(rows[0].querySelector(".out")).not.toBeNull();
+    expect(rows[1].textContent).toContain("Realizado");
+    expect(rows[1].querySelector(".in")).not.toBeNull();
+    expect(rows[2].textContent).toContain("Cartão previsto");
+  });
+
+  it("filters the list when a deadline indicator is clicked and clears it", async () => {
+    const element = await mount();
+    element.shadowRoot.querySelector(".kpi-overdue").click();
+    await flushPromises();
+    expect(getEntries.mock.calls[1][0].filter).toBe("OVERDUE");
+    expect(text(element, ".entries-title")).toContain(
+      "Vencidos (todos os meses)"
+    );
+    expect(
+      element.shadowRoot.querySelector(".kpi-overdue.kpi-active")
+    ).not.toBeNull();
+    element.shadowRoot.querySelector(".kpi-due-soon").click();
+    await flushPromises();
+    expect(getEntries.mock.calls[2][0].filter).toBe("DUE_SOON");
+    expect(text(element, ".entries-title")).toContain("A vencer no mês");
+    element.shadowRoot.querySelector(".clear-filter").click();
+    await flushPromises();
+    expect(getEntries.mock.calls[3][0].filter).toBeNull();
+    expect(element.shadowRoot.querySelector(".clear-filter")).toBeNull();
+    element.shadowRoot.querySelector(".kpi-overdue").click();
+    await flushPromises();
+    element.shadowRoot.querySelector(".kpi-overdue").click();
+    await flushPromises();
+    expect(getEntries.mock.calls[5][0].filter).toBeNull();
+  });
+
+  it("keeps the filter when the holder or month changes", async () => {
+    const element = await mount();
+    element.shadowRoot.querySelector(".kpi-due-soon").click();
+    await flushPromises();
+    element.shadowRoot
+      .querySelector(".holder-filter")
+      .dispatchEvent(new CustomEvent("change", { detail: { value: "001B" } }));
+    await flushPromises();
+    const last = getEntries.mock.calls[getEntries.mock.calls.length - 1][0];
+    expect(last.filter).toBe("DUE_SOON");
+    expect(last.holderId).toBe("001B");
+  });
+
+  it("opens the entry record when a row is clicked", async () => {
+    const element = await mount();
+    element.shadowRoot.querySelector(".entry-link").click();
+    expect(mockNavigate).toHaveBeenCalledWith({
+      type: "standard__recordPage",
+      attributes: {
+        recordId: "e1",
+        objectApiName: "AXF_OBJ_Entry__c",
+        actionName: "view"
+      }
+    });
+  });
+
+  it("opens the new entry form with the type and the filtered holder", async () => {
+    const element = await mount();
+    element.shadowRoot.querySelector(".new-expense").click();
+    expect(mockNavigate).toHaveBeenLastCalledWith({
+      type: "standard__objectPage",
+      attributes: { objectApiName: "AXF_OBJ_Entry__c", actionName: "new" },
+      state: { defaultFieldValues: "AXF_ENT_PKL_Type__c=Expense" }
+    });
+    element.shadowRoot
+      .querySelector(".holder-filter")
+      .dispatchEvent(new CustomEvent("change", { detail: { value: "001B" } }));
+    await flushPromises();
+    element.shadowRoot.querySelector(".new-income").click();
+    expect(mockNavigate).toHaveBeenLastCalledWith({
+      type: "standard__objectPage",
+      attributes: { objectApiName: "AXF_OBJ_Entry__c", actionName: "new" },
+      state: {
+        defaultFieldValues:
+          "AXF_ENT_PKL_Type__c=Income,AXF_ENT_MD_Holder__c=001B"
+      }
+    });
+  });
+
+  it("shows the empty, truncated and error states of the list", async () => {
+    getEntries.mockResolvedValue({ rows: [], truncated: false });
+    let element = await mount();
+    expect(text(element, ".entries-empty")).toContain("Nenhum lançamento");
+    document.body.removeChild(element);
+    getEntries.mockResolvedValue({ ...entryList, truncated: true });
+    element = await mount();
+    expect(text(element, ".entries-caption")).toContain("primeiros");
+    document.body.removeChild(element);
+    getEntries.mockRejectedValue({ body: { message: "Sem acesso" } });
+    element = await mount();
+    expect(text(element, ".entries-error")).toContain("Sem acesso");
+    expect(element.shadowRoot.querySelector(".entry-row")).toBeNull();
+    expect(element.shadowRoot.querySelector(".entries-empty")).toBeNull();
+  });
+
+  it("ignores an older list response after quick filter clicks", async () => {
+    let resolveFirst;
+    const element = await mount();
+    getEntries.mockImplementationOnce(
+      () => new Promise((resolve) => (resolveFirst = resolve))
+    );
+    element.shadowRoot.querySelector(".kpi-overdue").click();
+    getEntries.mockResolvedValueOnce({
+      truncated: false,
+      rows: [{ ...entryList.rows[1], name: "Resposta nova" }]
+    });
+    element.shadowRoot.querySelector(".kpi-due-soon").click();
+    await flushPromises();
+    resolveFirst({
+      truncated: false,
+      rows: [{ ...entryList.rows[0], name: "Resposta velha" }]
+    });
+    await flushPromises();
+    expect(text(element, ".entries")).toContain("Resposta nova");
+    expect(text(element, ".entries")).not.toContain("Resposta velha");
+  });
+
+  it("copes with a missing amount, an unknown type and an unknown status", async () => {
+    getEntries.mockResolvedValue({
+      truncated: false,
+      rows: [
+        { id: "x1", name: "Sem valor", type: "Expense", status: "Pending" },
+        {
+          id: "x2",
+          name: "Transferência",
+          amount: 10,
+          type: "Transfer",
+          status: "Canceled"
+        }
+      ]
+    });
+    const element = await mount();
+    const rows = [...element.shadowRoot.querySelectorAll(".entry-row")];
+    expect(rows[0].textContent).not.toContain("NaN");
+    expect(rows[1].querySelector(".in")).toBeNull();
+    expect(rows[1].querySelector(".out")).toBeNull();
+    expect(rows[1].textContent).toContain("Canceled");
+  });
+
+  it("keeps the list visible when the summary fails", async () => {
+    getSummary.mockRejectedValue({ body: { message: "Falha no resumo" } });
+    const element = await mount();
+    expect(element.shadowRoot.querySelectorAll(".entry-row")).toHaveLength(3);
+  });
+
+  it("marks the active indicator as pressed for assistive technology", async () => {
+    const element = await mount();
+    const overdue = element.shadowRoot.querySelector(".kpi-overdue");
+    expect(overdue.getAttribute("aria-pressed")).toBe("false");
+    overdue.click();
+    await flushPromises();
+    expect(
+      element.shadowRoot
+        .querySelector(".kpi-overdue")
+        .getAttribute("aria-pressed")
+    ).toBe("true");
+  });
+
+  it("keeps the filter and sends the new month when the month changes", async () => {
+    const element = await mount();
+    element.shadowRoot.querySelector(".kpi-due-soon").click();
+    await flushPromises();
+    element.shadowRoot.querySelector(".next-month").click();
+    await flushPromises();
+    const last = getEntries.mock.calls[getEntries.mock.calls.length - 1][0];
+    expect(last.filter).toBe("DUE_SOON");
+    expect(last.month).toBe(
+      getSummary.mock.calls[getSummary.mock.calls.length - 1][0].month
+    );
+    expect(last.month).not.toBe(getEntries.mock.calls[0][0].month);
   });
 });

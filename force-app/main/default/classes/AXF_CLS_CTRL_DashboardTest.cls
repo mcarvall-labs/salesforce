@@ -3,7 +3,9 @@ private class AXF_CLS_CTRL_DashboardTest {
   private static final List<String> OBJECTS = new List<String>{
     'AXF_OBJ_Entry__c',
     'AXF_OBJ_BankAccount__c',
-    'AXF_OBJ_CreditCard__c'
+    'AXF_OBJ_CreditCard__c',
+    'AXF_OBJ_CreditCardInvoice__c',
+    'AXF_OBJ_Category__c'
   };
 
   @TestSetup
@@ -331,6 +333,247 @@ private class AXF_CLS_CTRL_DashboardTest {
           e.getMessage(),
           'The real error must reach the LWC'
         );
+      }
+    }
+  }
+
+  private static AXF_OBJ_Entry__c named(AXF_OBJ_Entry__c entry, String name) {
+    entry.Name = name;
+    return entry;
+  }
+
+  @IsTest
+  static void listsTheMonthOverdueAndDueSoonEntries() {
+    System.runAs(new User(Id = UserInfo.getUserId())) {
+      Account holder = scenario();
+      Date monthStart = Date.today().toStartOfMonth();
+      AXF_OBJ_Entry__c next = entry(
+        holder.Id,
+        'Expense',
+        'Pending',
+        monthStart.addMonths(1),
+        999
+      );
+      insert named(next, 'Mês seguinte');
+      Id id = holder.Id;
+      List<ALT_CLS_Dashboard.EntryRow> month = AXF_CLS_CTRL_Dashboard.getEntries(
+          id,
+          Date.today(),
+          null
+        )
+        .rows;
+      Set<Integer> amounts = new Set<Integer>();
+      for (ALT_CLS_Dashboard.EntryRow row : month) {
+        amounts.add(row.amount.intValue());
+      }
+      System.assert(
+        amounts.containsAll(new Set<Integer>{ 100, 300, 20, 11, 60 })
+      );
+      for (ALT_CLS_Dashboard.EntryRow row : month) {
+        System.assertNotEquals('Mês seguinte', row.name);
+        System.assert(row.dueDate >= monthStart);
+      }
+      List<ALT_CLS_Dashboard.EntryRow> overdue = AXF_CLS_CTRL_Dashboard.getEntries(
+          id,
+          Date.today(),
+          'OVERDUE'
+        )
+        .rows;
+      System.assertEquals(2, overdue.size(), 'Expense 40 and income 7');
+      for (ALT_CLS_Dashboard.EntryRow row : overdue) {
+        System.assert(row.overdue);
+        System.assertEquals('Pending', row.status);
+        System.assertEquals('Titular', row.holderName);
+      }
+      List<ALT_CLS_Dashboard.EntryRow> dueSoon = AXF_CLS_CTRL_Dashboard.getEntries(
+          id,
+          Date.today(),
+          'DUE_SOON'
+        )
+        .rows;
+      System.assertEquals(
+        2,
+        dueSoon.size(),
+        'Expense 100 and income 300 (card out)'
+      );
+      System.assertEquals(
+        2,
+        AXF_CLS_CTRL_Dashboard.getEntries(null, Date.today(), 'OVERDUE')
+          .rows.size()
+      );
+    }
+  }
+
+  @IsTest
+  static void monthListFlagsCardForecastAndHonorsHolder() {
+    System.runAs(new User(Id = UserInfo.getUserId())) {
+      Account holder = scenario();
+      Account other = holder('Outro', 'AXF_Person');
+      insert entry(other.Id, 'Expense', 'Pending', Date.today(), 1);
+      List<ALT_CLS_Dashboard.EntryRow> rows = AXF_CLS_CTRL_Dashboard.getEntries(
+          holder.Id,
+          Date.today(),
+          null
+        )
+        .rows;
+      Integer forecast = 0;
+      for (ALT_CLS_Dashboard.EntryRow row : rows) {
+        forecast += row.forecastCard ? 1 : 0;
+        System.assertEquals('Titular', row.holderName);
+      }
+      System.assertEquals(
+        1,
+        forecast,
+        'Only today card purchase is in the month'
+      );
+      System.assertEquals(
+        rows.size() + 1,
+        AXF_CLS_CTRL_Dashboard.getEntries(null, Date.today(), null).rows.size()
+      );
+    }
+  }
+
+  @IsTest
+  static void monthListIsCappedAndFlaggedAsTruncated() {
+    System.runAs(new User(Id = UserInfo.getUserId())) {
+      Account holder = holder('Titular', 'AXF_Business');
+      insert new List<AXF_OBJ_Entry__c>{
+        entry(holder.Id, 'Expense', 'Pending', Date.today(), 1),
+        entry(holder.Id, 'Expense', 'Pending', Date.today(), 2),
+        entry(holder.Id, 'Expense', 'Pending', Date.today(), 3)
+      };
+      ALT_CLS_Dashboard.maxRows = 2;
+      ALT_CLS_Dashboard.EntryList result = AXF_CLS_CTRL_Dashboard.getEntries(
+        holder.Id,
+        Date.today(),
+        null
+      );
+      System.assertEquals(2, result.rows.size());
+      System.assert(result.truncated);
+    }
+  }
+
+  @IsTest
+  static void rejectsAnUnknownListFilter() {
+    System.runAs(new User(Id = UserInfo.getUserId())) {
+      try {
+        AXF_CLS_CTRL_Dashboard.getEntries(null, Date.today(), 'TYPO');
+        System.assert(false, 'Should have been rejected');
+      } catch (AuraHandledException e) {
+        System.assert(e.getMessage().contains('TYPO'));
+      }
+    }
+  }
+
+  @IsTest
+  static void monthListHasExactOrderedRows() {
+    System.runAs(new User(Id = UserInfo.getUserId())) {
+      Account holder = holder('Titular', 'AXF_Business');
+      AXF_OBJ_Category__c category = new AXF_OBJ_Category__c(
+        Name = 'Mercado',
+        AXF_CAT_PKL_Type__c = 'Expense'
+      );
+      insert category;
+      Date monthStart = Date.today().toStartOfMonth();
+      AXF_OBJ_Entry__c later = named(
+        entry(holder.Id, 'Income', 'Realized', monthStart.addDays(5), 70),
+        'B segunda'
+      );
+      AXF_OBJ_Entry__c sooner = named(
+        entry(holder.Id, 'Expense', 'Pending', monthStart.addDays(2), 25),
+        'A primeira'
+      );
+      sooner.AXF_ENT_LKP_Category__c = category.Id;
+      insert new List<AXF_OBJ_Entry__c>{ later, sooner };
+      List<ALT_CLS_Dashboard.EntryRow> rows = AXF_CLS_CTRL_Dashboard.getEntries(
+          holder.Id,
+          Date.today(),
+          null
+        )
+        .rows;
+      System.assertEquals(2, rows.size());
+      System.assertEquals('A primeira', rows[0].name);
+      System.assertEquals('Expense', rows[0].type);
+      System.assertEquals(25, rows[0].amount);
+      System.assertEquals('Mercado', rows[0].categoryName);
+      System.assertEquals('Pending', rows[0].status);
+      System.assertEquals('B segunda', rows[1].name);
+      System.assertEquals('Income', rows[1].type);
+      System.assertEquals('Realized', rows[1].status);
+      System.assertEquals(null, rows[1].categoryName);
+    }
+  }
+
+  @IsTest
+  static void monthListConvertsForeignCurrency() {
+    System.runAs(new User(Id = UserInfo.getUserId())) {
+      Account holder = holder('Titular', 'AXF_Person');
+      AXF_OBJ_Entry__c usd = entry(
+        holder.Id,
+        'Expense',
+        'Pending',
+        Date.today(),
+        100
+      );
+      usd.put('CurrencyIsoCode', 'USD');
+      insert usd;
+      Decimal rate = [
+        SELECT ConversionRate
+        FROM CurrencyType
+        WHERE IsoCode = 'USD'
+      ]
+      .ConversionRate;
+      System.assertEquals(
+        (100 / rate).setScale(2),
+        AXF_CLS_CTRL_Dashboard.getEntries(holder.Id, null, null)
+          .rows[0]
+          .amount.setScale(2)
+      );
+    }
+  }
+
+  @IsTest
+  static void restrictedUserListsOnlySharedHolderEntries() {
+    User restricted = [SELECT Id FROM User WHERE LastName = 'AxfDash'];
+    System.runAs(new User(Id = UserInfo.getUserId())) {
+      Account shared = holder('Dela', 'AXF_Person');
+      Account hidden = holder('Do outro', 'AXF_Business');
+      insert new List<AXF_OBJ_Entry__c>{
+        named(entry(shared.Id, 'Expense', 'Pending', Date.today(), 10), 'Dela'),
+        named(
+          entry(hidden.Id, 'Expense', 'Pending', Date.today(), 500),
+          'Do outro'
+        )
+      };
+      insert new AccountShare(
+        AccountId = shared.Id,
+        UserOrGroupId = restricted.Id,
+        AccountAccessLevel = 'Edit',
+        OpportunityAccessLevel = 'None',
+        CaseAccessLevel = 'None'
+      );
+    }
+    System.runAs(restricted) {
+      List<ALT_CLS_Dashboard.EntryRow> rows = AXF_CLS_CTRL_Dashboard.getEntries(
+          null,
+          Date.today(),
+          null
+        )
+        .rows;
+      System.assertEquals(1, rows.size());
+      System.assertEquals('Dela', rows[0].name);
+    }
+  }
+
+  @IsTest
+  static void userWithoutPermissionCannotListEntries() {
+    User none = [SELECT Id FROM User WHERE LastName = 'AxfDashNone'];
+    System.runAs(none) {
+      try {
+        AXF_CLS_CTRL_Dashboard.getEntries(null, Date.today(), null);
+        System.assert(false, 'Should have been denied');
+      } catch (AuraHandledException e) {
+        System.assertNotEquals('Script-thrown exception', e.getMessage());
       }
     }
   }
