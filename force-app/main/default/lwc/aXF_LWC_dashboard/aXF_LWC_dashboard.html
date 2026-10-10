@@ -87,6 +87,55 @@
           </div>
         </div>
       </template>
+      <template lwc:if={budgetError}>
+        <p
+          class="budget-error slds-text-color_error slds-m-top_small"
+          role="alert"
+        >
+          {budgetError}
+        </p>
+      </template>
+      <template lwc:if={hasBudget}>
+        <div class="budget slds-box slds-m-top_medium">
+          <div class="slds-grid slds-grid_align-spread">
+            <p class="slds-text-title">Metas de despesa</p>
+            <lightning-button
+              class="budget-toggle"
+              variant="base"
+              label={budgetToggleLabel}
+              onclick={handleBudgetToggle}
+            ></lightning-button>
+          </div>
+          <template for:each={visibleBudgetRows} for:item="row">
+            <div key={row.key} class="budget-row slds-m-top_small">
+              <div class="slds-grid slds-grid_align-spread">
+                <span class="budget-name">{row.name}</span>
+                <span class="budget-values slds-text-color_weak"
+                  >{row.realizedText} realizado · {row.plannedText} previsto ·
+                  {row.goalText}</span
+                >
+              </div>
+              <template lwc:if={row.hasGoal}>
+                <div class={row.barClass}>
+                  <div class="planned-fill" style={row.plannedStyle}></div>
+                  <div class="realized-fill" style={row.realizedStyle}></div>
+                </div>
+              </template>
+              <template lwc:if={row.alert}>
+                <p class="budget-alert slds-text-color_error">{row.alert}</p>
+              </template>
+            </div>
+          </template>
+          <template lwc:if={showCardForecast}>
+            <div
+              class="card-forecast-line slds-grid slds-grid_align-spread slds-m-top_small"
+            >
+              <span>Cartão previsto</span>
+              <span>{cardForecastLine}</span>
+            </div>
+          </template>
+        </div>
+      </template>
     </div>
   </lightning-card>
 </template>
