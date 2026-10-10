@@ -1,5 +1,6 @@
 import { LightningElement } from "lwc";
 import { NavigationMixin } from "lightning/navigation";
+import { encodeDefaultFieldValues } from "lightning/pageReferenceUtils";
 import getHolders from "@salesforce/apex/AXF_CLS_CTRL_Dashboard.getHolders";
 import getSummary from "@salesforce/apex/AXF_CLS_CTRL_Dashboard.getSummary";
 import getEntries from "@salesforce/apex/AXF_CLS_CTRL_Dashboard.getEntries";
@@ -46,6 +47,7 @@ export default class AXF_LWC_dashboard extends NavigationMixin(
   entriesTruncated = false;
   entriesError;
   listFilter;
+  entriesRequestId = 0;
   budget;
   budgetError;
   budgetExpanded = false;
@@ -87,7 +89,8 @@ export default class AXF_LWC_dashboard extends NavigationMixin(
     }
   }
 
-  async loadEntries(request) {
+  async loadEntries() {
+    const request = ++this.entriesRequestId;
     this.entriesError = undefined;
     try {
       const result = await getEntries({
@@ -95,12 +98,12 @@ export default class AXF_LWC_dashboard extends NavigationMixin(
         month: this.month,
         filter: this.listFilter || null
       });
-      if (request === this.requestId) {
+      if (request === this.entriesRequestId) {
         this.entries = result.rows || [];
         this.entriesTruncated = !!result.truncated;
       }
     } catch (error) {
-      if (request === this.requestId) {
+      if (request === this.entriesRequestId) {
         this.entries = [];
         this.entriesTruncated = false;
         this.entriesError = this.messageOf(
@@ -114,7 +117,7 @@ export default class AXF_LWC_dashboard extends NavigationMixin(
   async loadSummary() {
     const request = ++this.requestId;
     this.loadBudget(request);
-    this.loadEntries(request);
+    this.loadEntries();
     this.isLoading = true;
     this.errorMessage = undefined;
     try {
@@ -377,12 +380,12 @@ export default class AXF_LWC_dashboard extends NavigationMixin(
 
   toggleFilter(filter) {
     this.listFilter = this.listFilter === filter ? undefined : filter;
-    this.loadEntries(this.requestId);
+    this.loadEntries();
   }
 
   handleClearFilter() {
     this.listFilter = undefined;
-    this.loadEntries(this.requestId);
+    this.loadEntries();
   }
 
   get overdueKpiClass() {
@@ -396,6 +399,18 @@ export default class AXF_LWC_dashboard extends NavigationMixin(
   kpiClass(filter, name) {
     const active = this.listFilter === filter ? " kpi-active" : "";
     return `kpi ${name} kpi-click slds-box slds-m-right_small${active}`;
+  }
+
+  get isOverduePressed() {
+    return this.listFilter === "OVERDUE";
+  }
+
+  get isDueSoonPressed() {
+    return this.listFilter === "DUE_SOON";
+  }
+
+  get showEntries() {
+    return this.hasSummary || this.hasEntries || !!this.entriesError;
   }
 
   get listTitle() {
@@ -414,14 +429,23 @@ export default class AXF_LWC_dashboard extends NavigationMixin(
     return this.entries.map((entry) => ({
       ...entry,
       key: entry.id,
-      amountText: this.money(
-        entry.type === "Expense" ? -entry.amount : entry.amount
-      ),
-      amountClass:
-        entry.type === "Expense" ? "entry-amount out" : "entry-amount in",
+      amountText: this.money(this.signedAmount(entry)),
+      amountClass: this.amountClass(entry),
       statusText: this.statusText(entry),
       detail: [entry.holderName, entry.categoryName].filter(Boolean).join(" · ")
     }));
+  }
+
+  signedAmount(entry) {
+    const value = entry.amount || 0;
+    return entry.type === "Expense" ? -value : value;
+  }
+
+  amountClass(entry) {
+    if (entry.type === "Expense") {
+      return "entry-amount out";
+    }
+    return entry.type === "Income" ? "entry-amount in" : "entry-amount";
   }
 
   statusText(entry) {
@@ -431,7 +455,10 @@ export default class AXF_LWC_dashboard extends NavigationMixin(
     if (entry.forecastCard) {
       return "Cartão previsto";
     }
-    return entry.status === "Realized" ? "Realizado" : "Pendente";
+    if (entry.status === "Realized") {
+      return "Realizado";
+    }
+    return entry.status === "Pending" ? "Pendente" : entry.status || "";
   }
 
   get noEntriesMessage() {
@@ -476,11 +503,7 @@ export default class AXF_LWC_dashboard extends NavigationMixin(
     this[NavigationMixin.Navigate]({
       type: "standard__objectPage",
       attributes: { objectApiName: "AXF_OBJ_Entry__c", actionName: "new" },
-      state: {
-        defaultFieldValues: Object.entries(values)
-          .map(([field, value]) => `${field}=${encodeURIComponent(value)}`)
-          .join(",")
-      }
+      state: { defaultFieldValues: encodeDefaultFieldValues(values) }
     });
   }
 }

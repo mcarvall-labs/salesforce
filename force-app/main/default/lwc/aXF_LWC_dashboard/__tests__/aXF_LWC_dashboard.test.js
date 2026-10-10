@@ -33,6 +33,17 @@ jest.mock(
   { virtual: true }
 );
 jest.mock(
+  "lightning/pageReferenceUtils",
+  () => ({
+    encodeDefaultFieldValues: jest.fn((values) =>
+      Object.entries(values)
+        .map(([field, value]) => `${field}=${value}`)
+        .join(",")
+    )
+  }),
+  { virtual: true }
+);
+jest.mock(
   "@salesforce/apex/AXF_CLS_CTRL_Dashboard.getEntries",
   () => ({ default: jest.fn() }),
   { virtual: true }
@@ -537,5 +548,82 @@ describe("c-a-x-f-l-w-c-dashboard", () => {
     expect(text(element, ".entries-error")).toContain("Sem acesso");
     expect(element.shadowRoot.querySelector(".entry-row")).toBeNull();
     expect(element.shadowRoot.querySelector(".entries-empty")).toBeNull();
+  });
+
+  it("ignores an older list response after quick filter clicks", async () => {
+    let resolveFirst;
+    const element = await mount();
+    getEntries.mockImplementationOnce(
+      () => new Promise((resolve) => (resolveFirst = resolve))
+    );
+    element.shadowRoot.querySelector(".kpi-overdue").click();
+    getEntries.mockResolvedValueOnce({
+      truncated: false,
+      rows: [{ ...entryList.rows[1], name: "Resposta nova" }]
+    });
+    element.shadowRoot.querySelector(".kpi-due-soon").click();
+    await flushPromises();
+    resolveFirst({
+      truncated: false,
+      rows: [{ ...entryList.rows[0], name: "Resposta velha" }]
+    });
+    await flushPromises();
+    expect(text(element, ".entries")).toContain("Resposta nova");
+    expect(text(element, ".entries")).not.toContain("Resposta velha");
+  });
+
+  it("copes with a missing amount, an unknown type and an unknown status", async () => {
+    getEntries.mockResolvedValue({
+      truncated: false,
+      rows: [
+        { id: "x1", name: "Sem valor", type: "Expense", status: "Pending" },
+        {
+          id: "x2",
+          name: "Transferência",
+          amount: 10,
+          type: "Transfer",
+          status: "Canceled"
+        }
+      ]
+    });
+    const element = await mount();
+    const rows = [...element.shadowRoot.querySelectorAll(".entry-row")];
+    expect(rows[0].textContent).not.toContain("NaN");
+    expect(rows[1].querySelector(".in")).toBeNull();
+    expect(rows[1].querySelector(".out")).toBeNull();
+    expect(rows[1].textContent).toContain("Canceled");
+  });
+
+  it("keeps the list visible when the summary fails", async () => {
+    getSummary.mockRejectedValue({ body: { message: "Falha no resumo" } });
+    const element = await mount();
+    expect(element.shadowRoot.querySelectorAll(".entry-row")).toHaveLength(3);
+  });
+
+  it("marks the active indicator as pressed for assistive technology", async () => {
+    const element = await mount();
+    const overdue = element.shadowRoot.querySelector(".kpi-overdue");
+    expect(overdue.getAttribute("aria-pressed")).toBe("false");
+    overdue.click();
+    await flushPromises();
+    expect(
+      element.shadowRoot
+        .querySelector(".kpi-overdue")
+        .getAttribute("aria-pressed")
+    ).toBe("true");
+  });
+
+  it("keeps the filter and sends the new month when the month changes", async () => {
+    const element = await mount();
+    element.shadowRoot.querySelector(".kpi-due-soon").click();
+    await flushPromises();
+    element.shadowRoot.querySelector(".next-month").click();
+    await flushPromises();
+    const last = getEntries.mock.calls[getEntries.mock.calls.length - 1][0];
+    expect(last.filter).toBe("DUE_SOON");
+    expect(last.month).toBe(
+      getSummary.mock.calls[getSummary.mock.calls.length - 1][0].month
+    );
+    expect(last.month).not.toBe(getEntries.mock.calls[0][0].month);
   });
 });

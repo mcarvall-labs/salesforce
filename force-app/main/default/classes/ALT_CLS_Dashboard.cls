@@ -228,6 +228,13 @@ public with sharing class ALT_CLS_Dashboard {
       'today' => today,
       'pendingStatus' => 'Pending'
     };
+    if (
+      String.isNotBlank(filter) &&
+      filter != FILTER_OVERDUE &&
+      filter != FILTER_DUE_SOON
+    ) {
+      throw new IllegalArgumentException('Filtro inválido: ' + filter);
+    }
     String clause;
     if (filter == FILTER_OVERDUE) {
       clause =
@@ -249,7 +256,7 @@ public with sharing class ALT_CLS_Dashboard {
           'FROM AXF_OBJ_Entry__c WHERE ' +
           clause +
           (holderId == null ? '' : ' AND AXF_ENT_MD_Holder__c = :holderId') +
-          ' ORDER BY AXF_ENT_DAT_DueDate__c, Name LIMIT ' +
+          ' ORDER BY AXF_ENT_DAT_DueDate__c, Name, Id LIMIT ' +
           (maxRows + 1),
         binds,
         AccessLevel.USER_MODE
