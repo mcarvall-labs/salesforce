@@ -26,8 +26,12 @@ public with sharing class ALT_CLS_DashboardPreview {
     public Integer total = 0;
     @AuraEnabled
     public Integer suggestions = 0;
+    // The month has more open transactions than the preview reads: the total is a lower bound.
     @AuraEnabled
     public Boolean truncated = false;
+    // "All holders" only looks for suggestions in the first holders: the count is partial.
+    @AuraEnabled
+    public Boolean suggestionsPartial = false;
     @AuraEnabled
     public List<PendingItem> items = new List<PendingItem>();
   }
@@ -57,7 +61,8 @@ public with sharing class ALT_CLS_DashboardPreview {
   }
 
   private static final Integer PREVIEW_ITEMS = 3;
-  private static final Integer MAX_ROWS = 2000;
+  @TestVisible
+  private static Integer maxRows = 2000;
   private static final Integer MAX_HOLDERS = 10;
   private static final Integer MAX_SOURCES = 50;
 
@@ -73,7 +78,7 @@ public with sharing class ALT_CLS_DashboardPreview {
       'first' => first,
       'last' => last,
       'pendingStatus' => 'Pending',
-      'maxRows' => MAX_ROWS
+      'maxRows' => maxRows
     };
     for (
       SObject row : Database.queryWithBinds(
@@ -129,7 +134,7 @@ public with sharing class ALT_CLS_DashboardPreview {
         )
       );
     }
-    result.truncated = bankIds.size() >= MAX_ROWS || cardIds.size() >= MAX_ROWS;
+    result.truncated = bankIds.size() >= maxRows || cardIds.size() >= maxRows;
     // A transaction linked to an Entry the user cannot see is still not "to reconcile".
     Set<Id> linked = new ALT_CLS_ReconciliationLinks().linked(bankIds, cardIds);
     List<PendingItem> still = new List<PendingItem>();
@@ -140,7 +145,7 @@ public with sharing class ALT_CLS_DashboardPreview {
     }
     still.sort(new ByDateDescending());
     result.total = still.size();
-    Set<Id> suggested = suggestedTransactions(holderId, first, last);
+    Set<Id> suggested = suggestedTransactions(holderId, first, last, result);
     for (PendingItem line : still) {
       line.suggested = suggested.contains(line.id);
       result.suggestions += line.suggested ? 1 : 0;
@@ -157,12 +162,11 @@ public with sharing class ALT_CLS_DashboardPreview {
       'holderId' => holderId,
       'maxSources' => MAX_SOURCES
     };
-    String holderClause = holderId == null ? '' : ' WHERE {0} = :holderId';
     for (
       SObject row : Database.queryWithBinds(
         'SELECT Name, AXF_BA_MD_Holder__r.Name, convertCurrency(AXF_BA_CUR_Balance__c) ' +
           'FROM AXF_OBJ_BankAccount__c' +
-          holderClause.replace('{0}', 'AXF_BA_MD_Holder__c') +
+          (holderId == null ? '' : ' WHERE AXF_BA_MD_Holder__c = :holderId') +
           ' ORDER BY Name LIMIT :maxSources',
         binds,
         AccessLevel.USER_MODE
@@ -181,7 +185,7 @@ public with sharing class ALT_CLS_DashboardPreview {
       SObject row : Database.queryWithBinds(
         'SELECT Name, AXF_CC_MD_Holder__r.Name, convertCurrency(AXF_CC_CUR_AvailableLimit__c), ' +
           'convertCurrency(AXF_CC_CUR_Limit__c) FROM AXF_OBJ_CreditCard__c' +
-          holderClause.replace('{0}', 'AXF_CC_MD_Holder__c') +
+          (holderId == null ? '' : ' WHERE AXF_CC_MD_Holder__c = :holderId') +
           ' ORDER BY Name LIMIT :maxSources',
         binds,
         AccessLevel.USER_MODE
@@ -218,8 +222,14 @@ public with sharing class ALT_CLS_DashboardPreview {
 
   // Transactions that have a suggested Entry. Suggestions are per holder, so "all holders" asks
   // for the first holders the user can see.
-  private Set<Id> suggestedTransactions(Id holderId, Date first, Date last) {
+  private Set<Id> suggestedTransactions(
+    Id holderId,
+    Date first,
+    Date last,
+    Pending result
+  ) {
     List<Id> holderIds = new List<Id>();
+    Integer holderLimit = MAX_HOLDERS + 1;
     if (holderId != null) {
       holderIds.add(holderId);
     } else {
@@ -229,9 +239,13 @@ public with sharing class ALT_CLS_DashboardPreview {
         WHERE RecordType.DeveloperName IN ('AXF_Person', 'AXF_Business')
         WITH USER_MODE
         ORDER BY Name
-        LIMIT :MAX_HOLDERS
+        LIMIT :holderLimit
       ]) {
         holderIds.add(holder.Id);
+      }
+      if (holderIds.size() > MAX_HOLDERS) {
+        result.suggestionsPartial = true;
+        holderIds.remove(MAX_HOLDERS);
       }
     }
     Set<Id> ids = new Set<Id>();
@@ -240,11 +254,12 @@ public with sharing class ALT_CLS_DashboardPreview {
         ALT_CLS_ReconciliationSuggestions.Suggestion suggestion : new ALT_CLS_ReconciliationSuggestions()
           .suggest(id, first, last)
       ) {
-        ids.add(
-          suggestion.bankTransactionId != null
-            ? suggestion.bankTransactionId
-            : suggestion.cardTransactionId
-        );
+        Id transactionId = suggestion.bankTransactionId != null
+          ? suggestion.bankTransactionId
+          : suggestion.cardTransactionId;
+        if (transactionId != null) {
+          ids.add(transactionId);
+        }
       }
     }
     return ids;
@@ -252,10 +267,16 @@ public with sharing class ALT_CLS_DashboardPreview {
 
   private class ByDateDescending implements System.Comparator<PendingItem> {
     public Integer compare(PendingItem first, PendingItem second) {
-      if (first.transactionDate == second.transactionDate) {
-        return 0;
+      if (first.transactionDate != second.transactionDate) {
+        if (first.transactionDate == null) {
+          return 1;
+        }
+        if (second.transactionDate == null) {
+          return -1;
+        }
+        return first.transactionDate > second.transactionDate ? -1 : 1;
       }
-      return first.transactionDate > second.transactionDate ? -1 : 1;
+      return String.valueOf(first.id).compareTo(String.valueOf(second.id));
     }
   }
 }

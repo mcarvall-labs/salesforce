@@ -577,7 +577,8 @@ export default class AXF_LWC_dashboard extends NavigationMixin(
     if (!count) {
       return undefined;
     }
-    return `${count} ${count === 1 ? "com sugestão" : "com sugestões"}`;
+    const text = `${count} ${count === 1 ? "com sugestão" : "com sugestões"}`;
+    return this.pending.suggestionsPartial ? `${text} (parcial)` : text;
   }
 
   get noPendingMessage() {
@@ -602,9 +603,9 @@ export default class AXF_LWC_dashboard extends NavigationMixin(
       id: line.id,
       objectApiName: "AXF_OBJ_BankAccount__c",
       name: line.name,
-      holderName: line.holderName,
+      holderText: this.holderText(line),
       label: "Saldo",
-      valueText: this.money(line.value)
+      valueText: this.valueOf(line.value)
     }));
   }
 
@@ -614,10 +615,22 @@ export default class AXF_LWC_dashboard extends NavigationMixin(
       id: line.id,
       objectApiName: "AXF_OBJ_CreditCard__c",
       name: line.name,
-      holderName: line.holderName,
+      holderText: this.holderText(line),
       label: "Limite disp.",
-      valueText: this.money(line.value)
+      valueText: this.valueOf(line.value)
     }));
+  }
+
+  // With all holders selected, the owner tells same-named accounts apart.
+  holderText(line) {
+    return this.showHolderOnSources && line.holderName
+      ? ` · ${line.holderName}`
+      : "";
+  }
+
+  // A missing balance or limit is not zero.
+  valueOf(value) {
+    return value == null ? "—" : this.money(value);
   }
 
   get hasAccounts() {

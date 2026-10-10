@@ -814,4 +814,26 @@ describe("c-a-x-f-l-w-c-dashboard", () => {
     await flushPromises();
     expect(text(element, ".pending-title")).toContain("(99)");
   });
+
+  it("marks partial suggestions and shows the owner of each source for all holders", async () => {
+    getPending.mockResolvedValue({ ...pending, suggestionsPartial: true });
+    const element = await mount();
+    expect(text(element, ".pending-caption")).toContain("(parcial)");
+    expect(text(element, ".source-link")).toContain("Inter ••1234 · Michel");
+    element.shadowRoot
+      .querySelector(".holder-filter")
+      .dispatchEvent(new CustomEvent("change", { detail: { value: "001B" } }));
+    await flushPromises();
+    expect(text(element, ".source-link")).not.toContain("· Michel");
+  });
+
+  it("shows a dash when a balance or limit is missing", async () => {
+    getSources.mockResolvedValue({
+      accounts: [{ id: "a2", name: "Sem saldo", kind: "account", value: null }],
+      cards: []
+    });
+    const element = await mount();
+    expect(text(element, ".source-row")).toContain("Saldo —");
+    expect(text(element, ".source-row")).not.toContain("R$ 0,00");
+  });
 });

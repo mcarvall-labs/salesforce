@@ -326,4 +326,120 @@ private class AXF_CLS_CTRL_DashboardPreviewTest {
       );
     }
   }
+
+  @IsTest
+  static void excludesCardTransactionsLinkedToAnEntryAndFlagsCardSuggestions() {
+    System.runAs(new User(Id = UserInfo.getUserId())) {
+      Account holder = holder('Titular', 'AXF_Business');
+      AXF_OBJ_CreditCard__c card = new AXF_OBJ_CreditCard__c(
+        Name = 'Cartão',
+        AXF_CC_MD_Holder__c = holder.Id,
+        AXF_CC_PKL_Institution__c = '341'
+      );
+      insert card;
+      Date start = Date.today().toStartOfMonth();
+      AXF_OBJ_CreditCardTransaction__c linked = new AXF_OBJ_CreditCardTransaction__c(
+        AXF_CCT_MD_CreditCard__c = card.Id,
+        AXF_CCT_DAT_Date__c = start,
+        AXF_CCT_CUR_Amount__c = -15,
+        AXF_CCT_TXT_Description__c = 'Já ligada'
+      );
+      AXF_OBJ_CreditCardTransaction__c matching = new AXF_OBJ_CreditCardTransaction__c(
+        AXF_CCT_MD_CreditCard__c = card.Id,
+        AXF_CCT_DAT_Date__c = start.addDays(3),
+        AXF_CCT_CUR_Amount__c = -80,
+        AXF_CCT_CUR_AmountBRL__c = -80,
+        AXF_CCT_TXT_Description__c = 'Sugerida'
+      );
+      insert new List<AXF_OBJ_CreditCardTransaction__c>{ linked, matching };
+      insert new List<AXF_OBJ_Entry__c>{
+        new AXF_OBJ_Entry__c(
+          Name = 'Ligado',
+          AXF_ENT_MD_Holder__c = holder.Id,
+          AXF_ENT_CUR_Amount__c = 15,
+          AXF_ENT_DAT_DueDate__c = start,
+          AXF_ENT_PKL_Type__c = 'Expense',
+          AXF_ENT_PKL_Status__c = 'Pending',
+          AXF_ENT_LKP_CreditCardTransaction__c = linked.Id
+        ),
+        new AXF_OBJ_Entry__c(
+          Name = 'Compra',
+          AXF_ENT_MD_Holder__c = holder.Id,
+          AXF_ENT_CUR_Amount__c = 80,
+          AXF_ENT_DAT_DueDate__c = start.addDays(3),
+          AXF_ENT_PKL_Type__c = 'Expense',
+          AXF_ENT_PKL_Status__c = 'Pending',
+          AXF_ENT_LKP_CreditCard__c = card.Id
+        )
+      };
+      ALT_CLS_DashboardPreview.Pending result = AXF_CLS_CTRL_Dashboard.getPending(
+        holder.Id,
+        Date.today()
+      );
+      System.assertEquals(1, result.total);
+      System.assertEquals(matching.Id, result.items[0].id);
+      System.assert(result.items[0].suggested);
+      System.assertEquals(1, result.suggestions);
+      System.assert(!result.suggestionsPartial);
+    }
+  }
+
+  @IsTest
+  static void flagsTruncationAndConvertsForeignTransactionsAndCards() {
+    System.runAs(new User(Id = UserInfo.getUserId())) {
+      Account holder = holder('Titular', 'AXF_Business');
+      AXF_OBJ_BankAccount__c account = account(holder.Id, 10);
+      Date start = Date.today().toStartOfMonth();
+      AXF_OBJ_BankAccountTransaction__c usd = bank(
+        account.Id,
+        start,
+        -100,
+        null
+      );
+      usd.put('CurrencyIsoCode', 'USD');
+      insert new List<AXF_OBJ_BankAccountTransaction__c>{
+        usd,
+        bank(account.Id, start.addDays(1), -1, null)
+      };
+      AXF_OBJ_CreditCard__c card = new AXF_OBJ_CreditCard__c(
+        Name = 'Cartão USD',
+        AXF_CC_MD_Holder__c = holder.Id,
+        AXF_CC_PKL_Institution__c = '341',
+        AXF_CC_CUR_Limit__c = 1000,
+        AXF_CC_CUR_AvailableLimit__c = 400
+      );
+      card.put('CurrencyIsoCode', 'USD');
+      insert card;
+      Decimal rate = [
+        SELECT ConversionRate
+        FROM CurrencyType
+        WHERE IsoCode = 'USD'
+      ]
+      .ConversionRate;
+      ALT_CLS_DashboardPreview.maxRows = 2;
+      ALT_CLS_DashboardPreview.Pending result = AXF_CLS_CTRL_Dashboard.getPending(
+        holder.Id,
+        Date.today()
+      );
+      System.assert(result.truncated, 'Two rows read, two is the cap');
+      ALT_CLS_DashboardPreview.maxRows = 2000;
+      result = AXF_CLS_CTRL_Dashboard.getPending(holder.Id, Date.today());
+      System.assert(!result.truncated);
+      System.assertEquals(
+        (-100 / rate).setScale(2),
+        result.items[1].amount.setScale(2)
+      );
+      ALT_CLS_DashboardPreview.Sources sources = AXF_CLS_CTRL_Dashboard.getSources(
+        holder.Id
+      );
+      System.assertEquals(
+        (400 / rate).setScale(2),
+        sources.cards[0].value.setScale(2)
+      );
+      System.assertEquals(
+        (1000 / rate).setScale(2),
+        sources.cards[0].limitTotal.setScale(2)
+      );
+    }
+  }
 }
