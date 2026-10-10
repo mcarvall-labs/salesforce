@@ -18,6 +18,20 @@ public with sharing class AXF_CLS_CTRL_Dashboard {
     }
   }
 
+  // filter: null = every entry of the month, OVERDUE or DUE_SOON (clicking the indicators).
+  @AuraEnabled
+  public static ALT_CLS_Dashboard.EntryList getEntries(
+    Id holderId,
+    Date month,
+    String filter
+  ) {
+    try {
+      return new ALT_CLS_Dashboard().entries(holderId, month, filter);
+    } catch (Exception e) {
+      throw aura(e);
+    }
+  }
+
   // Expenses of the month by category against the goals (E7-5); same filters as getSummary.
   @AuraEnabled
   public static ALT_CLS_DashboardBudget.View getBudget(

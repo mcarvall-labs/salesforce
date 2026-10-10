@@ -56,6 +56,44 @@ public with sharing class ALT_CLS_Dashboard {
     public Decimal projectedBalanceWithCard = 0;
   }
 
+  public class EntryRow {
+    @AuraEnabled
+    public Id id;
+    @AuraEnabled
+    public String name;
+    @AuraEnabled
+    public Date dueDate;
+    @AuraEnabled
+    public Decimal amount;
+    @AuraEnabled
+    public String type;
+    @AuraEnabled
+    public String status;
+    @AuraEnabled
+    public String holderName;
+    @AuraEnabled
+    public String categoryName;
+    @AuraEnabled
+    public Boolean overdue = false;
+    @AuraEnabled
+    public Boolean forecastCard = false;
+    @AuraEnabled
+    public Boolean invoice = false;
+  }
+
+  public class EntryList {
+    @AuraEnabled
+    public List<EntryRow> rows = new List<EntryRow>();
+    @AuraEnabled
+    public Boolean truncated = false;
+  }
+
+  public static final String FILTER_OVERDUE = 'OVERDUE';
+  public static final String FILTER_DUE_SOON = 'DUE_SOON';
+
+  @TestVisible
+  private static Integer maxRows = 200;
+
   private static final Set<String> HOLDER_RECORD_TYPES = new Set<String>{
     'AXF_Person',
     'AXF_Business'
@@ -174,5 +212,71 @@ public with sharing class ALT_CLS_Dashboard {
     summary.projectedBalanceWithCard =
       summary.projectedBalance - summary.cardForecast;
     return summary;
+  }
+
+  // Entries of the month list (E7-9). No filter: every entry due in the month. OVERDUE: pending
+  // cash entries due before today, any month. DUE_SOON: pending cash entries due from today to the
+  // end of the month. Ordered by due date; capped at maxRows.
+  public EntryList entries(Id holderId, Date month, String filter) {
+    Date monthStart = (month == null ? Date.today() : month).toStartOfMonth();
+    Date monthEnd = monthStart.addMonths(1).addDays(-1);
+    Date today = Date.today();
+    Map<String, Object> binds = new Map<String, Object>{
+      'holderId' => holderId,
+      'monthStart' => monthStart,
+      'monthEnd' => monthEnd,
+      'today' => today,
+      'pendingStatus' => 'Pending'
+    };
+    String clause;
+    if (filter == FILTER_OVERDUE) {
+      clause =
+        'AXF_ENT_PKL_Status__c = :pendingStatus AND AXF_ENT_FOR_AffectsCash__c = TRUE ' +
+        'AND AXF_ENT_DAT_DueDate__c < :today';
+    } else if (filter == FILTER_DUE_SOON) {
+      clause =
+        'AXF_ENT_PKL_Status__c = :pendingStatus AND AXF_ENT_FOR_AffectsCash__c = TRUE ' +
+        'AND AXF_ENT_DAT_DueDate__c >= :today AND AXF_ENT_DAT_DueDate__c <= :monthEnd';
+    } else {
+      clause = 'AXF_ENT_DAT_DueDate__c >= :monthStart AND AXF_ENT_DAT_DueDate__c <= :monthEnd';
+    }
+    EntryList result = new EntryList();
+    for (
+      SObject row : Database.queryWithBinds(
+        'SELECT Name, AXF_ENT_DAT_DueDate__c, AXF_ENT_PKL_Type__c, AXF_ENT_PKL_Status__c, ' +
+          'AXF_ENT_FOR_AffectsCash__c, AXF_ENT_LKP_Invoice__c, AXF_ENT_MD_Holder__r.Name, ' +
+          'AXF_ENT_LKP_Category__r.Name, convertCurrency(AXF_ENT_CUR_Amount__c) ' +
+          'FROM AXF_OBJ_Entry__c WHERE ' +
+          clause +
+          (holderId == null ? '' : ' AND AXF_ENT_MD_Holder__c = :holderId') +
+          ' ORDER BY AXF_ENT_DAT_DueDate__c, Name LIMIT ' +
+          (maxRows + 1),
+        binds,
+        AccessLevel.USER_MODE
+      )
+    ) {
+      if (result.rows.size() == maxRows) {
+        result.truncated = true;
+        break;
+      }
+      AXF_OBJ_Entry__c entry = (AXF_OBJ_Entry__c) row;
+      EntryRow line = new EntryRow();
+      line.id = entry.Id;
+      line.name = entry.Name;
+      line.dueDate = entry.AXF_ENT_DAT_DueDate__c;
+      line.amount = entry.AXF_ENT_CUR_Amount__c;
+      line.type = entry.AXF_ENT_PKL_Type__c;
+      line.status = entry.AXF_ENT_PKL_Status__c;
+      line.holderName = entry.AXF_ENT_MD_Holder__r?.Name;
+      line.categoryName = entry.AXF_ENT_LKP_Category__r?.Name;
+      line.forecastCard = entry.AXF_ENT_FOR_AffectsCash__c != true;
+      line.invoice = entry.AXF_ENT_LKP_Invoice__c != null;
+      line.overdue =
+        entry.AXF_ENT_PKL_Status__c == 'Pending' &&
+        entry.AXF_ENT_FOR_AffectsCash__c == true &&
+        entry.AXF_ENT_DAT_DueDate__c < today;
+      result.rows.add(line);
+    }
+    return result;
   }
 }
