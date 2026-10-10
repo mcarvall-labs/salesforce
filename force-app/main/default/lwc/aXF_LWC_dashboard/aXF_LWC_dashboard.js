@@ -4,6 +4,8 @@ import { encodeDefaultFieldValues } from "lightning/pageReferenceUtils";
 import getHolders from "@salesforce/apex/AXF_CLS_CTRL_Dashboard.getHolders";
 import getSummary from "@salesforce/apex/AXF_CLS_CTRL_Dashboard.getSummary";
 import getEntries from "@salesforce/apex/AXF_CLS_CTRL_Dashboard.getEntries";
+import getPending from "@salesforce/apex/AXF_CLS_CTRL_Dashboard.getPending";
+import getSources from "@salesforce/apex/AXF_CLS_CTRL_Dashboard.getSources";
 import getBudget from "@salesforce/apex/AXF_CLS_CTRL_Dashboard.getBudget";
 
 const ALL = "";
@@ -48,6 +50,11 @@ export default class AXF_LWC_dashboard extends NavigationMixin(
   entriesError;
   listFilter;
   entriesRequestId = 0;
+  pending;
+  pendingError;
+  sources;
+  sourcesError;
+  previewsRequestId = 0;
   budget;
   budgetError;
   budgetExpanded = false;
@@ -114,10 +121,43 @@ export default class AXF_LWC_dashboard extends NavigationMixin(
     }
   }
 
+  async loadPreviews() {
+    const request = ++this.previewsRequestId;
+    this.pendingError = undefined;
+    this.sourcesError = undefined;
+    const holderId = this.holderId || null;
+    const [pending, sources] = await Promise.allSettled([
+      getPending({ holderId, month: this.month }),
+      getSources({ holderId })
+    ]);
+    if (request !== this.previewsRequestId) {
+      return;
+    }
+    if (pending.status === "fulfilled") {
+      this.pending = pending.value;
+    } else {
+      this.pending = undefined;
+      this.pendingError = this.messageOf(
+        pending.reason,
+        "Não foi possível carregar as pendências."
+      );
+    }
+    if (sources.status === "fulfilled") {
+      this.sources = sources.value;
+    } else {
+      this.sources = undefined;
+      this.sourcesError = this.messageOf(
+        sources.reason,
+        "Não foi possível carregar as contas e cartões."
+      );
+    }
+  }
+
   async loadSummary() {
     const request = ++this.requestId;
     this.loadBudget(request);
     this.loadEntries();
+    this.loadPreviews();
     this.isLoading = true;
     this.errorMessage = undefined;
     try {
@@ -504,6 +544,127 @@ export default class AXF_LWC_dashboard extends NavigationMixin(
       type: "standard__objectPage",
       attributes: { objectApiName: "AXF_OBJ_Entry__c", actionName: "new" },
       state: { defaultFieldValues: encodeDefaultFieldValues(values) }
+    });
+  }
+
+  // ---- Right column previews (E7-11, E7-14) ----
+  get hasPending() {
+    return !!this.pending;
+  }
+
+  get pendingTitle() {
+    const total = this.pending.total;
+    return `A conciliar (${total}${this.pending.truncated ? "+" : ""})`;
+  }
+
+  get pendingItems() {
+    return this.pending.items.map((item) => ({
+      ...item,
+      key: item.id,
+      amountText: this.money(item.amount),
+      amountClass: item.amount < 0 ? "pending-amount out" : "pending-amount in",
+      sourceText: item.source === "card" ? "Cartão" : "Conta",
+      suggestionText: item.suggested ? "sugestão" : ""
+    }));
+  }
+
+  get hasPendingItems() {
+    return this.pending.items.length > 0;
+  }
+
+  get pendingCaption() {
+    const count = this.pending.suggestions;
+    if (!count) {
+      return undefined;
+    }
+    return `${count} ${count === 1 ? "com sugestão" : "com sugestões"}`;
+  }
+
+  get noPendingMessage() {
+    return this.pending.items.length === 0
+      ? "Nada a conciliar neste mês."
+      : undefined;
+  }
+
+  get noSourcesMessage() {
+    return !this.hasAccounts && !this.hasCards
+      ? "Nenhuma conta ou cartão."
+      : undefined;
+  }
+
+  get hasSources() {
+    return !!this.sources;
+  }
+
+  get accountRows() {
+    return this.sources.accounts.map((line) => ({
+      key: line.id,
+      id: line.id,
+      objectApiName: "AXF_OBJ_BankAccount__c",
+      name: line.name,
+      holderName: line.holderName,
+      label: "Saldo",
+      valueText: this.money(line.value)
+    }));
+  }
+
+  get cardRows() {
+    return this.sources.cards.map((line) => ({
+      key: line.id,
+      id: line.id,
+      objectApiName: "AXF_OBJ_CreditCard__c",
+      name: line.name,
+      holderName: line.holderName,
+      label: "Limite disp.",
+      valueText: this.money(line.value)
+    }));
+  }
+
+  get hasAccounts() {
+    return this.sources.accounts.length > 0;
+  }
+
+  get hasCards() {
+    return this.sources.cards.length > 0;
+  }
+
+  get showHolderOnSources() {
+    return !this.holderId;
+  }
+
+  // Opens the full view: the Conciliação tab, and the Conta Bancária / Cartão de Crédito tabs.
+  handleOpenReconciliation(event) {
+    event.preventDefault();
+    this[NavigationMixin.Navigate]({
+      type: "standard__navItemPage",
+      attributes: { apiName: "AXF_CT_Reconciliation" }
+    });
+  }
+
+  handleOpenAccounts(event) {
+    event.preventDefault();
+    this.openList("AXF_OBJ_BankAccount__c");
+  }
+
+  handleOpenCards(event) {
+    event.preventDefault();
+    this.openList("AXF_OBJ_CreditCard__c");
+  }
+
+  openList(objectApiName) {
+    this[NavigationMixin.Navigate]({
+      type: "standard__objectPage",
+      attributes: { objectApiName, actionName: "list" },
+      state: { filterName: "Recent" }
+    });
+  }
+
+  handleOpenSource(event) {
+    event.preventDefault();
+    const { id, object } = event.currentTarget.dataset;
+    this[NavigationMixin.Navigate]({
+      type: "standard__recordPage",
+      attributes: { recordId: id, objectApiName: object, actionName: "view" }
     });
   }
 }
