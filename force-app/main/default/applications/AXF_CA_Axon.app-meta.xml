@@ -19,5 +19,6 @@
     <tabs>AXF_OBJ_Contract__c</tabs>
     <tabs>AXF_CT_Reconciliation</tabs>
     <tabs>AXF_OBJ_Budget__c</tabs>
+    <tabs>standard-report</tabs>
     <uiType>Lightning</uiType>
 </CustomApplication>
