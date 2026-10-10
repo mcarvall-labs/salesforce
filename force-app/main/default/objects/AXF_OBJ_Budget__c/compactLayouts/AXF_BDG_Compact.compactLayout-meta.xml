@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<CompactLayout xmlns="http://soap.sforce.com/2006/04/metadata">
+    <fullName>AXF_BDG_Compact</fullName>
+    <fields>Name</fields>
+    <fields>AXF_BDG_MD_Holder__c</fields>
+    <fields>AXF_BDG_LKP_Category__c</fields>
+    <fields>AXF_BDG_CUR_Amount__c</fields>
+    <fields>AXF_BDG_DAT_StartMonth__c</fields>
+    <label>Meta</label>
+</CompactLayout>

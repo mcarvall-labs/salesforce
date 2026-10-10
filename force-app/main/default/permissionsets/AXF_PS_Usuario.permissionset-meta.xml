@@ -40,8 +40,12 @@
         <apexClass>AXF_CLS_CTRL_InvoicePdf</apexClass>
         <enabled>true</enabled>
     </classAccesses>
+    <classAccesses>
+        <apexClass>AXF_CLS_CTRL_Dashboard</apexClass>
+        <enabled>true</enabled>
+    </classAccesses>
     <description
-  >Acesso ao app Axon, à tab Titulares e à tela de Conciliação. Sem "Ver todos": a visibilidade por registro vem do dono e da hierarquia de papéis.</description>
+  >Acesso ao app Axon: Início (dashboard), Titulares com listas relacionadas, Lançamentos, Contratos, Contas, Cartões, Metas, Relatórios e tela de Conciliação. Sem "Ver todos": a visibilidade por registro vem do dono e da hierarquia de papéis.</description>
     <fieldPermissions>
         <editable>true</editable>
         <field>AXF_OBJ_BankAccount__c.AXF_BA_CUR_Balance__c</field>
@@ -488,6 +492,32 @@
         <field>Account.AXF_ACC_TAL_PaymentDetails__c</field>
         <readable>true</readable>
     </fieldPermissions>
+    <fieldPermissions>
+        <editable>true</editable>
+        <field>AXF_OBJ_Budget__c.AXF_BDG_LKP_Category__c</field>
+        <readable>true</readable>
+    </fieldPermissions>
+    <fieldPermissions>
+        <editable>true</editable>
+        <field>AXF_OBJ_Budget__c.AXF_BDG_DAT_EndMonth__c</field>
+        <readable>true</readable>
+    </fieldPermissions>
+    <fieldPermissions>
+        <editable>false</editable>
+        <field>AXF_OBJ_PluggyConnection__c.AXF_CON_PKL_Status__c</field>
+        <readable>true</readable>
+    </fieldPermissions>
+    <fieldPermissions>
+        <editable>false</editable>
+        <field
+    >AXF_OBJ_PluggyConnection__c.AXF_CON_DT_LastSyncDatetime__c</field>
+        <readable>true</readable>
+    </fieldPermissions>
+    <fieldPermissions>
+        <editable>false</editable>
+        <field>AXF_OBJ_Entry__c.AXF_ENT_FOR_AffectsCash__c</field>
+        <readable>true</readable>
+    </fieldPermissions>
     <hasActivationRequired>false</hasActivationRequired>
     <label>Axon - Usuário</label>
     <objectPermissions>
@@ -589,6 +619,24 @@
         <object>AXF_OBJ_TimeEntry__c</object>
         <viewAllRecords>false</viewAllRecords>
     </objectPermissions>
+    <objectPermissions>
+        <allowCreate>true</allowCreate>
+        <allowDelete>false</allowDelete>
+        <allowEdit>true</allowEdit>
+        <allowRead>true</allowRead>
+        <modifyAllRecords>false</modifyAllRecords>
+        <object>AXF_OBJ_Budget__c</object>
+        <viewAllRecords>false</viewAllRecords>
+    </objectPermissions>
+    <objectPermissions>
+        <allowCreate>false</allowCreate>
+        <allowDelete>false</allowDelete>
+        <allowEdit>false</allowEdit>
+        <allowRead>true</allowRead>
+        <modifyAllRecords>false</modifyAllRecords>
+        <object>AXF_OBJ_PluggyConnection__c</object>
+        <viewAllRecords>false</viewAllRecords>
+    </objectPermissions>
     <pageAccesses>
         <apexPage>AXF_CTR_VFP_Timesheet</apexPage>
         <enabled>true</enabled>
@@ -674,4 +722,20 @@
         <tab>AXF_CT_Reconciliation</tab>
         <visibility>Visible</visibility>
     </tabSettings>
+    <tabSettings>
+        <tab>AXF_CT_Home</tab>
+        <visibility>Visible</visibility>
+    </tabSettings>
+    <tabSettings>
+        <tab>AXF_OBJ_Budget__c</tab>
+        <visibility>Visible</visibility>
+    </tabSettings>
+    <tabSettings>
+        <tab>standard-report</tab>
+        <visibility>Visible</visibility>
+    </tabSettings>
+    <userPermissions>
+        <enabled>true</enabled>
+        <name>RunReports</name>
+    </userPermissions>
 </PermissionSet>
