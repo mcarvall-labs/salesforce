@@ -836,4 +836,31 @@ describe("c-a-x-f-l-w-c-dashboard", () => {
     expect(text(element, ".source-row")).toContain("Saldo —");
     expect(text(element, ".source-row")).not.toContain("R$ 0,00");
   });
+
+  it("puts the indicators above the grid, the month list in the centre and the previews on the right", async () => {
+    const element = await mount();
+    const root = element.shadowRoot;
+    const grid = root.querySelector(".dashboard-grid");
+    const main = grid.querySelector(".main-column");
+    const side = grid.querySelector(".side-column");
+    const kpis = root.querySelector(".kpis");
+    expect(grid.contains(kpis)).toBe(false);
+    expect(
+      kpis.compareDocumentPosition(grid) & Node.DOCUMENT_POSITION_FOLLOWING
+    ).toBeTruthy();
+    expect(main.querySelector(".entries")).not.toBeNull();
+    expect(main.querySelector(".pending-card")).toBeNull();
+    expect(side.querySelector(".pending-card")).not.toBeNull();
+    expect(side.querySelector(".sources-card")).not.toBeNull();
+  });
+
+  it("keeps the goals card below both columns", async () => {
+    const element = await mount();
+    const grid = element.shadowRoot.querySelector(".dashboard-grid");
+    const goalsCard = element.shadowRoot.querySelector(".budget");
+    expect(grid.contains(goalsCard)).toBe(false);
+    expect(
+      grid.compareDocumentPosition(goalsCard) & Node.DOCUMENT_POSITION_FOLLOWING
+    ).toBeTruthy();
+  });
 });
