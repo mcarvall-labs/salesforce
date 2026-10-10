@@ -1,6 +1,6 @@
 /**
- * @description Aggregation behind the Axon home dashboard. Amounts are converted to the corporate
- * currency (BRL) with the org rate. Sharing applies: a user only sums what the holders shared
+ * @description Aggregation behind the Axon home dashboard. Amounts are converted to the running
+ * user's currency (BRL for Axon users) with the org rate. Sharing applies: a user only sums what the holders shared
  * with them. "All holders" (null holder) sums every holder the user can see.
  *
  * Overdue = pending entries that affect cash, due before today, of any month.
@@ -8,7 +8,7 @@
  * Income/expense of the month = entries that affect cash, due in the selected month (any status).
  * Projected balance = current balance of the bank accounts + pending cash income - pending cash
  * expense due up to the end of the month (overdue included). The card forecast is the pending
- * card entries (not yet in an invoice) due up to the end of the month; it is subtracted only in
+ * card entries (not yet in an invoice) due up to the end of the month, overdue included; it is subtracted only in
  * projectedBalanceWithCard.
  */
 public with sharing class ALT_CLS_Dashboard {
@@ -21,7 +21,7 @@ public with sharing class ALT_CLS_Dashboard {
 
   public class Summary {
     @AuraEnabled
-    public String currencyCode = 'BRL';
+    public String currencyCode = UserInfo.getDefaultCurrency();
     @AuraEnabled
     public Date monthStart;
     @AuraEnabled
@@ -84,6 +84,9 @@ public with sharing class ALT_CLS_Dashboard {
     Date today = Date.today();
     Date monthStart = summary.monthStart;
     Date monthEnd = summary.monthEnd;
+    // Pending entries already overdue are read whatever the selected month (E7-3), so the query
+    // reaches up to the later of the month end and yesterday.
+    Date queryEnd = today.addDays(-1) > monthEnd ? today.addDays(-1) : monthEnd;
     Decimal pendingCashNet = 0;
     String holderFilter = holderId == null
       ? ''
@@ -91,14 +94,14 @@ public with sharing class ALT_CLS_Dashboard {
     Map<String, Object> binds = new Map<String, Object>{
       'holderId' => holderId,
       'monthStart' => monthStart,
-      'monthEnd' => monthEnd,
+      'queryEnd' => queryEnd,
       'pendingStatus' => 'Pending'
     };
     for (
       SObject row : Database.queryWithBinds(
         'SELECT AXF_ENT_PKL_Type__c, AXF_ENT_PKL_Status__c, AXF_ENT_DAT_DueDate__c, ' +
           'AXF_ENT_FOR_AffectsCash__c, convertCurrency(AXF_ENT_CUR_Amount__c) ' +
-          'FROM AXF_OBJ_Entry__c WHERE AXF_ENT_DAT_DueDate__c <= :monthEnd ' +
+          'FROM AXF_OBJ_Entry__c WHERE AXF_ENT_DAT_DueDate__c <= :queryEnd ' +
           'AND (AXF_ENT_PKL_Status__c = :pendingStatus OR AXF_ENT_DAT_DueDate__c >= :monthStart)' +
           holderFilter,
         binds,
@@ -112,15 +115,16 @@ public with sharing class ALT_CLS_Dashboard {
         ? 0
         : entry.AXF_ENT_CUR_Amount__c;
       Date due = entry.AXF_ENT_DAT_DueDate__c;
+      Boolean inMonth = due >= monthStart && due <= monthEnd;
       if (entry.AXF_ENT_FOR_AffectsCash__c == true) {
-        if (due >= monthStart) {
+        if (inMonth) {
           if (expense) {
             summary.expense += amount;
           } else {
             summary.income += amount;
           }
         }
-        if (pending) {
+        if (pending && (due < today || due <= monthEnd)) {
           pendingCashNet += expense ? -amount : amount;
           if (due < today) {
             summary.overdueCount++;
@@ -138,7 +142,7 @@ public with sharing class ALT_CLS_Dashboard {
             }
           }
         }
-      } else if (pending && due >= monthStart) {
+      } else if (pending && due <= monthEnd) {
         summary.cardForecast += expense ? amount : -amount;
       }
     }

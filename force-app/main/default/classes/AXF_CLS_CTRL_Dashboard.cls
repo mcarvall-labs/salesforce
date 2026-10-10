@@ -4,7 +4,7 @@ public with sharing class AXF_CLS_CTRL_Dashboard {
     try {
       return new ALT_CLS_Dashboard().holders();
     } catch (Exception e) {
-      throw new AuraHandledException(e.getMessage());
+      throw aura(e);
     }
   }
 
@@ -14,7 +14,14 @@ public with sharing class AXF_CLS_CTRL_Dashboard {
     try {
       return new ALT_CLS_Dashboard().summarize(holderId, month);
     } catch (Exception e) {
-      throw new AuraHandledException(e.getMessage());
+      throw aura(e);
     }
+  }
+
+  // setMessage is what the LWC reads; the constructor message alone arrives as a generic error.
+  private static AuraHandledException aura(Exception e) {
+    AuraHandledException result = new AuraHandledException(e.getMessage());
+    result.setMessage(e.getMessage());
+    return result;
   }
 }
