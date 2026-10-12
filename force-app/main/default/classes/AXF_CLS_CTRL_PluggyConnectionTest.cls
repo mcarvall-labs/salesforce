@@ -2,9 +2,15 @@
 private class AXF_CLS_CTRL_PluggyConnectionTest {
   private class PluggyMock implements HttpCalloutMock {
     private Integer itemStatus;
+    private Integer accountsStatus;
 
     PluggyMock(Integer itemStatus) {
+      this(itemStatus, 200);
+    }
+
+    PluggyMock(Integer itemStatus, Integer accountsStatus) {
       this.itemStatus = itemStatus;
+      this.accountsStatus = accountsStatus;
     }
 
     public HttpResponse respond(HttpRequest req) {
@@ -14,7 +20,7 @@ private class AXF_CLS_CTRL_PluggyConnectionTest {
         res.setStatusCode(200);
         res.setBody('{"apiKey":"abc"}');
       } else if (endpoint.contains('/accounts?')) {
-        res.setStatusCode(200);
+        res.setStatusCode(accountsStatus);
         res.setBody(
           '{"results":[' +
             '{"id":"acc-1","type":"BANK","subtype":"CHECKING_ACCOUNT","name":"Conta Corrente","number":"12345-6","balance":10,"currencyCode":"BRL","bankData":{"transferNumber":"0001/12345-6"}},' +
@@ -41,6 +47,10 @@ private class AXF_CLS_CTRL_PluggyConnectionTest {
     );
   }
 
+  private static User syncUser() {
+    return [SELECT Id FROM User WHERE Id = :UserInfo.getUserId()];
+  }
+
   private static AXF_OBJ_PluggyConnection__c connection() {
     Account holder = new Account(Name = 'Holder');
     insert holder;
@@ -56,17 +66,34 @@ private class AXF_CLS_CTRL_PluggyConnectionTest {
 
   @IsTest
   static void validItemImportsAccountsAndCards() {
+    System.runAs(syncUser()) {
+      AXF_OBJ_PluggyConnection__c connection = connection();
+      ALT_CLS_PluggyAccountSync.assignRecordType = false;
+      Test.setMock(HttpCalloutMock.class, new PluggyMock(200));
+      Test.startTest();
+      AXF_CLS_CTRL_PluggyConnection.TestView view = AXF_CLS_CTRL_PluggyConnection.testAndSync(
+        connection.Id
+      );
+      Test.stopTest();
+      System.assertEquals(true, view.success, view.message);
+      System.assertEquals(1, view.accounts);
+      System.assertEquals(1, view.cards);
+    }
+  }
+
+  @IsTest
+  static void accountsFailureAfterValidItemIsReported() {
     AXF_OBJ_PluggyConnection__c connection = connection();
     ALT_CLS_PluggyAccountSync.assignRecordType = false;
-    Test.setMock(HttpCalloutMock.class, new PluggyMock(200));
+    Test.setMock(HttpCalloutMock.class, new PluggyMock(200, 500));
     Test.startTest();
     AXF_CLS_CTRL_PluggyConnection.TestView view = AXF_CLS_CTRL_PluggyConnection.testAndSync(
       connection.Id
     );
     Test.stopTest();
-    System.assertEquals(true, view.success, view.message);
-    System.assertEquals(1, view.accounts);
-    System.assertEquals(1, view.cards);
+    System.assertEquals(false, view.success);
+    System.assert(view.message.contains('HTTP 500'), view.message);
+    System.assertEquals(0, view.accounts);
   }
 
   @IsTest
@@ -79,6 +106,7 @@ private class AXF_CLS_CTRL_PluggyConnectionTest {
     );
     Test.stopTest();
     System.assertEquals(false, view.success);
+    System.assertEquals('Item Id não encontrado no Pluggy.', view.message);
     System.assertEquals(0, [SELECT COUNT() FROM AXF_OBJ_BankAccount__c]);
   }
 

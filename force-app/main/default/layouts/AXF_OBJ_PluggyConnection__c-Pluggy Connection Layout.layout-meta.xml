@@ -25,7 +25,7 @@
                 <field>AXF_CON_EXI_PluggyItemId__c</field>
             </layoutItems>
             <layoutItems>
-                <behavior>Edit</behavior>
+                <behavior>Readonly</behavior>
                 <field>AXF_CON_PKL_Status__c</field>
             </layoutItems>
             <layoutItems>
@@ -33,7 +33,7 @@
                 <field>AXF_CON_DT_LastSyncDatetime__c</field>
             </layoutItems>
             <layoutItems>
-                <behavior>Edit</behavior>
+                <behavior>Readonly</behavior>
                 <field>AXF_CON_TAL_SyncErrorMessage__c</field>
             </layoutItems>
         </layoutColumns>
