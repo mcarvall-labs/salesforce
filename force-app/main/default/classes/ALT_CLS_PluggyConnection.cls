@@ -73,7 +73,7 @@ public with sharing class ALT_CLS_PluggyConnection {
     return [SELECT COUNT() FROM AXF_OBJ_PluggyConnection__c WITH USER_MODE];
   }
 
-  private void validateItem(String itemId) {
+  public void validateItem(String itemId) {
     String apiKey = new ALT_CLS_PluggyCredential().requestApiKey();
     HttpRequest req = new HttpRequest();
     req.setEndpoint(ITEM_ENDPOINT + EncodingUtil.urlEncode(itemId, 'UTF-8'));
