@@ -9,6 +9,10 @@
     <enabled>true</enabled>
   </classAccesses>
   <classAccesses>
+    <apexClass>AXF_CLS_CTRL_PluggyConnection</apexClass>
+    <enabled>true</enabled>
+  </classAccesses>
+  <classAccesses>
     <apexClass>AXF_CLS_CTRL_PluggyWizard</apexClass>
     <enabled>true</enabled>
   </classAccesses>
@@ -26,6 +30,11 @@
   </customPermissions>
   <description
   >Acesso ao app Axon – Configuração. Credenciais ficam restritas ao administrador.</description>
+  <fieldPermissions>
+    <editable>true</editable>
+    <field>AXF_OBJ_Category__c.AXF_CAT_LKP_Parent__c</field>
+    <readable>true</readable>
+  </fieldPermissions>
   <fieldPermissions>
     <editable>true</editable>
     <field>AXF_OBJ_BankAccount__c.AXF_BA_CUR_Balance__c</field>

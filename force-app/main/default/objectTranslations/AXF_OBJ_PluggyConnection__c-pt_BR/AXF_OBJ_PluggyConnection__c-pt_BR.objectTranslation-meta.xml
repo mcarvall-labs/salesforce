@@ -10,4 +10,8 @@
     </caseValues>
     <gender>Feminine</gender>
     <nameFieldLabel>Nome da Conexão</nameFieldLabel>
+    <quickActions>
+        <label>Testar e importar</label>
+        <name>AXF_CON_QA_TestAndSync</name>
+    </quickActions>
 </CustomObjectTranslation>

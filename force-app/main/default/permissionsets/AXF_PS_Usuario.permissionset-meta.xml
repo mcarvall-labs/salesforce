@@ -47,6 +47,11 @@
     <description
   >Acesso ao app Axon: Início (dashboard), Titulares com listas relacionadas, Lançamentos, Contratos, Contas, Cartões, Metas, Relatórios e tela de Conciliação. Sem "Ver todos": a visibilidade por registro vem do dono e da hierarquia de papéis.</description>
     <fieldPermissions>
+      <editable>true</editable>
+      <field>AXF_OBJ_Category__c.AXF_CAT_LKP_Parent__c</field>
+      <readable>true</readable>
+    </fieldPermissions>
+    <fieldPermissions>
         <editable>true</editable>
         <field>AXF_OBJ_BankAccount__c.AXF_BA_CUR_Balance__c</field>
         <readable>true</readable>
