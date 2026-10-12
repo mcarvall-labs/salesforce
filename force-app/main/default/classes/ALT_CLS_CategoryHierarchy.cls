@@ -25,16 +25,19 @@ public with sharing class ALT_CLS_CategoryHierarchy {
       ) {
         continue;
       }
+      if (
+        category.AXF_CAT_LKP_Parent__c != null &&
+        category.AXF_CAT_LKP_Parent__c == category.Id
+      ) {
+        category.AXF_CAT_LKP_Parent__c.addError(
+          'Uma categoria não pode ser pai de si mesma.'
+        );
+        continue;
+      }
       if (category.Id != null) {
         parentOf.put(category.Id, category.AXF_CAT_LKP_Parent__c);
       }
       if (category.AXF_CAT_LKP_Parent__c == null) {
-        continue;
-      }
-      if (category.AXF_CAT_LKP_Parent__c == category.Id) {
-        category.AXF_CAT_LKP_Parent__c.addError(
-          'Uma categoria não pode ser pai de si mesma.'
-        );
         continue;
       }
       changed.add(category);
@@ -60,15 +63,11 @@ public with sharing class ALT_CLS_CategoryHierarchy {
       pending = next;
       level++;
     }
-    Boolean tooDeep = !pending.isEmpty();
 
     for (AXF_OBJ_Category__c category : changed) {
-      if (tooDeep || loopsBack(category, parentOf)) {
-        category.AXF_CAT_LKP_Parent__c.addError(
-          tooDeep
-            ? 'Hierarquia de categorias profunda demais.'
-            : 'Categoria pai inválida: a hierarquia ficaria circular.'
-        );
+      String problem = chainProblem(category, parentOf);
+      if (problem != null) {
+        category.AXF_CAT_LKP_Parent__c.addError(problem);
       }
     }
   }
@@ -84,7 +83,11 @@ public with sharing class ALT_CLS_CategoryHierarchy {
       WITH SYSTEM_MODE
     ]) {
       AXF_OBJ_Category__c parent = byId.get(child.AXF_CAT_LKP_Parent__c);
-      if (!byId.containsKey(child.Id) && !parent.hasErrors()) {
+      if (
+        parent != null &&
+        !byId.containsKey(child.Id) &&
+        !parent.hasErrors()
+      ) {
         parent.addError(
           'Não é possível excluir uma categoria que possui subcategorias.'
         );
@@ -92,17 +95,21 @@ public with sharing class ALT_CLS_CategoryHierarchy {
     }
   }
 
-  private Boolean loopsBack(
+  /** Returns the error for this record's own chain, or null when the chain is fine. */
+  private String chainProblem(
     AXF_OBJ_Category__c category,
     Map<Id, Id> parentOf
   ) {
     Id current = category.AXF_CAT_LKP_Parent__c;
-    for (Integer i = 0; i <= maxLevels && current != null; i++) {
+    while (current != null) {
       if (current == category.Id) {
-        return true;
+        return 'Categoria pai inválida: a hierarquia ficaria circular.';
+      }
+      if (!parentOf.containsKey(current)) {
+        return 'Hierarquia de categorias profunda demais.';
       }
       current = parentOf.get(current);
     }
-    return false;
+    return null;
   }
 }

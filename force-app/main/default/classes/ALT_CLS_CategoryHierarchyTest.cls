@@ -144,6 +144,30 @@ private class ALT_CLS_CategoryHierarchyTest {
   }
 
   @IsTest
+  static void deepChainRejectsOnlyItsOwnRecordInABatch() {
+    System.runAs(ALT_CLS_ConnectionTestUser.find('axfcat')) {
+      ALT_CLS_CategoryHierarchy.maxLevels = 3;
+      Id parentId = null;
+      for (Integer i = 0; i < 4; i++) {
+        AXF_OBJ_Category__c node = category('N' + i, parentId);
+        insert node;
+        parentId = node.Id;
+      }
+      AXF_OBJ_Category__c root = category('Raiz', null);
+      insert root;
+      List<Database.SaveResult> results = Database.insert(
+        new List<AXF_OBJ_Category__c>{
+          category('Fundo', parentId),
+          category('Raso', root.Id)
+        },
+        false
+      );
+      System.assert(!results[0].isSuccess());
+      System.assert(results[1].isSuccess());
+    }
+  }
+
+  @IsTest
   static void allowsDeletingASubtreeInOneBatch() {
     AXF_OBJ_Category__c parent = category('Pai', null);
     insert parent;
