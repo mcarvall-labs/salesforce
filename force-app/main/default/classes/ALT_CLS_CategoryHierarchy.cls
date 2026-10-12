@@ -82,16 +82,26 @@ public with sharing class ALT_CLS_CategoryHierarchy {
       WHERE AXF_CAT_LKP_Parent__c IN :byId.keySet()
       WITH SYSTEM_MODE
     ]) {
-      AXF_OBJ_Category__c parent = byId.get(child.AXF_CAT_LKP_Parent__c);
-      if (
-        parent != null &&
-        !byId.containsKey(child.Id) &&
-        !parent.hasErrors()
-      ) {
-        parent.addError(
+      if (!byId.containsKey(child.Id)) {
+        blockWithAncestors(byId.get(child.AXF_CAT_LKP_Parent__c), byId);
+      }
+    }
+  }
+
+  /** A category kept alive by a child outside the batch also keeps its in-batch ancestors. */
+  private void blockWithAncestors(
+    AXF_OBJ_Category__c blocked,
+    Map<Id, AXF_OBJ_Category__c> byId
+  ) {
+    Set<Id> seen = new Set<Id>();
+    AXF_OBJ_Category__c current = blocked;
+    while (current != null && seen.add(current.Id)) {
+      if (!current.hasErrors()) {
+        current.addError(
           'Não é possível excluir uma categoria que possui subcategorias.'
         );
       }
+      current = byId.get(current.AXF_CAT_LKP_Parent__c);
     }
   }
 
@@ -100,9 +110,10 @@ public with sharing class ALT_CLS_CategoryHierarchy {
     AXF_OBJ_Category__c category,
     Map<Id, Id> parentOf
   ) {
+    Set<Id> seen = new Set<Id>();
     Id current = category.AXF_CAT_LKP_Parent__c;
     while (current != null) {
-      if (current == category.Id) {
+      if (current == category.Id || !seen.add(current)) {
         return 'Categoria pai inválida: a hierarquia ficaria circular.';
       }
       if (!parentOf.containsKey(current)) {

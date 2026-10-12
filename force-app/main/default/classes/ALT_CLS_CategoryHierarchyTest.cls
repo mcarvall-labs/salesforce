@@ -168,6 +168,62 @@ private class ALT_CLS_CategoryHierarchyTest {
   }
 
   @IsTest
+  static void acceptsChainExactlyAtTheLimit() {
+    System.runAs(ALT_CLS_ConnectionTestUser.find('axfcat')) {
+      ALT_CLS_CategoryHierarchy.maxLevels = 3;
+      Id parentId = null;
+      for (Integer i = 0; i < 4; i++) {
+        Database.SaveResult result = Database.insert(
+          category('N' + i, parentId),
+          false
+        );
+        System.assert(result.isSuccess());
+        parentId = result.getId();
+      }
+    }
+  }
+
+  @IsTest
+  static void cycleInBatchDoesNotHangBystanders() {
+    System.runAs(ALT_CLS_ConnectionTestUser.find('axfcat')) {
+      AXF_OBJ_Category__c a = category('A', null);
+      AXF_OBJ_Category__c b = category('B', null);
+      insert new List<AXF_OBJ_Category__c>{ a, b };
+      AXF_OBJ_Category__c c = category('C', null);
+      insert c;
+      a.AXF_CAT_LKP_Parent__c = b.Id;
+      b.AXF_CAT_LKP_Parent__c = a.Id;
+      c.AXF_CAT_LKP_Parent__c = a.Id;
+      List<Database.SaveResult> results = Database.update(
+        new List<AXF_OBJ_Category__c>{ a, b, c },
+        false
+      );
+      System.assert(!results[0].isSuccess());
+      System.assert(!results[1].isSuccess());
+      System.assert(!results[2].isSuccess());
+    }
+  }
+
+  @IsTest
+  static void blocksBatchDeleteWhenAChildHasChildrenOutsideTheBatch() {
+    AXF_OBJ_Category__c parent = category('Pai', null);
+    insert parent;
+    AXF_OBJ_Category__c child = category('Filha', parent.Id);
+    insert child;
+    insert category('Neta', child.Id);
+    List<Database.DeleteResult> results = Database.delete(
+      new List<AXF_OBJ_Category__c>{ parent, child },
+      false
+    );
+    System.assert(!results[0].isSuccess());
+    System.assert(!results[1].isSuccess());
+    System.assertEquals(
+      3,
+      [SELECT COUNT() FROM AXF_OBJ_Category__c WHERE Name IN ('Pai', 'Filha', 'Neta')]
+    );
+  }
+
+  @IsTest
   static void allowsDeletingASubtreeInOneBatch() {
     AXF_OBJ_Category__c parent = category('Pai', null);
     insert parent;
