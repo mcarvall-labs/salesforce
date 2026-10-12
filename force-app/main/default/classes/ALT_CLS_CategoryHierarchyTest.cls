@@ -41,9 +41,8 @@ private class ALT_CLS_CategoryHierarchyTest {
       AXF_OBJ_Category__c root = category('Lazer', null);
       insert root;
       root.AXF_CAT_LKP_Parent__c = root.Id;
-      Database.SaveResult result = tryUpdate(root);
-      System.assert(!result.isSuccess());
-          }
+      System.assert(!tryUpdate(root).isSuccess());
+    }
   }
 
   @IsTest
@@ -103,5 +102,60 @@ private class ALT_CLS_CategoryHierarchyTest {
     System.assert(blocked.getErrors()[0].getMessage().contains('subcategorias'));
     System.assert(Database.delete(child, false).isSuccess());
     System.assert(Database.delete(parent, false).isSuccess());
+  }
+
+  @IsTest
+  static void allowsSwappingParentAndChildInOneBatch() {
+    System.runAs(ALT_CLS_ConnectionTestUser.find('axfcat')) {
+      AXF_OBJ_Category__c a = category('A', null);
+      insert a;
+      AXF_OBJ_Category__c b = category('B', a.Id);
+      insert b;
+      a.AXF_CAT_LKP_Parent__c = b.Id;
+      b.AXF_CAT_LKP_Parent__c = null;
+      for (
+        Database.SaveResult result : Database.update(
+          new List<AXF_OBJ_Category__c>{ a, b },
+          false
+        )
+      ) {
+        System.assert(result.isSuccess());
+      }
+    }
+  }
+
+  @IsTest
+  static void rejectsChainDeeperThanTheLimit() {
+    System.runAs(ALT_CLS_ConnectionTestUser.find('axfcat')) {
+      ALT_CLS_CategoryHierarchy.maxLevels = 3;
+      Id parentId = null;
+      for (Integer i = 0; i < 4; i++) {
+        AXF_OBJ_Category__c node = category('N' + i, parentId);
+        insert node;
+        parentId = node.Id;
+      }
+      Database.SaveResult result = Database.insert(
+        category('Fundo', parentId),
+        false
+      );
+      System.assert(!result.isSuccess());
+      System.assert(result.getErrors()[0].getMessage().contains('profunda'));
+    }
+  }
+
+  @IsTest
+  static void allowsDeletingASubtreeInOneBatch() {
+    AXF_OBJ_Category__c parent = category('Pai', null);
+    insert parent;
+    AXF_OBJ_Category__c child = category('Filha', parent.Id);
+    insert child;
+    for (
+      Database.DeleteResult result : Database.delete(
+        new List<AXF_OBJ_Category__c>{ parent, child },
+        false
+      )
+    ) {
+      System.assert(result.isSuccess());
+    }
   }
 }
