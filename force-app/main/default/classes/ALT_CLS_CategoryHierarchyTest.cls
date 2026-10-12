@@ -168,6 +168,22 @@ private class ALT_CLS_CategoryHierarchyTest {
   }
 
   @IsTest
+  static void renameWithUnchangedParentIsNotRevalidated() {
+    System.runAs(ALT_CLS_ConnectionTestUser.find('axfcat')) {
+      Id parentId = null;
+      AXF_OBJ_Category__c leaf;
+      for (Integer i = 0; i < 4; i++) {
+        leaf = category('N' + i, parentId);
+        insert leaf;
+        parentId = leaf.Id;
+      }
+      ALT_CLS_CategoryHierarchy.maxLevels = 1;
+      leaf.Name = 'Renomeada';
+      System.assert(tryUpdate(leaf).isSuccess());
+    }
+  }
+
+  @IsTest
   static void acceptsChainExactlyAtTheLimit() {
     System.runAs(ALT_CLS_ConnectionTestUser.find('axfcat')) {
       ALT_CLS_CategoryHierarchy.maxLevels = 3;
