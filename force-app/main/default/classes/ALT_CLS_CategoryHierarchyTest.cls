@@ -30,7 +30,11 @@ private class ALT_CLS_CategoryHierarchyTest {
       }
       System.assertEquals(
         7,
-        [SELECT COUNT() FROM AXF_OBJ_Category__c WHERE Name LIKE 'Nivel%' OR Name = 'Moradia']
+        [
+          SELECT COUNT()
+          FROM AXF_OBJ_Category__c
+          WHERE Name LIKE 'Nivel%' OR Name = 'Moradia'
+        ]
       );
     }
   }
@@ -99,7 +103,9 @@ private class ALT_CLS_CategoryHierarchyTest {
     insert child;
     Database.DeleteResult blocked = Database.delete(parent, false);
     System.assert(!blocked.isSuccess());
-    System.assert(blocked.getErrors()[0].getMessage().contains('subcategorias'));
+    System.assert(
+      blocked.getErrors()[0].getMessage().contains('subcategorias')
+    );
     System.assert(Database.delete(child, false).isSuccess());
     System.assert(Database.delete(parent, false).isSuccess());
   }
@@ -235,7 +241,11 @@ private class ALT_CLS_CategoryHierarchyTest {
     System.assert(!results[1].isSuccess());
     System.assertEquals(
       3,
-      [SELECT COUNT() FROM AXF_OBJ_Category__c WHERE Name IN ('Pai', 'Filha', 'Neta')]
+      [
+        SELECT COUNT()
+        FROM AXF_OBJ_Category__c
+        WHERE Name IN ('Pai', 'Filha', 'Neta')
+      ]
     );
   }
 
