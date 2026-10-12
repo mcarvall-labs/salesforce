@@ -98,9 +98,12 @@ private class ALT_CLS_CategoryHierarchyTest {
   @IsTest
   static void blocksDeleteOfParentWithChildren() {
     AXF_OBJ_Category__c parent = category('Pai', null);
-    insert parent;
-    AXF_OBJ_Category__c child = category('Filha', parent.Id);
-    insert child;
+    AXF_OBJ_Category__c child;
+    System.runAs(ALT_CLS_ConnectionTestUser.find('axfcat')) {
+      insert parent;
+      child = category('Filha', parent.Id);
+      insert child;
+    }
     Database.DeleteResult blocked = Database.delete(parent, false);
     System.assert(!blocked.isSuccess());
     System.assert(
@@ -229,10 +232,13 @@ private class ALT_CLS_CategoryHierarchyTest {
   @IsTest
   static void blocksBatchDeleteWhenAChildHasChildrenOutsideTheBatch() {
     AXF_OBJ_Category__c parent = category('Pai', null);
-    insert parent;
-    AXF_OBJ_Category__c child = category('Filha', parent.Id);
-    insert child;
-    insert category('Neta', child.Id);
+    AXF_OBJ_Category__c child;
+    System.runAs(ALT_CLS_ConnectionTestUser.find('axfcat')) {
+      insert parent;
+      child = category('Filha', parent.Id);
+      insert child;
+      insert category('Neta', child.Id);
+    }
     List<Database.DeleteResult> results = Database.delete(
       new List<AXF_OBJ_Category__c>{ parent, child },
       false
@@ -252,9 +258,12 @@ private class ALT_CLS_CategoryHierarchyTest {
   @IsTest
   static void allowsDeletingASubtreeInOneBatch() {
     AXF_OBJ_Category__c parent = category('Pai', null);
-    insert parent;
-    AXF_OBJ_Category__c child = category('Filha', parent.Id);
-    insert child;
+    AXF_OBJ_Category__c child;
+    System.runAs(ALT_CLS_ConnectionTestUser.find('axfcat')) {
+      insert parent;
+      child = category('Filha', parent.Id);
+      insert child;
+    }
     for (
       Database.DeleteResult result : Database.delete(
         new List<AXF_OBJ_Category__c>{ parent, child },
