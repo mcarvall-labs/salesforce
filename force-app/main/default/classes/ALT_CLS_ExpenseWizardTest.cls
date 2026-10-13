@@ -213,6 +213,51 @@ private class ALT_CLS_ExpenseWizardTest {
   }
 
   @IsTest
+  static void optionsCarryTheCategoryParentAndNewCategoriesAreExpenses() {
+    ALT_CLS_ExpenseWizard.Option parent = AXF_CLS_CTRL_ExpenseWizard.createCategory(
+      '  Moradia ',
+      null
+    );
+    ALT_CLS_ExpenseWizard.Option child = AXF_CLS_CTRL_ExpenseWizard.createCategory(
+      'Energia',
+      parent.id
+    );
+
+    System.assertEquals('Moradia', parent.label);
+    System.assertEquals(parent.id, child.parentId);
+    AXF_OBJ_Category__c saved = [
+      SELECT AXF_CAT_PKL_Type__c, AXF_CAT_LKP_Parent__c
+      FROM AXF_OBJ_Category__c
+      WHERE Id = :child.id
+    ];
+    System.assertEquals('Expense', saved.AXF_CAT_PKL_Type__c);
+    System.assertEquals(parent.id, saved.AXF_CAT_LKP_Parent__c);
+
+    Map<Id, Id> parentOf = new Map<Id, Id>();
+    for (
+      ALT_CLS_ExpenseWizard.Option option : AXF_CLS_CTRL_ExpenseWizard.getOptions(
+          null
+        )
+        .categories
+    ) {
+      parentOf.put(option.id, option.parentId);
+    }
+    System.assertEquals(null, parentOf.get(parent.id));
+    System.assertEquals(parent.id, parentOf.get(child.id));
+  }
+
+  @IsTest
+  static void aCategoryNeedsAName() {
+    try {
+      AXF_CLS_CTRL_ExpenseWizard.createCategory(' ', null);
+      System.assert(false, 'expected AuraHandledException');
+    } catch (AuraHandledException e) {
+      System.assertEquals('Informe o nome da categoria.', e.getMessage());
+    }
+    System.assertEquals(0, [SELECT COUNT() FROM AXF_OBJ_Category__c]);
+  }
+
+  @IsTest
   static void userWithoutPermissionGetsAReadableError() {
     User user = new User(
       Alias = 'axfexpw',

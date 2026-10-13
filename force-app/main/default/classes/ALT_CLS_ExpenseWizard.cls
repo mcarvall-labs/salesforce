@@ -9,6 +9,9 @@ public with sharing class ALT_CLS_ExpenseWizard {
     public Id id;
     @AuraEnabled
     public String label;
+    // Only for categories: the parent in the hierarchy.
+    @AuraEnabled
+    public Id parentId;
   }
 
   public class Options {
@@ -45,14 +48,16 @@ public with sharing class ALT_CLS_ExpenseWizard {
   public Options options(Id holderId) {
     Options result = new Options();
     for (AXF_OBJ_Category__c category : [
-      SELECT Id, Name
+      SELECT Id, Name, AXF_CAT_LKP_Parent__c
       FROM AXF_OBJ_Category__c
       WHERE AXF_CAT_PKL_Type__c IN ('Expense', 'Both')
       WITH USER_MODE
       ORDER BY Name
-      LIMIT 200
+      LIMIT 500
     ]) {
-      result.categories.add(option(category.Id, category.Name));
+      Option item = option(category.Id, category.Name);
+      item.parentId = category.AXF_CAT_LKP_Parent__c;
+      result.categories.add(item);
     }
     if (holderId == null) {
       return result;
@@ -78,6 +83,22 @@ public with sharing class ALT_CLS_ExpenseWizard {
       result.cards.add(option(card.Id, card.Name));
     }
     return result;
+  }
+
+  // "+ Nova categoria" of the wizard: a new expense category, optionally under a parent.
+  public Option createCategory(String name, Id parentId) {
+    if (String.isBlank(name)) {
+      throw new ExpenseWizardException('Informe o nome da categoria.');
+    }
+    AXF_OBJ_Category__c category = new AXF_OBJ_Category__c(
+      Name = name.trim().left(80),
+      AXF_CAT_PKL_Type__c = 'Expense',
+      AXF_CAT_LKP_Parent__c = parentId
+    );
+    insert as user category;
+    Option created = option(category.Id, category.Name);
+    created.parentId = parentId;
+    return created;
   }
 
   public Id createStandalone(Request request) {
