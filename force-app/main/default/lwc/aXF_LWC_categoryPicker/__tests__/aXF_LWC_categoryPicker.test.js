@@ -116,7 +116,21 @@ describe("c-a-x-f-l-w-c-category-picker", () => {
       new CustomEvent("mousedown", { cancelable: true })
     );
     await flushPromises();
-    expect(created.mock.calls[0][0].detail.name).toBe("Pet");
+    expect(created).not.toHaveBeenCalled();
+    const parents = $(element, ".new-parent").options;
+    expect(parents.map((o) => o.label)).toEqual(
+      expect.arrayContaining(["Nenhuma (nível raiz)"])
+    );
+    $(element, ".new-parent").dispatchEvent(
+      new CustomEvent("change", { detail: { value: "e" } })
+    );
+    await flushPromises();
+    $(element, ".confirm-create").dispatchEvent(new CustomEvent("click"));
+    await flushPromises();
+    expect(created.mock.calls[0][0].detail).toEqual({
+      name: "Pet",
+      parentId: "e"
+    });
   });
 
   it("clears the selection and says when nothing matches", async () => {
@@ -216,7 +230,8 @@ describe("c-a-x-f-l-w-c-category-picker", () => {
     expect($(element, ".option_clear").className).toContain("option_active");
     await key("ArrowUp");
     await key("Enter");
-    expect(created.mock.calls[0][0].detail.name).toBe("Pet");
+    expect(created).not.toHaveBeenCalled();
+    expect($(element, ".new-parent")).not.toBeNull();
     expect(changed).not.toHaveBeenCalled();
   });
 
