@@ -2,6 +2,14 @@ import { LightningElement, api } from "lwc";
 import getOptions from "@salesforce/apex/AXF_CLS_CTRL_ExpenseWizard.getOptions";
 import createStandalone from "@salesforce/apex/AXF_CLS_CTRL_ExpenseWizard.createStandalone";
 import createCategory from "@salesforce/apex/AXF_CLS_CTRL_ExpenseWizard.createCategory";
+import createRecurring from "@salesforce/apex/AXF_CLS_CTRL_ExpenseWizard.createRecurring";
+import previewRecurring from "@salesforce/apex/AXF_CLS_CTRL_ExpenseWizard.previewRecurring";
+import createInstallment from "@salesforce/apex/AXF_CLS_CTRL_ExpenseWizard.createInstallment";
+import previewInstallment from "@salesforce/apex/AXF_CLS_CTRL_ExpenseWizard.previewInstallment";
+import createConsortium from "@salesforce/apex/AXF_CLS_CTRL_ExpenseWizard.createConsortium";
+import previewConsortium from "@salesforce/apex/AXF_CLS_CTRL_ExpenseWizard.previewConsortium";
+import createFinancing from "@salesforce/apex/AXF_CLS_CTRL_ExpenseWizard.createFinancing";
+import previewFinancing from "@salesforce/apex/AXF_CLS_CTRL_ExpenseWizard.previewFinancing";
 
 const STEP_TITLES = ["Dados", "Pagamento", "Revisar"];
 const TYPES = [
@@ -15,31 +23,44 @@ const TYPES = [
     value: "recurring",
     label: "Recorrente",
     description: "Se repete todo mês: aluguel, assinatura, conta de água.",
-    enabled: false
+    enabled: true
   },
   {
     value: "installments",
     label: "Parcelada",
     description: "Compra dividida em parcelas fixas, sem juros. Inclui cartão.",
-    enabled: false
+    enabled: true
   },
   {
     value: "consortium",
     label: "Consórcio",
     description: "Parcela fixa mensal; pode ser contemplado depois.",
-    enabled: false
+    enabled: true
   },
   {
     value: "financing",
     label: "Financiamento",
     description: "Valor financiado com juros: SAC ou PRICE.",
-    enabled: false
+    enabled: true
   }
 ];
 const STATUS_OPTIONS = [
   { label: "Pendente", value: "Pending" },
   { label: "Realizado", value: "Realized" }
 ];
+const VARIABLE_OPTIONS = [
+  { label: "Não", value: "no" },
+  { label: "Sim (corrijo antes de realizar)", value: "yes" }
+];
+const AMOUNT_KIND_OPTIONS = [
+  { label: "Valor total", value: "total" },
+  { label: "Valor da parcela", value: "installment" }
+];
+const SYSTEM_OPTIONS = [
+  { label: "PRICE (parcela constante)", value: "PRICE" },
+  { label: "SAC (amortização constante)", value: "SAC" }
+];
+const PREVIEW_ROWS = 2;
 const METHOD_OPTIONS = [
   { label: "Dinheiro", value: "cash" },
   { label: "Conta bancária", value: "account" },
@@ -67,6 +88,20 @@ export default class AXF_LWC_expenseWizard extends LightningElement {
   errorMessage;
   focusTitle = false;
   loadSeq = 0;
+  isCreatingCategory = false;
+  isLoadingPreview = false;
+  // Recurring only
+  variable = "no";
+  amountKind = "total";
+  installmentCount;
+  administrator = "";
+  awardedOn;
+  creditor = "";
+  monthlyRate;
+  amortizationSystem = "PRICE";
+  dueDay;
+  endDate;
+  preview = [];
 
   connectedCallback() {
     this.chosenHolderId = this.holderId;
@@ -136,13 +171,321 @@ export default class AXF_LWC_expenseWizard extends LightningElement {
 
   handleChangeType() {
     this.type = undefined;
+    // Nothing typed for one type leaks into the next.
+    this.variable = "no";
+    this.dueDay = undefined;
+    this.endDate = undefined;
+    this.preview = [];
+    this.status = "Pending";
+    this.paymentDate = undefined;
+    this.amountKind = "total";
+    this.installmentCount = undefined;
+    this.administrator = "";
+    this.awardedOn = undefined;
+    this.creditor = "";
+    this.monthlyRate = undefined;
+    this.amortizationSystem = "PRICE";
     this.errorMessage = undefined;
     this.focusTitle = true;
   }
 
   // ---- Steps ----
   get title() {
-    return this.isChoosingType ? "Que tipo de despesa é?" : "Despesa avulsa";
+    if (this.isChoosingType) {
+      return "Que tipo de despesa é?";
+    }
+    if (this.isRecurring) {
+      return "Despesa recorrente";
+    }
+    if (this.isFinancing) {
+      return "Financiamento";
+    }
+    if (this.isConsortium) {
+      return "Consórcio";
+    }
+    return this.isInstallments ? "Despesa parcelada" : "Despesa avulsa";
+  }
+
+  get isInstallments() {
+    return this.type === "installments";
+  }
+
+  get isFinancing() {
+    return this.type === "financing";
+  }
+
+  get systemOptions() {
+    return SYSTEM_OPTIONS;
+  }
+
+  get isConsortium() {
+    return this.type === "consortium";
+  }
+
+  // The types with a fixed number of installments ask for it.
+  get hasInstallmentCount() {
+    return this.isInstallments || this.isConsortium || this.isFinancing;
+  }
+
+  get maxCount() {
+    if (this.isFinancing) {
+      return 480;
+    }
+    return this.isConsortium ? 240 : 120;
+  }
+
+  get hasContract() {
+    return (
+      this.isRecurring ||
+      this.isInstallments ||
+      this.isConsortium ||
+      this.isFinancing
+    );
+  }
+
+  get amountKindOptions() {
+    return AMOUNT_KIND_OPTIONS;
+  }
+
+  get isRecurring() {
+    return this.type === "recurring";
+  }
+
+  get isStandalone() {
+    return !this.isRecurring;
+  }
+
+  get amountLabel() {
+    if (this.isRecurring) {
+      return "Valor mensal (ou estimado)";
+    }
+    if (this.isFinancing) {
+      return "Valor financiado";
+    }
+    if (this.isConsortium) {
+      return "Valor da parcela";
+    }
+    return this.isInstallments && this.amountKind === "installment"
+      ? "Valor da parcela"
+      : this.isInstallments
+        ? "Valor total"
+        : "Valor";
+  }
+
+  get dueDateLabel() {
+    return this.hasContract ? "Primeiro vencimento" : "Vencimento";
+  }
+
+  get variableOptions() {
+    return VARIABLE_OPTIONS;
+  }
+
+  get previewRows() {
+    return this.preview.slice(0, PREVIEW_ROWS).map((item, index) => ({
+      key: `${item.dueDate}-${index}`,
+      dueDate: this.format(item.dueDate),
+      amount: this.money(item.amount),
+      interest:
+        item.interest === undefined || item.interest === null
+          ? ""
+          : this.money(item.interest)
+    }));
+  }
+
+  get previewMore() {
+    return Math.max(this.preview.length - PREVIEW_ROWS, 0);
+  }
+
+  get recurringSummary() {
+    const count = this.preview.length;
+    const entries =
+      count === 1 ? "1 lançamento pendente" : `${count} lançamentos pendentes`;
+    return `Será criado 1 Contrato (Recorrente) e ${entries}. Os próximos meses são gerados automaticamente todo mês.`;
+  }
+
+  get recurringJson() {
+    return JSON.stringify(this.recurringRequest);
+  }
+
+  get recurringRequest() {
+    return {
+      base: this.baseRequest,
+      variableAmount: this.variable === "yes",
+      dueDay: this.dueDay ? Number(this.dueDay) : null,
+      endDate: this.endDate || null
+    };
+  }
+
+  get installmentJson() {
+    return JSON.stringify(this.installmentRequest);
+  }
+
+  // What every type shares; each type adds its own fields around it.
+  get baseRequest() {
+    return {
+      holderId: this.chosenHolderId,
+      description: this.description.trim(),
+      amount: Number(this.amount),
+      dueDate: this.dueDate,
+      categoryId: this.categoryId || null,
+      accountId: this.method === "account" ? this.sourceId : null,
+      cardId: this.method === "card" ? this.sourceId : null
+    };
+  }
+
+  get financingJson() {
+    return JSON.stringify(this.financingRequest);
+  }
+
+  get financingRequest() {
+    return {
+      base: this.baseRequest,
+      count: this.installmentCount ? Number(this.installmentCount) : null,
+      monthlyRate:
+        this.monthlyRate === undefined || this.monthlyRate === ""
+          ? null
+          : Number(this.monthlyRate),
+      amortizationSystem: this.amortizationSystem,
+      creditor: this.creditor.trim() || null
+    };
+  }
+
+  // The first installment while the user is still typing (the review shows the real table).
+  get firstInstallmentHint() {
+    const principal = Number(this.amount);
+    const count = Number(this.installmentCount);
+    const rate = Number(this.monthlyRate) / 100;
+    if (
+      !this.isFinancing ||
+      this.monthlyRate === undefined ||
+      this.monthlyRate === "" ||
+      !(principal >= 0.01) ||
+      !(count >= 2) ||
+      !(rate >= 0)
+    ) {
+      return "";
+    }
+    let first;
+    if (this.amortizationSystem === "SAC") {
+      first = principal / count + principal * rate;
+    } else {
+      first =
+        rate === 0
+          ? principal / count
+          : (principal * rate) / (1 - Math.pow(1 + rate, -count));
+    }
+    return `1ª parcela ≈ ${this.money(first)} (${this.amortizationSystem}). Ajuste a taxa ou o prazo para conferir com o seu contrato. O Contrato é criado junto.`;
+  }
+
+  get consortiumJson() {
+    return JSON.stringify(this.consortiumRequest);
+  }
+
+  get consortiumRequest() {
+    return {
+      base: this.baseRequest,
+      count: this.installmentCount ? Number(this.installmentCount) : null,
+      administrator: this.administrator.trim() || null,
+      awardedOn: this.awardedOn || null
+    };
+  }
+
+  get installmentRequest() {
+    return {
+      base: this.baseRequest,
+      amountIsTotal: this.amountKind === "total",
+      count: this.installmentCount ? Number(this.installmentCount) : null
+    };
+  }
+
+  get installmentsValid() {
+    return this.validCount(120);
+  }
+
+  get financingValid() {
+    const rate = Number(this.monthlyRate);
+    return (
+      Number(this.amount) >= 0.01 &&
+      this.validCount(480) &&
+      this.monthlyRate !== undefined &&
+      this.monthlyRate !== "" &&
+      Number.isFinite(rate) &&
+      rate >= 0 &&
+      rate <= 100 &&
+      !!this.amortizationSystem
+    );
+  }
+
+  get consortiumValid() {
+    return this.validCount(240);
+  }
+
+  validCount(max) {
+    const count = Number(this.installmentCount);
+    return (
+      /^\d+$/.test(String(this.installmentCount).trim()) &&
+      Number.isInteger(count) &&
+      count >= 2 &&
+      count <= max
+    );
+  }
+
+  // What the review shows besides the schedule, so the user confirms the whole Contract.
+  get contractDetails() {
+    const parts = [];
+    if (this.isFinancing) {
+      if (this.creditor.trim()) {
+        parts.push(`Credor: ${this.creditor.trim()}`);
+      }
+      const interest = this.preview.reduce(
+        (sum, item) => sum + (item.interest || 0),
+        0
+      );
+      parts.push(
+        `Juros totais ${this.money(Math.round(interest * 100) / 100)}`
+      );
+      return parts.join(" · ");
+    }
+    if (this.administrator.trim()) {
+      parts.push(`Administradora: ${this.administrator.trim()}`);
+    }
+    if (this.awardedOn) {
+      parts.push(`Contemplado em ${this.format(this.awardedOn)}`);
+    }
+    return parts.join(" · ");
+  }
+
+  get hasContractDetails() {
+    return (this.isConsortium || this.isFinancing) && !!this.contractDetails;
+  }
+
+  get contractLabel() {
+    if (this.isFinancing) {
+      return "Financiamento";
+    }
+    return this.isConsortium ? "Consórcio" : "Parcelado";
+  }
+
+  get contractSummary() {
+    return this.isInstallments || this.isConsortium || this.isFinancing
+      ? this.installmentSummary
+      : this.recurringSummary;
+  }
+
+  get installmentSummary() {
+    const total =
+      Math.round(
+        this.preview.reduce((sum, item) => sum + item.amount, 0) * 100
+      ) / 100;
+    return `Será criado 1 Contrato (${this.contractLabel}) e ${this.preview.length} lançamentos pendentes. ${this.isFinancing ? "Total previsto" : "Total"} ${this.money(total)}.`;
+  }
+
+  get recurringValid() {
+    const day = this.dueDay ? Number(this.dueDay) : null;
+    return (
+      (day === null || (Number.isInteger(day) && day >= 1 && day <= 31)) &&
+      (!this.endDate || (!!this.dueDate && this.endDate >= this.dueDate))
+    );
   }
 
   get stepLabel() {
@@ -208,7 +551,15 @@ export default class AXF_LWC_expenseWizard extends LightningElement {
       !!this.description.trim() &&
       Number(this.amount) > 0 &&
       !!this.dueDate &&
-      (!this.isRealized || !!this.paymentDate)
+      (this.isRecurring
+        ? this.recurringValid
+        : this.isFinancing
+          ? this.financingValid
+          : this.isConsortium
+            ? this.consortiumValid
+            : this.isInstallments
+              ? this.installmentsValid
+              : !this.isRealized || !!this.paymentDate)
     );
   }
 
@@ -217,6 +568,9 @@ export default class AXF_LWC_expenseWizard extends LightningElement {
   }
 
   get nextDisabled() {
+    if (this.isLoadingPreview) {
+      return true;
+    }
     if (this.isStep1) {
       return !this.step1Valid;
     }
@@ -288,15 +642,24 @@ export default class AXF_LWC_expenseWizard extends LightningElement {
 
   // "+ Nova categoria": creates it (top level) and selects it.
   async handleCreateCategory(event) {
+    if (this.isCreatingCategory) {
+      return;
+    }
+    this.isCreatingCategory = true;
     this.errorMessage = undefined;
     try {
       const created = await createCategory({
         name: event.detail.name,
         parentId: null
       });
+      // A holder change may still have a load in flight; its list would not have this one.
+      this.loadSeq += 1;
+      const known = this.options.categories.some((c) => c.id === created.id);
       this.options = {
         ...this.options,
-        categories: [...this.options.categories, created]
+        categories: known
+          ? this.options.categories
+          : [...this.options.categories, created]
       };
       this.categoryId = created.id;
     } catch (error) {
@@ -304,6 +667,8 @@ export default class AXF_LWC_expenseWizard extends LightningElement {
         error,
         "Não foi possível criar a categoria."
       );
+    } finally {
+      this.isCreatingCategory = false;
     }
   }
 
@@ -334,12 +699,79 @@ export default class AXF_LWC_expenseWizard extends LightningElement {
   }
 
   // ---- Navigation ----
-  handleNext() {
+  handleVariable(event) {
+    this.variable = event.detail.value;
+  }
+
+  handleAmountKind(event) {
+    this.amountKind = event.detail.value;
+  }
+
+  handleInstallmentCount(event) {
+    this.installmentCount = event.detail.value;
+  }
+
+  handleAdministrator(event) {
+    this.administrator = event.detail.value || "";
+  }
+
+  handleCreditor(event) {
+    this.creditor = event.detail.value || "";
+  }
+
+  handleRate(event) {
+    this.monthlyRate = event.detail.value;
+  }
+
+  handleSystem(event) {
+    this.amortizationSystem = event.detail.value;
+  }
+
+  handleAwardedOn(event) {
+    this.awardedOn = event.detail.value;
+  }
+
+  handleDueDay(event) {
+    this.dueDay = event.detail.value;
+  }
+
+  handleEndDate(event) {
+    this.endDate = event.detail.value;
+  }
+
+  fetchPreview() {
+    if (this.isFinancing) {
+      return previewFinancing({ requestJson: this.financingJson });
+    }
+    if (this.isConsortium) {
+      return previewConsortium({ requestJson: this.consortiumJson });
+    }
+    return this.isInstallments
+      ? previewInstallment({ requestJson: this.installmentJson })
+      : previewRecurring({ requestJson: this.recurringJson });
+  }
+
+  async handleNext() {
     if (this.nextDisabled) {
       return;
     }
-    this.step += 1;
     this.errorMessage = undefined;
+    if (this.hasContract && this.step === 2) {
+      this.isLoadingPreview = true;
+      try {
+        this.preview = [];
+        this.preview = await this.fetchPreview();
+      } catch (error) {
+        this.errorMessage = this.messageOf(
+          error,
+          "Não foi possível calcular os lançamentos."
+        );
+        return;
+      } finally {
+        this.isLoadingPreview = false;
+      }
+    }
+    this.step += 1;
     this.focusTitle = true;
   }
 
@@ -354,9 +786,25 @@ export default class AXF_LWC_expenseWizard extends LightningElement {
   }
 
   async handleConclude() {
+    if (this.isSaving) {
+      return;
+    }
     this.isSaving = true;
     this.errorMessage = undefined;
     try {
+      if (this.hasContract) {
+        if (this.isFinancing) {
+          await createFinancing({ requestJson: this.financingJson });
+        } else if (this.isConsortium) {
+          await createConsortium({ requestJson: this.consortiumJson });
+        } else if (this.isInstallments) {
+          await createInstallment({ requestJson: this.installmentJson });
+        } else {
+          await createRecurring({ requestJson: this.recurringJson });
+        }
+        this.dispatchEvent(new CustomEvent("saved"));
+        return;
+      }
       // A JSON string: Aura does not fill the fields of an Apex object parameter reliably.
       await createStandalone({
         requestJson: JSON.stringify({

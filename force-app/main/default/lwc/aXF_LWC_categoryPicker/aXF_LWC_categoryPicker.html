@@ -4,7 +4,8 @@
       class="category-search"
       type="search"
       label={label}
-      placeholder="Digite para filtrar, ex.: Moradia ou Energia"
+      placeholder={placeholder}
+      maxlength={maxName}
       value={inputValue}
       autocomplete="off"
       onfocus={handleFocus}
@@ -13,7 +14,12 @@
       onkeydown={handleKeydown}
     ></lightning-input>
     <template lwc:if={isOpen}>
-      <ul class="list" role="listbox" aria-label={label}>
+      <ul
+        class="list"
+        role="listbox"
+        aria-label={label}
+        onmousedown={handleListMouseDown}
+      >
         <template for:each={rows} for:item="row">
           <li
             key={row.key}
@@ -26,27 +32,18 @@
             {row.label}
           </li>
         </template>
-        <template lwc:if={hasRows}></template>
-        <template lwc:else>
+        <template lwc:if={noRows}>
           <li class="option option_dim" role="presentation">
             Nenhuma categoria encontrada
           </li>
         </template>
         <template lwc:if={canCreate}>
-          <li
-            class="option option_new"
-            role="option"
-            onmousedown={handleCreate}
-          >
+          <li class={createClass} role="option" onmousedown={handleCreate}>
             {createLabel}
           </li>
         </template>
         <template lwc:if={value}>
-          <li
-            class="option option_clear"
-            role="option"
-            onmousedown={handleClear}
-          >
+          <li class={clearClass} role="option" onmousedown={handleClear}>
             Sem categoria
           </li>
         </template>
