@@ -90,8 +90,37 @@ public with sharing class ALT_CLS_ExpenseWizard {
     if (String.isBlank(name)) {
       throw new ExpenseWizardException('Informe o nome da categoria.');
     }
+    String clean = name.trim().left(80);
+    if (parentId != null) {
+      // The parent must be visible to the user and usable for expenses.
+      if (
+        [
+          SELECT COUNT()
+          FROM AXF_OBJ_Category__c
+          WHERE Id = :parentId AND AXF_CAT_PKL_Type__c IN ('Expense', 'Both')
+          WITH USER_MODE
+        ] == 0
+      ) {
+        throw new ExpenseWizardException('A categoria pai não é de despesa.');
+      }
+    }
+    // Same name under the same parent: reuse it instead of creating a duplicate.
+    for (AXF_OBJ_Category__c existing : [
+      SELECT Id, Name, AXF_CAT_LKP_Parent__c
+      FROM AXF_OBJ_Category__c
+      WHERE
+        Name = :clean
+        AND AXF_CAT_LKP_Parent__c = :parentId
+        AND AXF_CAT_PKL_Type__c IN ('Expense', 'Both')
+      WITH USER_MODE
+      LIMIT 1
+    ]) {
+      Option reused = option(existing.Id, existing.Name);
+      reused.parentId = existing.AXF_CAT_LKP_Parent__c;
+      return reused;
+    }
     AXF_OBJ_Category__c category = new AXF_OBJ_Category__c(
-      Name = name.trim().left(80),
+      Name = clean,
       AXF_CAT_PKL_Type__c = 'Expense',
       AXF_CAT_LKP_Parent__c = parentId
     );

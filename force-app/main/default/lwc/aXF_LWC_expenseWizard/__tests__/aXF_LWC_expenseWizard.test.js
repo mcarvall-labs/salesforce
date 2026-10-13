@@ -265,4 +265,29 @@ describe("c-a-x-f-l-w-c-expense-wizard", () => {
       "Informe o nome da categoria."
     );
   });
+
+  it("creates the category once when the picker asks twice", async () => {
+    let resolve;
+    createCategory.mockReturnValue(
+      new Promise((r) => {
+        resolve = r;
+      })
+    );
+    const element = await mount();
+    await chooseStandalone(element);
+    const ask = () =>
+      $(element, ".field-category").dispatchEvent(
+        new CustomEvent("createcategory", { detail: { name: "Pet" } })
+      );
+    ask();
+    ask();
+    await flushPromises();
+    expect(createCategory).toHaveBeenCalledTimes(1);
+    resolve({ id: "c3", label: "Pet" });
+    await flushPromises();
+    expect($(element, ".field-category").value).toBe("c3");
+    expect(
+      $(element, ".field-category").options.filter((o) => o.id === "c3")
+    ).toHaveLength(1);
+  });
 });

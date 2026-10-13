@@ -29,13 +29,29 @@ public with sharing class AXF_CLS_CTRL_ExpenseWizard {
     try {
       return new ALT_CLS_ExpenseWizard()
         .createStandalone(
-          (ALT_CLS_ExpenseWizard.Request) JSON.deserialize(
+          (ALT_CLS_ExpenseWizard.Request) parse(
             requestJson,
             ALT_CLS_ExpenseWizard.Request.class
           )
         );
     } catch (Exception e) {
       throw aura(e);
+    }
+  }
+
+  // A blank or malformed JSON gets a readable message instead of the parser's.
+  private static Object parse(String requestJson, Type target) {
+    if (String.isBlank(requestJson) || requestJson.trim() == 'null') {
+      throw new ALT_CLS_ExpenseWizard.ExpenseWizardException(
+        'Pedido não informado.'
+      );
+    }
+    try {
+      return JSON.deserialize(requestJson, target);
+    } catch (JSONException e) {
+      throw new ALT_CLS_ExpenseWizard.ExpenseWizardException(
+        'Pedido inválido.'
+      );
     }
   }
 

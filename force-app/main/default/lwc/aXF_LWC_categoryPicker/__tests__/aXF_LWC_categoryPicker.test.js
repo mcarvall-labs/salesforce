@@ -136,7 +136,7 @@ describe("c-a-x-f-l-w-c-category-picker", () => {
     expect(changed.mock.calls[0][0].detail.value).toBeNull();
   });
 
-  it("does not loop on a cycle in the data", async () => {
+  it("keeps the members of a cycle selectable at the top level", async () => {
     const element = await mount({
       options: [
         { id: "x", label: "X", parentId: "y" },
@@ -145,6 +145,86 @@ describe("c-a-x-f-l-w-c-category-picker", () => {
       ]
     });
     await open(element);
-    expect(labels(element)).toEqual(["Z"]);
+    expect(labels(element)).toEqual(["Z", "X", "Y"]);
+  });
+
+  it("filters ignoring case and accents, and does not offer to create an accented duplicate", async () => {
+    const element = await mount();
+    await open(element);
+    await search(element, "AGUA");
+    expect(labels(element)).toEqual(["Moradia", "Água"]);
+    expect($(element, ".option_new")).toBeNull();
+    await search(element, "orfa");
+    expect(labels(element)).toEqual(["Órfã"]);
+  });
+
+  it("limits the typed name to 80 characters", async () => {
+    const element = await mount();
+    expect($(element, ".category-search").maxLength).toBe(80);
+    await open(element);
+    await search(element, "a".repeat(100));
+    expect($(element, ".option_new").textContent).toContain("a".repeat(80));
+    expect($(element, ".option_new").textContent).not.toContain("a".repeat(81));
+  });
+
+  it("works with the keyboard: arrows move, Enter picks, Escape closes", async () => {
+    const element = await mount();
+    const changed = jest.fn();
+    element.addEventListener("change", changed);
+    await open(element);
+    const key = async (name) => {
+      $(element, ".category-search").dispatchEvent(
+        new KeyboardEvent("keydown", { key: name, cancelable: true })
+      );
+      await flushPromises();
+    };
+    await key("ArrowDown");
+    await key("ArrowDown");
+    const active = () =>
+      Array.from(element.shadowRoot.querySelectorAll(".option_active")).map(
+        (li) => li.textContent.trim()
+      );
+    expect(active()).toEqual(["Energia"]);
+    await key("ArrowUp");
+    expect(active()).toEqual(["Moradia"]);
+    await key("ArrowDown");
+    await key("Enter");
+    expect(changed.mock.calls[0][0].detail.value).toBe("e");
+    expect($(element, ".list")).toBeNull();
+    await open(element);
+    await key("Escape");
+    expect($(element, ".list")).toBeNull();
+  });
+
+  it("reaches the create and clear rows by keyboard", async () => {
+    const element = await mount({ value: "e" });
+    const created = jest.fn();
+    const changed = jest.fn();
+    element.addEventListener("createcategory", created);
+    element.addEventListener("change", changed);
+    await open(element);
+    await search(element, "Pet");
+    const key = async (name) => {
+      $(element, ".category-search").dispatchEvent(
+        new KeyboardEvent("keydown", { key: name, cancelable: true })
+      );
+      await flushPromises();
+    };
+    await key("ArrowDown");
+    expect($(element, ".option_new").className).toContain("option_active");
+    await key("ArrowDown");
+    expect($(element, ".option_clear").className).toContain("option_active");
+    await key("ArrowUp");
+    await key("Enter");
+    expect(created.mock.calls[0][0].detail.name).toBe("Pet");
+    expect(changed).not.toHaveBeenCalled();
+  });
+
+  it("keeps the chosen path as the hint while typing", async () => {
+    const element = await mount({ value: "e" });
+    await open(element);
+    expect($(element, ".category-search").placeholder).toBe(
+      "Moradia › Energia"
+    );
   });
 });

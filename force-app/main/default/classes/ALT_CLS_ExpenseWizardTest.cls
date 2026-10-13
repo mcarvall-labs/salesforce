@@ -258,6 +258,91 @@ private class ALT_CLS_ExpenseWizardTest {
   }
 
   @IsTest
+  static void aBlankOrMalformedRequestGetsAReadableError() {
+    for (String bad : new List<String>{ null, '', ' ', 'null' }) {
+      try {
+        AXF_CLS_CTRL_ExpenseWizard.createStandalone(bad);
+        System.assert(false, 'expected AuraHandledException');
+      } catch (AuraHandledException e) {
+        System.assertEquals('Pedido não informado.', e.getMessage());
+      }
+    }
+    try {
+      AXF_CLS_CTRL_ExpenseWizard.createStandalone('{');
+      System.assert(false, 'expected AuraHandledException');
+    } catch (AuraHandledException e) {
+      System.assertEquals('Pedido inválido.', e.getMessage());
+    }
+    try {
+      AXF_CLS_CTRL_ExpenseWizard.createStandalone('{"amount":"abc"}');
+      System.assert(false, 'expected AuraHandledException');
+    } catch (AuraHandledException e) {
+      System.assertEquals('Pedido inválido.', e.getMessage());
+    }
+  }
+
+  @IsTest
+  static void aCategoryWithTheSameNameAndParentIsReusedNotDuplicated() {
+    ALT_CLS_ExpenseWizard.Option first = AXF_CLS_CTRL_ExpenseWizard.createCategory(
+      'Moradia',
+      null
+    );
+    ALT_CLS_ExpenseWizard.Option again = AXF_CLS_CTRL_ExpenseWizard.createCategory(
+      'Moradia',
+      null
+    );
+    ALT_CLS_ExpenseWizard.Option child = AXF_CLS_CTRL_ExpenseWizard.createCategory(
+      'Moradia',
+      first.id
+    );
+
+    System.assertEquals(first.id, again.id);
+    System.assertNotEquals(first.id, child.id);
+    System.assertEquals(2, [SELECT COUNT() FROM AXF_OBJ_Category__c]);
+  }
+
+  @IsTest
+  static void theParentOfANewCategoryMustBeAnExpenseCategory() {
+    AXF_OBJ_Category__c income = new AXF_OBJ_Category__c(
+      Name = 'Salário',
+      AXF_CAT_PKL_Type__c = 'Income'
+    );
+    insert income;
+    try {
+      AXF_CLS_CTRL_ExpenseWizard.createCategory('Bônus', income.Id);
+      System.assert(false, 'expected AuraHandledException');
+    } catch (AuraHandledException e) {
+      System.assertEquals('A categoria pai não é de despesa.', e.getMessage());
+    }
+    System.assertEquals(1, [SELECT COUNT() FROM AXF_OBJ_Category__c]);
+  }
+
+  @IsTest
+  static void userWithoutPermissionCannotCreateACategory() {
+    User user = new User(
+      Alias = 'axfcatw',
+      Email = 'axfcatw@example.com',
+      EmailEncodingKey = 'UTF-8',
+      LastName = 'NoCategoryAccess',
+      LanguageLocaleKey = 'en_US',
+      LocaleSidKey = 'en_US',
+      ProfileId = ALT_CLS_ConnectionTestUser.standardProfileId(),
+      TimeZoneSidKey = 'America/Sao_Paulo',
+      Username = 'axfcatw' + System.currentTimeMillis() + '@example.com'
+    );
+    insert user;
+    System.runAs(user) {
+      try {
+        AXF_CLS_CTRL_ExpenseWizard.createCategory('Pet', null);
+        System.assert(false, 'expected AuraHandledException');
+      } catch (AuraHandledException e) {
+        System.assertNotEquals(null, e.getMessage());
+      }
+    }
+    System.assertEquals(0, [SELECT COUNT() FROM AXF_OBJ_Category__c]);
+  }
+
+  @IsTest
   static void userWithoutPermissionGetsAReadableError() {
     User user = new User(
       Alias = 'axfexpw',

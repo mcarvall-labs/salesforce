@@ -1,7 +1,14 @@
 import { LightningElement, api } from "lwc";
 
+const MAX_NAME = 80;
+
+// Case and accent insensitive: "agua" finds "Água".
+const normalize = (text) =>
+  (text || "").normalize("NFD").replace(/[̀-ͯ]/g, "").toLowerCase();
+
 // Category field of the expense wizard, as in the approved prototype: type to filter the
-// hierarchy (parents and children, any level), pick one, or create a new category.
+// hierarchy (parents and children, any level), pick one, or create a new category. Works with
+// the keyboard: ArrowUp/ArrowDown move, Enter picks, Escape closes.
 export default class AXF_LWC_categoryPicker extends LightningElement {
   @api label = "Categoria";
   // [{ id, label, parentId }]
@@ -10,9 +17,12 @@ export default class AXF_LWC_categoryPicker extends LightningElement {
 
   query = "";
   isOpen = false;
+  // Index in `actions` of the row under the keyboard; -1 = none.
+  activeIndex = -1;
 
   // Depth-first walk: a parent comes right before its children. A category whose parent is
-  // not in the list is treated as top level. `seen` protects against a loop in the data.
+  // not in the list is treated as top level. A category that is only reachable through a loop
+  // in the data (A under B under A) is appended at the top level, so it stays selectable.
   get tree() {
     const byParent = new Map();
     const ids = new Set((this.options || []).map((o) => o.id));
@@ -36,11 +46,18 @@ export default class AXF_LWC_categoryPicker extends LightningElement {
       }
       return rows;
     };
-    return walk("", 0);
+    const roots = walk("", 0);
+    for (const option of this.options || []) {
+      if (!seen.has(option.id)) {
+        seen.add(option.id);
+        roots.push({ option, depth: 0, children: walk(option.id, 1) });
+      }
+    }
+    return roots;
   }
 
-  get rows() {
-    const q = this.query.trim().toLowerCase();
+  get matches() {
+    const q = normalize(this.query.trim());
     const flat = [];
     // A match shows all of its children (as in the prototype); an ancestor of a match is shown
     // dimmed so the path stays visible.
@@ -48,19 +65,16 @@ export default class AXF_LWC_categoryPicker extends LightningElement {
       let anyMatch = false;
       for (const node of nodes) {
         const own =
-          !q || parentMatched || node.option.label.toLowerCase().includes(q);
+          !q || parentMatched || normalize(node.option.label).includes(q);
         const index = flat.length;
         flat.push(null);
         const childMatch = visit(node.children, own);
         if (own || childMatch) {
           flat[index] = {
-            key: node.option.id,
             id: node.option.id,
             label: node.option.label,
-            // An ancestor that only shows up because a descendant matched.
-            dim: !own,
-            className: `option depth-${Math.min(node.depth, 4)}${own ? "" : " option_dim"}`,
-            selected: node.option.id === this.value
+            depth: node.depth,
+            dim: !own
           };
           anyMatch = true;
         }
@@ -71,8 +85,54 @@ export default class AXF_LWC_categoryPicker extends LightningElement {
     return flat.filter(Boolean);
   }
 
+  // Everything the keyboard can reach, in display order.
+  get actions() {
+    const list = this.matches.map((m) => ({ type: "option", id: m.id }));
+    if (this.canCreate) {
+      list.push({ type: "create" });
+    }
+    if (this.value) {
+      list.push({ type: "clear" });
+    }
+    return list;
+  }
+
+  get rows() {
+    return this.matches.map((m, index) => ({
+      key: m.id,
+      id: m.id,
+      label: m.label,
+      selected: m.id === this.value || index === this.activeIndex,
+      className: [
+        "option",
+        `depth-${Math.min(m.depth, 4)}`,
+        m.dim ? "option_dim" : "",
+        index === this.activeIndex ? "option_active" : ""
+      ]
+        .filter(Boolean)
+        .join(" ")
+    }));
+  }
+
   get hasRows() {
-    return this.rows.length > 0;
+    return this.matches.length > 0;
+  }
+
+  get noRows() {
+    return !this.hasRows;
+  }
+
+  get createClass() {
+    return this.classFor("create", "option option_new");
+  }
+
+  get clearClass() {
+    return this.classFor("clear", "option option_clear");
+  }
+
+  classFor(type, base) {
+    const active = this.actions[this.activeIndex];
+    return active && active.type === type ? `${base} option_active` : base;
   }
 
   get selectedPath() {
@@ -92,21 +152,41 @@ export default class AXF_LWC_categoryPicker extends LightningElement {
     return this.isOpen ? this.query : this.selectedPath;
   }
 
+  // While typing, the chosen category stays visible as the hint.
+  get placeholder() {
+    return this.selectedPath || "Digite para filtrar, ex.: Moradia ou Energia";
+  }
+
+  get maxName() {
+    return MAX_NAME;
+  }
+
+  get typedName() {
+    return this.query.trim().slice(0, MAX_NAME);
+  }
+
   get canCreate() {
-    const name = this.query.trim().toLowerCase();
+    const name = normalize(this.typedName);
     return (
-      !!name &&
-      !(this.options || []).some((o) => o.label.toLowerCase() === name)
+      !!name && !(this.options || []).some((o) => normalize(o.label) === name)
     );
   }
 
   get createLabel() {
-    return `+ Nova categoria "${this.query.trim()}"`;
+    return `+ Nova categoria "${this.typedName}"`;
+  }
+
+  renderedCallback() {
+    const active = this.template.querySelector(".option_active");
+    if (active && active.scrollIntoView) {
+      active.scrollIntoView({ block: "nearest" });
+    }
   }
 
   handleFocus() {
     this.isOpen = true;
     this.query = "";
+    this.activeIndex = -1;
   }
 
   handleBlur() {
@@ -116,39 +196,69 @@ export default class AXF_LWC_categoryPicker extends LightningElement {
   handleInput(event) {
     this.isOpen = true;
     this.query = event.detail.value || "";
+    this.activeIndex = -1;
   }
 
   handleKeydown(event) {
+    const count = this.actions.length;
     if (event.key === "Escape") {
       this.isOpen = false;
+    } else if (event.key === "ArrowDown" || event.key === "ArrowUp") {
+      event.preventDefault();
+      this.isOpen = true;
+      if (count) {
+        const step = event.key === "ArrowDown" ? 1 : -1;
+        this.activeIndex = (this.activeIndex + step + count + 1) % (count + 1);
+        if (this.activeIndex === count) {
+          this.activeIndex = -1;
+        }
+      }
+    } else if (event.key === "Enter" && this.isOpen) {
+      const action = this.actions[this.activeIndex];
+      if (action) {
+        event.preventDefault();
+        this.run(action);
+      }
     }
+  }
+
+  run(action) {
+    if (action.type === "option") {
+      this.dispatchEvent(
+        new CustomEvent("change", { detail: { value: action.id } })
+      );
+    } else if (action.type === "clear") {
+      this.dispatchEvent(
+        new CustomEvent("change", { detail: { value: null } })
+      );
+    } else {
+      this.dispatchEvent(
+        new CustomEvent("createcategory", { detail: { name: this.typedName } })
+      );
+    }
+    this.query = "";
+    this.activeIndex = -1;
+    this.isOpen = false;
   }
 
   // mousedown, not click: the input would lose focus (and close the list) before the click.
   handleSelect(event) {
     event.preventDefault();
-    this.dispatchEvent(
-      new CustomEvent("change", {
-        detail: { value: event.currentTarget.dataset.id }
-      })
-    );
-    this.query = "";
-    this.isOpen = false;
+    this.run({ type: "option", id: event.currentTarget.dataset.id });
   }
 
   handleClear(event) {
     event.preventDefault();
-    this.dispatchEvent(new CustomEvent("change", { detail: { value: null } }));
-    this.query = "";
-    this.isOpen = false;
+    this.run({ type: "clear" });
   }
 
   handleCreate(event) {
     event.preventDefault();
-    this.dispatchEvent(
-      new CustomEvent("createcategory", { detail: { name: this.query.trim() } })
-    );
-    this.query = "";
-    this.isOpen = false;
+    this.run({ type: "create" });
+  }
+
+  // Keeps the focus on the input when the user presses the scrollbar or the list background.
+  handleListMouseDown(event) {
+    event.preventDefault();
   }
 }
