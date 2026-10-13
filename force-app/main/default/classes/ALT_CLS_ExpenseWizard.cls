@@ -42,6 +42,25 @@ public with sharing class ALT_CLS_ExpenseWizard {
     public Id cardId;
   }
 
+  // Recurring only (EP05-H20): base.dueDate is the first due date, base.amount the monthly (or estimated) value.
+  public class RecurringRequest {
+    @AuraEnabled
+    public Request base;
+    @AuraEnabled
+    public Boolean variableAmount = false;
+    @AuraEnabled
+    public Integer dueDay;
+    @AuraEnabled
+    public Date endDate;
+  }
+
+  public class PreviewItem {
+    @AuraEnabled
+    public Date dueDate;
+    @AuraEnabled
+    public Decimal amount;
+  }
+
   public Options options(Id holderId) {
     Options result = new Options();
     for (AXF_OBJ_Category__c category : [
@@ -120,6 +139,91 @@ public with sharing class ALT_CLS_ExpenseWizard {
     );
     insert as user entry;
     return entry.Id;
+  }
+
+  // Creates the recurring Contract and its Pending entries in one transaction: a failed
+  // generation throws, so nothing stays saved.
+  public Id createRecurring(RecurringRequest request) {
+    validateRecurring(request);
+    Request base = request.base;
+    AXF_OBJ_Contract__c contract = new AXF_OBJ_Contract__c(
+      Name = base.description.trim().left(80),
+      RecordTypeId = Schema.SObjectType.AXF_OBJ_Contract__c.getRecordTypeInfosByDeveloperName()
+        .get(ALT_CLS_ContractGeneration.RT_RECURRING)
+        .getRecordTypeId(),
+      AXF_CTR_MD_Holder__c = base.holderId,
+      AXF_CTR_PKL_Direction__c = 'Expense',
+      AXF_CTR_PKL_Status__c = ALT_CLS_ContractGeneration.STATUS_ACTIVE,
+      AXF_CTR_CUR_Amount__c = base.amount,
+      AXF_CTR_DAT_FirstDueDate__c = base.dueDate,
+      AXF_CTR_NUM_DueDay__c = request.dueDay != null
+        ? request.dueDay
+        : base.dueDate.day(),
+      AXF_CTR_DAT_EndDate__c = request.endDate,
+      AXF_CTR_BOL_VariableAmount__c = request.variableAmount == true,
+      AXF_CTR_LKP_Category__c = base.categoryId,
+      AXF_CTR_LKP_BankAccount__c = base.accountId,
+      AXF_CTR_LKP_CreditCard__c = base.cardId
+    );
+    insert as user contract;
+    ALT_CLS_ContractGeneration.Result result = new ALT_CLS_ContractGeneration()
+      .generate(new Set<Id>{ contract.Id }, false);
+    if (!result.messages.isEmpty()) {
+      throw new ExpenseWizardException(String.join(result.messages, ' '));
+    }
+    return contract.Id;
+  }
+
+  public List<PreviewItem> previewRecurring(RecurringRequest request) {
+    validateRecurring(request);
+    List<PreviewItem> items = new List<PreviewItem>();
+    for (
+      ALT_CLS_ContractSchedule.Item item : ALT_CLS_ContractSchedule.recurring(
+        request.base.dueDate,
+        request.dueDay,
+        request.endDate,
+        Date.today(),
+        request.base.amount
+      )
+    ) {
+      PreviewItem preview = new PreviewItem();
+      preview.dueDate = item.dueDate;
+      preview.amount = item.amount;
+      items.add(preview);
+    }
+    return items;
+  }
+
+  private static void validateRecurring(RecurringRequest request) {
+    Request base = request?.base;
+    if (base == null || base.holderId == null) {
+      throw new ExpenseWizardException('Informe o titular.');
+    }
+    if (String.isBlank(base.description)) {
+      throw new ExpenseWizardException('Informe a descrição.');
+    }
+    if (base.amount == null || base.amount <= 0) {
+      throw new ExpenseWizardException('O valor deve ser maior que zero.');
+    }
+    if (base.dueDate == null) {
+      throw new ExpenseWizardException('Informe o primeiro vencimento.');
+    }
+    if (request.dueDay != null && (request.dueDay < 1 || request.dueDay > 31)) {
+      throw new ExpenseWizardException(
+        'O dia do vencimento deve ser de 1 a 31.'
+      );
+    }
+    if (request.endDate != null && request.endDate < base.dueDate) {
+      throw new ExpenseWizardException(
+        'A data de fim não pode ser anterior ao primeiro vencimento.'
+      );
+    }
+    if (base.accountId != null && base.cardId != null) {
+      throw new ExpenseWizardException(
+        'Escolha a conta ou o cartão, não os dois.'
+      );
+    }
+    assertOwnership(base);
   }
 
   // The UI only offers the holder's own records; a crafted request must not get around it.

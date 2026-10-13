@@ -2,6 +2,8 @@ import { createElement } from "lwc";
 import AXF_LWC_expenseWizard from "c/aXF_LWC_expenseWizard";
 import getOptions from "@salesforce/apex/AXF_CLS_CTRL_ExpenseWizard.getOptions";
 import createStandalone from "@salesforce/apex/AXF_CLS_CTRL_ExpenseWizard.createStandalone";
+import createRecurring from "@salesforce/apex/AXF_CLS_CTRL_ExpenseWizard.createRecurring";
+import previewRecurring from "@salesforce/apex/AXF_CLS_CTRL_ExpenseWizard.previewRecurring";
 
 jest.mock(
   "@salesforce/apex/AXF_CLS_CTRL_ExpenseWizard.getOptions",
@@ -10,6 +12,17 @@ jest.mock(
 );
 jest.mock(
   "@salesforce/apex/AXF_CLS_CTRL_ExpenseWizard.createStandalone",
+  () => ({ default: jest.fn() }),
+  { virtual: true }
+);
+
+jest.mock(
+  "@salesforce/apex/AXF_CLS_CTRL_ExpenseWizard.createRecurring",
+  () => ({ default: jest.fn() }),
+  { virtual: true }
+);
+jest.mock(
+  "@salesforce/apex/AXF_CLS_CTRL_ExpenseWizard.previewRecurring",
   () => ({ default: jest.fn() }),
   { virtual: true }
 );
@@ -62,6 +75,12 @@ describe("c-a-x-f-l-w-c-expense-wizard", () => {
   beforeEach(() => {
     getOptions.mockResolvedValue(options);
     createStandalone.mockResolvedValue("a0X");
+    createRecurring.mockResolvedValue("a0C");
+    previewRecurring.mockResolvedValue([
+      { dueDate: "2026-11-05", amount: 2500 },
+      { dueDate: "2026-12-05", amount: 2500 },
+      { dueDate: "2027-01-05", amount: 2500 }
+    ]);
   });
 
   afterEach(() => {
@@ -71,7 +90,7 @@ describe("c-a-x-f-l-w-c-expense-wizard", () => {
     jest.clearAllMocks();
   });
 
-  it("asks the type first and only enables the standalone expense", async () => {
+  it("asks the type first and only enables the standalone and recurring expenses", async () => {
     const element = await mount();
     expect($(element, ".wizard-title").textContent).toContain(
       "Que tipo de despesa é?"
@@ -80,7 +99,7 @@ describe("c-a-x-f-l-w-c-expense-wizard", () => {
     expect(buttons).toHaveLength(5);
     expect(buttons.map((b) => b.disabled)).toEqual([
       false,
-      true,
+      false,
       true,
       true,
       true
@@ -210,5 +229,91 @@ describe("c-a-x-f-l-w-c-expense-wizard", () => {
       "O valor deve ser maior que zero."
     );
     expect($(element, ".conclude")).not.toBeNull();
+  });
+
+  it("creates a recurring expense with its contract in one call", async () => {
+    const element = await mount();
+    $$(element, ".type-button")[1].click();
+    await flushPromises();
+    expect($(element, ".wizard-title").textContent).toContain(
+      "Despesa recorrente"
+    );
+    expect($(element, ".field-status")).toBeNull();
+    await type(element, ".field-description", "Aluguel");
+    await type(element, ".field-amount", "2500");
+    await type(element, ".field-due", "2026-11-05");
+    await type(element, ".field-variable", "yes");
+    await type(element, ".field-due-day", "5");
+    await type(element, ".field-end-date", "2027-01-05");
+    $(element, ".next").click();
+    await flushPromises();
+    $(element, ".next").click();
+    await flushPromises();
+    expect(previewRecurring).toHaveBeenCalledTimes(1);
+    expect($(element, ".review-summary").textContent).toContain(
+      "1 Contrato (Recorrente) e 3 lançamentos pendentes"
+    );
+    expect($(element, ".review-preview").textContent).toContain("05/11/2026");
+    expect($(element, ".review-more").textContent).toContain("mais 1");
+
+    const saved = jest.fn();
+    element.addEventListener("saved", saved);
+    $(element, ".conclude").click();
+    await flushPromises();
+    expect(createRecurring).toHaveBeenCalledWith({
+      request: {
+        base: {
+          holderId: "001A",
+          description: "Aluguel",
+          amount: 2500,
+          dueDate: "2026-11-05",
+          categoryId: null,
+          accountId: null,
+          cardId: null
+        },
+        variableAmount: true,
+        dueDay: 5,
+        endDate: "2027-01-05"
+      }
+    });
+    expect(createStandalone).not.toHaveBeenCalled();
+    expect(saved).toHaveBeenCalledTimes(1);
+  });
+
+  it("blocks a recurring expense with an invalid day or an end before the start", async () => {
+    const element = await mount();
+    $$(element, ".type-button")[1].click();
+    await flushPromises();
+    await type(element, ".field-description", "Aluguel");
+    await type(element, ".field-amount", "2500");
+    await type(element, ".field-due", "2026-11-05");
+    expect($(element, ".next").disabled).toBe(false);
+    await type(element, ".field-due-day", "32");
+    expect($(element, ".next").disabled).toBe(true);
+    await type(element, ".field-due-day", "5");
+    await type(element, ".field-end-date", "2026-10-01");
+    expect($(element, ".next").disabled).toBe(true);
+    await type(element, ".field-end-date", "2026-12-01");
+    expect($(element, ".next").disabled).toBe(false);
+  });
+
+  it("stays on the payment step when the preview fails", async () => {
+    previewRecurring.mockRejectedValue({
+      body: { message: "O valor deve ser maior que zero." }
+    });
+    const element = await mount();
+    $$(element, ".type-button")[1].click();
+    await flushPromises();
+    await type(element, ".field-description", "Aluguel");
+    await type(element, ".field-amount", "2500");
+    await type(element, ".field-due", "2026-11-05");
+    $(element, ".next").click();
+    await flushPromises();
+    $(element, ".next").click();
+    await flushPromises();
+    expect($(element, ".wizard-error").textContent).toContain(
+      "O valor deve ser maior que zero."
+    );
+    expect($(element, ".wizard-step").textContent).toContain("Etapa 2 de 3");
   });
 });

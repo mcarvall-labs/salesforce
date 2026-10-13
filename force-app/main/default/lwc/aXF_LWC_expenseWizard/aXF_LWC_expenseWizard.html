@@ -79,7 +79,7 @@
             type="number"
             step="0.01"
             min="0.01"
-            label="Valor"
+            label={amountLabel}
             value={amount}
             required
             onchange={handleAmount}
@@ -87,7 +87,7 @@
           <lightning-input
             class="field-due"
             type="date"
-            label="Vencimento"
+            label={dueDateLabel}
             value={dueDate}
             required
             onchange={handleDueDate}
@@ -99,24 +99,55 @@
             value={categoryId}
             onchange={handleCategory}
           ></lightning-combobox>
-          <lightning-radio-group
-            class="field-status"
-            name="status"
-            label="Situação"
-            options={statusOptions}
-            value={status}
-            type="radio"
-            onchange={handleStatus}
-          ></lightning-radio-group>
-          <template lwc:if={isRealized}>
+          <template lwc:if={isRecurring}>
+            <lightning-combobox
+              class="field-variable"
+              label="O valor muda todo mês?"
+              options={variableOptions}
+              value={variable}
+              onchange={handleVariable}
+            ></lightning-combobox>
             <lightning-input
-              class="field-payment-date"
-              type="date"
-              label="Data de pagamento"
-              value={paymentDate}
-              required
-              onchange={handlePaymentDate}
+              class="field-due-day"
+              type="number"
+              min="1"
+              max="31"
+              label="Dia do vencimento (opcional)"
+              field-level-help="Se vazio, usa o dia do primeiro vencimento."
+              value={dueDay}
+              onchange={handleDueDay}
             ></lightning-input>
+            <lightning-input
+              class="field-end-date"
+              type="date"
+              label="Data de fim (opcional)"
+              value={endDate}
+              onchange={handleEndDate}
+            ></lightning-input>
+            <p class="slds-text-body_small slds-m-top_small">
+              O Contrato é criado junto no fim. Você não escolhe contrato.
+            </p>
+          </template>
+          <template lwc:else>
+            <lightning-radio-group
+              class="field-status"
+              name="status"
+              label="Situação"
+              options={statusOptions}
+              value={status}
+              type="radio"
+              onchange={handleStatus}
+            ></lightning-radio-group>
+            <template lwc:if={isRealized}>
+              <lightning-input
+                class="field-payment-date"
+                type="date"
+                label="Data de pagamento"
+                value={paymentDate}
+                required
+                onchange={handlePaymentDate}
+              ></lightning-input>
+            </template>
           </template>
         </template>
 
@@ -142,7 +173,20 @@
 
         <template lwc:else>
           <p class="review-line slds-text-heading_small">{reviewLine}</p>
-          <p class="review-summary slds-m-top_small">{reviewSummary}</p>
+          <template lwc:if={isRecurring}>
+            <p class="review-summary slds-m-top_small">{recurringSummary}</p>
+            <ul class="review-preview slds-m-top_small">
+              <template for:each={previewRows} for:item="row">
+                <li key={row.key}>{row.dueDate} · {row.amount}</li>
+              </template>
+              <template lwc:if={previewMore}>
+                <li class="review-more">… mais {previewMore}</li>
+              </template>
+            </ul>
+          </template>
+          <template lwc:else>
+            <p class="review-summary slds-m-top_small">{reviewSummary}</p>
+          </template>
         </template>
       </div>
       <footer class="slds-modal__footer">
