@@ -270,6 +270,136 @@ private class ALT_CLS_ExpenseWizardTest {
     System.assertEquals(0, [SELECT COUNT() FROM AXF_OBJ_Contract__c]);
   }
 
+  private static ALT_CLS_ExpenseWizard.InstallmentRequest installment(
+    Id holderId
+  ) {
+    ALT_CLS_ExpenseWizard.InstallmentRequest installment = new ALT_CLS_ExpenseWizard.InstallmentRequest();
+    installment.base = request(holderId);
+    installment.base.description = 'Geladeira';
+    installment.base.amount = 1000;
+    installment.base.dueDate = Date.today().addDays(5);
+    installment.count = 3;
+    return installment;
+  }
+
+  private static void assertInstallmentRejected(
+    ALT_CLS_ExpenseWizard.InstallmentRequest request,
+    String expected
+  ) {
+    try {
+      AXF_CLS_CTRL_ExpenseWizard.createInstallment(request);
+      System.assert(false, 'expected AuraHandledException');
+    } catch (AuraHandledException e) {
+      System.assertEquals(expected, e.getMessage());
+    }
+  }
+
+  @IsTest
+  static void totalIsSplitAndTheLastInstallmentAbsorbsTheResidue() {
+    Account h = holder('Titular');
+    ALT_CLS_ExpenseWizard.InstallmentRequest installment = installment(h.Id);
+    installment.base.cardId = card(h.Id).Id;
+
+    Id id = AXF_CLS_CTRL_ExpenseWizard.createInstallment(installment);
+
+    AXF_OBJ_Contract__c contract = [
+      SELECT RecordType.DeveloperName, AXF_CTR_CUR_Amount__c
+      FROM AXF_OBJ_Contract__c
+      WHERE Id = :id
+    ];
+    System.assertEquals('AXF_Installment', contract.RecordType.DeveloperName);
+    System.assertEquals(333.33, contract.AXF_CTR_CUR_Amount__c);
+    List<AXF_OBJ_Entry__c> entries = [
+      SELECT
+        AXF_ENT_CUR_Amount__c,
+        AXF_ENT_NUM_InstallmentNumber__c,
+        AXF_ENT_PKL_Status__c,
+        AXF_ENT_LKP_CreditCard__c
+      FROM AXF_OBJ_Entry__c
+      WHERE AXF_ENT_LKP_Contract__c = :id
+      ORDER BY AXF_ENT_NUM_InstallmentNumber__c
+    ];
+    System.assertEquals(3, entries.size());
+    System.assertEquals(333.33, entries[0].AXF_ENT_CUR_Amount__c);
+    System.assertEquals(333.34, entries[2].AXF_ENT_CUR_Amount__c);
+    Decimal sum = 0;
+    for (AXF_OBJ_Entry__c entry : entries) {
+      sum += entry.AXF_ENT_CUR_Amount__c;
+      System.assertEquals('Pending', entry.AXF_ENT_PKL_Status__c);
+      System.assertEquals(
+        installment.base.cardId,
+        entry.AXF_ENT_LKP_CreditCard__c
+      );
+    }
+    System.assertEquals(1000, sum);
+  }
+
+  @IsTest
+  static void installmentValueMultipliesByTheCount() {
+    ALT_CLS_ExpenseWizard.InstallmentRequest installment = installment(
+      holder('Titular').Id
+    );
+    installment.amountIsTotal = false;
+    installment.base.amount = 300;
+    installment.count = 10;
+
+    List<ALT_CLS_ExpenseWizard.PreviewItem> items = AXF_CLS_CTRL_ExpenseWizard.previewInstallment(
+      installment
+    );
+    Id id = AXF_CLS_CTRL_ExpenseWizard.createInstallment(installment);
+
+    System.assertEquals(10, items.size());
+    System.assertEquals(300, items[9].amount);
+    System.assertEquals(
+      3000,
+      (Decimal) [
+          SELECT SUM(AXF_ENT_CUR_Amount__c) total
+          FROM AXF_OBJ_Entry__c
+          WHERE AXF_ENT_LKP_Contract__c = :id
+        ][0]
+        .get('total')
+    );
+  }
+
+  @IsTest
+  static void rejectsInvalidInstallmentRequestsWithoutCreatingAnything() {
+    Account mine = holder('Meu');
+    Account other = holder('Outro');
+    ALT_CLS_ExpenseWizard.InstallmentRequest one = installment(mine.Id);
+    one.count = 1;
+    assertInstallmentRejected(one, 'O número de parcelas deve ser de 2 a 120.');
+    ALT_CLS_ExpenseWizard.InstallmentRequest many = installment(mine.Id);
+    many.count = 121;
+    assertInstallmentRejected(
+      many,
+      'O número de parcelas deve ser de 2 a 120.'
+    );
+    ALT_CLS_ExpenseWizard.InstallmentRequest zero = installment(mine.Id);
+    zero.base.amount = 0;
+    assertInstallmentRejected(zero, 'O valor deve ser maior que zero.');
+    ALT_CLS_ExpenseWizard.InstallmentRequest tiny = installment(mine.Id);
+    tiny.base.amount = 0.01;
+    assertInstallmentRejected(
+      tiny,
+      'O valor da parcela deve ser maior que zero.'
+    );
+    ALT_CLS_ExpenseWizard.InstallmentRequest noDue = installment(mine.Id);
+    noDue.base.dueDate = null;
+    assertInstallmentRejected(noDue, 'Informe o primeiro vencimento.');
+    ALT_CLS_ExpenseWizard.InstallmentRequest foreign = installment(mine.Id);
+    foreign.base.cardId = card(other.Id).Id;
+    assertInstallmentRejected(foreign, 'O cartão não pertence ao titular.');
+    ALT_CLS_ExpenseWizard.InstallmentRequest both = installment(mine.Id);
+    both.base.accountId = account(mine.Id).Id;
+    both.base.cardId = card(mine.Id).Id;
+    assertInstallmentRejected(
+      both,
+      'Escolha a conta ou o cartão, não os dois.'
+    );
+    System.assertEquals(0, [SELECT COUNT() FROM AXF_OBJ_Contract__c]);
+    System.assertEquals(0, [SELECT COUNT() FROM AXF_OBJ_Entry__c]);
+  }
+
   @IsTest
   static void aContractThatWouldGenerateNoEntriesIsRolledBack() {
     ALT_CLS_ExpenseWizard.RecurringRequest recurring = recurring(

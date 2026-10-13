@@ -43,6 +43,30 @@ public with sharing class AXF_CLS_CTRL_ExpenseWizard {
     }
   }
 
+  // One transaction: creates the installment Contract and its Pending entries.
+  @AuraEnabled
+  public static Id createInstallment(
+    ALT_CLS_ExpenseWizard.InstallmentRequest request
+  ) {
+    try {
+      return new ALT_CLS_ExpenseWizard().createInstallment(request);
+    } catch (Exception e) {
+      throw aura(e);
+    }
+  }
+
+  // The installments the Contract would generate, for the review step.
+  @AuraEnabled
+  public static List<ALT_CLS_ExpenseWizard.PreviewItem> previewInstallment(
+    ALT_CLS_ExpenseWizard.InstallmentRequest request
+  ) {
+    try {
+      return new ALT_CLS_ExpenseWizard().previewInstallment(request);
+    } catch (Exception e) {
+      throw aura(e);
+    }
+  }
+
   private static AuraHandledException aura(Exception e) {
     String message = e.getMessage();
     if (e instanceof DmlException && ((DmlException) e).getNumDml() > 0) {

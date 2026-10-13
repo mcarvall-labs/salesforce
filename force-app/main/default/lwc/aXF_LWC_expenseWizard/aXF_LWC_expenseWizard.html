@@ -74,6 +74,15 @@
             required
             onchange={handleDescription}
           ></lightning-input>
+          <template lwc:if={isInstallments}>
+            <lightning-combobox
+              class="field-amount-kind"
+              label="Vou informar"
+              options={amountKindOptions}
+              value={amountKind}
+              onchange={handleAmountKind}
+            ></lightning-combobox>
+          </template>
           <lightning-input
             class="field-amount"
             type="number"
@@ -99,7 +108,23 @@
             value={categoryId}
             onchange={handleCategory}
           ></lightning-combobox>
-          <template lwc:if={isRecurring}>
+          <template lwc:if={isInstallments}>
+            <lightning-input
+              class="field-installment-count"
+              type="number"
+              step="1"
+              min="2"
+              max="120"
+              label="Nº de parcelas"
+              value={installmentCount}
+              required
+              onchange={handleInstallmentCount}
+            ></lightning-input>
+            <p class="slds-text-body_small slds-m-top_small">
+              O Contrato é criado junto no fim. Você não escolhe contrato.
+            </p>
+          </template>
+          <template lwc:elseif={isRecurring}>
             <lightning-combobox
               class="field-variable"
               label="O valor muda todo mês?"
@@ -173,8 +198,8 @@
 
         <template lwc:else>
           <p class="review-line slds-text-heading_small">{reviewLine}</p>
-          <template lwc:if={isRecurring}>
-            <p class="review-summary slds-m-top_small">{recurringSummary}</p>
+          <template lwc:if={hasContract}>
+            <p class="review-summary slds-m-top_small">{contractSummary}</p>
             <ul class="review-preview slds-m-top_small">
               <template for:each={previewRows} for:item="row">
                 <li key={row.key}>{row.dueDate} · {row.amount}</li>

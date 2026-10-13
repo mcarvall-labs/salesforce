@@ -61,6 +61,17 @@ public with sharing class ALT_CLS_ExpenseWizard {
     public Decimal amount;
   }
 
+  // Installments only (EP05-H21): base.amount is the total or the installment value
+  // (amountIsTotal), base.dueDate the first due date.
+  public class InstallmentRequest {
+    @AuraEnabled
+    public Request base;
+    @AuraEnabled
+    public Boolean amountIsTotal = true;
+    @AuraEnabled
+    public Integer count;
+  }
+
   public Options options(Id holderId) {
     Options result = new Options();
     for (AXF_OBJ_Category__c category : [
@@ -236,6 +247,113 @@ public with sharing class ALT_CLS_ExpenseWizard {
       );
     }
     assertOwnership(base);
+  }
+
+  // Creates the installment Contract and its Pending entries in one transaction. The installment
+  // is the total divided by the count (2 decimals); the rounding residue goes to the last entry
+  // so the entries always add up to the total.
+  public Id createInstallment(InstallmentRequest request) {
+    List<PreviewItem> plan = plan(request);
+    Request base = request.base;
+    Decimal installment = plan[0].amount;
+    AXF_OBJ_Contract__c contract = new AXF_OBJ_Contract__c(
+      Name = base.description.trim().left(80),
+      RecordTypeId = Schema.SObjectType.AXF_OBJ_Contract__c.getRecordTypeInfosByDeveloperName()
+        .get(ALT_CLS_ContractGeneration.RT_INSTALLMENT)
+        .getRecordTypeId(),
+      AXF_CTR_MD_Holder__c = base.holderId,
+      AXF_CTR_PKL_Direction__c = 'Expense',
+      AXF_CTR_PKL_Status__c = ALT_CLS_ContractGeneration.STATUS_ACTIVE,
+      AXF_CTR_CUR_Amount__c = installment,
+      AXF_CTR_NUM_InstallmentCount__c = request.count,
+      AXF_CTR_DAT_FirstDueDate__c = base.dueDate,
+      AXF_CTR_LKP_Category__c = base.categoryId,
+      AXF_CTR_LKP_BankAccount__c = base.accountId,
+      AXF_CTR_LKP_CreditCard__c = base.cardId
+    );
+    Savepoint savepoint = Database.setSavepoint();
+    insert as user contract;
+    ALT_CLS_ContractGeneration.Result result = new ALT_CLS_ContractGeneration()
+      .generate(new Set<Id>{ contract.Id }, false);
+    if (!result.messages.isEmpty() || result.created != request.count) {
+      Database.rollback(savepoint);
+      throw new ExpenseWizardException(
+        result.messages.isEmpty()
+          ? 'Não foi possível gerar todas as parcelas.'
+          : String.join(result.messages, ' ')
+      );
+    }
+    Decimal residue = plan[plan.size() - 1].amount - installment;
+    if (residue != 0) {
+      AXF_OBJ_Entry__c last = [
+        SELECT Id, AXF_ENT_CUR_Amount__c
+        FROM AXF_OBJ_Entry__c
+        WHERE
+          AXF_ENT_LKP_Contract__c = :contract.Id
+          AND AXF_ENT_NUM_InstallmentNumber__c = :request.count
+        WITH USER_MODE
+      ];
+      last.AXF_ENT_CUR_Amount__c = plan[plan.size() - 1].amount;
+      update as user last;
+    }
+    return contract.Id;
+  }
+
+  public List<PreviewItem> previewInstallment(InstallmentRequest request) {
+    return plan(request);
+  }
+
+  private static List<PreviewItem> plan(InstallmentRequest request) {
+    Request base = request?.base;
+    if (base == null || base.holderId == null) {
+      throw new ExpenseWizardException('Informe o titular.');
+    }
+    if (String.isBlank(base.description)) {
+      throw new ExpenseWizardException('Informe a descrição.');
+    }
+    if (base.amount == null || base.amount <= 0) {
+      throw new ExpenseWizardException('O valor deve ser maior que zero.');
+    }
+    if (request.count == null || request.count < 2 || request.count > 120) {
+      throw new ExpenseWizardException(
+        'O número de parcelas deve ser de 2 a 120.'
+      );
+    }
+    if (base.dueDate == null) {
+      throw new ExpenseWizardException('Informe o primeiro vencimento.');
+    }
+    if (base.accountId != null && base.cardId != null) {
+      throw new ExpenseWizardException(
+        'Escolha a conta ou o cartão, não os dois.'
+      );
+    }
+    assertOwnership(base);
+    Decimal total = request.amountIsTotal == false
+      ? (base.amount * request.count).setScale(2)
+      : base.amount.setScale(2);
+    Decimal installment = request.amountIsTotal == false
+      ? base.amount.setScale(2)
+      : (total / request.count).setScale(2, RoundingMode.HALF_UP);
+    if (installment <= 0) {
+      throw new ExpenseWizardException(
+        'O valor da parcela deve ser maior que zero.'
+      );
+    }
+    List<PreviewItem> items = new List<PreviewItem>();
+    for (
+      ALT_CLS_ContractSchedule.Item item : ALT_CLS_ContractSchedule.fixedInstallments(
+        base.dueDate,
+        request.count,
+        installment
+      )
+    ) {
+      PreviewItem preview = new PreviewItem();
+      preview.dueDate = item.dueDate;
+      preview.amount = item.amount;
+      items.add(preview);
+    }
+    items[items.size() - 1].amount = total - installment * (request.count - 1);
+    return items;
   }
 
   // The UI only offers the holder's own records; a crafted request must not get around it.

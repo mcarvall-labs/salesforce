@@ -4,6 +4,8 @@ import getOptions from "@salesforce/apex/AXF_CLS_CTRL_ExpenseWizard.getOptions";
 import createStandalone from "@salesforce/apex/AXF_CLS_CTRL_ExpenseWizard.createStandalone";
 import createRecurring from "@salesforce/apex/AXF_CLS_CTRL_ExpenseWizard.createRecurring";
 import previewRecurring from "@salesforce/apex/AXF_CLS_CTRL_ExpenseWizard.previewRecurring";
+import createInstallment from "@salesforce/apex/AXF_CLS_CTRL_ExpenseWizard.createInstallment";
+import previewInstallment from "@salesforce/apex/AXF_CLS_CTRL_ExpenseWizard.previewInstallment";
 
 jest.mock(
   "@salesforce/apex/AXF_CLS_CTRL_ExpenseWizard.getOptions",
@@ -23,6 +25,17 @@ jest.mock(
 );
 jest.mock(
   "@salesforce/apex/AXF_CLS_CTRL_ExpenseWizard.previewRecurring",
+  () => ({ default: jest.fn() }),
+  { virtual: true }
+);
+
+jest.mock(
+  "@salesforce/apex/AXF_CLS_CTRL_ExpenseWizard.createInstallment",
+  () => ({ default: jest.fn() }),
+  { virtual: true }
+);
+jest.mock(
+  "@salesforce/apex/AXF_CLS_CTRL_ExpenseWizard.previewInstallment",
   () => ({ default: jest.fn() }),
   { virtual: true }
 );
@@ -76,6 +89,12 @@ describe("c-a-x-f-l-w-c-expense-wizard", () => {
     getOptions.mockResolvedValue(options);
     createStandalone.mockResolvedValue("a0X");
     createRecurring.mockResolvedValue("a0C");
+    createInstallment.mockResolvedValue("a0I");
+    previewInstallment.mockResolvedValue([
+      { dueDate: "2026-11-10", amount: 333.33 },
+      { dueDate: "2026-12-10", amount: 333.33 },
+      { dueDate: "2027-01-10", amount: 333.34 }
+    ]);
     previewRecurring.mockResolvedValue([
       { dueDate: "2026-11-05", amount: 2500 },
       { dueDate: "2026-12-05", amount: 2500 },
@@ -90,7 +109,7 @@ describe("c-a-x-f-l-w-c-expense-wizard", () => {
     jest.clearAllMocks();
   });
 
-  it("asks the type first and only enables the standalone and recurring expenses", async () => {
+  it("asks the type first and only enables the standalone, recurring and installment expenses", async () => {
     const element = await mount();
     expect($(element, ".wizard-title").textContent).toContain(
       "Que tipo de despesa é?"
@@ -100,7 +119,7 @@ describe("c-a-x-f-l-w-c-expense-wizard", () => {
     expect(buttons.map((b) => b.disabled)).toEqual([
       false,
       false,
-      true,
+      false,
       true,
       true
     ]);
@@ -338,5 +357,79 @@ describe("c-a-x-f-l-w-c-expense-wizard", () => {
     const base = createRecurring.mock.calls[0][0].request.base;
     expect(base.cardId).toBe("k1");
     expect(base.accountId).toBeNull();
+  });
+
+  it("creates an installment expense from the total with a card", async () => {
+    const element = await mount();
+    $$(element, ".type-button")[2].click();
+    await flushPromises();
+    expect($(element, ".wizard-title").textContent).toContain(
+      "Despesa parcelada"
+    );
+    expect($(element, ".field-status")).toBeNull();
+    await type(element, ".field-description", "Geladeira");
+    await type(element, ".field-amount", "1000");
+    await type(element, ".field-due", "2026-11-10");
+    expect($(element, ".next").disabled).toBe(true);
+    await type(element, ".field-installment-count", "1");
+    expect($(element, ".next").disabled).toBe(true);
+    await type(element, ".field-installment-count", "3");
+    expect($(element, ".next").disabled).toBe(false);
+    $(element, ".next").click();
+    await flushPromises();
+    await type(element, ".field-method", "card");
+    await type(element, ".field-source", "k1");
+    $(element, ".next").click();
+    await flushPromises();
+    expect(previewInstallment).toHaveBeenCalledTimes(1);
+    expect($(element, ".review-summary").textContent).toContain(
+      "1 Contrato (Parcelado) e 3 lançamentos pendentes"
+    );
+    expect($(element, ".review-summary").textContent).toContain("1.000,00");
+
+    const saved = jest.fn();
+    element.addEventListener("saved", saved);
+    $(element, ".conclude").click();
+    await flushPromises();
+    expect(createInstallment).toHaveBeenCalledWith({
+      request: {
+        base: {
+          holderId: "001A",
+          description: "Geladeira",
+          amount: 1000,
+          dueDate: "2026-11-10",
+          categoryId: null,
+          accountId: null,
+          cardId: "k1"
+        },
+        amountIsTotal: true,
+        count: 3
+      }
+    });
+    expect(createRecurring).not.toHaveBeenCalled();
+    expect(createStandalone).not.toHaveBeenCalled();
+    expect(saved).toHaveBeenCalledTimes(1);
+  });
+
+  it("sends the installment value when that is what the user informs", async () => {
+    const element = await mount();
+    $$(element, ".type-button")[2].click();
+    await flushPromises();
+    await type(element, ".field-amount-kind", "installment");
+    expect($(element, ".field-amount").label).toBe("Valor da parcela");
+    await type(element, ".field-description", "Geladeira");
+    await type(element, ".field-amount", "300");
+    await type(element, ".field-due", "2026-11-10");
+    await type(element, ".field-installment-count", "10");
+    $(element, ".next").click();
+    await flushPromises();
+    $(element, ".next").click();
+    await flushPromises();
+    $(element, ".conclude").click();
+    await flushPromises();
+    expect(createInstallment.mock.calls[0][0].request.amountIsTotal).toBe(
+      false
+    );
+    expect(createInstallment.mock.calls[0][0].request.count).toBe(10);
   });
 });
