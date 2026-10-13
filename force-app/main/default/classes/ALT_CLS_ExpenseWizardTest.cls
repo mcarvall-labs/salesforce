@@ -931,6 +931,390 @@ private class ALT_CLS_ExpenseWizardTest {
     System.assertEquals(0, [SELECT COUNT() FROM AXF_OBJ_Entry__c]);
   }
 
+  private static ALT_CLS_ExpenseWizard.FinancingRequest financing(Id holderId) {
+    ALT_CLS_ExpenseWizard.FinancingRequest financing = new ALT_CLS_ExpenseWizard.FinancingRequest();
+    financing.base = request(holderId);
+    financing.base.description = 'Financiamento do apartamento';
+    financing.base.amount = 1200;
+    financing.base.dueDate = Date.today().addDays(10);
+    financing.count = 12;
+    financing.monthlyRate = 1;
+    financing.amortizationSystem = 'SAC';
+    financing.creditor = 'Banco Y';
+    return financing;
+  }
+
+  private static void assertFinancingRejected(
+    ALT_CLS_ExpenseWizard.FinancingRequest request,
+    String expected
+  ) {
+    try {
+      AXF_CLS_CTRL_ExpenseWizard.createFinancing(JSON.serialize(request));
+      System.assert(false, 'expected AuraHandledException');
+    } catch (AuraHandledException e) {
+      System.assertEquals(expected, e.getMessage());
+    }
+  }
+
+  @IsTest
+  static void aSacFinancingMatchesTheReferenceTable() {
+    Account h = holder('Titular');
+    ALT_CLS_ExpenseWizard.FinancingRequest financing = financing(h.Id);
+    financing.base.accountId = account(h.Id).Id;
+
+    List<ALT_CLS_ExpenseWizard.PreviewItem> preview = AXF_CLS_CTRL_ExpenseWizard.previewFinancing(
+      JSON.serialize(financing)
+    );
+    Id id = AXF_CLS_CTRL_ExpenseWizard.createFinancing(
+      JSON.serialize(financing)
+    );
+
+    // SAC: constant amortization of 100, interest of 1 % on the outstanding balance.
+    System.assertEquals(12, preview.size());
+    System.assertEquals(112.00, preview[0].amount);
+    System.assertEquals(12.00, preview[0].interest);
+    System.assertEquals(111.00, preview[1].amount);
+    System.assertEquals(11.00, preview[1].interest);
+    System.assertEquals(101.00, preview[11].amount);
+    System.assertEquals(1.00, preview[11].interest);
+    AXF_OBJ_Contract__c contract = [
+      SELECT
+        RecordType.DeveloperName,
+        AXF_CTR_PKL_Direction__c,
+        AXF_CTR_PKL_Status__c,
+        AXF_CTR_CUR_FinancedAmount__c,
+        AXF_CTR_PCT_MonthlyRate__c,
+        AXF_CTR_PKL_AmortizationSystem__c,
+        AXF_CTR_TXT_Counterparty__c,
+        AXF_CTR_LKP_BankAccount__c
+      FROM AXF_OBJ_Contract__c
+      WHERE Id = :id
+    ];
+    System.assertEquals('AXF_Financing', contract.RecordType.DeveloperName);
+    System.assertEquals('Expense', contract.AXF_CTR_PKL_Direction__c);
+    System.assertEquals('Active', contract.AXF_CTR_PKL_Status__c);
+    System.assertEquals(1200, contract.AXF_CTR_CUR_FinancedAmount__c);
+    System.assertEquals(1, contract.AXF_CTR_PCT_MonthlyRate__c);
+    System.assertEquals('SAC', contract.AXF_CTR_PKL_AmortizationSystem__c);
+    System.assertEquals('Banco Y', contract.AXF_CTR_TXT_Counterparty__c);
+    System.assertEquals(
+      financing.base.accountId,
+      contract.AXF_CTR_LKP_BankAccount__c
+    );
+    List<AXF_OBJ_Entry__c> entries = [
+      SELECT
+        AXF_ENT_CUR_Amount__c,
+        AXF_ENT_DAT_DueDate__c,
+        AXF_ENT_LKP_BankAccount__c
+      FROM AXF_OBJ_Entry__c
+      WHERE AXF_ENT_LKP_Contract__c = :id
+      ORDER BY AXF_ENT_NUM_InstallmentNumber__c
+    ];
+    System.assertEquals(12, entries.size());
+    Decimal total = 0;
+    Decimal interest = 0;
+    for (Integer i = 0; i < entries.size(); i++) {
+      System.assertEquals(preview[i].amount, entries[i].AXF_ENT_CUR_Amount__c);
+      System.assertEquals(
+        preview[i].dueDate,
+        entries[i].AXF_ENT_DAT_DueDate__c
+      );
+      System.assertEquals(
+        financing.base.accountId,
+        entries[i].AXF_ENT_LKP_BankAccount__c
+      );
+      total += entries[i].AXF_ENT_CUR_Amount__c;
+      interest += preview[i].interest;
+    }
+    System.assertEquals(1278.00, total);
+    System.assertEquals(78.00, interest);
+  }
+
+  @IsTest
+  static void aPriceFinancingHasAConstantInstallmentAndTheInterestAddsUp() {
+    ALT_CLS_ExpenseWizard.FinancingRequest financing = financing(
+      holder('Titular').Id
+    );
+    financing.base.amount = 1000;
+    financing.amortizationSystem = 'PRICE';
+
+    List<ALT_CLS_ExpenseWizard.PreviewItem> preview = AXF_CLS_CTRL_ExpenseWizard.previewFinancing(
+      JSON.serialize(financing)
+    );
+    Id id = AXF_CLS_CTRL_ExpenseWizard.createFinancing(
+      JSON.serialize(financing)
+    );
+
+    // PRICE: PMT = 1000 * 0.01 / (1 - 1.01^-12) = 88.85; the first interest is 1 % of 1000.
+    System.assertEquals(88.85, preview[0].amount);
+    System.assertEquals(88.85, preview[10].amount);
+    System.assertEquals(10.00, preview[0].interest);
+    Decimal total = 0;
+    Decimal interest = 0;
+    for (ALT_CLS_ExpenseWizard.PreviewItem item : preview) {
+      total += item.amount;
+      interest += item.interest;
+    }
+    // Everything paid minus the principal is the interest; the last installment settles the balance.
+    System.assertEquals(total - 1000, interest);
+    System.assertEquals(
+      total,
+      [
+          SELECT SUM(AXF_ENT_CUR_Amount__c) total
+          FROM AXF_OBJ_Entry__c
+          WHERE AXF_ENT_LKP_Contract__c = :id
+        ][0]
+        .get('total')
+    );
+  }
+
+  @IsTest
+  static void thePreviewAndTheSavedScheduleAgreeForAnUnroundRateAndAmount() {
+    for (String kind : new List<String>{ 'PRICE', 'SAC' }) {
+      Account h = holder('Titular ' + kind);
+      ALT_CLS_ExpenseWizard.FinancingRequest financing = financing(h.Id);
+      financing.base.amount = 1234.56;
+      financing.monthlyRate = 0.12345;
+      financing.count = 7;
+      financing.amortizationSystem = kind;
+
+      List<ALT_CLS_ExpenseWizard.PreviewItem> preview = AXF_CLS_CTRL_ExpenseWizard.previewFinancing(
+        JSON.serialize(financing)
+      );
+      Id id = AXF_CLS_CTRL_ExpenseWizard.createFinancing(
+        JSON.serialize(financing)
+      );
+
+      System.assertEquals(
+        0.1235,
+        [
+          SELECT AXF_CTR_PCT_MonthlyRate__c
+          FROM AXF_OBJ_Contract__c
+          WHERE Id = :id
+        ]
+        .AXF_CTR_PCT_MonthlyRate__c
+      );
+      List<AXF_OBJ_Entry__c> entries = [
+        SELECT AXF_ENT_CUR_Amount__c, AXF_ENT_DAT_DueDate__c
+        FROM AXF_OBJ_Entry__c
+        WHERE AXF_ENT_LKP_Contract__c = :id
+        ORDER BY AXF_ENT_NUM_InstallmentNumber__c
+      ];
+      System.assertEquals(7, entries.size(), kind);
+      Decimal paid = 0;
+      Decimal interest = 0;
+      for (Integer i = 0; i < entries.size(); i++) {
+        System.assertEquals(
+          preview[i].amount,
+          entries[i].AXF_ENT_CUR_Amount__c,
+          kind
+        );
+        System.assertEquals(
+          preview[i].dueDate,
+          entries[i].AXF_ENT_DAT_DueDate__c,
+          kind
+        );
+        paid += entries[i].AXF_ENT_CUR_Amount__c;
+        interest += preview[i].interest;
+      }
+      // The last installment settles the balance: what was paid is the principal plus the interest.
+      System.assertEquals(paid - 1234.56, interest, kind);
+    }
+  }
+
+  @IsTest
+  static void thePriceTableMatchesTheReferenceInstallmentByInstallment() {
+    ALT_CLS_ExpenseWizard.FinancingRequest financing = financing(
+      holder('Titular').Id
+    );
+    financing.base.amount = 1000;
+    financing.amortizationSystem = 'PRICE';
+
+    List<ALT_CLS_ExpenseWizard.PreviewItem> preview = AXF_CLS_CTRL_ExpenseWizard.previewFinancing(
+      JSON.serialize(financing)
+    );
+    Id id = AXF_CLS_CTRL_ExpenseWizard.createFinancing(
+      JSON.serialize(financing)
+    );
+
+    List<AXF_OBJ_Entry__c> entries = [
+      SELECT AXF_ENT_CUR_Amount__c, AXF_ENT_DAT_DueDate__c
+      FROM AXF_OBJ_Entry__c
+      WHERE AXF_ENT_LKP_Contract__c = :id
+      ORDER BY AXF_ENT_NUM_InstallmentNumber__c
+    ];
+    System.assertEquals(12, entries.size());
+    for (Integer i = 0; i < entries.size(); i++) {
+      System.assertEquals(preview[i].amount, entries[i].AXF_ENT_CUR_Amount__c);
+      System.assertEquals(
+        preview[i].dueDate,
+        entries[i].AXF_ENT_DAT_DueDate__c
+      );
+    }
+    // Reference: 11 installments of 88,85 and a last one that settles the balance.
+    System.assertEquals(88.85, entries[10].AXF_ENT_CUR_Amount__c);
+    Decimal last = entries[11].AXF_ENT_CUR_Amount__c;
+    System.assert(last >= 88.80 && last <= 88.95, 'last installment ' + last);
+    Decimal total = 0;
+    for (AXF_OBJ_Entry__c entry : entries) {
+      total += entry.AXF_ENT_CUR_Amount__c;
+    }
+    System.assert(total >= 1066.10 && total <= 1066.30, 'total ' + total);
+  }
+
+  @IsTest
+  static void theLimitsOfTheFinancingCountAreAccepted() {
+    for (Integer count : new List<Integer>{ 2, 480 }) {
+      ALT_CLS_ExpenseWizard.FinancingRequest financing = financing(
+        holder('Titular ' + count).Id
+      );
+      financing.base.amount = 100000;
+      financing.count = count;
+
+      Id id = AXF_CLS_CTRL_ExpenseWizard.createFinancing(
+        JSON.serialize(financing)
+      );
+
+      System.assertEquals(
+        count,
+        [
+          SELECT COUNT()
+          FROM AXF_OBJ_Entry__c
+          WHERE AXF_ENT_LKP_Contract__c = :id
+        ]
+      );
+    }
+  }
+
+  @IsTest
+  static void aFinancingWithoutInterestSplitsThePrincipal() {
+    ALT_CLS_ExpenseWizard.FinancingRequest financing = financing(
+      holder('Titular').Id
+    );
+    financing.monthlyRate = 0;
+    financing.amortizationSystem = 'PRICE';
+    financing.creditor = ' ';
+
+    List<ALT_CLS_ExpenseWizard.PreviewItem> preview = AXF_CLS_CTRL_ExpenseWizard.previewFinancing(
+      JSON.serialize(financing)
+    );
+    Id id = AXF_CLS_CTRL_ExpenseWizard.createFinancing(
+      JSON.serialize(financing)
+    );
+
+    for (ALT_CLS_ExpenseWizard.PreviewItem item : preview) {
+      System.assertEquals(100.00, item.amount);
+      System.assertEquals(0, item.interest);
+    }
+    System.assertEquals(
+      null,
+      [
+        SELECT AXF_CTR_TXT_Counterparty__c
+        FROM AXF_OBJ_Contract__c
+        WHERE Id = :id
+      ]
+      .AXF_CTR_TXT_Counterparty__c
+    );
+  }
+
+  @IsTest
+  static void rejectsInvalidFinancingRequestsWithoutCreatingAnything() {
+    Account mine = holder('Meu');
+    Account other = holder('Outro');
+    ALT_CLS_ExpenseWizard.FinancingRequest one = financing(mine.Id);
+    one.count = 1;
+    assertFinancingRejected(one, 'O número de parcelas deve ser de 2 a 480.');
+    ALT_CLS_ExpenseWizard.FinancingRequest many = financing(mine.Id);
+    many.count = 481;
+    assertFinancingRejected(many, 'O número de parcelas deve ser de 2 a 480.');
+    ALT_CLS_ExpenseWizard.FinancingRequest zero = financing(mine.Id);
+    zero.base.amount = 0;
+    assertFinancingRejected(
+      zero,
+      'O valor financiado deve ser maior que zero.'
+    );
+    ALT_CLS_ExpenseWizard.FinancingRequest tiny = financing(mine.Id);
+    tiny.base.amount = 0.001;
+    assertFinancingRejected(
+      tiny,
+      'O valor financiado deve ser maior que zero.'
+    );
+    ALT_CLS_ExpenseWizard.FinancingRequest noRate = financing(mine.Id);
+    noRate.monthlyRate = null;
+    assertFinancingRejected(
+      noRate,
+      'A taxa mensal deve estar entre 0% e 100%.'
+    );
+    ALT_CLS_ExpenseWizard.FinancingRequest negative = financing(mine.Id);
+    negative.monthlyRate = -0.5;
+    assertFinancingRejected(
+      negative,
+      'A taxa mensal deve estar entre 0% e 100%.'
+    );
+    ALT_CLS_ExpenseWizard.FinancingRequest tooHigh = financing(mine.Id);
+    tooHigh.monthlyRate = 100.5;
+    assertFinancingRejected(
+      tooHigh,
+      'A taxa mensal deve estar entre 0% e 100%.'
+    );
+    ALT_CLS_ExpenseWizard.FinancingRequest badSystem = financing(mine.Id);
+    badSystem.amortizationSystem = 'OUTRO';
+    assertFinancingRejected(badSystem, 'Escolha o sistema: SAC ou PRICE.');
+    ALT_CLS_ExpenseWizard.FinancingRequest noSystem = financing(mine.Id);
+    noSystem.amortizationSystem = null;
+    assertFinancingRejected(noSystem, 'Escolha o sistema: SAC ou PRICE.');
+    ALT_CLS_ExpenseWizard.FinancingRequest longName = financing(mine.Id);
+    longName.creditor = 'a'.repeat(121);
+    assertFinancingRejected(
+      longName,
+      'O nome do credor deve ter até 120 caracteres.'
+    );
+    ALT_CLS_ExpenseWizard.FinancingRequest noDue = financing(mine.Id);
+    noDue.base.dueDate = null;
+    assertFinancingRejected(noDue, 'Informe o primeiro vencimento.');
+    ALT_CLS_ExpenseWizard.FinancingRequest noHolder = financing(mine.Id);
+    noHolder.base.holderId = null;
+    assertFinancingRejected(noHolder, 'Informe o titular.');
+    ALT_CLS_ExpenseWizard.FinancingRequest noDescription = financing(mine.Id);
+    noDescription.base.description = ' ';
+    assertFinancingRejected(noDescription, 'Informe a descrição.');
+    ALT_CLS_ExpenseWizard.FinancingRequest huge = financing(mine.Id);
+    huge.base.amount = 1000000000000000.00;
+    assertFinancingRejected(huge, 'O valor total está acima do limite.');
+    ALT_CLS_ExpenseWizard.FinancingRequest foreign = financing(mine.Id);
+    foreign.base.cardId = card(other.Id).Id;
+    assertFinancingRejected(foreign, 'O cartão não pertence ao titular.');
+    ALT_CLS_ExpenseWizard.FinancingRequest foreignAccount = financing(mine.Id);
+    foreignAccount.base.accountId = account(other.Id).Id;
+    assertFinancingRejected(foreignAccount, 'A conta não pertence ao titular.');
+    ALT_CLS_ExpenseWizard.FinancingRequest roundsAboveTheCap = financing(
+      mine.Id
+    );
+    roundsAboveTheCap.monthlyRate = 100.00005;
+    assertFinancingRejected(
+      roundsAboveTheCap,
+      'A taxa mensal deve estar entre 0% e 100%.'
+    );
+    ALT_CLS_ExpenseWizard.FinancingRequest tooSmallToSplit = financing(mine.Id);
+    tooSmallToSplit.base.amount = 0.05;
+    tooSmallToSplit.monthlyRate = 0;
+    assertFinancingRejected(
+      tooSmallToSplit,
+      'O valor financiado é pequeno demais para este número de parcelas.'
+    );
+    ALT_CLS_ExpenseWizard.FinancingRequest hugeTotal = financing(mine.Id);
+    hugeTotal.base.amount = 999999999999999.00;
+    hugeTotal.monthlyRate = 100;
+    hugeTotal.amortizationSystem = 'PRICE';
+    assertFinancingRejected(hugeTotal, 'O valor total está acima do limite.');
+    ALT_CLS_ExpenseWizard.FinancingRequest both = financing(mine.Id);
+    both.base.accountId = account(mine.Id).Id;
+    both.base.cardId = card(mine.Id).Id;
+    assertFinancingRejected(both, 'Escolha a conta ou o cartão, não os dois.');
+    System.assertEquals(0, [SELECT COUNT() FROM AXF_OBJ_Contract__c]);
+    System.assertEquals(0, [SELECT COUNT() FROM AXF_OBJ_Entry__c]);
+  }
+
   @IsTest
   static void aContractThatWouldGenerateNoEntriesIsRolledBack() {
     ALT_CLS_ExpenseWizard.RecurringRequest recurring = recurring(

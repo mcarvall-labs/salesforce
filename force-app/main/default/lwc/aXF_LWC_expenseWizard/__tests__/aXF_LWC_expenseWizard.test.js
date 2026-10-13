@@ -9,6 +9,8 @@ import createInstallment from "@salesforce/apex/AXF_CLS_CTRL_ExpenseWizard.creat
 import previewInstallment from "@salesforce/apex/AXF_CLS_CTRL_ExpenseWizard.previewInstallment";
 import createConsortium from "@salesforce/apex/AXF_CLS_CTRL_ExpenseWizard.createConsortium";
 import previewConsortium from "@salesforce/apex/AXF_CLS_CTRL_ExpenseWizard.previewConsortium";
+import createFinancing from "@salesforce/apex/AXF_CLS_CTRL_ExpenseWizard.createFinancing";
+import previewFinancing from "@salesforce/apex/AXF_CLS_CTRL_ExpenseWizard.previewFinancing";
 
 jest.mock(
   "@salesforce/apex/AXF_CLS_CTRL_ExpenseWizard.getOptions",
@@ -56,6 +58,17 @@ jest.mock(
 );
 jest.mock(
   "@salesforce/apex/AXF_CLS_CTRL_ExpenseWizard.previewConsortium",
+  () => ({ default: jest.fn() }),
+  { virtual: true }
+);
+
+jest.mock(
+  "@salesforce/apex/AXF_CLS_CTRL_ExpenseWizard.createFinancing",
+  () => ({ default: jest.fn() }),
+  { virtual: true }
+);
+jest.mock(
+  "@salesforce/apex/AXF_CLS_CTRL_ExpenseWizard.previewFinancing",
   () => ({ default: jest.fn() }),
   { virtual: true }
 );
@@ -114,6 +127,12 @@ describe("c-a-x-f-l-w-c-expense-wizard", () => {
     createRecurring.mockResolvedValue("a0C");
     createInstallment.mockResolvedValue("a0I");
     createConsortium.mockResolvedValue("a0K");
+    createFinancing.mockResolvedValue("a0F");
+    previewFinancing.mockResolvedValue([
+      { dueDate: "2026-11-10", amount: 112, interest: 12 },
+      { dueDate: "2026-12-10", amount: 111, interest: 11 },
+      { dueDate: "2027-01-10", amount: 110, interest: 10 }
+    ]);
     previewConsortium.mockResolvedValue([
       { dueDate: "2026-11-15", amount: 1200 },
       { dueDate: "2026-12-15", amount: 1200 },
@@ -138,7 +157,7 @@ describe("c-a-x-f-l-w-c-expense-wizard", () => {
     jest.clearAllMocks();
   });
 
-  it("asks the type first and only enables the standalone, recurring and installment expenses", async () => {
+  it("asks the type first and enables every expense type", async () => {
     const element = await mount();
     expect($(element, ".wizard-title").textContent).toContain(
       "Que tipo de despesa é?"
@@ -150,7 +169,7 @@ describe("c-a-x-f-l-w-c-expense-wizard", () => {
       false,
       false,
       false,
-      true
+      false
     ]);
     expect(getOptions).toHaveBeenCalledWith({ holderId: "001A" });
   });
@@ -853,5 +872,166 @@ describe("c-a-x-f-l-w-c-expense-wizard", () => {
     expect(createConsortium).toHaveBeenCalledTimes(1);
     resolve("a0K");
     await flushPromises();
+  });
+
+  async function fillFinancing(element, rate = "1", count = "12") {
+    $$(element, ".type-card")[4].click();
+    await flushPromises();
+    await type(element, ".field-description", "Financiamento do apartamento");
+    await type(element, ".field-creditor", "Banco Y");
+    await type(element, ".field-amount", "1200");
+    await type(element, ".field-rate", rate);
+    await type(element, ".field-installment-count", count);
+    await type(element, ".field-due", "2026-11-10");
+  }
+
+  const plain = (element, selector) =>
+    $(element, selector).textContent.replace(/\u00a0/g, " ");
+
+  it("shows the first installment while typing, for PRICE and for SAC", async () => {
+    const element = await mount();
+    await fillFinancing(element, "1", "12");
+    // PRICE: 1200 * 0.01 / (1 - 1.01^-12) = 106,62
+    expect(plain(element, ".first-installment")).toContain(
+      "1ª parcela ≈ R$ 106,62 (PRICE)"
+    );
+    await type(element, ".field-system", "SAC");
+    // SAC: 1200 / 12 + 1200 * 0.01 = 112,00
+    expect(plain(element, ".first-installment")).toContain(
+      "1ª parcela ≈ R$ 112,00 (SAC)"
+    );
+    await type(element, ".field-rate", "0");
+    expect(plain(element, ".first-installment")).toContain(
+      "1ª parcela ≈ R$ 100,00 (SAC)"
+    );
+  });
+
+  it("creates a financing with the creditor, the rate and the system", async () => {
+    const element = await mount();
+    await fillFinancing(element, "0.9", "36");
+    expect($(element, ".wizard-title").textContent).toContain("Financiamento");
+    expect($(element, ".field-amount").label).toBe("Valor financiado");
+    expect($(element, ".field-installment-count").max).toBe(480);
+    await type(element, ".field-system", "SAC");
+    $(element, ".next").click();
+    await flushPromises();
+    $(element, ".next").click();
+    await flushPromises();
+    expect(previewFinancing).toHaveBeenCalledTimes(1);
+    expect(plain(element, ".review-summary")).toContain(
+      "1 Contrato (Financiamento) e 3 lançamentos pendentes. Total previsto R$ 333,00."
+    );
+    expect(plain(element, ".review-details")).toContain(
+      "Credor: Banco Y · Juros totais R$ 33,00"
+    );
+    expect($(element, ".review-preview").textContent).toContain("juros");
+
+    const saved = jest.fn();
+    element.addEventListener("saved", saved);
+    $(element, ".conclude").click();
+    await flushPromises();
+    expect(JSON.parse(createFinancing.mock.calls[0][0].requestJson)).toEqual({
+      base: {
+        holderId: "001A",
+        description: "Financiamento do apartamento",
+        amount: 1200,
+        dueDate: "2026-11-10",
+        categoryId: null,
+        accountId: null,
+        cardId: null
+      },
+      count: 36,
+      monthlyRate: 0.9,
+      amortizationSystem: "SAC",
+      creditor: "Banco Y"
+    });
+    expect(createConsortium).not.toHaveBeenCalled();
+    expect(saved).toHaveBeenCalledTimes(1);
+  });
+
+  it("needs a valid rate and count before going on", async () => {
+    const element = await mount();
+    await fillFinancing(element, "1", "481");
+    expect($(element, ".next").disabled).toBe(true);
+    await type(element, ".field-installment-count", "480");
+    expect($(element, ".next").disabled).toBe(false);
+    await type(element, ".field-rate", "100.5");
+    expect($(element, ".next").disabled).toBe(true);
+    await type(element, ".field-rate", "");
+    expect($(element, ".next").disabled).toBe(true);
+    await type(element, ".field-rate", "0");
+    expect($(element, ".next").disabled).toBe(false);
+  });
+
+  it("sends the card of a financing, null creditor when empty, and shows the save error", async () => {
+    createFinancing.mockRejectedValueOnce({
+      body: { message: "Não foi possível gerar todas as parcelas." }
+    });
+    const element = await mount();
+    await fillFinancing(element);
+    await type(element, ".field-creditor", " ");
+    $(element, ".next").click();
+    await flushPromises();
+    await type(element, ".field-method", "card");
+    await type(element, ".field-source", "k1");
+    $(element, ".next").click();
+    await flushPromises();
+    expect($(element, ".review-details").textContent).not.toContain("Credor");
+    $(element, ".conclude").click();
+    await flushPromises();
+    const request = JSON.parse(createFinancing.mock.calls[0][0].requestJson);
+    expect(request.creditor).toBeNull();
+    expect(request.base.cardId).toBe("k1");
+    expect(request.base.accountId).toBeNull();
+    expect($(element, ".wizard-error").textContent).toContain(
+      "Não foi possível gerar todas as parcelas."
+    );
+  });
+
+  it("forgets the financing fields when the type is changed", async () => {
+    const element = await mount();
+    await fillFinancing(element, "1.5", "24");
+    await type(element, ".field-system", "SAC");
+    $(element, ".change-type").click();
+    await flushPromises();
+    $$(element, ".type-card")[4].click();
+    await flushPromises();
+    expect($(element, ".field-creditor").value).toBe("");
+    expect($(element, ".field-rate").value).toBeUndefined();
+    expect($(element, ".field-system").value).toBe("PRICE");
+    expect($(element, ".first-installment")).toBeNull();
+  });
+
+  it("shows no first installment while the rate is empty or the amount is below one cent", async () => {
+    const element = await mount();
+    await fillFinancing(element, "1", "12");
+    expect($(element, ".first-installment")).not.toBeNull();
+    await type(element, ".field-rate", "");
+    expect($(element, ".first-installment")).toBeNull();
+    await type(element, ".field-rate", "1");
+    await type(element, ".field-amount", "0.001");
+    expect($(element, ".first-installment")).toBeNull();
+    expect($(element, ".next").disabled).toBe(true);
+    await type(element, ".field-amount", "0.01");
+    expect($(element, ".first-installment")).not.toBeNull();
+    expect($(element, ".first-installment").getAttribute("aria-live")).toBe(
+      "polite"
+    );
+  });
+
+  it("sends a missing rate as null instead of zero", async () => {
+    const element = await mount();
+    await fillFinancing(element, "1", "12");
+    await type(element, ".field-rate", "");
+    expect($(element, ".next").disabled).toBe(true);
+    await type(element, ".field-rate", "0");
+    $(element, ".next").click();
+    await flushPromises();
+    $(element, ".next").click();
+    await flushPromises();
+    $(element, ".conclude").click();
+    await flushPromises();
+    const request = JSON.parse(createFinancing.mock.calls[0][0].requestJson);
+    expect(request.monthlyRate).toBe(0);
   });
 });
