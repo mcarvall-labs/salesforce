@@ -1,6 +1,8 @@
 import { LightningElement } from "lwc";
 import { NavigationMixin } from "lightning/navigation";
 import { encodeDefaultFieldValues } from "lightning/pageReferenceUtils";
+import { updateRecord } from "lightning/uiRecordApi";
+import { ShowToastEvent } from "lightning/platformShowToastEvent";
 import getHolders from "@salesforce/apex/AXF_CLS_CTRL_Dashboard.getHolders";
 import getSummary from "@salesforce/apex/AXF_CLS_CTRL_Dashboard.getSummary";
 import getEntries from "@salesforce/apex/AXF_CLS_CTRL_Dashboard.getEntries";
@@ -472,6 +474,7 @@ export default class AXF_LWC_dashboard extends NavigationMixin(
       amountText: this.money(this.signedAmount(entry)),
       amountClass: this.amountClass(entry),
       statusText: this.statusText(entry),
+      canRealize: entry.status === "Pending" && !entry.forecastCard,
       detail: [entry.holderName, entry.categoryName].filter(Boolean).join(" · ")
     }));
   }
@@ -528,6 +531,103 @@ export default class AXF_LWC_dashboard extends NavigationMixin(
 
   handleNewExpense() {
     this.openNewEntry("Expense");
+  }
+
+  // ---- Mark as realized: popup suggests due date and amount (editable) ----
+  realizing;
+  realizeDate;
+  realizeAmount;
+  realizeError;
+  isSaving = false;
+
+  get isRealizing() {
+    return !!this.realizing;
+  }
+
+  get realizingName() {
+    return this.realizing.name;
+  }
+
+  get realizingDueDate() {
+    return this.realizing.dueDate;
+  }
+
+  get realizingPlanned() {
+    return this.money(this.realizing.amount);
+  }
+
+  handleRealizeClick(event) {
+    const id = event.currentTarget.dataset.id;
+    this.realizing = this.entries.find((entry) => entry.id === id);
+    this.realizeDate = this.realizing.dueDate;
+    this.realizeAmount = Math.abs(this.realizing.amount || 0);
+    this.realizeError = undefined;
+  }
+
+  handleRealizeDate(event) {
+    this.realizeDate = event.detail.value;
+  }
+
+  handleRealizeAmount(event) {
+    this.realizeAmount = event.detail.value;
+  }
+
+  handleRealizeCancel() {
+    if (!this.isSaving) {
+      this.realizing = undefined;
+    }
+  }
+
+  handleRealizeKeydown(event) {
+    if (event.key === "Escape") {
+      this.handleRealizeCancel();
+    }
+  }
+
+  renderedCallback() {
+    if (this.realizing && !this.realizeFocused) {
+      this.realizeFocused = true;
+      this.template.querySelector(".realize-date").focus();
+    } else if (!this.realizing) {
+      this.realizeFocused = false;
+    }
+  }
+
+  async handleRealizeConfirm() {
+    if (this.isSaving) {
+      return;
+    }
+    if (!this.realizeDate || !(Number(this.realizeAmount) > 0)) {
+      this.realizeError = "Informe a data e um valor maior que zero.";
+      return;
+    }
+    this.isSaving = true;
+    this.realizeError = undefined;
+    try {
+      await updateRecord({
+        fields: {
+          Id: this.realizing.id,
+          AXF_ENT_PKL_Status__c: "Realized",
+          AXF_ENT_DAT_PaymentDate__c: this.realizeDate,
+          AXF_ENT_NUM_RealizedAmountBRL__c: Number(this.realizeAmount)
+        }
+      });
+      this.realizing = undefined;
+      this.dispatchEvent(
+        new ShowToastEvent({
+          title: "Lançamento marcado como realizado",
+          variant: "success"
+        })
+      );
+      this.loadSummary();
+    } catch (error) {
+      this.realizeError = this.messageOf(
+        error,
+        "Não foi possível marcar como realizado."
+      );
+    } finally {
+      this.isSaving = false;
+    }
   }
 
   handleNewIncome() {
