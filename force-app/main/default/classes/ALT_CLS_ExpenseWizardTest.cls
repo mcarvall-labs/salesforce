@@ -165,6 +165,279 @@ private class ALT_CLS_ExpenseWizardTest {
     return card;
   }
 
+  private static ALT_CLS_ExpenseWizard.RecurringRequest recurring(Id holderId) {
+    ALT_CLS_ExpenseWizard.RecurringRequest recurring = new ALT_CLS_ExpenseWizard.RecurringRequest();
+    recurring.base = request(holderId);
+    recurring.base.amount = 2500;
+    recurring.base.description = 'Aluguel';
+    recurring.base.dueDate = Date.today().addDays(3);
+    return recurring;
+  }
+
+  private static void assertRecurringRejected(
+    ALT_CLS_ExpenseWizard.RecurringRequest request,
+    String expected
+  ) {
+    try {
+      AXF_CLS_CTRL_ExpenseWizard.createRecurring(JSON.serialize(request));
+      System.assert(false, 'expected AuraHandledException');
+    } catch (AuraHandledException e) {
+      System.assertEquals(expected, e.getMessage());
+    }
+  }
+
+  @IsTest
+  static void createsTheRecurringContractWithPendingEntries() {
+    Account h = holder('Titular');
+    ALT_CLS_ExpenseWizard.RecurringRequest recurring = recurring(h.Id);
+    recurring.variableAmount = true;
+    recurring.base.accountId = account(h.Id).Id;
+
+    Id id = AXF_CLS_CTRL_ExpenseWizard.createRecurring(
+      JSON.serialize(recurring)
+    );
+
+    AXF_OBJ_Contract__c contract = [
+      SELECT
+        RecordType.DeveloperName,
+        AXF_CTR_PKL_Direction__c,
+        AXF_CTR_PKL_Status__c,
+        AXF_CTR_BOL_VariableAmount__c,
+        AXF_CTR_NUM_DueDay__c
+      FROM AXF_OBJ_Contract__c
+      WHERE Id = :id
+    ];
+    System.assertEquals('AXF_Recurring', contract.RecordType.DeveloperName);
+    System.assertEquals('Expense', contract.AXF_CTR_PKL_Direction__c);
+    System.assertEquals('Active', contract.AXF_CTR_PKL_Status__c);
+    System.assertEquals(true, contract.AXF_CTR_BOL_VariableAmount__c);
+    System.assertEquals(
+      recurring.base.dueDate.day(),
+      contract.AXF_CTR_NUM_DueDay__c
+    );
+    List<AXF_OBJ_Entry__c> entries = [
+      SELECT
+        AXF_ENT_PKL_Status__c,
+        AXF_ENT_PKL_Type__c,
+        AXF_ENT_LKP_BankAccount__c
+      FROM AXF_OBJ_Entry__c
+      WHERE AXF_ENT_LKP_Contract__c = :id
+    ];
+    System.assert(entries.size() >= 12, 'expected about 12 months of entries');
+    for (AXF_OBJ_Entry__c entry : entries) {
+      System.assertEquals('Pending', entry.AXF_ENT_PKL_Status__c);
+      System.assertEquals('Expense', entry.AXF_ENT_PKL_Type__c);
+      System.assertEquals(
+        recurring.base.accountId,
+        entry.AXF_ENT_LKP_BankAccount__c
+      );
+    }
+  }
+
+  @IsTest
+  static void aCardPaidRecurringExpenseKeepsTheCardOnTheContractAndEntries() {
+    Account h = holder('Titular');
+    ALT_CLS_ExpenseWizard.RecurringRequest recurring = recurring(h.Id);
+    recurring.base.cardId = card(h.Id).Id;
+
+    Id id = AXF_CLS_CTRL_ExpenseWizard.createRecurring(
+      JSON.serialize(recurring)
+    );
+
+    System.assertEquals(
+      recurring.base.cardId,
+      [SELECT AXF_CTR_LKP_CreditCard__c FROM AXF_OBJ_Contract__c WHERE Id = :id]
+      .AXF_CTR_LKP_CreditCard__c
+    );
+    for (AXF_OBJ_Entry__c entry : [
+      SELECT AXF_ENT_LKP_CreditCard__c, AXF_ENT_LKP_BankAccount__c
+      FROM AXF_OBJ_Entry__c
+      WHERE AXF_ENT_LKP_Contract__c = :id
+    ]) {
+      System.assertEquals(
+        recurring.base.cardId,
+        entry.AXF_ENT_LKP_CreditCard__c
+      );
+      System.assertEquals(null, entry.AXF_ENT_LKP_BankAccount__c);
+    }
+  }
+
+  @IsTest
+  static void anExplicitDueDayIsKeptAndUsedByTheEntries() {
+    ALT_CLS_ExpenseWizard.RecurringRequest recurring = recurring(
+      holder('Titular').Id
+    );
+    Date start = Date.today().toStartOfMonth().addMonths(1);
+    recurring.base.dueDate = start.addDays(2);
+    recurring.dueDay = 28;
+    recurring.endDate = start.addMonths(3);
+
+    List<ALT_CLS_ExpenseWizard.PreviewItem> preview = AXF_CLS_CTRL_ExpenseWizard.previewRecurring(
+      JSON.serialize(recurring)
+    );
+    Id id = AXF_CLS_CTRL_ExpenseWizard.createRecurring(
+      JSON.serialize(recurring)
+    );
+
+    System.assertEquals(
+      28,
+      [SELECT AXF_CTR_NUM_DueDay__c FROM AXF_OBJ_Contract__c WHERE Id = :id]
+      .AXF_CTR_NUM_DueDay__c
+    );
+    List<AXF_OBJ_Entry__c> entries = [
+      SELECT AXF_ENT_DAT_DueDate__c
+      FROM AXF_OBJ_Entry__c
+      WHERE AXF_ENT_LKP_Contract__c = :id
+      ORDER BY AXF_ENT_DAT_DueDate__c
+    ];
+    System.assertEquals(preview.size(), entries.size());
+    for (Integer i = 0; i < entries.size(); i++) {
+      System.assertEquals(
+        preview[i].dueDate,
+        entries[i].AXF_ENT_DAT_DueDate__c
+      );
+      System.assertEquals(28, entries[i].AXF_ENT_DAT_DueDate__c.day());
+    }
+  }
+
+  @IsTest
+  static void anOpenEndedRecurringExpenseGeneratesTwelveMonthsAhead() {
+    ALT_CLS_ExpenseWizard.RecurringRequest recurring = recurring(
+      holder('Titular').Id
+    );
+    recurring.base.dueDate = Date.today().addDays(1);
+    recurring.dueDay = recurring.base.dueDate.day();
+
+    Id id = AXF_CLS_CTRL_ExpenseWizard.createRecurring(
+      JSON.serialize(recurring)
+    );
+
+    List<AXF_OBJ_Entry__c> entries = [
+      SELECT AXF_ENT_DAT_DueDate__c
+      FROM AXF_OBJ_Entry__c
+      WHERE AXF_ENT_LKP_Contract__c = :id
+    ];
+    Date horizon = Date.today().addMonths(12);
+    for (AXF_OBJ_Entry__c entry : entries) {
+      System.assert(
+        entry.AXF_ENT_DAT_DueDate__c <= horizon,
+        'no entry beyond the 12 months horizon'
+      );
+    }
+    System.assert(
+      entries.size() >= 12 && entries.size() <= 13,
+      'about 12 months of entries, got ' + entries.size()
+    );
+  }
+
+  @IsTest
+  static void endDateLimitsTheEntriesAndFixedAmountIsNotVariable() {
+    ALT_CLS_ExpenseWizard.RecurringRequest recurring = recurring(
+      holder('Titular').Id
+    );
+    recurring.base.dueDate = Date.today().addDays(1);
+    recurring.endDate = Date.today().addDays(1).addMonths(2);
+
+    Id id = AXF_CLS_CTRL_ExpenseWizard.createRecurring(
+      JSON.serialize(recurring)
+    );
+
+    System.assertEquals(
+      3,
+      [SELECT COUNT() FROM AXF_OBJ_Entry__c WHERE AXF_ENT_LKP_Contract__c = :id]
+    );
+    System.assertEquals(
+      false,
+      [
+        SELECT AXF_CTR_BOL_VariableAmount__c
+        FROM AXF_OBJ_Contract__c
+        WHERE Id = :id
+      ]
+      .AXF_CTR_BOL_VariableAmount__c
+    );
+  }
+
+  @IsTest
+  static void previewListsTheDatesTheContractWouldGenerate() {
+    ALT_CLS_ExpenseWizard.RecurringRequest recurring = recurring(
+      holder('Titular').Id
+    );
+    recurring.base.dueDate = Date.today().addDays(1);
+    recurring.endDate = Date.today().addDays(1).addMonths(1);
+
+    List<ALT_CLS_ExpenseWizard.PreviewItem> items = AXF_CLS_CTRL_ExpenseWizard.previewRecurring(
+      JSON.serialize(recurring)
+    );
+
+    System.assertEquals(2, items.size());
+    System.assertEquals(2500, items[0].amount);
+    System.assertEquals(0, [SELECT COUNT() FROM AXF_OBJ_Contract__c]);
+  }
+
+  @IsTest
+  static void aContractThatWouldGenerateNoEntriesIsRolledBack() {
+    ALT_CLS_ExpenseWizard.RecurringRequest recurring = recurring(
+      holder('Titular').Id
+    );
+    // Beyond the 12 months horizon: the schedule is empty.
+    recurring.base.dueDate = Date.today().addMonths(24);
+
+    assertRecurringRejected(
+      recurring,
+      'Nenhum lançamento seria gerado para este período.'
+    );
+    System.assertEquals(0, [SELECT COUNT() FROM AXF_OBJ_Contract__c]);
+    System.assertEquals(0, [SELECT COUNT() FROM AXF_OBJ_Entry__c]);
+    try {
+      AXF_CLS_CTRL_ExpenseWizard.previewRecurring(JSON.serialize(recurring));
+      System.assert(false, 'expected AuraHandledException');
+    } catch (AuraHandledException e) {
+      System.assertEquals(
+        'Nenhum lançamento seria gerado para este período.',
+        e.getMessage()
+      );
+    }
+  }
+
+  @IsTest
+  static void rejectsInvalidRecurringRequestsWithoutCreatingAnything() {
+    Account mine = holder('Meu');
+    Account other = holder('Outro');
+    ALT_CLS_ExpenseWizard.RecurringRequest badDay = recurring(mine.Id);
+    badDay.dueDay = 32;
+    assertRecurringRejected(badDay, 'O dia do vencimento deve ser de 1 a 31.');
+    ALT_CLS_ExpenseWizard.RecurringRequest badEnd = recurring(mine.Id);
+    badEnd.endDate = badEnd.base.dueDate.addDays(-1);
+    assertRecurringRejected(
+      badEnd,
+      'A data de fim não pode ser anterior ao primeiro vencimento.'
+    );
+    ALT_CLS_ExpenseWizard.RecurringRequest zero = recurring(mine.Id);
+    zero.base.amount = 0;
+    assertRecurringRejected(zero, 'O valor deve ser maior que zero.');
+    ALT_CLS_ExpenseWizard.RecurringRequest noDue = recurring(mine.Id);
+    noDue.base.dueDate = null;
+    assertRecurringRejected(noDue, 'Informe o primeiro vencimento.');
+    ALT_CLS_ExpenseWizard.RecurringRequest foreign = recurring(mine.Id);
+    foreign.base.accountId = account(other.Id).Id;
+    assertRecurringRejected(foreign, 'A conta não pertence ao titular.');
+    ALT_CLS_ExpenseWizard.RecurringRequest foreignCard = recurring(mine.Id);
+    foreignCard.base.cardId = card(other.Id).Id;
+    assertRecurringRejected(foreignCard, 'O cartão não pertence ao titular.');
+    ALT_CLS_ExpenseWizard.RecurringRequest both = recurring(mine.Id);
+    both.base.accountId = account(mine.Id).Id;
+    both.base.cardId = card(mine.Id).Id;
+    assertRecurringRejected(both, 'Escolha a conta ou o cartão, não os dois.');
+    ALT_CLS_ExpenseWizard.RecurringRequest noHolder = recurring(mine.Id);
+    noHolder.base.holderId = null;
+    assertRecurringRejected(noHolder, 'Informe o titular.');
+    ALT_CLS_ExpenseWizard.RecurringRequest noDescription = recurring(mine.Id);
+    noDescription.base.description = ' ';
+    assertRecurringRejected(noDescription, 'Informe a descrição.');
+    System.assertEquals(0, [SELECT COUNT() FROM AXF_OBJ_Contract__c]);
+    System.assertEquals(0, [SELECT COUNT() FROM AXF_OBJ_Entry__c]);
+  }
+
   @IsTest
   static void optionsListExpenseCategoriesAndOnlyTheHolderSources() {
     Account mine = holder('Meu');
