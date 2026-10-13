@@ -18,5 +18,5 @@
         <value>THIS_MONTH</value>
     </filters>
     <filterScope>Everything</filterScope>
-    <label>Realized This Month</label>
+    <label>Realizados no mês</label>
 </ListView>

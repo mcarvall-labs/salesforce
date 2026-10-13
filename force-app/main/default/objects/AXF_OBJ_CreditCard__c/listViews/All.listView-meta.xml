@@ -10,5 +10,5 @@
     <columns>AXF_CC_DT_LastSync__c</columns>
     <columns>RECORDTYPE</columns>
     <filterScope>Everything</filterScope>
-    <label>All</label>
+    <label>Todos</label>
 </ListView>

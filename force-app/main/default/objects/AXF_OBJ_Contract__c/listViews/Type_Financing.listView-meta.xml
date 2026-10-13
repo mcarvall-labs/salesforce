@@ -13,5 +13,5 @@
         <value>AXF_OBJ_Contract__c.AXF_Financing</value>
     </filters>
     <filterScope>Everything</filterScope>
-    <label>Financing</label>
+    <label>Financiamento</label>
 </ListView>

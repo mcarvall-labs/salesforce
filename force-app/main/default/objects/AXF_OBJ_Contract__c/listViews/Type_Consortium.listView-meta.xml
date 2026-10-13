@@ -13,5 +13,5 @@
         <value>AXF_OBJ_Contract__c.AXF_Consortium</value>
     </filters>
     <filterScope>Everything</filterScope>
-    <label>Consortium</label>
+    <label>Consórcio</label>
 </ListView>
