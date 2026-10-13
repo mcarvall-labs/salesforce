@@ -141,6 +141,40 @@ public with sharing class AXF_CLS_CTRL_ExpenseWizard {
     }
   }
 
+  // One transaction: creates the financing Contract and its Pending entries.
+  @AuraEnabled
+  public static Id createFinancing(String requestJson) {
+    try {
+      return new ALT_CLS_ExpenseWizard()
+        .createFinancing(
+          (ALT_CLS_ExpenseWizard.FinancingRequest) parse(
+            requestJson,
+            ALT_CLS_ExpenseWizard.FinancingRequest.class
+          )
+        );
+    } catch (Exception e) {
+      throw aura(e);
+    }
+  }
+
+  // The schedule the Contract would generate, with the interest of each installment.
+  @AuraEnabled
+  public static List<ALT_CLS_ExpenseWizard.PreviewItem> previewFinancing(
+    String requestJson
+  ) {
+    try {
+      return new ALT_CLS_ExpenseWizard()
+        .previewFinancing(
+          (ALT_CLS_ExpenseWizard.FinancingRequest) parse(
+            requestJson,
+            ALT_CLS_ExpenseWizard.FinancingRequest.class
+          )
+        );
+    } catch (Exception e) {
+      throw aura(e);
+    }
+  }
+
   // A blank or malformed JSON gets a readable message instead of the parser's.
   private static Object parse(String requestJson, Type target) {
     if (String.isBlank(requestJson) || requestJson.trim() == 'null') {
