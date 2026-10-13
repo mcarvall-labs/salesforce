@@ -67,6 +67,7 @@ export default class AXF_LWC_expenseWizard extends LightningElement {
   errorMessage;
   focusTitle = false;
   loadSeq = 0;
+  isCreatingCategory = false;
 
   connectedCallback() {
     this.chosenHolderId = this.holderId;
@@ -288,15 +289,24 @@ export default class AXF_LWC_expenseWizard extends LightningElement {
 
   // "+ Nova categoria": creates it (top level) and selects it.
   async handleCreateCategory(event) {
+    if (this.isCreatingCategory) {
+      return;
+    }
+    this.isCreatingCategory = true;
     this.errorMessage = undefined;
     try {
       const created = await createCategory({
         name: event.detail.name,
         parentId: null
       });
+      // A holder change may still have a load in flight; its list would not have this one.
+      this.loadSeq += 1;
+      const known = this.options.categories.some((c) => c.id === created.id);
       this.options = {
         ...this.options,
-        categories: [...this.options.categories, created]
+        categories: known
+          ? this.options.categories
+          : [...this.options.categories, created]
       };
       this.categoryId = created.id;
     } catch (error) {
@@ -304,6 +314,8 @@ export default class AXF_LWC_expenseWizard extends LightningElement {
         error,
         "Não foi possível criar a categoria."
       );
+    } finally {
+      this.isCreatingCategory = false;
     }
   }
 

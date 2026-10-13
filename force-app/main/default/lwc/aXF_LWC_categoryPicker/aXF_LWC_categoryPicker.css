@@ -24,8 +24,13 @@
   font-weight: 700;
 }
 
-.option:hover {
+.option:hover,
+.option_active {
   background: #eef4ff;
+}
+
+.option_active {
+  box-shadow: inset 3px 0 0 #0176d3;
 }
 
 .option_dim {
