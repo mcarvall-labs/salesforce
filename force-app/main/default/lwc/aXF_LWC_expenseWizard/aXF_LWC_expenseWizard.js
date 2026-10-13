@@ -1,6 +1,7 @@
 import { LightningElement, api } from "lwc";
 import getOptions from "@salesforce/apex/AXF_CLS_CTRL_ExpenseWizard.getOptions";
 import createStandalone from "@salesforce/apex/AXF_CLS_CTRL_ExpenseWizard.createStandalone";
+import createCategory from "@salesforce/apex/AXF_CLS_CTRL_ExpenseWizard.createCategory";
 import createRecurring from "@salesforce/apex/AXF_CLS_CTRL_ExpenseWizard.createRecurring";
 import previewRecurring from "@salesforce/apex/AXF_CLS_CTRL_ExpenseWizard.previewRecurring";
 
@@ -264,13 +265,6 @@ export default class AXF_LWC_expenseWizard extends LightningElement {
     return METHOD_OPTIONS;
   }
 
-  get categoryOptions() {
-    return this.options.categories.map((c) => ({
-      label: c.label,
-      value: c.id
-    }));
-  }
-
   get isRealized() {
     return this.status === "Realized";
   }
@@ -315,9 +309,18 @@ export default class AXF_LWC_expenseWizard extends LightningElement {
     return this.isStep2 ? !this.step2Valid : false;
   }
 
+  // "Moradia › Energia": the category with its parents.
   get categoryName() {
-    const found = this.categoryOptions.find((o) => o.value === this.categoryId);
-    return found ? found.label : "Sem categoria";
+    const byId = new Map(this.options.categories.map((c) => [c.id, c]));
+    const names = [];
+    const seen = new Set();
+    let current = byId.get(this.categoryId);
+    while (current && !seen.has(current.id)) {
+      seen.add(current.id);
+      names.unshift(current.label);
+      current = current.parentId ? byId.get(current.parentId) : undefined;
+    }
+    return names.length ? names.join(" › ") : "Sem categoria";
   }
 
   get methodName() {
@@ -367,6 +370,27 @@ export default class AXF_LWC_expenseWizard extends LightningElement {
 
   handleCategory(event) {
     this.categoryId = event.detail.value;
+  }
+
+  // "+ Nova categoria": creates it (top level) and selects it.
+  async handleCreateCategory(event) {
+    this.errorMessage = undefined;
+    try {
+      const created = await createCategory({
+        name: event.detail.name,
+        parentId: null
+      });
+      this.options = {
+        ...this.options,
+        categories: [...this.options.categories, created]
+      };
+      this.categoryId = created.id;
+    } catch (error) {
+      this.errorMessage = this.messageOf(
+        error,
+        "Não foi possível criar a categoria."
+      );
+    }
   }
 
   handleStatus(event) {
