@@ -48,7 +48,7 @@ async function type(element, selector, value) {
 }
 
 async function chooseStandalone(element) {
-  $$(element, ".type-button")[0].click();
+  $$(element, ".type-card")[0].click();
   await flushPromises();
 }
 
@@ -76,7 +76,7 @@ describe("c-a-x-f-l-w-c-expense-wizard", () => {
     expect($(element, ".wizard-title").textContent).toContain(
       "Que tipo de despesa é?"
     );
-    const buttons = $$(element, ".type-button");
+    const buttons = $$(element, ".type-card");
     expect(buttons).toHaveLength(5);
     expect(buttons.map((b) => b.disabled)).toEqual([
       false,
