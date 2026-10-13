@@ -10,5 +10,5 @@
     <columns>AXF_BA_CUR_Balance__c</columns>
     <columns>RECORDTYPE</columns>
     <filterScope>Everything</filterScope>
-    <label>All</label>
+    <label>Todas</label>
 </ListView>

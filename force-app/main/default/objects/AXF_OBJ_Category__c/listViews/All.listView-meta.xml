@@ -5,5 +5,5 @@
     <columns>AXF_CAT_PKL_Type__c</columns>
     <columns>AXF_CAT_LKP_Parent__c</columns>
     <filterScope>Everything</filterScope>
-    <label>All</label>
+    <label>Todas</label>
 </ListView>
