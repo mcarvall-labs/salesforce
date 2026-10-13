@@ -18,5 +18,5 @@
         <value>TODAY</value>
     </filters>
     <filterScope>Everything</filterScope>
-    <label>Upcoming</label>
+    <label>A vencer</label>
 </ListView>

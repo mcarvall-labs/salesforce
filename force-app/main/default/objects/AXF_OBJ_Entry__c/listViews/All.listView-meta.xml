@@ -8,5 +8,5 @@
     <columns>AXF_ENT_DAT_DueDate__c</columns>
     <columns>AXF_ENT_PKL_Status__c</columns>
     <filterScope>Everything</filterScope>
-    <label>All</label>
+    <label>Todos</label>
 </ListView>

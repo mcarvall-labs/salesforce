@@ -13,5 +13,5 @@
         <value>AXF_OBJ_Contract__c.AXF_ServiceProvision</value>
     </filters>
     <filterScope>Everything</filterScope>
-    <label>Service Provision</label>
+    <label>Prestação de serviço</label>
 </ListView>
