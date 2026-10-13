@@ -21,7 +21,7 @@ private class ALT_CLS_ExpenseWizardTest {
     String expected
   ) {
     try {
-      AXF_CLS_CTRL_ExpenseWizard.createStandalone(request);
+      AXF_CLS_CTRL_ExpenseWizard.createStandalone(JSON.serialize(request));
       System.assert(false, 'expected AuraHandledException');
     } catch (AuraHandledException e) {
       System.assertEquals(expected, e.getMessage());
@@ -42,7 +42,9 @@ private class ALT_CLS_ExpenseWizardTest {
     request.accountId = account.Id;
     request.paymentDate = Date.newInstance(2026, 10, 1);
 
-    Id id = AXF_CLS_CTRL_ExpenseWizard.createStandalone(request);
+    Id id = AXF_CLS_CTRL_ExpenseWizard.createStandalone(
+      JSON.serialize(request)
+    );
 
     AXF_OBJ_Entry__c entry = [
       SELECT
@@ -72,7 +74,9 @@ private class ALT_CLS_ExpenseWizardTest {
     request.status = 'Realized';
     request.paymentDate = Date.newInstance(2026, 10, 5);
 
-    Id id = AXF_CLS_CTRL_ExpenseWizard.createStandalone(request);
+    Id id = AXF_CLS_CTRL_ExpenseWizard.createStandalone(
+      JSON.serialize(request)
+    );
 
     AXF_OBJ_Entry__c entry = [
       SELECT AXF_ENT_PKL_Status__c, AXF_ENT_DAT_PaymentDate__c
@@ -175,7 +179,7 @@ private class ALT_CLS_ExpenseWizardTest {
     String expected
   ) {
     try {
-      AXF_CLS_CTRL_ExpenseWizard.createRecurring(request);
+      AXF_CLS_CTRL_ExpenseWizard.createRecurring(JSON.serialize(request));
       System.assert(false, 'expected AuraHandledException');
     } catch (AuraHandledException e) {
       System.assertEquals(expected, e.getMessage());
@@ -189,7 +193,9 @@ private class ALT_CLS_ExpenseWizardTest {
     recurring.variableAmount = true;
     recurring.base.accountId = account(h.Id).Id;
 
-    Id id = AXF_CLS_CTRL_ExpenseWizard.createRecurring(recurring);
+    Id id = AXF_CLS_CTRL_ExpenseWizard.createRecurring(
+      JSON.serialize(recurring)
+    );
 
     AXF_OBJ_Contract__c contract = [
       SELECT
@@ -236,7 +242,9 @@ private class ALT_CLS_ExpenseWizardTest {
     recurring.base.dueDate = Date.today().addDays(1);
     recurring.endDate = Date.today().addDays(1).addMonths(2);
 
-    Id id = AXF_CLS_CTRL_ExpenseWizard.createRecurring(recurring);
+    Id id = AXF_CLS_CTRL_ExpenseWizard.createRecurring(
+      JSON.serialize(recurring)
+    );
 
     System.assertEquals(
       3,
@@ -262,7 +270,7 @@ private class ALT_CLS_ExpenseWizardTest {
     recurring.endDate = Date.today().addDays(1).addMonths(1);
 
     List<ALT_CLS_ExpenseWizard.PreviewItem> items = AXF_CLS_CTRL_ExpenseWizard.previewRecurring(
-      recurring
+      JSON.serialize(recurring)
     );
 
     System.assertEquals(2, items.size());
@@ -285,7 +293,7 @@ private class ALT_CLS_ExpenseWizardTest {
     System.assertEquals(0, [SELECT COUNT() FROM AXF_OBJ_Contract__c]);
     System.assertEquals(0, [SELECT COUNT() FROM AXF_OBJ_Entry__c]);
     try {
-      AXF_CLS_CTRL_ExpenseWizard.previewRecurring(recurring);
+      AXF_CLS_CTRL_ExpenseWizard.previewRecurring(JSON.serialize(recurring));
       System.assert(false, 'expected AuraHandledException');
     } catch (AuraHandledException e) {
       System.assertEquals(
@@ -398,7 +406,9 @@ private class ALT_CLS_ExpenseWizardTest {
     Id holderId = holder('Titular').Id;
     System.runAs(user) {
       try {
-        AXF_CLS_CTRL_ExpenseWizard.createStandalone(request(holderId));
+        AXF_CLS_CTRL_ExpenseWizard.createStandalone(
+          JSON.serialize(request(holderId))
+        );
         System.assert(false, 'expected AuraHandledException');
       } catch (AuraHandledException e) {
         System.assertNotEquals(null, e.getMessage());

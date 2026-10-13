@@ -196,6 +196,10 @@ export default class AXF_LWC_expenseWizard extends LightningElement {
     return `Será criado 1 Contrato (Recorrente) e ${this.preview.length} lançamentos pendentes (o job mensal estende).`;
   }
 
+  get recurringJson() {
+    return JSON.stringify(this.recurringRequest);
+  }
+
   get recurringRequest() {
     return {
       base: {
@@ -413,7 +417,7 @@ export default class AXF_LWC_expenseWizard extends LightningElement {
       this.isLoadingPreview = true;
       try {
         this.preview = await previewRecurring({
-          request: this.recurringRequest
+          requestJson: this.recurringJson
         });
       } catch (error) {
         this.errorMessage = this.messageOf(
@@ -444,12 +448,13 @@ export default class AXF_LWC_expenseWizard extends LightningElement {
     this.errorMessage = undefined;
     try {
       if (this.isRecurring) {
-        await createRecurring({ request: this.recurringRequest });
+        await createRecurring({ requestJson: this.recurringJson });
         this.dispatchEvent(new CustomEvent("saved"));
         return;
       }
+      // A JSON string: Aura does not fill the fields of an Apex object parameter reliably.
       await createStandalone({
-        request: {
+        requestJson: JSON.stringify({
           holderId: this.chosenHolderId,
           description: this.description.trim(),
           amount: Number(this.amount),
@@ -459,7 +464,7 @@ export default class AXF_LWC_expenseWizard extends LightningElement {
           paymentDate: this.isRealized ? this.paymentDate : null,
           accountId: this.method === "account" ? this.sourceId : null,
           cardId: this.method === "card" ? this.sourceId : null
-        }
+        })
       });
       this.dispatchEvent(new CustomEvent("saved"));
     } catch (error) {
