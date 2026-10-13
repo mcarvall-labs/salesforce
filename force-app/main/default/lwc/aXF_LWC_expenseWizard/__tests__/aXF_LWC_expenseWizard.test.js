@@ -2,6 +2,7 @@ import { createElement } from "lwc";
 import AXF_LWC_expenseWizard from "c/aXF_LWC_expenseWizard";
 import getOptions from "@salesforce/apex/AXF_CLS_CTRL_ExpenseWizard.getOptions";
 import createStandalone from "@salesforce/apex/AXF_CLS_CTRL_ExpenseWizard.createStandalone";
+import createCategory from "@salesforce/apex/AXF_CLS_CTRL_ExpenseWizard.createCategory";
 import createRecurring from "@salesforce/apex/AXF_CLS_CTRL_ExpenseWizard.createRecurring";
 import previewRecurring from "@salesforce/apex/AXF_CLS_CTRL_ExpenseWizard.previewRecurring";
 import createInstallment from "@salesforce/apex/AXF_CLS_CTRL_ExpenseWizard.createInstallment";
@@ -40,6 +41,12 @@ jest.mock(
   { virtual: true }
 );
 
+jest.mock(
+  "@salesforce/apex/AXF_CLS_CTRL_ExpenseWizard.createCategory",
+  () => ({ default: jest.fn() }),
+  { virtual: true }
+);
+
 const flushPromises = () =>
   Array.from({ length: 10 }).reduce(
     (chain) => chain.then(() => undefined),
@@ -47,7 +54,10 @@ const flushPromises = () =>
   );
 
 const options = {
-  categories: [{ id: "c1", label: "Moradia" }],
+  categories: [
+    { id: "c1", label: "Moradia" },
+    { id: "c2", label: "Energia", parentId: "c1" }
+  ],
   accounts: [{ id: "a1", label: "Conta" }],
   cards: [{ id: "k1", label: "Cartão" }]
 };
@@ -429,5 +439,48 @@ describe("c-a-x-f-l-w-c-expense-wizard", () => {
     const request = JSON.parse(createInstallment.mock.calls[0][0].requestJson);
     expect(request.amountIsTotal).toBe(false);
     expect(request.count).toBe(10);
+  });
+
+  it("shows the parent and the child in the review and creates a new category from the picker", async () => {
+    createCategory.mockResolvedValue({ id: "c3", label: "Pet" });
+    const element = await mount();
+    await chooseStandalone(element);
+    await fillStep1(element);
+    await type(element, ".field-category", "c2");
+    $(element, ".next").click();
+    await flushPromises();
+    $(element, ".next").click();
+    await flushPromises();
+    expect($(element, ".review-line").textContent).toContain(
+      "Moradia › Energia"
+    );
+    $(element, ".back").click();
+    await flushPromises();
+    $(element, ".back").click();
+    await flushPromises();
+    $(element, ".field-category").dispatchEvent(
+      new CustomEvent("createcategory", { detail: { name: "Pet" } })
+    );
+    await flushPromises();
+    expect(createCategory).toHaveBeenCalledWith({
+      name: "Pet",
+      parentId: null
+    });
+    expect($(element, ".field-category").value).toBe("c3");
+  });
+
+  it("shows the error when the category cannot be created", async () => {
+    createCategory.mockRejectedValue({
+      body: { message: "Informe o nome da categoria." }
+    });
+    const element = await mount();
+    await chooseStandalone(element);
+    $(element, ".field-category").dispatchEvent(
+      new CustomEvent("createcategory", { detail: { name: " " } })
+    );
+    await flushPromises();
+    expect($(element, ".wizard-error").textContent).toContain(
+      "Informe o nome da categoria."
+    );
   });
 });

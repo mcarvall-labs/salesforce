@@ -9,6 +9,19 @@ public with sharing class AXF_CLS_CTRL_ExpenseWizard {
     }
   }
 
+  // "+ Nova categoria": creates an expense category (top level or under parentId).
+  @AuraEnabled
+  public static ALT_CLS_ExpenseWizard.Option createCategory(
+    String name,
+    Id parentId
+  ) {
+    try {
+      return new ALT_CLS_ExpenseWizard().createCategory(name, parentId);
+    } catch (Exception e) {
+      throw aura(e);
+    }
+  }
+
   // One transaction: creates the standalone expense entry and returns its id. The request is a
   // JSON string because Aura does not fill the fields of an Apex object parameter reliably.
   @AuraEnabled

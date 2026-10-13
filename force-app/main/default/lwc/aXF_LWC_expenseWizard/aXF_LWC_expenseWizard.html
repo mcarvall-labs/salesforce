@@ -102,13 +102,14 @@
             required
             onchange={handleDueDate}
           ></lightning-input>
-          <lightning-combobox
+          <c-a-x-f_-l-w-c_category-picker
             class="field-category"
             label="Categoria"
-            options={categoryOptions}
+            options={options.categories}
             value={categoryId}
             onchange={handleCategory}
-          ></lightning-combobox>
+            oncreatecategory={handleCreateCategory}
+          ></c-a-x-f_-l-w-c_category-picker>
           <template lwc:if={isInstallments}>
             <lightning-input
               class="field-installment-count"
