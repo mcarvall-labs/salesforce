@@ -35,22 +35,23 @@
         </template>
 
         <template lwc:if={isChoosingType}>
-          <div class="slds-grid slds-wrap slds-gutters_small">
+          <p class="type-hint slds-text-body_small slds-m-bottom_small">
+            Escolha o tipo; o wizard pergunta só o que for necessário.
+          </p>
+          <div class="type-grid">
             <template for:each={typeButtons} for:item="type">
-              <div
+              <button
                 key={type.value}
-                class="slds-col slds-size_1-of-2 slds-m-bottom_small"
+                type="button"
+                class={type.cardClass}
+                data-type={type.value}
+                title={type.title}
+                disabled={type.disabled}
+                onclick={handleTypeClick}
               >
-                <lightning-button
-                  class="type-button"
-                  data-type={type.value}
-                  label={type.label}
-                  title={type.title}
-                  variant={type.variant}
-                  disabled={type.disabled}
-                  onclick={handleTypeClick}
-                ></lightning-button>
-              </div>
+                <span class="type-name">{type.label}</span>
+                <span class="type-description">{type.description}</span>
+              </button>
             </template>
           </div>
         </template>

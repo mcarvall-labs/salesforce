@@ -1,0 +1,54 @@
+/* Type choice cards, as in the approved prototype (EP-05-despesas-wizard.html). */
+.type-hint {
+  color: var(--slds-g-color-neutral-base-50, #706e6b);
+}
+
+.type-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 0.75rem;
+}
+
+.type-card {
+  display: block;
+  width: 100%;
+  padding: 0.875rem;
+  text-align: left;
+  cursor: pointer;
+  background: #fff;
+  border: 1px solid #dddbda;
+  border-radius: 0.375rem;
+  color: inherit;
+  font: inherit;
+}
+
+.type-card:hover,
+.type-card:focus {
+  background: #eef4ff;
+  border-color: #0176d3;
+  outline: none;
+}
+
+.type-card:focus-visible {
+  box-shadow: 0 0 3px #0176d3;
+}
+
+.type-card_disabled,
+.type-card_disabled:hover {
+  cursor: not-allowed;
+  background: #f3f3f3;
+  border-color: #dddbda;
+  opacity: 0.7;
+}
+
+.type-name {
+  display: block;
+  margin-bottom: 0.125rem;
+  font-weight: 700;
+}
+
+.type-description {
+  display: block;
+  font-size: 0.75rem;
+  color: #706e6b;
+}

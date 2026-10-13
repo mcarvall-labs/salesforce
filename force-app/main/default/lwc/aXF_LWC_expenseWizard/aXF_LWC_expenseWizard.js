@@ -6,11 +6,44 @@ import previewRecurring from "@salesforce/apex/AXF_CLS_CTRL_ExpenseWizard.previe
 
 const STEP_TITLES = ["Dados", "Pagamento", "Revisar"];
 const TYPES = [
+<<<<<<< HEAD
   { value: "standalone", label: "Despesa avulsa", enabled: true },
   { value: "recurring", label: "Recorrente", enabled: true },
   { value: "installments", label: "Parcelada", enabled: false },
   { value: "consortium", label: "Consórcio", enabled: false },
   { value: "financing", label: "Financiamento", enabled: false }
+=======
+  {
+    value: "standalone",
+    label: "Despesa avulsa",
+    description: "Paga uma vez, à vista ou prevista para uma data.",
+    enabled: true
+  },
+  {
+    value: "recurring",
+    label: "Recorrente",
+    description: "Se repete todo mês: aluguel, assinatura, conta de água.",
+    enabled: false
+  },
+  {
+    value: "installments",
+    label: "Parcelada",
+    description: "Compra dividida em parcelas fixas, sem juros. Inclui cartão.",
+    enabled: false
+  },
+  {
+    value: "consortium",
+    label: "Consórcio",
+    description: "Parcela fixa mensal; pode ser contemplado depois.",
+    enabled: false
+  },
+  {
+    value: "financing",
+    label: "Financiamento",
+    description: "Valor financiado com juros: SAC ou PRICE.",
+    enabled: false
+  }
+>>>>>>> origin/feature/axf-303-wizard-despesa
 ];
 const STATUS_OPTIONS = [
   { label: "Pendente", value: "Pending" },
@@ -107,7 +140,7 @@ export default class AXF_LWC_expenseWizard extends LightningElement {
       ...type,
       disabled: !type.enabled,
       title: type.enabled ? "" : "Disponível em breve",
-      variant: type.enabled ? "brand" : "neutral"
+      cardClass: type.enabled ? "type-card" : "type-card type-card_disabled"
     }));
   }
 
