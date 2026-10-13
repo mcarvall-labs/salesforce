@@ -1001,4 +1001,37 @@ describe("c-a-x-f-l-w-c-expense-wizard", () => {
     expect($(element, ".field-system").value).toBe("PRICE");
     expect($(element, ".first-installment")).toBeNull();
   });
+
+  it("shows no first installment while the rate is empty or the amount is below one cent", async () => {
+    const element = await mount();
+    await fillFinancing(element, "1", "12");
+    expect($(element, ".first-installment")).not.toBeNull();
+    await type(element, ".field-rate", "");
+    expect($(element, ".first-installment")).toBeNull();
+    await type(element, ".field-rate", "1");
+    await type(element, ".field-amount", "0.001");
+    expect($(element, ".first-installment")).toBeNull();
+    expect($(element, ".next").disabled).toBe(true);
+    await type(element, ".field-amount", "0.01");
+    expect($(element, ".first-installment")).not.toBeNull();
+    expect($(element, ".first-installment").getAttribute("aria-live")).toBe(
+      "polite"
+    );
+  });
+
+  it("sends a missing rate as null instead of zero", async () => {
+    const element = await mount();
+    await fillFinancing(element, "1", "12");
+    await type(element, ".field-rate", "");
+    expect($(element, ".next").disabled).toBe(true);
+    await type(element, ".field-rate", "0");
+    $(element, ".next").click();
+    await flushPromises();
+    $(element, ".next").click();
+    await flushPromises();
+    $(element, ".conclude").click();
+    await flushPromises();
+    const request = JSON.parse(createFinancing.mock.calls[0][0].requestJson);
+    expect(request.monthlyRate).toBe(0);
+  });
 });

@@ -1069,6 +1069,124 @@ private class ALT_CLS_ExpenseWizardTest {
   }
 
   @IsTest
+  static void thePreviewAndTheSavedScheduleAgreeForAnUnroundRateAndAmount() {
+    for (String kind : new List<String>{ 'PRICE', 'SAC' }) {
+      Account h = holder('Titular ' + kind);
+      ALT_CLS_ExpenseWizard.FinancingRequest financing = financing(h.Id);
+      financing.base.amount = 1234.56;
+      financing.monthlyRate = 0.12345;
+      financing.count = 7;
+      financing.amortizationSystem = kind;
+
+      List<ALT_CLS_ExpenseWizard.PreviewItem> preview = AXF_CLS_CTRL_ExpenseWizard.previewFinancing(
+        JSON.serialize(financing)
+      );
+      Id id = AXF_CLS_CTRL_ExpenseWizard.createFinancing(
+        JSON.serialize(financing)
+      );
+
+      System.assertEquals(
+        0.1235,
+        [
+          SELECT AXF_CTR_PCT_MonthlyRate__c
+          FROM AXF_OBJ_Contract__c
+          WHERE Id = :id
+        ]
+        .AXF_CTR_PCT_MonthlyRate__c
+      );
+      List<AXF_OBJ_Entry__c> entries = [
+        SELECT AXF_ENT_CUR_Amount__c, AXF_ENT_DAT_DueDate__c
+        FROM AXF_OBJ_Entry__c
+        WHERE AXF_ENT_LKP_Contract__c = :id
+        ORDER BY AXF_ENT_NUM_InstallmentNumber__c
+      ];
+      System.assertEquals(7, entries.size(), kind);
+      Decimal paid = 0;
+      Decimal interest = 0;
+      for (Integer i = 0; i < entries.size(); i++) {
+        System.assertEquals(
+          preview[i].amount,
+          entries[i].AXF_ENT_CUR_Amount__c,
+          kind
+        );
+        System.assertEquals(
+          preview[i].dueDate,
+          entries[i].AXF_ENT_DAT_DueDate__c,
+          kind
+        );
+        paid += entries[i].AXF_ENT_CUR_Amount__c;
+        interest += preview[i].interest;
+      }
+      // The last installment settles the balance: what was paid is the principal plus the interest.
+      System.assertEquals(paid - 1234.56, interest, kind);
+    }
+  }
+
+  @IsTest
+  static void thePriceTableMatchesTheReferenceInstallmentByInstallment() {
+    ALT_CLS_ExpenseWizard.FinancingRequest financing = financing(
+      holder('Titular').Id
+    );
+    financing.base.amount = 1000;
+    financing.amortizationSystem = 'PRICE';
+
+    List<ALT_CLS_ExpenseWizard.PreviewItem> preview = AXF_CLS_CTRL_ExpenseWizard.previewFinancing(
+      JSON.serialize(financing)
+    );
+    Id id = AXF_CLS_CTRL_ExpenseWizard.createFinancing(
+      JSON.serialize(financing)
+    );
+
+    List<AXF_OBJ_Entry__c> entries = [
+      SELECT AXF_ENT_CUR_Amount__c, AXF_ENT_DAT_DueDate__c
+      FROM AXF_OBJ_Entry__c
+      WHERE AXF_ENT_LKP_Contract__c = :id
+      ORDER BY AXF_ENT_NUM_InstallmentNumber__c
+    ];
+    System.assertEquals(12, entries.size());
+    for (Integer i = 0; i < entries.size(); i++) {
+      System.assertEquals(preview[i].amount, entries[i].AXF_ENT_CUR_Amount__c);
+      System.assertEquals(
+        preview[i].dueDate,
+        entries[i].AXF_ENT_DAT_DueDate__c
+      );
+    }
+    // Reference: 11 installments of 88,85 and a last one that settles the balance.
+    System.assertEquals(88.85, entries[10].AXF_ENT_CUR_Amount__c);
+    Decimal last = entries[11].AXF_ENT_CUR_Amount__c;
+    System.assert(last >= 88.80 && last <= 88.95, 'last installment ' + last);
+    Decimal total = 0;
+    for (AXF_OBJ_Entry__c entry : entries) {
+      total += entry.AXF_ENT_CUR_Amount__c;
+    }
+    System.assert(total >= 1066.10 && total <= 1066.30, 'total ' + total);
+  }
+
+  @IsTest
+  static void theLimitsOfTheFinancingCountAreAccepted() {
+    for (Integer count : new List<Integer>{ 2, 480 }) {
+      ALT_CLS_ExpenseWizard.FinancingRequest financing = financing(
+        holder('Titular ' + count).Id
+      );
+      financing.base.amount = 100000;
+      financing.count = count;
+
+      Id id = AXF_CLS_CTRL_ExpenseWizard.createFinancing(
+        JSON.serialize(financing)
+      );
+
+      System.assertEquals(
+        count,
+        [
+          SELECT COUNT()
+          FROM AXF_OBJ_Entry__c
+          WHERE AXF_ENT_LKP_Contract__c = :id
+        ]
+      );
+    }
+  }
+
+  @IsTest
   static void aFinancingWithoutInterestSplitsThePrincipal() {
     ALT_CLS_ExpenseWizard.FinancingRequest financing = financing(
       holder('Titular').Id
@@ -1166,6 +1284,29 @@ private class ALT_CLS_ExpenseWizardTest {
     ALT_CLS_ExpenseWizard.FinancingRequest foreign = financing(mine.Id);
     foreign.base.cardId = card(other.Id).Id;
     assertFinancingRejected(foreign, 'O cartão não pertence ao titular.');
+    ALT_CLS_ExpenseWizard.FinancingRequest foreignAccount = financing(mine.Id);
+    foreignAccount.base.accountId = account(other.Id).Id;
+    assertFinancingRejected(foreignAccount, 'A conta não pertence ao titular.');
+    ALT_CLS_ExpenseWizard.FinancingRequest roundsAboveTheCap = financing(
+      mine.Id
+    );
+    roundsAboveTheCap.monthlyRate = 100.00005;
+    assertFinancingRejected(
+      roundsAboveTheCap,
+      'A taxa mensal deve estar entre 0% e 100%.'
+    );
+    ALT_CLS_ExpenseWizard.FinancingRequest tooSmallToSplit = financing(mine.Id);
+    tooSmallToSplit.base.amount = 0.05;
+    tooSmallToSplit.monthlyRate = 0;
+    assertFinancingRejected(
+      tooSmallToSplit,
+      'O valor financiado é pequeno demais para este número de parcelas.'
+    );
+    ALT_CLS_ExpenseWizard.FinancingRequest hugeTotal = financing(mine.Id);
+    hugeTotal.base.amount = 999999999999999.00;
+    hugeTotal.monthlyRate = 100;
+    hugeTotal.amortizationSystem = 'PRICE';
+    assertFinancingRejected(hugeTotal, 'O valor total está acima do limite.');
     ALT_CLS_ExpenseWizard.FinancingRequest both = financing(mine.Id);
     both.base.accountId = account(mine.Id).Id;
     both.base.cardId = card(mine.Id).Id;

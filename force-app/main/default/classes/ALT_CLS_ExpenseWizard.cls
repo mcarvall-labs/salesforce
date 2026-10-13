@@ -609,8 +609,8 @@ public with sharing class ALT_CLS_ExpenseWizard {
     }
     if (
       request.monthlyRate == null ||
-      request.monthlyRate < 0 ||
-      request.monthlyRate > 100
+      request.monthlyRate.setScale(4, RoundingMode.HALF_UP) < 0 ||
+      request.monthlyRate.setScale(4, RoundingMode.HALF_UP) > 100
     ) {
       throw new ExpenseWizardException(
         'A taxa mensal deve estar entre 0% e 100%.'
@@ -644,6 +644,12 @@ public with sharing class ALT_CLS_ExpenseWizard {
     }
     if (principal >= MAX_TOTAL) {
       throw new ExpenseWizardException('O valor total está acima do limite.');
+    }
+    // An installment that rounds to zero would leave the whole debt to the last one.
+    if ((principal / request.count).setScale(2, RoundingMode.HALF_UP) <= 0) {
+      throw new ExpenseWizardException(
+        'O valor financiado é pequeno demais para este número de parcelas.'
+      );
     }
     Decimal monthly = rate(request) / 100;
     Decimal balance = principal;

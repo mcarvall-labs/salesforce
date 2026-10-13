@@ -222,7 +222,7 @@ export default class AXF_LWC_expenseWizard extends LightningElement {
     return this.type === "consortium";
   }
 
-  // Both fixed-installment types ask for the number of installments.
+  // The types with a fixed number of installments ask for it.
   get hasInstallmentCount() {
     return this.isInstallments || this.isConsortium || this.isFinancing;
   }
@@ -341,7 +341,10 @@ export default class AXF_LWC_expenseWizard extends LightningElement {
     return {
       base: this.baseRequest,
       count: this.installmentCount ? Number(this.installmentCount) : null,
-      monthlyRate: Number(this.monthlyRate),
+      monthlyRate:
+        this.monthlyRate === undefined || this.monthlyRate === ""
+          ? null
+          : Number(this.monthlyRate),
       amortizationSystem: this.amortizationSystem,
       creditor: this.creditor.trim() || null
     };
@@ -354,7 +357,9 @@ export default class AXF_LWC_expenseWizard extends LightningElement {
     const rate = Number(this.monthlyRate) / 100;
     if (
       !this.isFinancing ||
-      !(principal > 0) ||
+      this.monthlyRate === undefined ||
+      this.monthlyRate === "" ||
+      !(principal >= 0.01) ||
       !(count >= 2) ||
       !(rate >= 0)
     ) {
@@ -400,6 +405,7 @@ export default class AXF_LWC_expenseWizard extends LightningElement {
   get financingValid() {
     const rate = Number(this.monthlyRate);
     return (
+      Number(this.amount) >= 0.01 &&
       this.validCount(480) &&
       this.monthlyRate !== undefined &&
       this.monthlyRate !== "" &&
