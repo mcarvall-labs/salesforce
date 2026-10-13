@@ -673,6 +673,172 @@ private class ALT_CLS_ExpenseWizardTest {
     System.assertEquals(0, [SELECT COUNT() FROM AXF_OBJ_Entry__c]);
   }
 
+  private static ALT_CLS_ExpenseWizard.ConsortiumRequest consortium(
+    Id holderId
+  ) {
+    ALT_CLS_ExpenseWizard.ConsortiumRequest consortium = new ALT_CLS_ExpenseWizard.ConsortiumRequest();
+    consortium.base = request(holderId);
+    consortium.base.description = 'Consórcio do carro';
+    consortium.base.amount = 1200;
+    consortium.base.dueDate = Date.today().addDays(10);
+    consortium.count = 60;
+    consortium.administrator = 'Administradora X';
+    return consortium;
+  }
+
+  private static void assertConsortiumRejected(
+    ALT_CLS_ExpenseWizard.ConsortiumRequest request,
+    String expected
+  ) {
+    try {
+      AXF_CLS_CTRL_ExpenseWizard.createConsortium(JSON.serialize(request));
+      System.assert(false, 'expected AuraHandledException');
+    } catch (AuraHandledException e) {
+      System.assertEquals(expected, e.getMessage());
+    }
+  }
+
+  @IsTest
+  static void createsTheConsortiumContractWithEveryInstallment() {
+    Account h = holder('Titular');
+    ALT_CLS_ExpenseWizard.ConsortiumRequest consortium = consortium(h.Id);
+    consortium.awardedOn = Date.today().addMonths(6);
+    consortium.base.cardId = card(h.Id).Id;
+
+    List<ALT_CLS_ExpenseWizard.PreviewItem> preview = AXF_CLS_CTRL_ExpenseWizard.previewConsortium(
+      JSON.serialize(consortium)
+    );
+    Id id = AXF_CLS_CTRL_ExpenseWizard.createConsortium(
+      JSON.serialize(consortium)
+    );
+
+    AXF_OBJ_Contract__c contract = [
+      SELECT
+        RecordType.DeveloperName,
+        AXF_CTR_PKL_Direction__c,
+        AXF_CTR_PKL_Status__c,
+        AXF_CTR_CUR_Amount__c,
+        AXF_CTR_TXT_Counterparty__c,
+        AXF_CTR_DAT_AwardedOn__c,
+        AXF_CTR_LKP_CreditCard__c
+      FROM AXF_OBJ_Contract__c
+      WHERE Id = :id
+    ];
+    System.assertEquals('AXF_Consortium', contract.RecordType.DeveloperName);
+    System.assertEquals('Expense', contract.AXF_CTR_PKL_Direction__c);
+    System.assertEquals('Active', contract.AXF_CTR_PKL_Status__c);
+    System.assertEquals(1200, contract.AXF_CTR_CUR_Amount__c);
+    System.assertEquals(
+      'Administradora X',
+      contract.AXF_CTR_TXT_Counterparty__c
+    );
+    System.assertEquals(
+      consortium.awardedOn,
+      contract.AXF_CTR_DAT_AwardedOn__c
+    );
+    System.assertEquals(
+      consortium.base.cardId,
+      contract.AXF_CTR_LKP_CreditCard__c
+    );
+    List<AXF_OBJ_Entry__c> entries = [
+      SELECT
+        AXF_ENT_CUR_Amount__c,
+        AXF_ENT_DAT_DueDate__c,
+        AXF_ENT_PKL_Status__c,
+        AXF_ENT_LKP_CreditCard__c
+      FROM AXF_OBJ_Entry__c
+      WHERE AXF_ENT_LKP_Contract__c = :id
+      ORDER BY AXF_ENT_NUM_InstallmentNumber__c
+    ];
+    System.assertEquals(60, entries.size());
+    System.assertEquals(60, preview.size());
+    for (Integer i = 0; i < entries.size(); i++) {
+      System.assertEquals(1200, entries[i].AXF_ENT_CUR_Amount__c);
+      System.assertEquals('Pending', entries[i].AXF_ENT_PKL_Status__c);
+      System.assertEquals(
+        preview[i].dueDate,
+        entries[i].AXF_ENT_DAT_DueDate__c
+      );
+      System.assertEquals(
+        consortium.base.cardId,
+        entries[i].AXF_ENT_LKP_CreditCard__c
+      );
+    }
+  }
+
+  @IsTest
+  static void aConsortiumWithoutAdministratorOrAwardDateIsAccepted() {
+    ALT_CLS_ExpenseWizard.ConsortiumRequest consortium = consortium(
+      holder('Titular').Id
+    );
+    consortium.administrator = '  ';
+    consortium.count = 2;
+
+    Id id = AXF_CLS_CTRL_ExpenseWizard.createConsortium(
+      JSON.serialize(consortium)
+    );
+
+    AXF_OBJ_Contract__c contract = [
+      SELECT AXF_CTR_TXT_Counterparty__c, AXF_CTR_DAT_AwardedOn__c
+      FROM AXF_OBJ_Contract__c
+      WHERE Id = :id
+    ];
+    System.assertEquals(null, contract.AXF_CTR_TXT_Counterparty__c);
+    System.assertEquals(null, contract.AXF_CTR_DAT_AwardedOn__c);
+    System.assertEquals(
+      2,
+      [SELECT COUNT() FROM AXF_OBJ_Entry__c WHERE AXF_ENT_LKP_Contract__c = :id]
+    );
+  }
+
+  @IsTest
+  static void rejectsInvalidConsortiumRequestsWithoutCreatingAnything() {
+    Account mine = holder('Meu');
+    Account other = holder('Outro');
+    ALT_CLS_ExpenseWizard.ConsortiumRequest one = consortium(mine.Id);
+    one.count = 1;
+    assertConsortiumRejected(one, 'O número de parcelas deve ser de 2 a 240.');
+    ALT_CLS_ExpenseWizard.ConsortiumRequest many = consortium(mine.Id);
+    many.count = 241;
+    assertConsortiumRejected(many, 'O número de parcelas deve ser de 2 a 240.');
+    ALT_CLS_ExpenseWizard.ConsortiumRequest zero = consortium(mine.Id);
+    zero.base.amount = 0;
+    assertConsortiumRejected(zero, 'O valor deve ser maior que zero.');
+    ALT_CLS_ExpenseWizard.ConsortiumRequest tiny = consortium(mine.Id);
+    tiny.base.amount = 0.001;
+    assertConsortiumRejected(
+      tiny,
+      'O valor da parcela deve ser maior que zero.'
+    );
+    ALT_CLS_ExpenseWizard.ConsortiumRequest huge = consortium(mine.Id);
+    huge.base.amount = 100000000000000.00;
+    assertConsortiumRejected(huge, 'O valor total está acima do limite.');
+    ALT_CLS_ExpenseWizard.ConsortiumRequest longName = consortium(mine.Id);
+    longName.administrator = 'a'.repeat(121);
+    assertConsortiumRejected(
+      longName,
+      'O nome da administradora deve ter até 120 caracteres.'
+    );
+    ALT_CLS_ExpenseWizard.ConsortiumRequest noDue = consortium(mine.Id);
+    noDue.base.dueDate = null;
+    assertConsortiumRejected(noDue, 'Informe o primeiro vencimento.');
+    ALT_CLS_ExpenseWizard.ConsortiumRequest noHolder = consortium(mine.Id);
+    noHolder.base.holderId = null;
+    assertConsortiumRejected(noHolder, 'Informe o titular.');
+    ALT_CLS_ExpenseWizard.ConsortiumRequest noDescription = consortium(mine.Id);
+    noDescription.base.description = ' ';
+    assertConsortiumRejected(noDescription, 'Informe a descrição.');
+    ALT_CLS_ExpenseWizard.ConsortiumRequest foreign = consortium(mine.Id);
+    foreign.base.accountId = account(other.Id).Id;
+    assertConsortiumRejected(foreign, 'A conta não pertence ao titular.');
+    ALT_CLS_ExpenseWizard.ConsortiumRequest both = consortium(mine.Id);
+    both.base.accountId = account(mine.Id).Id;
+    both.base.cardId = card(mine.Id).Id;
+    assertConsortiumRejected(both, 'Escolha a conta ou o cartão, não os dois.');
+    System.assertEquals(0, [SELECT COUNT() FROM AXF_OBJ_Contract__c]);
+    System.assertEquals(0, [SELECT COUNT() FROM AXF_OBJ_Entry__c]);
+  }
+
   @IsTest
   static void aContractThatWouldGenerateNoEntriesIsRolledBack() {
     ALT_CLS_ExpenseWizard.RecurringRequest recurring = recurring(

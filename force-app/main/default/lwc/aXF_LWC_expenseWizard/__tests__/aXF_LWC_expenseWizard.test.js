@@ -7,6 +7,8 @@ import createRecurring from "@salesforce/apex/AXF_CLS_CTRL_ExpenseWizard.createR
 import previewRecurring from "@salesforce/apex/AXF_CLS_CTRL_ExpenseWizard.previewRecurring";
 import createInstallment from "@salesforce/apex/AXF_CLS_CTRL_ExpenseWizard.createInstallment";
 import previewInstallment from "@salesforce/apex/AXF_CLS_CTRL_ExpenseWizard.previewInstallment";
+import createConsortium from "@salesforce/apex/AXF_CLS_CTRL_ExpenseWizard.createConsortium";
+import previewConsortium from "@salesforce/apex/AXF_CLS_CTRL_ExpenseWizard.previewConsortium";
 
 jest.mock(
   "@salesforce/apex/AXF_CLS_CTRL_ExpenseWizard.getOptions",
@@ -43,6 +45,17 @@ jest.mock(
 
 jest.mock(
   "@salesforce/apex/AXF_CLS_CTRL_ExpenseWizard.createCategory",
+  () => ({ default: jest.fn() }),
+  { virtual: true }
+);
+
+jest.mock(
+  "@salesforce/apex/AXF_CLS_CTRL_ExpenseWizard.createConsortium",
+  () => ({ default: jest.fn() }),
+  { virtual: true }
+);
+jest.mock(
+  "@salesforce/apex/AXF_CLS_CTRL_ExpenseWizard.previewConsortium",
   () => ({ default: jest.fn() }),
   { virtual: true }
 );
@@ -100,6 +113,12 @@ describe("c-a-x-f-l-w-c-expense-wizard", () => {
     createStandalone.mockResolvedValue("a0X");
     createRecurring.mockResolvedValue("a0C");
     createInstallment.mockResolvedValue("a0I");
+    createConsortium.mockResolvedValue("a0K");
+    previewConsortium.mockResolvedValue([
+      { dueDate: "2026-11-15", amount: 1200 },
+      { dueDate: "2026-12-15", amount: 1200 },
+      { dueDate: "2027-01-15", amount: 1200 }
+    ]);
     previewInstallment.mockResolvedValue([
       { dueDate: "2026-11-10", amount: 333.33 },
       { dueDate: "2026-12-10", amount: 333.33 },
@@ -130,7 +149,7 @@ describe("c-a-x-f-l-w-c-expense-wizard", () => {
       false,
       false,
       false,
-      true,
+      false,
       true
     ]);
     expect(getOptions).toHaveBeenCalledWith({ holderId: "001A" });
@@ -648,6 +667,99 @@ describe("c-a-x-f-l-w-c-expense-wizard", () => {
     $$(element, ".type-card")[2].click();
     await flushPromises();
     expect($(element, ".field-amount-kind").value).toBe("total");
+    expect($(element, ".field-installment-count").value).toBeUndefined();
+  });
+
+  it("creates a consortium with the administrator and the award date", async () => {
+    const element = await mount();
+    $$(element, ".type-card")[3].click();
+    await flushPromises();
+    expect($(element, ".wizard-title").textContent).toContain("Consórcio");
+    expect($(element, ".field-status")).toBeNull();
+    expect($(element, ".field-amount-kind")).toBeNull();
+    expect($(element, ".field-amount").label).toBe("Valor da parcela");
+    expect($(element, ".field-installment-count").max).toBe(240);
+    await type(element, ".field-description", "Consórcio do carro");
+    await type(element, ".field-administrator", "Administradora X");
+    await type(element, ".field-amount", "1200");
+    await type(element, ".field-due", "2026-11-15");
+    await type(element, ".field-awarded-on", "2027-05-01");
+    await type(element, ".field-installment-count", "241");
+    expect($(element, ".next").disabled).toBe(true);
+    await type(element, ".field-installment-count", "60");
+    expect($(element, ".next").disabled).toBe(false);
+    $(element, ".next").click();
+    await flushPromises();
+    $(element, ".next").click();
+    await flushPromises();
+    expect(previewConsortium).toHaveBeenCalledTimes(1);
+    expect(
+      $(element, ".review-summary").textContent.replace(/\u00a0/g, " ")
+    ).toContain(
+      "1 Contrato (Consórcio) e 3 lançamentos pendentes. Total R$ 3.600,00."
+    );
+
+    const saved = jest.fn();
+    element.addEventListener("saved", saved);
+    $(element, ".conclude").click();
+    await flushPromises();
+    expect(JSON.parse(createConsortium.mock.calls[0][0].requestJson)).toEqual({
+      base: {
+        holderId: "001A",
+        description: "Consórcio do carro",
+        amount: 1200,
+        dueDate: "2026-11-15",
+        categoryId: null,
+        accountId: null,
+        cardId: null
+      },
+      count: 60,
+      administrator: "Administradora X",
+      awardedOn: "2027-05-01"
+    });
+    expect(createInstallment).not.toHaveBeenCalled();
+    expect(createRecurring).not.toHaveBeenCalled();
+    expect(saved).toHaveBeenCalledTimes(1);
+  });
+
+  it("sends null for an empty administrator and award date, and shows the save error", async () => {
+    createConsortium.mockRejectedValueOnce({
+      body: { message: "Não foi possível gerar todas as parcelas." }
+    });
+    const element = await mount();
+    $$(element, ".type-card")[3].click();
+    await flushPromises();
+    await type(element, ".field-description", "Consórcio");
+    await type(element, ".field-amount", "500");
+    await type(element, ".field-due", "2026-11-15");
+    await type(element, ".field-installment-count", "12");
+    $(element, ".next").click();
+    await flushPromises();
+    $(element, ".next").click();
+    await flushPromises();
+    $(element, ".conclude").click();
+    await flushPromises();
+    const request = JSON.parse(createConsortium.mock.calls[0][0].requestJson);
+    expect(request.administrator).toBeNull();
+    expect(request.awardedOn).toBeNull();
+    expect($(element, ".wizard-error").textContent).toContain(
+      "Não foi possível gerar todas as parcelas."
+    );
+  });
+
+  it("forgets the consortium fields when the type is changed", async () => {
+    const element = await mount();
+    $$(element, ".type-card")[3].click();
+    await flushPromises();
+    await type(element, ".field-administrator", "Administradora X");
+    await type(element, ".field-awarded-on", "2027-05-01");
+    await type(element, ".field-installment-count", "60");
+    $(element, ".change-type").click();
+    await flushPromises();
+    $$(element, ".type-card")[3].click();
+    await flushPromises();
+    expect($(element, ".field-administrator").value).toBe("");
+    expect($(element, ".field-awarded-on").value).toBeUndefined();
     expect($(element, ".field-installment-count").value).toBeUndefined();
   });
 });

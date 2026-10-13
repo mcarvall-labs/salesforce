@@ -78,6 +78,19 @@ public with sharing class ALT_CLS_ExpenseWizard {
     public Integer count;
   }
 
+  // Consortium only (EP05-H22): base.amount is the installment value, base.dueDate the first
+  // due date; administrator becomes the Contract counterparty.
+  public class ConsortiumRequest {
+    @AuraEnabled
+    public Request base;
+    @AuraEnabled
+    public Integer count;
+    @AuraEnabled
+    public String administrator;
+    @AuraEnabled
+    public Date awardedOn;
+  }
+
   public Options options(Id holderId) {
     Options result = new Options();
     for (AXF_OBJ_Category__c category : [
@@ -455,6 +468,116 @@ public with sharing class ALT_CLS_ExpenseWizard {
       items.add(preview);
     }
     items[items.size() - 1].amount = total - installment * (request.count - 1);
+    return items;
+  }
+
+  // Creates the consortium Contract and its Pending entries in one transaction.
+  public Id createConsortium(ConsortiumRequest request) {
+    List<PreviewItem> plan = planConsortium(request);
+    Request base = request.base;
+    Schema.RecordTypeInfo recordType = Schema.SObjectType.AXF_OBJ_Contract__c.getRecordTypeInfosByDeveloperName()
+      .get(ALT_CLS_ContractGeneration.RT_CONSORTIUM);
+    if (recordType == null) {
+      throw new ExpenseWizardException(
+        'O tipo de contrato Consórcio não está disponível.'
+      );
+    }
+    AXF_OBJ_Contract__c contract = new AXF_OBJ_Contract__c(
+      Name = base.description.trim().left(80),
+      RecordTypeId = recordType.getRecordTypeId(),
+      AXF_CTR_MD_Holder__c = base.holderId,
+      AXF_CTR_PKL_Direction__c = 'Expense',
+      AXF_CTR_PKL_Status__c = ALT_CLS_ContractGeneration.STATUS_ACTIVE,
+      AXF_CTR_CUR_Amount__c = plan[0].amount,
+      AXF_CTR_NUM_InstallmentCount__c = request.count,
+      AXF_CTR_DAT_FirstDueDate__c = base.dueDate,
+      AXF_CTR_TXT_Counterparty__c = String.isBlank(request.administrator)
+        ? null
+        : request.administrator.trim(),
+      AXF_CTR_DAT_AwardedOn__c = request.awardedOn,
+      AXF_CTR_LKP_Category__c = base.categoryId,
+      AXF_CTR_LKP_BankAccount__c = base.accountId,
+      AXF_CTR_LKP_CreditCard__c = base.cardId
+    );
+    Savepoint savepoint = Database.setSavepoint();
+    try {
+      insert as user contract;
+      ALT_CLS_ContractGeneration.Result result = new ALT_CLS_ContractGeneration()
+        .generate(new Set<Id>{ contract.Id }, false);
+      if (!result.messages.isEmpty() || result.created != request.count) {
+        throw new ExpenseWizardException(
+          result.messages.isEmpty()
+            ? 'Não foi possível gerar todas as parcelas.'
+            : String.join(result.messages, ' ')
+        );
+      }
+    } catch (Exception e) {
+      // Nothing stays saved: no Contract without every installment.
+      Database.rollback(savepoint);
+      throw e;
+    }
+    return contract.Id;
+  }
+
+  public List<PreviewItem> previewConsortium(ConsortiumRequest request) {
+    return planConsortium(request);
+  }
+
+  private static List<PreviewItem> planConsortium(ConsortiumRequest request) {
+    Request base = request?.base;
+    if (base == null || base.holderId == null) {
+      throw new ExpenseWizardException('Informe o titular.');
+    }
+    if (String.isBlank(base.description)) {
+      throw new ExpenseWizardException('Informe a descrição.');
+    }
+    if (base.amount == null || base.amount <= 0) {
+      throw new ExpenseWizardException('O valor deve ser maior que zero.');
+    }
+    if (request.count == null || request.count < 2 || request.count > 240) {
+      throw new ExpenseWizardException(
+        'O número de parcelas deve ser de 2 a 240.'
+      );
+    }
+    if (base.dueDate == null) {
+      throw new ExpenseWizardException('Informe o primeiro vencimento.');
+    }
+    if (
+      request.administrator != null &&
+      request.administrator.trim().length() > 120
+    ) {
+      throw new ExpenseWizardException(
+        'O nome da administradora deve ter até 120 caracteres.'
+      );
+    }
+    if (base.accountId != null && base.cardId != null) {
+      throw new ExpenseWizardException(
+        'Escolha a conta ou o cartão, não os dois.'
+      );
+    }
+    assertOwnership(base);
+    Decimal installment = base.amount.setScale(2, RoundingMode.HALF_UP);
+    if (installment <= 0) {
+      throw new ExpenseWizardException(
+        'O valor da parcela deve ser maior que zero.'
+      );
+    }
+    if (installment * request.count >= MAX_TOTAL) {
+      throw new ExpenseWizardException('O valor total está acima do limite.');
+    }
+    List<PreviewItem> items = new List<PreviewItem>();
+    for (
+      ALT_CLS_ContractSchedule.Item item : ALT_CLS_ContractSchedule.fixedInstallments(
+        base.dueDate,
+        request.count,
+        installment
+      )
+    ) {
+      PreviewItem preview = new PreviewItem();
+      preview.dueDate = item.dueDate;
+      preview.amount = item.amount;
+      items.add(preview);
+    }
     return items;
   }
 

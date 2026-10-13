@@ -110,18 +110,34 @@
             onchange={handleCategory}
             oncreatecategory={handleCreateCategory}
           ></c-a-x-f_-l-w-c_category-picker>
-          <template lwc:if={isInstallments}>
+          <template lwc:if={hasInstallmentCount}>
             <lightning-input
               class="field-installment-count"
               type="number"
               step="1"
               min="2"
-              max="120"
+              max={maxCount}
               label="Nº de parcelas"
               value={installmentCount}
               required
               onchange={handleInstallmentCount}
             ></lightning-input>
+            <template lwc:if={isConsortium}>
+              <lightning-input
+                class="field-administrator"
+                label="Administradora"
+                maxlength="120"
+                value={administrator}
+                onchange={handleAdministrator}
+              ></lightning-input>
+              <lightning-input
+                class="field-awarded-on"
+                type="date"
+                label="Contemplado em (opcional)"
+                value={awardedOn}
+                onchange={handleAwardedOn}
+              ></lightning-input>
+            </template>
             <p class="slds-text-body_small slds-m-top_small">
               O Contrato é criado junto no fim. Você não escolhe contrato.
             </p>
