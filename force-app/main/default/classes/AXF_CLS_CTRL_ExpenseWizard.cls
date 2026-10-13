@@ -9,11 +9,18 @@ public with sharing class AXF_CLS_CTRL_ExpenseWizard {
     }
   }
 
-  // One transaction: creates the standalone expense entry and returns its id.
+  // One transaction: creates the standalone expense entry and returns its id. The request is a
+  // JSON string because Aura does not fill the fields of an Apex object parameter reliably.
   @AuraEnabled
-  public static Id createStandalone(ALT_CLS_ExpenseWizard.Request request) {
+  public static Id createStandalone(String requestJson) {
     try {
-      return new ALT_CLS_ExpenseWizard().createStandalone(request);
+      return new ALT_CLS_ExpenseWizard()
+        .createStandalone(
+          (ALT_CLS_ExpenseWizard.Request) JSON.deserialize(
+            requestJson,
+            ALT_CLS_ExpenseWizard.Request.class
+          )
+        );
     } catch (Exception e) {
       throw aura(e);
     }
@@ -21,11 +28,15 @@ public with sharing class AXF_CLS_CTRL_ExpenseWizard {
 
   // One transaction: creates the recurring Contract and its Pending entries.
   @AuraEnabled
-  public static Id createRecurring(
-    ALT_CLS_ExpenseWizard.RecurringRequest request
-  ) {
+  public static Id createRecurring(String requestJson) {
     try {
-      return new ALT_CLS_ExpenseWizard().createRecurring(request);
+      return new ALT_CLS_ExpenseWizard()
+        .createRecurring(
+          (ALT_CLS_ExpenseWizard.RecurringRequest) JSON.deserialize(
+            requestJson,
+            ALT_CLS_ExpenseWizard.RecurringRequest.class
+          )
+        );
     } catch (Exception e) {
       throw aura(e);
     }
@@ -34,10 +45,16 @@ public with sharing class AXF_CLS_CTRL_ExpenseWizard {
   // The entries the Contract would generate, for the review step.
   @AuraEnabled
   public static List<ALT_CLS_ExpenseWizard.PreviewItem> previewRecurring(
-    ALT_CLS_ExpenseWizard.RecurringRequest request
+    String requestJson
   ) {
     try {
-      return new ALT_CLS_ExpenseWizard().previewRecurring(request);
+      return new ALT_CLS_ExpenseWizard()
+        .previewRecurring(
+          (ALT_CLS_ExpenseWizard.RecurringRequest) JSON.deserialize(
+            requestJson,
+            ALT_CLS_ExpenseWizard.RecurringRequest.class
+          )
+        );
     } catch (Exception e) {
       throw aura(e);
     }
@@ -45,11 +62,15 @@ public with sharing class AXF_CLS_CTRL_ExpenseWizard {
 
   // One transaction: creates the installment Contract and its Pending entries.
   @AuraEnabled
-  public static Id createInstallment(
-    ALT_CLS_ExpenseWizard.InstallmentRequest request
-  ) {
+  public static Id createInstallment(String requestJson) {
     try {
-      return new ALT_CLS_ExpenseWizard().createInstallment(request);
+      return new ALT_CLS_ExpenseWizard()
+        .createInstallment(
+          (ALT_CLS_ExpenseWizard.InstallmentRequest) JSON.deserialize(
+            requestJson,
+            ALT_CLS_ExpenseWizard.InstallmentRequest.class
+          )
+        );
     } catch (Exception e) {
       throw aura(e);
     }
@@ -58,10 +79,16 @@ public with sharing class AXF_CLS_CTRL_ExpenseWizard {
   // The installments the Contract would generate, for the review step.
   @AuraEnabled
   public static List<ALT_CLS_ExpenseWizard.PreviewItem> previewInstallment(
-    ALT_CLS_ExpenseWizard.InstallmentRequest request
+    String requestJson
   ) {
     try {
-      return new ALT_CLS_ExpenseWizard().previewInstallment(request);
+      return new ALT_CLS_ExpenseWizard()
+        .previewInstallment(
+          (ALT_CLS_ExpenseWizard.InstallmentRequest) JSON.deserialize(
+            requestJson,
+            ALT_CLS_ExpenseWizard.InstallmentRequest.class
+          )
+        );
     } catch (Exception e) {
       throw aura(e);
     }

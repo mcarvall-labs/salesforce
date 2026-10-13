@@ -196,18 +196,17 @@ describe("c-a-x-f-l-w-c-expense-wizard", () => {
     element.addEventListener("saved", saved);
     $(element, ".conclude").click();
     await flushPromises();
-    expect(createStandalone).toHaveBeenCalledWith({
-      request: {
-        holderId: "001A",
-        description: "Conta de luz",
-        amount: 180,
-        dueDate: "2026-10-20",
-        categoryId: "c1",
-        status: "Pending",
-        paymentDate: null,
-        accountId: "a1",
-        cardId: null
-      }
+    expect(createStandalone).toHaveBeenCalledTimes(1);
+    expect(JSON.parse(createStandalone.mock.calls[0][0].requestJson)).toEqual({
+      holderId: "001A",
+      description: "Conta de luz",
+      amount: 180,
+      dueDate: "2026-10-20",
+      categoryId: "c1",
+      status: "Pending",
+      paymentDate: null,
+      accountId: "a1",
+      cardId: null
     });
     expect(saved).toHaveBeenCalledTimes(1);
   });
@@ -281,21 +280,20 @@ describe("c-a-x-f-l-w-c-expense-wizard", () => {
     element.addEventListener("saved", saved);
     $(element, ".conclude").click();
     await flushPromises();
-    expect(createRecurring).toHaveBeenCalledWith({
-      request: {
-        base: {
-          holderId: "001A",
-          description: "Aluguel",
-          amount: 2500,
-          dueDate: "2026-11-05",
-          categoryId: null,
-          accountId: null,
-          cardId: null
-        },
-        variableAmount: true,
-        dueDay: 5,
-        endDate: "2027-01-05"
-      }
+    expect(createRecurring).toHaveBeenCalledTimes(1);
+    expect(JSON.parse(createRecurring.mock.calls[0][0].requestJson)).toEqual({
+      base: {
+        holderId: "001A",
+        description: "Aluguel",
+        amount: 2500,
+        dueDate: "2026-11-05",
+        categoryId: null,
+        accountId: null,
+        cardId: null
+      },
+      variableAmount: true,
+      dueDay: 5,
+      endDate: "2027-01-05"
     });
     expect(createStandalone).not.toHaveBeenCalled();
     expect(saved).toHaveBeenCalledTimes(1);
@@ -356,7 +354,7 @@ describe("c-a-x-f-l-w-c-expense-wizard", () => {
     await flushPromises();
     $(element, ".conclude").click();
     await flushPromises();
-    const base = createRecurring.mock.calls[0][0].request.base;
+    const base = JSON.parse(createRecurring.mock.calls[0][0].requestJson).base;
     expect(base.cardId).toBe("k1");
     expect(base.accountId).toBeNull();
   });
@@ -393,20 +391,19 @@ describe("c-a-x-f-l-w-c-expense-wizard", () => {
     element.addEventListener("saved", saved);
     $(element, ".conclude").click();
     await flushPromises();
-    expect(createInstallment).toHaveBeenCalledWith({
-      request: {
-        base: {
-          holderId: "001A",
-          description: "Geladeira",
-          amount: 1000,
-          dueDate: "2026-11-10",
-          categoryId: null,
-          accountId: null,
-          cardId: "k1"
-        },
-        amountIsTotal: true,
-        count: 3
-      }
+    expect(createInstallment).toHaveBeenCalledTimes(1);
+    expect(JSON.parse(createInstallment.mock.calls[0][0].requestJson)).toEqual({
+      base: {
+        holderId: "001A",
+        description: "Geladeira",
+        amount: 1000,
+        dueDate: "2026-11-10",
+        categoryId: null,
+        accountId: null,
+        cardId: "k1"
+      },
+      amountIsTotal: true,
+      count: 3
     });
     expect(createRecurring).not.toHaveBeenCalled();
     expect(createStandalone).not.toHaveBeenCalled();
@@ -429,9 +426,8 @@ describe("c-a-x-f-l-w-c-expense-wizard", () => {
     await flushPromises();
     $(element, ".conclude").click();
     await flushPromises();
-    expect(createInstallment.mock.calls[0][0].request.amountIsTotal).toBe(
-      false
-    );
-    expect(createInstallment.mock.calls[0][0].request.count).toBe(10);
+    const request = JSON.parse(createInstallment.mock.calls[0][0].requestJson);
+    expect(request.amountIsTotal).toBe(false);
+    expect(request.count).toBe(10);
   });
 });
