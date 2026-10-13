@@ -15,6 +15,8 @@ concurrency:
 jobs:
   scope:
     name: Detect metadata scope
+    # `on-hold` label: skip the whole CI until it is removed (labeled/unlabeled re-trigger).
+    if: ${{ !contains(github.event.pull_request.labels.*.name, 'on-hold') }}
     runs-on: ubuntu-latest
     outputs:
       has_metadata: ${{ steps.scope.outputs.has_metadata }}
@@ -36,6 +38,7 @@ jobs:
 
   quality:
     name: Lint and unit tests
+    if: ${{ !contains(github.event.pull_request.labels.*.name, 'on-hold') }}
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
@@ -70,7 +73,9 @@ jobs:
   salesforce-validation:
     name: Validate Salesforce delta
     needs: scope
-    if: needs.scope.outputs.has_metadata == 'true'
+    if: >-
+      needs.scope.outputs.has_metadata == 'true' &&
+      !contains(github.event.pull_request.labels.*.name, 'on-hold')
     runs-on: ubuntu-latest
     timeout-minutes: 150
     outputs:
@@ -132,6 +137,7 @@ jobs:
     if: >-
       needs.scope.outputs.has_metadata == 'true' &&
       github.base_ref != 'develop' &&
+      !contains(github.event.pull_request.labels.*.name, 'on-hold') &&
       contains(github.event.pull_request.labels.*.name, 'deploy-approved')
     runs-on: ubuntu-latest
     timeout-minutes: 150
@@ -233,7 +239,13 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Require a successful real pre-merge deploy
+        env:
+          ON_HOLD: ${{ contains(github.event.pull_request.labels.*.name, 'on-hold') }}
         run: |
+          if [ "$ON_HOLD" = "true" ]; then
+            echo "::error::PR has the 'on-hold' label — CI is paused and merge stays blocked until the label is removed."
+            exit 1
+          fi
           if [ "${{ needs.scope.outputs.has_metadata }}" != "true" ]; then
             echo "No force-app changes in this PR — nothing to gate."
             exit 0
@@ -250,7 +262,7 @@ jobs:
 
   comment:
     name: Publish validation result
-    if: always() && github.event.pull_request.head.repo.full_name == github.repository
+    if: always() && !contains(github.event.pull_request.labels.*.name, 'on-hold') && github.event.pull_request.head.repo.full_name == github.repository
     needs: [quality, salesforce-validation]
     runs-on: ubuntu-latest
     permissions:
