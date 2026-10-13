@@ -5,6 +5,8 @@ import createStandalone from "@salesforce/apex/AXF_CLS_CTRL_ExpenseWizard.create
 import createCategory from "@salesforce/apex/AXF_CLS_CTRL_ExpenseWizard.createCategory";
 import createRecurring from "@salesforce/apex/AXF_CLS_CTRL_ExpenseWizard.createRecurring";
 import previewRecurring from "@salesforce/apex/AXF_CLS_CTRL_ExpenseWizard.previewRecurring";
+import createInstallment from "@salesforce/apex/AXF_CLS_CTRL_ExpenseWizard.createInstallment";
+import previewInstallment from "@salesforce/apex/AXF_CLS_CTRL_ExpenseWizard.previewInstallment";
 
 jest.mock(
   "@salesforce/apex/AXF_CLS_CTRL_ExpenseWizard.getOptions",
@@ -24,6 +26,17 @@ jest.mock(
 );
 jest.mock(
   "@salesforce/apex/AXF_CLS_CTRL_ExpenseWizard.previewRecurring",
+  () => ({ default: jest.fn() }),
+  { virtual: true }
+);
+
+jest.mock(
+  "@salesforce/apex/AXF_CLS_CTRL_ExpenseWizard.createInstallment",
+  () => ({ default: jest.fn() }),
+  { virtual: true }
+);
+jest.mock(
+  "@salesforce/apex/AXF_CLS_CTRL_ExpenseWizard.previewInstallment",
   () => ({ default: jest.fn() }),
   { virtual: true }
 );
@@ -86,6 +99,12 @@ describe("c-a-x-f-l-w-c-expense-wizard", () => {
     getOptions.mockResolvedValue(options);
     createStandalone.mockResolvedValue("a0X");
     createRecurring.mockResolvedValue("a0C");
+    createInstallment.mockResolvedValue("a0I");
+    previewInstallment.mockResolvedValue([
+      { dueDate: "2026-11-10", amount: 333.33 },
+      { dueDate: "2026-12-10", amount: 333.33 },
+      { dueDate: "2027-01-10", amount: 333.34 }
+    ]);
     previewRecurring.mockResolvedValue([
       { dueDate: "2026-11-05", amount: 2500 },
       { dueDate: "2026-12-05", amount: 2500 },
@@ -100,7 +119,7 @@ describe("c-a-x-f-l-w-c-expense-wizard", () => {
     jest.clearAllMocks();
   });
 
-  it("asks the type first and only enables the standalone and recurring expenses", async () => {
+  it("asks the type first and only enables the standalone, recurring and installment expenses", async () => {
     const element = await mount();
     expect($(element, ".wizard-title").textContent).toContain(
       "Que tipo de despesa é?"
@@ -110,7 +129,7 @@ describe("c-a-x-f-l-w-c-expense-wizard", () => {
     expect(buttons.map((b) => b.disabled)).toEqual([
       false,
       false,
-      true,
+      false,
       true,
       true
     ]);
@@ -350,6 +369,78 @@ describe("c-a-x-f-l-w-c-expense-wizard", () => {
     expect(base.accountId).toBeNull();
   });
 
+  it("creates an installment expense from the total with a card", async () => {
+    const element = await mount();
+    $$(element, ".type-card")[2].click();
+    await flushPromises();
+    expect($(element, ".wizard-title").textContent).toContain(
+      "Despesa parcelada"
+    );
+    expect($(element, ".field-status")).toBeNull();
+    await type(element, ".field-description", "Geladeira");
+    await type(element, ".field-amount", "1000");
+    await type(element, ".field-due", "2026-11-10");
+    expect($(element, ".next").disabled).toBe(true);
+    await type(element, ".field-installment-count", "1");
+    expect($(element, ".next").disabled).toBe(true);
+    await type(element, ".field-installment-count", "3");
+    expect($(element, ".next").disabled).toBe(false);
+    $(element, ".next").click();
+    await flushPromises();
+    await type(element, ".field-method", "card");
+    await type(element, ".field-source", "k1");
+    $(element, ".next").click();
+    await flushPromises();
+    expect(previewInstallment).toHaveBeenCalledTimes(1);
+    expect($(element, ".review-summary").textContent).toContain(
+      "1 Contrato (Parcelado) e 3 lançamentos pendentes"
+    );
+    expect($(element, ".review-summary").textContent).toContain("1.000,00");
+
+    const saved = jest.fn();
+    element.addEventListener("saved", saved);
+    $(element, ".conclude").click();
+    await flushPromises();
+    expect(createInstallment).toHaveBeenCalledTimes(1);
+    expect(JSON.parse(createInstallment.mock.calls[0][0].requestJson)).toEqual({
+      base: {
+        holderId: "001A",
+        description: "Geladeira",
+        amount: 1000,
+        dueDate: "2026-11-10",
+        categoryId: null,
+        accountId: null,
+        cardId: "k1"
+      },
+      amountIsTotal: true,
+      count: 3
+    });
+    expect(createRecurring).not.toHaveBeenCalled();
+    expect(createStandalone).not.toHaveBeenCalled();
+    expect(saved).toHaveBeenCalledTimes(1);
+  });
+
+  it("sends the installment value when that is what the user informs", async () => {
+    const element = await mount();
+    $$(element, ".type-card")[2].click();
+    await flushPromises();
+    await type(element, ".field-amount-kind", "installment");
+    expect($(element, ".field-amount").label).toBe("Valor da parcela");
+    await type(element, ".field-description", "Geladeira");
+    await type(element, ".field-amount", "300");
+    await type(element, ".field-due", "2026-11-10");
+    await type(element, ".field-installment-count", "10");
+    $(element, ".next").click();
+    await flushPromises();
+    $(element, ".next").click();
+    await flushPromises();
+    $(element, ".conclude").click();
+    await flushPromises();
+    const request = JSON.parse(createInstallment.mock.calls[0][0].requestJson);
+    expect(request.amountIsTotal).toBe(false);
+    expect(request.count).toBe(10);
+  });
+
   it("shows the parent and the child in the review and creates a new category from the picker", async () => {
     createCategory.mockResolvedValue({ id: "c3", label: "Pet" });
     const element = await mount();
@@ -485,5 +576,78 @@ describe("c-a-x-f-l-w-c-expense-wizard", () => {
     expect($(element, ".review-summary").textContent).not.toContain(
       "1 lançamentos"
     );
+  });
+
+  it("sends the account of an installment expense and blocks a count with an exponent", async () => {
+    const element = await mount();
+    $$(element, ".type-card")[2].click();
+    await flushPromises();
+    await type(element, ".field-description", "Geladeira");
+    await type(element, ".field-amount", "1000");
+    await type(element, ".field-due", "2026-11-10");
+    await type(element, ".field-installment-count", "1e1");
+    expect($(element, ".next").disabled).toBe(true);
+    await type(element, ".field-installment-count", "3");
+    $(element, ".next").click();
+    await flushPromises();
+    await type(element, ".field-method", "account");
+    await type(element, ".field-source", "a1");
+    $(element, ".next").click();
+    await flushPromises();
+    $(element, ".conclude").click();
+    await flushPromises();
+    const base = JSON.parse(
+      createInstallment.mock.calls[0][0].requestJson
+    ).base;
+    expect(base.accountId).toBe("a1");
+    expect(base.cardId).toBeNull();
+  });
+
+  it("shows the error of the installment preview and of saving it", async () => {
+    previewInstallment.mockRejectedValueOnce({
+      body: {
+        message: "O valor total é pequeno demais para este número de parcelas."
+      }
+    });
+    const element = await mount();
+    $$(element, ".type-card")[2].click();
+    await flushPromises();
+    await type(element, ".field-description", "Geladeira");
+    await type(element, ".field-amount", "1");
+    await type(element, ".field-due", "2026-11-10");
+    await type(element, ".field-installment-count", "120");
+    $(element, ".next").click();
+    await flushPromises();
+    $(element, ".next").click();
+    await flushPromises();
+    expect($(element, ".wizard-error").textContent).toContain("pequeno demais");
+    expect($(element, ".wizard-step").textContent).toContain("Etapa 2 de 3");
+
+    createInstallment.mockRejectedValueOnce({
+      body: { message: "Não foi possível gerar todas as parcelas." }
+    });
+    $(element, ".next").click();
+    await flushPromises();
+    expect($(element, ".wizard-step").textContent).toContain("Etapa 3 de 3");
+    $(element, ".conclude").click();
+    await flushPromises();
+    expect($(element, ".wizard-error").textContent).toContain(
+      "Não foi possível gerar todas as parcelas."
+    );
+    expect($(element, ".conclude").disabled).toBe(false);
+  });
+
+  it("forgets the installment kind and count when the type is changed", async () => {
+    const element = await mount();
+    $$(element, ".type-card")[2].click();
+    await flushPromises();
+    await type(element, ".field-amount-kind", "installment");
+    await type(element, ".field-installment-count", "12");
+    $(element, ".change-type").click();
+    await flushPromises();
+    $$(element, ".type-card")[2].click();
+    await flushPromises();
+    expect($(element, ".field-amount-kind").value).toBe("total");
+    expect($(element, ".field-installment-count").value).toBeUndefined();
   });
 });

@@ -73,6 +73,40 @@ public with sharing class AXF_CLS_CTRL_ExpenseWizard {
     }
   }
 
+  // One transaction: creates the installment Contract and its Pending entries.
+  @AuraEnabled
+  public static Id createInstallment(String requestJson) {
+    try {
+      return new ALT_CLS_ExpenseWizard()
+        .createInstallment(
+          (ALT_CLS_ExpenseWizard.InstallmentRequest) parse(
+            requestJson,
+            ALT_CLS_ExpenseWizard.InstallmentRequest.class
+          )
+        );
+    } catch (Exception e) {
+      throw aura(e);
+    }
+  }
+
+  // The installments the Contract would generate, for the review step.
+  @AuraEnabled
+  public static List<ALT_CLS_ExpenseWizard.PreviewItem> previewInstallment(
+    String requestJson
+  ) {
+    try {
+      return new ALT_CLS_ExpenseWizard()
+        .previewInstallment(
+          (ALT_CLS_ExpenseWizard.InstallmentRequest) parse(
+            requestJson,
+            ALT_CLS_ExpenseWizard.InstallmentRequest.class
+          )
+        );
+    } catch (Exception e) {
+      throw aura(e);
+    }
+  }
+
   // A blank or malformed JSON gets a readable message instead of the parser's.
   private static Object parse(String requestJson, Type target) {
     if (String.isBlank(requestJson) || requestJson.trim() == 'null') {
