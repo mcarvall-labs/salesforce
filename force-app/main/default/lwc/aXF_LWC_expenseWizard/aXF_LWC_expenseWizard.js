@@ -640,7 +640,7 @@ export default class AXF_LWC_expenseWizard extends LightningElement {
     this.categoryId = event.detail.value;
   }
 
-  // "+ Nova categoria": creates it (top level) and selects it.
+  // "+ Nova categoria": creates it under the chosen parent (or top level) and selects it.
   async handleCreateCategory(event) {
     if (this.isCreatingCategory) {
       return;
@@ -650,7 +650,7 @@ export default class AXF_LWC_expenseWizard extends LightningElement {
     try {
       const created = await createCategory({
         name: event.detail.name,
-        parentId: null
+        parentId: event.detail.parentId || null
       });
       // A holder change may still have a load in flight; its list would not have this one.
       this.loadSeq += 1;
