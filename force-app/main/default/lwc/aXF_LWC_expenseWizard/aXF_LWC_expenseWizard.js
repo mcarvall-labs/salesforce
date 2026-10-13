@@ -6,6 +6,8 @@ import createRecurring from "@salesforce/apex/AXF_CLS_CTRL_ExpenseWizard.createR
 import previewRecurring from "@salesforce/apex/AXF_CLS_CTRL_ExpenseWizard.previewRecurring";
 import createInstallment from "@salesforce/apex/AXF_CLS_CTRL_ExpenseWizard.createInstallment";
 import previewInstallment from "@salesforce/apex/AXF_CLS_CTRL_ExpenseWizard.previewInstallment";
+import createConsortium from "@salesforce/apex/AXF_CLS_CTRL_ExpenseWizard.createConsortium";
+import previewConsortium from "@salesforce/apex/AXF_CLS_CTRL_ExpenseWizard.previewConsortium";
 
 const STEP_TITLES = ["Dados", "Pagamento", "Revisar"];
 const TYPES = [
@@ -31,7 +33,7 @@ const TYPES = [
     value: "consortium",
     label: "Consórcio",
     description: "Parcela fixa mensal; pode ser contemplado depois.",
-    enabled: false
+    enabled: true
   },
   {
     value: "financing",
@@ -86,6 +88,8 @@ export default class AXF_LWC_expenseWizard extends LightningElement {
   variable = "no";
   amountKind = "total";
   installmentCount;
+  administrator = "";
+  awardedOn;
   dueDay;
   endDate;
   preview = [];
@@ -167,6 +171,8 @@ export default class AXF_LWC_expenseWizard extends LightningElement {
     this.paymentDate = undefined;
     this.amountKind = "total";
     this.installmentCount = undefined;
+    this.administrator = "";
+    this.awardedOn = undefined;
     this.errorMessage = undefined;
     this.focusTitle = true;
   }
@@ -179,6 +185,9 @@ export default class AXF_LWC_expenseWizard extends LightningElement {
     if (this.isRecurring) {
       return "Despesa recorrente";
     }
+    if (this.isConsortium) {
+      return "Consórcio";
+    }
     return this.isInstallments ? "Despesa parcelada" : "Despesa avulsa";
   }
 
@@ -186,8 +195,21 @@ export default class AXF_LWC_expenseWizard extends LightningElement {
     return this.type === "installments";
   }
 
+  get isConsortium() {
+    return this.type === "consortium";
+  }
+
+  // Both fixed-installment types ask for the number of installments.
+  get hasInstallmentCount() {
+    return this.isInstallments || this.isConsortium;
+  }
+
+  get maxCount() {
+    return this.isConsortium ? 240 : 120;
+  }
+
   get hasContract() {
-    return this.isRecurring || this.isInstallments;
+    return this.isRecurring || this.isInstallments || this.isConsortium;
   }
 
   get amountKindOptions() {
@@ -205,6 +227,9 @@ export default class AXF_LWC_expenseWizard extends LightningElement {
   get amountLabel() {
     if (this.isRecurring) {
       return "Valor mensal (ou estimado)";
+    }
+    if (this.isConsortium) {
+      return "Valor da parcela";
     }
     return this.isInstallments && this.amountKind === "installment"
       ? "Valor da parcela"
@@ -270,6 +295,19 @@ export default class AXF_LWC_expenseWizard extends LightningElement {
     };
   }
 
+  get consortiumJson() {
+    return JSON.stringify(this.consortiumRequest);
+  }
+
+  get consortiumRequest() {
+    return {
+      base: this.baseRequest,
+      count: this.installmentCount ? Number(this.installmentCount) : null,
+      administrator: this.administrator.trim() || null,
+      awardedOn: this.awardedOn || null
+    };
+  }
+
   get installmentRequest() {
     return {
       base: this.baseRequest,
@@ -279,17 +317,41 @@ export default class AXF_LWC_expenseWizard extends LightningElement {
   }
 
   get installmentsValid() {
+    return this.validCount(120);
+  }
+
+  get consortiumValid() {
+    return this.validCount(240);
+  }
+
+  validCount(max) {
     const count = Number(this.installmentCount);
     return (
       /^\d+$/.test(String(this.installmentCount).trim()) &&
       Number.isInteger(count) &&
       count >= 2 &&
-      count <= 120
+      count <= max
     );
   }
 
+  // What the review shows besides the schedule, so the user confirms the whole Contract.
+  get consortiumDetails() {
+    const parts = [];
+    if (this.administrator.trim()) {
+      parts.push(`Administradora: ${this.administrator.trim()}`);
+    }
+    if (this.awardedOn) {
+      parts.push(`Contemplado em ${this.format(this.awardedOn)}`);
+    }
+    return parts.join(" · ");
+  }
+
+  get hasConsortiumDetails() {
+    return this.isConsortium && !!this.consortiumDetails;
+  }
+
   get contractSummary() {
-    return this.isInstallments
+    return this.isInstallments || this.isConsortium
       ? this.installmentSummary
       : this.recurringSummary;
   }
@@ -299,7 +361,7 @@ export default class AXF_LWC_expenseWizard extends LightningElement {
       Math.round(
         this.preview.reduce((sum, item) => sum + item.amount, 0) * 100
       ) / 100;
-    return `Será criado 1 Contrato (Parcelado) e ${this.preview.length} lançamentos pendentes. Total ${this.money(total)}.`;
+    return `Será criado 1 Contrato (${this.isConsortium ? "Consórcio" : "Parcelado"}) e ${this.preview.length} lançamentos pendentes. Total ${this.money(total)}.`;
   }
 
   get recurringValid() {
@@ -375,9 +437,11 @@ export default class AXF_LWC_expenseWizard extends LightningElement {
       !!this.dueDate &&
       (this.isRecurring
         ? this.recurringValid
-        : this.isInstallments
-          ? this.installmentsValid
-          : !this.isRealized || !!this.paymentDate)
+        : this.isConsortium
+          ? this.consortiumValid
+          : this.isInstallments
+            ? this.installmentsValid
+            : !this.isRealized || !!this.paymentDate)
     );
   }
 
@@ -529,12 +593,29 @@ export default class AXF_LWC_expenseWizard extends LightningElement {
     this.installmentCount = event.detail.value;
   }
 
+  handleAdministrator(event) {
+    this.administrator = event.detail.value || "";
+  }
+
+  handleAwardedOn(event) {
+    this.awardedOn = event.detail.value;
+  }
+
   handleDueDay(event) {
     this.dueDay = event.detail.value;
   }
 
   handleEndDate(event) {
     this.endDate = event.detail.value;
+  }
+
+  fetchPreview() {
+    if (this.isConsortium) {
+      return previewConsortium({ requestJson: this.consortiumJson });
+    }
+    return this.isInstallments
+      ? previewInstallment({ requestJson: this.installmentJson })
+      : previewRecurring({ requestJson: this.recurringJson });
   }
 
   async handleNext() {
@@ -546,9 +627,7 @@ export default class AXF_LWC_expenseWizard extends LightningElement {
       this.isLoadingPreview = true;
       try {
         this.preview = [];
-        this.preview = this.isInstallments
-          ? await previewInstallment({ requestJson: this.installmentJson })
-          : await previewRecurring({ requestJson: this.recurringJson });
+        this.preview = await this.fetchPreview();
       } catch (error) {
         this.errorMessage = this.messageOf(
           error,
@@ -574,11 +653,16 @@ export default class AXF_LWC_expenseWizard extends LightningElement {
   }
 
   async handleConclude() {
+    if (this.isSaving) {
+      return;
+    }
     this.isSaving = true;
     this.errorMessage = undefined;
     try {
       if (this.hasContract) {
-        if (this.isInstallments) {
+        if (this.isConsortium) {
+          await createConsortium({ requestJson: this.consortiumJson });
+        } else if (this.isInstallments) {
           await createInstallment({ requestJson: this.installmentJson });
         } else {
           await createRecurring({ requestJson: this.recurringJson });
