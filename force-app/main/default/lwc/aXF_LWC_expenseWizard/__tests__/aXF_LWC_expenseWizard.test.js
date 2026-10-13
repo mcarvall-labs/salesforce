@@ -74,7 +74,7 @@ async function type(element, selector, value) {
 }
 
 async function chooseStandalone(element) {
-  $$(element, ".type-button")[0].click();
+  $$(element, ".type-card")[0].click();
   await flushPromises();
 }
 
@@ -114,7 +114,7 @@ describe("c-a-x-f-l-w-c-expense-wizard", () => {
     expect($(element, ".wizard-title").textContent).toContain(
       "Que tipo de despesa é?"
     );
-    const buttons = $$(element, ".type-button");
+    const buttons = $$(element, ".type-card");
     expect(buttons).toHaveLength(5);
     expect(buttons.map((b) => b.disabled)).toEqual([
       false,
@@ -254,7 +254,7 @@ describe("c-a-x-f-l-w-c-expense-wizard", () => {
 
   it("creates a recurring expense with its contract in one call", async () => {
     const element = await mount();
-    $$(element, ".type-button")[1].click();
+    $$(element, ".type-card")[1].click();
     await flushPromises();
     expect($(element, ".wizard-title").textContent).toContain(
       "Despesa recorrente"
@@ -303,7 +303,7 @@ describe("c-a-x-f-l-w-c-expense-wizard", () => {
 
   it("blocks a recurring expense with an invalid day or an end before the start", async () => {
     const element = await mount();
-    $$(element, ".type-button")[1].click();
+    $$(element, ".type-card")[1].click();
     await flushPromises();
     await type(element, ".field-description", "Aluguel");
     await type(element, ".field-amount", "2500");
@@ -323,7 +323,7 @@ describe("c-a-x-f-l-w-c-expense-wizard", () => {
       body: { message: "O valor deve ser maior que zero." }
     });
     const element = await mount();
-    $$(element, ".type-button")[1].click();
+    $$(element, ".type-card")[1].click();
     await flushPromises();
     await type(element, ".field-description", "Aluguel");
     await type(element, ".field-amount", "2500");
@@ -340,7 +340,7 @@ describe("c-a-x-f-l-w-c-expense-wizard", () => {
 
   it("sends the account or card of a recurring expense and blocks a fractional day", async () => {
     const element = await mount();
-    $$(element, ".type-button")[1].click();
+    $$(element, ".type-card")[1].click();
     await flushPromises();
     await type(element, ".field-description", "Assinatura");
     await type(element, ".field-amount", "40");
