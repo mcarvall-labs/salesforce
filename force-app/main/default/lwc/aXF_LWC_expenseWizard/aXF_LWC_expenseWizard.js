@@ -4,6 +4,8 @@ import createStandalone from "@salesforce/apex/AXF_CLS_CTRL_ExpenseWizard.create
 import createCategory from "@salesforce/apex/AXF_CLS_CTRL_ExpenseWizard.createCategory";
 import createRecurring from "@salesforce/apex/AXF_CLS_CTRL_ExpenseWizard.createRecurring";
 import previewRecurring from "@salesforce/apex/AXF_CLS_CTRL_ExpenseWizard.previewRecurring";
+import createInstallment from "@salesforce/apex/AXF_CLS_CTRL_ExpenseWizard.createInstallment";
+import previewInstallment from "@salesforce/apex/AXF_CLS_CTRL_ExpenseWizard.previewInstallment";
 
 const STEP_TITLES = ["Dados", "Pagamento", "Revisar"];
 const TYPES = [
@@ -23,7 +25,7 @@ const TYPES = [
     value: "installments",
     label: "Parcelada",
     description: "Compra dividida em parcelas fixas, sem juros. Inclui cartão.",
-    enabled: false
+    enabled: true
   },
   {
     value: "consortium",
@@ -45,6 +47,10 @@ const STATUS_OPTIONS = [
 const VARIABLE_OPTIONS = [
   { label: "Não", value: "no" },
   { label: "Sim (corrijo antes de realizar)", value: "yes" }
+];
+const AMOUNT_KIND_OPTIONS = [
+  { label: "Valor total", value: "total" },
+  { label: "Valor da parcela", value: "installment" }
 ];
 const PREVIEW_ROWS = 2;
 const METHOD_OPTIONS = [
@@ -78,6 +84,8 @@ export default class AXF_LWC_expenseWizard extends LightningElement {
   isLoadingPreview = false;
   // Recurring only
   variable = "no";
+  amountKind = "total";
+  installmentCount;
   dueDay;
   endDate;
   preview = [];
@@ -157,6 +165,8 @@ export default class AXF_LWC_expenseWizard extends LightningElement {
     this.preview = [];
     this.status = "Pending";
     this.paymentDate = undefined;
+    this.amountKind = "total";
+    this.installmentCount = undefined;
     this.errorMessage = undefined;
     this.focusTitle = true;
   }
@@ -166,7 +176,22 @@ export default class AXF_LWC_expenseWizard extends LightningElement {
     if (this.isChoosingType) {
       return "Que tipo de despesa é?";
     }
-    return this.isRecurring ? "Despesa recorrente" : "Despesa avulsa";
+    if (this.isRecurring) {
+      return "Despesa recorrente";
+    }
+    return this.isInstallments ? "Despesa parcelada" : "Despesa avulsa";
+  }
+
+  get isInstallments() {
+    return this.type === "installments";
+  }
+
+  get hasContract() {
+    return this.isRecurring || this.isInstallments;
+  }
+
+  get amountKindOptions() {
+    return AMOUNT_KIND_OPTIONS;
   }
 
   get isRecurring() {
@@ -178,11 +203,18 @@ export default class AXF_LWC_expenseWizard extends LightningElement {
   }
 
   get amountLabel() {
-    return this.isRecurring ? "Valor mensal (ou estimado)" : "Valor";
+    if (this.isRecurring) {
+      return "Valor mensal (ou estimado)";
+    }
+    return this.isInstallments && this.amountKind === "installment"
+      ? "Valor da parcela"
+      : this.isInstallments
+        ? "Valor total"
+        : "Valor";
   }
 
   get dueDateLabel() {
-    return this.isRecurring ? "Primeiro vencimento" : "Vencimento";
+    return this.hasContract ? "Primeiro vencimento" : "Vencimento";
   }
 
   get variableOptions() {
@@ -214,19 +246,60 @@ export default class AXF_LWC_expenseWizard extends LightningElement {
 
   get recurringRequest() {
     return {
-      base: {
-        holderId: this.chosenHolderId,
-        description: this.description.trim(),
-        amount: Number(this.amount),
-        dueDate: this.dueDate,
-        categoryId: this.categoryId || null,
-        accountId: this.method === "account" ? this.sourceId : null,
-        cardId: this.method === "card" ? this.sourceId : null
-      },
+      base: this.baseRequest,
       variableAmount: this.variable === "yes",
       dueDay: this.dueDay ? Number(this.dueDay) : null,
       endDate: this.endDate || null
     };
+  }
+
+  get installmentJson() {
+    return JSON.stringify(this.installmentRequest);
+  }
+
+  // What every type shares; each type adds its own fields around it.
+  get baseRequest() {
+    return {
+      holderId: this.chosenHolderId,
+      description: this.description.trim(),
+      amount: Number(this.amount),
+      dueDate: this.dueDate,
+      categoryId: this.categoryId || null,
+      accountId: this.method === "account" ? this.sourceId : null,
+      cardId: this.method === "card" ? this.sourceId : null
+    };
+  }
+
+  get installmentRequest() {
+    return {
+      base: this.baseRequest,
+      amountIsTotal: this.amountKind === "total",
+      count: this.installmentCount ? Number(this.installmentCount) : null
+    };
+  }
+
+  get installmentsValid() {
+    const count = Number(this.installmentCount);
+    return (
+      /^\d+$/.test(String(this.installmentCount).trim()) &&
+      Number.isInteger(count) &&
+      count >= 2 &&
+      count <= 120
+    );
+  }
+
+  get contractSummary() {
+    return this.isInstallments
+      ? this.installmentSummary
+      : this.recurringSummary;
+  }
+
+  get installmentSummary() {
+    const total =
+      Math.round(
+        this.preview.reduce((sum, item) => sum + item.amount, 0) * 100
+      ) / 100;
+    return `Será criado 1 Contrato (Parcelado) e ${this.preview.length} lançamentos pendentes. Total ${this.money(total)}.`;
   }
 
   get recurringValid() {
@@ -302,7 +375,9 @@ export default class AXF_LWC_expenseWizard extends LightningElement {
       !!this.dueDate &&
       (this.isRecurring
         ? this.recurringValid
-        : !this.isRealized || !!this.paymentDate)
+        : this.isInstallments
+          ? this.installmentsValid
+          : !this.isRealized || !!this.paymentDate)
     );
   }
 
@@ -446,6 +521,14 @@ export default class AXF_LWC_expenseWizard extends LightningElement {
     this.variable = event.detail.value;
   }
 
+  handleAmountKind(event) {
+    this.amountKind = event.detail.value;
+  }
+
+  handleInstallmentCount(event) {
+    this.installmentCount = event.detail.value;
+  }
+
   handleDueDay(event) {
     this.dueDay = event.detail.value;
   }
@@ -459,13 +542,13 @@ export default class AXF_LWC_expenseWizard extends LightningElement {
       return;
     }
     this.errorMessage = undefined;
-    if (this.isRecurring && this.step === 2) {
+    if (this.hasContract && this.step === 2) {
       this.isLoadingPreview = true;
       try {
         this.preview = [];
-        this.preview = await previewRecurring({
-          requestJson: this.recurringJson
-        });
+        this.preview = this.isInstallments
+          ? await previewInstallment({ requestJson: this.installmentJson })
+          : await previewRecurring({ requestJson: this.recurringJson });
       } catch (error) {
         this.errorMessage = this.messageOf(
           error,
@@ -494,8 +577,12 @@ export default class AXF_LWC_expenseWizard extends LightningElement {
     this.isSaving = true;
     this.errorMessage = undefined;
     try {
-      if (this.isRecurring) {
-        await createRecurring({ requestJson: this.recurringJson });
+      if (this.hasContract) {
+        if (this.isInstallments) {
+          await createInstallment({ requestJson: this.installmentJson });
+        } else {
+          await createRecurring({ requestJson: this.recurringJson });
+        }
         this.dispatchEvent(new CustomEvent("saved"));
         return;
       }
