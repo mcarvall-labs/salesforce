@@ -120,6 +120,8 @@ describe("c-a-x-f-l-w-c-expense-wizard", () => {
       holderId: "",
       holders: [{ id: "001B", name: "Titular B" }]
     });
+    // "Todos" arrives as an empty string; Apex needs a null, not an invalid Id.
+    expect(getOptions).toHaveBeenCalledWith({ holderId: null });
     await chooseStandalone(element);
     await fillStep1(element);
     expect($(element, ".next").disabled).toBe(true);
