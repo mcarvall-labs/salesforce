@@ -2,6 +2,8 @@ import { LightningElement, api } from "lwc";
 import getOptions from "@salesforce/apex/AXF_CLS_CTRL_ExpenseWizard.getOptions";
 import createStandalone from "@salesforce/apex/AXF_CLS_CTRL_ExpenseWizard.createStandalone";
 import createCategory from "@salesforce/apex/AXF_CLS_CTRL_ExpenseWizard.createCategory";
+import createRecurring from "@salesforce/apex/AXF_CLS_CTRL_ExpenseWizard.createRecurring";
+import previewRecurring from "@salesforce/apex/AXF_CLS_CTRL_ExpenseWizard.previewRecurring";
 
 const STEP_TITLES = ["Dados", "Pagamento", "Revisar"];
 const TYPES = [
@@ -15,7 +17,7 @@ const TYPES = [
     value: "recurring",
     label: "Recorrente",
     description: "Se repete todo mês: aluguel, assinatura, conta de água.",
-    enabled: false
+    enabled: true
   },
   {
     value: "installments",
@@ -40,6 +42,11 @@ const STATUS_OPTIONS = [
   { label: "Pendente", value: "Pending" },
   { label: "Realizado", value: "Realized" }
 ];
+const VARIABLE_OPTIONS = [
+  { label: "Não", value: "no" },
+  { label: "Sim (corrijo antes de realizar)", value: "yes" }
+];
+const PREVIEW_ROWS = 2;
 const METHOD_OPTIONS = [
   { label: "Dinheiro", value: "cash" },
   { label: "Conta bancária", value: "account" },
@@ -68,6 +75,12 @@ export default class AXF_LWC_expenseWizard extends LightningElement {
   focusTitle = false;
   loadSeq = 0;
   isCreatingCategory = false;
+  isLoadingPreview = false;
+  // Recurring only
+  variable = "no";
+  dueDay;
+  endDate;
+  preview = [];
 
   connectedCallback() {
     this.chosenHolderId = this.holderId;
@@ -137,13 +150,91 @@ export default class AXF_LWC_expenseWizard extends LightningElement {
 
   handleChangeType() {
     this.type = undefined;
+    // Nothing typed for one type leaks into the next.
+    this.variable = "no";
+    this.dueDay = undefined;
+    this.endDate = undefined;
+    this.preview = [];
+    this.status = "Pending";
+    this.paymentDate = undefined;
     this.errorMessage = undefined;
     this.focusTitle = true;
   }
 
   // ---- Steps ----
   get title() {
-    return this.isChoosingType ? "Que tipo de despesa é?" : "Despesa avulsa";
+    if (this.isChoosingType) {
+      return "Que tipo de despesa é?";
+    }
+    return this.isRecurring ? "Despesa recorrente" : "Despesa avulsa";
+  }
+
+  get isRecurring() {
+    return this.type === "recurring";
+  }
+
+  get isStandalone() {
+    return !this.isRecurring;
+  }
+
+  get amountLabel() {
+    return this.isRecurring ? "Valor mensal (ou estimado)" : "Valor";
+  }
+
+  get dueDateLabel() {
+    return this.isRecurring ? "Primeiro vencimento" : "Vencimento";
+  }
+
+  get variableOptions() {
+    return VARIABLE_OPTIONS;
+  }
+
+  get previewRows() {
+    return this.preview.slice(0, PREVIEW_ROWS).map((item, index) => ({
+      key: `${item.dueDate}-${index}`,
+      dueDate: this.format(item.dueDate),
+      amount: this.money(item.amount)
+    }));
+  }
+
+  get previewMore() {
+    return Math.max(this.preview.length - PREVIEW_ROWS, 0);
+  }
+
+  get recurringSummary() {
+    const count = this.preview.length;
+    const entries =
+      count === 1 ? "1 lançamento pendente" : `${count} lançamentos pendentes`;
+    return `Será criado 1 Contrato (Recorrente) e ${entries}. Os próximos meses são gerados automaticamente todo mês.`;
+  }
+
+  get recurringJson() {
+    return JSON.stringify(this.recurringRequest);
+  }
+
+  get recurringRequest() {
+    return {
+      base: {
+        holderId: this.chosenHolderId,
+        description: this.description.trim(),
+        amount: Number(this.amount),
+        dueDate: this.dueDate,
+        categoryId: this.categoryId || null,
+        accountId: this.method === "account" ? this.sourceId : null,
+        cardId: this.method === "card" ? this.sourceId : null
+      },
+      variableAmount: this.variable === "yes",
+      dueDay: this.dueDay ? Number(this.dueDay) : null,
+      endDate: this.endDate || null
+    };
+  }
+
+  get recurringValid() {
+    const day = this.dueDay ? Number(this.dueDay) : null;
+    return (
+      (day === null || (Number.isInteger(day) && day >= 1 && day <= 31)) &&
+      (!this.endDate || (!!this.dueDate && this.endDate >= this.dueDate))
+    );
   }
 
   get stepLabel() {
@@ -209,7 +300,9 @@ export default class AXF_LWC_expenseWizard extends LightningElement {
       !!this.description.trim() &&
       Number(this.amount) > 0 &&
       !!this.dueDate &&
-      (!this.isRealized || !!this.paymentDate)
+      (this.isRecurring
+        ? this.recurringValid
+        : !this.isRealized || !!this.paymentDate)
     );
   }
 
@@ -218,6 +311,9 @@ export default class AXF_LWC_expenseWizard extends LightningElement {
   }
 
   get nextDisabled() {
+    if (this.isLoadingPreview) {
+      return true;
+    }
     if (this.isStep1) {
       return !this.step1Valid;
     }
@@ -346,12 +442,41 @@ export default class AXF_LWC_expenseWizard extends LightningElement {
   }
 
   // ---- Navigation ----
-  handleNext() {
+  handleVariable(event) {
+    this.variable = event.detail.value;
+  }
+
+  handleDueDay(event) {
+    this.dueDay = event.detail.value;
+  }
+
+  handleEndDate(event) {
+    this.endDate = event.detail.value;
+  }
+
+  async handleNext() {
     if (this.nextDisabled) {
       return;
     }
-    this.step += 1;
     this.errorMessage = undefined;
+    if (this.isRecurring && this.step === 2) {
+      this.isLoadingPreview = true;
+      try {
+        this.preview = [];
+        this.preview = await previewRecurring({
+          requestJson: this.recurringJson
+        });
+      } catch (error) {
+        this.errorMessage = this.messageOf(
+          error,
+          "Não foi possível calcular os lançamentos."
+        );
+        return;
+      } finally {
+        this.isLoadingPreview = false;
+      }
+    }
+    this.step += 1;
     this.focusTitle = true;
   }
 
@@ -369,6 +494,11 @@ export default class AXF_LWC_expenseWizard extends LightningElement {
     this.isSaving = true;
     this.errorMessage = undefined;
     try {
+      if (this.isRecurring) {
+        await createRecurring({ requestJson: this.recurringJson });
+        this.dispatchEvent(new CustomEvent("saved"));
+        return;
+      }
       // A JSON string: Aura does not fill the fields of an Apex object parameter reliably.
       await createStandalone({
         requestJson: JSON.stringify({
