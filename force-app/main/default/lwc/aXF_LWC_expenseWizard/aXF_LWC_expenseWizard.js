@@ -73,7 +73,10 @@ export default class AXF_LWC_expenseWizard extends LightningElement {
   async loadOptions() {
     const seq = ++this.loadSeq;
     try {
-      const options = await getOptions({ holderId: this.chosenHolderId });
+      // The dashboard filter "Todos" is an empty string, which is not a valid Id for Apex.
+      const options = await getOptions({
+        holderId: this.chosenHolderId || null
+      });
       if (seq !== this.loadSeq) {
         return;
       }
