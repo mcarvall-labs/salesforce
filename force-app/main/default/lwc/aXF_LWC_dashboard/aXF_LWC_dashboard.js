@@ -573,16 +573,32 @@ export default class AXF_LWC_dashboard extends NavigationMixin(
   }
 
   handleRealizeCancel() {
-    this.realizing = undefined;
+    if (!this.isSaving) {
+      this.realizing = undefined;
+    }
+  }
+
+  handleRealizeKeydown(event) {
+    if (event.key === "Escape") {
+      this.handleRealizeCancel();
+    }
+  }
+
+  renderedCallback() {
+    if (this.realizing && !this.realizeFocused) {
+      this.realizeFocused = true;
+      this.template.querySelector(".realize-date").focus();
+    } else if (!this.realizing) {
+      this.realizeFocused = false;
+    }
   }
 
   async handleRealizeConfirm() {
-    if (
-      !this.realizeDate ||
-      this.realizeAmount === "" ||
-      this.realizeAmount == null
-    ) {
-      this.realizeError = "Informe a data e o valor do pagamento.";
+    if (this.isSaving) {
+      return;
+    }
+    if (!this.realizeDate || !(Number(this.realizeAmount) > 0)) {
+      this.realizeError = "Informe a data e um valor maior que zero.";
       return;
     }
     this.isSaving = true;

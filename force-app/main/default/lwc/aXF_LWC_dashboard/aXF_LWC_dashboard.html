@@ -375,6 +375,7 @@
         tabindex="-1"
         aria-modal="true"
         aria-labelledby="realize-title"
+        onkeydown={handleRealizeKeydown}
         class="realize-modal slds-modal slds-fade-in-open slds-modal_small"
       >
         <div class="slds-modal__container">
@@ -407,6 +408,7 @@
               class="realize-amount"
               type="number"
               step="0.01"
+              min="0.01"
               label="Valor pago"
               value={realizeAmount}
               required
@@ -422,6 +424,7 @@
             <lightning-button
               class="realize-cancel slds-m-right_x-small"
               label="Cancelar"
+              disabled={isSaving}
               onclick={handleRealizeCancel}
             ></lightning-button>
             <lightning-button

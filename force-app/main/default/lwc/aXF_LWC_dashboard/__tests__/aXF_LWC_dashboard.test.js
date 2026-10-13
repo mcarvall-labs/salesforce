@@ -891,6 +891,9 @@ describe("c-a-x-f-l-w-c-dashboard", () => {
     updateRecord.mockResolvedValue({});
     const element = await mount();
     getSummary.mockClear();
+    getEntries.mockClear();
+    const toasts = [];
+    element.addEventListener("lightning__showtoast", (e) => toasts.push(e));
     element.shadowRoot.querySelector(".mark-realized").click();
     await flushPromises();
     const date = element.shadowRoot.querySelector(".realize-date");
@@ -915,6 +918,9 @@ describe("c-a-x-f-l-w-c-dashboard", () => {
     });
     expect(element.shadowRoot.querySelector(".realize-modal")).toBeNull();
     expect(getSummary).toHaveBeenCalled();
+    expect(getEntries).toHaveBeenCalled();
+    expect(toasts).toHaveLength(1);
+    expect(toasts[0].detail.variant).toBe("success");
   });
 
   it("cancels the popup without saving and shows save errors", async () => {
@@ -926,7 +932,7 @@ describe("c-a-x-f-l-w-c-dashboard", () => {
     expect(element.shadowRoot.querySelector(".realize-modal")).toBeNull();
     expect(updateRecord).not.toHaveBeenCalled();
 
-    updateRecord.mockRejectedValue({ body: { message: "Sem permissão" } });
+    updateRecord.mockRejectedValueOnce({ body: { message: "Sem permissão" } });
     element.shadowRoot.querySelector(".mark-realized").click();
     await flushPromises();
     element.shadowRoot.querySelector(".realize-confirm").click();
@@ -946,5 +952,62 @@ describe("c-a-x-f-l-w-c-dashboard", () => {
     await flushPromises();
     expect(updateRecord).not.toHaveBeenCalled();
     expect(text(element, ".realize-error")).toContain("Informe");
+  });
+
+  it("blocks a zero or negative amount", async () => {
+    const element = await mount();
+    element.shadowRoot.querySelector(".mark-realized").click();
+    await flushPromises();
+    element.shadowRoot
+      .querySelector(".realize-amount")
+      .dispatchEvent(new CustomEvent("change", { detail: { value: "-5" } }));
+    element.shadowRoot.querySelector(".realize-confirm").click();
+    await flushPromises();
+    expect(updateRecord).not.toHaveBeenCalled();
+    expect(text(element, ".realize-error")).toContain("maior que zero");
+  });
+
+  it("saves once on a double click and ignores Cancel while saving", async () => {
+    let resolveSave;
+    updateRecord.mockImplementationOnce(
+      () => new Promise((resolve) => (resolveSave = resolve))
+    );
+    const element = await mount();
+    element.shadowRoot.querySelector(".mark-realized").click();
+    await flushPromises();
+    const confirm = element.shadowRoot.querySelector(".realize-confirm");
+    confirm.click();
+    confirm.click();
+    await flushPromises();
+    element.shadowRoot.querySelector(".realize-cancel").click();
+    expect(updateRecord).toHaveBeenCalledTimes(1);
+    expect(element.shadowRoot.querySelector(".realize-modal")).not.toBeNull();
+    resolveSave({});
+    await flushPromises();
+    expect(element.shadowRoot.querySelector(".realize-modal")).toBeNull();
+  });
+
+  it("closes the popup with Escape", async () => {
+    const element = await mount();
+    element.shadowRoot.querySelector(".mark-realized").click();
+    await flushPromises();
+    element.shadowRoot
+      .querySelector(".realize-modal")
+      .dispatchEvent(new KeyboardEvent("keydown", { key: "Escape" }));
+    await flushPromises();
+    expect(element.shadowRoot.querySelector(".realize-modal")).toBeNull();
+  });
+
+  it("offers mark as realized in the Vencidos list too", async () => {
+    const element = await mount();
+    getEntries.mockResolvedValueOnce({
+      truncated: false,
+      rows: [entryList.rows[0]]
+    });
+    element.shadowRoot.querySelector(".kpi-overdue").click();
+    await flushPromises();
+    expect(element.shadowRoot.querySelectorAll(".mark-realized")).toHaveLength(
+      1
+    );
   });
 });
