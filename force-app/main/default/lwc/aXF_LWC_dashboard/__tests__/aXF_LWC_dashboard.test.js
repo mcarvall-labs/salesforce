@@ -6,6 +6,7 @@ import getBudget from "@salesforce/apex/AXF_CLS_CTRL_Dashboard.getBudget";
 import getEntries from "@salesforce/apex/AXF_CLS_CTRL_Dashboard.getEntries";
 import getPending from "@salesforce/apex/AXF_CLS_CTRL_Dashboard.getPending";
 import getSources from "@salesforce/apex/AXF_CLS_CTRL_Dashboard.getSources";
+import { updateRecord } from "lightning/uiRecordApi";
 
 jest.mock(
   "@salesforce/apex/AXF_CLS_CTRL_Dashboard.getHolders",
@@ -15,6 +16,21 @@ jest.mock(
 jest.mock(
   "@salesforce/apex/AXF_CLS_CTRL_Dashboard.getSummary",
   () => ({ default: jest.fn() }),
+  { virtual: true }
+);
+
+jest.mock("lightning/uiRecordApi", () => ({ updateRecord: jest.fn() }), {
+  virtual: true
+});
+jest.mock(
+  "lightning/platformShowToastEvent",
+  () => ({
+    ShowToastEvent: class extends CustomEvent {
+      constructor(detail) {
+        super("lightning__showtoast", { detail });
+      }
+    }
+  }),
   { virtual: true }
 );
 
@@ -862,5 +878,136 @@ describe("c-a-x-f-l-w-c-dashboard", () => {
     expect(
       grid.compareDocumentPosition(goalsCard) & Node.DOCUMENT_POSITION_FOLLOWING
     ).toBeTruthy();
+  });
+
+  it("offers mark as realized only on pending non-forecast rows", async () => {
+    const element = await mount();
+    const buttons = element.shadowRoot.querySelectorAll(".mark-realized");
+    expect(buttons).toHaveLength(1);
+    expect(buttons[0].dataset.id).toBe("e1");
+  });
+
+  it("opens the popup with due date and amount suggested and saves the edited values", async () => {
+    updateRecord.mockResolvedValue({});
+    const element = await mount();
+    getSummary.mockClear();
+    getEntries.mockClear();
+    const toasts = [];
+    element.addEventListener("lightning__showtoast", (e) => toasts.push(e));
+    element.shadowRoot.querySelector(".mark-realized").click();
+    await flushPromises();
+    const date = element.shadowRoot.querySelector(".realize-date");
+    const amount = element.shadowRoot.querySelector(".realize-amount");
+    expect(date.value).toBe("2026-10-05");
+    expect(amount.value).toBe(1500);
+    date.dispatchEvent(
+      new CustomEvent("change", { detail: { value: "2026-10-07" } })
+    );
+    amount.dispatchEvent(
+      new CustomEvent("change", { detail: { value: "1450.5" } })
+    );
+    element.shadowRoot.querySelector(".realize-confirm").click();
+    await flushPromises();
+    expect(updateRecord).toHaveBeenCalledWith({
+      fields: {
+        Id: "e1",
+        AXF_ENT_PKL_Status__c: "Realized",
+        AXF_ENT_DAT_PaymentDate__c: "2026-10-07",
+        AXF_ENT_NUM_RealizedAmountBRL__c: 1450.5
+      }
+    });
+    expect(element.shadowRoot.querySelector(".realize-modal")).toBeNull();
+    expect(getSummary).toHaveBeenCalled();
+    expect(getEntries).toHaveBeenCalled();
+    expect(toasts).toHaveLength(1);
+    expect(toasts[0].detail.variant).toBe("success");
+  });
+
+  it("cancels the popup without saving and shows save errors", async () => {
+    const element = await mount();
+    element.shadowRoot.querySelector(".mark-realized").click();
+    await flushPromises();
+    element.shadowRoot.querySelector(".realize-cancel").click();
+    await flushPromises();
+    expect(element.shadowRoot.querySelector(".realize-modal")).toBeNull();
+    expect(updateRecord).not.toHaveBeenCalled();
+
+    updateRecord.mockRejectedValueOnce({ body: { message: "Sem permissão" } });
+    element.shadowRoot.querySelector(".mark-realized").click();
+    await flushPromises();
+    element.shadowRoot.querySelector(".realize-confirm").click();
+    await flushPromises();
+    expect(text(element, ".realize-error")).toContain("Sem permissão");
+    expect(element.shadowRoot.querySelector(".realize-modal")).not.toBeNull();
+  });
+
+  it("blocks saving without a date", async () => {
+    const element = await mount();
+    element.shadowRoot.querySelector(".mark-realized").click();
+    await flushPromises();
+    element.shadowRoot
+      .querySelector(".realize-date")
+      .dispatchEvent(new CustomEvent("change", { detail: { value: "" } }));
+    element.shadowRoot.querySelector(".realize-confirm").click();
+    await flushPromises();
+    expect(updateRecord).not.toHaveBeenCalled();
+    expect(text(element, ".realize-error")).toContain("Informe");
+  });
+
+  it("blocks a zero or negative amount", async () => {
+    const element = await mount();
+    element.shadowRoot.querySelector(".mark-realized").click();
+    await flushPromises();
+    element.shadowRoot
+      .querySelector(".realize-amount")
+      .dispatchEvent(new CustomEvent("change", { detail: { value: "-5" } }));
+    element.shadowRoot.querySelector(".realize-confirm").click();
+    await flushPromises();
+    expect(updateRecord).not.toHaveBeenCalled();
+    expect(text(element, ".realize-error")).toContain("maior que zero");
+  });
+
+  it("saves once on a double click and ignores Cancel while saving", async () => {
+    let resolveSave;
+    updateRecord.mockImplementationOnce(
+      () => new Promise((resolve) => (resolveSave = resolve))
+    );
+    const element = await mount();
+    element.shadowRoot.querySelector(".mark-realized").click();
+    await flushPromises();
+    const confirm = element.shadowRoot.querySelector(".realize-confirm");
+    confirm.click();
+    confirm.click();
+    await flushPromises();
+    element.shadowRoot.querySelector(".realize-cancel").click();
+    expect(updateRecord).toHaveBeenCalledTimes(1);
+    expect(element.shadowRoot.querySelector(".realize-modal")).not.toBeNull();
+    resolveSave({});
+    await flushPromises();
+    expect(element.shadowRoot.querySelector(".realize-modal")).toBeNull();
+  });
+
+  it("closes the popup with Escape", async () => {
+    const element = await mount();
+    element.shadowRoot.querySelector(".mark-realized").click();
+    await flushPromises();
+    element.shadowRoot
+      .querySelector(".realize-modal")
+      .dispatchEvent(new KeyboardEvent("keydown", { key: "Escape" }));
+    await flushPromises();
+    expect(element.shadowRoot.querySelector(".realize-modal")).toBeNull();
+  });
+
+  it("offers mark as realized in the Vencidos list too", async () => {
+    const element = await mount();
+    getEntries.mockResolvedValueOnce({
+      truncated: false,
+      rows: [entryList.rows[0]]
+    });
+    element.shadowRoot.querySelector(".kpi-overdue").click();
+    await flushPromises();
+    expect(element.shadowRoot.querySelectorAll(".mark-realized")).toHaveLength(
+      1
+    );
   });
 });
