@@ -8,13 +8,6 @@ import previewInstallment from "@salesforce/apex/AXF_CLS_CTRL_ExpenseWizard.prev
 
 const STEP_TITLES = ["Dados", "Pagamento", "Revisar"];
 const TYPES = [
-<<<<<<< HEAD
-  { value: "standalone", label: "Despesa avulsa", enabled: true },
-  { value: "recurring", label: "Recorrente", enabled: true },
-  { value: "installments", label: "Parcelada", enabled: true },
-  { value: "consortium", label: "Consórcio", enabled: false },
-  { value: "financing", label: "Financiamento", enabled: false }
-=======
   {
     value: "standalone",
     label: "Despesa avulsa",
@@ -25,13 +18,13 @@ const TYPES = [
     value: "recurring",
     label: "Recorrente",
     description: "Se repete todo mês: aluguel, assinatura, conta de água.",
-    enabled: false
+    enabled: true
   },
   {
     value: "installments",
     label: "Parcelada",
     description: "Compra dividida em parcelas fixas, sem juros. Inclui cartão.",
-    enabled: false
+    enabled: true
   },
   {
     value: "consortium",
@@ -45,7 +38,6 @@ const TYPES = [
     description: "Valor financiado com juros: SAC ou PRICE.",
     enabled: false
   }
->>>>>>> origin/feature/axf-303-wizard-despesa
 ];
 const STATUS_OPTIONS = [
   { label: "Pendente", value: "Pending" },
