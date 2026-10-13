@@ -439,5 +439,13 @@
       </section>
       <div class="slds-backdrop slds-backdrop_open"></div>
     </template>
+    <template lwc:if={showExpenseWizard}>
+      <c-a-x-f_-l-w-c_expense-wizard
+        holder-id={holderId}
+        holders={holders}
+        onclose={handleExpenseWizardClose}
+        onsaved={handleExpenseWizardSaved}
+      ></c-a-x-f_-l-w-c_expense-wizard>
+    </template>
   </lightning-card>
 </template>

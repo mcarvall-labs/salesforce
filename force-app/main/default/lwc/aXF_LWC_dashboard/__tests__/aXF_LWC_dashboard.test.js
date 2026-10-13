@@ -587,14 +587,24 @@ describe("c-a-x-f-l-w-c-dashboard", () => {
     });
   });
 
-  it("opens the new entry form with the type and the filtered holder", async () => {
+  it("opens the expense wizard from + Despesa and the standard form from + Receita", async () => {
+    mockNavigate.mockClear();
     const element = await mount();
+    expect(
+      element.shadowRoot.querySelector("c-a-x-f_-l-w-c_expense-wizard")
+    ).toBeNull();
     element.shadowRoot.querySelector(".new-expense").click();
-    expect(mockNavigate).toHaveBeenLastCalledWith({
-      type: "standard__objectPage",
-      attributes: { objectApiName: "AXF_OBJ_Entry__c", actionName: "new" },
-      state: { defaultFieldValues: "AXF_ENT_PKL_Type__c=Expense" }
-    });
+    await flushPromises();
+    const wizard = element.shadowRoot.querySelector(
+      "c-a-x-f_-l-w-c_expense-wizard"
+    );
+    expect(wizard).not.toBeNull();
+    expect(mockNavigate).not.toHaveBeenCalled();
+    wizard.dispatchEvent(new CustomEvent("close"));
+    await flushPromises();
+    expect(
+      element.shadowRoot.querySelector("c-a-x-f_-l-w-c_expense-wizard")
+    ).toBeNull();
     element.shadowRoot
       .querySelector(".holder-filter")
       .dispatchEvent(new CustomEvent("change", { detail: { value: "001B" } }));
@@ -608,6 +618,21 @@ describe("c-a-x-f-l-w-c-dashboard", () => {
           "AXF_ENT_PKL_Type__c=Income,AXF_ENT_MD_Holder__c=001B"
       }
     });
+  });
+
+  it("closes the wizard and reloads the summary when an expense is saved", async () => {
+    const element = await mount();
+    const calls = getSummary.mock.calls.length;
+    element.shadowRoot.querySelector(".new-expense").click();
+    await flushPromises();
+    element.shadowRoot
+      .querySelector("c-a-x-f_-l-w-c_expense-wizard")
+      .dispatchEvent(new CustomEvent("saved"));
+    await flushPromises();
+    expect(
+      element.shadowRoot.querySelector("c-a-x-f_-l-w-c_expense-wizard")
+    ).toBeNull();
+    expect(getSummary.mock.calls.length).toBeGreaterThan(calls);
   });
 
   it("shows the empty, truncated and error states of the list", async () => {

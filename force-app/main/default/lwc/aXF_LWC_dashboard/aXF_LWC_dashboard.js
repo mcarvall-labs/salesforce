@@ -529,8 +529,26 @@ export default class AXF_LWC_dashboard extends NavigationMixin(
     });
   }
 
+  // + Despesa opens the expense wizard; + Receita keeps the standard form.
+  showExpenseWizard = false;
+
   handleNewExpense() {
-    this.openNewEntry("Expense");
+    this.showExpenseWizard = true;
+  }
+
+  handleExpenseWizardClose() {
+    this.showExpenseWizard = false;
+  }
+
+  handleExpenseWizardSaved() {
+    this.showExpenseWizard = false;
+    this.dispatchEvent(
+      new ShowToastEvent({
+        title: "Despesa criada",
+        variant: "success"
+      })
+    );
+    this.loadSummary();
   }
 
   // ---- Mark as realized: popup suggests due date and amount (editable) ----

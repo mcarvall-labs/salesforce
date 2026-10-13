@@ -44,6 +44,10 @@
         <apexClass>AXF_CLS_CTRL_Dashboard</apexClass>
         <enabled>true</enabled>
     </classAccesses>
+    <classAccesses>
+        <apexClass>AXF_CLS_CTRL_ExpenseWizard</apexClass>
+        <enabled>true</enabled>
+    </classAccesses>
     <description
   >Acesso ao app Axon: Início (dashboard), Titulares com listas relacionadas, Lançamentos, Contratos, Contas, Cartões, Metas, Relatórios e tela de Conciliação. Sem "Ver todos": a visibilidade por registro vem do dono e da hierarquia de papéis.</description>
     <fieldPermissions>
