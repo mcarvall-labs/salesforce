@@ -10,7 +10,12 @@ private class AXF_CLS_CTRL_DashboardTest {
 
   @TestSetup
   static void setup() {
-    Id profileId = [SELECT Id FROM Profile WHERE Name = 'Standard User' LIMIT 1]
+    Id profileId = [
+      SELECT Id
+      FROM Profile
+      WHERE Name IN ('Standard User', 'Usuário Padrão')
+      LIMIT 1
+    ]
     .Id;
     User restricted = new User(
       Alias = 'AxfDash',
