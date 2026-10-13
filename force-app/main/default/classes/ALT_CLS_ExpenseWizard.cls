@@ -65,6 +65,9 @@ public with sharing class ALT_CLS_ExpenseWizard {
     public Date dueDate;
     @AuraEnabled
     public Decimal amount;
+    // Financing only: the interest inside the installment.
+    @AuraEnabled
+    public Decimal interest;
   }
 
   // Installments only (EP05-H21): base.amount is the total or the installment value
@@ -89,6 +92,22 @@ public with sharing class ALT_CLS_ExpenseWizard {
     public String administrator;
     @AuraEnabled
     public Date awardedOn;
+  }
+
+  // Financing only (EP05-H23): base.amount is the financed amount, base.dueDate the first due
+  // date, monthlyRate is as typed (1.5 means 1.5 % per month).
+  public class FinancingRequest {
+    @AuraEnabled
+    public Request base;
+    @AuraEnabled
+    public Integer count;
+    @AuraEnabled
+    public Decimal monthlyRate;
+    // SAC or PRICE
+    @AuraEnabled
+    public String amortizationSystem;
+    @AuraEnabled
+    public String creditor;
   }
 
   public Options options(Id holderId) {
@@ -511,6 +530,153 @@ public with sharing class ALT_CLS_ExpenseWizard {
       throw e;
     }
     return contract.Id;
+  }
+
+  // Creates the financing Contract and its Pending entries in one transaction.
+  public Id createFinancing(FinancingRequest request) {
+    planFinancing(request);
+    Request base = request.base;
+    Schema.RecordTypeInfo recordType = Schema.SObjectType.AXF_OBJ_Contract__c.getRecordTypeInfosByDeveloperName()
+      .get(ALT_CLS_ContractGeneration.RT_FINANCING);
+    if (recordType == null) {
+      throw new ExpenseWizardException(
+        'O tipo de contrato Financiamento não está disponível.'
+      );
+    }
+    AXF_OBJ_Contract__c contract = new AXF_OBJ_Contract__c(
+      Name = base.description.trim().left(80),
+      RecordTypeId = recordType.getRecordTypeId(),
+      AXF_CTR_MD_Holder__c = base.holderId,
+      AXF_CTR_PKL_Direction__c = 'Expense',
+      AXF_CTR_PKL_Status__c = ALT_CLS_ContractGeneration.STATUS_ACTIVE,
+      AXF_CTR_CUR_FinancedAmount__c = financed(base),
+      AXF_CTR_PCT_MonthlyRate__c = rate(request),
+      AXF_CTR_PKL_AmortizationSystem__c = request.amortizationSystem,
+      AXF_CTR_NUM_InstallmentCount__c = request.count,
+      AXF_CTR_DAT_FirstDueDate__c = base.dueDate,
+      AXF_CTR_TXT_Counterparty__c = String.isBlank(request.creditor)
+        ? null
+        : request.creditor.trim(),
+      AXF_CTR_LKP_Category__c = base.categoryId,
+      AXF_CTR_LKP_BankAccount__c = base.accountId,
+      AXF_CTR_LKP_CreditCard__c = base.cardId
+    );
+    Savepoint savepoint = Database.setSavepoint();
+    try {
+      insert as user contract;
+      ALT_CLS_ContractGeneration.Result result = new ALT_CLS_ContractGeneration()
+        .generate(new Set<Id>{ contract.Id }, false);
+      requireComplete(result, request.count);
+    } catch (Exception e) {
+      // Nothing stays saved: no Contract without every installment.
+      Database.rollback(savepoint);
+      throw e;
+    }
+    return contract.Id;
+  }
+
+  public List<PreviewItem> previewFinancing(FinancingRequest request) {
+    return planFinancing(request);
+  }
+
+  private static Decimal financed(Request base) {
+    return base.amount.setScale(2, RoundingMode.HALF_UP);
+  }
+
+  // The rate field keeps 4 decimals, so the preview uses the same value the Contract will hold.
+  private static Decimal rate(FinancingRequest request) {
+    return request.monthlyRate.setScale(4, RoundingMode.HALF_UP);
+  }
+
+  // The schedule, with the interest of each installment (balance times the monthly rate).
+  private static List<PreviewItem> planFinancing(FinancingRequest request) {
+    Request base = request?.base;
+    if (base == null || base.holderId == null) {
+      throw new ExpenseWizardException('Informe o titular.');
+    }
+    if (String.isBlank(base.description)) {
+      throw new ExpenseWizardException('Informe a descrição.');
+    }
+    if (base.amount == null || base.amount <= 0) {
+      throw new ExpenseWizardException(
+        'O valor financiado deve ser maior que zero.'
+      );
+    }
+    if (request.count == null || request.count < 2 || request.count > 480) {
+      throw new ExpenseWizardException(
+        'O número de parcelas deve ser de 2 a 480.'
+      );
+    }
+    if (
+      request.monthlyRate == null ||
+      request.monthlyRate.setScale(4, RoundingMode.HALF_UP) < 0 ||
+      request.monthlyRate.setScale(4, RoundingMode.HALF_UP) > 100
+    ) {
+      throw new ExpenseWizardException(
+        'A taxa mensal deve estar entre 0% e 100%.'
+      );
+    }
+    if (
+      request.amortizationSystem != ALT_CLS_ContractSchedule.SAC &&
+      request.amortizationSystem != ALT_CLS_ContractSchedule.PRICE
+    ) {
+      throw new ExpenseWizardException('Escolha o sistema: SAC ou PRICE.');
+    }
+    if (base.dueDate == null) {
+      throw new ExpenseWizardException('Informe o primeiro vencimento.');
+    }
+    if (request.creditor != null && request.creditor.trim().length() > 120) {
+      throw new ExpenseWizardException(
+        'O nome do credor deve ter até 120 caracteres.'
+      );
+    }
+    if (base.accountId != null && base.cardId != null) {
+      throw new ExpenseWizardException(
+        'Escolha a conta ou o cartão, não os dois.'
+      );
+    }
+    assertOwnership(base);
+    Decimal principal = financed(base);
+    if (principal <= 0) {
+      throw new ExpenseWizardException(
+        'O valor financiado deve ser maior que zero.'
+      );
+    }
+    if (principal >= MAX_TOTAL) {
+      throw new ExpenseWizardException('O valor total está acima do limite.');
+    }
+    // An installment that rounds to zero would leave the whole debt to the last one.
+    if ((principal / request.count).setScale(2, RoundingMode.HALF_UP) <= 0) {
+      throw new ExpenseWizardException(
+        'O valor financiado é pequeno demais para este número de parcelas.'
+      );
+    }
+    Decimal monthly = rate(request) / 100;
+    Decimal balance = principal;
+    Decimal total = 0;
+    List<PreviewItem> items = new List<PreviewItem>();
+    for (
+      ALT_CLS_ContractSchedule.Item item : ALT_CLS_ContractSchedule.financing(
+        principal,
+        rate(request),
+        request.count,
+        request.amortizationSystem,
+        base.dueDate
+      )
+    ) {
+      Decimal interest = (balance * monthly).setScale(2, RoundingMode.HALF_UP);
+      PreviewItem preview = new PreviewItem();
+      preview.dueDate = item.dueDate;
+      preview.amount = item.amount;
+      preview.interest = interest;
+      items.add(preview);
+      balance -= item.amount - interest;
+      total += item.amount;
+    }
+    if (total >= MAX_TOTAL) {
+      throw new ExpenseWizardException('O valor total está acima do limite.');
+    }
+    return items;
   }
 
   // Generation must create every installment; anything else undoes the Contract.
