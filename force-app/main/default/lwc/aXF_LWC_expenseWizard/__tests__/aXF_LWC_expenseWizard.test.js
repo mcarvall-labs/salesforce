@@ -363,7 +363,7 @@ describe("c-a-x-f-l-w-c-expense-wizard", () => {
 
   it("creates an installment expense from the total with a card", async () => {
     const element = await mount();
-    $$(element, ".type-button")[2].click();
+    $$(element, ".type-card")[2].click();
     await flushPromises();
     expect($(element, ".wizard-title").textContent).toContain(
       "Despesa parcelada"
@@ -415,7 +415,7 @@ describe("c-a-x-f-l-w-c-expense-wizard", () => {
 
   it("sends the installment value when that is what the user informs", async () => {
     const element = await mount();
-    $$(element, ".type-button")[2].click();
+    $$(element, ".type-card")[2].click();
     await flushPromises();
     await type(element, ".field-amount-kind", "installment");
     expect($(element, ".field-amount").label).toBe("Valor da parcela");
