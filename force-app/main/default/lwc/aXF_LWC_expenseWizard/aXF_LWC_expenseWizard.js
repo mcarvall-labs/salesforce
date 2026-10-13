@@ -8,6 +8,8 @@ import createInstallment from "@salesforce/apex/AXF_CLS_CTRL_ExpenseWizard.creat
 import previewInstallment from "@salesforce/apex/AXF_CLS_CTRL_ExpenseWizard.previewInstallment";
 import createConsortium from "@salesforce/apex/AXF_CLS_CTRL_ExpenseWizard.createConsortium";
 import previewConsortium from "@salesforce/apex/AXF_CLS_CTRL_ExpenseWizard.previewConsortium";
+import createFinancing from "@salesforce/apex/AXF_CLS_CTRL_ExpenseWizard.createFinancing";
+import previewFinancing from "@salesforce/apex/AXF_CLS_CTRL_ExpenseWizard.previewFinancing";
 
 const STEP_TITLES = ["Dados", "Pagamento", "Revisar"];
 const TYPES = [
@@ -39,7 +41,7 @@ const TYPES = [
     value: "financing",
     label: "Financiamento",
     description: "Valor financiado com juros: SAC ou PRICE.",
-    enabled: false
+    enabled: true
   }
 ];
 const STATUS_OPTIONS = [
@@ -53,6 +55,10 @@ const VARIABLE_OPTIONS = [
 const AMOUNT_KIND_OPTIONS = [
   { label: "Valor total", value: "total" },
   { label: "Valor da parcela", value: "installment" }
+];
+const SYSTEM_OPTIONS = [
+  { label: "PRICE (parcela constante)", value: "PRICE" },
+  { label: "SAC (amortização constante)", value: "SAC" }
 ];
 const PREVIEW_ROWS = 2;
 const METHOD_OPTIONS = [
@@ -90,6 +96,9 @@ export default class AXF_LWC_expenseWizard extends LightningElement {
   installmentCount;
   administrator = "";
   awardedOn;
+  creditor = "";
+  monthlyRate;
+  amortizationSystem = "PRICE";
   dueDay;
   endDate;
   preview = [];
@@ -173,6 +182,9 @@ export default class AXF_LWC_expenseWizard extends LightningElement {
     this.installmentCount = undefined;
     this.administrator = "";
     this.awardedOn = undefined;
+    this.creditor = "";
+    this.monthlyRate = undefined;
+    this.amortizationSystem = "PRICE";
     this.errorMessage = undefined;
     this.focusTitle = true;
   }
@@ -185,6 +197,9 @@ export default class AXF_LWC_expenseWizard extends LightningElement {
     if (this.isRecurring) {
       return "Despesa recorrente";
     }
+    if (this.isFinancing) {
+      return "Financiamento";
+    }
     if (this.isConsortium) {
       return "Consórcio";
     }
@@ -195,21 +210,37 @@ export default class AXF_LWC_expenseWizard extends LightningElement {
     return this.type === "installments";
   }
 
+  get isFinancing() {
+    return this.type === "financing";
+  }
+
+  get systemOptions() {
+    return SYSTEM_OPTIONS;
+  }
+
   get isConsortium() {
     return this.type === "consortium";
   }
 
   // Both fixed-installment types ask for the number of installments.
   get hasInstallmentCount() {
-    return this.isInstallments || this.isConsortium;
+    return this.isInstallments || this.isConsortium || this.isFinancing;
   }
 
   get maxCount() {
+    if (this.isFinancing) {
+      return 480;
+    }
     return this.isConsortium ? 240 : 120;
   }
 
   get hasContract() {
-    return this.isRecurring || this.isInstallments || this.isConsortium;
+    return (
+      this.isRecurring ||
+      this.isInstallments ||
+      this.isConsortium ||
+      this.isFinancing
+    );
   }
 
   get amountKindOptions() {
@@ -227,6 +258,9 @@ export default class AXF_LWC_expenseWizard extends LightningElement {
   get amountLabel() {
     if (this.isRecurring) {
       return "Valor mensal (ou estimado)";
+    }
+    if (this.isFinancing) {
+      return "Valor financiado";
     }
     if (this.isConsortium) {
       return "Valor da parcela";
@@ -250,7 +284,11 @@ export default class AXF_LWC_expenseWizard extends LightningElement {
     return this.preview.slice(0, PREVIEW_ROWS).map((item, index) => ({
       key: `${item.dueDate}-${index}`,
       dueDate: this.format(item.dueDate),
-      amount: this.money(item.amount)
+      amount: this.money(item.amount),
+      interest:
+        item.interest === undefined || item.interest === null
+          ? ""
+          : this.money(item.interest)
     }));
   }
 
@@ -295,6 +333,45 @@ export default class AXF_LWC_expenseWizard extends LightningElement {
     };
   }
 
+  get financingJson() {
+    return JSON.stringify(this.financingRequest);
+  }
+
+  get financingRequest() {
+    return {
+      base: this.baseRequest,
+      count: this.installmentCount ? Number(this.installmentCount) : null,
+      monthlyRate: Number(this.monthlyRate),
+      amortizationSystem: this.amortizationSystem,
+      creditor: this.creditor.trim() || null
+    };
+  }
+
+  // The first installment while the user is still typing (the review shows the real table).
+  get firstInstallmentHint() {
+    const principal = Number(this.amount);
+    const count = Number(this.installmentCount);
+    const rate = Number(this.monthlyRate) / 100;
+    if (
+      !this.isFinancing ||
+      !(principal > 0) ||
+      !(count >= 2) ||
+      !(rate >= 0)
+    ) {
+      return "";
+    }
+    let first;
+    if (this.amortizationSystem === "SAC") {
+      first = principal / count + principal * rate;
+    } else {
+      first =
+        rate === 0
+          ? principal / count
+          : (principal * rate) / (1 - Math.pow(1 + rate, -count));
+    }
+    return `1ª parcela ≈ ${this.money(first)} (${this.amortizationSystem}). Ajuste a taxa ou o prazo para conferir com o seu contrato. O Contrato é criado junto.`;
+  }
+
   get consortiumJson() {
     return JSON.stringify(this.consortiumRequest);
   }
@@ -320,6 +397,19 @@ export default class AXF_LWC_expenseWizard extends LightningElement {
     return this.validCount(120);
   }
 
+  get financingValid() {
+    const rate = Number(this.monthlyRate);
+    return (
+      this.validCount(480) &&
+      this.monthlyRate !== undefined &&
+      this.monthlyRate !== "" &&
+      Number.isFinite(rate) &&
+      rate >= 0 &&
+      rate <= 100 &&
+      !!this.amortizationSystem
+    );
+  }
+
   get consortiumValid() {
     return this.validCount(240);
   }
@@ -335,8 +425,21 @@ export default class AXF_LWC_expenseWizard extends LightningElement {
   }
 
   // What the review shows besides the schedule, so the user confirms the whole Contract.
-  get consortiumDetails() {
+  get contractDetails() {
     const parts = [];
+    if (this.isFinancing) {
+      if (this.creditor.trim()) {
+        parts.push(`Credor: ${this.creditor.trim()}`);
+      }
+      const interest = this.preview.reduce(
+        (sum, item) => sum + (item.interest || 0),
+        0
+      );
+      parts.push(
+        `Juros totais ${this.money(Math.round(interest * 100) / 100)}`
+      );
+      return parts.join(" · ");
+    }
     if (this.administrator.trim()) {
       parts.push(`Administradora: ${this.administrator.trim()}`);
     }
@@ -346,12 +449,19 @@ export default class AXF_LWC_expenseWizard extends LightningElement {
     return parts.join(" · ");
   }
 
-  get hasConsortiumDetails() {
-    return this.isConsortium && !!this.consortiumDetails;
+  get hasContractDetails() {
+    return (this.isConsortium || this.isFinancing) && !!this.contractDetails;
+  }
+
+  get contractLabel() {
+    if (this.isFinancing) {
+      return "Financiamento";
+    }
+    return this.isConsortium ? "Consórcio" : "Parcelado";
   }
 
   get contractSummary() {
-    return this.isInstallments || this.isConsortium
+    return this.isInstallments || this.isConsortium || this.isFinancing
       ? this.installmentSummary
       : this.recurringSummary;
   }
@@ -361,7 +471,7 @@ export default class AXF_LWC_expenseWizard extends LightningElement {
       Math.round(
         this.preview.reduce((sum, item) => sum + item.amount, 0) * 100
       ) / 100;
-    return `Será criado 1 Contrato (${this.isConsortium ? "Consórcio" : "Parcelado"}) e ${this.preview.length} lançamentos pendentes. Total ${this.money(total)}.`;
+    return `Será criado 1 Contrato (${this.contractLabel}) e ${this.preview.length} lançamentos pendentes. ${this.isFinancing ? "Total previsto" : "Total"} ${this.money(total)}.`;
   }
 
   get recurringValid() {
@@ -437,11 +547,13 @@ export default class AXF_LWC_expenseWizard extends LightningElement {
       !!this.dueDate &&
       (this.isRecurring
         ? this.recurringValid
-        : this.isConsortium
-          ? this.consortiumValid
-          : this.isInstallments
-            ? this.installmentsValid
-            : !this.isRealized || !!this.paymentDate)
+        : this.isFinancing
+          ? this.financingValid
+          : this.isConsortium
+            ? this.consortiumValid
+            : this.isInstallments
+              ? this.installmentsValid
+              : !this.isRealized || !!this.paymentDate)
     );
   }
 
@@ -597,6 +709,18 @@ export default class AXF_LWC_expenseWizard extends LightningElement {
     this.administrator = event.detail.value || "";
   }
 
+  handleCreditor(event) {
+    this.creditor = event.detail.value || "";
+  }
+
+  handleRate(event) {
+    this.monthlyRate = event.detail.value;
+  }
+
+  handleSystem(event) {
+    this.amortizationSystem = event.detail.value;
+  }
+
   handleAwardedOn(event) {
     this.awardedOn = event.detail.value;
   }
@@ -610,6 +734,9 @@ export default class AXF_LWC_expenseWizard extends LightningElement {
   }
 
   fetchPreview() {
+    if (this.isFinancing) {
+      return previewFinancing({ requestJson: this.financingJson });
+    }
     if (this.isConsortium) {
       return previewConsortium({ requestJson: this.consortiumJson });
     }
@@ -660,7 +787,9 @@ export default class AXF_LWC_expenseWizard extends LightningElement {
     this.errorMessage = undefined;
     try {
       if (this.hasContract) {
-        if (this.isConsortium) {
+        if (this.isFinancing) {
+          await createFinancing({ requestJson: this.financingJson });
+        } else if (this.isConsortium) {
           await createConsortium({ requestJson: this.consortiumJson });
         } else if (this.isInstallments) {
           await createInstallment({ requestJson: this.installmentJson });
