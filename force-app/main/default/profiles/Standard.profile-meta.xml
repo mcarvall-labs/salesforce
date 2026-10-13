@@ -1,0 +1,23 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<Profile xmlns="http://soap.sforce.com/2006/04/metadata">
+    <layoutAssignments>
+        <layout>AXF_OBJ_Contract__c-Contract Recurring Layout</layout>
+        <recordType>AXF_OBJ_Contract__c.AXF_Recurring</recordType>
+    </layoutAssignments>
+    <layoutAssignments>
+        <layout>AXF_OBJ_Contract__c-Contract Installment Layout</layout>
+        <recordType>AXF_OBJ_Contract__c.AXF_Installment</recordType>
+    </layoutAssignments>
+    <layoutAssignments>
+        <layout>AXF_OBJ_Contract__c-Contract Consortium Layout</layout>
+        <recordType>AXF_OBJ_Contract__c.AXF_Consortium</recordType>
+    </layoutAssignments>
+    <layoutAssignments>
+        <layout>AXF_OBJ_Contract__c-Contract Financing Layout</layout>
+        <recordType>AXF_OBJ_Contract__c.AXF_Financing</recordType>
+    </layoutAssignments>
+    <layoutAssignments>
+        <layout>AXF_OBJ_Contract__c-Contract ServiceProvision Layout</layout>
+        <recordType>AXF_OBJ_Contract__c.AXF_ServiceProvision</recordType>
+    </layoutAssignments>
+</Profile>
