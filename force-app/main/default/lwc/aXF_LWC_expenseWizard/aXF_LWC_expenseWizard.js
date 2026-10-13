@@ -334,6 +334,22 @@ export default class AXF_LWC_expenseWizard extends LightningElement {
     );
   }
 
+  // What the review shows besides the schedule, so the user confirms the whole Contract.
+  get consortiumDetails() {
+    const parts = [];
+    if (this.administrator.trim()) {
+      parts.push(`Administradora: ${this.administrator.trim()}`);
+    }
+    if (this.awardedOn) {
+      parts.push(`Contemplado em ${this.format(this.awardedOn)}`);
+    }
+    return parts.join(" · ");
+  }
+
+  get hasConsortiumDetails() {
+    return this.isConsortium && !!this.consortiumDetails;
+  }
+
   get contractSummary() {
     return this.isInstallments || this.isConsortium
       ? this.installmentSummary
@@ -637,6 +653,9 @@ export default class AXF_LWC_expenseWizard extends LightningElement {
   }
 
   async handleConclude() {
+    if (this.isSaving) {
+      return;
+    }
     this.isSaving = true;
     this.errorMessage = undefined;
     try {

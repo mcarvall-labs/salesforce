@@ -504,19 +504,28 @@ public with sharing class ALT_CLS_ExpenseWizard {
       insert as user contract;
       ALT_CLS_ContractGeneration.Result result = new ALT_CLS_ContractGeneration()
         .generate(new Set<Id>{ contract.Id }, false);
-      if (!result.messages.isEmpty() || result.created != request.count) {
-        throw new ExpenseWizardException(
-          result.messages.isEmpty()
-            ? 'Não foi possível gerar todas as parcelas.'
-            : String.join(result.messages, ' ')
-        );
-      }
+      requireComplete(result, request.count);
     } catch (Exception e) {
       // Nothing stays saved: no Contract without every installment.
       Database.rollback(savepoint);
       throw e;
     }
     return contract.Id;
+  }
+
+  // Generation must create every installment; anything else undoes the Contract.
+  @TestVisible
+  private static void requireComplete(
+    ALT_CLS_ContractGeneration.Result result,
+    Integer expected
+  ) {
+    if (!result.messages.isEmpty() || result.created != expected) {
+      throw new ExpenseWizardException(
+        result.messages.isEmpty()
+          ? 'Não foi possível gerar todas as parcelas.'
+          : String.join(result.messages, ' ')
+      );
+    }
   }
 
   public List<PreviewItem> previewConsortium(ConsortiumRequest request) {

@@ -792,6 +792,98 @@ private class ALT_CLS_ExpenseWizardTest {
   }
 
   @IsTest
+  static void anIncompleteGenerationIsRefusedWithItsMessage() {
+    ALT_CLS_ContractGeneration.Result complete = new ALT_CLS_ContractGeneration.Result();
+    complete.created = 3;
+    ALT_CLS_ExpenseWizard.requireComplete(complete, 3);
+
+    ALT_CLS_ContractGeneration.Result shortfall = new ALT_CLS_ContractGeneration.Result();
+    shortfall.created = 2;
+    try {
+      ALT_CLS_ExpenseWizard.requireComplete(shortfall, 3);
+      System.assert(false, 'expected ExpenseWizardException');
+    } catch (ALT_CLS_ExpenseWizard.ExpenseWizardException e) {
+      System.assertEquals(
+        'Não foi possível gerar todas as parcelas.',
+        e.getMessage()
+      );
+    }
+
+    ALT_CLS_ContractGeneration.Result failed = new ALT_CLS_ContractGeneration.Result();
+    failed.created = 3;
+    failed.messages.add('Contrato: informe o valor.');
+    try {
+      ALT_CLS_ExpenseWizard.requireComplete(failed, 3);
+      System.assert(false, 'expected ExpenseWizardException');
+    } catch (ALT_CLS_ExpenseWizard.ExpenseWizardException e) {
+      System.assertEquals('Contrato: informe o valor.', e.getMessage());
+    }
+  }
+
+  @IsTest
+  static void aConsortiumKeepsTheMonthlyCadenceAndAddsUpToTheTotal() {
+    ALT_CLS_ExpenseWizard.ConsortiumRequest consortium = consortium(
+      holder('Titular').Id
+    );
+    consortium.base.dueDate = Date.today()
+      .toStartOfMonth()
+      .addMonths(1)
+      .addDays(14);
+
+    Id id = AXF_CLS_CTRL_ExpenseWizard.createConsortium(
+      JSON.serialize(consortium)
+    );
+
+    List<AXF_OBJ_Entry__c> entries = [
+      SELECT AXF_ENT_DAT_DueDate__c, AXF_ENT_CUR_Amount__c
+      FROM AXF_OBJ_Entry__c
+      WHERE AXF_ENT_LKP_Contract__c = :id
+      ORDER BY AXF_ENT_NUM_InstallmentNumber__c
+    ];
+    Decimal total = 0;
+    for (Integer i = 0; i < entries.size(); i++) {
+      System.assertEquals(
+        consortium.base.dueDate.addMonths(i),
+        entries[i].AXF_ENT_DAT_DueDate__c
+      );
+      total += entries[i].AXF_ENT_CUR_Amount__c;
+    }
+    System.assertEquals(72000, total);
+  }
+
+  @IsTest
+  static void aConsortiumPaidFromABankAccountKeepsTheAccount() {
+    Account h = holder('Titular');
+    ALT_CLS_ExpenseWizard.ConsortiumRequest consortium = consortium(h.Id);
+    consortium.count = 3;
+    consortium.base.accountId = account(h.Id).Id;
+
+    Id id = AXF_CLS_CTRL_ExpenseWizard.createConsortium(
+      JSON.serialize(consortium)
+    );
+
+    System.assertEquals(
+      consortium.base.accountId,
+      [
+        SELECT AXF_CTR_LKP_BankAccount__c
+        FROM AXF_OBJ_Contract__c
+        WHERE Id = :id
+      ]
+      .AXF_CTR_LKP_BankAccount__c
+    );
+    for (AXF_OBJ_Entry__c entry : [
+      SELECT AXF_ENT_LKP_BankAccount__c
+      FROM AXF_OBJ_Entry__c
+      WHERE AXF_ENT_LKP_Contract__c = :id
+    ]) {
+      System.assertEquals(
+        consortium.base.accountId,
+        entry.AXF_ENT_LKP_BankAccount__c
+      );
+    }
+  }
+
+  @IsTest
   static void rejectsInvalidConsortiumRequestsWithoutCreatingAnything() {
     Account mine = holder('Meu');
     Account other = holder('Outro');

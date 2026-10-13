@@ -218,6 +218,11 @@
           <p class="review-line slds-text-heading_small">{reviewLine}</p>
           <template lwc:if={hasContract}>
             <p class="review-summary slds-m-top_small">{contractSummary}</p>
+            <template lwc:if={hasConsortiumDetails}>
+              <p class="review-details slds-m-top_x-small">
+                {consortiumDetails}
+              </p>
+            </template>
             <ul class="review-preview slds-m-top_small">
               <template for:each={previewRows} for:item="row">
                 <li key={row.key}>{row.dueDate} · {row.amount}</li>
