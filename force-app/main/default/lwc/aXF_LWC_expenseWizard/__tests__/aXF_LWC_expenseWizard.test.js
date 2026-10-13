@@ -158,18 +158,17 @@ describe("c-a-x-f-l-w-c-expense-wizard", () => {
     element.addEventListener("saved", saved);
     $(element, ".conclude").click();
     await flushPromises();
-    expect(createStandalone).toHaveBeenCalledWith({
-      request: {
-        holderId: "001A",
-        description: "Conta de luz",
-        amount: 180,
-        dueDate: "2026-10-20",
-        categoryId: "c1",
-        status: "Pending",
-        paymentDate: null,
-        accountId: "a1",
-        cardId: null
-      }
+    expect(createStandalone).toHaveBeenCalledTimes(1);
+    expect(JSON.parse(createStandalone.mock.calls[0][0].requestJson)).toEqual({
+      holderId: "001A",
+      description: "Conta de luz",
+      amount: 180,
+      dueDate: "2026-10-20",
+      categoryId: "c1",
+      status: "Pending",
+      paymentDate: null,
+      accountId: "a1",
+      cardId: null
     });
     expect(saved).toHaveBeenCalledTimes(1);
   });

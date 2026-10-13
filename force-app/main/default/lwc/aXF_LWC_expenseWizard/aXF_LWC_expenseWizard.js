@@ -333,8 +333,9 @@ export default class AXF_LWC_expenseWizard extends LightningElement {
     this.isSaving = true;
     this.errorMessage = undefined;
     try {
+      // A JSON string: Aura does not fill the fields of an Apex object parameter reliably.
       await createStandalone({
-        request: {
+        requestJson: JSON.stringify({
           holderId: this.chosenHolderId,
           description: this.description.trim(),
           amount: Number(this.amount),
@@ -344,7 +345,7 @@ export default class AXF_LWC_expenseWizard extends LightningElement {
           paymentDate: this.isRealized ? this.paymentDate : null,
           accountId: this.method === "account" ? this.sourceId : null,
           cardId: this.method === "card" ? this.sourceId : null
-        }
+        })
       });
       this.dispatchEvent(new CustomEvent("saved"));
     } catch (error) {

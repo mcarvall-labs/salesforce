@@ -21,7 +21,7 @@ private class ALT_CLS_ExpenseWizardTest {
     String expected
   ) {
     try {
-      AXF_CLS_CTRL_ExpenseWizard.createStandalone(request);
+      AXF_CLS_CTRL_ExpenseWizard.createStandalone(JSON.serialize(request));
       System.assert(false, 'expected AuraHandledException');
     } catch (AuraHandledException e) {
       System.assertEquals(expected, e.getMessage());
@@ -42,7 +42,9 @@ private class ALT_CLS_ExpenseWizardTest {
     request.accountId = account.Id;
     request.paymentDate = Date.newInstance(2026, 10, 1);
 
-    Id id = AXF_CLS_CTRL_ExpenseWizard.createStandalone(request);
+    Id id = AXF_CLS_CTRL_ExpenseWizard.createStandalone(
+      JSON.serialize(request)
+    );
 
     AXF_OBJ_Entry__c entry = [
       SELECT
@@ -72,7 +74,9 @@ private class ALT_CLS_ExpenseWizardTest {
     request.status = 'Realized';
     request.paymentDate = Date.newInstance(2026, 10, 5);
 
-    Id id = AXF_CLS_CTRL_ExpenseWizard.createStandalone(request);
+    Id id = AXF_CLS_CTRL_ExpenseWizard.createStandalone(
+      JSON.serialize(request)
+    );
 
     AXF_OBJ_Entry__c entry = [
       SELECT AXF_ENT_PKL_Status__c, AXF_ENT_DAT_PaymentDate__c
@@ -225,7 +229,9 @@ private class ALT_CLS_ExpenseWizardTest {
     Id holderId = holder('Titular').Id;
     System.runAs(user) {
       try {
-        AXF_CLS_CTRL_ExpenseWizard.createStandalone(request(holderId));
+        AXF_CLS_CTRL_ExpenseWizard.createStandalone(
+          JSON.serialize(request(holderId))
+        );
         System.assert(false, 'expected AuraHandledException');
       } catch (AuraHandledException e) {
         System.assertNotEquals(null, e.getMessage());

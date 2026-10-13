@@ -9,11 +9,18 @@ public with sharing class AXF_CLS_CTRL_ExpenseWizard {
     }
   }
 
-  // One transaction: creates the standalone expense entry and returns its id.
+  // One transaction: creates the standalone expense entry and returns its id. The request is a
+  // JSON string because Aura does not fill the fields of an Apex object parameter reliably.
   @AuraEnabled
-  public static Id createStandalone(ALT_CLS_ExpenseWizard.Request request) {
+  public static Id createStandalone(String requestJson) {
     try {
-      return new ALT_CLS_ExpenseWizard().createStandalone(request);
+      return new ALT_CLS_ExpenseWizard()
+        .createStandalone(
+          (ALT_CLS_ExpenseWizard.Request) JSON.deserialize(
+            requestJson,
+            ALT_CLS_ExpenseWizard.Request.class
+          )
+        );
     } catch (Exception e) {
       throw aura(e);
     }
