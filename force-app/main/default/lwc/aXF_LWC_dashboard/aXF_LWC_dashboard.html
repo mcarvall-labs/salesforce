@@ -155,7 +155,21 @@
                           · {entry.statusText} · {entry.detail}
                         </p>
                       </div>
-                      <span class={entry.amountClass}>{entry.amountText}</span>
+                      <div class="slds-grid slds-grid_vertical-align-center">
+                        <span class={entry.amountClass}
+                          >{entry.amountText}</span
+                        >
+                        <template lwc:if={entry.canRealize}>
+                          <lightning-button-icon
+                            class="mark-realized slds-m-left_x-small"
+                            icon-name="utility:check"
+                            alternative-text="Marcar como realizado"
+                            title="Marcar como realizado"
+                            data-id={entry.id}
+                            onclick={handleRealizeClick}
+                          ></lightning-button-icon>
+                        </template>
+                      </div>
                     </li>
                   </template>
                 </ul>
@@ -354,5 +368,76 @@
         </div>
       </template>
     </div>
+
+    <template lwc:if={isRealizing}>
+      <section
+        role="dialog"
+        tabindex="-1"
+        aria-modal="true"
+        aria-labelledby="realize-title"
+        onkeydown={handleRealizeKeydown}
+        class="realize-modal slds-modal slds-fade-in-open slds-modal_small"
+      >
+        <div class="slds-modal__container">
+          <header class="slds-modal__header">
+            <h2 id="realize-title" class="slds-modal__title">
+              Marcar como realizado
+            </h2>
+          </header>
+          <div class="slds-modal__content slds-p-around_medium">
+            <p class="realizing-name slds-text-heading_small">
+              {realizingName}
+            </p>
+            <p class="slds-text-color_weak slds-m-bottom_small">
+              Vencimento:
+              <lightning-formatted-date-time
+                value={realizingDueDate}
+                time-zone="UTC"
+              ></lightning-formatted-date-time>
+              · Previsto: {realizingPlanned}
+            </p>
+            <lightning-input
+              class="realize-date"
+              type="date"
+              label="Data do pagamento"
+              value={realizeDate}
+              required
+              onchange={handleRealizeDate}
+            ></lightning-input>
+            <lightning-input
+              class="realize-amount"
+              type="number"
+              step="0.01"
+              min="0.01"
+              label="Valor pago"
+              value={realizeAmount}
+              required
+              onchange={handleRealizeAmount}
+            ></lightning-input>
+            <template lwc:if={realizeError}>
+              <p class="realize-error slds-text-color_error" role="alert">
+                {realizeError}
+              </p>
+            </template>
+          </div>
+          <footer class="slds-modal__footer">
+            <lightning-button
+              class="realize-cancel slds-m-right_x-small"
+              label="Cancelar"
+              disabled={isSaving}
+              onclick={handleRealizeCancel}
+            ></lightning-button>
+            <lightning-button
+              class="realize-confirm"
+              variant="brand"
+              label="Confirmar"
+              disabled={isSaving}
+              onclick={handleRealizeConfirm}
+            ></lightning-button>
+          </footer>
+        </div>
+      </section>
+      <div class="slds-backdrop slds-backdrop_open"></div>
+    </template>
   </lightning-card>
 </template>
