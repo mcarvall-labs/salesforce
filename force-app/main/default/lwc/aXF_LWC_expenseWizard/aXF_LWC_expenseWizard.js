@@ -128,6 +128,9 @@ export default class AXF_LWC_expenseWizard extends LightningElement {
 
   handleChangeType() {
     this.type = undefined;
+    this.amountKind = "total";
+    this.installmentCount = undefined;
+    this.preview = [];
     this.errorMessage = undefined;
     this.focusTitle = true;
   }
@@ -235,7 +238,10 @@ export default class AXF_LWC_expenseWizard extends LightningElement {
   }
 
   get installmentSummary() {
-    const total = this.preview.reduce((sum, item) => sum + item.amount, 0);
+    const total =
+      Math.round(
+        this.preview.reduce((sum, item) => sum + item.amount, 0) * 100
+      ) / 100;
     return `Será criado 1 Contrato (Parcelado) e ${this.preview.length} lançamentos pendentes. Total ${this.money(total)}.`;
   }
 

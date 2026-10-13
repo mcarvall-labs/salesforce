@@ -272,31 +272,57 @@ public with sharing class ALT_CLS_ExpenseWizard {
       AXF_CTR_LKP_CreditCard__c = base.cardId
     );
     Savepoint savepoint = Database.setSavepoint();
-    insert as user contract;
-    ALT_CLS_ContractGeneration.Result result = new ALT_CLS_ContractGeneration()
-      .generate(new Set<Id>{ contract.Id }, false);
-    if (!result.messages.isEmpty() || result.created != request.count) {
-      Database.rollback(savepoint);
-      throw new ExpenseWizardException(
-        result.messages.isEmpty()
-          ? 'Não foi possível gerar todas as parcelas.'
-          : String.join(result.messages, ' ')
+    try {
+      insert as user contract;
+      ALT_CLS_ContractGeneration.Result result = new ALT_CLS_ContractGeneration()
+        .generate(new Set<Id>{ contract.Id }, false);
+      if (!result.messages.isEmpty() || result.created != request.count) {
+        throw new ExpenseWizardException(
+          result.messages.isEmpty()
+            ? 'Não foi possível gerar todas as parcelas.'
+            : String.join(result.messages, ' ')
+        );
+      }
+      adjustLastInstallment(
+        contract.Id,
+        request.count,
+        plan[plan.size() - 1].amount,
+        installment
       );
-    }
-    Decimal residue = plan[plan.size() - 1].amount - installment;
-    if (residue != 0) {
-      AXF_OBJ_Entry__c last = [
-        SELECT Id, AXF_ENT_CUR_Amount__c
-        FROM AXF_OBJ_Entry__c
-        WHERE
-          AXF_ENT_LKP_Contract__c = :contract.Id
-          AND AXF_ENT_NUM_InstallmentNumber__c = :request.count
-        WITH USER_MODE
-      ];
-      last.AXF_ENT_CUR_Amount__c = plan[plan.size() - 1].amount;
-      update as user last;
+    } catch (Exception e) {
+      // Nothing stays saved: no Contract without every installment.
+      Database.rollback(savepoint);
+      throw e;
     }
     return contract.Id;
+  }
+
+  // The rounding residue goes to the last entry so the entries add up to the total.
+  private static void adjustLastInstallment(
+    Id contractId,
+    Integer count,
+    Decimal lastAmount,
+    Decimal installment
+  ) {
+    if (lastAmount == installment) {
+      return;
+    }
+    List<AXF_OBJ_Entry__c> rows = [
+      SELECT Id
+      FROM AXF_OBJ_Entry__c
+      WHERE
+        AXF_ENT_LKP_Contract__c = :contractId
+        AND AXF_ENT_NUM_InstallmentNumber__c = :count
+      WITH USER_MODE
+      LIMIT 1
+    ];
+    if (rows.isEmpty()) {
+      throw new ExpenseWizardException(
+        'Não foi possível ajustar a última parcela.'
+      );
+    }
+    rows[0].AXF_ENT_CUR_Amount__c = lastAmount;
+    update as user rows;
   }
 
   public List<PreviewItem> previewInstallment(InstallmentRequest request) {
@@ -337,6 +363,12 @@ public with sharing class ALT_CLS_ExpenseWizard {
     if (installment <= 0) {
       throw new ExpenseWizardException(
         'O valor da parcela deve ser maior que zero.'
+      );
+    }
+    // Rounding up can leave nothing (or less) for the last installment on tiny totals.
+    if (total - installment * (request.count - 1) <= 0) {
+      throw new ExpenseWizardException(
+        'O valor total é pequeno demais para este número de parcelas.'
       );
     }
     List<PreviewItem> items = new List<PreviewItem>();

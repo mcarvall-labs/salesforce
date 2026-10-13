@@ -299,14 +299,35 @@ private class ALT_CLS_ExpenseWizardTest {
     Account h = holder('Titular');
     ALT_CLS_ExpenseWizard.InstallmentRequest installment = installment(h.Id);
     installment.base.cardId = card(h.Id).Id;
+    AXF_OBJ_Category__c category = new AXF_OBJ_Category__c(
+      Name = 'Casa',
+      AXF_CAT_PKL_Type__c = 'Expense'
+    );
+    insert category;
+    installment.base.categoryId = category.Id;
 
+    List<ALT_CLS_ExpenseWizard.PreviewItem> preview = AXF_CLS_CTRL_ExpenseWizard.previewInstallment(
+      installment
+    );
+    System.assertEquals(333.34, preview[2].amount);
     Id id = AXF_CLS_CTRL_ExpenseWizard.createInstallment(installment);
 
     AXF_OBJ_Contract__c contract = [
-      SELECT RecordType.DeveloperName, AXF_CTR_CUR_Amount__c
+      SELECT
+        RecordType.DeveloperName,
+        AXF_CTR_CUR_Amount__c,
+        AXF_CTR_LKP_CreditCard__c,
+        AXF_CTR_LKP_Category__c,
+        AXF_CTR_PKL_Direction__c
       FROM AXF_OBJ_Contract__c
       WHERE Id = :id
     ];
+    System.assertEquals(
+      installment.base.cardId,
+      contract.AXF_CTR_LKP_CreditCard__c
+    );
+    System.assertEquals(category.Id, contract.AXF_CTR_LKP_Category__c);
+    System.assertEquals('Expense', contract.AXF_CTR_PKL_Direction__c);
     System.assertEquals('AXF_Installment', contract.RecordType.DeveloperName);
     System.assertEquals(333.33, contract.AXF_CTR_CUR_Amount__c);
     List<AXF_OBJ_Entry__c> entries = [
@@ -332,6 +353,31 @@ private class ALT_CLS_ExpenseWizardTest {
       );
     }
     System.assertEquals(1000, sum);
+  }
+
+  @IsTest
+  static void aRoundedUpInstallmentGivesTheNegativeResidueToTheLastOne() {
+    ALT_CLS_ExpenseWizard.InstallmentRequest installment = installment(
+      holder('Titular').Id
+    );
+    installment.base.amount = 100;
+    installment.count = 6;
+
+    Id id = AXF_CLS_CTRL_ExpenseWizard.createInstallment(installment);
+
+    List<AXF_OBJ_Entry__c> entries = [
+      SELECT AXF_ENT_CUR_Amount__c
+      FROM AXF_OBJ_Entry__c
+      WHERE AXF_ENT_LKP_Contract__c = :id
+      ORDER BY AXF_ENT_NUM_InstallmentNumber__c
+    ];
+    System.assertEquals(16.67, entries[0].AXF_ENT_CUR_Amount__c);
+    System.assertEquals(16.65, entries[5].AXF_ENT_CUR_Amount__c);
+    Decimal sum = 0;
+    for (AXF_OBJ_Entry__c entry : entries) {
+      sum += entry.AXF_ENT_CUR_Amount__c;
+    }
+    System.assertEquals(100, sum);
   }
 
   @IsTest
@@ -382,6 +428,21 @@ private class ALT_CLS_ExpenseWizardTest {
     assertInstallmentRejected(
       tiny,
       'O valor da parcela deve ser maior que zero.'
+    );
+    ALT_CLS_ExpenseWizard.InstallmentRequest small = installment(mine.Id);
+    small.base.amount = 1;
+    small.count = 120;
+    assertInstallmentRejected(
+      small,
+      'O valor total é pequeno demais para este número de parcelas.'
+    );
+    ALT_CLS_ExpenseWizard.InstallmentRequest foreignAccount = installment(
+      mine.Id
+    );
+    foreignAccount.base.accountId = account(other.Id).Id;
+    assertInstallmentRejected(
+      foreignAccount,
+      'A conta não pertence ao titular.'
     );
     ALT_CLS_ExpenseWizard.InstallmentRequest noDue = installment(mine.Id);
     noDue.base.dueDate = null;
