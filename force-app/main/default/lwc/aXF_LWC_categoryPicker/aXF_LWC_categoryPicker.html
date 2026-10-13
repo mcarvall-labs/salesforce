@@ -49,5 +49,36 @@
         </template>
       </ul>
     </template>
+
+    <template lwc:if={isCreating}>
+      <div class="create-panel">
+        <lightning-input
+          class="new-name"
+          label="Nome da nova categoria"
+          value={newName}
+          maxlength={maxName}
+          disabled
+        ></lightning-input>
+        <lightning-combobox
+          class="new-parent"
+          label="Categoria pai"
+          options={parentOptions}
+          value={newParentId}
+          onchange={handleParentChange}
+        ></lightning-combobox>
+        <div class="create-actions">
+          <lightning-button
+            label="Cancelar"
+            onclick={handleCancelCreate}
+          ></lightning-button>
+          <lightning-button
+            class="confirm-create"
+            variant="brand"
+            label="Criar categoria"
+            onclick={handleConfirmCreate}
+          ></lightning-button>
+        </div>
+      </div>
+    </template>
   </div>
 </template>

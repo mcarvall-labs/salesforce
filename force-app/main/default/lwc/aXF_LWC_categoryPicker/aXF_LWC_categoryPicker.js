@@ -17,6 +17,10 @@ export default class AXF_LWC_categoryPicker extends LightningElement {
 
   query = "";
   isOpen = false;
+  // "+ Nova categoria" step: the name is kept while the user picks the parent.
+  isCreating = false;
+  newName = "";
+  newParentId = "";
   // Index in `actions` of the row under the keyboard; -1 = none.
   activeIndex = -1;
 
@@ -172,6 +176,22 @@ export default class AXF_LWC_categoryPicker extends LightningElement {
     );
   }
 
+  // Every category as "Moradia › Energia", in tree order, to choose the parent of a new one.
+  get parentOptions() {
+    const flat = [{ label: "Nenhuma (nível raiz)", value: "" }];
+    const walk = (nodes, prefix) => {
+      for (const node of nodes) {
+        const path = prefix
+          ? `${prefix} › ${node.option.label}`
+          : node.option.label;
+        flat.push({ label: path, value: node.option.id });
+        walk(node.children, path);
+      }
+    };
+    walk(this.tree, "");
+    return flat;
+  }
+
   get createLabel() {
     return `+ Nova categoria "${this.typedName}"`;
   }
@@ -232,9 +252,10 @@ export default class AXF_LWC_categoryPicker extends LightningElement {
         new CustomEvent("change", { detail: { value: null } })
       );
     } else {
-      this.dispatchEvent(
-        new CustomEvent("createcategory", { detail: { name: this.typedName } })
-      );
+      // Not created yet: the user still chooses where it goes in the tree.
+      this.newName = this.typedName;
+      this.newParentId = this.value || "";
+      this.isCreating = true;
     }
     this.query = "";
     this.activeIndex = -1;
@@ -260,5 +281,22 @@ export default class AXF_LWC_categoryPicker extends LightningElement {
   // Keeps the focus on the input when the user presses the scrollbar or the list background.
   handleListMouseDown(event) {
     event.preventDefault();
+  }
+
+  handleParentChange(event) {
+    this.newParentId = event.detail.value || "";
+  }
+
+  handleConfirmCreate() {
+    this.dispatchEvent(
+      new CustomEvent("createcategory", {
+        detail: { name: this.newName, parentId: this.newParentId || null }
+      })
+    );
+    this.isCreating = false;
+  }
+
+  handleCancelCreate() {
+    this.isCreating = false;
   }
 }
