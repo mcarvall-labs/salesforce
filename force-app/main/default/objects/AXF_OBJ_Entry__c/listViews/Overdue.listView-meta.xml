@@ -13,5 +13,5 @@
         <value>1</value>
     </filters>
     <filterScope>Everything</filterScope>
-    <label>Overdue</label>
+    <label>Vencidos</label>
 </ListView>

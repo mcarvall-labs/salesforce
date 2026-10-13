@@ -10,4 +10,26 @@
     </caseValues>
     <gender>Feminine</gender>
     <nameFieldLabel>Nome</nameFieldLabel>
+    <validationRules>
+        <errorMessage>O valor mensal deve ser maior que zero.</errorMessage>
+        <name>AXF_BDG_VR_AmountPositive</name>
+    </validationRules>
+    <validationRules>
+        <errorMessage>As metas devem estar em BRL.</errorMessage>
+        <name>AXF_BDG_VR_CurrencyBRL</name>
+    </validationRules>
+    <validationRules>
+        <errorMessage
+    >O mês final não pode ser anterior ao mês inicial.</errorMessage>
+        <name>AXF_BDG_VR_EndAfterStart</name>
+    </validationRules>
+    <validationRules>
+        <errorMessage>O mês final deve ser o primeiro dia do mês.</errorMessage>
+        <name>AXF_BDG_VR_EndMonthFirstDay</name>
+    </validationRules>
+    <validationRules>
+        <errorMessage
+    >O mês inicial deve ser o primeiro dia do mês.</errorMessage>
+        <name>AXF_BDG_VR_StartMonthFirstDay</name>
+    </validationRules>
 </CustomObjectTranslation>

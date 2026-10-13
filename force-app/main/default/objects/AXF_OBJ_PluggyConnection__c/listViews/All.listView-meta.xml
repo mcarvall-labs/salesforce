@@ -8,5 +8,5 @@
     <columns>AXF_CON_DT_LastSyncDatetime__c</columns>
     <columns>AXF_CON_EXI_PluggyItemId__c</columns>
     <filterScope>Everything</filterScope>
-    <label>All</label>
+    <label>Todas</label>
 </ListView>

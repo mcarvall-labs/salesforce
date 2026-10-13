@@ -8,5 +8,5 @@
     <columns>AXF_BDG_DAT_StartMonth__c</columns>
     <columns>AXF_BDG_DAT_EndMonth__c</columns>
     <filterScope>Everything</filterScope>
-    <label>All</label>
+    <label>Todas</label>
 </ListView>
