@@ -165,11 +165,18 @@ public with sharing class ALT_CLS_ExpenseWizard {
       AXF_CTR_LKP_BankAccount__c = base.accountId,
       AXF_CTR_LKP_CreditCard__c = base.cardId
     );
+    Savepoint savepoint = Database.setSavepoint();
     insert as user contract;
     ALT_CLS_ContractGeneration.Result result = new ALT_CLS_ContractGeneration()
       .generate(new Set<Id>{ contract.Id }, false);
-    if (!result.messages.isEmpty()) {
-      throw new ExpenseWizardException(String.join(result.messages, ' '));
+    // A contract without entries (or with some that failed) is not what the user asked for.
+    if (!result.messages.isEmpty() || result.created == 0) {
+      Database.rollback(savepoint);
+      throw new ExpenseWizardException(
+        result.messages.isEmpty()
+          ? 'Nenhum lançamento seria gerado para este período.'
+          : String.join(result.messages, ' ')
+      );
     }
     return contract.Id;
   }
@@ -190,6 +197,11 @@ public with sharing class ALT_CLS_ExpenseWizard {
       preview.dueDate = item.dueDate;
       preview.amount = item.amount;
       items.add(preview);
+    }
+    if (items.isEmpty()) {
+      throw new ExpenseWizardException(
+        'Nenhum lançamento seria gerado para este período.'
+      );
     }
     return items;
   }

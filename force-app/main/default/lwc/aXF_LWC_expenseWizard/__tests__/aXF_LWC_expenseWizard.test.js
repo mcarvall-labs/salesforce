@@ -316,4 +316,27 @@ describe("c-a-x-f-l-w-c-expense-wizard", () => {
     );
     expect($(element, ".wizard-step").textContent).toContain("Etapa 2 de 3");
   });
+
+  it("sends the account or card of a recurring expense and blocks a fractional day", async () => {
+    const element = await mount();
+    $$(element, ".type-button")[1].click();
+    await flushPromises();
+    await type(element, ".field-description", "Assinatura");
+    await type(element, ".field-amount", "40");
+    await type(element, ".field-due", "2026-11-05");
+    await type(element, ".field-due-day", "5.5");
+    expect($(element, ".next").disabled).toBe(true);
+    await type(element, ".field-due-day", "5");
+    $(element, ".next").click();
+    await flushPromises();
+    await type(element, ".field-method", "card");
+    await type(element, ".field-source", "k1");
+    $(element, ".next").click();
+    await flushPromises();
+    $(element, ".conclude").click();
+    await flushPromises();
+    const base = createRecurring.mock.calls[0][0].request.base;
+    expect(base.cardId).toBe("k1");
+    expect(base.accountId).toBeNull();
+  });
 });

@@ -48,6 +48,7 @@ export default class AXF_LWC_expenseWizard extends LightningElement {
   errorMessage;
   focusTitle = false;
   loadSeq = 0;
+  isLoadingPreview = false;
   // Recurring only
   variable = "no";
   dueDay;
@@ -187,7 +188,7 @@ export default class AXF_LWC_expenseWizard extends LightningElement {
   get recurringValid() {
     const day = this.dueDay ? Number(this.dueDay) : null;
     return (
-      (day === null || (day >= 1 && day <= 31)) &&
+      (day === null || (Number.isInteger(day) && day >= 1 && day <= 31)) &&
       (!this.endDate || this.endDate >= this.dueDate)
     );
   }
@@ -273,6 +274,9 @@ export default class AXF_LWC_expenseWizard extends LightningElement {
   }
 
   get nextDisabled() {
+    if (this.isLoadingPreview) {
+      return true;
+    }
     if (this.isStep1) {
       return !this.step1Valid;
     }
@@ -378,6 +382,7 @@ export default class AXF_LWC_expenseWizard extends LightningElement {
     }
     this.errorMessage = undefined;
     if (this.isRecurring && this.step === 2) {
+      this.isLoadingPreview = true;
       try {
         this.preview = await previewRecurring({
           request: this.recurringRequest
@@ -388,6 +393,8 @@ export default class AXF_LWC_expenseWizard extends LightningElement {
           "Não foi possível calcular os lançamentos."
         );
         return;
+      } finally {
+        this.isLoadingPreview = false;
       }
     }
     this.step += 1;

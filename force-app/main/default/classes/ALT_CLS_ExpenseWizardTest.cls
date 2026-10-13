@@ -271,6 +271,31 @@ private class ALT_CLS_ExpenseWizardTest {
   }
 
   @IsTest
+  static void aContractThatWouldGenerateNoEntriesIsRolledBack() {
+    ALT_CLS_ExpenseWizard.RecurringRequest recurring = recurring(
+      holder('Titular').Id
+    );
+    // Beyond the 12 months horizon: the schedule is empty.
+    recurring.base.dueDate = Date.today().addMonths(24);
+
+    assertRecurringRejected(
+      recurring,
+      'Nenhum lançamento seria gerado para este período.'
+    );
+    System.assertEquals(0, [SELECT COUNT() FROM AXF_OBJ_Contract__c]);
+    System.assertEquals(0, [SELECT COUNT() FROM AXF_OBJ_Entry__c]);
+    try {
+      AXF_CLS_CTRL_ExpenseWizard.previewRecurring(recurring);
+      System.assert(false, 'expected AuraHandledException');
+    } catch (AuraHandledException e) {
+      System.assertEquals(
+        'Nenhum lançamento seria gerado para este período.',
+        e.getMessage()
+      );
+    }
+  }
+
+  @IsTest
   static void rejectsInvalidRecurringRequestsWithoutCreatingAnything() {
     Account mine = holder('Meu');
     Account other = holder('Outro');
@@ -292,6 +317,19 @@ private class ALT_CLS_ExpenseWizardTest {
     ALT_CLS_ExpenseWizard.RecurringRequest foreign = recurring(mine.Id);
     foreign.base.accountId = account(other.Id).Id;
     assertRecurringRejected(foreign, 'A conta não pertence ao titular.');
+    ALT_CLS_ExpenseWizard.RecurringRequest foreignCard = recurring(mine.Id);
+    foreignCard.base.cardId = card(other.Id).Id;
+    assertRecurringRejected(foreignCard, 'O cartão não pertence ao titular.');
+    ALT_CLS_ExpenseWizard.RecurringRequest both = recurring(mine.Id);
+    both.base.accountId = account(mine.Id).Id;
+    both.base.cardId = card(mine.Id).Id;
+    assertRecurringRejected(both, 'Escolha a conta ou o cartão, não os dois.');
+    ALT_CLS_ExpenseWizard.RecurringRequest noHolder = recurring(mine.Id);
+    noHolder.base.holderId = null;
+    assertRecurringRejected(noHolder, 'Informe o titular.');
+    ALT_CLS_ExpenseWizard.RecurringRequest noDescription = recurring(mine.Id);
+    noDescription.base.description = ' ';
+    assertRecurringRejected(noDescription, 'Informe a descrição.');
     System.assertEquals(0, [SELECT COUNT() FROM AXF_OBJ_Contract__c]);
     System.assertEquals(0, [SELECT COUNT() FROM AXF_OBJ_Entry__c]);
   }
