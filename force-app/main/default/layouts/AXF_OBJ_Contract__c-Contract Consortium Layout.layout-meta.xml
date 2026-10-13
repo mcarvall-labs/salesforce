@@ -50,17 +50,17 @@
         <label>Consórcio</label>
         <layoutColumns>
             <layoutItems>
-                <behavior>Required</behavior>
+                <behavior>Edit</behavior>
                 <field>AXF_CTR_CUR_Amount__c</field>
             </layoutItems>
             <layoutItems>
-                <behavior>Required</behavior>
+                <behavior>Edit</behavior>
                 <field>AXF_CTR_NUM_InstallmentCount__c</field>
             </layoutItems>
         </layoutColumns>
         <layoutColumns>
             <layoutItems>
-                <behavior>Required</behavior>
+                <behavior>Edit</behavior>
                 <field>AXF_CTR_DAT_FirstDueDate__c</field>
             </layoutItems>
             <layoutItems>

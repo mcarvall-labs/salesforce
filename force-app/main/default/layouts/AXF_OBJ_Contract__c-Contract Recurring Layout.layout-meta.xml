@@ -50,7 +50,7 @@
         <label>Recorrência</label>
         <layoutColumns>
             <layoutItems>
-                <behavior>Required</behavior>
+                <behavior>Edit</behavior>
                 <field>AXF_CTR_CUR_Amount__c</field>
             </layoutItems>
             <layoutItems>
@@ -58,13 +58,13 @@
                 <field>AXF_CTR_BOL_VariableAmount__c</field>
             </layoutItems>
             <layoutItems>
-                <behavior>Required</behavior>
+                <behavior>Edit</behavior>
                 <field>AXF_CTR_NUM_DueDay__c</field>
             </layoutItems>
         </layoutColumns>
         <layoutColumns>
             <layoutItems>
-                <behavior>Required</behavior>
+                <behavior>Edit</behavior>
                 <field>AXF_CTR_DAT_FirstDueDate__c</field>
             </layoutItems>
             <layoutItems>

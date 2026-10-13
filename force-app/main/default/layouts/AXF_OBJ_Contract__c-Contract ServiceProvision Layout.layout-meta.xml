@@ -54,17 +54,17 @@
         <label>Valor e vigência</label>
         <layoutColumns>
             <layoutItems>
-                <behavior>Required</behavior>
+                <behavior>Edit</behavior>
                 <field>AXF_CTR_CUR_HourlyRate__c</field>
             </layoutItems>
             <layoutItems>
-                <behavior>Required</behavior>
+                <behavior>Edit</behavior>
                 <field>AXF_CTR_DAT_ActivityStart__c</field>
             </layoutItems>
         </layoutColumns>
         <layoutColumns>
             <layoutItems>
-                <behavior>Required</behavior>
+                <behavior>Edit</behavior>
                 <field>AXF_CTR_DAT_FirstCompetence__c</field>
             </layoutItems>
             <layoutItems>
@@ -81,21 +81,21 @@
         <label>Envio e recebimento</label>
         <layoutColumns>
             <layoutItems>
-                <behavior>Required</behavior>
+                <behavior>Edit</behavior>
                 <field>AXF_CTR_PKL_SendMonth__c</field>
             </layoutItems>
             <layoutItems>
-                <behavior>Required</behavior>
+                <behavior>Edit</behavior>
                 <field>AXF_CTR_NUM_SendDay__c</field>
             </layoutItems>
         </layoutColumns>
         <layoutColumns>
             <layoutItems>
-                <behavior>Required</behavior>
+                <behavior>Edit</behavior>
                 <field>AXF_CTR_PKL_ReceiptMonth__c</field>
             </layoutItems>
             <layoutItems>
-                <behavior>Required</behavior>
+                <behavior>Edit</behavior>
                 <field>AXF_CTR_NUM_ReceiptDay__c</field>
             </layoutItems>
         </layoutColumns>
@@ -120,7 +120,7 @@
                 <field>AXF_CTR_NUM_DailyLimit__c</field>
             </layoutItems>
             <layoutItems>
-                <behavior>Required</behavior>
+                <behavior>Edit</behavior>
                 <field>AXF_CTR_PKL_HolidayCalendar__c</field>
             </layoutItems>
         </layoutColumns>
@@ -166,15 +166,6 @@
         </layoutColumns>
         <style>OneColumn</style>
     </layoutSections>
-    <platformActionList>
-        <actionListContext>Record</actionListContext>
-        <platformActionListItems>
-            <actionName
-      >AXF_OBJ_Contract__c.AXF_CTR_QA_GenerateEntries</actionName>
-            <actionType>QuickAction</actionType>
-            <sortOrder>0</sortOrder>
-        </platformActionListItems>
-    </platformActionList>
     <relatedLists>
         <fields>NAME</fields>
         <fields>AXF_ENT_DAT_DueDate__c</fields>
