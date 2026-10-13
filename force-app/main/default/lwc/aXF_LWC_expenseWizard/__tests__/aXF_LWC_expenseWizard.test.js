@@ -7,6 +7,8 @@ import createRecurring from "@salesforce/apex/AXF_CLS_CTRL_ExpenseWizard.createR
 import previewRecurring from "@salesforce/apex/AXF_CLS_CTRL_ExpenseWizard.previewRecurring";
 import createInstallment from "@salesforce/apex/AXF_CLS_CTRL_ExpenseWizard.createInstallment";
 import previewInstallment from "@salesforce/apex/AXF_CLS_CTRL_ExpenseWizard.previewInstallment";
+import createConsortium from "@salesforce/apex/AXF_CLS_CTRL_ExpenseWizard.createConsortium";
+import previewConsortium from "@salesforce/apex/AXF_CLS_CTRL_ExpenseWizard.previewConsortium";
 
 jest.mock(
   "@salesforce/apex/AXF_CLS_CTRL_ExpenseWizard.getOptions",
@@ -43,6 +45,17 @@ jest.mock(
 
 jest.mock(
   "@salesforce/apex/AXF_CLS_CTRL_ExpenseWizard.createCategory",
+  () => ({ default: jest.fn() }),
+  { virtual: true }
+);
+
+jest.mock(
+  "@salesforce/apex/AXF_CLS_CTRL_ExpenseWizard.createConsortium",
+  () => ({ default: jest.fn() }),
+  { virtual: true }
+);
+jest.mock(
+  "@salesforce/apex/AXF_CLS_CTRL_ExpenseWizard.previewConsortium",
   () => ({ default: jest.fn() }),
   { virtual: true }
 );
@@ -100,6 +113,12 @@ describe("c-a-x-f-l-w-c-expense-wizard", () => {
     createStandalone.mockResolvedValue("a0X");
     createRecurring.mockResolvedValue("a0C");
     createInstallment.mockResolvedValue("a0I");
+    createConsortium.mockResolvedValue("a0K");
+    previewConsortium.mockResolvedValue([
+      { dueDate: "2026-11-15", amount: 1200 },
+      { dueDate: "2026-12-15", amount: 1200 },
+      { dueDate: "2027-01-15", amount: 1200 }
+    ]);
     previewInstallment.mockResolvedValue([
       { dueDate: "2026-11-10", amount: 333.33 },
       { dueDate: "2026-12-10", amount: 333.33 },
@@ -130,7 +149,7 @@ describe("c-a-x-f-l-w-c-expense-wizard", () => {
       false,
       false,
       false,
-      true,
+      false,
       true
     ]);
     expect(getOptions).toHaveBeenCalledWith({ holderId: "001A" });
@@ -649,5 +668,190 @@ describe("c-a-x-f-l-w-c-expense-wizard", () => {
     await flushPromises();
     expect($(element, ".field-amount-kind").value).toBe("total");
     expect($(element, ".field-installment-count").value).toBeUndefined();
+  });
+
+  it("creates a consortium with the administrator and the award date", async () => {
+    const element = await mount();
+    $$(element, ".type-card")[3].click();
+    await flushPromises();
+    expect($(element, ".wizard-title").textContent).toContain("Consórcio");
+    expect($(element, ".field-status")).toBeNull();
+    expect($(element, ".field-amount-kind")).toBeNull();
+    expect($(element, ".field-amount").label).toBe("Valor da parcela");
+    expect($(element, ".field-installment-count").max).toBe(240);
+    await type(element, ".field-description", "Consórcio do carro");
+    await type(element, ".field-administrator", "Administradora X");
+    await type(element, ".field-amount", "1200");
+    await type(element, ".field-due", "2026-11-15");
+    await type(element, ".field-awarded-on", "2027-05-01");
+    await type(element, ".field-installment-count", "241");
+    expect($(element, ".next").disabled).toBe(true);
+    await type(element, ".field-installment-count", "60");
+    expect($(element, ".next").disabled).toBe(false);
+    $(element, ".next").click();
+    await flushPromises();
+    $(element, ".next").click();
+    await flushPromises();
+    expect(previewConsortium).toHaveBeenCalledTimes(1);
+    expect(
+      $(element, ".review-summary").textContent.replace(/\u00a0/g, " ")
+    ).toContain(
+      "1 Contrato (Consórcio) e 3 lançamentos pendentes. Total R$ 3.600,00."
+    );
+
+    const saved = jest.fn();
+    element.addEventListener("saved", saved);
+    $(element, ".conclude").click();
+    await flushPromises();
+    expect(JSON.parse(createConsortium.mock.calls[0][0].requestJson)).toEqual({
+      base: {
+        holderId: "001A",
+        description: "Consórcio do carro",
+        amount: 1200,
+        dueDate: "2026-11-15",
+        categoryId: null,
+        accountId: null,
+        cardId: null
+      },
+      count: 60,
+      administrator: "Administradora X",
+      awardedOn: "2027-05-01"
+    });
+    expect(createInstallment).not.toHaveBeenCalled();
+    expect(createRecurring).not.toHaveBeenCalled();
+    expect(saved).toHaveBeenCalledTimes(1);
+  });
+
+  it("sends null for an empty administrator and award date, and shows the save error", async () => {
+    createConsortium.mockRejectedValueOnce({
+      body: { message: "Não foi possível gerar todas as parcelas." }
+    });
+    const element = await mount();
+    $$(element, ".type-card")[3].click();
+    await flushPromises();
+    await type(element, ".field-description", "Consórcio");
+    await type(element, ".field-amount", "500");
+    await type(element, ".field-due", "2026-11-15");
+    await type(element, ".field-installment-count", "12");
+    $(element, ".next").click();
+    await flushPromises();
+    $(element, ".next").click();
+    await flushPromises();
+    $(element, ".conclude").click();
+    await flushPromises();
+    const request = JSON.parse(createConsortium.mock.calls[0][0].requestJson);
+    expect(request.administrator).toBeNull();
+    expect(request.awardedOn).toBeNull();
+    expect($(element, ".wizard-error").textContent).toContain(
+      "Não foi possível gerar todas as parcelas."
+    );
+  });
+
+  it("forgets the consortium fields when the type is changed", async () => {
+    const element = await mount();
+    $$(element, ".type-card")[3].click();
+    await flushPromises();
+    await type(element, ".field-administrator", "Administradora X");
+    await type(element, ".field-awarded-on", "2027-05-01");
+    await type(element, ".field-installment-count", "60");
+    $(element, ".change-type").click();
+    await flushPromises();
+    $$(element, ".type-card")[3].click();
+    await flushPromises();
+    expect($(element, ".field-administrator").value).toBe("");
+    expect($(element, ".field-awarded-on").value).toBeUndefined();
+    expect($(element, ".field-installment-count").value).toBeUndefined();
+  });
+
+  it("shows the administrator and the award date in the review of a consortium", async () => {
+    const element = await mount();
+    $$(element, ".type-card")[3].click();
+    await flushPromises();
+    await type(element, ".field-description", "Consórcio do carro");
+    await type(element, ".field-administrator", "Administradora X");
+    await type(element, ".field-amount", "1200");
+    await type(element, ".field-due", "2026-11-15");
+    await type(element, ".field-awarded-on", "2027-05-01");
+    await type(element, ".field-installment-count", "60");
+    expect($(element, ".field-administrator").maxLength).toBe("120");
+    $(element, ".next").click();
+    await flushPromises();
+    $(element, ".next").click();
+    await flushPromises();
+    expect($(element, ".review-details").textContent).toContain(
+      "Administradora: Administradora X · Contemplado em 01/05/2027"
+    );
+  });
+
+  it("hides the details line when a consortium has neither administrator nor award date", async () => {
+    const element = await mount();
+    $$(element, ".type-card")[3].click();
+    await flushPromises();
+    await type(element, ".field-description", "Consórcio");
+    await type(element, ".field-amount", "500");
+    await type(element, ".field-due", "2026-11-15");
+    await type(element, ".field-installment-count", "1");
+    expect($(element, ".next").disabled).toBe(true);
+    await type(element, ".field-installment-count", "12");
+    $(element, ".next").click();
+    await flushPromises();
+    $(element, ".next").click();
+    await flushPromises();
+    expect($(element, ".review-details")).toBeNull();
+  });
+
+  it("sends the account of a consortium and shows the preview error", async () => {
+    previewConsortium.mockRejectedValueOnce({
+      body: { message: "O número de parcelas deve ser de 2 a 240." }
+    });
+    const element = await mount();
+    $$(element, ".type-card")[3].click();
+    await flushPromises();
+    await type(element, ".field-description", "Consórcio");
+    await type(element, ".field-amount", "500");
+    await type(element, ".field-due", "2026-11-15");
+    await type(element, ".field-installment-count", "12");
+    $(element, ".next").click();
+    await flushPromises();
+    await type(element, ".field-method", "account");
+    await type(element, ".field-source", "a1");
+    $(element, ".next").click();
+    await flushPromises();
+    expect($(element, ".wizard-error").textContent).toContain("de 2 a 240");
+    expect($(element, ".wizard-step").textContent).toContain("Etapa 2 de 3");
+    $(element, ".next").click();
+    await flushPromises();
+    $(element, ".conclude").click();
+    await flushPromises();
+    const base = JSON.parse(createConsortium.mock.calls[0][0].requestJson).base;
+    expect(base.accountId).toBe("a1");
+    expect(base.cardId).toBeNull();
+  });
+
+  it("ignores a second click on Concluir while the first is saving", async () => {
+    let resolve;
+    createConsortium.mockReturnValueOnce(
+      new Promise((r) => {
+        resolve = r;
+      })
+    );
+    const element = await mount();
+    $$(element, ".type-card")[3].click();
+    await flushPromises();
+    await type(element, ".field-description", "Consórcio");
+    await type(element, ".field-amount", "500");
+    await type(element, ".field-due", "2026-11-15");
+    await type(element, ".field-installment-count", "12");
+    $(element, ".next").click();
+    await flushPromises();
+    $(element, ".next").click();
+    await flushPromises();
+    const concluded = $(element, ".conclude");
+    concluded.click();
+    concluded.click();
+    await flushPromises();
+    expect(createConsortium).toHaveBeenCalledTimes(1);
+    resolve("a0K");
+    await flushPromises();
   });
 });
