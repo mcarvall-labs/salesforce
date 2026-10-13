@@ -13,8 +13,7 @@ private class ALT_CLS_ReconciliationAccessTest {
   // (through the permission set) but without sharing of the holders it did not receive.
   @TestSetup
   static void setup() {
-    Id profileId = [SELECT Id FROM Profile WHERE Name = 'Standard User' LIMIT 1]
-    .Id;
+    Id profileId = ALT_CLS_ConnectionTestUser.standardProfileId();
     List<User> users = new List<User>();
     for (String name : new List<String>{ 'AxfNoPerm', 'AxfWithPerm' }) {
       users.add(

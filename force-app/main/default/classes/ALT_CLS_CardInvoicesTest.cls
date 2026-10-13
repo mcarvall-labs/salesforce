@@ -124,8 +124,7 @@ private class ALT_CLS_CardInvoicesTest {
       LastName = 'NoAccess',
       LanguageLocaleKey = 'en_US',
       LocaleSidKey = 'en_US',
-      ProfileId = [SELECT Id FROM Profile WHERE Name = 'Standard User' LIMIT 1]
-      .Id,
+      ProfileId = ALT_CLS_ConnectionTestUser.standardProfileId(),
       TimeZoneSidKey = 'America/Sao_Paulo',
       Username = 'axfnoacc' + System.currentTimeMillis() + '@example.com'
     );

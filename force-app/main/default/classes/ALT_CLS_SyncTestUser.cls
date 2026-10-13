@@ -56,6 +56,18 @@ public class ALT_CLS_SyncTestUser {
         }
       }
     }
+    // Read on an Axon object depends on Read on Account, which depends on Read on Contact.
+    for (String standard : new List<String>{ 'Account', 'Contact' }) {
+      if (!objectNames.contains(standard)) {
+        objects.add(
+          new ObjectPermissions(
+            ParentId = ps.Id,
+            SobjectType = standard,
+            PermissionsRead = true
+          )
+        );
+      }
+    }
     insert objects;
     insert fields;
     insert new PermissionSetAssignment(
