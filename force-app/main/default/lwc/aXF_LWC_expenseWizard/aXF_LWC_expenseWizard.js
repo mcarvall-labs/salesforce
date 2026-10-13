@@ -40,6 +40,7 @@ export default class AXF_LWC_expenseWizard extends LightningElement {
   isSaving = false;
   errorMessage;
   focusTitle = false;
+  loadSeq = 0;
 
   connectedCallback() {
     this.chosenHolderId = this.holderId;
@@ -57,14 +58,22 @@ export default class AXF_LWC_expenseWizard extends LightningElement {
   }
 
   async loadOptions() {
+    const seq = ++this.loadSeq;
     try {
       const options = await getOptions({ holderId: this.chosenHolderId });
+      if (seq !== this.loadSeq) {
+        return;
+      }
+      this.errorMessage = undefined;
       this.options = {
         categories: options.categories || [],
         accounts: options.accounts || [],
         cards: options.cards || []
       };
     } catch (error) {
+      if (seq !== this.loadSeq) {
+        return;
+      }
       this.errorMessage = this.messageOf(
         error,
         "Não foi possível carregar as opções."
@@ -259,7 +268,6 @@ export default class AXF_LWC_expenseWizard extends LightningElement {
 
   handleHolder(event) {
     this.chosenHolderId = event.detail.value;
-    this.categoryId = undefined;
     this.sourceId = undefined;
     this.loadOptions();
   }

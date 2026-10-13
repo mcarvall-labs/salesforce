@@ -600,6 +600,8 @@ describe("c-a-x-f-l-w-c-dashboard", () => {
     );
     expect(wizard).not.toBeNull();
     expect(mockNavigate).not.toHaveBeenCalled();
+    expect(wizard.holderId).toBe("");
+    expect(wizard.holders).toEqual(holders);
     wizard.dispatchEvent(new CustomEvent("close"));
     await flushPromises();
     expect(

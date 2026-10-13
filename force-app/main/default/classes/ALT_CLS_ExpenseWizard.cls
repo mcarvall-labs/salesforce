@@ -105,6 +105,7 @@ public with sharing class ALT_CLS_ExpenseWizard {
         'Escolha a conta ou o cartão, não os dois.'
       );
     }
+    assertOwnership(request);
     AXF_OBJ_Entry__c entry = new AXF_OBJ_Entry__c(
       Name = request.description.trim().left(80),
       AXF_ENT_MD_Holder__c = request.holderId,
@@ -119,6 +120,47 @@ public with sharing class ALT_CLS_ExpenseWizard {
     );
     insert as user entry;
     return entry.Id;
+  }
+
+  // The UI only offers the holder's own records; a crafted request must not get around it.
+  private static void assertOwnership(Request request) {
+    if (
+      request.accountId != null &&
+      [
+        SELECT COUNT()
+        FROM AXF_OBJ_BankAccount__c
+        WHERE
+          Id = :request.accountId
+          AND AXF_BA_MD_Holder__c = :request.holderId
+        WITH USER_MODE
+      ] == 0
+    ) {
+      throw new ExpenseWizardException('A conta não pertence ao titular.');
+    }
+    if (
+      request.cardId != null &&
+      [
+        SELECT COUNT()
+        FROM AXF_OBJ_CreditCard__c
+        WHERE Id = :request.cardId AND AXF_CC_MD_Holder__c = :request.holderId
+        WITH USER_MODE
+      ] == 0
+    ) {
+      throw new ExpenseWizardException('O cartão não pertence ao titular.');
+    }
+    if (
+      request.categoryId != null &&
+      [
+        SELECT COUNT()
+        FROM AXF_OBJ_Category__c
+        WHERE
+          Id = :request.categoryId
+          AND AXF_CAT_PKL_Type__c IN ('Expense', 'Both')
+        WITH USER_MODE
+      ] == 0
+    ) {
+      throw new ExpenseWizardException('A categoria não é de despesa.');
+    }
   }
 
   private static Option option(Id id, String label) {

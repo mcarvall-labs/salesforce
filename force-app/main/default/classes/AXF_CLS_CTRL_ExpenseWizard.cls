@@ -21,7 +21,7 @@ public with sharing class AXF_CLS_CTRL_ExpenseWizard {
 
   private static AuraHandledException aura(Exception e) {
     String message = e.getMessage();
-    if (e instanceof DmlException) {
+    if (e instanceof DmlException && ((DmlException) e).getNumDml() > 0) {
       message = ((DmlException) e).getDmlMessage(0);
     }
     AuraHandledException result = new AuraHandledException(message);

@@ -112,10 +112,53 @@ private class ALT_CLS_ExpenseWizardTest {
 
   @IsTest
   static void rejectsAccountAndCardTogether() {
-    ALT_CLS_ExpenseWizard.Request request = request(holder('Titular').Id);
-    request.accountId = Id.valueOf('001000000000001AAA');
-    request.cardId = Id.valueOf('001000000000002AAA');
+    Account h = holder('Titular');
+    ALT_CLS_ExpenseWizard.Request request = request(h.Id);
+    request.accountId = account(h.Id).Id;
+    request.cardId = card(h.Id).Id;
     assertRejected(request, 'Escolha a conta ou o cartão, não os dois.');
+  }
+
+  @IsTest
+  static void rejectsSourcesOfAnotherHolderAndIncomeCategories() {
+    Account mine = holder('Meu');
+    Account other = holder('Outro');
+    ALT_CLS_ExpenseWizard.Request withAccount = request(mine.Id);
+    withAccount.accountId = account(other.Id).Id;
+    assertRejected(withAccount, 'A conta não pertence ao titular.');
+    ALT_CLS_ExpenseWizard.Request withCard = request(mine.Id);
+    withCard.cardId = card(other.Id).Id;
+    assertRejected(withCard, 'O cartão não pertence ao titular.');
+    AXF_OBJ_Category__c income = new AXF_OBJ_Category__c(
+      Name = 'Salário',
+      AXF_CAT_PKL_Type__c = 'Income'
+    );
+    insert income;
+    ALT_CLS_ExpenseWizard.Request withCategory = request(mine.Id);
+    withCategory.categoryId = income.Id;
+    assertRejected(withCategory, 'A categoria não é de despesa.');
+    System.assertEquals(0, [SELECT COUNT() FROM AXF_OBJ_Entry__c]);
+  }
+
+  private static AXF_OBJ_BankAccount__c account(Id holderId) {
+    AXF_OBJ_BankAccount__c account = new AXF_OBJ_BankAccount__c(
+      Name = 'Conta',
+      AXF_BA_MD_Holder__c = holderId,
+      AXF_BA_PKL_Institution__c = '341',
+      AXF_BA_PKL_Type__c = 'Checking'
+    );
+    insert account;
+    return account;
+  }
+
+  private static AXF_OBJ_CreditCard__c card(Id holderId) {
+    AXF_OBJ_CreditCard__c card = new AXF_OBJ_CreditCard__c(
+      Name = 'Cartão',
+      AXF_CC_MD_Holder__c = holderId,
+      AXF_CC_PKL_Institution__c = '341'
+    );
+    insert card;
+    return card;
   }
 
   @IsTest
@@ -188,5 +231,6 @@ private class ALT_CLS_ExpenseWizardTest {
         System.assertNotEquals(null, e.getMessage());
       }
     }
+    System.assertEquals(0, [SELECT COUNT() FROM AXF_OBJ_Entry__c]);
   }
 }

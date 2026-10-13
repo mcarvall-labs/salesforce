@@ -149,6 +149,7 @@
         <lightning-button
           class="cancel slds-m-right_x-small"
           label="Cancelar"
+          disabled={isSaving}
           onclick={handleCancel}
         ></lightning-button>
         <template lwc:if={isChoosingType}></template>
