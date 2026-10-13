@@ -12,22 +12,24 @@ private class AXF_CLS_ReconciliationPermissionTest {
       LastName = 'AxonUser',
       LanguageLocaleKey = 'en_US',
       LocaleSidKey = 'en_US',
-      ProfileId = [SELECT Id FROM Profile WHERE Name = 'Standard User' LIMIT 1]
-      .Id,
+      ProfileId = ALT_CLS_ConnectionTestUser.standardProfileId(),
       TimeZoneSidKey = 'America/Sao_Paulo',
       Username = 'axfusr' + System.currentTimeMillis() + '@example.com'
     );
-    insert user;
-    insert new PermissionSetAssignment(
-      AssigneeId = user.Id,
-      PermissionSetId = [
-        SELECT Id
-        FROM PermissionSet
-        WHERE Name = 'AXF_PS_Usuario'
-        LIMIT 1
-      ]
-      .Id
-    );
+    // Setup DML in its own runAs context, so the Account inserted later is not a mixed DML.
+    System.runAs(new User(Id = UserInfo.getUserId())) {
+      insert user;
+      insert new PermissionSetAssignment(
+        AssigneeId = user.Id,
+        PermissionSetId = [
+          SELECT Id
+          FROM PermissionSet
+          WHERE Name = 'AXF_PS_Usuario'
+          LIMIT 1
+        ]
+        .Id
+      );
+    }
     return user;
   }
 
@@ -233,8 +235,7 @@ private class AXF_CLS_ReconciliationPermissionTest {
       LastName = 'NoPermissionSet',
       LanguageLocaleKey = 'en_US',
       LocaleSidKey = 'en_US',
-      ProfileId = [SELECT Id FROM Profile WHERE Name = 'Standard User' LIMIT 1]
-      .Id,
+      ProfileId = ALT_CLS_ConnectionTestUser.standardProfileId(),
       TimeZoneSidKey = 'America/Sao_Paulo',
       Username = 'axfnops' + System.currentTimeMillis() + '@example.com'
     );

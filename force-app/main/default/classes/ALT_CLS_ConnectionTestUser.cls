@@ -6,6 +6,17 @@
  */
 @IsTest
 public class ALT_CLS_ConnectionTestUser {
+  // The standard profile is named per org language: 'Standard User' (en) or 'Usuário Padrão' (pt-BR, UAT).
+  public static Id standardProfileId() {
+    return [
+      SELECT Id
+      FROM Profile
+      WHERE Name IN ('Standard User', 'Usuário Padrão')
+      LIMIT 1
+    ]
+    .Id;
+  }
+
   public static User create(String alias) {
     User u = new User(
       Alias = alias,
@@ -14,8 +25,7 @@ public class ALT_CLS_ConnectionTestUser {
       LastName = alias,
       LanguageLocaleKey = 'en_US',
       LocaleSidKey = 'en_US',
-      ProfileId = [SELECT Id FROM Profile WHERE Name = 'Standard User' LIMIT 1]
-      .Id,
+      ProfileId = standardProfileId(),
       TimeZoneSidKey = 'America/Sao_Paulo',
       Username = alias + System.currentTimeMillis() + '@example.com'
     );

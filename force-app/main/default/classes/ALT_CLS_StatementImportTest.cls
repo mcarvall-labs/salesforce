@@ -360,8 +360,7 @@ private class ALT_CLS_StatementImportTest {
       LastName = 'NoImport',
       LanguageLocaleKey = 'en_US',
       LocaleSidKey = 'en_US',
-      ProfileId = [SELECT Id FROM Profile WHERE Name = 'Standard User' LIMIT 1]
-      .Id,
+      ProfileId = ALT_CLS_ConnectionTestUser.standardProfileId(),
       TimeZoneSidKey = 'America/Sao_Paulo',
       Username = 'axfnoimp' + System.currentTimeMillis() + '@example.com'
     );

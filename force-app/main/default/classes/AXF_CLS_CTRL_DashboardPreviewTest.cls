@@ -11,8 +11,7 @@ private class AXF_CLS_CTRL_DashboardPreviewTest {
 
   @TestSetup
   static void setup() {
-    Id profileId = [SELECT Id FROM Profile WHERE Name = 'Standard User' LIMIT 1]
-    .Id;
+    Id profileId = ALT_CLS_ConnectionTestUser.standardProfileId();
     User restricted = new User(
       Alias = 'AxfPrv',
       Email = 'AxfPrv@example.com',
