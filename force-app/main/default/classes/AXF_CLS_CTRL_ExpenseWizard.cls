@@ -39,6 +39,40 @@ public with sharing class AXF_CLS_CTRL_ExpenseWizard {
     }
   }
 
+  // One transaction: creates the recurring Contract and its Pending entries.
+  @AuraEnabled
+  public static Id createRecurring(String requestJson) {
+    try {
+      return new ALT_CLS_ExpenseWizard()
+        .createRecurring(
+          (ALT_CLS_ExpenseWizard.RecurringRequest) JSON.deserialize(
+            requestJson,
+            ALT_CLS_ExpenseWizard.RecurringRequest.class
+          )
+        );
+    } catch (Exception e) {
+      throw aura(e);
+    }
+  }
+
+  // The entries the Contract would generate, for the review step.
+  @AuraEnabled
+  public static List<ALT_CLS_ExpenseWizard.PreviewItem> previewRecurring(
+    String requestJson
+  ) {
+    try {
+      return new ALT_CLS_ExpenseWizard()
+        .previewRecurring(
+          (ALT_CLS_ExpenseWizard.RecurringRequest) JSON.deserialize(
+            requestJson,
+            ALT_CLS_ExpenseWizard.RecurringRequest.class
+          )
+        );
+    } catch (Exception e) {
+      throw aura(e);
+    }
+  }
+
   private static AuraHandledException aura(Exception e) {
     String message = e.getMessage();
     if (e instanceof DmlException && ((DmlException) e).getNumDml() > 0) {
