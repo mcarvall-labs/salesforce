@@ -1461,6 +1461,35 @@ private class ALT_CLS_ExpenseWizardTest {
   }
 
   @IsTest
+  static void aBlankParentCreatesATopLevelCategory() {
+    ALT_CLS_ExpenseWizard.Option top = AXF_CLS_CTRL_ExpenseWizard.createCategory(
+      'Lazer',
+      ''
+    );
+    System.assertEquals(null, top.parentId);
+    System.assertEquals(
+      null,
+      [
+        SELECT AXF_CAT_LKP_Parent__c
+        FROM AXF_OBJ_Category__c
+        WHERE Id = :top.id
+      ]
+      .AXF_CAT_LKP_Parent__c
+    );
+  }
+
+  @IsTest
+  static void aParentThatIsNotAnIdGetsAReadableError() {
+    try {
+      AXF_CLS_CTRL_ExpenseWizard.createCategory('Lazer', 'Nenhuma');
+      System.assert(false, 'expected AuraHandledException');
+    } catch (AuraHandledException e) {
+      System.assertEquals('A categoria pai é inválida.', e.getMessage());
+    }
+    System.assertEquals(0, [SELECT COUNT() FROM AXF_OBJ_Category__c]);
+  }
+
+  @IsTest
   static void aCategoryNeedsAName() {
     try {
       AXF_CLS_CTRL_ExpenseWizard.createCategory(' ', null);
