@@ -9,14 +9,17 @@ public with sharing class AXF_CLS_CTRL_ExpenseWizard {
     }
   }
 
-  // "+ Nova categoria": creates an expense category (top level or under parentId).
+  // "+ Nova categoria": creates an expense category (top level or under parentId). The parent
+  // is a String because Aura rejects any non-Id value of an Id parameter before this runs;
+  // blank means top level.
   @AuraEnabled
   public static ALT_CLS_ExpenseWizard.Option createCategory(
     String name,
-    Id parentId
+    String parentId
   ) {
     try {
-      return new ALT_CLS_ExpenseWizard().createCategory(name, parentId);
+      return new ALT_CLS_ExpenseWizard()
+        .createCategory(name, toParentId(parentId));
     } catch (Exception e) {
       throw aura(e);
     }
@@ -172,6 +175,19 @@ public with sharing class AXF_CLS_CTRL_ExpenseWizard {
         );
     } catch (Exception e) {
       throw aura(e);
+    }
+  }
+
+  private static Id toParentId(String value) {
+    if (String.isBlank(value)) {
+      return null;
+    }
+    try {
+      return Id.valueOf(value.trim());
+    } catch (StringException e) {
+      throw new ALT_CLS_ExpenseWizard.ExpenseWizardException(
+        'A categoria pai é inválida.'
+      );
     }
   }
 

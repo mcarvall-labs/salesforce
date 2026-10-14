@@ -288,9 +288,14 @@ export default class AXF_LWC_categoryPicker extends LightningElement {
   }
 
   handleConfirmCreate() {
+    // Only a listed category can be the parent; anything else means top level.
+    const listed = (this.options || []).some((o) => o.id === this.newParentId);
     this.dispatchEvent(
       new CustomEvent("createcategory", {
-        detail: { name: this.newName, parentId: this.newParentId || null }
+        detail: {
+          name: this.newName,
+          parentId: listed ? this.newParentId : null
+        }
       })
     );
     this.isCreating = false;
