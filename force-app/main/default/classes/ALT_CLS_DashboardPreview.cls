@@ -1,6 +1,6 @@
 /**
  * @description Right-column previews of the Axon dashboard (E7-11, E7-14): the transactions still to
- * reconcile (count and the 3 most recent, flagged when a suggestion exists) and the accounts and
+ * reconcile (count and the 100 most recent, flagged when a suggestion exists) and the accounts and
  * cards of the holder with balance and available limit. Sharing applies. "All holders" (null)
  * covers every holder the user can see.
  */
@@ -60,7 +60,7 @@ public with sharing class ALT_CLS_DashboardPreview {
     public List<Source> cards = new List<Source>();
   }
 
-  private static final Integer PREVIEW_ITEMS = 3;
+  private static final Integer PREVIEW_ITEMS = 100;
   @TestVisible
   private static Integer maxRows = 2000;
   private static final Integer MAX_HOLDERS = 10;

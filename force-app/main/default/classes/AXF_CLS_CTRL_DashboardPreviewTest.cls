@@ -110,7 +110,7 @@ private class AXF_CLS_CTRL_DashboardPreviewTest {
         result.total,
         '3 bank + 1 card, in the month, not reconciled'
       );
-      System.assertEquals(3, result.items.size());
+      System.assertEquals(4, result.items.size());
       System.assertEquals('Compra', result.items[0].description);
       System.assertEquals('card', result.items[0].source);
       System.assertEquals(-30, result.items[1].amount);
