@@ -9,6 +9,8 @@ import getEntries from "@salesforce/apex/AXF_CLS_CTRL_Dashboard.getEntries";
 import getPending from "@salesforce/apex/AXF_CLS_CTRL_Dashboard.getPending";
 import getSources from "@salesforce/apex/AXF_CLS_CTRL_Dashboard.getSources";
 import getBudget from "@salesforce/apex/AXF_CLS_CTRL_Dashboard.getBudget";
+import getEntryCandidates from "@salesforce/apex/AXF_CLS_CTRL_Dashboard.getEntryCandidates";
+import reconcile from "@salesforce/apex/AXF_CLS_CTRL_Reconciliation.reconcile";
 
 const ALL = "";
 const MONTHS_AROUND = 6;
@@ -30,9 +32,31 @@ const MONTH_NAMES = [
 const pad = (value) => String(value).padStart(2, "0");
 const monthKey = (year, month) => `${year}-${pad(month + 1)}-01`;
 
-const FILTER_TITLES = {
-  OVERDUE: "Vencidos (todos os meses)",
-  DUE_SOON: "A vencer no mês"
+// A pending entry due within this many days (today included) is "Vence em breve".
+const DUE_SOON_DAYS = 5;
+const PAGE_ENTRIES = 20;
+const PAGE_PENDING = 10;
+const SCROLL_MARGIN = 48;
+const MS_PER_DAY = 86400000;
+
+const STATUS_CHIPS = [
+  { key: "all", label: "Todos" },
+  { key: "paid", label: "Pagos" },
+  { key: "soon", label: "Vence em breve" },
+  { key: "open", label: "À vencer" },
+  { key: "late", label: "Atrasados" }
+];
+
+const CANDIDATE_TAGS = {
+  BEST: { label: "Melhor correspondência", css: "tag tag-best" },
+  VALUE: { label: "Valor próximo", css: "tag tag-near" },
+  DATE: { label: "Data próxima", css: "tag tag-near" }
+};
+
+// "2026-10-05" -> "05/10/2026" (the value is a plain date: no time zone shifting).
+const formatDate = (value) => {
+  const [year, month, day] = String(value || "").split("-");
+  return year && month && day ? `${day}/${month}/${year}` : "";
 };
 
 export default class AXF_LWC_dashboard extends NavigationMixin(
@@ -50,7 +74,7 @@ export default class AXF_LWC_dashboard extends NavigationMixin(
   entries = [];
   entriesTruncated = false;
   entriesError;
-  listFilter;
+  activeTab = "entries";
   entriesRequestId = 0;
   pending;
   pendingError;
@@ -59,7 +83,9 @@ export default class AXF_LWC_dashboard extends NavigationMixin(
   previewsRequestId = 0;
   budget;
   budgetError;
-  budgetExpanded = false;
+  entriesLimit = PAGE_ENTRIES;
+  pendingLimit = PAGE_PENDING;
+  statusChip = "all";
 
   connectedCallback() {
     this.loadHolders();
@@ -105,7 +131,7 @@ export default class AXF_LWC_dashboard extends NavigationMixin(
       const result = await getEntries({
         holderId: this.holderId || null,
         month: this.month,
-        filter: this.listFilter || null
+        filter: null
       });
       if (request === this.entriesRequestId) {
         this.entries = result.rows || [];
@@ -217,11 +243,11 @@ export default class AXF_LWC_dashboard extends NavigationMixin(
     return (this.summary && this.summary.currencyCode) || "BRL";
   }
 
-  money(value) {
+  money(value, currencyCode) {
     try {
       return new Intl.NumberFormat("pt-BR", {
         style: "currency",
-        currency: this.currency
+        currency: currencyCode || this.currency
       }).format(value || 0);
     } catch {
       return String(value || 0);
@@ -250,7 +276,8 @@ export default class AXF_LWC_dashboard extends NavigationMixin(
   }
 
   get overdueCaption() {
-    return `${this.summary.overdueCount} em aberto`;
+    const count = this.summary.overdueCount;
+    return `${count} ${count === 1 ? "lançamento" : "lançamentos"}`;
   }
 
   get dueSoonTotal() {
@@ -272,6 +299,23 @@ export default class AXF_LWC_dashboard extends NavigationMixin(
 
   get expenseTotal() {
     return this.money(this.summary.expenseRealized);
+  }
+
+  get realizedNet() {
+    return this.summary.incomeRealized - this.summary.expenseRealized;
+  }
+
+  get realizedTotal() {
+    return this.money(this.realizedNet);
+  }
+
+  get realizedClass() {
+    return this.realizedNet < 0 ? "kpi-value out" : "kpi-value in";
+  }
+
+  get realizedCaption() {
+    const count = this.summary.realizedCount || 0;
+    return `${count} ${count === 1 ? "lançamento" : "lançamentos"}`;
   }
 
   get plannedCaption() {
@@ -300,11 +344,17 @@ export default class AXF_LWC_dashboard extends NavigationMixin(
 
   handleHolderChange(event) {
     this.holderId = event.detail.value;
+    this.statusChip = "all";
+    this.entriesLimit = PAGE_ENTRIES;
+    this.pendingLimit = PAGE_PENDING;
     this.loadSummary();
   }
 
   handleMonthChange(event) {
     this.month = event.detail.value;
+    this.statusChip = "all";
+    this.entriesLimit = PAGE_ENTRIES;
+    this.pendingLimit = PAGE_PENDING;
     this.loadSummary();
   }
 
@@ -321,6 +371,9 @@ export default class AXF_LWC_dashboard extends NavigationMixin(
     const month = Number(this.month.slice(5, 7)) - 1;
     const date = new Date(year, month + delta, 1);
     this.month = monthKey(date.getFullYear(), date.getMonth());
+    this.statusChip = "all";
+    this.entriesLimit = PAGE_ENTRIES;
+    this.pendingLimit = PAGE_PENDING;
     this.loadSummary();
   }
 
@@ -329,7 +382,7 @@ export default class AXF_LWC_dashboard extends NavigationMixin(
   }
 
   // Budget bars (E7-5): dark = realized, light = planned, 100 % = goal. Orange when the planned
-  // passes the goal, red when the realized does. A category without goal has no bar.
+  // passes the goal, red when the realized does. A category without goal compares realized with planned.
   get hasBudget() {
     return !!this.budget;
   }
@@ -344,11 +397,14 @@ export default class AXF_LWC_dashboard extends NavigationMixin(
 
   barOf(row, isTotal) {
     const hasGoal = row.goal != null && row.goal > 0;
+    // Without a goal the bar compares realized with planned (planned = 100 %).
+    const base = hasGoal ? row.goal : row.planned;
+    const hasBar = base > 0;
     const percent = (value) => {
-      if (!hasGoal) {
+      if (!hasBar) {
         return 0;
       }
-      return Math.max(0, Math.min(100, Math.round((value / row.goal) * 100)));
+      return Math.max(0, Math.min(100, Math.round((value / base) * 100)));
     };
     const over = hasGoal && row.realized > row.goal;
     const warning = hasGoal && row.planned > row.goal;
@@ -356,6 +412,7 @@ export default class AXF_LWC_dashboard extends NavigationMixin(
       key: isTotal ? "total" : row.categoryId || "none",
       name: row.name,
       hasGoal,
+      hasBar,
       isTotal,
       realizedText: this.money(row.realized),
       plannedText: this.money(row.planned),
@@ -378,24 +435,6 @@ export default class AXF_LWC_dashboard extends NavigationMixin(
     };
   }
 
-  // Preview: the total and the three categories closest to their goal; the toggle shows all.
-  get visibleBudgetRows() {
-    const rows = this.budgetRows;
-    if (this.budgetExpanded) {
-      return rows;
-    }
-    const [total, ...categories] = rows;
-    const closest = categories
-      .filter((row) => row.hasGoal)
-      .sort((a, b) => b.ratio - a.ratio || b.planned - a.planned)
-      .slice(0, 3);
-    return [total, ...closest];
-  }
-
-  get budgetToggleLabel() {
-    return this.budgetExpanded ? "Ver menos" : "Ver todas as categorias";
-  }
-
   // Same figure as the "incluir cartão previsto" switch (one source: the summary).
   get cardForecastLine() {
     return this.money(this.summary.cardForecast);
@@ -405,50 +444,12 @@ export default class AXF_LWC_dashboard extends NavigationMixin(
     return !!this.budget && !!this.summary && !!this.summary.cardForecast;
   }
 
-  handleBudgetToggle() {
-    this.budgetExpanded = !this.budgetExpanded;
-  }
-
-  // Clicking Vencidos or A vencer filters the month list; clicking it again clears the filter.
-  handleOverdueClick(event) {
-    event.preventDefault();
-    this.toggleFilter("OVERDUE");
-  }
-
-  handleDueSoonClick(event) {
-    event.preventDefault();
-    this.toggleFilter("DUE_SOON");
-  }
-
-  toggleFilter(filter) {
-    this.listFilter = this.listFilter === filter ? undefined : filter;
-    this.loadEntries();
-  }
-
-  handleClearFilter() {
-    this.listFilter = undefined;
-    this.loadEntries();
-  }
-
   get overdueKpiClass() {
-    return this.kpiClass("OVERDUE", "kpi-overdue");
+    return "kpi kpi-overdue slds-box slds-m-right_small";
   }
 
   get dueSoonKpiClass() {
-    return this.kpiClass("DUE_SOON", "kpi-due-soon");
-  }
-
-  kpiClass(filter, name) {
-    const active = this.listFilter === filter ? " kpi-active" : "";
-    return `kpi ${name} kpi-click slds-box slds-m-right_small${active}`;
-  }
-
-  get isOverduePressed() {
-    return this.listFilter === "OVERDUE";
-  }
-
-  get isDueSoonPressed() {
-    return this.listFilter === "DUE_SOON";
+    return "kpi kpi-due-soon slds-box slds-m-right_small";
   }
 
   get showEntries() {
@@ -456,27 +457,156 @@ export default class AXF_LWC_dashboard extends NavigationMixin(
   }
 
   get listTitle() {
-    return FILTER_TITLES[this.listFilter] || "Lançamentos do mês";
-  }
-
-  get hasListFilter() {
-    return !!this.listFilter;
+    return "Lançamentos do mês";
   }
 
   get hasEntries() {
     return this.entries.length > 0;
   }
 
-  get entryRows() {
-    return this.entries.map((entry) => ({
-      ...entry,
-      key: entry.id,
-      amountText: this.money(this.signedAmount(entry)),
-      amountClass: this.amountClass(entry),
-      statusText: this.statusText(entry),
-      canRealize: entry.status === "Pending" && !entry.forecastCard,
-      detail: [entry.holderName, entry.categoryName].filter(Boolean).join(" · ")
+  // Whole days from today to the date (negative = past); both read as calendar dates.
+  daysFromToday(isoDate) {
+    const parts = String(isoDate || "").split("-");
+    if (parts.length !== 3) {
+      return undefined;
+    }
+    const now = new Date();
+    const today = Date.UTC(now.getFullYear(), now.getMonth(), now.getDate());
+    const target = Date.UTC(
+      Number(parts[0]),
+      Number(parts[1]) - 1,
+      Number(parts[2])
+    );
+    return Math.round((target - today) / MS_PER_DAY);
+  }
+
+  // paid | late | soon | open | forecast | other. The card forecast counts as open.
+  statusOf(entry) {
+    const daysToDue = this.daysFromToday(entry.dueDate);
+    if (entry.status === "Realized") {
+      return {
+        key: "paid",
+        label: entry.type === "Income" ? "Recebido" : "Pago",
+        sub: entry.paymentDate
+          ? `em ${formatDate(entry.paymentDate).slice(0, 5)}`
+          : ""
+      };
+    }
+    if (entry.forecastCard) {
+      return { key: "forecast", label: "Cartão previsto", sub: "" };
+    }
+    if (entry.overdue) {
+      const late = daysToDue === undefined ? 0 : Math.abs(daysToDue);
+      return {
+        key: "late",
+        label: "Atrasado",
+        sub: late ? `${late} ${late === 1 ? "dia" : "dias"}` : ""
+      };
+    }
+    if (entry.status !== "Pending") {
+      return { key: "other", label: entry.status || "", sub: "" };
+    }
+    if (daysToDue === undefined) {
+      return { key: "open", label: "Em aberto", sub: "" };
+    }
+    const when =
+      daysToDue === 0
+        ? "hoje"
+        : daysToDue === 1
+          ? "amanhã"
+          : `em ${daysToDue} dias`;
+    if (daysToDue >= 0 && daysToDue <= DUE_SOON_DAYS) {
+      return { key: "soon", label: "Vence em breve", sub: when };
+    }
+    return { key: "open", label: "Em aberto", sub: daysToDue > 0 ? when : "" };
+  }
+
+  // Chip a status falls under: the card forecast is still to come (À vencer).
+  chipOf(statusKey) {
+    return statusKey === "forecast" ? "open" : statusKey;
+  }
+
+  get statusChips() {
+    const counts = {
+      all: this.entries.length,
+      paid: 0,
+      soon: 0,
+      open: 0,
+      late: 0
+    };
+    this.entries.forEach((entry) => {
+      const chip = this.chipOf(this.statusOf(entry).key);
+      if (chip in counts) {
+        counts[chip] += 1;
+      }
+    });
+    return STATUS_CHIPS.map((chip) => ({
+      ...chip,
+      text: `${chip.label} ${counts[chip.key]}`,
+      count: counts[chip.key],
+      pressed: this.statusChip === chip.key,
+      class: `chip chip-${chip.key}${this.statusChip === chip.key ? " chip-on" : ""}`
     }));
+  }
+
+  handleChipClick(event) {
+    this.statusChip = event.currentTarget.dataset.chip;
+    this.entriesLimit = PAGE_ENTRIES;
+  }
+
+  get entryRows() {
+    return this.entries
+      .map((entry) => ({ entry, status: this.statusOf(entry) }))
+      .filter(
+        ({ status }) =>
+          this.statusChip === "all" ||
+          this.chipOf(status.key) === this.statusChip
+      )
+      .map(({ entry, status }) => ({
+        ...entry,
+        key: entry.id,
+        amountText: this.money(this.signedAmount(entry)),
+        amountClass: this.amountClass(entry),
+        statusText: status.label,
+        statusSub: status.sub,
+        statusClass: `pill pill-${status.key}`,
+        rowClass: `entry-row entry-${status.key} slds-m-top_x-small`,
+        canRealize: entry.status === "Pending" && !entry.forecastCard,
+        realizeLabel: entry.type === "Income" ? "Receber" : "Pagar",
+        detail: [entry.holderName, entry.categoryName]
+          .filter(Boolean)
+          .join(" · ")
+      }));
+  }
+
+  get visibleEntryRows() {
+    return this.entryRows.slice(0, this.entriesLimit);
+  }
+
+  // Infinite loading: the list scrolls inside the card and shows the next page near the bottom.
+  handleEntriesScroll(event) {
+    if (
+      this.entriesLimit < this.entryRows.length &&
+      this.nearBottom(event.currentTarget)
+    ) {
+      this.entriesLimit += PAGE_ENTRIES;
+    }
+  }
+
+  handlePendingScroll(event) {
+    if (
+      this.pending &&
+      this.pendingLimit < this.pending.items.length &&
+      this.nearBottom(event.currentTarget)
+    ) {
+      this.pendingLimit += PAGE_PENDING;
+    }
+  }
+
+  nearBottom(node) {
+    return (
+      node.scrollHeight - node.scrollTop - node.clientHeight <= SCROLL_MARGIN
+    );
   }
 
   signedAmount(entry) {
@@ -491,21 +621,8 @@ export default class AXF_LWC_dashboard extends NavigationMixin(
     return entry.type === "Income" ? "entry-amount in" : "entry-amount";
   }
 
-  statusText(entry) {
-    if (entry.overdue) {
-      return "Vencido";
-    }
-    if (entry.forecastCard) {
-      return "Cartão previsto";
-    }
-    if (entry.status === "Realized") {
-      return "Realizado";
-    }
-    return entry.status === "Pending" ? "Pendente" : entry.status || "";
-  }
-
   get noEntriesMessage() {
-    return !this.hasEntries && !this.entriesError
+    return this.entryRows.length === 0 && !this.entriesError
       ? "Nenhum lançamento neste filtro."
       : undefined;
   }
@@ -551,35 +668,208 @@ export default class AXF_LWC_dashboard extends NavigationMixin(
     this.loadSummary();
   }
 
-  // ---- Mark as realized: popup suggests due date and amount (editable) ----
+  // ---- Pagar / Receber popup: reconcile with a Pluggy transaction or inform manually ----
   realizing;
+  realizeTab = "pluggy";
   realizeDate;
   realizeAmount;
   realizeError;
   isSaving = false;
+  candidates = [];
+  candidatesLoading = false;
+  selectedCandidateId;
+  candidatesRequestId = 0;
+  realizeFocus;
 
   get isRealizing() {
     return !!this.realizing;
+  }
+
+  get isIncome() {
+    return !!this.realizing && this.realizing.type === "Income";
+  }
+
+  get realizeTitle() {
+    return this.isIncome ? "Receber" : "Pagar";
+  }
+
+  get paidWord() {
+    return this.isIncome ? "Recebido" : "Pago";
   }
 
   get realizingName() {
     return this.realizing.name;
   }
 
-  get realizingDueDate() {
-    return this.realizing.dueDate;
+  get realizingInfo() {
+    const parts = [
+      `Vencimento: ${formatDate(this.realizing.dueDate)}`,
+      `Previsto: ${this.money(this.realizing.amount)}`
+    ];
+    if (this.realizing.holderName) {
+      parts.push(`Titular: ${this.realizing.holderName}`);
+    }
+    return parts.join(" · ");
   }
 
-  get realizingPlanned() {
-    return this.money(this.realizing.amount);
+  get isPluggyTab() {
+    return this.realizeTab === "pluggy";
   }
 
-  handleRealizeClick(event) {
+  get isManualTab() {
+    return this.realizeTab === "manual";
+  }
+
+  get pluggyTabClass() {
+    return `realize-tab tab-pluggy${this.isPluggyTab ? " tab-on" : ""}`;
+  }
+
+  get manualTabClass() {
+    return `realize-tab tab-manual${this.isManualTab ? " tab-on" : ""}`;
+  }
+
+  get pluggyTabCaption() {
+    if (this.candidatesLoading) {
+      return "buscando transações…";
+    }
+    const count = this.candidates.length;
+    if (!count) {
+      return "nenhuma transação encontrada";
+    }
+    return `${count} ${count === 1 ? "transação compatível" : "transações compatíveis"}`;
+  }
+
+  get hasCandidates() {
+    return this.candidates.length > 0;
+  }
+
+  get noCandidates() {
+    return !this.candidatesLoading && this.candidates.length === 0;
+  }
+
+  get candidateRows() {
+    return this.candidates.map((candidate) => {
+      const tag = CANDIDATE_TAGS[candidate.tag];
+      const selected = candidate.id === this.selectedCandidateId;
+      const where = [
+        formatDate(candidate.transactionDate),
+        candidate.accountName,
+        "Pluggy"
+      ].filter(Boolean);
+      if (candidate.tag === "VALUE" && candidate.amountGap) {
+        where.push(
+          `diferença ${this.money(candidate.amountGap, candidate.currencyCode)}`
+        );
+      }
+      return {
+        ...candidate,
+        key: candidate.id,
+        selected,
+        rowClass: `candidate${selected ? " candidate-selected" : ""}`,
+        tagText: tag ? tag.label : "",
+        tagClass: tag ? tag.css : "",
+        whereText: where.join(" · "),
+        amountText: this.money(candidate.amount, candidate.currencyCode),
+        amountClass:
+          candidate.amount < 0 ? "entry-amount out" : "entry-amount in"
+      };
+    });
+  }
+
+  get selectedCandidate() {
+    return this.candidates.find((item) => item.id === this.selectedCandidateId);
+  }
+
+  get candidateEffect() {
+    const candidate = this.selectedCandidate;
+    if (!candidate) {
+      return undefined;
+    }
+    return `Ao confirmar: o lançamento fica ${this.paidWord} em ${formatDate(candidate.transactionDate)} com ${this.money(Math.abs(candidate.amount), candidate.currencyCode)} (data e valor da transação) e a transação sai da lista "A conciliar".`;
+  }
+
+  get manualEffect() {
+    return `Sem conciliação: o lançamento fica ${this.paidWord}, mas continua sem vínculo com o banco. Quando a transação do Pluggy chegar, ela aparece em "A conciliar" para ser vinculada depois.`;
+  }
+
+  get realizeSummary() {
+    return this.isPluggyTab
+      ? "Vincula 1 transação do Pluggy"
+      : "Sem vínculo com o banco";
+  }
+
+  get realizeConfirmLabel() {
+    if (this.isPluggyTab) {
+      return `${this.realizeTitle} e conciliar`;
+    }
+    return this.isIncome ? "Confirmar recebimento" : "Confirmar pagamento";
+  }
+
+  async handleRealizeClick(event) {
     const id = event.currentTarget.dataset.id;
     this.realizing = this.entries.find((entry) => entry.id === id);
     this.realizeDate = this.realizing.dueDate;
     this.realizeAmount = Math.abs(this.realizing.amount || 0);
     this.realizeError = undefined;
+    this.realizeTab = "pluggy";
+    this.candidates = [];
+    this.selectedCandidateId = undefined;
+    this.candidatesLoading = true;
+    const request = ++this.candidatesRequestId;
+    try {
+      const found = (await getEntryCandidates({ entryId: id })) || [];
+      if (request === this.candidatesRequestId && this.realizing) {
+        this.candidates = found;
+        this.selectedCandidateId = found.length ? found[0].id : undefined;
+        if (!found.length) {
+          this.realizeTab = "manual";
+        }
+      }
+    } catch (error) {
+      if (request === this.candidatesRequestId && this.realizing) {
+        this.realizeTab = "manual";
+        this.realizeError = this.messageOf(
+          error,
+          "Não foi possível buscar as transações do banco; informe manualmente."
+        );
+      }
+    } finally {
+      if (request === this.candidatesRequestId) {
+        this.candidatesLoading = false;
+      }
+    }
+  }
+
+  handleTabPluggy() {
+    this.realizeTab = "pluggy";
+    this.realizeError = undefined;
+  }
+
+  handleTabManual() {
+    this.realizeTab = "manual";
+    this.realizeError = undefined;
+  }
+
+  handleManualLinkClick(event) {
+    event.preventDefault();
+    this.handleTabManual();
+  }
+
+  handleCandidateChange(event) {
+    this.selectedCandidateId = event.currentTarget.dataset.id;
+  }
+
+  // The N:N cases (one payment for several entries, or the reverse) live on the Conciliação tab.
+  handleRealizeOpenReconciliation(event) {
+    event.preventDefault();
+    if (this.isSaving) {
+      return;
+    }
+    this.closeRealize();
+    this[NavigationMixin.Navigate]({
+      type: "standard__navItemPage",
+      attributes: { apiName: "AXF_CT_Reconciliation" }
+    });
   }
 
   handleRealizeDate(event) {
@@ -590,9 +880,15 @@ export default class AXF_LWC_dashboard extends NavigationMixin(
     this.realizeAmount = event.detail.value;
   }
 
+  closeRealize() {
+    this.candidatesRequestId++;
+    this.realizing = undefined;
+    this.candidatesLoading = false;
+  }
+
   handleRealizeCancel() {
     if (!this.isSaving) {
-      this.realizing = undefined;
+      this.closeRealize();
     }
   }
 
@@ -602,12 +898,22 @@ export default class AXF_LWC_dashboard extends NavigationMixin(
     }
   }
 
+  // Focus: the dialog when it opens, the date field when the manual tab shows.
   renderedCallback() {
-    if (this.realizing && !this.realizeFocused) {
-      this.realizeFocused = true;
-      this.template.querySelector(".realize-date").focus();
-    } else if (!this.realizing) {
-      this.realizeFocused = false;
+    if (!this.realizing) {
+      this.realizeFocus = undefined;
+      return;
+    }
+    const target = this.isManualTab ? "manual" : "dialog";
+    if (this.realizeFocus === target) {
+      return;
+    }
+    const element = this.isManualTab
+      ? this.template.querySelector(".realize-date")
+      : this.template.querySelector(".realize-modal");
+    if (element) {
+      this.realizeFocus = target;
+      element.focus();
     }
   }
 
@@ -615,6 +921,49 @@ export default class AXF_LWC_dashboard extends NavigationMixin(
     if (this.isSaving) {
       return;
     }
+    if (this.isPluggyTab) {
+      await this.confirmReconcile();
+    } else {
+      await this.confirmManual();
+    }
+  }
+
+  async confirmReconcile() {
+    const candidate = this.selectedCandidate;
+    if (!candidate) {
+      this.realizeError = "Escolha uma transação para conciliar.";
+      return;
+    }
+    this.isSaving = true;
+    this.realizeError = undefined;
+    const pair = { entryId: this.realizing.id };
+    pair[
+      candidate.source === "card" ? "cardTransactionId" : "bankTransactionId"
+    ] = candidate.id;
+    try {
+      const outcomes = await reconcile({ pairsJson: JSON.stringify([pair]) });
+      const outcome = (outcomes || [])[0];
+      if (!outcome || !outcome.success) {
+        this.realizeError =
+          (outcome && outcome.message) ||
+          "Não foi possível conciliar este lançamento.";
+        return;
+      }
+      const title = `Lançamento ${this.isIncome ? "recebido" : "pago"} e conciliado`;
+      this.closeRealize();
+      this.dispatchEvent(new ShowToastEvent({ title, variant: "success" }));
+      this.loadSummary();
+    } catch (error) {
+      this.realizeError = this.messageOf(
+        error,
+        "Não foi possível conciliar este lançamento."
+      );
+    } finally {
+      this.isSaving = false;
+    }
+  }
+
+  async confirmManual() {
     if (!this.realizeDate || !(Number(this.realizeAmount) > 0)) {
       this.realizeError = "Informe a data e um valor maior que zero.";
       return;
@@ -630,7 +979,7 @@ export default class AXF_LWC_dashboard extends NavigationMixin(
           AXF_ENT_NUM_RealizedAmountBRL__c: Number(this.realizeAmount)
         }
       });
-      this.realizing = undefined;
+      this.closeRealize();
       this.dispatchEvent(
         new ShowToastEvent({
           title: "Lançamento marcado como realizado",
@@ -675,8 +1024,52 @@ export default class AXF_LWC_dashboard extends NavigationMixin(
     return `A conciliar (${total}${this.pending.truncated ? "+" : ""})`;
   }
 
+  get hasPendingBadge() {
+    return !!this.pending && this.pending.total > 0;
+  }
+
+  get pendingBadge() {
+    return `${this.pending.total}${this.pending.truncated ? "+" : ""}`;
+  }
+
+  get isTabEntries() {
+    return this.activeTab === "entries";
+  }
+
+  get isTabSources() {
+    return this.activeTab === "sources";
+  }
+
+  get isTabPending() {
+    return this.activeTab === "pending";
+  }
+
+  get isTabBudget() {
+    return this.activeTab === "budget";
+  }
+
+  get budgetTabClass() {
+    return `home-tab${this.isTabBudget ? " home-tab-on" : ""}`;
+  }
+
+  get entriesTabClass() {
+    return `home-tab${this.isTabEntries ? " home-tab-on" : ""}`;
+  }
+
+  get sourcesTabClass() {
+    return `home-tab${this.isTabSources ? " home-tab-on" : ""}`;
+  }
+
+  get pendingTabClass() {
+    return `home-tab${this.isTabPending ? " home-tab-on" : ""}`;
+  }
+
+  handleTabChange(event) {
+    this.activeTab = event.currentTarget.dataset.tab;
+  }
+
   get pendingItems() {
-    return this.pending.items.map((item) => ({
+    return this.pending.items.slice(0, this.pendingLimit).map((item) => ({
       ...item,
       key: item.id,
       amountText: this.money(item.amount),

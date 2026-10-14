@@ -65,22 +65,6 @@
   background: #ba0517;
 }
 
-.kpi-click {
-  display: block;
-  width: auto;
-  background: transparent;
-  text-align: left;
-  font: inherit;
-  color: inherit;
-  text-decoration: none;
-  cursor: pointer;
-}
-
-.kpi-active {
-  border-color: #0b5cab;
-  box-shadow: 0 0 0 1px #0b5cab;
-}
-
 .entry-amount {
   font-weight: 700;
   white-space: nowrap;
@@ -95,22 +79,68 @@
   margin-top: 0.25rem;
 }
 
-.dashboard-grid {
-  display: grid;
-  grid-template-columns: minmax(0, 2fr) minmax(16rem, 1fr);
-  gap: 1rem;
-  align-items: start;
+/* Home tabs: Lançamentos | Contas e cartões | Conciliação */
+.home-tabs {
+  display: flex;
+  gap: 0.125rem;
+  border-bottom: 2px solid #e3e1df;
 }
 
-@media (max-width: 62rem) {
-  .dashboard-grid {
-    grid-template-columns: minmax(0, 1fr);
-  }
+.home-tab {
+  margin-bottom: -2px;
+  padding: 0.625rem 1.25rem;
+  font: inherit;
+  font-size: 0.9375rem;
+  font-weight: 600;
+  color: #706e6b;
+  background: transparent;
+  border: 0;
+  border-bottom: 3px solid transparent;
+  cursor: pointer;
+}
+
+.home-tab-on {
+  color: #032d60;
+  border-bottom-color: #0176d3;
+}
+
+.tab-badge {
+  margin-left: 0.375rem;
+  padding: 0 0.5rem;
+  font-size: 0.75rem;
+  color: #fff;
+  background: #dd7a01;
+  border-radius: 0.625rem;
+}
+
+.tab-panel {
+  padding-top: 0.75rem;
+}
+
+/* Contas e cartões: subtitles with a highlighted strip and divider */
+.sub-title {
+  display: block;
+  flex: 1;
+  padding: 0.25rem 0.625rem;
+  font-size: 0.8125rem;
+  font-weight: 700;
+  color: #032d60;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  background: #eef4fb;
+  border-left: 4px solid #0176d3;
+  border-bottom: 1px solid #c5d9ee;
+}
+
+.sources-card .open-accounts,
+.sources-card .open-cards {
+  margin-left: 0.75rem;
+  white-space: nowrap;
 }
 
 .kpis {
   display: grid;
-  grid-template-columns: repeat(4, minmax(0, 1fr));
+  grid-template-columns: repeat(5, minmax(0, 1fr));
   gap: 0.75rem;
 }
 
@@ -118,8 +148,308 @@
   margin-right: 0;
 }
 
+/* Card titles: stronger heading strip with a blue vertical bar. */
+.card-head {
+  margin: -0.75rem -0.75rem 0.5rem;
+  padding: 0.75rem;
+  background: #f3f6fb;
+  border-bottom: 2px solid #0176d3;
+  border-radius: 0.25rem 0.25rem 0 0;
+}
+
+.card-title {
+  margin: 0;
+  font-size: 16px;
+  font-weight: 700;
+  color: #032d60;
+  letter-spacing: 0.01em;
+}
+
+.card-title::before {
+  content: "";
+  display: inline-block;
+  width: 4px;
+  height: 16px;
+  margin-right: 0.5rem;
+  vertical-align: -2px;
+  background: #0176d3;
+  border-radius: 2px;
+}
+
+.card-title a {
+  color: inherit;
+}
+
+/* Status chips */
+.chips {
+  gap: 0.375rem;
+  flex-wrap: wrap;
+}
+
+.chip {
+  padding: 0.125rem 0.75rem;
+  font: inherit;
+  font-size: 0.75rem;
+  color: inherit;
+  background: #fff;
+  border: 1px solid #e3e1df;
+  border-radius: 1rem;
+  cursor: pointer;
+}
+
+.chip-count {
+  margin-left: 0.25rem;
+}
+
+.chip-paid .chip-count {
+  color: #2e844a;
+}
+
+.chip-soon .chip-count {
+  color: #dd7a01;
+}
+
+.chip-open .chip-count {
+  color: #706e6b;
+}
+
+.chip-late .chip-count {
+  color: #ba0517;
+}
+
+.chip-on {
+  color: #fff;
+  background: #0176d3;
+  border-color: #0176d3;
+}
+
+.chip-on .chip-count {
+  color: #fff;
+}
+
+/* Status pills */
+.pill {
+  display: inline-flex;
+  flex-direction: column;
+  align-items: flex-start;
+  margin-right: 0.75rem;
+  padding: 0.125rem 0.625rem;
+  font-size: 0.6875rem;
+  font-weight: 600;
+  white-space: nowrap;
+  border-radius: 0.75rem;
+}
+
+.pill-sub {
+  font-size: 0.6875rem;
+  font-weight: 400;
+}
+
+.pill-paid {
+  color: #2e844a;
+  background: #e3f3e8;
+}
+
+.pill-open,
+.pill-forecast,
+.pill-other {
+  color: #444;
+  background: #eceae8;
+}
+
+.pill-late {
+  color: #ba0517;
+  background: #fbe3e5;
+}
+
+.pill-soon {
+  color: #dd7a01;
+  background: #fdf0e0;
+}
+
+/* Fixed columns: description | status | amount | action */
+.entry-row {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 8rem 7.5rem 2.25rem;
+  align-items: center;
+  column-gap: 0.5rem;
+}
+
+.entry-cells {
+  display: contents;
+}
+
+.entry-row .pill {
+  margin-right: 0;
+  justify-self: start;
+}
+
+.entry-row .entry-amount {
+  justify-self: end;
+  text-align: right;
+}
+
+.entry-row .mark-realized {
+  margin-left: 0;
+  justify-self: end;
+}
+
+@media (max-width: 40rem) {
+  .entry-row {
+    grid-template-columns: minmax(0, 1fr) auto;
+  }
+}
+
+.entry-late {
+  padding-left: 0.5rem;
+  background: #fdf3f3;
+  box-shadow: inset 3px 0 0 #ba0517;
+}
+
+.entry-paid .entry-link,
+.entry-paid .entry-amount {
+  color: #5c5c5c;
+}
+
+.legend {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.25rem 1rem;
+  margin: 0.75rem -0.75rem -0.75rem;
+  padding: 0.625rem 0.75rem;
+  font-size: 0.75rem;
+  background: #eef4fb;
+  border-top: 1px solid #c5d9ee;
+  border-radius: 0 0 0.25rem 0.25rem;
+}
+
+.legend .pill {
+  margin-right: 0.25rem;
+}
+
+/* Pagar / Receber popup */
+.realize-header {
+  background: #f3f6fb;
+  border-bottom: 2px solid #0176d3;
+}
+
+.realize-tabs {
+  display: flex;
+  margin-bottom: 0.875rem;
+  overflow: hidden;
+  border: 1px solid #e3e1df;
+  border-radius: 0.375rem;
+}
+
+.realize-tab {
+  flex: 1;
+  padding: 0.5rem 0.75rem;
+  font: inherit;
+  font-weight: 600;
+  color: inherit;
+  text-align: center;
+  background: #fff;
+  border: 0;
+  cursor: pointer;
+}
+
+.realize-tab + .realize-tab {
+  border-left: 1px solid #e3e1df;
+}
+
+.realize-tab small {
+  display: block;
+  font-size: 0.6875rem;
+  font-weight: 400;
+  opacity: 0.85;
+}
+
+.tab-on {
+  color: #fff;
+  background: #0176d3;
+}
+
+.candidates-loading {
+  min-height: 3rem;
+}
+
+.candidate {
+  display: flex;
+  align-items: center;
+  gap: 0.625rem;
+  padding: 0.5rem 0.75rem;
+  margin-bottom: 0.5rem;
+  border: 1px solid #e3e1df;
+  border-radius: 0.375rem;
+  cursor: pointer;
+}
+
+.candidate-selected {
+  background: #eef4ff;
+  border-color: #0176d3;
+  box-shadow: 0 0 0 1px #0176d3;
+}
+
+.candidate-body {
+  flex: 1;
+}
+
+.candidate-where {
+  display: block;
+  color: #706e6b;
+}
+
+.tag {
+  margin-left: 0.375rem;
+  padding: 0.0625rem 0.5rem;
+  font-size: 0.6875rem;
+  font-weight: 600;
+  border-radius: 0.625rem;
+}
+
+.tag-best {
+  color: #2e844a;
+  background: #e3f3e8;
+}
+
+.tag-near {
+  color: #dd7a01;
+  background: #fdf0e0;
+}
+
+.realize-note {
+  padding: 0.5rem 0.75rem;
+  margin-top: 0.375rem;
+  font-size: 0.75rem;
+  background: #fff8e1;
+  border: 1px solid #f0d98c;
+  border-radius: 0.375rem;
+}
+
+.realize-summary {
+  float: left;
+  font-size: 0.75rem;
+  line-height: 2rem;
+}
+
+.budget-values {
+  text-align: right;
+}
+
 @media (max-width: 62rem) {
   .kpis {
     grid-template-columns: repeat(2, minmax(0, 1fr));
   }
+}
+
+.sources-card ul + div {
+  margin-top: 1rem;
+  padding-top: 0.75rem;
+  border-top: 2px solid #e3e1df;
+}
+
+/* Infinite loading lists scroll inside the card */
+.scroll-list {
+  max-height: 26rem;
+  overflow-y: auto;
 }

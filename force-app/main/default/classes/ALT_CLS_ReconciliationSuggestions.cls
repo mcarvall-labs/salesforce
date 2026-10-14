@@ -266,13 +266,13 @@ public with sharing class ALT_CLS_ReconciliationSuggestions {
     }
   }
 
-  private String cardCurrency(AXF_OBJ_CreditCardTransaction__c card) {
+  public String cardCurrency(AXF_OBJ_CreditCardTransaction__c card) {
     return String.isBlank(card.AXF_CCT_TXT_CurrencyCode__c)
       ? card.CurrencyIsoCode
       : card.AXF_CCT_TXT_CurrencyCode__c;
   }
 
-  private Decimal toBRL(
+  public Decimal toBRL(
     Decimal amount,
     String currencyCode,
     Map<String, Decimal> rates
@@ -302,6 +302,15 @@ public with sharing class ALT_CLS_ReconciliationSuggestions {
     for (AXF_OBJ_CreditCardTransaction__c card : cards) {
       foreign.add(cardCurrency(card));
     }
+    return ratesFor(foreign);
+  }
+
+  // Units of each currency per 1 BRL for the given ISO codes (BRL and blanks ignored).
+  public Map<String, Decimal> ratesFor(Set<String> codes) {
+    if (rateOverride != null) {
+      return rateOverride;
+    }
+    Set<String> foreign = new Set<String>(codes);
     foreign.remove(BRL);
     foreign.remove(null);
     Map<String, Decimal> rates = new Map<String, Decimal>();
