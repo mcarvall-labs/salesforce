@@ -324,12 +324,17 @@ public with sharing class ALT_CLS_Reconciliation {
     }
   }
 
-  // Runs after the Entries are saved; a failure here does not undo the reconciliation, it is
-  // reported in the outcome message.
+  // Runs after the Entries are saved; a failed save here does not undo the reconciliation, it is
+  // reported in the outcome message. A query without access throws and rolls the whole call back.
   private void reprice(Changes changes, Map<Id, Outcome> byEntry) {
     Map<Id, Repricing> byContract = new Map<Id, Repricing>();
     for (Repricing repricing : changes.repricings) {
-      if (byEntry.get(repricing.entryId).success) {
+      Repricing kept = byContract.get(repricing.contractId);
+      // Several installments of one contract in the same batch: the latest one sets the amount.
+      if (
+        byEntry.get(repricing.entryId).success &&
+        (kept == null || kept.installment < repricing.installment)
+      ) {
         byContract.put(repricing.contractId, repricing);
       }
     }

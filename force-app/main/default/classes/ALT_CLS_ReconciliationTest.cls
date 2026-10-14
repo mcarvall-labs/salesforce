@@ -927,4 +927,163 @@ private class ALT_CLS_ReconciliationTest {
       System.assertEquals(130, amounts.get(3), 'later pending installment');
     }
   }
+
+  private static List<AXF_OBJ_Entry__c> contractInstallments(
+    String recordType,
+    Integer count
+  ) {
+    AXF_OBJ_Contract__c contract = new AXF_OBJ_Contract__c(
+      Name = 'Contrato',
+      AXF_CTR_MD_Holder__c = holder.Id,
+      RecordTypeId = Schema.SObjectType.AXF_OBJ_Contract__c.getRecordTypeInfosByDeveloperName()
+        .get(recordType)
+        .getRecordTypeId(),
+      AXF_CTR_PKL_Direction__c = 'Expense',
+      AXF_CTR_PKL_Status__c = 'Active',
+      AXF_CTR_DAT_FirstDueDate__c = Date.newInstance(2026, 9, 5),
+      AXF_CTR_CUR_Amount__c = 100
+    );
+    insert contract;
+    List<AXF_OBJ_Entry__c> installments = new List<AXF_OBJ_Entry__c>();
+    for (Integer n = 1; n <= count; n++) {
+      installments.add(
+        new AXF_OBJ_Entry__c(
+          Name = 'Parcela ' + n,
+          AXF_ENT_MD_Holder__c = holder.Id,
+          AXF_ENT_LKP_Contract__c = contract.Id,
+          AXF_ENT_NUM_InstallmentNumber__c = n,
+          AXF_ENT_CUR_Amount__c = 100,
+          AXF_ENT_DAT_DueDate__c = Date.newInstance(2026, 8 + n, 5),
+          AXF_ENT_PKL_Type__c = 'Expense',
+          AXF_ENT_PKL_Status__c = 'Pending'
+        )
+      );
+    }
+    insert installments;
+    return installments;
+  }
+
+  private static Decimal contractAmount(Id entryId) {
+    return [
+      SELECT AXF_ENT_LKP_Contract__r.AXF_CTR_CUR_Amount__c
+      FROM AXF_OBJ_Entry__c
+      WHERE Id = :entryId
+    ]
+    .AXF_ENT_LKP_Contract__r.AXF_CTR_CUR_Amount__c;
+  }
+
+  private static Decimal entryAmount(Id entryId) {
+    return [SELECT AXF_ENT_CUR_Amount__c FROM AXF_OBJ_Entry__c WHERE Id = :entryId]
+    .AXF_ENT_CUR_Amount__c;
+  }
+
+  @IsTest
+  static void cardTransactionPaidAmountReplacesTheEntryAmount() {
+    System.runAs(new User(Id = UserInfo.getUserId())) {
+      base();
+      AXF_OBJ_Entry__c entry = entry(card.Id, null);
+      AXF_OBJ_CreditCardTransaction__c purchase = cardTransaction(-80, -80);
+      ALT_CLS_Reconciliation.Outcome outcome = new ALT_CLS_Reconciliation()
+        .reconcile(
+          new List<ALT_CLS_Reconciliation.Pair>{
+            new ALT_CLS_Reconciliation.Pair(entry.Id, null, purchase.Id)
+          }
+        )[0];
+      System.assertEquals(true, outcome.success, '' + outcome.message);
+      AXF_OBJ_Entry__c saved = [
+        SELECT AXF_ENT_CUR_Amount__c, AXF_ENT_CUR_PlannedAmount__c
+        FROM AXF_OBJ_Entry__c
+        WHERE Id = :entry.Id
+      ];
+      System.assertEquals(80, saved.AXF_ENT_CUR_Amount__c);
+      System.assertEquals(100, saved.AXF_ENT_CUR_PlannedAmount__c);
+    }
+  }
+
+  @IsTest
+  static void sameAmountKeepsTheEntryAndLeavesNoPlannedAmount() {
+    System.runAs(new User(Id = UserInfo.getUserId())) {
+      base();
+      AXF_OBJ_Entry__c entry = entry(null, null);
+      AXF_OBJ_BankAccountTransaction__c bank = bankTransaction();
+      new ALT_CLS_Reconciliation()
+        .reconcile(
+          new List<ALT_CLS_Reconciliation.Pair>{
+            new ALT_CLS_Reconciliation.Pair(entry.Id, bank.Id, null)
+          }
+        );
+      AXF_OBJ_Entry__c saved = [
+        SELECT AXF_ENT_CUR_Amount__c, AXF_ENT_CUR_PlannedAmount__c
+        FROM AXF_OBJ_Entry__c
+        WHERE Id = :entry.Id
+      ];
+      System.assertEquals(100, saved.AXF_ENT_CUR_Amount__c);
+      System.assertEquals(null, saved.AXF_ENT_CUR_PlannedAmount__c);
+    }
+  }
+
+  @IsTest
+  static void recurringContractIsNotRepriced() {
+    System.runAs(new User(Id = UserInfo.getUserId())) {
+      base();
+      List<AXF_OBJ_Entry__c> items = contractInstallments('AXF_Recurring', 2);
+      AXF_OBJ_BankAccountTransaction__c bank = bankTransaction('Pending', -130);
+      ALT_CLS_Reconciliation.Outcome outcome = new ALT_CLS_Reconciliation()
+        .reconcile(
+          new List<ALT_CLS_Reconciliation.Pair>{
+            new ALT_CLS_Reconciliation.Pair(items[0].Id, bank.Id, null)
+          }
+        )[0];
+      System.assertEquals(true, outcome.success, '' + outcome.message);
+      System.assertEquals(130, entryAmount(items[0].Id));
+      System.assertEquals(100, contractAmount(items[0].Id));
+      System.assertEquals(100, entryAmount(items[1].Id));
+    }
+  }
+
+  @IsTest
+  static void realizedLaterInstallmentAndUndoLeaveTheContractRepriced() {
+    System.runAs(new User(Id = UserInfo.getUserId())) {
+      base();
+      List<AXF_OBJ_Entry__c> items = contractInstallments('AXF_Financing', 3);
+      items[2].AXF_ENT_PKL_Status__c = 'Realized';
+      items[2].AXF_ENT_DAT_PaymentDate__c = Date.newInstance(2026, 11, 5);
+      update items[2];
+      AXF_OBJ_BankAccountTransaction__c bank = bankTransaction('Pending', -90);
+      ALT_CLS_Reconciliation service = new ALT_CLS_Reconciliation();
+      service.reconcile(
+        new List<ALT_CLS_Reconciliation.Pair>{
+          new ALT_CLS_Reconciliation.Pair(items[0].Id, bank.Id, null)
+        }
+      );
+      System.assertEquals(90, contractAmount(items[0].Id));
+      System.assertEquals(90, entryAmount(items[1].Id));
+      System.assertEquals(100, entryAmount(items[2].Id), 'realized untouched');
+      service.unreconcile(new List<Id>{ items[0].Id });
+      System.assertEquals(100, entryAmount(items[0].Id));
+      System.assertEquals(90, contractAmount(items[0].Id), 'undo keeps it');
+      System.assertEquals(90, entryAmount(items[1].Id));
+    }
+  }
+
+  @IsTest
+  static void twoInstallmentsOfTheSameContractInOneBatchUseTheLatest() {
+    System.runAs(new User(Id = UserInfo.getUserId())) {
+      base();
+      List<AXF_OBJ_Entry__c> items = contractInstallments('AXF_Installment', 3);
+      AXF_OBJ_BankAccountTransaction__c first = bankTransaction('Pending', -110);
+      AXF_OBJ_BankAccountTransaction__c second = bankTransaction('Pending', -120);
+      List<ALT_CLS_Reconciliation.Outcome> outcomes = new ALT_CLS_Reconciliation()
+        .reconcile(
+          new List<ALT_CLS_Reconciliation.Pair>{
+            new ALT_CLS_Reconciliation.Pair(items[1].Id, second.Id, null),
+            new ALT_CLS_Reconciliation.Pair(items[0].Id, first.Id, null)
+          }
+        );
+      System.assertEquals(true, outcomes[0].success, '' + outcomes[0].message);
+      System.assertEquals(true, outcomes[1].success, '' + outcomes[1].message);
+      System.assertEquals(120, contractAmount(items[0].Id));
+      System.assertEquals(120, entryAmount(items[2].Id));
+    }
+  }
 }
