@@ -626,39 +626,45 @@ describe("c-a-x-f-l-w-c-dashboard", () => {
     });
   });
 
-  it("opens the expense wizard from + Despesa and the standard form from + Receita", async () => {
+  it("opens the same wizard from + Despesa and from + Receita with the entry type", async () => {
     mockNavigate.mockClear();
     const element = await mount();
-    expect(
-      element.shadowRoot.querySelector("c-a-x-f_-l-w-c_expense-wizard")
-    ).toBeNull();
+    const wizardOf = () =>
+      element.shadowRoot.querySelector("c-a-x-f_-l-w-c_expense-wizard");
+    expect(wizardOf()).toBeNull();
     element.shadowRoot.querySelector(".new-expense").click();
     await flushPromises();
-    const wizard = element.shadowRoot.querySelector(
-      "c-a-x-f_-l-w-c_expense-wizard"
-    );
-    expect(wizard).not.toBeNull();
-    expect(mockNavigate).not.toHaveBeenCalled();
-    expect(wizard.holderId).toBe("");
-    expect(wizard.holders).toEqual(holders);
-    wizard.dispatchEvent(new CustomEvent("close"));
+    expect(wizardOf()).not.toBeNull();
+    expect(wizardOf().entryType).toBe("Expense");
+    expect(wizardOf().holderId).toBe("");
+    expect(wizardOf().holders).toEqual(holders);
+    wizardOf().dispatchEvent(new CustomEvent("close"));
     await flushPromises();
-    expect(
-      element.shadowRoot.querySelector("c-a-x-f_-l-w-c_expense-wizard")
-    ).toBeNull();
+    expect(wizardOf()).toBeNull();
     element.shadowRoot
       .querySelector(".holder-filter")
       .dispatchEvent(new CustomEvent("change", { detail: { value: "001B" } }));
     await flushPromises();
     element.shadowRoot.querySelector(".new-income").click();
-    expect(mockNavigate).toHaveBeenLastCalledWith({
-      type: "standard__objectPage",
-      attributes: { objectApiName: "AXF_OBJ_Entry__c", actionName: "new" },
-      state: {
-        defaultFieldValues:
-          "AXF_ENT_PKL_Type__c=Income,AXF_ENT_MD_Holder__c=001B"
-      }
-    });
+    await flushPromises();
+    expect(wizardOf().entryType).toBe("Income");
+    expect(wizardOf().holderId).toBe("001B");
+    expect(mockNavigate).not.toHaveBeenCalled();
+  });
+
+  it("toasts Receita criada when an income is saved from the wizard", async () => {
+    const element = await mount();
+    const toasts = [];
+    element.addEventListener("lightning__showtoast", (event) =>
+      toasts.push(event.detail)
+    );
+    element.shadowRoot.querySelector(".new-income").click();
+    await flushPromises();
+    element.shadowRoot
+      .querySelector("c-a-x-f_-l-w-c_expense-wizard")
+      .dispatchEvent(new CustomEvent("saved"));
+    await flushPromises();
+    expect(toasts.map((toast) => toast.title)).toEqual(["Receita criada"]);
   });
 
   it("closes the wizard and reloads the summary when an expense is saved", async () => {

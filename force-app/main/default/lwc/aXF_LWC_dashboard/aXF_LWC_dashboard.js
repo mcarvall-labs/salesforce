@@ -1,6 +1,5 @@
 import { LightningElement } from "lwc";
 import { NavigationMixin } from "lightning/navigation";
-import { encodeDefaultFieldValues } from "lightning/pageReferenceUtils";
 import { updateRecord } from "lightning/uiRecordApi";
 import { ShowToastEvent } from "lightning/platformShowToastEvent";
 import getHolders from "@salesforce/apex/AXF_CLS_CTRL_Dashboard.getHolders";
@@ -646,10 +645,17 @@ export default class AXF_LWC_dashboard extends NavigationMixin(
     });
   }
 
-  // + Despesa opens the expense wizard; + Receita keeps the standard form.
+  // + Despesa and + Receita open the same wizard (standalone only for income).
   showExpenseWizard = false;
+  wizardEntryType = "Expense";
 
   handleNewExpense() {
+    this.wizardEntryType = "Expense";
+    this.showExpenseWizard = true;
+  }
+
+  handleNewIncome() {
+    this.wizardEntryType = "Income";
     this.showExpenseWizard = true;
   }
 
@@ -661,7 +667,10 @@ export default class AXF_LWC_dashboard extends NavigationMixin(
     this.showExpenseWizard = false;
     this.dispatchEvent(
       new ShowToastEvent({
-        title: "Despesa criada",
+        title:
+          this.wizardEntryType === "Income"
+            ? "Receita criada"
+            : "Despesa criada",
         variant: "success"
       })
     );
@@ -995,23 +1004,6 @@ export default class AXF_LWC_dashboard extends NavigationMixin(
     } finally {
       this.isSaving = false;
     }
-  }
-
-  handleNewIncome() {
-    this.openNewEntry("Income");
-  }
-
-  // The standard form opens with the Type and the filtered holder already filled in.
-  openNewEntry(type) {
-    const values = { AXF_ENT_PKL_Type__c: type };
-    if (this.holderId) {
-      values.AXF_ENT_MD_Holder__c = this.holderId;
-    }
-    this[NavigationMixin.Navigate]({
-      type: "standard__objectPage",
-      attributes: { objectApiName: "AXF_OBJ_Entry__c", actionName: "new" },
-      state: { defaultFieldValues: encodeDefaultFieldValues(values) }
-    });
   }
 
   // ---- Right column previews (E7-11, E7-14) ----
