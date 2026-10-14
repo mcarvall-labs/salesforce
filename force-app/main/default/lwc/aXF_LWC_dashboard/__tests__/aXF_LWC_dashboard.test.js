@@ -1185,7 +1185,7 @@ describe("c-a-x-f-l-w-c-dashboard", () => {
     it("shows the empty message and resets the chip when the month changes", async () => {
       getEntries.mockResolvedValue({
         truncated: false,
-        rows: scenarioRows().filter((row) => row.status === "Realized")
+        rows: scenarioRows().filter((item) => item.status === "Realized")
       });
       const element = await mount();
       const chips = () => [...element.shadowRoot.querySelectorAll(".chip")];
