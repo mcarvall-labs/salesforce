@@ -233,6 +233,39 @@
   background: #fdf0e0;
 }
 
+/* Fixed columns: description | status | amount | action */
+.entry-row {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 8rem 7.5rem 2.25rem;
+  align-items: center;
+  column-gap: 0.5rem;
+}
+
+.entry-cells {
+  display: contents;
+}
+
+.entry-row .pill {
+  margin-right: 0;
+  justify-self: start;
+}
+
+.entry-row .entry-amount {
+  justify-self: end;
+  text-align: right;
+}
+
+.entry-row .mark-realized {
+  margin-left: 0;
+  justify-self: end;
+}
+
+@media (max-width: 40rem) {
+  .entry-row {
+    grid-template-columns: minmax(0, 1fr) auto;
+  }
+}
+
 .entry-late {
   padding-left: 0.5rem;
   background: #fdf3f3;

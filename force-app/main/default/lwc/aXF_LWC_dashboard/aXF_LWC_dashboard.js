@@ -616,7 +616,7 @@ export default class AXF_LWC_dashboard extends NavigationMixin(
         statusText: status.label,
         statusSub: status.sub,
         statusClass: `pill pill-${status.key}`,
-        rowClass: `entry-row entry-${status.key} slds-grid slds-grid_align-spread slds-m-top_x-small`,
+        rowClass: `entry-row entry-${status.key} slds-m-top_x-small`,
         canRealize: entry.status === "Pending" && !entry.forecastCard,
         realizeLabel: entry.type === "Income" ? "Receber" : "Pagar",
         detail: [entry.holderName, entry.categoryName]

@@ -1178,7 +1178,7 @@ describe("c-a-x-f-l-w-c-dashboard", () => {
       const element = await mount();
       const labels = [
         ...element.shadowRoot.querySelectorAll(".mark-realized")
-      ].map((button) => button.label);
+      ].map((button) => button.alternativeText);
       expect(labels).toEqual(["Pagar", "Receber"]);
     });
 

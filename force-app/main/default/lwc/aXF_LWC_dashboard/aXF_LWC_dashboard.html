@@ -120,7 +120,7 @@
       <div class="dashboard-grid slds-m-top_medium">
         <div class="main-column">
           <template lwc:if={showEntries}>
-            <div class="entries slds-box slds-m-top_medium">
+            <div class="entries slds-box">
               <div
                 class="card-head slds-grid slds-grid_align-spread slds-grid_vertical-align-center slds-wrap"
               >
@@ -173,7 +173,7 @@
                           · {entry.detail}
                         </p>
                       </div>
-                      <div class="slds-grid slds-grid_vertical-align-center">
+                      <div class="entry-cells">
                         <span class={entry.statusClass}>
                           {entry.statusText}
                           <template lwc:if={entry.statusSub}>
@@ -184,13 +184,15 @@
                           >{entry.amountText}</span
                         >
                         <template lwc:if={entry.canRealize}>
-                          <lightning-button
-                            class="mark-realized slds-m-left_x-small"
-                            label={entry.realizeLabel}
+                          <lightning-button-icon
+                            class="mark-realized"
+                            icon-name="utility:check"
+                            variant="border-filled"
+                            alternative-text={entry.realizeLabel}
                             title={entry.realizeLabel}
                             data-id={entry.id}
                             onclick={handleRealizeClick}
-                          ></lightning-button>
+                          ></lightning-button-icon>
                         </template>
                       </div>
                     </li>
