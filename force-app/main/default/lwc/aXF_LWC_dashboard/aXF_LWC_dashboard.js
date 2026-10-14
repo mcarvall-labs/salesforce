@@ -34,6 +34,9 @@ const monthKey = (year, month) => `${year}-${pad(month + 1)}-01`;
 
 // A pending entry due within this many days (today included) is "Vence em breve".
 const DUE_SOON_DAYS = 5;
+const PAGE_ENTRIES = 20;
+const PAGE_PENDING = 10;
+const SCROLL_MARGIN = 48;
 const MS_PER_DAY = 86400000;
 
 const STATUS_CHIPS = [
@@ -85,7 +88,8 @@ export default class AXF_LWC_dashboard extends NavigationMixin(
   previewsRequestId = 0;
   budget;
   budgetError;
-  budgetExpanded = false;
+  entriesLimit = PAGE_ENTRIES;
+  pendingLimit = PAGE_PENDING;
   statusChip = "all";
 
   connectedCallback() {
@@ -136,6 +140,7 @@ export default class AXF_LWC_dashboard extends NavigationMixin(
       });
       if (request === this.entriesRequestId) {
         this.entries = result.rows || [];
+        this.entriesLimit = PAGE_ENTRIES;
         this.entriesTruncated = !!result.truncated;
       }
     } catch (error) {
@@ -164,6 +169,7 @@ export default class AXF_LWC_dashboard extends NavigationMixin(
     }
     if (pending.status === "fulfilled") {
       this.pending = pending.value;
+      this.pendingLimit = PAGE_PENDING;
     } else {
       this.pending = undefined;
       this.pendingError = this.messageOf(
@@ -376,7 +382,7 @@ export default class AXF_LWC_dashboard extends NavigationMixin(
   }
 
   // Budget bars (E7-5): dark = realized, light = planned, 100 % = goal. Orange when the planned
-  // passes the goal, red when the realized does. A category without goal has no bar.
+  // passes the goal, red when the realized does. A category without goal compares realized with planned.
   get hasBudget() {
     return !!this.budget;
   }
@@ -391,11 +397,14 @@ export default class AXF_LWC_dashboard extends NavigationMixin(
 
   barOf(row, isTotal) {
     const hasGoal = row.goal != null && row.goal > 0;
+    // Without a goal the bar compares realized with planned (planned = 100 %).
+    const base = hasGoal ? row.goal : row.planned;
+    const hasBar = base > 0;
     const percent = (value) => {
-      if (!hasGoal) {
+      if (!hasBar) {
         return 0;
       }
-      return Math.max(0, Math.min(100, Math.round((value / row.goal) * 100)));
+      return Math.max(0, Math.min(100, Math.round((value / base) * 100)));
     };
     const over = hasGoal && row.realized > row.goal;
     const warning = hasGoal && row.planned > row.goal;
@@ -403,6 +412,7 @@ export default class AXF_LWC_dashboard extends NavigationMixin(
       key: isTotal ? "total" : row.categoryId || "none",
       name: row.name,
       hasGoal,
+      hasBar,
       isTotal,
       realizedText: this.money(row.realized),
       plannedText: this.money(row.planned),
@@ -425,24 +435,6 @@ export default class AXF_LWC_dashboard extends NavigationMixin(
     };
   }
 
-  // Preview: the total and the three categories closest to their goal; the toggle shows all.
-  get visibleBudgetRows() {
-    const rows = this.budgetRows;
-    if (this.budgetExpanded) {
-      return rows;
-    }
-    const [total, ...categories] = rows;
-    const closest = categories
-      .filter((row) => row.hasGoal)
-      .sort((a, b) => b.ratio - a.ratio || b.planned - a.planned)
-      .slice(0, 3);
-    return [total, ...closest];
-  }
-
-  get budgetToggleLabel() {
-    return this.budgetExpanded ? "Ver menos" : "Ver todas as categorias";
-  }
-
   // Same figure as the "incluir cartão previsto" switch (one source: the summary).
   get cardForecastLine() {
     return this.money(this.summary.cardForecast);
@@ -450,10 +442,6 @@ export default class AXF_LWC_dashboard extends NavigationMixin(
 
   get showCardForecast() {
     return !!this.budget && !!this.summary && !!this.summary.cardForecast;
-  }
-
-  handleBudgetToggle() {
-    this.budgetExpanded = !this.budgetExpanded;
   }
 
   // Clicking Vencidos or A vencer filters the month list; clicking it again clears the filter.
@@ -599,6 +587,7 @@ export default class AXF_LWC_dashboard extends NavigationMixin(
 
   handleChipClick(event) {
     this.statusChip = event.currentTarget.dataset.chip;
+    this.entriesLimit = PAGE_ENTRIES;
   }
 
   get entryRows() {
@@ -624,6 +613,29 @@ export default class AXF_LWC_dashboard extends NavigationMixin(
           .filter(Boolean)
           .join(" · ")
       }));
+  }
+
+  get visibleEntryRows() {
+    return this.entryRows.slice(0, this.entriesLimit);
+  }
+
+  // Infinite loading: the list scrolls inside the card and shows the next page near the bottom.
+  handleEntriesScroll(event) {
+    if (this.nearBottom(event.currentTarget)) {
+      this.entriesLimit += PAGE_ENTRIES;
+    }
+  }
+
+  handlePendingScroll(event) {
+    if (this.nearBottom(event.currentTarget)) {
+      this.pendingLimit += PAGE_PENDING;
+    }
+  }
+
+  nearBottom(node) {
+    return (
+      node.scrollHeight - node.scrollTop - node.clientHeight <= SCROLL_MARGIN
+    );
   }
 
   signedAmount(entry) {
@@ -1061,6 +1073,14 @@ export default class AXF_LWC_dashboard extends NavigationMixin(
     return this.activeTab === "pending";
   }
 
+  get isTabBudget() {
+    return this.activeTab === "budget";
+  }
+
+  get budgetTabClass() {
+    return `home-tab${this.isTabBudget ? " home-tab-on" : ""}`;
+  }
+
   get entriesTabClass() {
     return `home-tab${this.isTabEntries ? " home-tab-on" : ""}`;
   }
@@ -1078,7 +1098,7 @@ export default class AXF_LWC_dashboard extends NavigationMixin(
   }
 
   get pendingItems() {
-    return this.pending.items.map((item) => ({
+    return this.pending.items.slice(0, this.pendingLimit).map((item) => ({
       ...item,
       key: item.id,
       amountText: this.money(item.amount),

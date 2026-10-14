@@ -32,7 +32,7 @@ public with sharing class AXF_CLS_CTRL_Dashboard {
     }
   }
 
-  // A conciliar preview: count and the 3 most recent open transactions of the month.
+  // A conciliar preview: count and the 100 most recent open transactions of the month.
   @AuraEnabled
   public static ALT_CLS_DashboardPreview.Pending getPending(
     Id holderId,

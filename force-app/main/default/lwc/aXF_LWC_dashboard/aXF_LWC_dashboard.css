@@ -459,3 +459,9 @@
   padding-top: 0.75rem;
   border-top: 2px solid #e3e1df;
 }
+
+/* Infinite loading lists scroll inside the card */
+.scroll-list {
+  max-height: 26rem;
+  overflow-y: auto;
+}

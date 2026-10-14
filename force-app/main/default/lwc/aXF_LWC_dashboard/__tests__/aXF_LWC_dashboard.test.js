@@ -428,34 +428,33 @@ describe("c-a-x-f-l-w-c-dashboard", () => {
     expect(text(element, ".kpi-flow")).toContain("555,00");
   });
 
-  it("shows the total and the three categories closest to the goal", async () => {
+  it("shows every category as a bar in the Metas de despesa tab", async () => {
     const element = await mount();
-    const names = [...element.shadowRoot.querySelectorAll(".budget-name")].map(
-      (node) => node.textContent
-    );
-    expect(names).toEqual(["Total de despesas", "Lazer", "Mercado", "Casa"]);
-    expect(getBudget.mock.calls[0][0].holderId).toBeNull();
-  });
-
-  it("expands to every category, including the ones without goal", async () => {
-    const element = await mount();
-    element.shadowRoot.querySelector(".budget-toggle").click();
-    await flushPromises();
+    expect(element.shadowRoot.querySelector(".budget")).toBeNull();
+    await openTab(element, "budget");
     const names = [...element.shadowRoot.querySelectorAll(".budget-name")].map(
       (node) => node.textContent
     );
     expect(names).toHaveLength(7);
+    expect(names[0]).toBe("Total de despesas");
     expect(names).toContain("Sem categoria");
+    expect(getBudget.mock.calls[0][0].holderId).toBeNull();
+  });
+
+  it("draws a realized x planned bar for a category without goal", async () => {
+    const element = await mount();
+    await openTab(element, "budget");
     const rows = element.shadowRoot.querySelectorAll(".budget-row");
     const noGoal = [...rows].find((row) =>
       row.textContent.includes("Sem categoria")
     );
     expect(noGoal.textContent).toContain("sem meta");
-    expect(noGoal.querySelector(".budget-bar")).toBeNull();
+    expect(noGoal.querySelector(".budget-bar")).not.toBeNull();
   });
 
   it("marks the planned above the goal in orange and the realized above it in red", async () => {
     const element = await mount();
+    await openTab(element, "budget");
     const rows = [...element.shadowRoot.querySelectorAll(".budget-row")];
     const of = (name) => rows.find((row) => row.textContent.includes(name));
     expect(of("Mercado").querySelector(".budget-bar.warning")).not.toBeNull();
@@ -470,6 +469,7 @@ describe("c-a-x-f-l-w-c-dashboard", () => {
 
   it("caps the bar at 100% and sizes realized and planned against the goal", async () => {
     const element = await mount();
+    await openTab(element, "budget");
     const rows = [...element.shadowRoot.querySelectorAll(".budget-row")];
     const lazer = rows.find((row) => row.textContent.includes("Lazer"));
     expect(
@@ -486,10 +486,12 @@ describe("c-a-x-f-l-w-c-dashboard", () => {
 
   it("shows the forecast card line only when there is one", async () => {
     let element = await mount();
+    await openTab(element, "budget");
     expect(text(element, ".card-forecast-line")).toContain("R$ 65,00");
     document.body.removeChild(element);
     getSummary.mockResolvedValue({ ...summary, cardForecast: 0 });
     element = await mount();
+    await openTab(element, "budget");
     expect(element.shadowRoot.querySelector(".card-forecast-line")).toBeNull();
   });
 
@@ -509,6 +511,7 @@ describe("c-a-x-f-l-w-c-dashboard", () => {
 
   it("shows the percentage of the goal used next to each bar", async () => {
     const element = await mount();
+    await openTab(element, "budget");
     expect(text(element, ".budget-values")).toContain("meta R$ 500,00 · 28%");
   });
 
@@ -518,6 +521,7 @@ describe("c-a-x-f-l-w-c-dashboard", () => {
       () => new Promise((resolve) => (resolveFirst = resolve))
     );
     const element = await mount();
+    await openTab(element, "budget");
     getBudget.mockResolvedValueOnce({
       ...budget,
       total: { ...budget.total, name: "Novo total" }
@@ -537,6 +541,7 @@ describe("c-a-x-f-l-w-c-dashboard", () => {
   it("shows a goals error without hiding the indicators", async () => {
     getBudget.mockRejectedValue({ body: { message: "Sem acesso às metas" } });
     const element = await mount();
+    await openTab(element, "budget");
     expect(text(element, ".budget-error")).toContain("Sem acesso às metas");
     expect(element.shadowRoot.querySelector(".kpis")).not.toBeNull();
     expect(element.shadowRoot.querySelector(".budget")).toBeNull();
@@ -916,21 +921,20 @@ describe("c-a-x-f-l-w-c-dashboard", () => {
     expect(text(element, ".source-row")).not.toContain("R$ 0,00");
   });
 
-  it("puts the indicators first, then the goals, then the tabs with the month list open", async () => {
+  it("puts the indicators first and the tabs below them with the month list open", async () => {
     const element = await mount();
     const root = element.shadowRoot;
     const kpis = root.querySelector(".kpis");
-    const goals = root.querySelector(".budget");
     const tabs = root.querySelector(".home-tabs");
     const panel = root.querySelector(".tab-panel");
     const follows = (first, second) =>
       first.compareDocumentPosition(second) & Node.DOCUMENT_POSITION_FOLLOWING;
-    expect(follows(kpis, goals)).toBeTruthy();
-    expect(follows(goals, tabs)).toBeTruthy();
+    expect(follows(kpis, tabs)).toBeTruthy();
     expect(follows(tabs, panel)).toBeTruthy();
     expect(panel.querySelector(".entries")).not.toBeNull();
     expect(panel.querySelector(".sources-card")).toBeNull();
     expect(panel.querySelector(".pending-card")).toBeNull();
+    expect(panel.querySelector(".budget")).toBeNull();
     expect(text(element, ".home-tab-on")).toContain("Lançamentos");
   });
 
@@ -958,18 +962,37 @@ describe("c-a-x-f-l-w-c-dashboard", () => {
         (node) => node.textContent.replace(/\s+/g, " ").trim()
       );
     };
-    expect(await titles("entries")).toEqual([
-      "Metas de despesa",
-      "Lançamentos do mês"
-    ]);
-    expect(await titles("sources")).toEqual([
-      "Metas de despesa",
-      "Contas e cartões"
-    ]);
-    expect(await titles("pending")).toEqual([
-      "Metas de despesa",
-      "A conciliar (12)"
-    ]);
+    expect(await titles("entries")).toEqual(["Lançamentos do mês"]);
+    expect(await titles("sources")).toEqual(["Contas e cartões"]);
+    expect(await titles("pending")).toEqual(["A conciliar (12)"]);
+    expect(await titles("budget")).toEqual(["Metas de despesa"]);
+  });
+
+  it("loads more Conciliação items when the list scrolls to the bottom", async () => {
+    getPending.mockResolvedValue({
+      ...pending,
+      total: 25,
+      items: Array.from({ length: 25 }, (_, index) => ({
+        id: `p${index}`,
+        source: "account",
+        description: `Item ${index}`,
+        amount: -10,
+        transactionDate: "2026-10-01",
+        suggested: false
+      }))
+    });
+    const element = await mount();
+    await openTab(element, "pending");
+    const list = element.shadowRoot.querySelector(".scroll-list");
+    const count = () =>
+      element.shadowRoot.querySelectorAll(".pending-row").length;
+    expect(count()).toBe(10);
+    Object.defineProperty(list, "scrollHeight", { value: 1000 });
+    Object.defineProperty(list, "clientHeight", { value: 400 });
+    list.scrollTop = 600;
+    list.dispatchEvent(new CustomEvent("scroll"));
+    await flushPromises();
+    expect(count()).toBe(20);
   });
 
   it("highlights the Contas and Cartões subtitles", async () => {
@@ -1129,6 +1152,28 @@ describe("c-a-x-f-l-w-c-dashboard", () => {
       forecastCard: false,
       ...over
     });
+    it("loads the next page of Lançamentos when the list scrolls to the bottom", async () => {
+      const many = Array.from({ length: 45 }, (_, index) =>
+        row(`m${index}`, { dueDate: iso(3) })
+      );
+      getEntries.mockResolvedValue({ truncated: false, rows: many });
+      const element = await mount();
+      const list = () => element.shadowRoot.querySelector(".entries-list");
+      const count = () =>
+        element.shadowRoot.querySelectorAll(".entries-list .entry-row").length;
+      expect(count()).toBe(20);
+      Object.defineProperty(list(), "scrollHeight", { value: 1000 });
+      Object.defineProperty(list(), "clientHeight", { value: 400 });
+      list().scrollTop = 500;
+      list().dispatchEvent(new CustomEvent("scroll"));
+      await flushPromises();
+      expect(count()).toBe(20);
+      list().scrollTop = 600;
+      list().dispatchEvent(new CustomEvent("scroll"));
+      await flushPromises();
+      expect(count()).toBe(40);
+    });
+
     const scenarioRows = () => [
       row("s1", { dueDate: iso(1) }),
       row("s5", { dueDate: iso(5) }),
