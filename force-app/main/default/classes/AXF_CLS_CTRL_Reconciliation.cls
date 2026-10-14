@@ -233,12 +233,15 @@ public with sharing class AXF_CLS_CTRL_Reconciliation {
         );
       } catch (JSONException e) {
         throw new AuraHandledException(FAILED);
+      } catch (TypeException e) {
+        throw new AuraHandledException(FAILED);
       }
     }
     return reconcilePairs(pairs);
   }
 
-  public static List<OutcomeView> reconcilePairs(List<PairInput> pairs) {
+  @TestVisible
+  private static List<OutcomeView> reconcilePairs(List<PairInput> pairs) {
     List<ALT_CLS_Reconciliation.Pair> converted = new List<ALT_CLS_Reconciliation.Pair>();
     for (PairInput pair : pairs == null ? new List<PairInput>() : pairs) {
       converted.add(

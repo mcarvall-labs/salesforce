@@ -153,7 +153,14 @@ private class AXF_CLS_CTRL_ReconciliationTest {
         AXF_CLS_CTRL_Reconciliation.reconcile('not json');
         System.assert(false, 'JSON inválido deve falhar');
       } catch (AuraHandledException e) {
-        System.assert(true);
+        // The exception type is the contract; getMessage() is generic in tests.
+        System.assertNotEquals(null, e);
+      }
+      try {
+        AXF_CLS_CTRL_Reconciliation.reconcile('{}');
+        System.assert(false, 'JSON que não é lista deve falhar');
+      } catch (AuraHandledException e) {
+        System.assertNotEquals(null, e);
       }
     }
   }
