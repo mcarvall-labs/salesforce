@@ -205,6 +205,10 @@
   color: #2e844a;
 }
 
+.chip-soon .chip-count {
+  color: #dd7a01;
+}
+
 .chip-open .chip-count {
   color: #706e6b;
 }

@@ -42,7 +42,8 @@ const MS_PER_DAY = 86400000;
 const STATUS_CHIPS = [
   { key: "all", label: "Todos" },
   { key: "paid", label: "Pagos" },
-  { key: "open", label: "Em aberto" },
+  { key: "soon", label: "Vence em breve" },
+  { key: "open", label: "À vencer" },
   { key: "late", label: "Atrasados" }
 ];
 
@@ -516,16 +517,19 @@ export default class AXF_LWC_dashboard extends NavigationMixin(
     return { key: "open", label: "Em aberto", sub: daysToDue > 0 ? when : "" };
   }
 
-  // Chip a status falls under: forecast and due-soon entries are still open.
+  // Chip a status falls under: the card forecast is still to come (À vencer).
   chipOf(statusKey) {
-    if (statusKey === "soon" || statusKey === "forecast") {
-      return "open";
-    }
-    return statusKey;
+    return statusKey === "forecast" ? "open" : statusKey;
   }
 
   get statusChips() {
-    const counts = { all: this.entries.length, paid: 0, open: 0, late: 0 };
+    const counts = {
+      all: this.entries.length,
+      paid: 0,
+      soon: 0,
+      open: 0,
+      late: 0
+    };
     this.entries.forEach((entry) => {
       const chip = this.chipOf(this.statusOf(entry).key);
       if (chip in counts) {

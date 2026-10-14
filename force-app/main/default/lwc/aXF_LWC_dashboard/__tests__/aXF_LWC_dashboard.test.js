@@ -1145,17 +1145,21 @@ describe("c-a-x-f-l-w-c-dashboard", () => {
       expect(chips().map((chip) => squash(chip).trim())).toEqual([
         "Todos9",
         "Pagos2",
-        "Em aberto5",
+        "Vence em breve3",
+        "À vencer2",
         "Atrasados2"
       ]);
       getEntries.mockClear();
-      chips()[3].click();
+      chips()[4].click();
       await flushPromises();
       expect(element.shadowRoot.querySelectorAll(".entry-row")).toHaveLength(2);
       expect(getEntries).not.toHaveBeenCalled();
+      chips()[3].click();
+      await flushPromises();
+      expect(element.shadowRoot.querySelectorAll(".entry-row")).toHaveLength(2);
       chips()[2].click();
       await flushPromises();
-      expect(element.shadowRoot.querySelectorAll(".entry-row")).toHaveLength(5);
+      expect(element.shadowRoot.querySelectorAll(".entry-row")).toHaveLength(3);
       chips()[1].click();
       await flushPromises();
       expect(element.shadowRoot.querySelectorAll(".entry-row")).toHaveLength(2);
@@ -1187,7 +1191,7 @@ describe("c-a-x-f-l-w-c-dashboard", () => {
       });
       const element = await mount();
       const chips = () => [...element.shadowRoot.querySelectorAll(".chip")];
-      chips()[3].click();
+      chips()[4].click();
       await flushPromises();
       expect(element.shadowRoot.querySelectorAll(".entry-row")).toHaveLength(0);
       expect(text(element, ".entries-empty")).toContain("Nenhum lançamento");
