@@ -156,6 +156,7 @@ private class ALT_CLS_ContractGenerationTest {
     rows[1].AXF_ENT_CUR_Amount__c = 999;
     update new List<AXF_OBJ_Entry__c>{ rows[0], rows[1] };
     c.AXF_CTR_CUR_Amount__c = 150;
+    AXF_CLS_ContractHandler.bypass = true;
     update c;
     ALT_CLS_ContractGeneration.Result result = run(c, true);
     // Parcel 1 is due in 5 days but Realized, so only parcels 2 and 3 change.
@@ -183,6 +184,7 @@ private class ALT_CLS_ContractGenerationTest {
     Integer before = entries(c.Id).size();
     c.AXF_CTR_CUR_Amount__c = 500;
     c.AXF_CTR_DAT_EndDate__c = Date.today().addMonths(4);
+    AXF_CLS_ContractHandler.bypass = true;
     update c;
     ALT_CLS_ContractGeneration.Result result = run(c, false);
     System.assertEquals(0, result.updated);
@@ -291,6 +293,7 @@ private class ALT_CLS_ContractGenerationTest {
     );
     // Changing the first due date moves the Pending entries on regenerate.
     c.AXF_CTR_DAT_FirstDueDate__c = Date.today().addDays(20);
+    AXF_CLS_ContractHandler.bypass = true;
     update c;
     System.assertEquals(2, run(c, true).updated);
     System.assertEquals(
@@ -363,6 +366,7 @@ private class ALT_CLS_ContractGenerationTest {
     rows[0].AXF_ENT_CUR_Amount__c = 321;
     update rows[0];
     c.AXF_CTR_CUR_Amount__c = 500;
+    AXF_CLS_ContractHandler.bypass = true;
     update c;
     Test.startTest();
     ALT_CLS_ContractGenerationBatch.run();
@@ -377,6 +381,7 @@ private class ALT_CLS_ContractGenerationTest {
     insert c;
     AXF_CLS_CTRL_ContractGeneration.generate(c.Id);
     c.AXF_CTR_CUR_Amount__c = 175;
+    AXF_CLS_ContractHandler.bypass = true;
     update c;
     AXF_CLS_CTRL_ContractGeneration.Summary summary = AXF_CLS_CTRL_ContractGeneration.generate(
       c.Id
@@ -399,5 +404,63 @@ private class ALT_CLS_ContractGenerationTest {
     new ALT_CLS_ContractGenerationSchedule().execute(null);
     Test.stopTest();
     System.assert(entries(c.Id).size() >= 12);
+  }
+
+  @IsTest
+  static void editingTheContractRefreshesPendingEntriesOfEveryGeneratingType() {
+    List<AXF_OBJ_Contract__c> contracts = new List<AXF_OBJ_Contract__c>{
+      contract('AXF_Recurring'),
+      contract('AXF_Installment'),
+      contract('AXF_Consortium'),
+      contract('AXF_Financing')
+    };
+    contracts[0].AXF_CTR_DAT_EndDate__c = Date.today().addMonths(2);
+    contracts[1].AXF_CTR_NUM_InstallmentCount__c = 3;
+    contracts[2].AXF_CTR_NUM_InstallmentCount__c = 3;
+    contracts[3].AXF_CTR_CUR_Amount__c = null;
+    contracts[3].AXF_CTR_CUR_FinancedAmount__c = 3000;
+    contracts[3].AXF_CTR_PCT_MonthlyRate__c = 1;
+    contracts[3].AXF_CTR_NUM_InstallmentCount__c = 3;
+    contracts[3].AXF_CTR_PKL_AmortizationSystem__c = 'SAC';
+    insert contracts;
+    for (AXF_OBJ_Contract__c c : contracts) {
+      run(c, true);
+    }
+    for (AXF_OBJ_Contract__c c : contracts) {
+      c.Name = 'Renomeado ' + c.Id;
+    }
+    update contracts;
+    for (AXF_OBJ_Contract__c c : contracts) {
+      for (AXF_OBJ_Entry__c e : entries(c.Id)) {
+        System.assert(e.Name.startsWith(c.Name), e.Name);
+      }
+    }
+    contracts[1].AXF_CTR_CUR_Amount__c = 130;
+    update contracts[1];
+    for (AXF_OBJ_Entry__c e : entries(contracts[1].Id)) {
+      System.assertEquals(130, e.AXF_ENT_CUR_Amount__c);
+    }
+  }
+
+  @IsTest
+  static void editingTheContractNeverTouchesRealizedEntriesOrUnwatchedFields() {
+    AXF_OBJ_Contract__c c = contract('AXF_Installment');
+    c.AXF_CTR_NUM_InstallmentCount__c = 3;
+    insert c;
+    run(c, true);
+    List<AXF_OBJ_Entry__c> rows = entries(c.Id);
+    rows[0].AXF_ENT_PKL_Status__c = 'Realized';
+    rows[0].AXF_ENT_DAT_PaymentDate__c = Date.today();
+    rows[1].AXF_ENT_CUR_Amount__c = 999;
+    update new List<AXF_OBJ_Entry__c>{ rows[0], rows[1] };
+    c.AXF_CTR_TAL_Notes__c = 'só uma nota';
+    update c;
+    System.assertEquals(999, entries(c.Id)[1].AXF_ENT_CUR_Amount__c);
+    c.AXF_CTR_CUR_Amount__c = 150;
+    update c;
+    List<AXF_OBJ_Entry__c> after = entries(c.Id);
+    System.assertEquals(100, after[0].AXF_ENT_CUR_Amount__c);
+    System.assertEquals(150, after[1].AXF_ENT_CUR_Amount__c);
+    System.assertEquals(150, after[2].AXF_ENT_CUR_Amount__c);
   }
 }
