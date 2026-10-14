@@ -19,6 +19,10 @@
                 <field>AXF_ENT_CUR_Amount__c</field>
             </layoutItems>
             <layoutItems>
+                <behavior>Readonly</behavior>
+                <field>AXF_ENT_CUR_PlannedAmount__c</field>
+            </layoutItems>
+            <layoutItems>
                 <behavior>Required</behavior>
                 <field>AXF_ENT_DAT_DueDate__c</field>
             </layoutItems>

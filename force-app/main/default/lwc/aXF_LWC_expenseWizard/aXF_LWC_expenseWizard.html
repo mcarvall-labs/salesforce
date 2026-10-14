@@ -281,7 +281,7 @@
               <lightning-input
                 class="field-payment-date"
                 type="date"
-                label="Data de pagamento"
+                label={paymentDateLabel}
                 value={paymentDate}
                 required
                 onchange={handlePaymentDate}
@@ -293,7 +293,7 @@
         <template lwc:elseif={isStep2}>
           <lightning-combobox
             class="field-method"
-            label="Como foi/será pago?"
+            label={methodLabel}
             options={methodOptions}
             value={method}
             onchange={handleMethod}
@@ -349,11 +349,13 @@
         <template lwc:if={isChoosingType}></template>
         <template lwc:else>
           <template lwc:if={isStep1}>
-            <lightning-button
-              class="change-type slds-m-right_x-small"
-              label="Trocar tipo"
-              onclick={handleChangeType}
-            ></lightning-button>
+            <template lwc:if={canChangeType}>
+              <lightning-button
+                class="change-type slds-m-right_x-small"
+                label="Trocar tipo"
+                onclick={handleChangeType}
+              ></lightning-button>
+            </template>
           </template>
           <template lwc:else>
             <lightning-button

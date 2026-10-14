@@ -32,7 +32,7 @@ public with sharing class AXF_CLS_CTRL_Dashboard {
     }
   }
 
-  // A conciliar preview: count and the 3 most recent open transactions of the month.
+  // A conciliar preview: count and the 100 most recent open transactions of the month.
   @AuraEnabled
   public static ALT_CLS_DashboardPreview.Pending getPending(
     Id holderId,
@@ -63,6 +63,18 @@ public with sharing class AXF_CLS_CTRL_Dashboard {
   ) {
     try {
       return new ALT_CLS_DashboardBudget().build(holderId, month);
+    } catch (Exception e) {
+      throw aura(e);
+    }
+  }
+
+  // Bank/card transactions that can pay the Pending entry (popup Pagar/Receber).
+  @AuraEnabled
+  public static List<ALT_CLS_EntryCandidates.Candidate> getEntryCandidates(
+    Id entryId
+  ) {
+    try {
+      return new ALT_CLS_EntryCandidates().candidates(entryId);
     } catch (Exception e) {
       throw aura(e);
     }

@@ -1,9 +1,12 @@
 public with sharing class AXF_CLS_CTRL_ExpenseWizard {
-  // Expense categories and the accounts and cards of the holder.
+  // Categories of the entry type (Expense by default) and the accounts and cards of the holder.
   @AuraEnabled
-  public static ALT_CLS_ExpenseWizard.Options getOptions(Id holderId) {
+  public static ALT_CLS_ExpenseWizard.Options getOptions(
+    Id holderId,
+    String entryType
+  ) {
     try {
-      return new ALT_CLS_ExpenseWizard().options(holderId);
+      return new ALT_CLS_ExpenseWizard().options(holderId, entryType);
     } catch (Exception e) {
       throw aura(e);
     }
@@ -15,11 +18,12 @@ public with sharing class AXF_CLS_CTRL_ExpenseWizard {
   @AuraEnabled
   public static ALT_CLS_ExpenseWizard.Option createCategory(
     String name,
-    String parentId
+    String parentId,
+    String entryType
   ) {
     try {
       return new ALT_CLS_ExpenseWizard()
-        .createCategory(name, toParentId(parentId));
+        .createCategory(name, toParentId(parentId), entryType);
     } catch (Exception e) {
       throw aura(e);
     }

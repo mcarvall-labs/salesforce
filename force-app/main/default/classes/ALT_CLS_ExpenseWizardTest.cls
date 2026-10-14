@@ -1451,7 +1451,8 @@ private class ALT_CLS_ExpenseWizardTest {
     );
 
     ALT_CLS_ExpenseWizard.Options options = AXF_CLS_CTRL_ExpenseWizard.getOptions(
-      mine.Id
+      mine.Id,
+      null
     );
 
     System.assertEquals(2, options.categories.size());
@@ -1461,19 +1462,21 @@ private class ALT_CLS_ExpenseWizardTest {
     System.assertEquals(1, options.cards.size());
     System.assertEquals(
       0,
-      AXF_CLS_CTRL_ExpenseWizard.getOptions(null).accounts.size()
+      AXF_CLS_CTRL_ExpenseWizard.getOptions(null, null).accounts.size()
     );
   }
 
   @IsTest
-  static void optionsCarryTheCategoryParentAndNewCategoriesAreExpenses() {
+  static void optionsCarryTheCategoryParentAndNewCategoriesAreExpensesByDefault() {
     ALT_CLS_ExpenseWizard.Option parent = AXF_CLS_CTRL_ExpenseWizard.createCategory(
       '  Moradia ',
+      null,
       null
     );
     ALT_CLS_ExpenseWizard.Option child = AXF_CLS_CTRL_ExpenseWizard.createCategory(
       'Energia',
-      parent.id
+      parent.id,
+      null
     );
 
     System.assertEquals('Moradia', parent.label);
@@ -1489,6 +1492,7 @@ private class ALT_CLS_ExpenseWizardTest {
     Map<Id, Id> parentOf = new Map<Id, Id>();
     for (
       ALT_CLS_ExpenseWizard.Option option : AXF_CLS_CTRL_ExpenseWizard.getOptions(
+          null,
           null
         )
         .categories
@@ -1503,7 +1507,8 @@ private class ALT_CLS_ExpenseWizardTest {
   static void aBlankParentCreatesATopLevelCategory() {
     ALT_CLS_ExpenseWizard.Option top = AXF_CLS_CTRL_ExpenseWizard.createCategory(
       'Lazer',
-      ''
+      '',
+      null
     );
     System.assertEquals(null, top.parentId);
     System.assertEquals(
@@ -1520,7 +1525,7 @@ private class ALT_CLS_ExpenseWizardTest {
   @IsTest
   static void aParentThatIsNotAnIdGetsAReadableError() {
     try {
-      AXF_CLS_CTRL_ExpenseWizard.createCategory('Lazer', 'Nenhuma');
+      AXF_CLS_CTRL_ExpenseWizard.createCategory('Lazer', 'Nenhuma', null);
       System.assert(false, 'expected AuraHandledException');
     } catch (AuraHandledException e) {
       System.assertEquals('A categoria pai é inválida.', e.getMessage());
@@ -1531,7 +1536,7 @@ private class ALT_CLS_ExpenseWizardTest {
   @IsTest
   static void aCategoryNeedsAName() {
     try {
-      AXF_CLS_CTRL_ExpenseWizard.createCategory(' ', null);
+      AXF_CLS_CTRL_ExpenseWizard.createCategory(' ', null, null);
       System.assert(false, 'expected AuraHandledException');
     } catch (AuraHandledException e) {
       System.assertEquals('Informe o nome da categoria.', e.getMessage());
@@ -1567,15 +1572,18 @@ private class ALT_CLS_ExpenseWizardTest {
   static void aCategoryWithTheSameNameAndParentIsReusedNotDuplicated() {
     ALT_CLS_ExpenseWizard.Option first = AXF_CLS_CTRL_ExpenseWizard.createCategory(
       'Moradia',
+      null,
       null
     );
     ALT_CLS_ExpenseWizard.Option again = AXF_CLS_CTRL_ExpenseWizard.createCategory(
       'Moradia',
+      null,
       null
     );
     ALT_CLS_ExpenseWizard.Option child = AXF_CLS_CTRL_ExpenseWizard.createCategory(
       'Moradia',
-      first.id
+      first.id,
+      null
     );
 
     System.assertEquals(first.id, again.id);
@@ -1591,7 +1599,7 @@ private class ALT_CLS_ExpenseWizardTest {
     );
     insert income;
     try {
-      AXF_CLS_CTRL_ExpenseWizard.createCategory('Bônus', income.Id);
+      AXF_CLS_CTRL_ExpenseWizard.createCategory('Bônus', income.Id, null);
       System.assert(false, 'expected AuraHandledException');
     } catch (AuraHandledException e) {
       System.assertEquals('A categoria pai não é de despesa.', e.getMessage());
@@ -1615,7 +1623,7 @@ private class ALT_CLS_ExpenseWizardTest {
     insert user;
     System.runAs(user) {
       try {
-        AXF_CLS_CTRL_ExpenseWizard.createCategory('Pet', null);
+        AXF_CLS_CTRL_ExpenseWizard.createCategory('Pet', null, null);
         System.assert(false, 'expected AuraHandledException');
       } catch (AuraHandledException e) {
         System.assertNotEquals(null, e.getMessage());
@@ -1805,5 +1813,169 @@ private class ALT_CLS_ExpenseWizardTest {
     );
     System.assertEquals(0, [SELECT COUNT() FROM AXF_OBJ_Contract__c]);
     System.assertEquals(0, [SELECT COUNT() FROM AXF_OBJ_Entry__c]);
+  }
+
+  @IsTest
+  static void incomeOptionsListIncomeAndBothCategoriesOnly() {
+    insert new List<AXF_OBJ_Category__c>{
+      new AXF_OBJ_Category__c(
+        Name = 'Moradia',
+        AXF_CAT_PKL_Type__c = 'Expense'
+      ),
+      new AXF_OBJ_Category__c(Name = 'Geral', AXF_CAT_PKL_Type__c = 'Both'),
+      new AXF_OBJ_Category__c(Name = 'Salário', AXF_CAT_PKL_Type__c = 'Income')
+    };
+
+    List<String> income = new List<String>();
+    for (
+      ALT_CLS_ExpenseWizard.Option option : AXF_CLS_CTRL_ExpenseWizard.getOptions(
+          null,
+          'Income'
+        )
+        .categories
+    ) {
+      income.add(option.label);
+    }
+    List<String> expense = new List<String>();
+    for (
+      ALT_CLS_ExpenseWizard.Option option : AXF_CLS_CTRL_ExpenseWizard.getOptions(
+          null,
+          'Expense'
+        )
+        .categories
+    ) {
+      expense.add(option.label);
+    }
+
+    System.assertEquals(new List<String>{ 'Geral', 'Salário' }, income);
+    System.assertEquals(new List<String>{ 'Geral', 'Moradia' }, expense);
+  }
+
+  @IsTest
+  static void newIncomeCategoriesAreIncomeAndNeedAnIncomeParent() {
+    ALT_CLS_ExpenseWizard.Option parent = AXF_CLS_CTRL_ExpenseWizard.createCategory(
+      'Salário',
+      null,
+      'Income'
+    );
+    ALT_CLS_ExpenseWizard.Option child = AXF_CLS_CTRL_ExpenseWizard.createCategory(
+      'Bônus',
+      parent.id,
+      'Income'
+    );
+    ALT_CLS_ExpenseWizard.Option again = AXF_CLS_CTRL_ExpenseWizard.createCategory(
+      'Bônus',
+      parent.id,
+      'Income'
+    );
+
+    System.assertEquals(child.id, again.id, 'same name and parent is reused');
+    System.assertEquals(
+      'Income',
+      [
+        SELECT AXF_CAT_PKL_Type__c
+        FROM AXF_OBJ_Category__c
+        WHERE Id = :child.id
+      ]
+      .AXF_CAT_PKL_Type__c
+    );
+    AXF_OBJ_Category__c expense = new AXF_OBJ_Category__c(
+      Name = 'Moradia',
+      AXF_CAT_PKL_Type__c = 'Expense'
+    );
+    insert expense;
+    try {
+      AXF_CLS_CTRL_ExpenseWizard.createCategory(
+        'Aluguel',
+        expense.Id,
+        'Income'
+      );
+      System.assert(false, 'expected AuraHandledException');
+    } catch (AuraHandledException e) {
+      System.assertEquals('A categoria pai não é de receita.', e.getMessage());
+    }
+  }
+
+  @IsTest
+  static void createsAStandaloneIncomeWithAnIncomeCategory() {
+    Account h = holder('Titular');
+    AXF_OBJ_Category__c category = new AXF_OBJ_Category__c(
+      Name = 'Salário',
+      AXF_CAT_PKL_Type__c = 'Income'
+    );
+    insert category;
+    ALT_CLS_ExpenseWizard.Request request = request(h.Id);
+    request.entryType = 'Income';
+    request.description = 'Salário de outubro';
+    request.categoryId = category.Id;
+
+    Id id = AXF_CLS_CTRL_ExpenseWizard.createStandalone(
+      JSON.serialize(request)
+    );
+
+    AXF_OBJ_Entry__c entry = [
+      SELECT AXF_ENT_PKL_Type__c, AXF_ENT_LKP_Category__c
+      FROM AXF_OBJ_Entry__c
+      WHERE Id = :id
+    ];
+    System.assertEquals('Income', entry.AXF_ENT_PKL_Type__c);
+    System.assertEquals(category.Id, entry.AXF_ENT_LKP_Category__c);
+  }
+
+  @IsTest
+  static void incomeRejectsAnExpenseCategoryAndExpenseRejectsAnIncomeOne() {
+    Account h = holder('Titular');
+    AXF_OBJ_Category__c expenseCategory = new AXF_OBJ_Category__c(
+      Name = 'Moradia',
+      AXF_CAT_PKL_Type__c = 'Expense'
+    );
+    insert expenseCategory;
+    ALT_CLS_ExpenseWizard.Request income = request(h.Id);
+    income.entryType = 'Income';
+    income.categoryId = expenseCategory.Id;
+    assertRejected(income, 'A categoria não é de receita.');
+    ALT_CLS_ExpenseWizard.Request invalid = request(h.Id);
+    invalid.entryType = 'Transfer';
+    assertRejected(invalid, 'Tipo de lançamento inválido.');
+    System.assertEquals(0, [SELECT COUNT() FROM AXF_OBJ_Entry__c]);
+  }
+
+  @IsTest
+  static void incomeCannotUseACardOnTheServer() {
+    Account h = holder('Titular');
+    ALT_CLS_ExpenseWizard.Request request = request(h.Id);
+    request.entryType = 'Income';
+    request.cardId = card(h.Id).Id;
+    assertRejected(request, 'Receita não usa cartão de crédito.');
+    System.assertEquals(0, [SELECT COUNT() FROM AXF_OBJ_Entry__c]);
+  }
+
+  @IsTest
+  static void incomeIsRefusedByTheContractFlows() {
+    Account h = holder('Titular');
+    ALT_CLS_ExpenseWizard.Request base = request(h.Id);
+    base.entryType = 'Income';
+    String expected = 'Receita só pode ser avulsa: recorrente, parcelada, consórcio e financiamento são despesas.';
+
+    ALT_CLS_ExpenseWizard.RecurringRequest recurring = new ALT_CLS_ExpenseWizard.RecurringRequest();
+    recurring.base = base;
+    try {
+      AXF_CLS_CTRL_ExpenseWizard.createRecurring(JSON.serialize(recurring));
+      System.assert(false, 'expected AuraHandledException');
+    } catch (AuraHandledException e) {
+      System.assertEquals(expected, e.getMessage());
+    }
+    ALT_CLS_ExpenseWizard.InstallmentRequest installment = new ALT_CLS_ExpenseWizard.InstallmentRequest();
+    installment.base = base;
+    installment.count = 3;
+    installment.amountIsTotal = true;
+    try {
+      AXF_CLS_CTRL_ExpenseWizard.createInstallment(JSON.serialize(installment));
+      System.assert(false, 'expected AuraHandledException');
+    } catch (AuraHandledException e) {
+      System.assertEquals(expected, e.getMessage());
+    }
+    System.assertEquals(0, [SELECT COUNT() FROM AXF_OBJ_Entry__c]);
+    System.assertEquals(0, [SELECT COUNT() FROM AXF_OBJ_Contract__c]);
   }
 }

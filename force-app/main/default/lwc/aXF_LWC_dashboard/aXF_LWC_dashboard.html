@@ -1,5 +1,5 @@
 <template>
-  <lightning-card title="Início" icon-name="standard:dashboard">
+  <lightning-card>
     <div class="slds-p-horizontal_medium">
       <div class="filters slds-grid slds-grid_vertical-align-end slds-wrap">
         <lightning-combobox
@@ -70,26 +70,21 @@
 
       <template lwc:if={hasSummary}>
         <div class="kpis slds-m-top_medium">
-          <button
-            type="button"
-            class={overdueKpiClass}
-            aria-pressed={isOverduePressed}
-            onclick={handleOverdueClick}
-          >
-            <p class="slds-text-title">Vencidos</p>
+          <div class={overdueKpiClass}>
+            <p class="slds-text-title">Atrasados</p>
             <p class={overdueClass}>{overdueTotal}</p>
             <p class="slds-text-color_weak">{overdueCaption}</p>
-          </button>
-          <button
-            type="button"
-            class={dueSoonKpiClass}
-            aria-pressed={isDueSoonPressed}
-            onclick={handleDueSoonClick}
-          >
+          </div>
+          <div class={dueSoonKpiClass}>
             <p class="slds-text-title">A vencer no mês</p>
             <p class={dueSoonClass}>{dueSoonTotal}</p>
             <p class="slds-text-color_weak">{dueSoonCaption}</p>
-          </button>
+          </div>
+          <div class="kpi kpi-realized slds-box slds-m-right_small">
+            <p class="slds-text-title">Pago / recebido</p>
+            <p class={realizedClass}>{realizedTotal}</p>
+            <p class="slds-text-color_weak">{realizedCaption}</p>
+          </div>
           <div class="kpi kpi-flow slds-box slds-m-right_small">
             <p class="slds-text-title">Receitas · Despesas</p>
             <p class="kpi-value in">{incomeTotal}</p>
@@ -112,20 +107,74 @@
         </div>
       </template>
 
-      <div class="dashboard-grid slds-m-top_medium">
-        <div class="main-column">
+      <div class="home-tabs slds-m-top_medium" role="tablist">
+        <button
+          type="button"
+          role="tab"
+          class={entriesTabClass}
+          aria-selected={isTabEntries}
+          data-tab="entries"
+          onclick={handleTabChange}
+        >
+          Lançamentos
+        </button>
+        <button
+          type="button"
+          role="tab"
+          class={sourcesTabClass}
+          aria-selected={isTabSources}
+          data-tab="sources"
+          onclick={handleTabChange}
+        >
+          Contas e cartões
+        </button>
+        <button
+          type="button"
+          role="tab"
+          class={pendingTabClass}
+          aria-selected={isTabPending}
+          data-tab="pending"
+          onclick={handleTabChange}
+        >
+          Conciliação
+          <template lwc:if={hasPendingBadge}>
+            <span class="tab-badge">{pendingBadge}</span>
+          </template>
+        </button>
+        <button
+          type="button"
+          role="tab"
+          class={budgetTabClass}
+          aria-selected={isTabBudget}
+          data-tab="budget"
+          onclick={handleTabChange}
+        >
+          Metas de despesa
+        </button>
+      </div>
+
+      <div class="tab-panel" role="tabpanel">
+        <template lwc:if={isTabEntries}>
           <template lwc:if={showEntries}>
-            <div class="entries slds-box slds-m-top_medium">
-              <div class="slds-grid slds-grid_align-spread">
-                <p class="entries-title slds-text-title">{listTitle}</p>
-                <template lwc:if={hasListFilter}>
-                  <lightning-button
-                    class="clear-filter"
-                    variant="base"
-                    label="Limpar filtro"
-                    onclick={handleClearFilter}
-                  ></lightning-button>
-                </template>
+            <div class="entries slds-box">
+              <div
+                class="card-head slds-grid slds-grid_align-spread slds-grid_vertical-align-center slds-wrap"
+              >
+                <h3 class="entries-title card-title">{listTitle}</h3>
+                <div class="chips slds-grid slds-grid_vertical-align-center">
+                  <template for:each={statusChips} for:item="chip">
+                    <button
+                      key={chip.key}
+                      type="button"
+                      class={chip.class}
+                      data-chip={chip.key}
+                      aria-pressed={chip.pressed}
+                      onclick={handleChipClick}
+                    >
+                      {chip.label}<b class="chip-count">{chip.count}</b>
+                    </button>
+                  </template>
+                </div>
               </div>
               <template lwc:if={entriesError}>
                 <p class="entries-error slds-text-color_error" role="alert">
@@ -133,12 +182,12 @@
                 </p>
               </template>
               <template lwc:if={hasEntries}>
-                <ul class="entries-list">
-                  <template for:each={entryRows} for:item="entry">
-                    <li
-                      key={entry.key}
-                      class="entry-row slds-grid slds-grid_align-spread slds-m-top_x-small"
-                    >
+                <ul
+                  class="entries-list scroll-list"
+                  onscroll={handleEntriesScroll}
+                >
+                  <template for:each={visibleEntryRows} for:item="entry">
+                    <li key={entry.key} class={entry.rowClass}>
                       <div>
                         <a
                           class="entry-link"
@@ -152,19 +201,26 @@
                             value={entry.dueDate}
                             time-zone="UTC"
                           ></lightning-formatted-date-time>
-                          · {entry.statusText} · {entry.detail}
+                          · {entry.detail}
                         </p>
                       </div>
-                      <div class="slds-grid slds-grid_vertical-align-center">
+                      <div class="entry-cells">
+                        <span class={entry.statusClass}>
+                          {entry.statusText}
+                          <template lwc:if={entry.statusSub}>
+                            <span class="pill-sub">{entry.statusSub}</span>
+                          </template>
+                        </span>
                         <span class={entry.amountClass}
                           >{entry.amountText}</span
                         >
                         <template lwc:if={entry.canRealize}>
                           <lightning-button-icon
-                            class="mark-realized slds-m-left_x-small"
+                            class="mark-realized"
                             icon-name="utility:check"
-                            alternative-text="Marcar como realizado"
-                            title="Marcar como realizado"
+                            variant="border-filled"
+                            alternative-text={entry.realizeLabel}
+                            title={entry.realizeLabel}
                             data-id={entry.id}
                             onclick={handleRealizeClick}
                           ></lightning-button-icon>
@@ -184,79 +240,43 @@
                   {noEntriesMessage}
                 </p>
               </template>
-            </div>
-          </template>
-        </div>
-        <div class="side-column">
-          <template lwc:if={pendingError}>
-            <p class="pending-error slds-text-color_error" role="alert">
-              {pendingError}
-            </p>
-          </template>
-          <template lwc:if={hasPending}>
-            <div class="pending-card slds-box">
-              <div class="slds-grid slds-grid_align-spread">
-                <a
-                  class="pending-title slds-text-title"
-                  href="#"
-                  onclick={handleOpenReconciliation}
-                  >{pendingTitle}</a
+              <div class="legend slds-text-color_weak">
+                <span
+                  ><span class="pill pill-paid">Pago / Recebido</span> liquidado
+                  (mostra a data)</span
                 >
-                <a
-                  class="pending-open"
-                  href="#"
-                  onclick={handleOpenReconciliation}
-                  >Abrir conciliação</a
+                <span
+                  ><span class="pill pill-soon">Vence em breve</span> vence em
+                  até 5 dias</span
+                >
+                <span
+                  ><span class="pill pill-open">Em aberto</span> vence em mais
+                  de 5 dias</span
+                >
+                <span
+                  ><span class="pill pill-late">Atrasado</span> vencido e não
+                  liquidado (mostra os dias)</span
                 >
               </div>
-              <template lwc:if={pendingCaption}>
-                <p class="pending-caption slds-text-color_weak">
-                  {pendingCaption}
-                </p>
-              </template>
-              <template lwc:if={hasPendingItems}>
-                <ul>
-                  <template for:each={pendingItems} for:item="item">
-                    <li
-                      key={item.key}
-                      class="pending-row slds-grid slds-grid_align-spread slds-m-top_x-small"
-                    >
-                      <div>
-                        <p>{item.description}</p>
-                        <p class="slds-text-color_weak">
-                          <lightning-formatted-date-time
-                            value={item.transactionDate}
-                            time-zone="UTC"
-                          ></lightning-formatted-date-time>
-                          · {item.sourceText} {item.suggestionText}
-                        </p>
-                      </div>
-                      <span class={item.amountClass}>{item.amountText}</span>
-                    </li>
-                  </template>
-                </ul>
-              </template>
-              <template lwc:if={noPendingMessage}>
-                <p class="pending-empty slds-text-color_weak">
-                  {noPendingMessage}
-                </p>
-              </template>
             </div>
           </template>
-
+        </template>
+        <template lwc:if={isTabSources}>
           <template lwc:if={sourcesError}>
             <p class="sources-error slds-text-color_error" role="alert">
               {sourcesError}
             </p>
           </template>
           <template lwc:if={hasSources}>
-            <div class="sources-card slds-box slds-m-top_small">
-              <p class="slds-text-title">Contas e cartões</p>
+            <div class="sources-card slds-box">
+              <div class="card-head">
+                <h4 class="card-title">Contas e cartões</h4>
+              </div>
               <template lwc:if={hasAccounts}>
                 <div
                   class="slds-grid slds-grid_align-spread slds-m-top_x-small"
                 >
-                  <span class="slds-text-color_weak">Contas</span>
+                  <span class="sub-title">Contas</span>
                   <a class="open-accounts" href="#" onclick={handleOpenAccounts}
                     >ver todas</a
                   >
@@ -284,7 +304,7 @@
                 <div
                   class="slds-grid slds-grid_align-spread slds-m-top_x-small"
                 >
-                  <span class="slds-text-color_weak">Cartões</span>
+                  <span class="sub-title">Cartões</span>
                   <a class="open-cards" href="#" onclick={handleOpenCards}
                     >ver todos</a
                   >
@@ -315,58 +335,118 @@
               </template>
             </div>
           </template>
-        </div>
-      </div>
-
-      <template lwc:if={budgetError}>
-        <p
-          class="budget-error slds-text-color_error slds-m-top_small"
-          role="alert"
-        >
-          {budgetError}
-        </p>
-      </template>
-      <template lwc:if={hasBudget}>
-        <div class="budget slds-box slds-m-top_medium">
-          <div class="slds-grid slds-grid_align-spread">
-            <p class="slds-text-title">Metas de despesa</p>
-            <lightning-button
-              class="budget-toggle"
-              variant="base"
-              label={budgetToggleLabel}
-              onclick={handleBudgetToggle}
-            ></lightning-button>
-          </div>
-          <template for:each={visibleBudgetRows} for:item="row">
-            <div key={row.key} class="budget-row slds-m-top_small">
-              <div class="slds-grid slds-grid_align-spread">
-                <span class="budget-name">{row.name}</span>
-                <span class="budget-values slds-text-color_weak"
-                  >{row.realizedText} realizado · {row.plannedText} previsto ·
-                  {row.goalText}</span
-                >
+        </template>
+        <template lwc:if={isTabBudget}>
+          <template lwc:if={budgetError}>
+            <p class="budget-error slds-text-color_error" role="alert">
+              {budgetError}
+            </p>
+          </template>
+          <template lwc:if={hasBudget}>
+            <div class="budget slds-box">
+              <div
+                class="card-head slds-grid slds-grid_align-spread slds-grid_vertical-align-center"
+              >
+                <h4 class="card-title">Metas de despesa</h4>
               </div>
-              <template lwc:if={row.hasGoal}>
-                <div class={row.barClass}>
-                  <div class="planned-fill" style={row.plannedStyle}></div>
-                  <div class="realized-fill" style={row.realizedStyle}></div>
+              <template for:each={budgetRows} for:item="row">
+                <div key={row.key} class="budget-row slds-m-top_small">
+                  <div class="slds-grid slds-grid_align-spread">
+                    <span class="budget-name">{row.name}</span>
+                    <span class="budget-values slds-text-color_weak"
+                      >{row.realizedText} realizado · {row.plannedText} previsto
+                      · {row.goalText}</span
+                    >
+                  </div>
+                  <template lwc:if={row.hasBar}>
+                    <div class={row.barClass}>
+                      <div class="planned-fill" style={row.plannedStyle}></div>
+                      <div
+                        class="realized-fill"
+                        style={row.realizedStyle}
+                      ></div>
+                    </div>
+                  </template>
+                  <template lwc:if={row.alert}>
+                    <p class="budget-alert slds-text-color_error">
+                      {row.alert}
+                    </p>
+                  </template>
                 </div>
               </template>
-              <template lwc:if={row.alert}>
-                <p class="budget-alert slds-text-color_error">{row.alert}</p>
+              <template lwc:if={showCardForecast}>
+                <div
+                  class="card-forecast-line slds-grid slds-grid_align-spread slds-m-top_small"
+                >
+                  <span>Cartão previsto</span>
+                  <span>{cardForecastLine}</span>
+                </div>
               </template>
             </div>
           </template>
-          <template lwc:if={showCardForecast}>
-            <div
-              class="card-forecast-line slds-grid slds-grid_align-spread slds-m-top_small"
-            >
-              <span>Cartão previsto</span>
-              <span>{cardForecastLine}</span>
+        </template>
+        <template lwc:if={isTabPending}>
+          <template lwc:if={pendingError}>
+            <p class="pending-error slds-text-color_error" role="alert">
+              {pendingError}
+            </p>
+          </template>
+          <template lwc:if={hasPending}>
+            <div class="pending-card slds-box">
+              <div
+                class="card-head slds-grid slds-grid_align-spread slds-grid_vertical-align-center"
+              >
+                <h4 class="card-title">
+                  <a
+                    class="pending-title"
+                    href="#"
+                    onclick={handleOpenReconciliation}
+                    >{pendingTitle}</a
+                  >
+                </h4>
+                <a
+                  class="pending-open"
+                  href="#"
+                  onclick={handleOpenReconciliation}
+                  >Abrir conciliação</a
+                >
+              </div>
+              <template lwc:if={pendingCaption}>
+                <p class="pending-caption slds-text-color_weak">
+                  {pendingCaption}
+                </p>
+              </template>
+              <template lwc:if={hasPendingItems}>
+                <ul class="scroll-list" onscroll={handlePendingScroll}>
+                  <template for:each={pendingItems} for:item="item">
+                    <li
+                      key={item.key}
+                      class="pending-row slds-grid slds-grid_align-spread slds-m-top_x-small"
+                    >
+                      <div>
+                        <p>{item.description}</p>
+                        <p class="slds-text-color_weak">
+                          <lightning-formatted-date-time
+                            value={item.transactionDate}
+                            time-zone="UTC"
+                          ></lightning-formatted-date-time>
+                          · {item.sourceText} {item.suggestionText}
+                        </p>
+                      </div>
+                      <span class={item.amountClass}>{item.amountText}</span>
+                    </li>
+                  </template>
+                </ul>
+              </template>
+              <template lwc:if={noPendingMessage}>
+                <p class="pending-empty slds-text-color_weak">
+                  {noPendingMessage}
+                </p>
+              </template>
             </div>
           </template>
-        </div>
-      </template>
+        </template>
+      </div>
     </div>
 
     <template lwc:if={isRealizing}>
@@ -379,41 +459,133 @@
         class="realize-modal slds-modal slds-fade-in-open slds-modal_small"
       >
         <div class="slds-modal__container">
-          <header class="slds-modal__header">
-            <h2 id="realize-title" class="slds-modal__title">
-              Marcar como realizado
-            </h2>
+          <header class="slds-modal__header realize-header">
+            <h2 id="realize-title" class="slds-modal__title">{realizeTitle}</h2>
           </header>
           <div class="slds-modal__content slds-p-around_medium">
             <p class="realizing-name slds-text-heading_small">
               {realizingName}
             </p>
-            <p class="slds-text-color_weak slds-m-bottom_small">
-              Vencimento:
-              <lightning-formatted-date-time
-                value={realizingDueDate}
-                time-zone="UTC"
-              ></lightning-formatted-date-time>
-              · Previsto: {realizingPlanned}
+            <p class="realizing-info slds-text-color_weak slds-m-bottom_small">
+              {realizingInfo}
             </p>
-            <lightning-input
-              class="realize-date"
-              type="date"
-              label="Data do pagamento"
-              value={realizeDate}
-              required
-              onchange={handleRealizeDate}
-            ></lightning-input>
-            <lightning-input
-              class="realize-amount"
-              type="number"
-              step="0.01"
-              min="0.01"
-              label="Valor pago"
-              value={realizeAmount}
-              required
-              onchange={handleRealizeAmount}
-            ></lightning-input>
+
+            <div class="realize-tabs" role="tablist">
+              <button
+                type="button"
+                role="tab"
+                class={pluggyTabClass}
+                aria-selected={isPluggyTab}
+                onclick={handleTabPluggy}
+              >
+                Conciliar com o Pluggy
+                <small>{pluggyTabCaption}</small>
+              </button>
+              <button
+                type="button"
+                role="tab"
+                class={manualTabClass}
+                aria-selected={isManualTab}
+                onclick={handleTabManual}
+              >
+                Informar manualmente
+                <small>sem transação do banco</small>
+              </button>
+            </div>
+
+            <template lwc:if={isPluggyTab}>
+              <div class="pluggy-panel" role="tabpanel">
+                <template lwc:if={candidatesLoading}>
+                  <div class="slds-is-relative candidates-loading">
+                    <lightning-spinner
+                      alternative-text="Buscando transações"
+                      size="small"
+                    ></lightning-spinner>
+                  </div>
+                </template>
+                <template lwc:if={hasCandidates}>
+                  <p class="slds-text-color_weak slds-m-bottom_small">
+                    Escolha a transação do banco que corresponde a este
+                    lançamento. Mostramos as de valor próximo (±5%) e data
+                    próxima (±7 dias).
+                  </p>
+                  <template for:each={candidateRows} for:item="candidate">
+                    <label key={candidate.key} class={candidate.rowClass}>
+                      <input
+                        type="radio"
+                        name="candidate"
+                        class="candidate-radio"
+                        data-id={candidate.id}
+                        checked={candidate.selected}
+                        onchange={handleCandidateChange}
+                      />
+                      <span class="candidate-body">
+                        <b class="candidate-name">{candidate.description}</b>
+                        <span class={candidate.tagClass}
+                          >{candidate.tagText}</span
+                        >
+                        <small class="candidate-where"
+                          >{candidate.whereText}</small
+                        >
+                      </span>
+                      <span class={candidate.amountClass}
+                        >{candidate.amountText}</span
+                      >
+                    </label>
+                  </template>
+                  <p class="candidate-effect realize-note">{candidateEffect}</p>
+                </template>
+                <template lwc:if={noCandidates}>
+                  <p class="candidates-empty slds-text-color_weak">
+                    Nenhuma transação encontrada
+                  </p>
+                </template>
+                <p class="realize-links slds-m-top_small">
+                  <a
+                    class="open-manual"
+                    href="#"
+                    onclick={handleManualLinkClick}
+                    >Não achei a transação — informar manualmente</a
+                  >
+                </p>
+              </div>
+            </template>
+            <template lwc:if={isManualTab}>
+              <div class="manual-panel" role="tabpanel">
+                <lightning-input
+                  class="realize-date"
+                  type="date"
+                  label="Data do pagamento"
+                  value={realizeDate}
+                  required
+                  onchange={handleRealizeDate}
+                ></lightning-input>
+                <lightning-input
+                  class="realize-amount"
+                  type="number"
+                  step="0.01"
+                  min="0.01"
+                  label="Valor pago"
+                  value={realizeAmount}
+                  required
+                  onchange={handleRealizeAmount}
+                ></lightning-input>
+                <p class="manual-effect realize-note">{manualEffect}</p>
+              </div>
+            </template>
+
+            <p
+              class="reconciliation-hint slds-text-color_weak slds-m-top_small"
+            >
+              Um pagamento que cobre vários lançamentos, ou vários pagamentos
+              para um lançamento, é tratado na tela de
+              <a
+                class="open-reconciliation"
+                href="#"
+                onclick={handleRealizeOpenReconciliation}
+                >Conciliação</a
+              >.
+            </p>
             <template lwc:if={realizeError}>
               <p class="realize-error slds-text-color_error" role="alert">
                 {realizeError}
@@ -421,6 +593,9 @@
             </template>
           </div>
           <footer class="slds-modal__footer">
+            <span class="realize-summary slds-text-color_weak"
+              >{realizeSummary}</span
+            >
             <lightning-button
               class="realize-cancel slds-m-right_x-small"
               label="Cancelar"
@@ -430,7 +605,7 @@
             <lightning-button
               class="realize-confirm"
               variant="brand"
-              label="Confirmar"
+              label={realizeConfirmLabel}
               disabled={isSaving}
               onclick={handleRealizeConfirm}
             ></lightning-button>
@@ -443,6 +618,7 @@
       <c-a-x-f_-l-w-c_expense-wizard
         holder-id={holderId}
         holders={holders}
+        entry-type={wizardEntryType}
         onclose={handleExpenseWizardClose}
         onsaved={handleExpenseWizardSaved}
       ></c-a-x-f_-l-w-c_expense-wizard>
