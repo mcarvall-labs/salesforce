@@ -33,6 +33,18 @@ private class ALT_CLS_ReconciliationAccessTest {
     insert users;
     ALT_CLS_SyncTestUser.create('axfac', OBJECTS, users[1].Id);
     ALT_CLS_SyncTestUser.create('axfad', OBJECTS);
+    // The Entry contract lookup is only readable with access to the contract (the Axon permission
+    // set grants it); reconcile reads it.
+    insert new ObjectPermissions(
+      ParentId = [
+        SELECT Id
+        FROM PermissionSet
+        WHERE Name = 'AXF_SyncTest_axfac'
+      ]
+      .Id,
+      SobjectType = 'AXF_OBJ_Contract__c',
+      PermissionsRead = true
+    );
   }
 
   private static User user(String lastName) {
