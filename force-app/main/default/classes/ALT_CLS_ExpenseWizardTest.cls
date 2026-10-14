@@ -931,7 +931,46 @@ private class ALT_CLS_ExpenseWizardTest {
     System.assertEquals(0, [SELECT COUNT() FROM AXF_OBJ_Entry__c]);
   }
 
+  // The charge fields reach the deploy user through a permission set group
+  // that is recalculated asynchronously, so a deploy that creates the fields
+  // and their FLS together runs these tests before the access exists. A direct
+  // assignment takes effect immediately. Called from financing(), so every
+  // financing test gets it. The runAs wrapper avoids a mixed-DML error when
+  // the test has already inserted data.
+  private static void grantFinancingFieldAccess() {
+    Id userId = UserInfo.getUserId();
+    List<PermissionSet> permissionSets = [
+      SELECT Id
+      FROM PermissionSet
+      WHERE Name = 'AXF_PS_Usuario'
+      LIMIT 1
+    ];
+    System.assert(!permissionSets.isEmpty(), 'AXF_PS_Usuario is not deployed');
+    Id permissionSetId = permissionSets[0].Id;
+    // Rows derived from a group do not count: they may still be recalculating.
+    if (
+      ![
+          SELECT Id
+          FROM PermissionSetAssignment
+          WHERE
+            AssigneeId = :userId
+            AND PermissionSetId = :permissionSetId
+            AND PermissionSetGroupId = NULL
+        ]
+        .isEmpty()
+    ) {
+      return;
+    }
+    System.runAs(new User(Id = userId)) {
+      insert new PermissionSetAssignment(
+        AssigneeId = userId,
+        PermissionSetId = permissionSetId
+      );
+    }
+  }
+
   private static ALT_CLS_ExpenseWizard.FinancingRequest financing(Id holderId) {
+    grantFinancingFieldAccess();
     ALT_CLS_ExpenseWizard.FinancingRequest financing = new ALT_CLS_ExpenseWizard.FinancingRequest();
     financing.base = request(holderId);
     financing.base.description = 'Financiamento do apartamento';
