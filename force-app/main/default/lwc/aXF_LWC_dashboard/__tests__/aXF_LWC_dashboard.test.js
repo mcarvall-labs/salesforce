@@ -253,6 +253,11 @@ async function mount() {
   return element;
 }
 
+async function openTab(element, key) {
+  element.shadowRoot.querySelector(`[data-tab="${key}"]`).click();
+  await flushPromises();
+}
+
 const text = (element, selector) =>
   element.shadowRoot.querySelector(selector).textContent.replace(/\s+/g, " ");
 
@@ -749,6 +754,7 @@ describe("c-a-x-f-l-w-c-dashboard", () => {
 
   it("shows the count, the suggestions and the three most recent open transactions", async () => {
     const element = await mount();
+    await openTab(element, "pending");
     expect(text(element, ".pending-title")).toContain("A conciliar (12)");
     expect(text(element, ".pending-caption")).toContain("2 com sugestões");
     const rows = [...element.shadowRoot.querySelectorAll(".pending-row")];
@@ -762,6 +768,7 @@ describe("c-a-x-f-l-w-c-dashboard", () => {
 
   it("opens the Conciliação tab from the preview", async () => {
     const element = await mount();
+    await openTab(element, "pending");
     element.shadowRoot.querySelector(".pending-title").click();
     expect(mockNavigate).toHaveBeenLastCalledWith({
       type: "standard__navItemPage",
@@ -773,6 +780,7 @@ describe("c-a-x-f-l-w-c-dashboard", () => {
 
   it("shows balance and available limit and opens the account, the card and their tabs", async () => {
     const element = await mount();
+    await openTab(element, "sources");
     const rows = [...element.shadowRoot.querySelectorAll(".source-row")];
     expect(rows).toHaveLength(2);
     expect(rows[0].textContent.replace(/\s+/g, " ")).toContain(
@@ -830,13 +838,16 @@ describe("c-a-x-f-l-w-c-dashboard", () => {
     });
     getSources.mockResolvedValue({ accounts: [], cards: [] });
     let element = await mount();
+    await openTab(element, "pending");
     expect(text(element, ".pending-empty")).toContain("Nada a conciliar");
+    await openTab(element, "sources");
     expect(text(element, ".sources-empty")).toContain(
       "Nenhuma conta ou cartão"
     );
     document.body.removeChild(element);
     getPending.mockResolvedValue({ ...pending, truncated: true });
     element = await mount();
+    await openTab(element, "pending");
     expect(text(element, ".pending-title")).toContain("A conciliar (12+)");
   });
 
@@ -845,17 +856,21 @@ describe("c-a-x-f-l-w-c-dashboard", () => {
       body: { message: "Sem acesso às pendências" }
     });
     const element = await mount();
+    await openTab(element, "pending");
     expect(text(element, ".pending-error")).toContain(
       "Sem acesso às pendências"
     );
     expect(element.shadowRoot.querySelector(".pending-card")).toBeNull();
+    await openTab(element, "sources");
     expect(element.shadowRoot.querySelectorAll(".source-row")).toHaveLength(2);
     expect(element.shadowRoot.querySelector(".kpis")).not.toBeNull();
     document.body.removeChild(element);
     getPending.mockResolvedValue(pending);
     getSources.mockRejectedValue({ body: { message: "Sem acesso às contas" } });
     const second = await mount();
+    await openTab(second, "sources");
     expect(text(second, ".sources-error")).toContain("Sem acesso às contas");
+    await openTab(second, "pending");
     expect(second.shadowRoot.querySelectorAll(".pending-row")).toHaveLength(2);
   });
 
@@ -872,13 +887,16 @@ describe("c-a-x-f-l-w-c-dashboard", () => {
     await flushPromises();
     resolveFirst({ ...pending, total: 1 });
     await flushPromises();
+    await openTab(element, "pending");
     expect(text(element, ".pending-title")).toContain("(99)");
   });
 
   it("marks partial suggestions and shows the owner of each source for all holders", async () => {
     getPending.mockResolvedValue({ ...pending, suggestionsPartial: true });
     const element = await mount();
+    await openTab(element, "pending");
     expect(text(element, ".pending-caption")).toContain("(parcial)");
+    await openTab(element, "sources");
     expect(text(element, ".source-link")).toContain("Inter ••1234 · Michel");
     element.shadowRoot
       .querySelector(".holder-filter")
@@ -893,51 +911,74 @@ describe("c-a-x-f-l-w-c-dashboard", () => {
       cards: []
     });
     const element = await mount();
+    await openTab(element, "sources");
     expect(text(element, ".source-row")).toContain("Saldo —");
     expect(text(element, ".source-row")).not.toContain("R$ 0,00");
   });
 
-  it("puts the indicators above the grid, the month list in the centre and the previews on the right", async () => {
+  it("puts the indicators first, then the goals, then the tabs with the month list open", async () => {
     const element = await mount();
     const root = element.shadowRoot;
-    const grid = root.querySelector(".dashboard-grid");
-    const main = grid.querySelector(".main-column");
-    const side = grid.querySelector(".side-column");
     const kpis = root.querySelector(".kpis");
-    expect(grid.contains(kpis)).toBe(false);
-    expect(
-      kpis.compareDocumentPosition(grid) & Node.DOCUMENT_POSITION_FOLLOWING
-    ).toBeTruthy();
-    expect(main.querySelector(".entries")).not.toBeNull();
-    expect(main.querySelector(".pending-card")).toBeNull();
-    expect(side.querySelector(".pending-card")).not.toBeNull();
-    expect(side.querySelector(".sources-card")).not.toBeNull();
+    const budget = root.querySelector(".budget");
+    const tabs = root.querySelector(".home-tabs");
+    const panel = root.querySelector(".tab-panel");
+    const follows = (first, second) =>
+      first.compareDocumentPosition(second) & Node.DOCUMENT_POSITION_FOLLOWING;
+    expect(follows(kpis, budget)).toBeTruthy();
+    expect(follows(budget, tabs)).toBeTruthy();
+    expect(follows(tabs, panel)).toBeTruthy();
+    expect(panel.querySelector(".entries")).not.toBeNull();
+    expect(panel.querySelector(".sources-card")).toBeNull();
+    expect(panel.querySelector(".pending-card")).toBeNull();
+    expect(text(element, ".home-tab-on")).toContain("Lançamentos");
   });
 
-  it("keeps the goals card in the right column below Contas e cartões", async () => {
+  it("shows one tab at a time and the count on Conciliação", async () => {
     const element = await mount();
-    const side = element.shadowRoot.querySelector(".side-column");
-    const goalsCard = side.querySelector(".budget");
-    const sourcesCard = side.querySelector(".sources-card");
-    expect(goalsCard).not.toBeNull();
-    expect(
-      sourcesCard.compareDocumentPosition(goalsCard) &
-        Node.DOCUMENT_POSITION_FOLLOWING
-    ).toBeTruthy();
-    expect(element.shadowRoot.querySelector(".main-column .budget")).toBeNull();
+    const root = element.shadowRoot;
+    expect(text(element, ".tab-badge")).toContain("12");
+    await openTab(element, "sources");
+    expect(root.querySelector(".entries")).toBeNull();
+    expect(root.querySelector(".sources-card")).not.toBeNull();
+    expect(root.querySelector(".pending-card")).toBeNull();
+    expect(text(element, ".home-tab-on")).toContain("Contas e cartões");
+    await openTab(element, "pending");
+    expect(root.querySelector(".sources-card")).toBeNull();
+    expect(root.querySelector(".pending-card")).not.toBeNull();
+    await openTab(element, "entries");
+    expect(root.querySelector(".entries")).not.toBeNull();
   });
 
   it("gives every card a highlighted title", async () => {
     const element = await mount();
-    const titles = [...element.shadowRoot.querySelectorAll(".card-title")].map(
-      (node) => node.textContent.replace(/\s+/g, " ").trim()
-    );
-    expect(titles).toEqual([
-      "Lançamentos do mês",
-      "A conciliar (12)",
-      "Contas e cartões",
-      "Metas de despesa"
+    const titles = async (tab) => {
+      await openTab(element, tab);
+      return [...element.shadowRoot.querySelectorAll(".card-title")].map(
+        (node) => node.textContent.replace(/\s+/g, " ").trim()
+      );
+    };
+    expect(await titles("entries")).toEqual([
+      "Metas de despesa",
+      "Lançamentos do mês"
     ]);
+    expect(await titles("sources")).toEqual([
+      "Metas de despesa",
+      "Contas e cartões"
+    ]);
+    expect(await titles("pending")).toEqual([
+      "Metas de despesa",
+      "A conciliar (12)"
+    ]);
+  });
+
+  it("highlights the Contas and Cartões subtitles", async () => {
+    const element = await mount();
+    await openTab(element, "sources");
+    const subtitles = [
+      ...element.shadowRoot.querySelectorAll(".sub-title")
+    ].map((node) => node.textContent.trim());
+    expect(subtitles).toEqual(["Contas", "Cartões"]);
   });
 
   it("offers mark as realized only on pending non-forecast rows", async () => {

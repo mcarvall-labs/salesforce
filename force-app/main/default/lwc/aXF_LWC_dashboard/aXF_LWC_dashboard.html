@@ -117,8 +117,96 @@
         </div>
       </template>
 
-      <div class="dashboard-grid slds-m-top_medium">
-        <div class="main-column">
+      <template lwc:if={budgetError}>
+        <p
+          class="budget-error slds-text-color_error slds-m-top_small"
+          role="alert"
+        >
+          {budgetError}
+        </p>
+      </template>
+      <template lwc:if={hasBudget}>
+        <div class="budget slds-box slds-m-top_medium">
+          <div
+            class="card-head slds-grid slds-grid_align-spread slds-grid_vertical-align-center"
+          >
+            <h4 class="card-title">Metas de despesa</h4>
+            <lightning-button
+              class="budget-toggle"
+              variant="base"
+              label={budgetToggleLabel}
+              onclick={handleBudgetToggle}
+            ></lightning-button>
+          </div>
+          <template for:each={visibleBudgetRows} for:item="row">
+            <div key={row.key} class="budget-row slds-m-top_small">
+              <div class="slds-grid slds-grid_align-spread">
+                <span class="budget-name">{row.name}</span>
+                <span class="budget-values slds-text-color_weak"
+                  >{row.realizedText} realizado · {row.plannedText} previsto ·
+                  {row.goalText}</span
+                >
+              </div>
+              <template lwc:if={row.hasGoal}>
+                <div class={row.barClass}>
+                  <div class="planned-fill" style={row.plannedStyle}></div>
+                  <div class="realized-fill" style={row.realizedStyle}></div>
+                </div>
+              </template>
+              <template lwc:if={row.alert}>
+                <p class="budget-alert slds-text-color_error">{row.alert}</p>
+              </template>
+            </div>
+          </template>
+          <template lwc:if={showCardForecast}>
+            <div
+              class="card-forecast-line slds-grid slds-grid_align-spread slds-m-top_small"
+            >
+              <span>Cartão previsto</span>
+              <span>{cardForecastLine}</span>
+            </div>
+          </template>
+        </div>
+      </template>
+
+      <div class="home-tabs slds-m-top_medium" role="tablist">
+        <button
+          type="button"
+          role="tab"
+          class={entriesTabClass}
+          aria-selected={isTabEntries}
+          data-tab="entries"
+          onclick={handleTabChange}
+        >
+          Lançamentos
+        </button>
+        <button
+          type="button"
+          role="tab"
+          class={sourcesTabClass}
+          aria-selected={isTabSources}
+          data-tab="sources"
+          onclick={handleTabChange}
+        >
+          Contas e cartões
+        </button>
+        <button
+          type="button"
+          role="tab"
+          class={pendingTabClass}
+          aria-selected={isTabPending}
+          data-tab="pending"
+          onclick={handleTabChange}
+        >
+          Conciliação
+          <template lwc:if={hasPendingBadge}>
+            <span class="tab-badge">{pendingBadge}</span>
+          </template>
+        </button>
+      </div>
+
+      <div class="tab-panel" role="tabpanel">
+        <template lwc:if={isTabEntries}>
           <template lwc:if={showEntries}>
             <div class="entries slds-box">
               <div
@@ -229,8 +317,83 @@
               </div>
             </div>
           </template>
-        </div>
-        <div class="side-column">
+        </template>
+        <template lwc:if={isTabSources}>
+          <template lwc:if={sourcesError}>
+            <p class="sources-error slds-text-color_error" role="alert">
+              {sourcesError}
+            </p>
+          </template>
+          <template lwc:if={hasSources}>
+            <div class="sources-card slds-box">
+              <div class="card-head">
+                <h4 class="card-title">Contas e cartões</h4>
+              </div>
+              <template lwc:if={hasAccounts}>
+                <div
+                  class="slds-grid slds-grid_align-spread slds-m-top_x-small"
+                >
+                  <span class="sub-title">Contas</span>
+                  <a class="open-accounts" href="#" onclick={handleOpenAccounts}
+                    >ver todas</a
+                  >
+                </div>
+                <ul>
+                  <template for:each={accountRows} for:item="row">
+                    <li
+                      key={row.key}
+                      class="source-row slds-grid slds-grid_align-spread"
+                    >
+                      <a
+                        class="source-link"
+                        href="#"
+                        data-id={row.id}
+                        data-object={row.objectApiName}
+                        onclick={handleOpenSource}
+                        >{row.name}{row.holderText}</a
+                      >
+                      <span>{row.label} {row.valueText}</span>
+                    </li>
+                  </template>
+                </ul>
+              </template>
+              <template lwc:if={hasCards}>
+                <div
+                  class="slds-grid slds-grid_align-spread slds-m-top_x-small"
+                >
+                  <span class="sub-title">Cartões</span>
+                  <a class="open-cards" href="#" onclick={handleOpenCards}
+                    >ver todos</a
+                  >
+                </div>
+                <ul>
+                  <template for:each={cardRows} for:item="row">
+                    <li
+                      key={row.key}
+                      class="source-row slds-grid slds-grid_align-spread"
+                    >
+                      <a
+                        class="source-link"
+                        href="#"
+                        data-id={row.id}
+                        data-object={row.objectApiName}
+                        onclick={handleOpenSource}
+                        >{row.name}{row.holderText}</a
+                      >
+                      <span>{row.label} {row.valueText}</span>
+                    </li>
+                  </template>
+                </ul>
+              </template>
+              <template lwc:if={noSourcesMessage}>
+                <p class="sources-empty slds-text-color_weak">
+                  {noSourcesMessage}
+                </p>
+              </template>
+            </div>
+          </template>
+        </template>
+        <template lwc:if={isTabPending}>
           <template lwc:if={pendingError}>
             <p class="pending-error slds-text-color_error" role="alert">
               {pendingError}
@@ -290,138 +453,7 @@
               </template>
             </div>
           </template>
-
-          <template lwc:if={sourcesError}>
-            <p class="sources-error slds-text-color_error" role="alert">
-              {sourcesError}
-            </p>
-          </template>
-          <template lwc:if={hasSources}>
-            <div class="sources-card slds-box slds-m-top_small">
-              <div class="card-head">
-                <h4 class="card-title">Contas e cartões</h4>
-              </div>
-              <template lwc:if={hasAccounts}>
-                <div
-                  class="slds-grid slds-grid_align-spread slds-m-top_x-small"
-                >
-                  <span class="slds-text-color_weak">Contas</span>
-                  <a class="open-accounts" href="#" onclick={handleOpenAccounts}
-                    >ver todas</a
-                  >
-                </div>
-                <ul>
-                  <template for:each={accountRows} for:item="row">
-                    <li
-                      key={row.key}
-                      class="source-row slds-grid slds-grid_align-spread"
-                    >
-                      <a
-                        class="source-link"
-                        href="#"
-                        data-id={row.id}
-                        data-object={row.objectApiName}
-                        onclick={handleOpenSource}
-                        >{row.name}{row.holderText}</a
-                      >
-                      <span>{row.label} {row.valueText}</span>
-                    </li>
-                  </template>
-                </ul>
-              </template>
-              <template lwc:if={hasCards}>
-                <div
-                  class="slds-grid slds-grid_align-spread slds-m-top_x-small"
-                >
-                  <span class="slds-text-color_weak">Cartões</span>
-                  <a class="open-cards" href="#" onclick={handleOpenCards}
-                    >ver todos</a
-                  >
-                </div>
-                <ul>
-                  <template for:each={cardRows} for:item="row">
-                    <li
-                      key={row.key}
-                      class="source-row slds-grid slds-grid_align-spread"
-                    >
-                      <a
-                        class="source-link"
-                        href="#"
-                        data-id={row.id}
-                        data-object={row.objectApiName}
-                        onclick={handleOpenSource}
-                        >{row.name}{row.holderText}</a
-                      >
-                      <span>{row.label} {row.valueText}</span>
-                    </li>
-                  </template>
-                </ul>
-              </template>
-              <template lwc:if={noSourcesMessage}>
-                <p class="sources-empty slds-text-color_weak">
-                  {noSourcesMessage}
-                </p>
-              </template>
-            </div>
-          </template>
-
-          <template lwc:if={budgetError}>
-            <p
-              class="budget-error slds-text-color_error slds-m-top_small"
-              role="alert"
-            >
-              {budgetError}
-            </p>
-          </template>
-          <template lwc:if={hasBudget}>
-            <div class="budget slds-box slds-m-top_small">
-              <div
-                class="card-head slds-grid slds-grid_align-spread slds-grid_vertical-align-center"
-              >
-                <h4 class="card-title">Metas de despesa</h4>
-                <lightning-button
-                  class="budget-toggle"
-                  variant="base"
-                  label={budgetToggleLabel}
-                  onclick={handleBudgetToggle}
-                ></lightning-button>
-              </div>
-              <template for:each={visibleBudgetRows} for:item="row">
-                <div key={row.key} class="budget-row slds-m-top_small">
-                  <div class="slds-grid slds-grid_align-spread">
-                    <span class="budget-name">{row.name}</span>
-                    <span class="budget-values slds-text-color_weak"
-                      >{row.realizedText} realizado · {row.plannedText} previsto
-                      · {row.goalText}</span
-                    >
-                  </div>
-                  <template lwc:if={row.hasGoal}>
-                    <div class={row.barClass}>
-                      <div class="planned-fill" style={row.plannedStyle}></div>
-                      <div
-                        class="realized-fill"
-                        style={row.realizedStyle}
-                      ></div>
-                    </div>
-                  </template>
-                  <template lwc:if={row.alert}>
-                    <p class="budget-alert slds-text-color_error">
-                      {row.alert}
-                    </p>
-                  </template>
-                </div>
-              </template>
-              <template lwc:if={showCardForecast}>
-                <div
-                  class="card-forecast-line slds-grid slds-grid_align-spread slds-m-top_small"
-                >
-                  <span>Cartão previsto</span>
-                  <span>{cardForecastLine}</span>
-                </div>
-              </template>
-            </div>
-          </template>
-        </div>
+        </template>
       </div>
     </div>
 

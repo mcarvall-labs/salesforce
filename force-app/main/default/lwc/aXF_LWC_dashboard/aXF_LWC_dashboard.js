@@ -76,6 +76,7 @@ export default class AXF_LWC_dashboard extends NavigationMixin(
   entriesTruncated = false;
   entriesError;
   listFilter;
+  activeTab = "entries";
   entriesRequestId = 0;
   pending;
   pendingError;
@@ -1038,6 +1039,42 @@ export default class AXF_LWC_dashboard extends NavigationMixin(
   get pendingTitle() {
     const total = this.pending.total;
     return `A conciliar (${total}${this.pending.truncated ? "+" : ""})`;
+  }
+
+  get hasPendingBadge() {
+    return !!this.pending && this.pending.total > 0;
+  }
+
+  get pendingBadge() {
+    return `${this.pending.total}${this.pending.truncated ? "+" : ""}`;
+  }
+
+  get isTabEntries() {
+    return this.activeTab === "entries";
+  }
+
+  get isTabSources() {
+    return this.activeTab === "sources";
+  }
+
+  get isTabPending() {
+    return this.activeTab === "pending";
+  }
+
+  get entriesTabClass() {
+    return `home-tab${this.isTabEntries ? " home-tab-on" : ""}`;
+  }
+
+  get sourcesTabClass() {
+    return `home-tab${this.isTabSources ? " home-tab-on" : ""}`;
+  }
+
+  get pendingTabClass() {
+    return `home-tab${this.isTabPending ? " home-tab-on" : ""}`;
+  }
+
+  handleTabChange(event) {
+    this.activeTab = event.currentTarget.dataset.tab;
   }
 
   get pendingItems() {

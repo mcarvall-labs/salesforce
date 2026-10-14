@@ -1,0 +1,584 @@
+<!doctype html>
+<html lang="pt-BR">
+  <head>
+    <meta charset="utf-8" />
+    <title>
+      Protótipo — Home em abas: Lançamentos | Contas e cartões | Conciliação
+    </title>
+    <style>
+      :root {
+        --blue: #0176d3;
+        --navy: #032d60;
+        --bg: #f3f3f3;
+        --bd: #e3e1df;
+        --mut: #706e6b;
+        --ok: #2e844a;
+        --err: #ba0517;
+        --warn: #dd7a01;
+      }
+      * {
+        box-sizing: border-box;
+      }
+      body {
+        margin: 0;
+        font:
+          14px/1.45 -apple-system,
+          "Segoe UI",
+          Arial,
+          sans-serif;
+        background: var(--bg);
+        color: #181818;
+      }
+      .page {
+        max-width: 1100px;
+        margin: 18px auto;
+        padding: 0 16px;
+      }
+      .note {
+        background: #fff8e1;
+        border: 1px solid #f0d98c;
+        padding: 7px 12px;
+        border-radius: 4px;
+        font-size: 12px;
+        margin-bottom: 14px;
+      }
+      .top {
+        display: flex;
+        gap: 10px;
+        align-items: flex-end;
+        margin-bottom: 14px;
+        flex-wrap: wrap;
+      }
+      .top label {
+        display: block;
+        font-size: 12px;
+        color: var(--mut);
+        margin-bottom: 2px;
+      }
+      .top select,
+      .top button {
+        font: inherit;
+        padding: 6px 12px;
+        border: 1px solid #c9c7c5;
+        border-radius: 4px;
+        background: #fff;
+      }
+      .top .sp {
+        margin-left: auto;
+      }
+      .top button {
+        color: var(--blue);
+        cursor: pointer;
+      }
+      .kpis {
+        display: grid;
+        grid-template-columns: repeat(5, 1fr);
+        gap: 10px;
+        margin-bottom: 14px;
+      }
+      .kpi {
+        background: #fff;
+        border: 1px solid var(--bd);
+        border-radius: 6px;
+        padding: 10px 12px;
+      }
+      .kpi small {
+        color: var(--mut);
+        font-size: 11px;
+        text-transform: uppercase;
+        letter-spacing: 0.04em;
+      }
+      .kpi div {
+        font-size: 20px;
+        font-weight: 700;
+      }
+      .kpi em {
+        font-style: normal;
+        font-size: 12px;
+        color: var(--mut);
+      }
+      .in {
+        color: var(--ok);
+      }
+      .out {
+        color: var(--err);
+      }
+
+      /* Abas */
+      .tabs {
+        display: flex;
+        gap: 2px;
+        border-bottom: 2px solid var(--bd);
+      }
+      .tab {
+        padding: 10px 20px;
+        font: inherit;
+        font-size: 15px;
+        font-weight: 600;
+        color: var(--mut);
+        background: transparent;
+        border: 0;
+        border-bottom: 3px solid transparent;
+        margin-bottom: -2px;
+        cursor: pointer;
+      }
+      .tab.on {
+        color: var(--navy);
+        border-bottom-color: var(--blue);
+      }
+      .tab .badge {
+        margin-left: 6px;
+        padding: 0 8px;
+        font-size: 12px;
+        color: #fff;
+        background: var(--warn);
+        border-radius: 10px;
+      }
+      .panel {
+        display: none;
+        background: #fff;
+        border: 1px solid var(--bd);
+        border-top: 0;
+        border-radius: 0 0 6px 6px;
+      }
+      .panel.on {
+        display: block;
+      }
+      .head {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        flex-wrap: wrap;
+        gap: 8px;
+        padding: 12px 16px;
+        background: #f3f6fb;
+        border-bottom: 2px solid var(--blue);
+      }
+      .head h3 {
+        margin: 0;
+        font-size: 16px;
+        color: var(--navy);
+      }
+      .head h3::before {
+        content: "";
+        display: inline-block;
+        width: 4px;
+        height: 16px;
+        margin-right: 8px;
+        vertical-align: -2px;
+        background: var(--blue);
+        border-radius: 2px;
+      }
+      .head a {
+        font-size: 13px;
+        color: var(--blue);
+        cursor: pointer;
+      }
+      .chip {
+        display: inline-block;
+        margin-left: 6px;
+        padding: 2px 12px;
+        font-size: 12px;
+        background: #fff;
+        border: 1px solid var(--bd);
+        border-radius: 16px;
+      }
+      .chip.on {
+        color: #fff;
+        background: var(--blue);
+        border-color: var(--blue);
+      }
+
+      /* Tabela de lançamentos: colunas fixas */
+      .row {
+        display: grid;
+        grid-template-columns: minmax(0, 1fr) 8rem 7.5rem 2.25rem;
+        align-items: center;
+        column-gap: 8px;
+        padding: 8px 16px;
+        border-bottom: 1px solid #f0efee;
+      }
+      .row.late {
+        background: #fdf3f3;
+        box-shadow: inset 3px 0 0 var(--err);
+      }
+      .row.paid .d,
+      .row.paid .v {
+        color: #5c5c5c;
+      }
+      .row .d small {
+        display: block;
+        color: var(--mut);
+      }
+      .row .v {
+        justify-self: end;
+        font-weight: 700;
+        white-space: nowrap;
+      }
+      .pill {
+        display: inline-flex;
+        flex-direction: column;
+        justify-self: start;
+        padding: 2px 10px;
+        font-size: 11px;
+        font-weight: 600;
+        border-radius: 12px;
+      }
+      .pill small {
+        font-weight: 400;
+      }
+      .p-ok {
+        background: #e3f3e8;
+        color: var(--ok);
+      }
+      .p-open {
+        background: #eceae8;
+        color: #444;
+      }
+      .p-late {
+        background: #fbe3e5;
+        color: var(--err);
+      }
+      .ic {
+        justify-self: end;
+        width: 32px;
+        height: 32px;
+        color: var(--blue);
+        background: #fff;
+        border: 1px solid #c9c7c5;
+        border-radius: 4px;
+        cursor: pointer;
+      }
+
+      /* Contas e cartões */
+      .cols {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+      }
+      .sec {
+        padding: 14px 16px 16px;
+      }
+      .sec + .sec {
+        border-left: 1px solid var(--bd);
+      }
+      .sec h4 {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        margin: 0 0 8px;
+        padding: 6px 10px;
+        font-size: 13px;
+        letter-spacing: 0.06em;
+        text-transform: uppercase;
+        color: var(--navy);
+        background: #eef4fb;
+        border-left: 4px solid var(--blue);
+        border-bottom: 1px solid #c5d9ee;
+      }
+      .sec h4 a {
+        font-size: 12px;
+        font-weight: 400;
+        letter-spacing: 0;
+        text-transform: none;
+        color: var(--blue);
+        cursor: pointer;
+      }
+      .it {
+        display: flex;
+        justify-content: space-between;
+        padding: 7px 4px;
+        border-bottom: 1px solid #f0efee;
+      }
+      .it a {
+        color: var(--blue);
+      }
+      .it small {
+        display: block;
+        color: var(--mut);
+      }
+      .tot {
+        display: flex;
+        justify-content: space-between;
+        margin-top: 8px;
+        padding: 8px 4px 0;
+        font-weight: 700;
+        border-top: 2px solid var(--bd);
+      }
+
+      /* Conciliação */
+      .c-item {
+        display: flex;
+        justify-content: space-between;
+        padding: 10px 16px;
+        border-bottom: 1px solid #f0efee;
+      }
+      .c-item small {
+        display: block;
+        color: var(--mut);
+      }
+
+      .metas {
+        margin-bottom: 14px;
+        background: #fff;
+        border: 1px solid var(--bd);
+        border-radius: 6px;
+      }
+      .metas .mg {
+        display: grid;
+        grid-template-columns: repeat(3, 1fr);
+        gap: 16px;
+        padding: 12px 16px;
+      }
+      .bar {
+        height: 8px;
+        margin-top: 4px;
+        background: #e5e5e5;
+        border-radius: 4px;
+        overflow: hidden;
+      }
+      .bar span {
+        display: block;
+        height: 100%;
+        background: var(--blue);
+      }
+      .bar.warn span {
+        background: var(--warn);
+      }
+      .bar.over span {
+        background: var(--err);
+      }
+      .mr {
+        display: flex;
+        justify-content: space-between;
+        font-size: 13px;
+      }
+    </style>
+  </head>
+  <body>
+    <div class="page">
+      <div class="note">
+        PROTÓTIPO para aprovação — home em 3 abas (Lançamentos | Contas e
+        cartões | Conciliação). Clique nas abas. Titular, Mês, + Despesa/+
+        Receita e KPIs ficam acima das abas e valem para todas. Metas fica entre
+        os KPIs e as abas, visível em todas. Dados fictícios.
+      </div>
+
+      <div class="top">
+        <div>
+          <label>Titular</label
+          ><select>
+            <option>Todos</option>
+            <option>Michel Lopes</option>
+            <option>Gisele Lopes</option>
+          </select>
+        </div>
+        <div>
+          <label>Mês</label><button>◀</button>
+          <select>
+            <option>Outubro/2026</option></select
+          ><button>▶</button>
+        </div>
+        <span class="sp"></span>
+        <button>+ Despesa</button>
+        <button>+ Receita</button>
+      </div>
+
+      <div class="kpis">
+        <div class="kpi">
+          <small>Receitas</small>
+          <div class="in">R$ 11.700,00</div>
+          <em>despesas R$ 5.740,00</em>
+        </div>
+        <div class="kpi">
+          <small>Pago / recebido</small>
+          <div class="in">R$ 6.120,00</div>
+          <em>4 lançamentos</em>
+        </div>
+        <div class="kpi">
+          <small>Em aberto</small>
+          <div>R$ 2.340,00</div>
+          <em>3 lançamentos</em>
+        </div>
+        <div class="kpi">
+          <small>Atrasado</small>
+          <div class="out">R$ 1.180,00</div>
+          <em>2 lançamentos</em>
+        </div>
+        <div class="kpi">
+          <small>Saldo final previsto</small>
+          <div>R$ 2.600,00</div>
+          <em>incluir cartão previsto</em>
+        </div>
+      </div>
+
+      <div class="metas">
+        <div class="head">
+          <h3>Metas — Outubro/2026</h3>
+          <a>ver completo ↗</a>
+        </div>
+        <div class="mg">
+          <div>
+            <div class="mr">
+              <span>Moradia</span><span>R$ 2.880 / 3.000</span>
+            </div>
+            <div class="bar warn"><span style="width: 96%"></span></div>
+          </div>
+          <div>
+            <div class="mr"><span>Serviços</span><span>R$ 520 / 600</span></div>
+            <div class="bar"><span style="width: 87%"></span></div>
+          </div>
+          <div>
+            <div class="mr"><span>Saúde</span><span>R$ 460 / 400</span></div>
+            <div class="bar over"><span style="width: 100%"></span></div>
+          </div>
+        </div>
+      </div>
+
+      <div class="tabs" role="tablist">
+        <button class="tab on" data-tab="lanc">Lançamentos</button>
+        <button class="tab" data-tab="contas">Contas e cartões</button>
+        <button class="tab" data-tab="conc">
+          Conciliação<span class="badge">58</span>
+        </button>
+      </div>
+
+      <div class="panel on" id="lanc">
+        <div class="head">
+          <h3>Lançamentos do mês</h3>
+          <div>
+            <span class="chip on">Todos 5</span><span class="chip">Pagos 2</span
+            ><span class="chip">Em aberto 1</span
+            ><span class="chip">Atrasados 2</span>
+          </div>
+        </div>
+        <div class="row paid">
+          <div class="d">
+            Aluguel 10/2026<small>10/10 · Gisele Lopes · Moradia</small>
+          </div>
+          <span class="pill p-ok">Pago<small>em 13/10</small></span>
+          <span class="v">-R$ 850,00</span>
+          <span></span>
+        </div>
+        <div class="row">
+          <div class="d">
+            teste 1/15<small>10/10 · Gisele Lopes · Saúde</small>
+          </div>
+          <span class="pill p-open">Cartão previsto</span>
+          <span class="v">-R$ 300,00</span>
+          <span></span>
+        </div>
+        <div class="row late">
+          <div class="d">
+            Carta R$ 7.500 reais 1/36<small
+              >13/10 · Gisele Lopes · Aluguel</small
+            >
+          </div>
+          <span class="pill p-late">Atrasado<small>1 dia</small></span>
+          <span class="v">-R$ 229,69</span>
+          <button class="ic" title="Pagar">✓</button>
+        </div>
+        <div class="row late">
+          <div class="d">
+            Fatura Itaú Unibanco - MASTERCARD<small
+              >13/10 · Gisele Lopes · Aluguel</small
+            >
+          </div>
+          <span class="pill p-late">Atrasado<small>1 dia</small></span>
+          <span class="v">-R$ 824,37</span>
+          <button class="ic" title="Pagar">✓</button>
+        </div>
+        <div class="row paid">
+          <div class="d">Teste<small>14/10 · Michel Lopes</small></div>
+          <span class="pill p-ok">Recebido<small>em 14/10</small></span>
+          <span class="v in">R$ 1.000,00</span>
+          <span></span>
+        </div>
+      </div>
+
+      <div class="panel" id="contas">
+        <div class="head">
+          <h3>Contas e cartões</h3>
+          <a>Gerenciar ↗</a>
+        </div>
+        <div class="cols">
+          <div class="sec">
+            <h4>Contas <a>ver todas</a></h4>
+            <div class="it">
+              <a>C6 BANK<small>Michel Lopes</small></a
+              ><span>Saldo R$ 0,00</span>
+            </div>
+            <div class="it">
+              <a>CAIXA<small>Michel Lopes</small></a
+              ><span>Saldo R$ 108,70</span>
+            </div>
+            <div class="it">
+              <a>itau<small>Gisele Lopes</small></a
+              ><span class="out">Saldo -R$ 120,45</span>
+            </div>
+            <div class="it">
+              <a>Sicoob<small>Gisele Lopes</small></a
+              ><span>Saldo R$ 178,83</span>
+            </div>
+            <div class="it">
+              <a>Sicoob<small>Michel Lopes</small></a
+              ><span>Saldo R$ 1.199,31</span>
+            </div>
+            <div class="tot">
+              <span>Total em contas</span><span>R$ 1.366,39</span>
+            </div>
+          </div>
+          <div class="sec">
+            <h4>Cartões <a>ver todos</a></h4>
+            <div class="it">
+              <a>C6 Bank - MASTERCARD (1818)<small>Michel Lopes</small></a
+              ><span class="out">Limite disp. -R$ 110,08</span>
+            </div>
+            <div class="it">
+              <a>CEF - VISA (1406)<small>Michel Lopes</small></a
+              ><span>Limite disp. R$ 2.977,75</span>
+            </div>
+            <div class="tot">
+              <span>Limite disponível</span><span>R$ 2.867,67</span>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="panel" id="conc">
+        <div class="head">
+          <h3>A conciliar (58)</h3>
+          <a>Abrir conciliação ↗</a>
+        </div>
+        <div class="c-item">
+          <div>
+            GERRAYNE CARLA SOU04/05<small>26 de out. de 2026 · Cartão</small>
+          </div>
+          <b class="out">-R$ 172,90</b>
+        </div>
+        <div class="c-item">
+          <div>
+            JU ACESSORIOS 10/10<small>26 de out. de 2026 · Cartão</small>
+          </div>
+          <b class="out">-R$ 96,48</b>
+        </div>
+        <div class="c-item">
+          <div>
+            MP *STUDIOSHINOZAI03/03<small>26 de out. de 2026 · Cartão</small>
+          </div>
+          <b class="out">-R$ 398,54</b>
+        </div>
+      </div>
+    </div>
+    <script>
+      document.querySelectorAll(".tab").forEach(function (tab) {
+        tab.addEventListener("click", function () {
+          document.querySelectorAll(".tab, .panel").forEach(function (el) {
+            el.classList.remove("on");
+          });
+          tab.classList.add("on");
+          document.getElementById(tab.dataset.tab).classList.add("on");
+        });
+      });
+    </script>
+  </body>
+</html>
