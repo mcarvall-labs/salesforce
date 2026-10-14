@@ -46,6 +46,9 @@ public with sharing class ALT_CLS_Dashboard {
     public Decimal incomeRealized = 0;
     @AuraEnabled
     public Decimal expenseRealized = 0;
+    // Cash entries of the month already Realized (Pago/Recebido).
+    @AuraEnabled
+    public Integer realizedCount = 0;
     @AuraEnabled
     public Decimal currentBalance = 0;
     @AuraEnabled
@@ -69,6 +72,8 @@ public with sharing class ALT_CLS_Dashboard {
     public String type;
     @AuraEnabled
     public String status;
+    @AuraEnabled
+    public Date paymentDate;
     @AuraEnabled
     public String holderName;
     @AuraEnabled
@@ -166,6 +171,7 @@ public with sharing class ALT_CLS_Dashboard {
             summary.income += amount;
           }
           if (!pending) {
+            summary.realizedCount++;
             if (expense) {
               summary.expenseRealized += amount;
             } else {
@@ -250,7 +256,8 @@ public with sharing class ALT_CLS_Dashboard {
     EntryList result = new EntryList();
     for (
       SObject row : Database.queryWithBinds(
-        'SELECT Name, AXF_ENT_DAT_DueDate__c, AXF_ENT_PKL_Type__c, AXF_ENT_PKL_Status__c, ' +
+        'SELECT Name, AXF_ENT_DAT_DueDate__c, AXF_ENT_DAT_PaymentDate__c, AXF_ENT_PKL_Type__c, ' +
+          'AXF_ENT_PKL_Status__c, ' +
           'AXF_ENT_FOR_AffectsCash__c, AXF_ENT_LKP_Invoice__c, AXF_ENT_MD_Holder__r.Name, ' +
           'AXF_ENT_LKP_Category__r.Name, convertCurrency(AXF_ENT_CUR_Amount__c) ' +
           'FROM AXF_OBJ_Entry__c WHERE ' +
@@ -274,6 +281,7 @@ public with sharing class ALT_CLS_Dashboard {
       line.amount = entry.AXF_ENT_CUR_Amount__c;
       line.type = entry.AXF_ENT_PKL_Type__c;
       line.status = entry.AXF_ENT_PKL_Status__c;
+      line.paymentDate = entry.AXF_ENT_DAT_PaymentDate__c;
       line.holderName = entry.AXF_ENT_MD_Holder__r?.Name;
       line.categoryName = entry.AXF_ENT_LKP_Category__r?.Name;
       line.forecastCard = entry.AXF_ENT_FOR_AffectsCash__c != true;

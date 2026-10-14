@@ -5,7 +5,9 @@ private class AXF_CLS_CTRL_DashboardTest {
     'AXF_OBJ_BankAccount__c',
     'AXF_OBJ_CreditCard__c',
     'AXF_OBJ_CreditCardInvoice__c',
-    'AXF_OBJ_Category__c'
+    'AXF_OBJ_Category__c',
+    'AXF_OBJ_BankAccountTransaction__c',
+    'AXF_OBJ_CreditCardTransaction__c'
   };
 
   @TestSetup
@@ -576,6 +578,75 @@ private class AXF_CLS_CTRL_DashboardTest {
     System.runAs(none) {
       try {
         AXF_CLS_CTRL_Dashboard.getEntries(null, Date.today(), null);
+        System.assert(false, 'Should have been denied');
+      } catch (AuraHandledException e) {
+        System.assertNotEquals('Script-thrown exception', e.getMessage());
+      }
+    }
+  }
+
+  @IsTest
+  static void listsPaymentDateAndCountsRealizedEntries() {
+    System.runAs(new User(Id = UserInfo.getUserId())) {
+      Account holder = scenario();
+      ALT_CLS_Dashboard.Summary result = summary(holder.Id);
+      System.assertEquals(
+        2,
+        result.realizedCount,
+        'Realized expense and income'
+      );
+      Integer withDate = 0;
+      for (
+        ALT_CLS_Dashboard.EntryRow row : AXF_CLS_CTRL_Dashboard.getEntries(
+            holder.Id,
+            Date.today(),
+            null
+          )
+          .rows
+      ) {
+        if (row.status == 'Realized') {
+          System.assertEquals(Date.today(), row.paymentDate);
+          withDate++;
+        } else {
+          System.assertEquals(null, row.paymentDate);
+        }
+      }
+      System.assertEquals(2, withDate);
+    }
+  }
+
+  @IsTest
+  static void restrictedUserGetsNoCandidatesForAHiddenEntry() {
+    User restricted = [SELECT Id FROM User WHERE LastName = 'AxfDash'];
+    Id hiddenEntryId;
+    System.runAs(new User(Id = UserInfo.getUserId())) {
+      Account hidden = holder('Do outro', 'AXF_Business');
+      AXF_OBJ_Entry__c hiddenEntry = entry(
+        hidden.Id,
+        'Expense',
+        'Pending',
+        Date.today(),
+        10
+      );
+      insert hiddenEntry;
+      hiddenEntryId = hiddenEntry.Id;
+    }
+    System.runAs(restricted) {
+      System.assertEquals(
+        0,
+        AXF_CLS_CTRL_Dashboard.getEntryCandidates(hiddenEntryId).size()
+      );
+    }
+  }
+
+  @IsTest
+  static void userWithoutPermissionCannotListCandidates() {
+    User none = [SELECT Id FROM User WHERE LastName = 'AxfDashNone'];
+    System.runAs(none) {
+      try {
+        AXF_CLS_CTRL_Dashboard.getEntryCandidates(
+          Id.valueOf('a00000000000001')
+        );
         System.assert(false, 'Should have been denied');
       } catch (AuraHandledException e) {
         System.assertNotEquals('Script-thrown exception', e.getMessage());
