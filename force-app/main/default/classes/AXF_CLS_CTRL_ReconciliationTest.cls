@@ -132,6 +132,33 @@ private class AXF_CLS_CTRL_ReconciliationTest {
   }
 
   @IsTest
+  static void reconcileReadsThePairsSentAsJson() {
+    System.runAs(new User(Id = UserInfo.getUserId())) {
+      base();
+      AXF_OBJ_Entry__c pending = entry(null, 100);
+      AXF_OBJ_BankAccountTransaction__c debit = bank(-100);
+      String pairs =
+        '[{"entryId":"' +
+        pending.Id +
+        '","bankTransactionId":"' +
+        debit.Id +
+        '"}]';
+      List<AXF_CLS_CTRL_Reconciliation.OutcomeView> done = AXF_CLS_CTRL_Reconciliation.reconcile(
+        pairs
+      );
+      System.assertEquals(1, done.size());
+      System.assertEquals(true, done[0].success, '' + done[0].message);
+      System.assertEquals(0, AXF_CLS_CTRL_Reconciliation.reconcile('').size());
+      try {
+        AXF_CLS_CTRL_Reconciliation.reconcile('not json');
+        System.assert(false, 'JSON inválido deve falhar');
+      } catch (AuraHandledException e) {
+        System.assert(true);
+      }
+    }
+  }
+
+  @IsTest
   static void reconcileThenUnreconcileThroughTheController() {
     System.runAs(new User(Id = UserInfo.getUserId())) {
       base();
@@ -140,7 +167,7 @@ private class AXF_CLS_CTRL_ReconciliationTest {
       AXF_CLS_CTRL_Reconciliation.PairInput pair = new AXF_CLS_CTRL_Reconciliation.PairInput();
       pair.entryId = pending.Id;
       pair.bankTransactionId = debit.Id;
-      List<AXF_CLS_CTRL_Reconciliation.OutcomeView> done = AXF_CLS_CTRL_Reconciliation.reconcile(
+      List<AXF_CLS_CTRL_Reconciliation.OutcomeView> done = AXF_CLS_CTRL_Reconciliation.reconcilePairs(
         new List<AXF_CLS_CTRL_Reconciliation.PairInput>{ pair, null }
       );
       System.assertEquals(true, done[0].success, '' + done[0].message);
@@ -260,7 +287,7 @@ private class AXF_CLS_CTRL_ReconciliationTest {
       AXF_CLS_CTRL_Reconciliation.PairInput cardPair = new AXF_CLS_CTRL_Reconciliation.PairInput();
       cardPair.entryId = cardEntry.Id;
       cardPair.cardTransactionId = purchase.Id;
-      AXF_CLS_CTRL_Reconciliation.reconcile(
+      AXF_CLS_CTRL_Reconciliation.reconcilePairs(
         new List<AXF_CLS_CTRL_Reconciliation.PairInput>{ bankPair, cardPair }
       );
       AXF_CLS_CTRL_Reconciliation.EntryReconciliationView onBank = AXF_CLS_CTRL_Reconciliation.getEntryReconciliation(
@@ -304,7 +331,7 @@ private class AXF_CLS_CTRL_ReconciliationTest {
       AXF_CLS_CTRL_Reconciliation.PairInput pair = new AXF_CLS_CTRL_Reconciliation.PairInput();
       pair.entryId = pending.Id;
       pair.bankTransactionId = debit.Id;
-      AXF_CLS_CTRL_Reconciliation.reconcile(
+      AXF_CLS_CTRL_Reconciliation.reconcilePairs(
         new List<AXF_CLS_CTRL_Reconciliation.PairInput>{ pair }
       );
       AXF_CLS_CTRL_Reconciliation.EntryReconciliationView done = AXF_CLS_CTRL_Reconciliation.getEntryReconciliation(

@@ -221,8 +221,24 @@ public with sharing class AXF_CLS_CTRL_Reconciliation {
     return data;
   }
 
+  // The pairs travel as JSON: Aura left every field of a List<PairInput> parameter null.
   @AuraEnabled
-  public static List<OutcomeView> reconcile(List<PairInput> pairs) {
+  public static List<OutcomeView> reconcile(String pairsJson) {
+    List<PairInput> pairs = new List<PairInput>();
+    if (String.isNotBlank(pairsJson)) {
+      try {
+        pairs = (List<PairInput>) JSON.deserialize(
+          pairsJson,
+          List<PairInput>.class
+        );
+      } catch (JSONException e) {
+        throw new AuraHandledException(FAILED);
+      }
+    }
+    return reconcilePairs(pairs);
+  }
+
+  public static List<OutcomeView> reconcilePairs(List<PairInput> pairs) {
     List<ALT_CLS_Reconciliation.Pair> converted = new List<ALT_CLS_Reconciliation.Pair>();
     for (PairInput pair : pairs == null ? new List<PairInput>() : pairs) {
       converted.add(
