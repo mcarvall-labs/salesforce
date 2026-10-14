@@ -80,6 +80,8 @@ export default class AXF_LWC_expenseWizard extends LightningElement {
   // Holder of the dashboard filter; when empty the first step asks for it.
   @api holderId;
   @api holders = [];
+  // Expense (default) or Income; income is always a standalone entry.
+  @api entryType = "Expense";
 
   type;
   step = 1;
@@ -120,7 +122,19 @@ export default class AXF_LWC_expenseWizard extends LightningElement {
 
   connectedCallback() {
     this.chosenHolderId = this.holderId;
+    if (this.isIncome) {
+      this.type = "standalone";
+      this.focusTitle = true;
+    }
     this.loadOptions();
+  }
+
+  get isIncome() {
+    return this.entryType === "Income";
+  }
+
+  get canChangeType() {
+    return !this.isIncome;
   }
 
   renderedCallback() {
@@ -138,7 +152,8 @@ export default class AXF_LWC_expenseWizard extends LightningElement {
     try {
       // The dashboard filter "Todos" is an empty string, which is not a valid Id for Apex.
       const options = await getOptions({
-        holderId: this.chosenHolderId || null
+        holderId: this.chosenHolderId || null,
+        entryType: this.entryType
       });
       if (seq !== this.loadSeq) {
         return;
@@ -223,6 +238,9 @@ export default class AXF_LWC_expenseWizard extends LightningElement {
     }
     if (this.isConsortium) {
       return "Consórcio";
+    }
+    if (this.isIncome) {
+      return "Receita avulsa";
     }
     return this.isInstallments ? "Despesa parcelada" : "Despesa avulsa";
   }
@@ -595,7 +613,17 @@ export default class AXF_LWC_expenseWizard extends LightningElement {
   }
 
   get methodOptions() {
-    return METHOD_OPTIONS;
+    return this.isIncome
+      ? METHOD_OPTIONS.filter((option) => option.value !== "card")
+      : METHOD_OPTIONS;
+  }
+
+  get methodLabel() {
+    return this.isIncome ? "Como foi/será recebido?" : "Como foi/será pago?";
+  }
+
+  get paymentDateLabel() {
+    return this.isIncome ? "Data de recebimento" : "Data de pagamento";
   }
 
   get isRealized() {
@@ -721,7 +749,8 @@ export default class AXF_LWC_expenseWizard extends LightningElement {
     try {
       const created = await createCategory({
         name: event.detail.name,
-        parentId: event.detail.parentId || null
+        parentId: event.detail.parentId || null,
+        entryType: this.entryType
       });
       // A holder change may still have a load in flight; its list would not have this one.
       this.loadSeq += 1;
@@ -911,14 +940,17 @@ export default class AXF_LWC_expenseWizard extends LightningElement {
           status: this.status,
           paymentDate: this.isRealized ? this.paymentDate : null,
           accountId: this.method === "account" ? this.sourceId : null,
-          cardId: this.method === "card" ? this.sourceId : null
+          cardId: this.method === "card" ? this.sourceId : null,
+          entryType: this.entryType
         })
       });
       this.dispatchEvent(new CustomEvent("saved"));
     } catch (error) {
       this.errorMessage = this.messageOf(
         error,
-        "Não foi possível criar a despesa."
+        this.isIncome
+          ? "Não foi possível criar a receita."
+          : "Não foi possível criar a despesa."
       );
     } finally {
       this.isSaving = false;

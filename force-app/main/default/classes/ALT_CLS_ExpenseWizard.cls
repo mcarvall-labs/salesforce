@@ -46,6 +46,9 @@ public with sharing class ALT_CLS_ExpenseWizard {
     public Id accountId;
     @AuraEnabled
     public Id cardId;
+    // Expense (default) or Income: the wizard also records a standalone income.
+    @AuraEnabled
+    public String entryType;
   }
 
   // Recurring only (EP05-H20): base.dueDate is the first due date, base.amount the monthly (or estimated) value.
@@ -128,12 +131,24 @@ public with sharing class ALT_CLS_ExpenseWizard {
     public String creditor;
   }
 
-  public Options options(Id holderId) {
+  // Blank means Expense; anything but Expense or Income is refused.
+  public static String entryTypeOf(String value) {
+    if (String.isBlank(value) || value == 'Expense') {
+      return 'Expense';
+    }
+    if (value == 'Income') {
+      return 'Income';
+    }
+    throw new ExpenseWizardException('Tipo de lançamento inválido.');
+  }
+
+  public Options options(Id holderId, String entryType) {
+    String kind = entryTypeOf(entryType);
     Options result = new Options();
     for (AXF_OBJ_Category__c category : [
       SELECT Id, Name, AXF_CAT_LKP_Parent__c
       FROM AXF_OBJ_Category__c
-      WHERE AXF_CAT_PKL_Type__c IN ('Expense', 'Both')
+      WHERE AXF_CAT_PKL_Type__c IN (:kind, 'Both')
       WITH USER_MODE
       ORDER BY Name
       LIMIT 500
@@ -168,8 +183,10 @@ public with sharing class ALT_CLS_ExpenseWizard {
     return result;
   }
 
-  // "+ Nova categoria" of the wizard: a new expense category, optionally under a parent.
-  public Option createCategory(String name, Id parentId) {
+  // "+ Nova categoria" of the wizard: a new category of the entry type (Expense or Income),
+  // optionally under a parent.
+  public Option createCategory(String name, Id parentId, String entryType) {
+    String kind = entryTypeOf(entryType);
     if (String.isBlank(name)) {
       throw new ExpenseWizardException('Informe o nome da categoria.');
     }
@@ -180,11 +197,15 @@ public with sharing class ALT_CLS_ExpenseWizard {
         [
           SELECT COUNT()
           FROM AXF_OBJ_Category__c
-          WHERE Id = :parentId AND AXF_CAT_PKL_Type__c IN ('Expense', 'Both')
+          WHERE Id = :parentId AND AXF_CAT_PKL_Type__c IN (:kind, 'Both')
           WITH USER_MODE
         ] == 0
       ) {
-        throw new ExpenseWizardException('A categoria pai não é de despesa.');
+        throw new ExpenseWizardException(
+          kind == 'Income'
+            ? 'A categoria pai não é de receita.'
+            : 'A categoria pai não é de despesa.'
+        );
       }
     }
     // Same name under the same parent: reuse it instead of creating a duplicate.
@@ -194,7 +215,7 @@ public with sharing class ALT_CLS_ExpenseWizard {
       WHERE
         Name = :clean
         AND AXF_CAT_LKP_Parent__c = :parentId
-        AND AXF_CAT_PKL_Type__c IN ('Expense', 'Both')
+        AND AXF_CAT_PKL_Type__c IN (:kind, 'Both')
       WITH USER_MODE
       LIMIT 1
     ]) {
@@ -204,7 +225,7 @@ public with sharing class ALT_CLS_ExpenseWizard {
     }
     AXF_OBJ_Category__c category = new AXF_OBJ_Category__c(
       Name = clean,
-      AXF_CAT_PKL_Type__c = 'Expense',
+      AXF_CAT_PKL_Type__c = kind,
       AXF_CAT_LKP_Parent__c = parentId
     );
     insert as user category;
@@ -245,7 +266,7 @@ public with sharing class ALT_CLS_ExpenseWizard {
       AXF_ENT_CUR_Amount__c = request.amount,
       AXF_ENT_DAT_DueDate__c = request.dueDate,
       AXF_ENT_LKP_Category__c = request.categoryId,
-      AXF_ENT_PKL_Type__c = 'Expense',
+      AXF_ENT_PKL_Type__c = entryTypeOf(request.entryType),
       AXF_ENT_PKL_Status__c = request.status,
       AXF_ENT_DAT_PaymentDate__c = realized ? request.paymentDate : null,
       AXF_ENT_LKP_BankAccount__c = request.accountId,
@@ -854,6 +875,7 @@ public with sharing class ALT_CLS_ExpenseWizard {
 
   // The UI only offers the holder's own records; a crafted request must not get around it.
   private static void assertOwnership(Request request) {
+    String kind = entryTypeOf(request.entryType);
     if (
       request.accountId != null &&
       [
@@ -885,11 +907,15 @@ public with sharing class ALT_CLS_ExpenseWizard {
         FROM AXF_OBJ_Category__c
         WHERE
           Id = :request.categoryId
-          AND AXF_CAT_PKL_Type__c IN ('Expense', 'Both')
+          AND AXF_CAT_PKL_Type__c IN (:kind, 'Both')
         WITH USER_MODE
       ] == 0
     ) {
-      throw new ExpenseWizardException('A categoria não é de despesa.');
+      throw new ExpenseWizardException(
+        kind == 'Income'
+          ? 'A categoria não é de receita.'
+          : 'A categoria não é de despesa.'
+      );
     }
   }
 
