@@ -171,7 +171,10 @@ describe("c-a-x-f-l-w-c-expense-wizard", () => {
       false,
       false
     ]);
-    expect(getOptions).toHaveBeenCalledWith({ holderId: "001A" });
+    expect(getOptions).toHaveBeenCalledWith({
+      holderId: "001A",
+      entryType: "Expense"
+    });
   });
 
   it("only enables Próximo with the required fields filled", async () => {
@@ -207,12 +210,18 @@ describe("c-a-x-f-l-w-c-expense-wizard", () => {
       holders: [{ id: "001B", name: "Titular B" }]
     });
     // "Todos" arrives as an empty string; Apex needs a null, not an invalid Id.
-    expect(getOptions).toHaveBeenCalledWith({ holderId: null });
+    expect(getOptions).toHaveBeenCalledWith({
+      holderId: null,
+      entryType: "Expense"
+    });
     await chooseStandalone(element);
     await fillStep1(element);
     expect($(element, ".next").disabled).toBe(true);
     await type(element, ".field-holder", "001B");
-    expect(getOptions).toHaveBeenLastCalledWith({ holderId: "001B" });
+    expect(getOptions).toHaveBeenLastCalledWith({
+      holderId: "001B",
+      entryType: "Expense"
+    });
     expect($(element, ".next").disabled).toBe(false);
   });
 
@@ -254,7 +263,8 @@ describe("c-a-x-f-l-w-c-expense-wizard", () => {
       status: "Pending",
       paymentDate: null,
       accountId: "a1",
-      cardId: null
+      cardId: null,
+      entryType: "Expense"
     });
     expect(saved).toHaveBeenCalledTimes(1);
   });
@@ -502,7 +512,8 @@ describe("c-a-x-f-l-w-c-expense-wizard", () => {
     await flushPromises();
     expect(createCategory).toHaveBeenCalledWith({
       name: "Pet",
-      parentId: null
+      parentId: null,
+      entryType: "Expense"
     });
     expect($(element, ".field-category").value).toBe("c3");
   });
@@ -1098,5 +1109,97 @@ describe("c-a-x-f-l-w-c-expense-wizard", () => {
     await flushPromises();
     const request = JSON.parse(createFinancing.mock.calls[0][0].requestJson);
     expect(request.monthlyRate).toBe(0);
+  });
+
+  describe("income (+ Receita)", () => {
+    const incomeOptions = {
+      categories: [
+        { id: "r1", label: "Salário", parentId: null },
+        { id: "r2", label: "Bônus", parentId: "r1" }
+      ],
+      accounts: [{ id: "a1", label: "Conta" }],
+      cards: [{ id: "k1", label: "Cartão" }]
+    };
+
+    beforeEach(() => {
+      getOptions.mockResolvedValue(incomeOptions);
+    });
+
+    it("skips the type step and loads the income categories", async () => {
+      const element = await mount({ holderId: "001A", entryType: "Income" });
+      expect($$(element, ".type-card")).toHaveLength(0);
+      expect($(element, ".wizard-title").textContent).toContain(
+        "Receita avulsa"
+      );
+      expect($(element, ".wizard-step").textContent).toContain("Etapa 1 de 3");
+      expect($(element, ".change-type")).toBeNull();
+      expect(getOptions).toHaveBeenCalledWith({
+        holderId: "001A",
+        entryType: "Income"
+      });
+      expect($(element, ".field-category").options).toEqual(
+        incomeOptions.categories
+      );
+    });
+
+    it("uses the receipt wording and offers no card", async () => {
+      const element = await mount({ holderId: "001A", entryType: "Income" });
+      await fillStep1(element);
+      await type(element, ".field-status", "Realized");
+      expect($(element, ".field-payment-date").label).toBe(
+        "Data de recebimento"
+      );
+      await type(element, ".field-payment-date", "2026-10-20");
+      $(element, ".next").click();
+      await flushPromises();
+      expect($(element, ".field-method").label).toBe("Como foi/será recebido?");
+      expect($(element, ".field-method").options.map((o) => o.value)).toEqual([
+        "cash",
+        "account"
+      ]);
+    });
+
+    it("creates the income with the type, a category and a new income category", async () => {
+      createCategory.mockResolvedValue({
+        id: "r3",
+        label: "Freela",
+        parentId: null
+      });
+      const element = await mount({ holderId: "001A", entryType: "Income" });
+      await fillStep1(element);
+      $(element, ".field-category").dispatchEvent(
+        new CustomEvent("createcategory", { detail: { name: "Freela" } })
+      );
+      await flushPromises();
+      expect(createCategory).toHaveBeenCalledWith({
+        name: "Freela",
+        parentId: null,
+        entryType: "Income"
+      });
+      $(element, ".next").click();
+      await flushPromises();
+      $(element, ".next").click();
+      await flushPromises();
+      $(element, ".conclude").click();
+      await flushPromises();
+      const sent = JSON.parse(createStandalone.mock.calls[0][0].requestJson);
+      expect(sent.entryType).toBe("Income");
+      expect(sent.categoryId).toBe("r3");
+    });
+
+    it("says the income could not be created", async () => {
+      createStandalone.mockRejectedValue({});
+      const element = await mount({ holderId: "001A", entryType: "Income" });
+      await fillStep1(element);
+      $(element, ".next").click();
+      await flushPromises();
+      $(element, ".next").click();
+      await flushPromises();
+      $(element, ".conclude").click();
+      await flushPromises();
+      expect($(element, ".wizard-error").textContent).toContain(
+        "Não foi possível criar a receita."
+      );
+    });
   });
 });
