@@ -931,6 +931,36 @@ private class ALT_CLS_ExpenseWizardTest {
     System.assertEquals(0, [SELECT COUNT() FROM AXF_OBJ_Entry__c]);
   }
 
+  // The charge fields reach the deploy user through a permission set group
+  // that is recalculated asynchronously, so a deploy that creates the fields
+  // and their FLS together would run these tests before the access exists.
+  // A direct assignment takes effect immediately.
+  private static void grantFinancingFieldAccess() {
+    Id userId = UserInfo.getUserId();
+    Id permissionSetId = [
+      SELECT Id
+      FROM PermissionSet
+      WHERE Name = 'AXF_PS_Usuario'
+    ]
+    .Id;
+    if (
+      ![
+          SELECT Id
+          FROM PermissionSetAssignment
+          WHERE AssigneeId = :userId AND PermissionSetId = :permissionSetId
+        ]
+        .isEmpty()
+    ) {
+      return;
+    }
+    System.runAs(new User(Id = userId)) {
+      insert new PermissionSetAssignment(
+        AssigneeId = userId,
+        PermissionSetId = permissionSetId
+      );
+    }
+  }
+
   private static ALT_CLS_ExpenseWizard.FinancingRequest financing(Id holderId) {
     ALT_CLS_ExpenseWizard.FinancingRequest financing = new ALT_CLS_ExpenseWizard.FinancingRequest();
     financing.base = request(holderId);
@@ -958,6 +988,7 @@ private class ALT_CLS_ExpenseWizardTest {
 
   @IsTest
   static void aSacFinancingMatchesTheReferenceTable() {
+    grantFinancingFieldAccess();
     Account h = holder('Titular');
     ALT_CLS_ExpenseWizard.FinancingRequest financing = financing(h.Id);
     financing.base.accountId = account(h.Id).Id;
@@ -1032,6 +1063,7 @@ private class ALT_CLS_ExpenseWizardTest {
 
   @IsTest
   static void aPriceFinancingHasAConstantInstallmentAndTheInterestAddsUp() {
+    grantFinancingFieldAccess();
     ALT_CLS_ExpenseWizard.FinancingRequest financing = financing(
       holder('Titular').Id
     );
@@ -1070,6 +1102,7 @@ private class ALT_CLS_ExpenseWizardTest {
 
   @IsTest
   static void thePreviewAndTheSavedScheduleAgreeForAnUnroundRateAndAmount() {
+    grantFinancingFieldAccess();
     for (String kind : new List<String>{ 'PRICE', 'SAC' }) {
       Account h = holder('Titular ' + kind);
       ALT_CLS_ExpenseWizard.FinancingRequest financing = financing(h.Id);
@@ -1124,6 +1157,7 @@ private class ALT_CLS_ExpenseWizardTest {
 
   @IsTest
   static void thePriceTableMatchesTheReferenceInstallmentByInstallment() {
+    grantFinancingFieldAccess();
     ALT_CLS_ExpenseWizard.FinancingRequest financing = financing(
       holder('Titular').Id
     );
@@ -1164,6 +1198,7 @@ private class ALT_CLS_ExpenseWizardTest {
 
   @IsTest
   static void theLimitsOfTheFinancingCountAreAccepted() {
+    grantFinancingFieldAccess();
     for (Integer count : new List<Integer>{ 2, 480 }) {
       ALT_CLS_ExpenseWizard.FinancingRequest financing = financing(
         holder('Titular ' + count).Id
@@ -1188,6 +1223,7 @@ private class ALT_CLS_ExpenseWizardTest {
 
   @IsTest
   static void aFinancingWithoutInterestSplitsThePrincipal() {
+    grantFinancingFieldAccess();
     ALT_CLS_ExpenseWizard.FinancingRequest financing = financing(
       holder('Titular').Id
     );
@@ -1615,6 +1651,7 @@ private class ALT_CLS_ExpenseWizardTest {
 
   @IsTest
   static void chargesAreSavedOnTheContractAndAddedToEveryInstallment() {
+    grantFinancingFieldAccess();
     Account h = holder('Titular');
     ALT_CLS_ExpenseWizard.FinancingRequest financing = financing(h.Id);
     financing.insurance = 10;
@@ -1659,6 +1696,7 @@ private class ALT_CLS_ExpenseWizardTest {
 
   @IsTest
   static void upfrontCostsAreFinancedWithTheAmount() {
+    grantFinancingFieldAccess();
     Account h = holder('Titular');
     ALT_CLS_ExpenseWizard.FinancingRequest financing = financing(h.Id);
     financing.base.amount = 1000;
@@ -1688,6 +1726,7 @@ private class ALT_CLS_ExpenseWizardTest {
 
   @IsTest
   static void anInformedInstallmentGivesTheImpliedRateAndTheOtherInstallments() {
+    grantFinancingFieldAccess();
     Account h = holder('Titular');
     ALT_CLS_ExpenseWizard.FinancingRequest financing = financing(h.Id);
     financing.base.amount = 1000;
