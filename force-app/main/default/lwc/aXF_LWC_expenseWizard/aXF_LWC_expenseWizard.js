@@ -464,8 +464,11 @@ export default class AXF_LWC_expenseWizard extends LightningElement {
       this.otherCharges,
       this.upfrontCosts
     ].every((value) => !(Number(value) < 0));
+    // The informed installments must at least pay back what is financed.
     const pricing = this.isInstallmentMode
-      ? Number(this.installmentAmount) >= 0.01
+      ? Number(this.installmentAmount) >= 0.01 &&
+        Number(this.installmentAmount) * Number(this.installmentCount) >=
+          Number(this.amount) + (Number(this.upfrontCosts) || 0)
       : this.monthlyRate !== undefined &&
         this.monthlyRate !== "" &&
         Number.isFinite(rate) &&

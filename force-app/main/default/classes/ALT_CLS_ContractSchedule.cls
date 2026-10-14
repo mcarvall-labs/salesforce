@@ -119,7 +119,10 @@ public with sharing class ALT_CLS_ContractSchedule {
       if (k == count) {
         amortization = balance;
       } else if (amortizationSystem == PRICE) {
-        amortization = Math.min(constantPayment - interest, balance);
+        amortization = Math.max(
+          0,
+          Math.min(constantPayment - interest, balance)
+        );
       } else {
         amortization = constantAmortization;
       }
@@ -156,7 +159,13 @@ public with sharing class ALT_CLS_ContractSchedule {
     Decimal payment,
     Integer count
   ) {
-    if (payment * count < principal) {
+    if (
+      principal == null ||
+      payment == null ||
+      count == null ||
+      count < 1 ||
+      payment * count < principal
+    ) {
       return null;
     }
     if (payment * count == principal) {

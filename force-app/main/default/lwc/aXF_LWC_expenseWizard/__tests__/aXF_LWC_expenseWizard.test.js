@@ -972,12 +972,12 @@ describe("c-a-x-f-l-w-c-expense-wizard", () => {
     expect($(element, ".field-rate")).toBeNull();
     expect($(element, ".field-system")).toBeNull();
     expect($(element, ".next").disabled).toBe(true);
-    await type(element, ".field-installment-amount", "88.85");
+    await type(element, ".field-installment-amount", "120");
     await type(element, ".field-insurance", "10");
     await type(element, ".field-upfront", "200");
     expect($(element, ".next").disabled).toBe(false);
     expect(plain(element, ".first-installment")).toContain(
-      "Parcela R$ 98,85 com encargos"
+      "Parcela R$ 130,00 com encargos"
     );
     $(element, ".next").click();
     await flushPromises();
@@ -987,10 +987,22 @@ describe("c-a-x-f-l-w-c-expense-wizard", () => {
     await flushPromises();
     const request = JSON.parse(createFinancing.mock.calls[0][0].requestJson);
     expect(request.monthlyRate).toBeNull();
-    expect(request.installmentAmount).toBe(88.85);
+    expect(request.installmentAmount).toBe(120);
     expect(request.amortizationSystem).toBe("PRICE");
     expect(request.insurance).toBe(10);
     expect(request.upfrontCosts).toBe(200);
+  });
+
+  it("needs an informed installment that pays the financed amount back", async () => {
+    const element = await mount();
+    await fillFinancing(element, "1", "12");
+    await type(element, ".field-financing-mode", "installment");
+    await type(element, ".field-installment-amount", "50");
+    expect($(element, ".next").disabled).toBe(true);
+    await type(element, ".field-installment-amount", "100");
+    expect($(element, ".next").disabled).toBe(false);
+    await type(element, ".field-upfront", "100");
+    expect($(element, ".next").disabled).toBe(true);
   });
 
   it("does not accept negative charges", async () => {

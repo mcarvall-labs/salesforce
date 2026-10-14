@@ -679,6 +679,14 @@ public with sharing class ALT_CLS_ExpenseWizard {
         'O valor da parcela deve ser maior que zero.'
       );
     }
+    if (
+      request.installmentAmount != null &&
+      money(request.installmentAmount) >= MAX_TOTAL
+    ) {
+      throw new ExpenseWizardException(
+        'O valor da parcela está acima do limite.'
+      );
+    }
     for (
       Decimal charge : new List<Decimal>{
         request.insurance,
@@ -713,7 +721,7 @@ public with sharing class ALT_CLS_ExpenseWizard {
         'O valor financiado deve ser maior que zero.'
       );
     }
-    if (principal >= MAX_TOTAL) {
+    if (principal + money(request.upfrontCosts) >= MAX_TOTAL) {
       throw new ExpenseWizardException('O valor total está acima do limite.');
     }
     // An installment that rounds to zero would leave the whole debt to the last one.

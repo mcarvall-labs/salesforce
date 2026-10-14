@@ -1678,7 +1678,7 @@ private class ALT_CLS_ExpenseWizardTest {
     System.assertEquals(98.85, preview[0].amount);
     System.assertEquals(98.85, preview[10].amount);
     System.assert(
-      Math.abs(preview[0].monthlyRate - 1) < 0.01,
+      Math.abs(preview[0].monthlyRate - 1) < 0.001,
       'rate ' + preview[0].monthlyRate
     );
     AXF_OBJ_Contract__c contract = [
@@ -1719,6 +1719,20 @@ private class ALT_CLS_ExpenseWizardTest {
     negative.insurance = -1;
     assertFinancingRejected(
       negative,
+      'Seguro, taxas e tarifas devem ser zero ou mais, dentro do limite.'
+    );
+    ALT_CLS_ExpenseWizard.FinancingRequest tooHigh = financing(h.Id);
+    tooHigh.base.amount = 1000;
+    tooHigh.amortizationSystem = 'PRICE';
+    tooHigh.installmentAmount = 1500;
+    assertFinancingRejected(
+      tooHigh,
+      'A parcela informada não paga o valor financiado com taxa entre 0% e 100%.'
+    );
+    ALT_CLS_ExpenseWizard.FinancingRequest huge = financing(h.Id);
+    huge.otherCharges = 1000000000000000.00;
+    assertFinancingRejected(
+      huge,
       'Seguro, taxas e tarifas devem ser zero ou mais, dentro do limite.'
     );
     System.assertEquals(0, [SELECT COUNT() FROM AXF_OBJ_Contract__c]);

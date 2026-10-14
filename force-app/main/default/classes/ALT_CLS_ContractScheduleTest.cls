@@ -210,13 +210,18 @@ private class ALT_CLS_ContractScheduleTest {
       amortized += item.amount - item.interest;
     }
     System.assertEquals(1000, amortized);
+    // The rate is rounded to 4 places, so the last installment only absorbs a few cents.
+    System.assert(
+      Math.abs(items[11].amount - 88.85) < 0.1,
+      'last ' + items[11].amount
+    );
   }
 
   @IsTest
   static void theImpliedRateIsTheOneThatPaysThePrincipalOff() {
     // 88.85 is the 1 % a month installment of 1,000.00 over 12 months, rounded to the cent.
     Decimal rate = ALT_CLS_ContractSchedule.impliedMonthlyRate(1000, 88.85, 12);
-    System.assert(Math.abs(rate - 1) < 0.01, 'rate ' + rate);
+    System.assert(Math.abs(rate - 1) < 0.001, 'rate ' + rate);
     System.assertEquals(
       0,
       ALT_CLS_ContractSchedule.impliedMonthlyRate(1200, 100, 12)

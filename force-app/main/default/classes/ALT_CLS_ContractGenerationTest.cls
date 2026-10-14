@@ -400,4 +400,50 @@ private class ALT_CLS_ContractGenerationTest {
     Test.stopTest();
     System.assert(entries(c.Id).size() >= 12);
   }
+
+  @IsTest
+  static void financingSchedulesIncludeTheChargesAndTheFinancedFees() {
+    AXF_OBJ_Contract__c c = contract('AXF_Financing');
+    c.AXF_CTR_CUR_Amount__c = null;
+    c.AXF_CTR_CUR_FinancedAmount__c = 1000;
+    c.AXF_CTR_CUR_UpfrontCosts__c = 200;
+    c.AXF_CTR_CUR_Insurance__c = 10;
+    c.AXF_CTR_CUR_AdminFee__c = 5;
+    c.AXF_CTR_CUR_OtherCharges__c = 2.50;
+    c.AXF_CTR_PCT_MonthlyRate__c = 0;
+    c.AXF_CTR_NUM_InstallmentCount__c = 12;
+    c.AXF_CTR_PKL_AmortizationSystem__c = 'PRICE';
+    insert c;
+
+    System.assertEquals(12, run(c, true).created);
+
+    // (1,000 + 200 of fees) / 12 = 100.00, plus 17.50 of monthly charges.
+    for (AXF_OBJ_Entry__c e : entries(c.Id)) {
+      System.assertEquals(117.50, e.AXF_ENT_CUR_Amount__c);
+    }
+  }
+
+  @IsTest
+  static void financingWithAnInformedInstallmentKeepsItInEveryEntry() {
+    AXF_OBJ_Contract__c c = contract('AXF_Financing');
+    c.AXF_CTR_CUR_Amount__c = null;
+    c.AXF_CTR_CUR_FinancedAmount__c = 1000;
+    c.AXF_CTR_CUR_InformedInstallment__c = 88.85;
+    c.AXF_CTR_CUR_Insurance__c = 10;
+    c.AXF_CTR_PCT_MonthlyRate__c = ALT_CLS_ContractSchedule.impliedMonthlyRate(
+      1000,
+      88.85,
+      12
+    );
+    c.AXF_CTR_NUM_InstallmentCount__c = 12;
+    c.AXF_CTR_PKL_AmortizationSystem__c = 'PRICE';
+    insert c;
+
+    System.assertEquals(12, run(c, true).created);
+
+    List<AXF_OBJ_Entry__c> rows = entries(c.Id);
+    for (Integer i = 0; i < 11; i++) {
+      System.assertEquals(98.85, rows[i].AXF_ENT_CUR_Amount__c);
+    }
+  }
 }
