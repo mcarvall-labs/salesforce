@@ -58,11 +58,6 @@ const formatDate = (value) => {
   return year && month && day ? `${day}/${month}/${year}` : "";
 };
 
-const FILTER_TITLES = {
-  OVERDUE: "Vencidos (todos os meses)",
-  DUE_SOON: "A vencer no mês"
-};
-
 export default class AXF_LWC_dashboard extends NavigationMixin(
   LightningElement
 ) {
@@ -78,7 +73,6 @@ export default class AXF_LWC_dashboard extends NavigationMixin(
   entries = [];
   entriesTruncated = false;
   entriesError;
-  listFilter;
   activeTab = "entries";
   entriesRequestId = 0;
   pending;
@@ -136,7 +130,7 @@ export default class AXF_LWC_dashboard extends NavigationMixin(
       const result = await getEntries({
         holderId: this.holderId || null,
         month: this.month,
-        filter: this.listFilter || null
+        filter: null
       });
       if (request === this.entriesRequestId) {
         this.entries = result.rows || [];
@@ -283,7 +277,8 @@ export default class AXF_LWC_dashboard extends NavigationMixin(
   }
 
   get overdueCaption() {
-    return `${this.summary.overdueCount} em aberto`;
+    const count = this.summary.overdueCount;
+    return `${count} ${count === 1 ? "lançamento" : "lançamentos"}`;
   }
 
   get dueSoonTotal() {
@@ -444,47 +439,12 @@ export default class AXF_LWC_dashboard extends NavigationMixin(
     return !!this.budget && !!this.summary && !!this.summary.cardForecast;
   }
 
-  // Clicking Vencidos or A vencer filters the month list; clicking it again clears the filter.
-  handleOverdueClick(event) {
-    event.preventDefault();
-    this.toggleFilter("OVERDUE");
-  }
-
-  handleDueSoonClick(event) {
-    event.preventDefault();
-    this.toggleFilter("DUE_SOON");
-  }
-
-  toggleFilter(filter) {
-    this.listFilter = this.listFilter === filter ? undefined : filter;
-    this.loadEntries();
-  }
-
-  handleClearFilter() {
-    this.listFilter = undefined;
-    this.statusChip = "all";
-    this.loadEntries();
-  }
-
   get overdueKpiClass() {
-    return this.kpiClass("OVERDUE", "kpi-overdue");
+    return "kpi kpi-overdue slds-box slds-m-right_small";
   }
 
   get dueSoonKpiClass() {
-    return this.kpiClass("DUE_SOON", "kpi-due-soon");
-  }
-
-  kpiClass(filter, name) {
-    const active = this.listFilter === filter ? " kpi-active" : "";
-    return `kpi ${name} kpi-click slds-box slds-m-right_small${active}`;
-  }
-
-  get isOverduePressed() {
-    return this.listFilter === "OVERDUE";
-  }
-
-  get isDueSoonPressed() {
-    return this.listFilter === "DUE_SOON";
+    return "kpi kpi-due-soon slds-box slds-m-right_small";
   }
 
   get showEntries() {
@@ -492,11 +452,7 @@ export default class AXF_LWC_dashboard extends NavigationMixin(
   }
 
   get listTitle() {
-    return FILTER_TITLES[this.listFilter] || "Lançamentos do mês";
-  }
-
-  get hasListFilter() {
-    return !!this.listFilter;
+    return "Lançamentos do mês";
   }
 
   get hasEntries() {

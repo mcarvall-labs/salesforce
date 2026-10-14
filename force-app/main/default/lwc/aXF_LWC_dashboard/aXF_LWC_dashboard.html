@@ -70,26 +70,16 @@
 
       <template lwc:if={hasSummary}>
         <div class="kpis slds-m-top_medium">
-          <button
-            type="button"
-            class={overdueKpiClass}
-            aria-pressed={isOverduePressed}
-            onclick={handleOverdueClick}
-          >
-            <p class="slds-text-title">Vencidos</p>
+          <div class={overdueKpiClass}>
+            <p class="slds-text-title">Atrasados</p>
             <p class={overdueClass}>{overdueTotal}</p>
             <p class="slds-text-color_weak">{overdueCaption}</p>
-          </button>
-          <button
-            type="button"
-            class={dueSoonKpiClass}
-            aria-pressed={isDueSoonPressed}
-            onclick={handleDueSoonClick}
-          >
+          </div>
+          <div class={dueSoonKpiClass}>
             <p class="slds-text-title">A vencer no mês</p>
             <p class={dueSoonClass}>{dueSoonTotal}</p>
             <p class="slds-text-color_weak">{dueSoonCaption}</p>
-          </button>
+          </div>
           <div class="kpi kpi-realized slds-box slds-m-right_small">
             <p class="slds-text-title">Pago / recebido</p>
             <p class={realizedClass}>{realizedTotal}</p>
@@ -183,14 +173,6 @@
                     >
                       {chip.label}<b class="chip-count">{chip.count}</b>
                     </button>
-                  </template>
-                  <template lwc:if={hasListFilter}>
-                    <lightning-button
-                      class="clear-filter slds-m-left_x-small"
-                      variant="base"
-                      label="Limpar filtro"
-                      onclick={handleClearFilter}
-                    ></lightning-button>
                   </template>
                 </div>
               </div>

@@ -289,7 +289,7 @@ describe("c-a-x-f-l-w-c-dashboard", () => {
     expect(
       element.shadowRoot.querySelector(".kpi-overdue .out")
     ).not.toBeNull();
-    expect(text(element, ".kpi-overdue")).toContain("2 em aberto");
+    expect(text(element, ".kpi-overdue")).toContain("2 lançamentos");
     expect(text(element, ".kpi-due-soon")).toContain("-R$ 200,00");
     expect(text(element, ".kpi-due-soon")).toContain("3 lançamentos");
     expect(element.shadowRoot.querySelector(".kpi-due-soon .out")).toBeNull();
@@ -562,43 +562,17 @@ describe("c-a-x-f-l-w-c-dashboard", () => {
     expect(rows[2].textContent).toContain("Cartão previsto");
   });
 
-  it("filters the list when a deadline indicator is clicked and clears it", async () => {
+  it("shows the deadline indicators as plain cards without click action", async () => {
     const element = await mount();
-    element.shadowRoot.querySelector(".kpi-overdue").click();
-    await flushPromises();
-    expect(getEntries.mock.calls[1][0].filter).toBe("OVERDUE");
-    expect(text(element, ".entries-title")).toContain(
-      "Vencidos (todos os meses)"
-    );
-    expect(
-      element.shadowRoot.querySelector(".kpi-overdue.kpi-active")
-    ).not.toBeNull();
+    const overdue = element.shadowRoot.querySelector(".kpi-overdue");
+    expect(overdue.tagName).toBe("DIV");
+    expect(text(element, ".kpi-overdue")).toContain("Atrasados");
+    expect(text(element, ".kpi-due-soon")).toContain("A vencer no mês");
+    overdue.click();
     element.shadowRoot.querySelector(".kpi-due-soon").click();
     await flushPromises();
-    expect(getEntries.mock.calls[2][0].filter).toBe("DUE_SOON");
-    expect(text(element, ".entries-title")).toContain("A vencer no mês");
-    element.shadowRoot.querySelector(".clear-filter").click();
-    await flushPromises();
-    expect(getEntries.mock.calls[3][0].filter).toBeNull();
-    expect(element.shadowRoot.querySelector(".clear-filter")).toBeNull();
-    element.shadowRoot.querySelector(".kpi-overdue").click();
-    await flushPromises();
-    element.shadowRoot.querySelector(".kpi-overdue").click();
-    await flushPromises();
-    expect(getEntries.mock.calls[5][0].filter).toBeNull();
-  });
-
-  it("keeps the filter when the holder or month changes", async () => {
-    const element = await mount();
-    element.shadowRoot.querySelector(".kpi-due-soon").click();
-    await flushPromises();
-    element.shadowRoot
-      .querySelector(".holder-filter")
-      .dispatchEvent(new CustomEvent("change", { detail: { value: "001B" } }));
-    await flushPromises();
-    const last = getEntries.mock.calls[getEntries.mock.calls.length - 1][0];
-    expect(last.filter).toBe("DUE_SOON");
-    expect(last.holderId).toBe("001B");
+    expect(getEntries).toHaveBeenCalledTimes(1);
+    expect(getEntries.mock.calls[0][0].filter).toBeNull();
   });
 
   it("opens the entry record when a row is clicked", async () => {
@@ -680,28 +654,6 @@ describe("c-a-x-f-l-w-c-dashboard", () => {
     expect(element.shadowRoot.querySelector(".entries-empty")).toBeNull();
   });
 
-  it("ignores an older list response after quick filter clicks", async () => {
-    let resolveFirst;
-    const element = await mount();
-    getEntries.mockImplementationOnce(
-      () => new Promise((resolve) => (resolveFirst = resolve))
-    );
-    element.shadowRoot.querySelector(".kpi-overdue").click();
-    getEntries.mockResolvedValueOnce({
-      truncated: false,
-      rows: [{ ...entryList.rows[1], name: "Resposta nova" }]
-    });
-    element.shadowRoot.querySelector(".kpi-due-soon").click();
-    await flushPromises();
-    resolveFirst({
-      truncated: false,
-      rows: [{ ...entryList.rows[0], name: "Resposta velha" }]
-    });
-    await flushPromises();
-    expect(text(element, ".entries")).toContain("Resposta nova");
-    expect(text(element, ".entries")).not.toContain("Resposta velha");
-  });
-
   it("copes with a missing amount, an unknown type and an unknown status", async () => {
     getEntries.mockResolvedValue({
       truncated: false,
@@ -728,33 +680,6 @@ describe("c-a-x-f-l-w-c-dashboard", () => {
     getSummary.mockRejectedValue({ body: { message: "Falha no resumo" } });
     const element = await mount();
     expect(element.shadowRoot.querySelectorAll(".entry-row")).toHaveLength(3);
-  });
-
-  it("marks the active indicator as pressed for assistive technology", async () => {
-    const element = await mount();
-    const overdue = element.shadowRoot.querySelector(".kpi-overdue");
-    expect(overdue.getAttribute("aria-pressed")).toBe("false");
-    overdue.click();
-    await flushPromises();
-    expect(
-      element.shadowRoot
-        .querySelector(".kpi-overdue")
-        .getAttribute("aria-pressed")
-    ).toBe("true");
-  });
-
-  it("keeps the filter and sends the new month when the month changes", async () => {
-    const element = await mount();
-    element.shadowRoot.querySelector(".kpi-due-soon").click();
-    await flushPromises();
-    element.shadowRoot.querySelector(".next-month").click();
-    await flushPromises();
-    const last = getEntries.mock.calls[getEntries.mock.calls.length - 1][0];
-    expect(last.filter).toBe("DUE_SOON");
-    expect(last.month).toBe(
-      getSummary.mock.calls[getSummary.mock.calls.length - 1][0].month
-    );
-    expect(last.month).not.toBe(getEntries.mock.calls[0][0].month);
   });
 
   it("shows the count, the suggestions and the three most recent open transactions", async () => {
@@ -1120,19 +1045,6 @@ describe("c-a-x-f-l-w-c-dashboard", () => {
       .dispatchEvent(new KeyboardEvent("keydown", { key: "Escape" }));
     await flushPromises();
     expect(element.shadowRoot.querySelector(".realize-modal")).toBeNull();
-  });
-
-  it("offers mark as realized in the Vencidos list too", async () => {
-    const element = await mount();
-    getEntries.mockResolvedValueOnce({
-      truncated: false,
-      rows: [entryList.rows[0]]
-    });
-    element.shadowRoot.querySelector(".kpi-overdue").click();
-    await flushPromises();
-    expect(element.shadowRoot.querySelectorAll(".mark-realized")).toHaveLength(
-      1
-    );
   });
 
   describe("status badges and chips", () => {
