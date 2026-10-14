@@ -14,6 +14,9 @@ public with sharing class ALT_CLS_ContractSchedule {
     public Integer installmentNumber;
     public Date dueDate;
     public Decimal amount;
+    // Financing only: the interest and the fixed monthly charges inside the amount.
+    public Decimal interest;
+    public Decimal charges;
 
     public Item(Integer installmentNumber, Date dueDate, Decimal amount) {
       this.installmentNumber = installmentNumber;
@@ -75,12 +78,38 @@ public with sharing class ALT_CLS_ContractSchedule {
     String amortizationSystem,
     Date firstDueDate
   ) {
+    return financing(
+      principal,
+      monthlyRatePercent,
+      count,
+      amortizationSystem,
+      firstDueDate,
+      null,
+      0
+    );
+  }
+
+  // `fixedPayment` (PRICE only) is the informed installment, interest plus amortization;
+  // `monthlyCharges` (insurance, fees) are fixed amounts added to every installment, outside
+  // the interest base.
+  public static List<Item> financing(
+    Decimal principal,
+    Decimal monthlyRatePercent,
+    Integer count,
+    String amortizationSystem,
+    Date firstDueDate,
+    Decimal fixedPayment,
+    Decimal monthlyCharges
+  ) {
     Decimal rate = monthlyRatePercent / 100;
     Decimal constantPayment = amortizationSystem == PRICE
-      ? priceInstallment(principal, rate, count)
+      ? (fixedPayment != null
+          ? fixedPayment
+          : priceInstallment(principal, rate, count))
       : null;
     Decimal constantAmortization = (principal / count)
       .setScale(2, RoundingMode.HALF_UP);
+    Decimal charges = monthlyCharges == null ? 0 : monthlyCharges;
     Decimal balance = principal;
     Integer day = firstDueDate.day();
     List<Item> items = new List<Item>();
@@ -90,20 +119,84 @@ public with sharing class ALT_CLS_ContractSchedule {
       if (k == count) {
         amortization = balance;
       } else if (amortizationSystem == PRICE) {
-        amortization = constantPayment - interest;
+        amortization = Math.max(
+          0,
+          Math.min(constantPayment - interest, balance)
+        );
       } else {
         amortization = constantAmortization;
       }
-      items.add(
-        new Item(
-          k,
-          monthlyDate(firstDueDate, k - 1, day),
-          amortization + interest
-        )
+      Item item = new Item(
+        k,
+        monthlyDate(firstDueDate, k - 1, day),
+        amortization + interest + charges
       );
+      item.interest = interest;
+      item.charges = charges;
+      items.add(item);
       balance -= amortization;
     }
     return items;
+  }
+
+  // The financed amount plus the upfront costs (fees, IOF) that are financed with it.
+  public static Decimal financedPrincipal(Decimal financed, Decimal upfront) {
+    return financed + (upfront == null ? 0 : upfront);
+  }
+
+  public static Decimal sum(List<Decimal> values) {
+    Decimal total = 0;
+    for (Decimal value : values) {
+      total += value == null ? 0 : value;
+    }
+    return total;
+  }
+
+  // The monthly rate (percent, 4 places) at which `count` constant installments of `payment`
+  // pay off `principal`; null when no rate from 0 % to 100 % does.
+  public static Decimal impliedMonthlyRate(
+    Decimal principal,
+    Decimal payment,
+    Integer count
+  ) {
+    if (
+      principal == null ||
+      payment == null ||
+      count == null ||
+      count < 1 ||
+      payment * count < principal
+    ) {
+      return null;
+    }
+    if (payment * count == principal) {
+      return 0;
+    }
+    Double p = principal;
+    Double n = count;
+    Double target = payment;
+    Double low = 0;
+    Double high = 1;
+    if (installmentFor(p, high, n) < target) {
+      return null;
+    }
+    for (Integer i = 0; i < 100; i++) {
+      Double mid = (low + high) / 2;
+      if (installmentFor(p, mid, n) < target) {
+        low = mid;
+      } else {
+        high = mid;
+      }
+    }
+    return (Decimal.valueOf((low + high) / 2) * 100)
+      .setScale(4, RoundingMode.HALF_UP);
+  }
+
+  private static Double installmentFor(
+    Double principal,
+    Double rate,
+    Double n
+  ) {
+    return principal * rate / (1 - Math.pow(1 + rate, -n));
   }
 
   private static Decimal priceInstallment(

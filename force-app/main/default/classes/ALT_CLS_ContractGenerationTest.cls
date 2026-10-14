@@ -156,6 +156,7 @@ private class ALT_CLS_ContractGenerationTest {
     rows[1].AXF_ENT_CUR_Amount__c = 999;
     update new List<AXF_OBJ_Entry__c>{ rows[0], rows[1] };
     c.AXF_CTR_CUR_Amount__c = 150;
+    AXF_CLS_ContractHandler.bypass = true;
     update c;
     ALT_CLS_ContractGeneration.Result result = run(c, true);
     // Parcel 1 is due in 5 days but Realized, so only parcels 2 and 3 change.
@@ -183,6 +184,7 @@ private class ALT_CLS_ContractGenerationTest {
     Integer before = entries(c.Id).size();
     c.AXF_CTR_CUR_Amount__c = 500;
     c.AXF_CTR_DAT_EndDate__c = Date.today().addMonths(4);
+    AXF_CLS_ContractHandler.bypass = true;
     update c;
     ALT_CLS_ContractGeneration.Result result = run(c, false);
     System.assertEquals(0, result.updated);
@@ -291,6 +293,7 @@ private class ALT_CLS_ContractGenerationTest {
     );
     // Changing the first due date moves the Pending entries on regenerate.
     c.AXF_CTR_DAT_FirstDueDate__c = Date.today().addDays(20);
+    AXF_CLS_ContractHandler.bypass = true;
     update c;
     System.assertEquals(2, run(c, true).updated);
     System.assertEquals(
@@ -363,6 +366,7 @@ private class ALT_CLS_ContractGenerationTest {
     rows[0].AXF_ENT_CUR_Amount__c = 321;
     update rows[0];
     c.AXF_CTR_CUR_Amount__c = 500;
+    AXF_CLS_ContractHandler.bypass = true;
     update c;
     Test.startTest();
     ALT_CLS_ContractGenerationBatch.run();
@@ -377,6 +381,7 @@ private class ALT_CLS_ContractGenerationTest {
     insert c;
     AXF_CLS_CTRL_ContractGeneration.generate(c.Id);
     c.AXF_CTR_CUR_Amount__c = 175;
+    AXF_CLS_ContractHandler.bypass = true;
     update c;
     AXF_CLS_CTRL_ContractGeneration.Summary summary = AXF_CLS_CTRL_ContractGeneration.generate(
       c.Id
@@ -399,5 +404,174 @@ private class ALT_CLS_ContractGenerationTest {
     new ALT_CLS_ContractGenerationSchedule().execute(null);
     Test.stopTest();
     System.assert(entries(c.Id).size() >= 12);
+  }
+
+  @IsTest
+  static void financingSchedulesIncludeTheChargesAndTheFinancedFees() {
+    AXF_OBJ_Contract__c c = contract('AXF_Financing');
+    c.AXF_CTR_CUR_Amount__c = null;
+    c.AXF_CTR_CUR_FinancedAmount__c = 1000;
+    c.AXF_CTR_CUR_UpfrontCosts__c = 200;
+    c.AXF_CTR_CUR_Insurance__c = 10;
+    c.AXF_CTR_CUR_AdminFee__c = 5;
+    c.AXF_CTR_CUR_OtherCharges__c = 2.50;
+    c.AXF_CTR_PCT_MonthlyRate__c = 0;
+    c.AXF_CTR_NUM_InstallmentCount__c = 12;
+    c.AXF_CTR_PKL_AmortizationSystem__c = 'PRICE';
+    insert c;
+
+    System.assertEquals(12, run(c, true).created);
+
+    // (1,000 + 200 of fees) / 12 = 100.00, plus 17.50 of monthly charges.
+    for (AXF_OBJ_Entry__c e : entries(c.Id)) {
+      System.assertEquals(117.50, e.AXF_ENT_CUR_Amount__c);
+    }
+  }
+
+  @IsTest
+  static void editingTheContractRefreshesPendingEntriesOfEveryGeneratingType() {
+    List<AXF_OBJ_Contract__c> contracts = new List<AXF_OBJ_Contract__c>{
+      contract('AXF_Recurring'),
+      contract('AXF_Installment'),
+      contract('AXF_Consortium'),
+      contract('AXF_Financing')
+    };
+    contracts[0].AXF_CTR_DAT_EndDate__c = Date.today().addMonths(2);
+    contracts[1].AXF_CTR_NUM_InstallmentCount__c = 3;
+    contracts[2].AXF_CTR_NUM_InstallmentCount__c = 3;
+    contracts[3].AXF_CTR_CUR_Amount__c = null;
+    contracts[3].AXF_CTR_CUR_FinancedAmount__c = 3000;
+    contracts[3].AXF_CTR_PCT_MonthlyRate__c = 1;
+    contracts[3].AXF_CTR_NUM_InstallmentCount__c = 3;
+    contracts[3].AXF_CTR_PKL_AmortizationSystem__c = 'SAC';
+    insert contracts;
+    for (AXF_OBJ_Contract__c c : contracts) {
+      run(c, true);
+    }
+    for (AXF_OBJ_Contract__c c : contracts) {
+      c.Name = 'Renomeado ' + c.Id;
+    }
+    update contracts;
+    for (AXF_OBJ_Contract__c c : contracts) {
+      List<AXF_OBJ_Entry__c> rows = entries(c.Id);
+      System.assert(!rows.isEmpty(), 'entries for ' + c.Id);
+      for (AXF_OBJ_Entry__c e : rows) {
+        System.assert(e.Name.startsWith(c.Name), e.Name);
+      }
+    }
+    contracts[1].AXF_CTR_CUR_Amount__c = 130;
+    update contracts[1];
+    for (AXF_OBJ_Entry__c e : entries(contracts[1].Id)) {
+      System.assertEquals(130, e.AXF_ENT_CUR_Amount__c);
+    }
+  }
+
+  @IsTest
+  static void financingWithAnInformedInstallmentKeepsItInEveryEntry() {
+    AXF_OBJ_Contract__c c = contract('AXF_Financing');
+    c.AXF_CTR_CUR_Amount__c = null;
+    c.AXF_CTR_CUR_FinancedAmount__c = 1000;
+    c.AXF_CTR_CUR_InformedInstallment__c = 88.85;
+    c.AXF_CTR_CUR_Insurance__c = 10;
+    c.AXF_CTR_PCT_MonthlyRate__c = ALT_CLS_ContractSchedule.impliedMonthlyRate(
+      1000,
+      88.85,
+      12
+    );
+    c.AXF_CTR_NUM_InstallmentCount__c = 12;
+    c.AXF_CTR_PKL_AmortizationSystem__c = 'PRICE';
+    insert c;
+
+    System.assertEquals(12, run(c, true).created);
+
+    List<AXF_OBJ_Entry__c> rows = entries(c.Id);
+    for (Integer i = 0; i < 11; i++) {
+      System.assertEquals(98.85, rows[i].AXF_ENT_CUR_Amount__c);
+    }
+  }
+
+  @IsTest
+  static void editingTheContractNeverTouchesRealizedEntriesOrUnwatchedFields() {
+    AXF_OBJ_Contract__c c = contract('AXF_Installment');
+    c.AXF_CTR_NUM_InstallmentCount__c = 3;
+    insert c;
+    run(c, true);
+    List<AXF_OBJ_Entry__c> rows = entries(c.Id);
+    rows[0].AXF_ENT_PKL_Status__c = 'Realized';
+    rows[0].AXF_ENT_DAT_PaymentDate__c = Date.today();
+    rows[1].AXF_ENT_CUR_Amount__c = 999;
+    update new List<AXF_OBJ_Entry__c>{ rows[0], rows[1] };
+    c.AXF_CTR_TAL_Notes__c = 'só uma nota';
+    update c;
+    System.assertEquals(999, entries(c.Id)[1].AXF_ENT_CUR_Amount__c);
+    c.AXF_CTR_CUR_Amount__c = 150;
+    update c;
+    List<AXF_OBJ_Entry__c> after = entries(c.Id);
+    System.assertEquals(100, after[0].AXF_ENT_CUR_Amount__c);
+    System.assertEquals(150, after[1].AXF_ENT_CUR_Amount__c);
+    System.assertEquals(150, after[2].AXF_ENT_CUR_Amount__c);
+  }
+
+  @IsTest
+  static void editingScheduleFieldsAddsAndMovesPendingEntries() {
+    AXF_OBJ_Contract__c installment = contract('AXF_Installment');
+    installment.AXF_CTR_NUM_InstallmentCount__c = 2;
+    AXF_OBJ_Contract__c recurring = contract('AXF_Recurring');
+    recurring.AXF_CTR_DAT_EndDate__c = Date.today().addMonths(2);
+    AXF_OBJ_Contract__c financing = contract('AXF_Financing');
+    financing.AXF_CTR_CUR_Amount__c = null;
+    financing.AXF_CTR_CUR_FinancedAmount__c = 3000;
+    financing.AXF_CTR_PCT_MonthlyRate__c = 1;
+    financing.AXF_CTR_NUM_InstallmentCount__c = 3;
+    financing.AXF_CTR_PKL_AmortizationSystem__c = 'SAC';
+    insert new List<AXF_OBJ_Contract__c>{ installment, recurring, financing };
+    for (
+      AXF_OBJ_Contract__c c : new List<AXF_OBJ_Contract__c>{
+        installment,
+        recurring,
+        financing
+      }
+    ) {
+      run(c, true);
+    }
+    Integer recurringBefore = entries(recurring.Id).size();
+    Decimal firstFinancing = entries(financing.Id)[0].AXF_ENT_CUR_Amount__c;
+
+    installment.AXF_CTR_NUM_INSTALLMENTCOUNT__c = 4;
+    installment.AXF_CTR_DAT_FirstDueDate__c = Date.today().addDays(20);
+    recurring.AXF_CTR_DAT_EndDate__c = Date.today().addMonths(5);
+    financing.AXF_CTR_PCT_MONTHLYRATE__c = 3;
+    update new List<AXF_OBJ_Contract__c>{ installment, recurring, financing };
+
+    List<AXF_OBJ_Entry__c> installments = entries(installment.Id);
+    System.assertEquals(4, installments.size());
+    System.assertEquals(
+      Date.today().addDays(20),
+      installments[0].AXF_ENT_DAT_DueDate__c
+    );
+    System.assert(entries(recurring.Id).size() > recurringBefore);
+    System.assertNotEquals(
+      firstFinancing,
+      entries(financing.Id)[0].AXF_ENT_CUR_Amount__c
+    );
+  }
+
+  @IsTest
+  static void editingInactiveOrNonGeneratingContractsLeavesEntriesAlone() {
+    AXF_OBJ_Contract__c c = contract('AXF_Installment');
+    c.AXF_CTR_NUM_INSTALLMENTCOUNT__c = 2;
+    AXF_OBJ_Contract__c service = contract('AXF_ServiceProvision');
+    insert new List<AXF_OBJ_Contract__c>{ c, service };
+    run(c, true);
+    c.AXF_CTR_PKL_Status__c = 'Closed';
+    update c;
+    c.AXF_CTR_CUR_Amount__c = 500;
+    update c;
+    for (AXF_OBJ_Entry__c e : entries(c.Id)) {
+      System.assertEquals(100, e.AXF_ENT_CUR_Amount__c);
+    }
+    service.Name = 'Serviço renomeado';
+    update service;
+    System.assertEquals(0, entries(service.Id).size());
   }
 }
