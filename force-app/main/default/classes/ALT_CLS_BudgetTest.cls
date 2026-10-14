@@ -33,6 +33,15 @@ private class ALT_CLS_BudgetTest {
     return result.getErrors()[0].getMessage();
   }
 
+  // The validation messages are translated (pt-BR); the test user's language decides which one
+  // comes back.
+  private static void assertMessage(String actual, String en, String pt) {
+    System.assert(
+      actual.contains(en) || actual.contains(pt),
+      'Unexpected message: ' + actual
+    );
+  }
+
   @IsTest
   static void savesWithoutCategoryAndEndMonth() {
     System.runAs(actor()) {
@@ -88,7 +97,7 @@ private class ALT_CLS_BudgetTest {
     System.runAs(actor()) {
       AXF_OBJ_Budget__c record = budget(holder());
       record.AXF_BDG_CUR_Amount__c = 0;
-      System.assert(error(record).contains('greater than zero'));
+      assertMessage(error(record), 'greater than zero', 'maior que zero');
     }
   }
 
@@ -97,7 +106,11 @@ private class ALT_CLS_BudgetTest {
     System.runAs(actor()) {
       AXF_OBJ_Budget__c record = budget(holder());
       record.AXF_BDG_DAT_EndMonth__c = Date.newInstance(2026, 9, 1);
-      System.assert(error(record).contains('before the start month'));
+      assertMessage(
+        error(record),
+        'before the start month',
+        'anterior ao mês inicial'
+      );
     }
   }
 
@@ -106,10 +119,10 @@ private class ALT_CLS_BudgetTest {
     System.runAs(actor()) {
       AXF_OBJ_Budget__c record = budget(holder());
       record.AXF_BDG_DAT_StartMonth__c = Date.newInstance(2026, 10, 15);
-      System.assert(error(record).contains('first day'));
+      assertMessage(error(record), 'first day', 'primeiro dia');
       record = budget(holder());
       record.AXF_BDG_DAT_EndMonth__c = Date.newInstance(2026, 12, 20);
-      System.assert(error(record).contains('first day'));
+      assertMessage(error(record), 'first day', 'primeiro dia');
     }
   }
 

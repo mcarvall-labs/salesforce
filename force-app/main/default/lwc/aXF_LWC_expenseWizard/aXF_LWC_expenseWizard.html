@@ -1,0 +1,325 @@
+<template>
+  <section
+    role="dialog"
+    aria-modal="true"
+    aria-labelledby="wizard-title"
+    class="slds-modal slds-fade-in-open"
+  >
+    <div class="slds-modal__container">
+      <header class="slds-modal__header">
+        <h2
+          id="wizard-title"
+          class="wizard-title slds-modal__title slds-hyphenate"
+          tabindex="-1"
+        >
+          {title}
+        </h2>
+        <template lwc:if={isChoosingType}></template>
+        <template lwc:else>
+          <p class="wizard-step slds-m-top_x-small">{stepLabel}</p>
+          <lightning-progress-bar
+            value={progress}
+            size="small"
+            aria-label="Progresso do assistente"
+          ></lightning-progress-bar>
+        </template>
+      </header>
+      <div class="slds-modal__content slds-p-around_medium">
+        <template lwc:if={errorMessage}>
+          <div
+            class="wizard-error slds-text-color_error slds-m-bottom_small"
+            role="alert"
+          >
+            {errorMessage}
+          </div>
+        </template>
+
+        <template lwc:if={isChoosingType}>
+          <p class="type-hint slds-text-body_small slds-m-bottom_small">
+            Escolha o tipo; o wizard pergunta só o que for necessário.
+          </p>
+          <div class="type-grid">
+            <template for:each={typeButtons} for:item="type">
+              <button
+                key={type.value}
+                type="button"
+                class={type.cardClass}
+                data-type={type.value}
+                title={type.title}
+                disabled={type.disabled}
+                onclick={handleTypeClick}
+              >
+                <span class="type-name">{type.label}</span>
+                <span class="type-description">{type.description}</span>
+              </button>
+            </template>
+          </div>
+        </template>
+
+        <template lwc:elseif={isStep1}>
+          <template lwc:if={hasHolderContext}></template>
+          <template lwc:else>
+            <lightning-combobox
+              class="field-holder"
+              label="Titular"
+              options={holderOptions}
+              value={chosenHolderId}
+              required
+              onchange={handleHolder}
+            ></lightning-combobox>
+          </template>
+          <lightning-input
+            class="field-description"
+            label="Descrição"
+            value={description}
+            required
+            onchange={handleDescription}
+          ></lightning-input>
+          <template lwc:if={isInstallments}>
+            <lightning-combobox
+              class="field-amount-kind"
+              label="Vou informar"
+              options={amountKindOptions}
+              value={amountKind}
+              onchange={handleAmountKind}
+            ></lightning-combobox>
+          </template>
+          <lightning-input
+            class="field-amount"
+            type="number"
+            step="0.01"
+            min="0.01"
+            label={amountLabel}
+            value={amount}
+            required
+            onchange={handleAmount}
+          ></lightning-input>
+          <lightning-input
+            class="field-due"
+            type="date"
+            label={dueDateLabel}
+            value={dueDate}
+            required
+            onchange={handleDueDate}
+          ></lightning-input>
+          <c-a-x-f_-l-w-c_category-picker
+            class="field-category"
+            label="Categoria"
+            options={options.categories}
+            value={categoryId}
+            onchange={handleCategory}
+            oncreatecategory={handleCreateCategory}
+          ></c-a-x-f_-l-w-c_category-picker>
+          <template lwc:if={hasInstallmentCount}>
+            <lightning-input
+              class="field-installment-count"
+              type="number"
+              step="1"
+              min="2"
+              max={maxCount}
+              label="Nº de parcelas"
+              value={installmentCount}
+              required
+              onchange={handleInstallmentCount}
+            ></lightning-input>
+            <template lwc:if={isConsortium}>
+              <lightning-input
+                class="field-administrator"
+                label="Administradora"
+                maxlength="120"
+                value={administrator}
+                onchange={handleAdministrator}
+              ></lightning-input>
+              <lightning-input
+                class="field-awarded-on"
+                type="date"
+                label="Contemplado em (opcional)"
+                value={awardedOn}
+                onchange={handleAwardedOn}
+              ></lightning-input>
+            </template>
+            <template lwc:if={isFinancing}>
+              <lightning-input
+                class="field-creditor"
+                label="Credor"
+                maxlength="120"
+                value={creditor}
+                onchange={handleCreditor}
+              ></lightning-input>
+              <lightning-input
+                class="field-rate"
+                type="number"
+                step="0.0001"
+                min="0"
+                max="100"
+                label="Taxa mensal (%)"
+                value={monthlyRate}
+                required
+                onchange={handleRate}
+              ></lightning-input>
+              <lightning-combobox
+                class="field-system"
+                label="Sistema"
+                options={systemOptions}
+                value={amortizationSystem}
+                onchange={handleSystem}
+              ></lightning-combobox>
+              <template lwc:if={firstInstallmentHint}>
+                <p
+                  class="first-installment slds-text-body_small slds-m-top_small"
+                  aria-live="polite"
+                >
+                  {firstInstallmentHint}
+                </p>
+              </template>
+            </template>
+            <p class="slds-text-body_small slds-m-top_small">
+              O Contrato é criado junto no fim. Você não escolhe contrato.
+            </p>
+          </template>
+          <template lwc:elseif={isRecurring}>
+            <lightning-combobox
+              class="field-variable"
+              label="O valor muda todo mês?"
+              options={variableOptions}
+              value={variable}
+              onchange={handleVariable}
+            ></lightning-combobox>
+            <lightning-input
+              class="field-due-day"
+              type="number"
+              min="1"
+              max="31"
+              label="Dia do vencimento (opcional)"
+              field-level-help="Se vazio, usa o dia do primeiro vencimento."
+              value={dueDay}
+              onchange={handleDueDay}
+            ></lightning-input>
+            <lightning-input
+              class="field-end-date"
+              type="date"
+              label="Data de fim (opcional)"
+              value={endDate}
+              onchange={handleEndDate}
+            ></lightning-input>
+            <p class="slds-text-body_small slds-m-top_small">
+              O Contrato é criado junto no fim. Você não escolhe contrato.
+            </p>
+          </template>
+          <template lwc:else>
+            <lightning-radio-group
+              class="field-status"
+              name="status"
+              label="Situação"
+              options={statusOptions}
+              value={status}
+              type="radio"
+              onchange={handleStatus}
+            ></lightning-radio-group>
+            <template lwc:if={isRealized}>
+              <lightning-input
+                class="field-payment-date"
+                type="date"
+                label="Data de pagamento"
+                value={paymentDate}
+                required
+                onchange={handlePaymentDate}
+              ></lightning-input>
+            </template>
+          </template>
+        </template>
+
+        <template lwc:elseif={isStep2}>
+          <lightning-combobox
+            class="field-method"
+            label="Como foi/será pago?"
+            options={methodOptions}
+            value={method}
+            onchange={handleMethod}
+          ></lightning-combobox>
+          <template lwc:if={needsSource}>
+            <lightning-combobox
+              class="field-source"
+              label={sourceLabel}
+              options={sourceOptions}
+              value={sourceId}
+              required
+              onchange={handleSource}
+            ></lightning-combobox>
+          </template>
+        </template>
+
+        <template lwc:else>
+          <p class="review-line slds-text-heading_small">{reviewLine}</p>
+          <template lwc:if={hasContract}>
+            <p class="review-summary slds-m-top_small">{contractSummary}</p>
+            <template lwc:if={hasContractDetails}>
+              <p class="review-details slds-m-top_x-small">{contractDetails}</p>
+            </template>
+            <ul class="review-preview slds-m-top_small">
+              <template for:each={previewRows} for:item="row">
+                <li key={row.key}>
+                  {row.dueDate} · {row.amount}
+                  <template lwc:if={row.interest}>
+                    · juros {row.interest}</template
+                  >
+                </li>
+              </template>
+              <template lwc:if={previewMore}>
+                <li class="review-more">… mais {previewMore}</li>
+              </template>
+            </ul>
+          </template>
+          <template lwc:else>
+            <p class="review-summary slds-m-top_small">{reviewSummary}</p>
+          </template>
+        </template>
+      </div>
+      <footer class="slds-modal__footer">
+        <lightning-button
+          class="cancel slds-m-right_x-small"
+          label="Cancelar"
+          disabled={isSaving}
+          onclick={handleCancel}
+        ></lightning-button>
+        <template lwc:if={isChoosingType}></template>
+        <template lwc:else>
+          <template lwc:if={isStep1}>
+            <lightning-button
+              class="change-type slds-m-right_x-small"
+              label="Trocar tipo"
+              onclick={handleChangeType}
+            ></lightning-button>
+          </template>
+          <template lwc:else>
+            <lightning-button
+              class="back slds-m-right_x-small"
+              label="Voltar"
+              disabled={isSaving}
+              onclick={handleBack}
+            ></lightning-button>
+          </template>
+          <template lwc:if={isLast}>
+            <lightning-button
+              class="conclude"
+              variant="brand"
+              label="Concluir"
+              disabled={isSaving}
+              onclick={handleConclude}
+            ></lightning-button>
+          </template>
+          <template lwc:else>
+            <lightning-button
+              class="next"
+              variant="brand"
+              label="Próximo"
+              disabled={nextDisabled}
+              onclick={handleNext}
+            ></lightning-button>
+          </template>
+        </template>
+      </footer>
+    </div>
+  </section>
+  <div class="slds-backdrop slds-backdrop_open"></div>
+</template>

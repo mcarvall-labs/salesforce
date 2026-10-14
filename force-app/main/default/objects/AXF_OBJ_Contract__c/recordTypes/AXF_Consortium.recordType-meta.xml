@@ -2,6 +2,7 @@
 <RecordType xmlns="http://soap.sforce.com/2006/04/metadata">
     <fullName>AXF_Consortium</fullName>
     <active>true</active>
+    <compactLayoutAssignment>AXF_CTR_CompactConsortium</compactLayoutAssignment>
     <description>Consórcio: parcela fixa, sem amortização.</description>
     <label>Consortium</label>
     <picklistValues>

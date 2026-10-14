@@ -145,8 +145,7 @@ private class AXF_CLS_CTRL_InvoiceTransactionsTest {
       LastName = 'NoAccessInvoice',
       LanguageLocaleKey = 'en_US',
       LocaleSidKey = 'en_US',
-      ProfileId = [SELECT Id FROM Profile WHERE Name = 'Standard User' LIMIT 1]
-      .Id,
+      ProfileId = ALT_CLS_ConnectionTestUser.standardProfileId(),
       TimeZoneSidKey = 'America/Sao_Paulo',
       Username = 'axfnoit' + System.currentTimeMillis() + '@example.com'
     );

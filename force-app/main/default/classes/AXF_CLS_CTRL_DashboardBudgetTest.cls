@@ -9,8 +9,7 @@ private class AXF_CLS_CTRL_DashboardBudgetTest {
 
   @TestSetup
   static void setup() {
-    Id profileId = [SELECT Id FROM Profile WHERE Name = 'Standard User' LIMIT 1]
-    .Id;
+    Id profileId = ALT_CLS_ConnectionTestUser.standardProfileId();
     User restricted = new User(
       Alias = 'AxfBdg',
       Email = 'AxfBdg@example.com',
