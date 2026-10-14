@@ -256,12 +256,12 @@ public with sharing class ALT_CLS_EntryCandidates {
       return null;
     }
     // Unlike the batch suggestions, the user picks here, so the 5 % tolerance also applies to the
-    // same currency; across currencies both sides are compared in BRL.
+    // same currency; across currencies both sides are compared in BRL. The Entry is the reference.
     Decimal gap;
     Decimal reference;
     if (entry.CurrencyIsoCode == currencyCode) {
       gap = (entry.AXF_ENT_CUR_Amount__c.abs() - amount.abs()).abs();
-      reference = amount.abs();
+      reference = entry.AXF_ENT_CUR_Amount__c.abs();
     } else {
       Decimal transactionBRL = amountBRL != null
         ? amountBRL.abs()
@@ -275,7 +275,7 @@ public with sharing class ALT_CLS_EntryCandidates {
         return null;
       }
       gap = (entryBRL - transactionBRL).abs();
-      reference = transactionBRL;
+      reference = entryBRL;
     }
     if (
       reference == 0 ||

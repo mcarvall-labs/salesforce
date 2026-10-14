@@ -192,6 +192,54 @@ private class ALT_CLS_EntryCandidatesTest {
   }
 
   @IsTest
+  static void incomeEntryOnlyGetsCredits() {
+    System.runAs(new User(Id = UserInfo.getUserId())) {
+      base();
+      AXF_OBJ_Entry__c income = new AXF_OBJ_Entry__c(
+        Name = 'Receita',
+        AXF_ENT_MD_Holder__c = holder.Id,
+        AXF_ENT_CUR_Amount__c = 100,
+        AXF_ENT_DAT_DueDate__c = DUE,
+        AXF_ENT_PKL_Type__c = 'Income',
+        AXF_ENT_PKL_Status__c = 'Pending',
+        AXF_ENT_LKP_BankAccount__c = account.Id
+      );
+      insert income;
+      AXF_OBJ_BankAccountTransaction__c credit = bank(account.Id, 100, DUE);
+      bank(account.Id, -100, DUE);
+      List<ALT_CLS_EntryCandidates.Candidate> found = new ALT_CLS_EntryCandidates()
+        .candidates(income.Id);
+      System.assertEquals(1, found.size());
+      System.assertEquals(credit.Id, found[0].id);
+    }
+  }
+
+  @IsTest
+  static void invoiceEntryGetsBankTransactionsNotCardPurchases() {
+    System.runAs(new User(Id = UserInfo.getUserId())) {
+      base();
+      AXF_OBJ_CreditCardInvoice__c invoice = new AXF_OBJ_CreditCardInvoice__c(
+        AXF_CCI_MD_CreditCard__c = card.Id,
+        AXF_CCI_TXT_Period__c = '2026-10',
+        AXF_CCI_DAT_DueDate__c = DUE,
+        AXF_CCI_CUR_TotalAmount__c = 80,
+        AXF_CCI_PKL_Status__c = 'Open'
+      );
+      insert invoice;
+      AXF_OBJ_Entry__c entry = entry(80, 'BRL', null, card.Id, 'Pending');
+      entry.AXF_ENT_LKP_Invoice__c = invoice.Id;
+      update entry;
+      AXF_OBJ_BankAccountTransaction__c debit = bank(account.Id, -80, DUE);
+      purchase(-80, DUE);
+      List<ALT_CLS_EntryCandidates.Candidate> found = new ALT_CLS_EntryCandidates()
+        .candidates(entry.Id);
+      System.assertEquals(1, found.size());
+      System.assertEquals(debit.Id, found[0].id);
+      System.assertEquals('account', found[0].source);
+    }
+  }
+
+  @IsTest
   static void skipsTransactionsAlreadyLinkedToAnotherEntry() {
     System.runAs(new User(Id = UserInfo.getUserId())) {
       base();

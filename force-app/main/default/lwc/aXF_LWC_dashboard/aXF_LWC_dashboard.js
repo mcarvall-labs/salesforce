@@ -343,11 +343,13 @@ export default class AXF_LWC_dashboard extends NavigationMixin(
 
   handleHolderChange(event) {
     this.holderId = event.detail.value;
+    this.statusChip = "all";
     this.loadSummary();
   }
 
   handleMonthChange(event) {
     this.month = event.detail.value;
+    this.statusChip = "all";
     this.loadSummary();
   }
 
@@ -364,6 +366,7 @@ export default class AXF_LWC_dashboard extends NavigationMixin(
     const month = Number(this.month.slice(5, 7)) - 1;
     const date = new Date(year, month + delta, 1);
     this.month = monthKey(date.getFullYear(), date.getMonth());
+    this.statusChip = "all";
     this.loadSummary();
   }
 
@@ -470,6 +473,7 @@ export default class AXF_LWC_dashboard extends NavigationMixin(
 
   handleClearFilter() {
     this.listFilter = undefined;
+    this.statusChip = "all";
     this.loadEntries();
   }
 
@@ -634,7 +638,7 @@ export default class AXF_LWC_dashboard extends NavigationMixin(
   }
 
   get noEntriesMessage() {
-    return !this.hasEntries && !this.entriesError
+    return this.entryRows.length === 0 && !this.entriesError
       ? "Nenhum lançamento neste filtro."
       : undefined;
   }

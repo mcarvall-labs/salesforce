@@ -57,12 +57,24 @@ tfoot td{font-weight:600;background:#fafaf9}
 .head h3::before,.side h4 .t::before,.metas h4 .t::before{content:"";display:inline-block;width:4px;height:16px;background:var(--blue);border-radius:2px;margin-right:8px;vertical-align:-2px}
 .side h4,.metas h4{padding:12px 14px!important}
 .side h4 a,.metas h4 a{font-size:12px!important;font-weight:400!important}
+.top{display:flex;gap:10px;align-items:flex-end;margin-bottom:14px;flex-wrap:wrap}
+.top label{display:block;font-size:12px;color:var(--mut);margin-bottom:2px}
+.top select,.top button{font:inherit;padding:6px 12px;border:1px solid #c9c7c5;border-radius:4px;background:#fff}
+.top .sp{margin-left:auto}.top button{color:var(--blue);cursor:pointer}
+.top button.pri{background:var(--blue);border-color:var(--blue);color:#fff}
 </style>
 </head>
 <body>
 <div class="nav"><b>Axon Finance</b><span class="on">Home</span><span>Lançamentos</span><span>Contas e cartões</span><span>Contratos</span></div>
 <div class="page">
 <div class="note">PROTÓTIPO para aprovação — componente <code>aXF_LWC_dashboard</code>, bloco "Lançamentos do mês". Dados fictícios. Colunas à direita (A conciliar, Contas e cartões) e Metas (agora na lateral, abaixo de Contas e cartões) seguem como hoje. Hoje: 14/10/2026.</div>
+
+<div class="top">
+<div><label>Titular</label><select><option>Todos</option><option>Michel Lopes</option><option>Gisele</option><option>Empresa X</option></select></div>
+<div><label>Mês</label><button>◀</button> <select><option>Outubro/2026</option></select> <button>▶</button></div>
+<span class="sp"></span>
+<button class="pri">+ Despesa</button><button class="pri">+ Receita</button>
+</div>
 
 <div class="kpis">
 <div class="kpi"><small>Pago / recebido</small><div class="in">R$ 6.120,00</div><em>4 lançamentos</em></div>

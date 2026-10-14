@@ -1181,6 +1181,22 @@ describe("c-a-x-f-l-w-c-dashboard", () => {
       ].map((button) => button.label);
       expect(labels).toEqual(["Pagar", "Receber"]);
     });
+
+    it("shows the empty message and resets the chip when the month changes", async () => {
+      getEntries.mockResolvedValue({
+        truncated: false,
+        rows: scenarioRows().filter((row) => row.status === "Realized")
+      });
+      const element = await mount();
+      const chips = () => [...element.shadowRoot.querySelectorAll(".chip")];
+      chips()[3].click();
+      await flushPromises();
+      expect(element.shadowRoot.querySelectorAll(".entry-row")).toHaveLength(0);
+      expect(text(element, ".entries-empty")).toContain("Nenhum lançamento");
+      element.shadowRoot.querySelector(".next-month").click();
+      await flushPromises();
+      expect(chips()[0].getAttribute("aria-pressed")).toBe("true");
+    });
   });
 
   describe("Pagar/Receber popup with Pluggy reconciliation", () => {
@@ -1380,6 +1396,20 @@ describe("c-a-x-f-l-w-c-dashboard", () => {
       await flushPromises();
       expect(reconcile).toHaveBeenCalledTimes(1);
       resolveReconcile([{ entryId: "e1", success: true }]);
+      await flushPromises();
+      expect(element.shadowRoot.querySelector(".realize-modal")).toBeNull();
+    });
+
+    it("ignores a late candidates response after the popup was closed", async () => {
+      let resolveCandidates;
+      getEntryCandidates.mockImplementationOnce(
+        () => new Promise((resolve) => (resolveCandidates = resolve))
+      );
+      const element = await mount();
+      await open(element);
+      element.shadowRoot.querySelector(".realize-cancel").click();
+      await flushPromises();
+      resolveCandidates(candidates);
       await flushPromises();
       expect(element.shadowRoot.querySelector(".realize-modal")).toBeNull();
     });
