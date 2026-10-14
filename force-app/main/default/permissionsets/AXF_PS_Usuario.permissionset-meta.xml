@@ -251,6 +251,11 @@
     </fieldPermissions>
     <fieldPermissions>
         <editable>true</editable>
+        <field>AXF_OBJ_Entry__c.AXF_ENT_CUR_PlannedAmount__c</field>
+        <readable>true</readable>
+    </fieldPermissions>
+    <fieldPermissions>
+        <editable>true</editable>
         <field>AXF_OBJ_Entry__c.AXF_ENT_NUM_RealizedAmountBRL__c</field>
         <readable>true</readable>
     </fieldPermissions>
