@@ -933,21 +933,29 @@ private class ALT_CLS_ExpenseWizardTest {
 
   // The charge fields reach the deploy user through a permission set group
   // that is recalculated asynchronously, so a deploy that creates the fields
-  // and their FLS together would run these tests before the access exists.
-  // A direct assignment takes effect immediately.
+  // and their FLS together runs these tests before the access exists. A direct
+  // assignment takes effect immediately. Called from financing(), so every
+  // financing test gets it. The runAs wrapper avoids a mixed-DML error when
+  // the test has already inserted data.
   private static void grantFinancingFieldAccess() {
     Id userId = UserInfo.getUserId();
-    Id permissionSetId = [
+    List<PermissionSet> permissionSets = [
       SELECT Id
       FROM PermissionSet
       WHERE Name = 'AXF_PS_Usuario'
-    ]
-    .Id;
+      LIMIT 1
+    ];
+    System.assert(!permissionSets.isEmpty(), 'AXF_PS_Usuario is not deployed');
+    Id permissionSetId = permissionSets[0].Id;
+    // Rows derived from a group do not count: they may still be recalculating.
     if (
       ![
           SELECT Id
           FROM PermissionSetAssignment
-          WHERE AssigneeId = :userId AND PermissionSetId = :permissionSetId
+          WHERE
+            AssigneeId = :userId
+            AND PermissionSetId = :permissionSetId
+            AND PermissionSetGroupId = NULL
         ]
         .isEmpty()
     ) {
@@ -962,6 +970,7 @@ private class ALT_CLS_ExpenseWizardTest {
   }
 
   private static ALT_CLS_ExpenseWizard.FinancingRequest financing(Id holderId) {
+    grantFinancingFieldAccess();
     ALT_CLS_ExpenseWizard.FinancingRequest financing = new ALT_CLS_ExpenseWizard.FinancingRequest();
     financing.base = request(holderId);
     financing.base.description = 'Financiamento do apartamento';
@@ -988,7 +997,6 @@ private class ALT_CLS_ExpenseWizardTest {
 
   @IsTest
   static void aSacFinancingMatchesTheReferenceTable() {
-    grantFinancingFieldAccess();
     Account h = holder('Titular');
     ALT_CLS_ExpenseWizard.FinancingRequest financing = financing(h.Id);
     financing.base.accountId = account(h.Id).Id;
@@ -1063,7 +1071,6 @@ private class ALT_CLS_ExpenseWizardTest {
 
   @IsTest
   static void aPriceFinancingHasAConstantInstallmentAndTheInterestAddsUp() {
-    grantFinancingFieldAccess();
     ALT_CLS_ExpenseWizard.FinancingRequest financing = financing(
       holder('Titular').Id
     );
@@ -1102,7 +1109,6 @@ private class ALT_CLS_ExpenseWizardTest {
 
   @IsTest
   static void thePreviewAndTheSavedScheduleAgreeForAnUnroundRateAndAmount() {
-    grantFinancingFieldAccess();
     for (String kind : new List<String>{ 'PRICE', 'SAC' }) {
       Account h = holder('Titular ' + kind);
       ALT_CLS_ExpenseWizard.FinancingRequest financing = financing(h.Id);
@@ -1157,7 +1163,6 @@ private class ALT_CLS_ExpenseWizardTest {
 
   @IsTest
   static void thePriceTableMatchesTheReferenceInstallmentByInstallment() {
-    grantFinancingFieldAccess();
     ALT_CLS_ExpenseWizard.FinancingRequest financing = financing(
       holder('Titular').Id
     );
@@ -1198,7 +1203,6 @@ private class ALT_CLS_ExpenseWizardTest {
 
   @IsTest
   static void theLimitsOfTheFinancingCountAreAccepted() {
-    grantFinancingFieldAccess();
     for (Integer count : new List<Integer>{ 2, 480 }) {
       ALT_CLS_ExpenseWizard.FinancingRequest financing = financing(
         holder('Titular ' + count).Id
@@ -1223,7 +1227,6 @@ private class ALT_CLS_ExpenseWizardTest {
 
   @IsTest
   static void aFinancingWithoutInterestSplitsThePrincipal() {
-    grantFinancingFieldAccess();
     ALT_CLS_ExpenseWizard.FinancingRequest financing = financing(
       holder('Titular').Id
     );
@@ -1651,7 +1654,6 @@ private class ALT_CLS_ExpenseWizardTest {
 
   @IsTest
   static void chargesAreSavedOnTheContractAndAddedToEveryInstallment() {
-    grantFinancingFieldAccess();
     Account h = holder('Titular');
     ALT_CLS_ExpenseWizard.FinancingRequest financing = financing(h.Id);
     financing.insurance = 10;
@@ -1696,7 +1698,6 @@ private class ALT_CLS_ExpenseWizardTest {
 
   @IsTest
   static void upfrontCostsAreFinancedWithTheAmount() {
-    grantFinancingFieldAccess();
     Account h = holder('Titular');
     ALT_CLS_ExpenseWizard.FinancingRequest financing = financing(h.Id);
     financing.base.amount = 1000;
@@ -1726,7 +1727,6 @@ private class ALT_CLS_ExpenseWizardTest {
 
   @IsTest
   static void anInformedInstallmentGivesTheImpliedRateAndTheOtherInstallments() {
-    grantFinancingFieldAccess();
     Account h = holder('Titular');
     ALT_CLS_ExpenseWizard.FinancingRequest financing = financing(h.Id);
     financing.base.amount = 1000;
