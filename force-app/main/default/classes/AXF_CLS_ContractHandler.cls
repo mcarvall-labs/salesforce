@@ -20,7 +20,8 @@ public with sharing class AXF_CLS_ContractHandler {
   };
 
   // Editing an active recurring, installment, consortium or financing contract
-  // refreshes its Pending entries; Realized and past ones are never touched.
+  // refreshes its Pending entries due today or later; existing Realized and
+  // past entries are never changed (missing ones may still be added).
   public static void handleAfterUpdate(
     List<AXF_OBJ_Contract__c> contracts,
     Map<Id, AXF_OBJ_Contract__c> oldContracts
