@@ -920,13 +920,13 @@ describe("c-a-x-f-l-w-c-dashboard", () => {
     const element = await mount();
     const root = element.shadowRoot;
     const kpis = root.querySelector(".kpis");
-    const budget = root.querySelector(".budget");
+    const goals = root.querySelector(".budget");
     const tabs = root.querySelector(".home-tabs");
     const panel = root.querySelector(".tab-panel");
     const follows = (first, second) =>
       first.compareDocumentPosition(second) & Node.DOCUMENT_POSITION_FOLLOWING;
-    expect(follows(kpis, budget)).toBeTruthy();
-    expect(follows(budget, tabs)).toBeTruthy();
+    expect(follows(kpis, goals)).toBeTruthy();
+    expect(follows(goals, tabs)).toBeTruthy();
     expect(follows(tabs, panel)).toBeTruthy();
     expect(panel.querySelector(".entries")).not.toBeNull();
     expect(panel.querySelector(".sources-card")).toBeNull();

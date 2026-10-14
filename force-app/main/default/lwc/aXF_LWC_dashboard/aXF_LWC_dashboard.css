@@ -327,8 +327,12 @@
   display: flex;
   flex-wrap: wrap;
   gap: 0.25rem 1rem;
-  margin-top: 0.75rem;
+  margin: 0.75rem -0.75rem -0.75rem;
+  padding: 0.625rem 0.75rem;
   font-size: 0.75rem;
+  background: #eef4fb;
+  border-top: 1px solid #c5d9ee;
+  border-radius: 0 0 0.25rem 0.25rem;
 }
 
 .legend .pill {
