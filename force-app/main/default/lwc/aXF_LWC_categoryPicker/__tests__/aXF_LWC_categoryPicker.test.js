@@ -133,6 +133,28 @@ describe("c-a-x-f-l-w-c-category-picker", () => {
     });
   });
 
+  it("sends no parent when the chosen value is not a listed category", async () => {
+    const element = await mount();
+    const created = jest.fn();
+    element.addEventListener("createcategory", created);
+    await open(element);
+    await search(element, "Pet");
+    $(element, ".option_new").dispatchEvent(
+      new CustomEvent("mousedown", { cancelable: true })
+    );
+    await flushPromises();
+    $(element, ".new-parent").dispatchEvent(
+      new CustomEvent("change", { detail: { value: "Nenhuma (nível raiz)" } })
+    );
+    await flushPromises();
+    $(element, ".confirm-create").dispatchEvent(new CustomEvent("click"));
+    await flushPromises();
+    expect(created.mock.calls[0][0].detail).toEqual({
+      name: "Pet",
+      parentId: null
+    });
+  });
+
   it("clears the selection and says when nothing matches", async () => {
     const element = await mount({ value: "e" });
     const changed = jest.fn();
