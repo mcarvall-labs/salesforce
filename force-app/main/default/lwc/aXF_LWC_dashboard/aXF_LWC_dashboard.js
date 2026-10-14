@@ -135,7 +135,6 @@ export default class AXF_LWC_dashboard extends NavigationMixin(
       });
       if (request === this.entriesRequestId) {
         this.entries = result.rows || [];
-        this.entriesLimit = PAGE_ENTRIES;
         this.entriesTruncated = !!result.truncated;
       }
     } catch (error) {
@@ -164,7 +163,6 @@ export default class AXF_LWC_dashboard extends NavigationMixin(
     }
     if (pending.status === "fulfilled") {
       this.pending = pending.value;
-      this.pendingLimit = PAGE_PENDING;
     } else {
       this.pending = undefined;
       this.pendingError = this.messageOf(
@@ -347,12 +345,16 @@ export default class AXF_LWC_dashboard extends NavigationMixin(
   handleHolderChange(event) {
     this.holderId = event.detail.value;
     this.statusChip = "all";
+    this.entriesLimit = PAGE_ENTRIES;
+    this.pendingLimit = PAGE_PENDING;
     this.loadSummary();
   }
 
   handleMonthChange(event) {
     this.month = event.detail.value;
     this.statusChip = "all";
+    this.entriesLimit = PAGE_ENTRIES;
+    this.pendingLimit = PAGE_PENDING;
     this.loadSummary();
   }
 
@@ -370,6 +372,8 @@ export default class AXF_LWC_dashboard extends NavigationMixin(
     const date = new Date(year, month + delta, 1);
     this.month = monthKey(date.getFullYear(), date.getMonth());
     this.statusChip = "all";
+    this.entriesLimit = PAGE_ENTRIES;
+    this.pendingLimit = PAGE_PENDING;
     this.loadSummary();
   }
 
@@ -581,13 +585,20 @@ export default class AXF_LWC_dashboard extends NavigationMixin(
 
   // Infinite loading: the list scrolls inside the card and shows the next page near the bottom.
   handleEntriesScroll(event) {
-    if (this.nearBottom(event.currentTarget)) {
+    if (
+      this.entriesLimit < this.entryRows.length &&
+      this.nearBottom(event.currentTarget)
+    ) {
       this.entriesLimit += PAGE_ENTRIES;
     }
   }
 
   handlePendingScroll(event) {
-    if (this.nearBottom(event.currentTarget)) {
+    if (
+      this.pending &&
+      this.pendingLimit < this.pending.items.length &&
+      this.nearBottom(event.currentTarget)
+    ) {
       this.pendingLimit += PAGE_PENDING;
     }
   }

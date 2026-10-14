@@ -452,6 +452,44 @@ describe("c-a-x-f-l-w-c-dashboard", () => {
     expect(noGoal.querySelector(".budget-bar")).not.toBeNull();
   });
 
+  it("sizes a category without goal against its planned and never flags it", async () => {
+    getBudget.mockResolvedValue({
+      ...budget,
+      rows: [
+        ...budget.rows,
+        {
+          categoryId: "c9",
+          name: "Sem previsão",
+          realized: 0,
+          planned: 0,
+          goal: null
+        },
+        {
+          categoryId: "c8",
+          name: "Metade",
+          realized: 5,
+          planned: 10,
+          goal: null
+        }
+      ]
+    });
+    const element = await mount();
+    await openTab(element, "budget");
+    const rows = [...element.shadowRoot.querySelectorAll(".budget-row")];
+    const of = (name) => rows.find((item) => item.textContent.includes(name));
+    const half = of("Metade");
+    expect(
+      half.querySelector(".realized-fill").getAttribute("style")
+    ).toContain("50%");
+    expect(half.querySelector(".planned-fill").getAttribute("style")).toContain(
+      "100%"
+    );
+    expect(
+      half.querySelector(".budget-bar.warning, .budget-bar.over")
+    ).toBeNull();
+    expect(of("Sem previsão").querySelector(".budget-bar")).toBeNull();
+  });
+
   it("marks the planned above the goal in orange and the realized above it in red", async () => {
     const element = await mount();
     await openTab(element, "budget");
@@ -682,7 +720,7 @@ describe("c-a-x-f-l-w-c-dashboard", () => {
     expect(element.shadowRoot.querySelectorAll(".entry-row")).toHaveLength(3);
   });
 
-  it("shows the count, the suggestions and the three most recent open transactions", async () => {
+  it("shows the count, the suggestions and the open transactions of the month", async () => {
     const element = await mount();
     await openTab(element, "pending");
     expect(text(element, ".pending-title")).toContain("A conciliar (12)");
@@ -1167,6 +1205,43 @@ describe("c-a-x-f-l-w-c-dashboard", () => {
       chips()[0].click();
       await flushPromises();
       expect(element.shadowRoot.querySelectorAll(".entry-row")).toHaveLength(9);
+    });
+
+    it("goes back to the first page when the chip or the month changes", async () => {
+      const many = Array.from({ length: 45 }, (_, index) =>
+        row(`r${index}`, { dueDate: iso(3) })
+      );
+      getEntries.mockResolvedValue({ truncated: false, rows: many });
+      const element = await mount();
+      const count = () =>
+        element.shadowRoot.querySelectorAll(".entries-list .entry-row").length;
+      const scrollToEnd = async () => {
+        const list = element.shadowRoot.querySelector(".entries-list");
+        Object.defineProperty(list, "scrollHeight", {
+          value: 1000,
+          configurable: true
+        });
+        Object.defineProperty(list, "clientHeight", {
+          value: 400,
+          configurable: true
+        });
+        list.scrollTop = 600;
+        list.dispatchEvent(new CustomEvent("scroll"));
+        await flushPromises();
+      };
+      await scrollToEnd();
+      expect(count()).toBe(40);
+      await scrollToEnd();
+      expect(count()).toBe(45);
+      await scrollToEnd();
+      expect(count()).toBe(45);
+      element.shadowRoot.querySelector(".next-month").click();
+      await flushPromises();
+      expect(count()).toBe(20);
+      await scrollToEnd();
+      element.shadowRoot.querySelector('[data-chip="soon"]').click();
+      await flushPromises();
+      expect(count()).toBe(20);
     });
 
     it("offers Pagar on expenses and Receber on income", async () => {
