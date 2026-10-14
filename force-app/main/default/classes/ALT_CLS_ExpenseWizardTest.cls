@@ -1467,7 +1467,7 @@ private class ALT_CLS_ExpenseWizardTest {
   }
 
   @IsTest
-  static void optionsCarryTheCategoryParentAndNewCategoriesAreExpenses() {
+  static void optionsCarryTheCategoryParentAndNewCategoriesAreExpensesByDefault() {
     ALT_CLS_ExpenseWizard.Option parent = AXF_CLS_CTRL_ExpenseWizard.createCategory(
       '  Moradia ',
       null,
@@ -1938,5 +1938,44 @@ private class ALT_CLS_ExpenseWizardTest {
     invalid.entryType = 'Transfer';
     assertRejected(invalid, 'Tipo de lançamento inválido.');
     System.assertEquals(0, [SELECT COUNT() FROM AXF_OBJ_Entry__c]);
+  }
+
+  @IsTest
+  static void incomeCannotUseACardOnTheServer() {
+    Account h = holder('Titular');
+    ALT_CLS_ExpenseWizard.Request request = request(h.Id);
+    request.entryType = 'Income';
+    request.cardId = card(h.Id).Id;
+    assertRejected(request, 'Receita não usa cartão de crédito.');
+    System.assertEquals(0, [SELECT COUNT() FROM AXF_OBJ_Entry__c]);
+  }
+
+  @IsTest
+  static void incomeIsRefusedByTheContractFlows() {
+    Account h = holder('Titular');
+    ALT_CLS_ExpenseWizard.Request base = request(h.Id);
+    base.entryType = 'Income';
+    String expected = 'Receita só pode ser avulsa: recorrente, parcelada, consórcio e financiamento são despesas.';
+
+    ALT_CLS_ExpenseWizard.RecurringRequest recurring = new ALT_CLS_ExpenseWizard.RecurringRequest();
+    recurring.base = base;
+    try {
+      AXF_CLS_CTRL_ExpenseWizard.createRecurring(JSON.serialize(recurring));
+      System.assert(false, 'expected AuraHandledException');
+    } catch (AuraHandledException e) {
+      System.assertEquals(expected, e.getMessage());
+    }
+    ALT_CLS_ExpenseWizard.InstallmentRequest installment = new ALT_CLS_ExpenseWizard.InstallmentRequest();
+    installment.base = base;
+    installment.count = 3;
+    installment.amountIsTotal = true;
+    try {
+      AXF_CLS_CTRL_ExpenseWizard.createInstallment(JSON.serialize(installment));
+      System.assert(false, 'expected AuraHandledException');
+    } catch (AuraHandledException e) {
+      System.assertEquals(expected, e.getMessage());
+    }
+    System.assertEquals(0, [SELECT COUNT() FROM AXF_OBJ_Entry__c]);
+    System.assertEquals(0, [SELECT COUNT() FROM AXF_OBJ_Contract__c]);
   }
 }

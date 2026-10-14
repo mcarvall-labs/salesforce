@@ -259,6 +259,9 @@ public with sharing class ALT_CLS_ExpenseWizard {
         'Escolha a conta ou o cartão, não os dois.'
       );
     }
+    if (entryTypeOf(request.entryType) == 'Income' && request.cardId != null) {
+      throw new ExpenseWizardException('Receita não usa cartão de crédito.');
+    }
     assertOwnership(request);
     AXF_OBJ_Entry__c entry = new AXF_OBJ_Entry__c(
       Name = request.description.trim().left(80),
@@ -380,6 +383,7 @@ public with sharing class ALT_CLS_ExpenseWizard {
         'Escolha a conta ou o cartão, não os dois.'
       );
     }
+    assertExpenseOnly(base);
     assertOwnership(base);
   }
 
@@ -487,6 +491,7 @@ public with sharing class ALT_CLS_ExpenseWizard {
         'Escolha a conta ou o cartão, não os dois.'
       );
     }
+    assertExpenseOnly(base);
     assertOwnership(base);
     // Both modes round the installment the same way; the total of "parcela" mode is that
     // installment times the count, so the entries always add up to what the user saw.
@@ -735,6 +740,7 @@ public with sharing class ALT_CLS_ExpenseWizard {
         'Escolha a conta ou o cartão, não os dois.'
       );
     }
+    assertExpenseOnly(base);
     assertOwnership(base);
     Decimal principal = financed(base);
     if (principal <= 0) {
@@ -847,6 +853,7 @@ public with sharing class ALT_CLS_ExpenseWizard {
         'Escolha a conta ou o cartão, não os dois.'
       );
     }
+    assertExpenseOnly(base);
     assertOwnership(base);
     Decimal installment = base.amount.setScale(2, RoundingMode.HALF_UP);
     if (installment <= 0) {
@@ -871,6 +878,16 @@ public with sharing class ALT_CLS_ExpenseWizard {
       items.add(preview);
     }
     return items;
+  }
+
+  // Income is only a standalone entry: contracts (recurring, installments, consortium,
+  // financing) are always expenses, whatever the request says.
+  private static void assertExpenseOnly(Request request) {
+    if (entryTypeOf(request.entryType) != 'Expense') {
+      throw new ExpenseWizardException(
+        'Receita só pode ser avulsa: recorrente, parcelada, consórcio e financiamento são despesas.'
+      );
+    }
   }
 
   // The UI only offers the holder's own records; a crafted request must not get around it.

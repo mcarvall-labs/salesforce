@@ -1,5 +1,5 @@
 public with sharing class AXF_CLS_CTRL_ExpenseWizard {
-  // Expense categories and the accounts and cards of the holder.
+  // Categories of the entry type (Expense by default) and the accounts and cards of the holder.
   @AuraEnabled
   public static ALT_CLS_ExpenseWizard.Options getOptions(
     Id holderId,
