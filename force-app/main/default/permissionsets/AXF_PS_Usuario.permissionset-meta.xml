@@ -348,31 +348,6 @@
     </fieldPermissions>
     <fieldPermissions>
         <editable>true</editable>
-        <field>AXF_OBJ_Contract__c.AXF_CTR_CUR_AdminFee__c</field>
-        <readable>true</readable>
-    </fieldPermissions>
-    <fieldPermissions>
-        <editable>true</editable>
-        <field>AXF_OBJ_Contract__c.AXF_CTR_CUR_InformedInstallment__c</field>
-        <readable>true</readable>
-    </fieldPermissions>
-    <fieldPermissions>
-        <editable>true</editable>
-        <field>AXF_OBJ_Contract__c.AXF_CTR_CUR_Insurance__c</field>
-        <readable>true</readable>
-    </fieldPermissions>
-    <fieldPermissions>
-        <editable>true</editable>
-        <field>AXF_OBJ_Contract__c.AXF_CTR_CUR_OtherCharges__c</field>
-        <readable>true</readable>
-    </fieldPermissions>
-    <fieldPermissions>
-        <editable>true</editable>
-        <field>AXF_OBJ_Contract__c.AXF_CTR_CUR_UpfrontCosts__c</field>
-        <readable>true</readable>
-    </fieldPermissions>
-    <fieldPermissions>
-        <editable>true</editable>
         <field>AXF_OBJ_Contract__c.AXF_CTR_PCT_MonthlyRate__c</field>
         <readable>true</readable>
     </fieldPermissions>
