@@ -358,7 +358,9 @@ export default class AXF_LWC_reconciliation extends NavigationMixin(
     return this.run(
       () =>
         reconcile({
-          pairs: [this.pairOf(this.selectedEntryId, this.selectedTransaction)]
+          pairsJson: JSON.stringify([
+            this.pairOf(this.selectedEntryId, this.selectedTransaction)
+          ])
         }),
       "Conciliado."
     );
@@ -368,11 +370,13 @@ export default class AXF_LWC_reconciliation extends NavigationMixin(
     return this.run(
       () =>
         reconcile({
-          pairs: this.visibleSuggestions.map((suggestion) => ({
-            entryId: suggestion.entryId,
-            bankTransactionId: suggestion.bankTransactionId,
-            cardTransactionId: suggestion.cardTransactionId
-          }))
+          pairsJson: JSON.stringify(
+            this.visibleSuggestions.map((suggestion) => ({
+              entryId: suggestion.entryId,
+              bankTransactionId: suggestion.bankTransactionId,
+              cardTransactionId: suggestion.cardTransactionId
+            }))
+          )
         }),
       "Sugestões conciliadas."
     );

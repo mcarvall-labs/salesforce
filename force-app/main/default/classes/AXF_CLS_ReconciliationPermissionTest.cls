@@ -159,7 +159,7 @@ private class AXF_CLS_ReconciliationPermissionTest {
       AXF_CLS_CTRL_Reconciliation.PairInput pair = new AXF_CLS_CTRL_Reconciliation.PairInput();
       pair.entryId = data.entry.Id;
       pair.bankTransactionId = data.bank.Id;
-      AXF_CLS_CTRL_Reconciliation.OutcomeView reconciled = AXF_CLS_CTRL_Reconciliation.reconcile(
+      AXF_CLS_CTRL_Reconciliation.OutcomeView reconciled = AXF_CLS_CTRL_Reconciliation.reconcilePairs(
         new List<AXF_CLS_CTRL_Reconciliation.PairInput>{ pair }
       )[0];
       System.assertEquals(true, reconciled.success, '' + reconciled.message);
