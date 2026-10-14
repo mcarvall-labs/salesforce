@@ -333,7 +333,8 @@ public with sharing class ALT_CLS_Reconciliation {
       // Several installments of one contract in the same batch: the latest one sets the amount.
       if (
         byEntry.get(repricing.entryId).success &&
-        (kept == null || kept.installment < repricing.installment)
+        (kept == null ||
+        kept.installment < repricing.installment)
       ) {
         byContract.put(repricing.contractId, repricing);
       }

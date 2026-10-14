@@ -973,7 +973,11 @@ private class ALT_CLS_ReconciliationTest {
   }
 
   private static Decimal entryAmount(Id entryId) {
-    return [SELECT AXF_ENT_CUR_Amount__c FROM AXF_OBJ_Entry__c WHERE Id = :entryId]
+    return [
+      SELECT AXF_ENT_CUR_Amount__c
+      FROM AXF_OBJ_Entry__c
+      WHERE Id = :entryId
+    ]
     .AXF_ENT_CUR_Amount__c;
   }
 
@@ -1071,8 +1075,14 @@ private class ALT_CLS_ReconciliationTest {
     System.runAs(new User(Id = UserInfo.getUserId())) {
       base();
       List<AXF_OBJ_Entry__c> items = contractInstallments('AXF_Installment', 3);
-      AXF_OBJ_BankAccountTransaction__c first = bankTransaction('Pending', -110);
-      AXF_OBJ_BankAccountTransaction__c second = bankTransaction('Pending', -120);
+      AXF_OBJ_BankAccountTransaction__c first = bankTransaction(
+        'Pending',
+        -110
+      );
+      AXF_OBJ_BankAccountTransaction__c second = bankTransaction(
+        'Pending',
+        -120
+      );
       List<ALT_CLS_Reconciliation.Outcome> outcomes = new ALT_CLS_Reconciliation()
         .reconcile(
           new List<ALT_CLS_Reconciliation.Pair>{
