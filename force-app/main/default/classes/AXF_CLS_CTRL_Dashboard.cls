@@ -68,6 +68,18 @@ public with sharing class AXF_CLS_CTRL_Dashboard {
     }
   }
 
+  // Bank/card transactions that can pay the Pending entry (popup Pagar/Receber).
+  @AuraEnabled
+  public static List<ALT_CLS_EntryCandidates.Candidate> getEntryCandidates(
+    Id entryId
+  ) {
+    try {
+      return new ALT_CLS_EntryCandidates().candidates(entryId);
+    } catch (Exception e) {
+      throw aura(e);
+    }
+  }
+
   // setMessage is what the LWC reads; the constructor message alone arrives as a generic error.
   private static AuraHandledException aura(Exception e) {
     AuraHandledException result = new AuraHandledException(e.getMessage());

@@ -6,6 +6,8 @@ import getBudget from "@salesforce/apex/AXF_CLS_CTRL_Dashboard.getBudget";
 import getEntries from "@salesforce/apex/AXF_CLS_CTRL_Dashboard.getEntries";
 import getPending from "@salesforce/apex/AXF_CLS_CTRL_Dashboard.getPending";
 import getSources from "@salesforce/apex/AXF_CLS_CTRL_Dashboard.getSources";
+import getEntryCandidates from "@salesforce/apex/AXF_CLS_CTRL_Dashboard.getEntryCandidates";
+import reconcile from "@salesforce/apex/AXF_CLS_CTRL_Reconciliation.reconcile";
 import { updateRecord } from "lightning/uiRecordApi";
 
 jest.mock(
@@ -81,6 +83,16 @@ jest.mock(
   () => ({ default: jest.fn() }),
   { virtual: true }
 );
+jest.mock(
+  "@salesforce/apex/AXF_CLS_CTRL_Dashboard.getEntryCandidates",
+  () => ({ default: jest.fn() }),
+  { virtual: true }
+);
+jest.mock(
+  "@salesforce/apex/AXF_CLS_CTRL_Reconciliation.reconcile",
+  () => ({ default: jest.fn() }),
+  { virtual: true }
+);
 
 const flushPromises = () =>
   Array.from({ length: 10 }).reduce(
@@ -102,7 +114,8 @@ const summary = {
   expenseRealized: 20,
   cardForecast: 65,
   projectedBalance: 1167,
-  projectedBalanceWithCard: -50
+  projectedBalanceWithCard: -50,
+  realizedCount: 4
 };
 
 const budget = {
@@ -251,6 +264,7 @@ describe("c-a-x-f-l-w-c-dashboard", () => {
     getEntries.mockResolvedValue(entryList);
     getPending.mockResolvedValue(pending);
     getSources.mockResolvedValue(sources);
+    getEntryCandidates.mockResolvedValue([]);
   });
 
   afterEach(() => {
@@ -260,7 +274,7 @@ describe("c-a-x-f-l-w-c-dashboard", () => {
     jest.clearAllMocks();
   });
 
-  it("loads the current month for all holders and shows the four indicators", async () => {
+  it("loads the current month for all holders and shows the five indicators", async () => {
     const element = await mount();
     const call = getSummary.mock.calls[0][0];
     expect(call.holderId).toBeNull();
@@ -280,6 +294,9 @@ describe("c-a-x-f-l-w-c-dashboard", () => {
       "previsto R$ 311,00 / R$ 120,00"
     );
     expect(text(element, ".kpi-projected")).toContain("1.167,00");
+    expect(text(element, ".kpi-realized")).toContain("Pago / recebido");
+    expect(text(element, ".kpi-realized")).toContain("-R$ 9,00");
+    expect(text(element, ".kpi-realized")).toContain("4 lançamentos");
   });
 
   it("lists Todos plus the holders returned by Apex", async () => {
@@ -527,10 +544,10 @@ describe("c-a-x-f-l-w-c-dashboard", () => {
     const rows = [...element.shadowRoot.querySelectorAll(".entry-row")];
     expect(rows).toHaveLength(3);
     expect(rows[0].textContent).toContain("Aluguel");
-    expect(rows[0].textContent).toContain("Vencido");
+    expect(rows[0].textContent).toContain("Atrasado");
     expect(rows[0].textContent.replace(/\s+/g, " ")).toContain("-R$ 1.500,00");
     expect(rows[0].querySelector(".out")).not.toBeNull();
-    expect(rows[1].textContent).toContain("Realizado");
+    expect(rows[1].textContent).toContain("Recebido");
     expect(rows[1].querySelector(".in")).not.toBeNull();
     expect(rows[2].textContent).toContain("Cartão previsto");
   });
@@ -897,14 +914,30 @@ describe("c-a-x-f-l-w-c-dashboard", () => {
     expect(side.querySelector(".sources-card")).not.toBeNull();
   });
 
-  it("keeps the goals card below both columns", async () => {
+  it("keeps the goals card in the right column below Contas e cartões", async () => {
     const element = await mount();
-    const grid = element.shadowRoot.querySelector(".dashboard-grid");
-    const goalsCard = element.shadowRoot.querySelector(".budget");
-    expect(grid.contains(goalsCard)).toBe(false);
+    const side = element.shadowRoot.querySelector(".side-column");
+    const goalsCard = side.querySelector(".budget");
+    const sourcesCard = side.querySelector(".sources-card");
+    expect(goalsCard).not.toBeNull();
     expect(
-      grid.compareDocumentPosition(goalsCard) & Node.DOCUMENT_POSITION_FOLLOWING
+      sourcesCard.compareDocumentPosition(goalsCard) &
+        Node.DOCUMENT_POSITION_FOLLOWING
     ).toBeTruthy();
+    expect(element.shadowRoot.querySelector(".main-column .budget")).toBeNull();
+  });
+
+  it("gives every card a highlighted title", async () => {
+    const element = await mount();
+    const titles = [...element.shadowRoot.querySelectorAll(".card-title")].map(
+      (node) => node.textContent.replace(/\s+/g, " ").trim()
+    );
+    expect(titles).toEqual([
+      "Lançamentos do mês",
+      "A conciliar (12)",
+      "Contas e cartões",
+      "Metas de despesa"
+    ]);
   });
 
   it("offers mark as realized only on pending non-forecast rows", async () => {
@@ -1036,5 +1069,319 @@ describe("c-a-x-f-l-w-c-dashboard", () => {
     expect(element.shadowRoot.querySelectorAll(".mark-realized")).toHaveLength(
       1
     );
+  });
+
+  describe("status badges and chips", () => {
+    const iso = (offset) => {
+      const date = new Date();
+      date.setDate(date.getDate() + offset);
+      const pad = (value) => String(value).padStart(2, "0");
+      return `${date.getFullYear()}-${pad(date.getMonth() + 1)}-${pad(date.getDate())}`;
+    };
+    const row = (id, over) => ({
+      id,
+      name: `L${id}`,
+      amount: 10,
+      type: "Expense",
+      status: "Pending",
+      overdue: false,
+      forecastCard: false,
+      ...over
+    });
+    const scenarioRows = () => [
+      row("s1", { dueDate: iso(1) }),
+      row("s5", { dueDate: iso(5) }),
+      row("s0", { dueDate: iso(0) }),
+      row("o6", { dueDate: iso(6) }),
+      row("l3", { dueDate: iso(-3), overdue: true }),
+      row("l1", { dueDate: iso(-1), overdue: true }),
+      row("p1", {
+        dueDate: iso(-5),
+        status: "Realized",
+        paymentDate: "2026-10-04"
+      }),
+      row("p2", {
+        dueDate: iso(-5),
+        status: "Realized",
+        type: "Income"
+      }),
+      row("f1", { dueDate: iso(2), forecastCard: true })
+    ];
+    const rowOf = (element, name) =>
+      [...element.shadowRoot.querySelectorAll(".entry-row")].find((node) =>
+        node.textContent.includes(name)
+      );
+    const squash = (node) => node.textContent.replace(/\s+/g, " ");
+    // Pill label and sub-text are separate elements: join them with a space.
+    const pillText = (node) =>
+      [...node.querySelectorAll(".pill, .pill-sub")]
+        .map((part) => part.firstChild.textContent.trim())
+        .join(" ");
+
+    it("labels each row by due date, with colour class and sub-text", async () => {
+      getEntries.mockResolvedValue({ truncated: false, rows: scenarioRows() });
+      const element = await mount();
+      expect(pillText(rowOf(element, "Ls1"))).toContain(
+        "Vence em breve amanhã"
+      );
+      expect(pillText(rowOf(element, "Ls5"))).toContain(
+        "Vence em breve em 5 dias"
+      );
+      expect(pillText(rowOf(element, "Ls0"))).toContain("Vence em breve hoje");
+      expect(pillText(rowOf(element, "Lo6"))).toContain("Em aberto em 6 dias");
+      expect(pillText(rowOf(element, "Ll3"))).toContain("Atrasado 3 dias");
+      expect(pillText(rowOf(element, "Ll1"))).toContain("Atrasado 1 dia");
+      expect(pillText(rowOf(element, "Lp1"))).toContain("Pago em 04/10");
+      expect(pillText(rowOf(element, "Lp2"))).toContain("Recebido");
+      expect(pillText(rowOf(element, "Lf1"))).toContain("Cartão previsto");
+      expect(rowOf(element, "Ls1").querySelector(".pill-soon")).not.toBeNull();
+      expect(rowOf(element, "Lo6").querySelector(".pill-open")).not.toBeNull();
+      expect(rowOf(element, "Ll3").querySelector(".pill-late")).not.toBeNull();
+      expect(rowOf(element, "Lp1").querySelector(".pill-paid")).not.toBeNull();
+    });
+
+    it("counts the chips from the loaded list and filters client-side", async () => {
+      getEntries.mockResolvedValue({ truncated: false, rows: scenarioRows() });
+      const element = await mount();
+      const chips = () => [...element.shadowRoot.querySelectorAll(".chip")];
+      expect(chips().map((chip) => squash(chip).trim())).toEqual([
+        "Todos9",
+        "Pagos2",
+        "Em aberto5",
+        "Atrasados2"
+      ]);
+      getEntries.mockClear();
+      chips()[3].click();
+      await flushPromises();
+      expect(element.shadowRoot.querySelectorAll(".entry-row")).toHaveLength(2);
+      expect(getEntries).not.toHaveBeenCalled();
+      chips()[2].click();
+      await flushPromises();
+      expect(element.shadowRoot.querySelectorAll(".entry-row")).toHaveLength(5);
+      chips()[1].click();
+      await flushPromises();
+      expect(element.shadowRoot.querySelectorAll(".entry-row")).toHaveLength(2);
+      expect(chips()[1].getAttribute("aria-pressed")).toBe("true");
+      chips()[0].click();
+      await flushPromises();
+      expect(element.shadowRoot.querySelectorAll(".entry-row")).toHaveLength(9);
+    });
+
+    it("offers Pagar on expenses and Receber on income", async () => {
+      getEntries.mockResolvedValue({
+        truncated: false,
+        rows: [
+          row("a", { dueDate: iso(3) }),
+          row("b", { dueDate: iso(3), type: "Income" })
+        ]
+      });
+      const element = await mount();
+      const labels = [
+        ...element.shadowRoot.querySelectorAll(".mark-realized")
+      ].map((button) => button.label);
+      expect(labels).toEqual(["Pagar", "Receber"]);
+    });
+  });
+
+  describe("Pagar/Receber popup with Pluggy reconciliation", () => {
+    const candidates = [
+      {
+        id: "b1",
+        source: "account",
+        description: "DEB ENEL",
+        transactionDate: "2026-10-04",
+        amount: -1500,
+        currencyCode: "BRL",
+        accountName: "Itaú",
+        daysApart: 1,
+        amountGap: 0,
+        tag: "BEST"
+      },
+      {
+        id: "c1",
+        source: "card",
+        description: "ENEL CARTAO",
+        transactionDate: "2026-10-06",
+        amount: -1510,
+        currencyCode: "BRL",
+        accountName: "Nubank",
+        daysApart: 1,
+        amountGap: 10,
+        tag: "VALUE"
+      }
+    ];
+
+    const open = async (element) => {
+      element.shadowRoot.querySelector(".mark-realized").click();
+      await flushPromises();
+    };
+    const pairOf = () => JSON.parse(reconcile.mock.calls[0][0].pairsJson);
+
+    it("lists the candidates with the best one preselected, tags and effect", async () => {
+      getEntryCandidates.mockResolvedValue(candidates);
+      const element = await mount();
+      await open(element);
+      const root = element.shadowRoot;
+      expect(getEntryCandidates).toHaveBeenCalledWith({ entryId: "e1" });
+      expect(text(element, ".slds-modal__title")).toContain("Pagar");
+      expect(text(element, ".tab-pluggy")).toContain(
+        "2 transações compatíveis"
+      );
+      const rows = [...root.querySelectorAll(".candidate")];
+      expect(rows).toHaveLength(2);
+      expect(rows[0].textContent).toContain("Melhor correspondência");
+      expect(rows[1].textContent).toContain("Valor próximo");
+      expect(rows[1].textContent).toContain("diferença");
+      expect(root.querySelector(".candidate-selected").textContent).toContain(
+        "DEB ENEL"
+      );
+      expect(text(element, ".candidate-effect")).toContain(
+        "Pago em 04/10/2026 com R$ 1.500,00"
+      );
+      expect(root.querySelector(".realize-confirm").label).toBe(
+        "Pagar e conciliar"
+      );
+      expect(text(element, ".reconciliation-hint")).toContain("Conciliação");
+    });
+
+    it("reconciles the chosen bank transaction and reloads the page", async () => {
+      getEntryCandidates.mockResolvedValue(candidates);
+      reconcile.mockResolvedValue([
+        { entryId: "e1", transactionId: "b1", success: true }
+      ]);
+      const element = await mount();
+      const toasts = [];
+      element.addEventListener("lightning__showtoast", (e) => toasts.push(e));
+      await open(element);
+      getSummary.mockClear();
+      element.shadowRoot.querySelector(".realize-confirm").click();
+      await flushPromises();
+      expect(pairOf()).toEqual([{ entryId: "e1", bankTransactionId: "b1" }]);
+      expect(updateRecord).not.toHaveBeenCalled();
+      expect(element.shadowRoot.querySelector(".realize-modal")).toBeNull();
+      expect(getSummary).toHaveBeenCalled();
+      expect(toasts[0].detail.variant).toBe("success");
+    });
+
+    it("sends a card transaction as cardTransactionId", async () => {
+      getEntryCandidates.mockResolvedValue(candidates);
+      reconcile.mockResolvedValue([{ entryId: "e1", success: true }]);
+      const element = await mount();
+      await open(element);
+      const radios = element.shadowRoot.querySelectorAll(".candidate-radio");
+      radios[1].dispatchEvent(new CustomEvent("change"));
+      await flushPromises();
+      expect(
+        element.shadowRoot.querySelector(".candidate-selected").textContent
+      ).toContain("ENEL CARTAO");
+      element.shadowRoot.querySelector(".realize-confirm").click();
+      await flushPromises();
+      expect(pairOf()).toEqual([{ entryId: "e1", cardTransactionId: "c1" }]);
+    });
+
+    it("shows the outcome message and keeps the popup when the reconciliation fails", async () => {
+      getEntryCandidates.mockResolvedValue(candidates);
+      reconcile.mockResolvedValue([
+        { entryId: "e1", success: false, message: "Transação já conciliada." }
+      ]);
+      const element = await mount();
+      await open(element);
+      element.shadowRoot.querySelector(".realize-confirm").click();
+      await flushPromises();
+      expect(text(element, ".realize-error")).toContain(
+        "Transação já conciliada."
+      );
+      expect(element.shadowRoot.querySelector(".realize-modal")).not.toBeNull();
+    });
+
+    it("shows a thrown error of the reconciliation", async () => {
+      getEntryCandidates.mockResolvedValue(candidates);
+      reconcile.mockRejectedValue({ body: { message: "Sem acesso." } });
+      const element = await mount();
+      await open(element);
+      element.shadowRoot.querySelector(".realize-confirm").click();
+      await flushPromises();
+      expect(text(element, ".realize-error")).toContain("Sem acesso.");
+    });
+
+    it("opens straight on the manual tab when there is no candidate", async () => {
+      getEntryCandidates.mockResolvedValue([]);
+      const element = await mount();
+      await open(element);
+      const root = element.shadowRoot;
+      expect(root.querySelector(".manual-panel")).not.toBeNull();
+      expect(root.querySelector(".realize-date").value).toBe("2026-10-05");
+      expect(text(element, ".tab-pluggy")).toContain(
+        "nenhuma transação encontrada"
+      );
+      root.querySelector(".tab-pluggy").click();
+      await flushPromises();
+      expect(text(element, ".candidates-empty")).toContain(
+        "Nenhuma transação encontrada"
+      );
+    });
+
+    it("falls back to the manual tab with a message when the search fails", async () => {
+      getEntryCandidates.mockRejectedValue({ body: { message: "Falhou." } });
+      const element = await mount();
+      await open(element);
+      expect(element.shadowRoot.querySelector(".manual-panel")).not.toBeNull();
+      expect(text(element, ".realize-error")).toContain("Falhou.");
+    });
+
+    it("lets the user switch to the manual tab and saves as before", async () => {
+      getEntryCandidates.mockResolvedValue(candidates);
+      updateRecord.mockResolvedValue({});
+      const element = await mount();
+      await open(element);
+      element.shadowRoot.querySelector(".open-manual").click();
+      await flushPromises();
+      expect(text(element, ".manual-effect")).toContain("Sem conciliação");
+      expect(element.shadowRoot.querySelector(".realize-confirm").label).toBe(
+        "Confirmar pagamento"
+      );
+      element.shadowRoot.querySelector(".realize-confirm").click();
+      await flushPromises();
+      expect(reconcile).not.toHaveBeenCalled();
+      expect(updateRecord).toHaveBeenCalledWith({
+        fields: {
+          Id: "e1",
+          AXF_ENT_PKL_Status__c: "Realized",
+          AXF_ENT_DAT_PaymentDate__c: "2026-10-05",
+          AXF_ENT_NUM_RealizedAmountBRL__c: 1500
+        }
+      });
+    });
+
+    it("points to the Conciliação tab and closes the popup", async () => {
+      getEntryCandidates.mockResolvedValue(candidates);
+      const element = await mount();
+      await open(element);
+      element.shadowRoot.querySelector(".open-reconciliation").click();
+      await flushPromises();
+      expect(element.shadowRoot.querySelector(".realize-modal")).toBeNull();
+      expect(mockNavigate).toHaveBeenCalledWith({
+        type: "standard__navItemPage",
+        attributes: { apiName: "AXF_CT_Reconciliation" }
+      });
+    });
+
+    it("reconciles once on a double click", async () => {
+      let resolveReconcile;
+      reconcile.mockImplementationOnce(
+        () => new Promise((resolve) => (resolveReconcile = resolve))
+      );
+      getEntryCandidates.mockResolvedValue(candidates);
+      const element = await mount();
+      await open(element);
+      const confirm = element.shadowRoot.querySelector(".realize-confirm");
+      confirm.click();
+      confirm.click();
+      await flushPromises();
+      expect(reconcile).toHaveBeenCalledTimes(1);
+      resolveReconcile([{ entryId: "e1", success: true }]);
+      await flushPromises();
+      expect(element.shadowRoot.querySelector(".realize-modal")).toBeNull();
+    });
   });
 });

@@ -110,12 +110,259 @@
 
 .kpis {
   display: grid;
-  grid-template-columns: repeat(4, minmax(0, 1fr));
+  grid-template-columns: repeat(5, minmax(0, 1fr));
   gap: 0.75rem;
 }
 
 .kpis .kpi {
   margin-right: 0;
+}
+
+/* Card titles: stronger heading strip with a blue vertical bar. */
+.card-head {
+  margin: -0.75rem -0.75rem 0.5rem;
+  padding: 0.75rem;
+  background: #f3f6fb;
+  border-bottom: 2px solid #0176d3;
+  border-radius: 0.25rem 0.25rem 0 0;
+}
+
+.card-title {
+  margin: 0;
+  font-size: 16px;
+  font-weight: 700;
+  color: #032d60;
+  letter-spacing: 0.01em;
+}
+
+.card-title::before {
+  content: "";
+  display: inline-block;
+  width: 4px;
+  height: 16px;
+  margin-right: 0.5rem;
+  vertical-align: -2px;
+  background: #0176d3;
+  border-radius: 2px;
+}
+
+.card-title a {
+  color: inherit;
+}
+
+/* Status chips */
+.chips {
+  gap: 0.375rem;
+  flex-wrap: wrap;
+}
+
+.chip {
+  padding: 0.125rem 0.75rem;
+  font: inherit;
+  font-size: 0.75rem;
+  color: inherit;
+  background: #fff;
+  border: 1px solid #e3e1df;
+  border-radius: 1rem;
+  cursor: pointer;
+}
+
+.chip-count {
+  margin-left: 0.25rem;
+}
+
+.chip-paid .chip-count {
+  color: #2e844a;
+}
+
+.chip-open .chip-count {
+  color: #706e6b;
+}
+
+.chip-late .chip-count {
+  color: #ba0517;
+}
+
+.chip-on {
+  color: #fff;
+  background: #0176d3;
+  border-color: #0176d3;
+}
+
+.chip-on .chip-count {
+  color: #fff;
+}
+
+/* Status pills */
+.pill {
+  display: inline-flex;
+  flex-direction: column;
+  align-items: flex-start;
+  margin-right: 0.75rem;
+  padding: 0.125rem 0.625rem;
+  font-size: 0.6875rem;
+  font-weight: 600;
+  white-space: nowrap;
+  border-radius: 0.75rem;
+}
+
+.pill-sub {
+  font-size: 0.6875rem;
+  font-weight: 400;
+}
+
+.pill-paid {
+  color: #2e844a;
+  background: #e3f3e8;
+}
+
+.pill-open,
+.pill-forecast,
+.pill-other {
+  color: #444;
+  background: #eceae8;
+}
+
+.pill-late {
+  color: #ba0517;
+  background: #fbe3e5;
+}
+
+.pill-soon {
+  color: #dd7a01;
+  background: #fdf0e0;
+}
+
+.entry-late {
+  padding-left: 0.5rem;
+  background: #fdf3f3;
+  box-shadow: inset 3px 0 0 #ba0517;
+}
+
+.entry-paid .entry-link,
+.entry-paid .entry-amount {
+  color: #5c5c5c;
+}
+
+.legend {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.25rem 1rem;
+  margin-top: 0.75rem;
+  font-size: 0.75rem;
+}
+
+.legend .pill {
+  margin-right: 0.25rem;
+}
+
+/* Pagar / Receber popup */
+.realize-header {
+  background: #f3f6fb;
+  border-bottom: 2px solid #0176d3;
+}
+
+.realize-tabs {
+  display: flex;
+  margin-bottom: 0.875rem;
+  overflow: hidden;
+  border: 1px solid #e3e1df;
+  border-radius: 0.375rem;
+}
+
+.realize-tab {
+  flex: 1;
+  padding: 0.5rem 0.75rem;
+  font: inherit;
+  font-weight: 600;
+  color: inherit;
+  text-align: center;
+  background: #fff;
+  border: 0;
+  cursor: pointer;
+}
+
+.realize-tab + .realize-tab {
+  border-left: 1px solid #e3e1df;
+}
+
+.realize-tab small {
+  display: block;
+  font-size: 0.6875rem;
+  font-weight: 400;
+  opacity: 0.85;
+}
+
+.tab-on {
+  color: #fff;
+  background: #0176d3;
+}
+
+.candidates-loading {
+  min-height: 3rem;
+}
+
+.candidate {
+  display: flex;
+  align-items: center;
+  gap: 0.625rem;
+  padding: 0.5rem 0.75rem;
+  margin-bottom: 0.5rem;
+  border: 1px solid #e3e1df;
+  border-radius: 0.375rem;
+  cursor: pointer;
+}
+
+.candidate-selected {
+  background: #eef4ff;
+  border-color: #0176d3;
+  box-shadow: 0 0 0 1px #0176d3;
+}
+
+.candidate-body {
+  flex: 1;
+}
+
+.candidate-where {
+  display: block;
+  color: #706e6b;
+}
+
+.tag {
+  margin-left: 0.375rem;
+  padding: 0.0625rem 0.5rem;
+  font-size: 0.6875rem;
+  font-weight: 600;
+  border-radius: 0.625rem;
+}
+
+.tag-best {
+  color: #2e844a;
+  background: #e3f3e8;
+}
+
+.tag-near {
+  color: #dd7a01;
+  background: #fdf0e0;
+}
+
+.realize-note {
+  padding: 0.5rem 0.75rem;
+  margin-top: 0.375rem;
+  font-size: 0.75rem;
+  background: #fff8e1;
+  border: 1px solid #f0d98c;
+  border-radius: 0.375rem;
+}
+
+.realize-summary {
+  float: left;
+  font-size: 0.75rem;
+  line-height: 2rem;
+}
+
+.budget-values {
+  text-align: right;
 }
 
 @media (max-width: 62rem) {
