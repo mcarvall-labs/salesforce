@@ -65,9 +65,14 @@ public with sharing class ALT_CLS_ExpenseWizard {
     public Date dueDate;
     @AuraEnabled
     public Decimal amount;
-    // Financing only: the interest inside the installment.
+    // Financing only: the interest and the fixed monthly charges inside the installment.
     @AuraEnabled
     public Decimal interest;
+    @AuraEnabled
+    public Decimal charges;
+    // Financing only: the monthly rate (percent) the schedule uses, typed or implied.
+    @AuraEnabled
+    public Decimal monthlyRate;
   }
 
   // Installments only (EP05-H21): base.amount is the total or the installment value
@@ -95,7 +100,10 @@ public with sharing class ALT_CLS_ExpenseWizard {
   }
 
   // Financing only (EP05-H23): base.amount is the financed amount, base.dueDate the first due
-  // date, monthlyRate is as typed (1.5 means 1.5 % per month).
+  // date, monthlyRate is as typed (1.5 means 1.5 % per month). With installmentAmount (PRICE
+  // only: interest plus amortization, without the monthly charges) the rate is the implied one
+  // and monthlyRate is ignored. The monthly charges are fixed amounts added to every
+  // installment; upfrontCosts (fees, IOF) are financed together with the amount.
   public class FinancingRequest {
     @AuraEnabled
     public Request base;
@@ -103,6 +111,16 @@ public with sharing class ALT_CLS_ExpenseWizard {
     public Integer count;
     @AuraEnabled
     public Decimal monthlyRate;
+    @AuraEnabled
+    public Decimal installmentAmount;
+    @AuraEnabled
+    public Decimal insurance;
+    @AuraEnabled
+    public Decimal adminFee;
+    @AuraEnabled
+    public Decimal otherCharges;
+    @AuraEnabled
+    public Decimal upfrontCosts;
     // SAC or PRICE
     @AuraEnabled
     public String amortizationSystem;
@@ -552,6 +570,13 @@ public with sharing class ALT_CLS_ExpenseWizard {
       AXF_CTR_CUR_FinancedAmount__c = financed(base),
       AXF_CTR_PCT_MonthlyRate__c = rate(request),
       AXF_CTR_PKL_AmortizationSystem__c = request.amortizationSystem,
+      AXF_CTR_CUR_UpfrontCosts__c = money(request.upfrontCosts),
+      AXF_CTR_CUR_InformedInstallment__c = request.installmentAmount == null
+        ? null
+        : money(request.installmentAmount),
+      AXF_CTR_CUR_Insurance__c = money(request.insurance),
+      AXF_CTR_CUR_AdminFee__c = money(request.adminFee),
+      AXF_CTR_CUR_OtherCharges__c = money(request.otherCharges),
       AXF_CTR_NUM_InstallmentCount__c = request.count,
       AXF_CTR_DAT_FirstDueDate__c = base.dueDate,
       AXF_CTR_TXT_Counterparty__c = String.isBlank(request.creditor)
@@ -583,8 +608,23 @@ public with sharing class ALT_CLS_ExpenseWizard {
     return base.amount.setScale(2, RoundingMode.HALF_UP);
   }
 
+  private static Decimal money(Decimal value) {
+    return value == null ? 0 : value.setScale(2, RoundingMode.HALF_UP);
+  }
+
   // The rate field keeps 4 decimals, so the preview uses the same value the Contract will hold.
+  // With an informed installment the rate is the one that pays the financed amount off.
   private static Decimal rate(FinancingRequest request) {
+    if (request.installmentAmount != null) {
+      return ALT_CLS_ContractSchedule.impliedMonthlyRate(
+        ALT_CLS_ContractSchedule.financedPrincipal(
+          financed(request.base),
+          money(request.upfrontCosts)
+        ),
+        money(request.installmentAmount),
+        request.count
+      );
+    }
     return request.monthlyRate.setScale(4, RoundingMode.HALF_UP);
   }
 
@@ -608,9 +648,10 @@ public with sharing class ALT_CLS_ExpenseWizard {
       );
     }
     if (
-      request.monthlyRate == null ||
+      request.installmentAmount == null &&
+      (request.monthlyRate == null ||
       request.monthlyRate.setScale(4, RoundingMode.HALF_UP) < 0 ||
-      request.monthlyRate.setScale(4, RoundingMode.HALF_UP) > 100
+      request.monthlyRate.setScale(4, RoundingMode.HALF_UP) > 100)
     ) {
       throw new ExpenseWizardException(
         'A taxa mensal deve estar entre 0% e 100%.'
@@ -621,6 +662,44 @@ public with sharing class ALT_CLS_ExpenseWizard {
       request.amortizationSystem != ALT_CLS_ContractSchedule.PRICE
     ) {
       throw new ExpenseWizardException('Escolha o sistema: SAC ou PRICE.');
+    }
+    if (
+      request.installmentAmount != null &&
+      request.amortizationSystem != ALT_CLS_ContractSchedule.PRICE
+    ) {
+      throw new ExpenseWizardException(
+        'Com a parcela informada o sistema é PRICE (parcela constante).'
+      );
+    }
+    if (
+      request.installmentAmount != null &&
+      money(request.installmentAmount) <= 0
+    ) {
+      throw new ExpenseWizardException(
+        'O valor da parcela deve ser maior que zero.'
+      );
+    }
+    if (
+      request.installmentAmount != null &&
+      money(request.installmentAmount) >= MAX_TOTAL
+    ) {
+      throw new ExpenseWizardException(
+        'O valor da parcela está acima do limite.'
+      );
+    }
+    for (
+      Decimal charge : new List<Decimal>{
+        request.insurance,
+        request.adminFee,
+        request.otherCharges,
+        request.upfrontCosts
+      }
+    ) {
+      if (charge != null && (charge < 0 || charge >= MAX_TOTAL)) {
+        throw new ExpenseWizardException(
+          'Seguro, taxas e tarifas devem ser zero ou mais, dentro do limite.'
+        );
+      }
     }
     if (base.dueDate == null) {
       throw new ExpenseWizardException('Informe o primeiro vencimento.');
@@ -642,7 +721,7 @@ public with sharing class ALT_CLS_ExpenseWizard {
         'O valor financiado deve ser maior que zero.'
       );
     }
-    if (principal >= MAX_TOTAL) {
+    if (principal + money(request.upfrontCosts) >= MAX_TOTAL) {
       throw new ExpenseWizardException('O valor total está acima do limite.');
     }
     // An installment that rounds to zero would leave the whole debt to the last one.
@@ -651,26 +730,43 @@ public with sharing class ALT_CLS_ExpenseWizard {
         'O valor financiado é pequeno demais para este número de parcelas.'
       );
     }
-    Decimal monthly = rate(request) / 100;
-    Decimal balance = principal;
+    Decimal monthlyRate = rate(request);
+    if (monthlyRate == null || monthlyRate > 100) {
+      throw new ExpenseWizardException(
+        'A parcela informada não paga o valor financiado com taxa entre 0% e 100%.'
+      );
+    }
     Decimal total = 0;
     List<PreviewItem> items = new List<PreviewItem>();
     for (
       ALT_CLS_ContractSchedule.Item item : ALT_CLS_ContractSchedule.financing(
-        principal,
-        rate(request),
+        ALT_CLS_ContractSchedule.financedPrincipal(
+          principal,
+          money(request.upfrontCosts)
+        ),
+        monthlyRate,
         request.count,
         request.amortizationSystem,
-        base.dueDate
+        base.dueDate,
+        request.installmentAmount == null
+          ? null
+          : money(request.installmentAmount),
+        ALT_CLS_ContractSchedule.sum(
+          new List<Decimal>{
+            money(request.insurance),
+            money(request.adminFee),
+            money(request.otherCharges)
+          }
+        )
       )
     ) {
-      Decimal interest = (balance * monthly).setScale(2, RoundingMode.HALF_UP);
       PreviewItem preview = new PreviewItem();
       preview.dueDate = item.dueDate;
       preview.amount = item.amount;
-      preview.interest = interest;
+      preview.interest = item.interest;
+      preview.charges = item.charges;
+      preview.monthlyRate = monthlyRate;
       items.add(preview);
-      balance -= item.amount - interest;
       total += item.amount;
     }
     if (total >= MAX_TOTAL) {

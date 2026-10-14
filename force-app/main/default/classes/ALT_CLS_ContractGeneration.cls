@@ -46,7 +46,12 @@ public with sharing class ALT_CLS_ContractGeneration {
         AXF_CTR_NUM_InstallmentCount__c,
         AXF_CTR_CUR_FinancedAmount__c,
         AXF_CTR_PCT_MonthlyRate__c,
-        AXF_CTR_PKL_AmortizationSystem__c
+        AXF_CTR_PKL_AmortizationSystem__c,
+        AXF_CTR_CUR_UpfrontCosts__c,
+        AXF_CTR_CUR_InformedInstallment__c,
+        AXF_CTR_CUR_Insurance__c,
+        AXF_CTR_CUR_AdminFee__c,
+        AXF_CTR_CUR_OtherCharges__c
       FROM AXF_OBJ_Contract__c
       WHERE Id IN :contractIds
     ];
@@ -149,11 +154,22 @@ public with sharing class ALT_CLS_ContractGeneration {
     Integer count = contract.AXF_CTR_NUM_InstallmentCount__c.intValue();
     if (type == RT_FINANCING) {
       return ALT_CLS_ContractSchedule.financing(
-        contract.AXF_CTR_CUR_FinancedAmount__c,
+        ALT_CLS_ContractSchedule.financedPrincipal(
+          contract.AXF_CTR_CUR_FinancedAmount__c,
+          contract.AXF_CTR_CUR_UpfrontCosts__c
+        ),
         contract.AXF_CTR_PCT_MonthlyRate__c,
         count,
         contract.AXF_CTR_PKL_AmortizationSystem__c,
-        firstDue
+        firstDue,
+        contract.AXF_CTR_CUR_InformedInstallment__c,
+        ALT_CLS_ContractSchedule.sum(
+          new List<Decimal>{
+            contract.AXF_CTR_CUR_Insurance__c,
+            contract.AXF_CTR_CUR_AdminFee__c,
+            contract.AXF_CTR_CUR_OtherCharges__c
+          }
+        )
       );
     }
     return ALT_CLS_ContractSchedule.fixedInstallments(

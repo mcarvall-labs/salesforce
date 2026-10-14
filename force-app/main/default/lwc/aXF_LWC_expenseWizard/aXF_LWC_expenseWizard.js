@@ -60,6 +60,15 @@ const SYSTEM_OPTIONS = [
   { label: "PRICE (parcela constante)", value: "PRICE" },
   { label: "SAC (amortização constante)", value: "SAC" }
 ];
+const toNumber = (value) => {
+  return value === undefined || value === null || value === ""
+    ? null
+    : Number(value);
+};
+const FINANCING_MODE_OPTIONS = [
+  { label: "Informo a taxa de juros", value: "rate" },
+  { label: "Informo o valor da parcela", value: "installment" }
+];
 const PREVIEW_ROWS = 2;
 const METHOD_OPTIONS = [
   { label: "Dinheiro", value: "cash" },
@@ -99,6 +108,12 @@ export default class AXF_LWC_expenseWizard extends LightningElement {
   creditor = "";
   monthlyRate;
   amortizationSystem = "PRICE";
+  financingMode = "rate";
+  installmentAmount;
+  insurance;
+  adminFee;
+  otherCharges;
+  upfrontCosts;
   dueDay;
   endDate;
   preview = [];
@@ -185,6 +200,12 @@ export default class AXF_LWC_expenseWizard extends LightningElement {
     this.creditor = "";
     this.monthlyRate = undefined;
     this.amortizationSystem = "PRICE";
+    this.financingMode = "rate";
+    this.installmentAmount = undefined;
+    this.insurance = undefined;
+    this.adminFee = undefined;
+    this.otherCharges = undefined;
+    this.upfrontCosts = undefined;
     this.errorMessage = undefined;
     this.focusTitle = true;
   }
@@ -288,7 +309,8 @@ export default class AXF_LWC_expenseWizard extends LightningElement {
       interest:
         item.interest === undefined || item.interest === null
           ? ""
-          : this.money(item.interest)
+          : this.money(item.interest),
+      charges: item.charges ? this.money(item.charges) : ""
     }));
   }
 
@@ -337,24 +359,55 @@ export default class AXF_LWC_expenseWizard extends LightningElement {
     return JSON.stringify(this.financingRequest);
   }
 
+  get financingModeOptions() {
+    return FINANCING_MODE_OPTIONS;
+  }
+
+  get isInstallmentMode() {
+    return this.financingMode === "installment";
+  }
+
+  get isRateMode() {
+    return !this.isInstallmentMode;
+  }
+
   get financingRequest() {
+    const number = toNumber;
     return {
       base: this.baseRequest,
       count: this.installmentCount ? Number(this.installmentCount) : null,
-      monthlyRate:
-        this.monthlyRate === undefined || this.monthlyRate === ""
-          ? null
-          : Number(this.monthlyRate),
-      amortizationSystem: this.amortizationSystem,
-      creditor: this.creditor.trim() || null
+      monthlyRate: this.isInstallmentMode ? null : number(this.monthlyRate),
+      installmentAmount: this.isInstallmentMode
+        ? number(this.installmentAmount)
+        : null,
+      amortizationSystem: this.isInstallmentMode
+        ? "PRICE"
+        : this.amortizationSystem,
+      creditor: this.creditor.trim() || null,
+      insurance: number(this.insurance),
+      adminFee: number(this.adminFee),
+      otherCharges: number(this.otherCharges),
+      upfrontCosts: number(this.upfrontCosts)
     };
+  }
+
+  get monthlyCharges() {
+    return [this.insurance, this.adminFee, this.otherCharges].reduce(
+      (sum, value) => sum + (Number(value) || 0),
+      0
+    );
   }
 
   // The first installment while the user is still typing (the review shows the real table).
   get firstInstallmentHint() {
-    const principal = Number(this.amount);
+    const principal = Number(this.amount) + (Number(this.upfrontCosts) || 0);
     const count = Number(this.installmentCount);
     const rate = Number(this.monthlyRate) / 100;
+    if (this.isFinancing && this.isInstallmentMode) {
+      return Number(this.installmentAmount) >= 0.01
+        ? `Parcela ${this.money(Number(this.installmentAmount) + this.monthlyCharges)} com encargos. A taxa mensal é calculada pela parcela e mostrada na revisão. O Contrato é criado junto.`
+        : "";
+    }
     if (
       !this.isFinancing ||
       this.monthlyRate === undefined ||
@@ -374,6 +427,7 @@ export default class AXF_LWC_expenseWizard extends LightningElement {
           ? principal / count
           : (principal * rate) / (1 - Math.pow(1 + rate, -count));
     }
+    first += this.monthlyCharges;
     return `1ª parcela ≈ ${this.money(first)} (${this.amortizationSystem}). Ajuste a taxa ou o prazo para conferir com o seu contrato. O Contrato é criado junto.`;
   }
 
@@ -404,15 +458,25 @@ export default class AXF_LWC_expenseWizard extends LightningElement {
 
   get financingValid() {
     const rate = Number(this.monthlyRate);
+    const charges = [
+      this.insurance,
+      this.adminFee,
+      this.otherCharges,
+      this.upfrontCosts
+    ].every((value) => !(Number(value) < 0));
+    // The informed installments must at least pay back what is financed.
+    const pricing = this.isInstallmentMode
+      ? Number(this.installmentAmount) >= 0.01 &&
+        Number(this.installmentAmount) * Number(this.installmentCount) >=
+          Number(this.amount) + (Number(this.upfrontCosts) || 0)
+      : this.monthlyRate !== undefined &&
+        this.monthlyRate !== "" &&
+        Number.isFinite(rate) &&
+        rate >= 0 &&
+        rate <= 100 &&
+        !!this.amortizationSystem;
     return (
-      Number(this.amount) >= 0.01 &&
-      this.validCount(480) &&
-      this.monthlyRate !== undefined &&
-      this.monthlyRate !== "" &&
-      Number.isFinite(rate) &&
-      rate >= 0 &&
-      rate <= 100 &&
-      !!this.amortizationSystem
+      Number(this.amount) >= 0.01 && this.validCount(480) && charges && pricing
     );
   }
 
@@ -444,6 +508,13 @@ export default class AXF_LWC_expenseWizard extends LightningElement {
       parts.push(
         `Juros totais ${this.money(Math.round(interest * 100) / 100)}`
       );
+      const rate = this.preview[0]?.monthlyRate;
+      if (this.isInstallmentMode && rate !== undefined && rate !== null) {
+        parts.push(`Taxa mensal calculada ${rate}%`);
+      }
+      if (this.monthlyCharges > 0) {
+        parts.push(`Encargos mensais ${this.money(this.monthlyCharges)}`);
+      }
       return parts.join(" · ");
     }
     if (this.administrator.trim()) {
@@ -721,6 +792,30 @@ export default class AXF_LWC_expenseWizard extends LightningElement {
 
   handleRate(event) {
     this.monthlyRate = event.detail.value;
+  }
+
+  handleFinancingMode(event) {
+    this.financingMode = event.detail.value;
+  }
+
+  handleInstallmentAmount(event) {
+    this.installmentAmount = event.detail.value;
+  }
+
+  handleInsurance(event) {
+    this.insurance = event.detail.value;
+  }
+
+  handleAdminFee(event) {
+    this.adminFee = event.detail.value;
+  }
+
+  handleOtherCharges(event) {
+    this.otherCharges = event.detail.value;
+  }
+
+  handleUpfrontCosts(event) {
+    this.upfrontCosts = event.detail.value;
   }
 
   handleSystem(event) {

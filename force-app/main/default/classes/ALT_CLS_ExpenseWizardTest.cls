@@ -931,7 +931,46 @@ private class ALT_CLS_ExpenseWizardTest {
     System.assertEquals(0, [SELECT COUNT() FROM AXF_OBJ_Entry__c]);
   }
 
+  // The charge fields reach the deploy user through a permission set group
+  // that is recalculated asynchronously, so a deploy that creates the fields
+  // and their FLS together runs these tests before the access exists. A direct
+  // assignment takes effect immediately. Called from financing(), so every
+  // financing test gets it. The runAs wrapper avoids a mixed-DML error when
+  // the test has already inserted data.
+  private static void grantFinancingFieldAccess() {
+    Id userId = UserInfo.getUserId();
+    List<PermissionSet> permissionSets = [
+      SELECT Id
+      FROM PermissionSet
+      WHERE Name = 'AXF_PS_Usuario'
+      LIMIT 1
+    ];
+    System.assert(!permissionSets.isEmpty(), 'AXF_PS_Usuario is not deployed');
+    Id permissionSetId = permissionSets[0].Id;
+    // Rows derived from a group do not count: they may still be recalculating.
+    if (
+      ![
+          SELECT Id
+          FROM PermissionSetAssignment
+          WHERE
+            AssigneeId = :userId
+            AND PermissionSetId = :permissionSetId
+            AND PermissionSetGroupId = NULL
+        ]
+        .isEmpty()
+    ) {
+      return;
+    }
+    System.runAs(new User(Id = userId)) {
+      insert new PermissionSetAssignment(
+        AssigneeId = userId,
+        PermissionSetId = permissionSetId
+      );
+    }
+  }
+
   private static ALT_CLS_ExpenseWizard.FinancingRequest financing(Id holderId) {
+    grantFinancingFieldAccess();
     ALT_CLS_ExpenseWizard.FinancingRequest financing = new ALT_CLS_ExpenseWizard.FinancingRequest();
     financing.base = request(holderId);
     financing.base.description = 'Financiamento do apartamento';
@@ -1461,6 +1500,35 @@ private class ALT_CLS_ExpenseWizardTest {
   }
 
   @IsTest
+  static void aBlankParentCreatesATopLevelCategory() {
+    ALT_CLS_ExpenseWizard.Option top = AXF_CLS_CTRL_ExpenseWizard.createCategory(
+      'Lazer',
+      ''
+    );
+    System.assertEquals(null, top.parentId);
+    System.assertEquals(
+      null,
+      [
+        SELECT AXF_CAT_LKP_Parent__c
+        FROM AXF_OBJ_Category__c
+        WHERE Id = :top.id
+      ]
+      .AXF_CAT_LKP_Parent__c
+    );
+  }
+
+  @IsTest
+  static void aParentThatIsNotAnIdGetsAReadableError() {
+    try {
+      AXF_CLS_CTRL_ExpenseWizard.createCategory('Lazer', 'Nenhuma');
+      System.assert(false, 'expected AuraHandledException');
+    } catch (AuraHandledException e) {
+      System.assertEquals('A categoria pai é inválida.', e.getMessage());
+    }
+    System.assertEquals(0, [SELECT COUNT() FROM AXF_OBJ_Category__c]);
+  }
+
+  @IsTest
   static void aCategoryNeedsAName() {
     try {
       AXF_CLS_CTRL_ExpenseWizard.createCategory(' ', null);
@@ -1581,6 +1649,161 @@ private class ALT_CLS_ExpenseWizardTest {
         System.assertNotEquals(null, e.getMessage());
       }
     }
+    System.assertEquals(0, [SELECT COUNT() FROM AXF_OBJ_Entry__c]);
+  }
+
+  @IsTest
+  static void chargesAreSavedOnTheContractAndAddedToEveryInstallment() {
+    Account h = holder('Titular');
+    ALT_CLS_ExpenseWizard.FinancingRequest financing = financing(h.Id);
+    financing.insurance = 10;
+    financing.adminFee = 5;
+    financing.otherCharges = 2.50;
+
+    List<ALT_CLS_ExpenseWizard.PreviewItem> preview = AXF_CLS_CTRL_ExpenseWizard.previewFinancing(
+      JSON.serialize(financing)
+    );
+    Id id = AXF_CLS_CTRL_ExpenseWizard.createFinancing(
+      JSON.serialize(financing)
+    );
+
+    // SAC 1,200.00 at 1 %: 100.00 + 12.00 of interest + 17.50 of charges.
+    System.assertEquals(129.50, preview[0].amount);
+    System.assertEquals(12.00, preview[0].interest);
+    System.assertEquals(17.50, preview[0].charges);
+    AXF_OBJ_Contract__c contract = [
+      SELECT
+        AXF_CTR_CUR_Insurance__c,
+        AXF_CTR_CUR_AdminFee__c,
+        AXF_CTR_CUR_OtherCharges__c,
+        AXF_CTR_CUR_UpfrontCosts__c
+      FROM AXF_OBJ_Contract__c
+      WHERE Id = :id
+    ];
+    System.assertEquals(10, contract.AXF_CTR_CUR_Insurance__c);
+    System.assertEquals(5, contract.AXF_CTR_CUR_AdminFee__c);
+    System.assertEquals(2.50, contract.AXF_CTR_CUR_OtherCharges__c);
+    System.assertEquals(0, contract.AXF_CTR_CUR_UpfrontCosts__c);
+    List<AXF_OBJ_Entry__c> entries = [
+      SELECT AXF_ENT_CUR_Amount__c
+      FROM AXF_OBJ_Entry__c
+      WHERE AXF_ENT_LKP_Contract__c = :id
+      ORDER BY AXF_ENT_NUM_InstallmentNumber__c
+    ];
+    System.assertEquals(12, entries.size());
+    for (Integer i = 0; i < 12; i++) {
+      System.assertEquals(preview[i].amount, entries[i].AXF_ENT_CUR_Amount__c);
+    }
+  }
+
+  @IsTest
+  static void upfrontCostsAreFinancedWithTheAmount() {
+    Account h = holder('Titular');
+    ALT_CLS_ExpenseWizard.FinancingRequest financing = financing(h.Id);
+    financing.base.amount = 1000;
+    financing.monthlyRate = 0;
+    financing.upfrontCosts = 200;
+
+    Id id = AXF_CLS_CTRL_ExpenseWizard.createFinancing(
+      JSON.serialize(financing)
+    );
+
+    // 1,000.00 financed plus 200.00 of fees: 1,200.00 over 12 months without interest.
+    AXF_OBJ_Contract__c contract = [
+      SELECT AXF_CTR_CUR_FinancedAmount__c, AXF_CTR_CUR_UpfrontCosts__c
+      FROM AXF_OBJ_Contract__c
+      WHERE Id = :id
+    ];
+    System.assertEquals(1000, contract.AXF_CTR_CUR_FinancedAmount__c);
+    System.assertEquals(200, contract.AXF_CTR_CUR_UpfrontCosts__c);
+    for (AXF_OBJ_Entry__c entry : [
+      SELECT AXF_ENT_CUR_Amount__c
+      FROM AXF_OBJ_Entry__c
+      WHERE AXF_ENT_LKP_Contract__c = :id
+    ]) {
+      System.assertEquals(100.00, entry.AXF_ENT_CUR_Amount__c);
+    }
+  }
+
+  @IsTest
+  static void anInformedInstallmentGivesTheImpliedRateAndTheOtherInstallments() {
+    Account h = holder('Titular');
+    ALT_CLS_ExpenseWizard.FinancingRequest financing = financing(h.Id);
+    financing.base.amount = 1000;
+    financing.monthlyRate = null;
+    financing.installmentAmount = 88.85;
+    financing.amortizationSystem = 'PRICE';
+    financing.insurance = 10;
+
+    List<ALT_CLS_ExpenseWizard.PreviewItem> preview = AXF_CLS_CTRL_ExpenseWizard.previewFinancing(
+      JSON.serialize(financing)
+    );
+    Id id = AXF_CLS_CTRL_ExpenseWizard.createFinancing(
+      JSON.serialize(financing)
+    );
+
+    System.assertEquals(12, preview.size());
+    System.assertEquals(98.85, preview[0].amount);
+    System.assertEquals(98.85, preview[10].amount);
+    System.assert(
+      Math.abs(preview[0].monthlyRate - 1) < 0.001,
+      'rate ' + preview[0].monthlyRate
+    );
+    AXF_OBJ_Contract__c contract = [
+      SELECT AXF_CTR_PCT_MonthlyRate__c, AXF_CTR_CUR_InformedInstallment__c
+      FROM AXF_OBJ_Contract__c
+      WHERE Id = :id
+    ];
+    System.assertEquals(88.85, contract.AXF_CTR_CUR_InformedInstallment__c);
+    System.assertEquals(
+      preview[0].monthlyRate,
+      contract.AXF_CTR_PCT_MonthlyRate__c
+    );
+    System.assertEquals(
+      12,
+      [SELECT COUNT() FROM AXF_OBJ_Entry__c WHERE AXF_ENT_LKP_Contract__c = :id]
+    );
+  }
+
+  @IsTest
+  static void rejectsInvalidInstallmentsAndChargesWithoutCreatingAnything() {
+    Account h = holder('Titular');
+    ALT_CLS_ExpenseWizard.FinancingRequest sac = financing(h.Id);
+    sac.installmentAmount = 100;
+    assertFinancingRejected(
+      sac,
+      'Com a parcela informada o sistema é PRICE (parcela constante).'
+    );
+
+    ALT_CLS_ExpenseWizard.FinancingRequest low = financing(h.Id);
+    low.amortizationSystem = 'PRICE';
+    low.installmentAmount = 50;
+    assertFinancingRejected(
+      low,
+      'A parcela informada não paga o valor financiado com taxa entre 0% e 100%.'
+    );
+
+    ALT_CLS_ExpenseWizard.FinancingRequest negative = financing(h.Id);
+    negative.insurance = -1;
+    assertFinancingRejected(
+      negative,
+      'Seguro, taxas e tarifas devem ser zero ou mais, dentro do limite.'
+    );
+    ALT_CLS_ExpenseWizard.FinancingRequest tooHigh = financing(h.Id);
+    tooHigh.base.amount = 1000;
+    tooHigh.amortizationSystem = 'PRICE';
+    tooHigh.installmentAmount = 1500;
+    assertFinancingRejected(
+      tooHigh,
+      'A parcela informada não paga o valor financiado com taxa entre 0% e 100%.'
+    );
+    ALT_CLS_ExpenseWizard.FinancingRequest huge = financing(h.Id);
+    huge.otherCharges = 1000000000000000.00;
+    assertFinancingRejected(
+      huge,
+      'Seguro, taxas e tarifas devem ser zero ou mais, dentro do limite.'
+    );
+    System.assertEquals(0, [SELECT COUNT() FROM AXF_OBJ_Contract__c]);
     System.assertEquals(0, [SELECT COUNT() FROM AXF_OBJ_Entry__c]);
   }
 }

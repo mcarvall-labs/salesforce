@@ -156,9 +156,9 @@ describe("c-a-x-f-l-w-c-reconciliation", () => {
     button(element, "reconcile").click();
     await flushPromises();
     expect(reconcile).toHaveBeenCalledWith({
-      pairs: [
+      pairsJson: JSON.stringify([
         { entryId: "e2", bankTransactionId: null, cardTransactionId: "t2" }
-      ]
+      ])
     });
     expect(getData).toHaveBeenCalledTimes(2);
   });
@@ -168,9 +168,9 @@ describe("c-a-x-f-l-w-c-reconciliation", () => {
     button(element, "suggest-all").click();
     await flushPromises();
     expect(reconcile).toHaveBeenCalledWith({
-      pairs: [
+      pairsJson: JSON.stringify([
         { entryId: "e1", bankTransactionId: "t1", cardTransactionId: null }
-      ]
+      ])
     });
   });
 
@@ -276,9 +276,9 @@ describe("c-a-x-f-l-w-c-reconciliation", () => {
     button(element, "suggest-all").click();
     await flushPromises();
     expect(reconcile).toHaveBeenCalledWith({
-      pairs: [
+      pairsJson: JSON.stringify([
         { entryId: "e1", bankTransactionId: "t1", cardTransactionId: null }
-      ]
+      ])
     });
   });
 
