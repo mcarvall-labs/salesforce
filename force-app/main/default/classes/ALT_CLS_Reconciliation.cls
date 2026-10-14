@@ -7,7 +7,10 @@
  * Entry into Realized with the transaction date and the realized amount in BRL, and the
  * transaction into Reconciled; undoing clears the link, the payment date and the realized amount,
  * returns the Entry to Pending and the transaction to Pending, and clears the bank account
- * of an Entry without card. Batches are partial: each pair succeeds or fails on its own, with the
+ * of an Entry without card. The Entry amount becomes the amount actually paid (the planned one is
+ * kept in AXF_ENT_CUR_PlannedAmount__c and comes back on undo); when the paid amount differs on an
+ * installment, consortium or financing contract installment, it becomes the contract amount and
+ * the amount of the later Pending installments. Batches are partial: each pair succeeds or fails on its own, with the
  * reason in its result. Runs with the caller's sharing and CRUD/FLS; only the duplicate-link check
  * ignores sharing, because a transaction linked to an Entry the caller cannot see is still linked.
  */
@@ -36,12 +39,27 @@ public with sharing class ALT_CLS_Reconciliation {
     Map<Id, AXF_OBJ_BankAccountTransaction__c> banks = new Map<Id, AXF_OBJ_BankAccountTransaction__c>();
     Map<Id, AXF_OBJ_CreditCardTransaction__c> cards = new Map<Id, AXF_OBJ_CreditCardTransaction__c>();
     Map<Id, Id> entryByTransaction = new Map<Id, Id>();
+    List<Repricing> repricings = new List<Repricing>();
+  }
+
+  // A reconciled installment paid for another amount: reprices its contract and later installments.
+  private class Repricing {
+    Id entryId;
+    Id contractId;
+    Integer installment;
+    Decimal amount;
+    String currencyCode;
   }
 
   private static final String ENTRY_PENDING = 'Pending';
   private static final String ENTRY_REALIZED = 'Realized';
   private static final String TX_PENDING = 'Pending';
   private static final String TX_RECONCILED = 'Reconciled';
+  private static final Set<String> REPRICED_CONTRACTS = new Set<String>{
+    'AXF_Installment',
+    'AXF_Consortium',
+    'AXF_Financing'
+  };
 
   public List<Outcome> reconcile(List<Pair> pairs) {
     List<Outcome> outcomes = new List<Outcome>();
@@ -120,6 +138,13 @@ public with sharing class ALT_CLS_Reconciliation {
         change.AXF_ENT_LKP_BankAccountTransaction__c = bank.Id;
         change.AXF_ENT_DAT_PaymentDate__c = bank.AXF_BAT_DAT_Date__c;
         change.AXF_ENT_NUM_RealizedAmountBRL__c = bank.AXF_BAT_CUR_Amount__c.abs();
+        paid(
+          changes,
+          change,
+          entry,
+          bank.AXF_BAT_CUR_Amount__c.abs(),
+          bank.CurrencyIsoCode
+        );
         if (
           entry.AXF_ENT_LKP_BankAccount__c == null &&
           entry.AXF_ENT_LKP_CreditCard__c == null
@@ -145,6 +170,15 @@ public with sharing class ALT_CLS_Reconciliation {
             ? card.AXF_CCT_CUR_Amount__c
             : card.AXF_CCT_CUR_AmountBRL__c)
           .abs();
+        paid(
+          changes,
+          change,
+          entry,
+          card.AXF_CCT_CUR_Amount__c.abs(),
+          String.isBlank(card.AXF_CCT_TXT_CurrencyCode__c)
+            ? card.CurrencyIsoCode
+            : card.AXF_CCT_TXT_CurrencyCode__c
+        );
         changes.cards.put(
           card.Id,
           new AXF_OBJ_CreditCardTransaction__c(
@@ -157,6 +191,7 @@ public with sharing class ALT_CLS_Reconciliation {
       changes.entries.add(change);
     }
     save(changes, byEntry);
+    reprice(changes, byEntry);
     return outcomes;
   }
 
@@ -214,6 +249,10 @@ public with sharing class ALT_CLS_Reconciliation {
           AXF_ENT_LKP_BankAccountTransaction__c = null,
           AXF_ENT_LKP_CreditCardTransaction__c = null
         );
+        if (entry.AXF_ENT_CUR_PlannedAmount__c != null) {
+          undo.AXF_ENT_CUR_Amount__c = entry.AXF_ENT_CUR_PlannedAmount__c;
+          undo.AXF_ENT_CUR_PlannedAmount__c = null;
+        }
         if (clearsAccount(entry, bankTransactions)) {
           undo.AXF_ENT_LKP_BankAccount__c = null;
         }
@@ -253,6 +292,105 @@ public with sharing class ALT_CLS_Reconciliation {
     }
     save(changes, byEntry);
     return outcomes;
+  }
+
+  // The Entry shows what was paid, in its own currency; a payment in another currency leaves it alone.
+  private void paid(
+    Changes changes,
+    AXF_OBJ_Entry__c change,
+    AXF_OBJ_Entry__c entry,
+    Decimal amount,
+    String currencyCode
+  ) {
+    if (
+      entry.CurrencyIsoCode != currencyCode ||
+      entry.AXF_ENT_CUR_Amount__c == amount
+    ) {
+      return;
+    }
+    change.AXF_ENT_CUR_PlannedAmount__c = entry.AXF_ENT_CUR_Amount__c;
+    change.AXF_ENT_CUR_Amount__c = amount;
+    if (
+      entry.AXF_ENT_LKP_Contract__c != null &&
+      entry.AXF_ENT_NUM_InstallmentNumber__c != null
+    ) {
+      Repricing repricing = new Repricing();
+      repricing.entryId = entry.Id;
+      repricing.contractId = entry.AXF_ENT_LKP_Contract__c;
+      repricing.installment = entry.AXF_ENT_NUM_InstallmentNumber__c.intValue();
+      repricing.amount = amount;
+      repricing.currencyCode = currencyCode;
+      changes.repricings.add(repricing);
+    }
+  }
+
+  // Runs after the Entries are saved; a failure here does not undo the reconciliation, it is
+  // reported in the outcome message.
+  private void reprice(Changes changes, Map<Id, Outcome> byEntry) {
+    Map<Id, Repricing> byContract = new Map<Id, Repricing>();
+    for (Repricing repricing : changes.repricings) {
+      if (byEntry.get(repricing.entryId).success) {
+        byContract.put(repricing.contractId, repricing);
+      }
+    }
+    if (byContract.isEmpty()) {
+      return;
+    }
+    List<AXF_OBJ_Contract__c> contracts = new List<AXF_OBJ_Contract__c>();
+    for (AXF_OBJ_Contract__c contract : [
+      SELECT Id, CurrencyIsoCode
+      FROM AXF_OBJ_Contract__c
+      WHERE
+        Id IN :byContract.keySet()
+        AND RecordType.DeveloperName IN :REPRICED_CONTRACTS
+      WITH USER_MODE
+    ]) {
+      Repricing repricing = byContract.get(contract.Id);
+      if (contract.CurrencyIsoCode == repricing.currencyCode) {
+        contract.AXF_CTR_CUR_Amount__c = repricing.amount;
+        contracts.add(contract);
+      }
+    }
+    Set<Id> repricedIds = new Map<Id, AXF_OBJ_Contract__c>(contracts).keySet();
+    List<AXF_OBJ_Entry__c> later = new List<AXF_OBJ_Entry__c>();
+    for (AXF_OBJ_Entry__c entry : [
+      SELECT
+        Id,
+        AXF_ENT_LKP_Contract__c,
+        AXF_ENT_NUM_InstallmentNumber__c,
+        CurrencyIsoCode
+      FROM AXF_OBJ_Entry__c
+      WHERE
+        AXF_ENT_LKP_Contract__c IN :repricedIds
+        AND AXF_ENT_PKL_Status__c = :ENTRY_PENDING
+        AND AXF_ENT_NUM_InstallmentNumber__c != NULL
+      WITH USER_MODE
+    ]) {
+      Repricing repricing = byContract.get(entry.AXF_ENT_LKP_Contract__c);
+      if (
+        entry.AXF_ENT_NUM_InstallmentNumber__c > repricing.installment &&
+        entry.CurrencyIsoCode == repricing.currencyCode
+      ) {
+        entry.AXF_ENT_CUR_Amount__c = repricing.amount;
+        later.add(entry);
+      }
+    }
+    List<Database.SaveResult> results = Database.update(
+      contracts,
+      false,
+      AccessLevel.USER_MODE
+    );
+    results.addAll(Database.update(later, false, AccessLevel.USER_MODE));
+    for (Database.SaveResult result : results) {
+      if (!result.isSuccess()) {
+        for (Repricing repricing : byContract.values()) {
+          byEntry.get(repricing.entryId).message =
+            'Conciliado, mas as parcelas futuras não foram atualizadas: ' +
+            result.getErrors()[0].getMessage();
+        }
+        return;
+      }
+    }
   }
 
   // The account of the reconciled transaction goes back to empty on an Entry without card. An
@@ -526,6 +664,11 @@ public with sharing class ALT_CLS_Reconciliation {
           AXF_ENT_LKP_BankAccount__c,
           AXF_ENT_LKP_CreditCard__c,
           AXF_ENT_LKP_Invoice__c,
+          AXF_ENT_CUR_Amount__c,
+          AXF_ENT_CUR_PlannedAmount__c,
+          AXF_ENT_LKP_Contract__c,
+          AXF_ENT_NUM_InstallmentNumber__c,
+          CurrencyIsoCode,
           AXF_ENT_LKP_BankAccountTransaction__c,
           AXF_ENT_LKP_CreditCardTransaction__c
         FROM AXF_OBJ_Entry__c
@@ -542,6 +685,7 @@ public with sharing class ALT_CLS_Reconciliation {
         SELECT
           AXF_BAT_DAT_Date__c,
           AXF_BAT_CUR_Amount__c,
+          CurrencyIsoCode,
           AXF_BAT_MD_BankAccount__c,
           AXF_BAT_MD_BankAccount__r.AXF_BA_MD_Holder__c,
           AXF_BAT_PKL_ReconciliationStatus__c

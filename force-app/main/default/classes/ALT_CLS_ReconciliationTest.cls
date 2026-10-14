@@ -59,10 +59,17 @@ private class ALT_CLS_ReconciliationTest {
   private static AXF_OBJ_BankAccountTransaction__c bankTransaction(
     String status
   ) {
+    return bankTransaction(status, -100);
+  }
+
+  private static AXF_OBJ_BankAccountTransaction__c bankTransaction(
+    String status,
+    Decimal amount
+  ) {
     AXF_OBJ_BankAccountTransaction__c transactionRecord = new AXF_OBJ_BankAccountTransaction__c(
       AXF_BAT_MD_BankAccount__c = account.Id,
       AXF_BAT_DAT_Date__c = Date.newInstance(2026, 10, 7),
-      AXF_BAT_CUR_Amount__c = -100,
+      AXF_BAT_CUR_Amount__c = amount,
       AXF_BAT_TXT_Description__c = 'Pagamento',
       AXF_BAT_PKL_ReconciliationStatus__c = status
     );
@@ -822,6 +829,102 @@ private class ALT_CLS_ReconciliationTest {
           }
         )[0];
       System.assertEquals(true, ok.success, '' + ok.message);
+    }
+  }
+
+  @IsTest
+  static void paidAmountReplacesTheEntryAmountAndUndoRestoresThePlannedOne() {
+    System.runAs(new User(Id = UserInfo.getUserId())) {
+      base();
+      AXF_OBJ_Entry__c entry = entry(null, null);
+      AXF_OBJ_BankAccountTransaction__c bank = bankTransaction('Pending', -120);
+      ALT_CLS_Reconciliation service = new ALT_CLS_Reconciliation();
+      service.reconcile(
+        new List<ALT_CLS_Reconciliation.Pair>{
+          new ALT_CLS_Reconciliation.Pair(entry.Id, bank.Id, null)
+        }
+      );
+      AXF_OBJ_Entry__c saved = [
+        SELECT AXF_ENT_CUR_Amount__c, AXF_ENT_CUR_PlannedAmount__c
+        FROM AXF_OBJ_Entry__c
+        WHERE Id = :entry.Id
+      ];
+      System.assertEquals(120, saved.AXF_ENT_CUR_Amount__c);
+      System.assertEquals(100, saved.AXF_ENT_CUR_PlannedAmount__c);
+      service.unreconcile(new List<Id>{ entry.Id });
+      saved = [
+        SELECT AXF_ENT_CUR_Amount__c, AXF_ENT_CUR_PlannedAmount__c
+        FROM AXF_OBJ_Entry__c
+        WHERE Id = :entry.Id
+      ];
+      System.assertEquals(100, saved.AXF_ENT_CUR_Amount__c);
+      System.assertEquals(null, saved.AXF_ENT_CUR_PlannedAmount__c);
+    }
+  }
+
+  @IsTest
+  static void installmentPaidForAnotherAmountRepricesTheContractAndLaterPending() {
+    System.runAs(new User(Id = UserInfo.getUserId())) {
+      base();
+      AXF_OBJ_Contract__c contract = new AXF_OBJ_Contract__c(
+        Name = 'Consórcio',
+        AXF_CTR_MD_Holder__c = holder.Id,
+        RecordTypeId = Schema.SObjectType.AXF_OBJ_Contract__c.getRecordTypeInfosByDeveloperName()
+          .get('AXF_Consortium')
+          .getRecordTypeId(),
+        AXF_CTR_PKL_Direction__c = 'Expense',
+        AXF_CTR_PKL_Status__c = 'Active',
+        AXF_CTR_DAT_FirstDueDate__c = Date.newInstance(2026, 9, 5),
+        AXF_CTR_CUR_Amount__c = 100
+      );
+      insert contract;
+      List<AXF_OBJ_Entry__c> installments = new List<AXF_OBJ_Entry__c>();
+      for (Integer n = 1; n <= 3; n++) {
+        installments.add(
+          new AXF_OBJ_Entry__c(
+            Name = 'Parcela ' + n,
+            AXF_ENT_MD_Holder__c = holder.Id,
+            AXF_ENT_LKP_Contract__c = contract.Id,
+            AXF_ENT_NUM_InstallmentNumber__c = n,
+            AXF_ENT_CUR_Amount__c = 100,
+            AXF_ENT_DAT_DueDate__c = Date.newInstance(2026, 8 + n, 5),
+            AXF_ENT_PKL_Type__c = 'Expense',
+            AXF_ENT_PKL_Status__c = 'Pending'
+          )
+        );
+      }
+      insert installments;
+      AXF_OBJ_BankAccountTransaction__c bank = bankTransaction('Pending', -130);
+      List<ALT_CLS_Reconciliation.Outcome> outcomes = new ALT_CLS_Reconciliation()
+        .reconcile(
+          new List<ALT_CLS_Reconciliation.Pair>{
+            new ALT_CLS_Reconciliation.Pair(installments[1].Id, bank.Id, null)
+          }
+        );
+      System.assertEquals(true, outcomes[0].success, '' + outcomes[0].message);
+      System.assertEquals(
+        130,
+        [
+          SELECT AXF_CTR_CUR_Amount__c
+          FROM AXF_OBJ_Contract__c
+          WHERE Id = :contract.Id
+        ]
+        .AXF_CTR_CUR_Amount__c
+      );
+      Map<Decimal, Decimal> amounts = new Map<Decimal, Decimal>();
+      for (AXF_OBJ_Entry__c item : [
+        SELECT AXF_ENT_NUM_InstallmentNumber__c, AXF_ENT_CUR_Amount__c
+        FROM AXF_OBJ_Entry__c
+        WHERE AXF_ENT_LKP_Contract__c = :contract.Id
+      ]) {
+        amounts.put(
+          item.AXF_ENT_NUM_InstallmentNumber__c,
+          item.AXF_ENT_CUR_Amount__c
+        );
+      }
+      System.assertEquals(100, amounts.get(1), 'earlier installment untouched');
+      System.assertEquals(130, amounts.get(2));
+      System.assertEquals(130, amounts.get(3), 'later pending installment');
     }
   }
 }
