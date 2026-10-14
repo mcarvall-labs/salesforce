@@ -171,4 +171,64 @@ private class ALT_CLS_ContractScheduleTest {
     System.assertEquals(Date.newInstance(2026, 2, 10), items[0].dueDate);
     System.assertEquals(3, items.size());
   }
+
+  @IsTest
+  static void monthlyChargesAreAddedToEveryInstallmentOutsideTheInterest() {
+    // SAC 1,200.00 at 1 %: amortization 100.00, first interest 12.00, plus 17.50 of charges.
+    List<ALT_CLS_ContractSchedule.Item> items = ALT_CLS_ContractSchedule.financing(
+      1200,
+      1,
+      12,
+      ALT_CLS_ContractSchedule.SAC,
+      Date.newInstance(2026, 11, 5),
+      null,
+      17.50
+    );
+    System.assertEquals(129.50, items[0].amount);
+    System.assertEquals(12.00, items[0].interest);
+    System.assertEquals(17.50, items[0].charges);
+    System.assertEquals(118.50, items[11].amount);
+  }
+
+  @IsTest
+  static void aFixedPaymentKeepsTheInstallmentAndPaysTheDebtOff() {
+    Decimal rate = ALT_CLS_ContractSchedule.impliedMonthlyRate(1000, 88.85, 12);
+    List<ALT_CLS_ContractSchedule.Item> items = ALT_CLS_ContractSchedule.financing(
+      1000,
+      rate,
+      12,
+      ALT_CLS_ContractSchedule.PRICE,
+      Date.newInstance(2026, 11, 5),
+      88.85,
+      0
+    );
+    Decimal amortized = 0;
+    for (Integer i = 0; i < 11; i++) {
+      System.assertEquals(88.85, items[i].amount);
+    }
+    for (ALT_CLS_ContractSchedule.Item item : items) {
+      amortized += item.amount - item.interest;
+    }
+    System.assertEquals(1000, amortized);
+  }
+
+  @IsTest
+  static void theImpliedRateIsTheOneThatPaysThePrincipalOff() {
+    // 88.85 is the 1 % a month installment of 1,000.00 over 12 months, rounded to the cent.
+    Decimal rate = ALT_CLS_ContractSchedule.impliedMonthlyRate(1000, 88.85, 12);
+    System.assert(Math.abs(rate - 1) < 0.01, 'rate ' + rate);
+    System.assertEquals(
+      0,
+      ALT_CLS_ContractSchedule.impliedMonthlyRate(1200, 100, 12)
+    );
+    // Pays back less than was borrowed, or needs more than 100 % a month: no rate.
+    System.assertEquals(
+      null,
+      ALT_CLS_ContractSchedule.impliedMonthlyRate(1000, 80, 12)
+    );
+    System.assertEquals(
+      null,
+      ALT_CLS_ContractSchedule.impliedMonthlyRate(1000, 1500, 12)
+    );
+  }
 }

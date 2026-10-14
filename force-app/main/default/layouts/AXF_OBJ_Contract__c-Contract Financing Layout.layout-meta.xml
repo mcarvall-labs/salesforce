@@ -61,6 +61,14 @@
                 <behavior>Edit</behavior>
                 <field>AXF_CTR_PKL_AmortizationSystem__c</field>
             </layoutItems>
+            <layoutItems>
+                <behavior>Edit</behavior>
+                <field>AXF_CTR_CUR_InformedInstallment__c</field>
+            </layoutItems>
+            <layoutItems>
+                <behavior>Edit</behavior>
+                <field>AXF_CTR_CUR_UpfrontCosts__c</field>
+            </layoutItems>
         </layoutColumns>
         <layoutColumns>
             <layoutItems>
@@ -70,6 +78,29 @@
             <layoutItems>
                 <behavior>Edit</behavior>
                 <field>AXF_CTR_DAT_FirstDueDate__c</field>
+            </layoutItems>
+        </layoutColumns>
+        <style>TwoColumnsTopToBottom</style>
+    </layoutSections>
+    <layoutSections>
+        <customLabel>true</customLabel>
+        <detailHeading>true</detailHeading>
+        <editHeading>true</editHeading>
+        <label>Encargos mensais</label>
+        <layoutColumns>
+            <layoutItems>
+                <behavior>Edit</behavior>
+                <field>AXF_CTR_CUR_Insurance__c</field>
+            </layoutItems>
+            <layoutItems>
+                <behavior>Edit</behavior>
+                <field>AXF_CTR_CUR_AdminFee__c</field>
+            </layoutItems>
+        </layoutColumns>
+        <layoutColumns>
+            <layoutItems>
+                <behavior>Edit</behavior>
+                <field>AXF_CTR_CUR_OtherCharges__c</field>
             </layoutItems>
         </layoutColumns>
         <style>TwoColumnsTopToBottom</style>
