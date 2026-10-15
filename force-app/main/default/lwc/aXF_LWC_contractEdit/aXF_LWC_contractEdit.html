@@ -1,0 +1,206 @@
+<template>
+  <lightning-quick-action-panel header="Editar contrato">
+    <template lwc:if={unsupported}>
+      <p class="slds-text-color_error">
+        Este tipo de contrato não pode ser editado por aqui.
+      </p>
+    </template>
+
+    <template lwc:if={supported}>
+      <template lwc:if={isStep1}>
+        <div class="slds-grid slds-wrap slds-gutters">
+          <template for:each={formFields} for:item="field">
+            <div key={field.api} class="slds-col slds-size_1-of-2">
+              <template lwc:if={field.isLookup}>
+                <lightning-record-picker
+                  label={field.label}
+                  object-api-name={field.object}
+                  value={field.value}
+                  data-api={field.api}
+                  onchange={handleLookup}
+                ></lightning-record-picker>
+              </template>
+              <template lwc:if={field.isText}>
+                <lightning-input
+                  type="text"
+                  label={field.label}
+                  value={field.value}
+                  required={field.required}
+                  data-api={field.api}
+                  class={field.className}
+                  onchange={handleInput}
+                ></lightning-input>
+              </template>
+              <template lwc:if={field.isNumber}>
+                <lightning-input
+                  type="number"
+                  label={field.label}
+                  value={field.value}
+                  step={field.step}
+                  required={field.required}
+                  data-api={field.api}
+                  class={field.className}
+                  onchange={handleInput}
+                ></lightning-input>
+              </template>
+              <template lwc:if={field.isDate}>
+                <lightning-input
+                  type="date"
+                  label={field.label}
+                  value={field.value}
+                  required={field.required}
+                  data-api={field.api}
+                  class={field.className}
+                  onchange={handleInput}
+                ></lightning-input>
+              </template>
+            </div>
+          </template>
+        </div>
+      </template>
+
+      <template lwc:if={isStep2}>
+        <h3 class="slds-text-heading_small slds-m-bottom_small">
+          Aplicar a alteração nos Lançamentos?
+        </h3>
+        <p class="slds-m-bottom_small">
+          O Contrato será salvo. Para cada campo alterado, escolha em quais
+          Lançamentos Pendentes a mudança também vale. Realizados, conciliados e
+          cancelados ficam sempre preservados.
+        </p>
+        <template for:each={scopeSections} for:item="section">
+          <div key={section.key} class="slds-box slds-m-bottom_small">
+            <template for:each={section.changes} for:item="change">
+              <p key={change.key}><b>{change.label}:</b> {change.text}</p>
+            </template>
+            <lightning-combobox
+              label="Aplicar em"
+              value={section.scope}
+              options={scopeOptions}
+              data-key={section.key}
+              onchange={handleScope}
+            ></lightning-combobox>
+            <template lwc:if={section.showFrom}>
+              <lightning-input
+                type="number"
+                label="Parcela inicial"
+                value={section.fromNumber}
+                min="1"
+                step="1"
+                data-key={section.key}
+                onchange={handleFrom}
+              ></lightning-input>
+            </template>
+          </div>
+        </template>
+        <template lwc:if={hasUnscopedChanges}>
+          <p class="slds-m-bottom_small">
+            Salvos no Contrato, sem escopo:
+            <template for:each={unscopedChanges} for:item="change">
+              <span key={change.key} class="slds-m-left_x-small">
+                {change.label} ({change.text})
+              </span>
+            </template>
+          </p>
+        </template>
+
+        <template lwc:if={loading}>
+          <lightning-spinner
+            alternative-text="Calculando"
+            size="small"
+          ></lightning-spinner>
+        </template>
+
+        <template lwc:if={hasPreview}>
+          <p class="slds-m-vertical_small">
+            <b>{previewData.updated}</b> serão atualizados ·
+            <b>{previewData.kept}</b> pendentes ficam como estão ·
+            <b>{previewData.preserved}</b> preservados
+          </p>
+          <template lwc:if={hasMissing}>
+            <p class="slds-m-bottom_small">
+              {previewData.missing} parcela(s) ainda sem Lançamento serão
+              criadas.
+            </p>
+          </template>
+          <table class="slds-table slds-table_bordered slds-table_cell-buffer">
+            <thead>
+              <tr>
+                <th>#</th>
+                <th>Nome</th>
+                <th>Vencimento</th>
+                <th>Valor</th>
+                <th>Estado</th>
+                <th>Resultado</th>
+              </tr>
+            </thead>
+            <tbody>
+              <template for:each={previewRows} for:item="row">
+                <tr key={row.key} class={row.className}>
+                  <td>{row.ordinal}</td>
+                  <td>
+                    <template lwc:if={row.nameChanged}>
+                      {row.name} → <b>{row.newName}</b>
+                    </template>
+                    <template lwc:else>{row.name}</template>
+                  </td>
+                  <td>
+                    <template lwc:if={row.dueChanged}>
+                      {row.dueText} → <b>{row.newDueText}</b>
+                    </template>
+                    <template lwc:else>{row.dueText}</template>
+                  </td>
+                  <td>
+                    <template lwc:if={row.amountChanged}>
+                      {row.amountText} → <b>{row.newAmountText}</b>
+                    </template>
+                    <template lwc:else>{row.amountText}</template>
+                  </td>
+                  <td>{row.statusLabel}</td>
+                  <td>{row.outcomeLabel}</td>
+                </tr>
+              </template>
+            </tbody>
+          </table>
+        </template>
+      </template>
+    </template>
+
+    <div slot="footer">
+      <lightning-button
+        label="Cancelar"
+        variant="neutral"
+        class="slds-m-right_x-small"
+        onclick={handleCancel}
+      ></lightning-button>
+      <template lwc:if={isStep1}>
+        <lightning-button
+          label="Restaurar"
+          variant="neutral"
+          class="slds-m-right_x-small"
+          onclick={handleRestore}
+        ></lightning-button>
+        <lightning-button
+          label="Continuar"
+          variant="brand"
+          disabled={continueDisabled}
+          onclick={handleContinue}
+        ></lightning-button>
+      </template>
+      <template lwc:if={isStep2}>
+        <lightning-button
+          label="Voltar"
+          variant="neutral"
+          class="slds-m-right_x-small"
+          onclick={handleBack}
+        ></lightning-button>
+        <lightning-button
+          label="Aplicar"
+          variant="brand"
+          disabled={saveDisabled}
+          onclick={handleSave}
+        ></lightning-button>
+      </template>
+    </div>
+  </lightning-quick-action-panel>
+</template>

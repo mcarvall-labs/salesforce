@@ -1,6 +1,6 @@
 public with sharing class AXF_CLS_ContractHandler {
-  @TestVisible
-  private static Boolean bypass = false;
+  // Set by the "Editar contrato" screen, which applies the scope the user chose itself.
+  public static Boolean bypass = false;
 
   private static final List<SObjectField> WATCHED = new List<SObjectField>{
     AXF_OBJ_Contract__c.Name,

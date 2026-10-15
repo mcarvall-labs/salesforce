@@ -25,9 +25,16 @@ public with sharing class ALT_CLS_ContractGeneration {
   @TestVisible
   private Date today = Date.today();
 
-  public Result generate(Set<Id> contractIds, Boolean updatePending) {
-    Result result = new Result();
-    List<AXF_OBJ_Contract__c> contracts = [
+  public ALT_CLS_ContractGeneration() {
+  }
+
+  public ALT_CLS_ContractGeneration(Date referenceDate) {
+    this.today = referenceDate;
+  }
+
+  // The contracts with every field the schedule needs (plus the counterparty).
+  public static List<AXF_OBJ_Contract__c> load(Set<Id> contractIds) {
+    return [
       SELECT
         Id,
         Name,
@@ -51,10 +58,39 @@ public with sharing class ALT_CLS_ContractGeneration {
         AXF_CTR_CUR_InformedInstallment__c,
         AXF_CTR_CUR_Insurance__c,
         AXF_CTR_CUR_AdminFee__c,
-        AXF_CTR_CUR_OtherCharges__c
+        AXF_CTR_CUR_OtherCharges__c,
+        AXF_CTR_TXT_Counterparty__c
       FROM AXF_OBJ_Contract__c
       WHERE Id IN :contractIds
     ];
+  }
+
+  // The entry every installment of the contract should have, by key (see `entryKey`).
+  public Map<String, AXF_OBJ_Entry__c> desiredEntries(
+    AXF_OBJ_Contract__c contract
+  ) {
+    Boolean recurring = contract.RecordType.DeveloperName == RT_RECURRING;
+    List<ALT_CLS_ContractSchedule.Item> items = schedule(contract);
+    Map<String, AXF_OBJ_Entry__c> desired = new Map<String, AXF_OBJ_Entry__c>();
+    for (ALT_CLS_ContractSchedule.Item item : items) {
+      AXF_OBJ_Entry__c entry = build(contract, item, items.size(), recurring);
+      desired.put(key(recurring, entry), entry);
+    }
+    return desired;
+  }
+
+  public static String entryKey(Boolean recurring, AXF_OBJ_Entry__c entry) {
+    return key(recurring, entry);
+  }
+
+  // Why the contract cannot generate entries (null when it can).
+  public static String problem(AXF_OBJ_Contract__c contract) {
+    return validate(contract);
+  }
+
+  public Result generate(Set<Id> contractIds, Boolean updatePending) {
+    Result result = new Result();
+    List<AXF_OBJ_Contract__c> contracts = load(contractIds);
     Map<Id, Map<String, AXF_OBJ_Entry__c>> existing = existingEntries(
       contracts
     );

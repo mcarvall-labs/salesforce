@@ -11,6 +11,10 @@
     <gender>Masculine</gender>
     <nameFieldLabel>Nome</nameFieldLabel>
     <quickActions>
+        <label>Editar contrato</label>
+        <name>AXF_CTR_QA_EditWithScope</name>
+    </quickActions>
+    <quickActions>
         <label>Gerar lançamentos</label>
         <name>AXF_CTR_QA_GenerateEntries</name>
     </quickActions>

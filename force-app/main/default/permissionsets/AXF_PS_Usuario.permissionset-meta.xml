@@ -29,6 +29,10 @@
         <enabled>true</enabled>
     </classAccesses>
     <classAccesses>
+        <apexClass>AXF_CLS_CTRL_ContractScope</apexClass>
+        <enabled>true</enabled>
+    </classAccesses>
+    <classAccesses>
         <apexClass>AXF_CLS_CTRL_Timesheet</apexClass>
         <enabled>true</enabled>
     </classAccesses>
