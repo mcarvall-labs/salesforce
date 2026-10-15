@@ -79,7 +79,8 @@ const PREVIEW = {
       dueDate: "2026-06-10",
       newDueDate: "2026-06-10",
       amount: 780,
-      newAmount: 800
+      newAmount: 800,
+      changedFields: ["Categoria", "Conta/Cartão"]
     }
   ]
 };
@@ -236,5 +237,62 @@ describe("c-axf-lwc-contract-edit", () => {
     await flush();
     expect(input(element, "AXF_CTR_CUR_Amount__c")).not.toBeNull();
     expect(input(element, "AXF_CTR_CUR_Amount__c").value).toBe("800");
+  });
+
+  it("a wire re-emission does not wipe the edits or step 2", async () => {
+    preview.mockResolvedValue(PREVIEW);
+    const { element } = await setup();
+    await typeInto(element, "AXF_CTR_CUR_Amount__c", "800");
+    getRecord.emit(record());
+    await flush();
+    expect(input(element, "AXF_CTR_CUR_Amount__c").value).toBe("800");
+    button(element, "Continuar").click();
+    await flush();
+    getRecord.emit(record());
+    await flush();
+    expect(root(element).querySelectorAll("lightning-combobox")).toHaveLength(
+      1
+    );
+    expect(button(element, "Aplicar")).toBeDefined();
+  });
+
+  it("compares numbers by value, so 780.0 is not a change from 780", async () => {
+    const { element } = await setup();
+    await typeInto(element, "AXF_CTR_CUR_Amount__c", "780.0");
+    expect(button(element, "Continuar").disabled).toBe(true);
+    await typeInto(element, "AXF_CTR_CUR_Amount__c", "780.5");
+    expect(button(element, "Continuar").disabled).toBe(false);
+  });
+
+  it("Voltar and Cancelar are disabled while saving", async () => {
+    preview.mockResolvedValue(PREVIEW);
+    let finish;
+    save.mockReturnValue(
+      new Promise((resolve) => {
+        finish = resolve;
+      })
+    );
+    const { element } = await setup();
+    await typeInto(element, "AXF_CTR_CUR_Amount__c", "800");
+    button(element, "Continuar").click();
+    await flush();
+    expect(button(element, "Voltar").disabled).toBe(false);
+    button(element, "Aplicar").click();
+    await flush();
+    expect(button(element, "Voltar").disabled).toBe(true);
+    expect(button(element, "Cancelar").disabled).toBe(true);
+    finish({ updated: 1, created: 0 });
+    await flush();
+  });
+
+  it("the preview shows the Category and Account changes of a row", async () => {
+    preview.mockResolvedValue(PREVIEW);
+    const { element } = await setup();
+    await typeInto(element, "AXF_CTR_CUR_Amount__c", "800");
+    button(element, "Continuar").click();
+    await flush();
+    expect(root(element).textContent).toContain(
+      "Também altera: Categoria, Conta/Cartão"
+    );
   });
 });

@@ -157,7 +157,15 @@
                     <template lwc:else>{row.amountText}</template>
                   </td>
                   <td>{row.statusLabel}</td>
-                  <td>{row.outcomeLabel}</td>
+                  <td>
+                    {row.outcomeLabel}
+                    <template lwc:if={row.hasChangedFields}>
+                      <br />
+                      <span class="slds-text-body_small">
+                        Também altera: {row.changedFieldsText}
+                      </span>
+                    </template>
+                  </td>
                 </tr>
               </template>
             </tbody>
@@ -171,6 +179,7 @@
         label="Cancelar"
         variant="neutral"
         class="slds-m-right_x-small"
+        disabled={backDisabled}
         onclick={handleCancel}
       ></lightning-button>
       <template lwc:if={isStep1}>
@@ -192,6 +201,7 @@
           label="Voltar"
           variant="neutral"
           class="slds-m-right_x-small"
+          disabled={backDisabled}
           onclick={handleBack}
         ></lightning-button>
         <lightning-button

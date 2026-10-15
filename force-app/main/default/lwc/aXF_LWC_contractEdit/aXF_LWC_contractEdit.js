@@ -130,6 +130,15 @@ const normalize = (value) => {
   return String(value);
 };
 
+// Numbers compare by value ("780.0" is not a change from 780); everything else as text.
+const differs = (def, value, original) => {
+  const current = normalize(value);
+  if (def.kind === "number" && current !== null && original !== null) {
+    return Number(current) !== Number(original);
+  }
+  return current !== original;
+};
+
 const definitionOf = (apiName) =>
   Object.values(FIELD).find((item) => item.api === apiName);
 
@@ -150,6 +159,10 @@ export default class AXF_LWC_contractEdit extends LightningElement {
   @wire(getRecord, { recordId: "$recordId", fields: RECORD_FIELDS })
   wiredRecord({ data, error }) {
     if (data) {
+      if (this.loaded) {
+        // A re-emission must not wipe the user's edits or step 2.
+        return;
+      }
       this.recordType =
         data.fields.RecordType?.value?.fields?.DeveloperName?.value;
       const original = {};
@@ -192,7 +205,7 @@ export default class AXF_LWC_contractEdit extends LightningElement {
         isDate: def.kind === "date",
         isLookup: def.kind === "lookup",
         step: def.money ? "0.01" : "1",
-        className: normalize(value) !== this.original[def.api] ? "changed" : ""
+        className: differs(def, value, this.original[def.api]) ? "changed" : ""
       };
     });
   }
@@ -200,8 +213,8 @@ export default class AXF_LWC_contractEdit extends LightningElement {
   get changedApis() {
     return (FIELDS_BY_TYPE[this.recordType] || [])
       .map((key) => FIELD[key])
-      .filter(
-        (def) => normalize(this.values[def.api]) !== this.original[def.api]
+      .filter((def) =>
+        differs(def, this.values[def.api], this.original[def.api])
       )
       .map((def) => def.api);
   }
@@ -271,6 +284,8 @@ export default class AXF_LWC_contractEdit extends LightningElement {
       nameChanged: row.name !== row.newName,
       dueChanged: row.dueDate !== row.newDueDate,
       amountChanged: row.amount !== row.newAmount,
+      hasChangedFields: (row.changedFields || []).length > 0,
+      changedFieldsText: (row.changedFields || []).join(", "),
       amountText: this.money(row.amount),
       newAmountText: this.money(row.newAmount),
       dueText: this.date(row.dueDate),
@@ -284,6 +299,10 @@ export default class AXF_LWC_contractEdit extends LightningElement {
 
   get hasMissing() {
     return (this.previewData?.missing || 0) > 0;
+  }
+
+  get backDisabled() {
+    return this.saving;
   }
 
   get saveDisabled() {

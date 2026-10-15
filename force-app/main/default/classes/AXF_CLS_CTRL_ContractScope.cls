@@ -20,6 +20,9 @@ public with sharing class AXF_CLS_CTRL_ContractScope {
     public Decimal amount;
     @AuraEnabled
     public Decimal newAmount;
+    // PT-BR labels of the other fields (Categoria, Conta/Cartão) this edit also changes.
+    @AuraEnabled
+    public List<String> changedFields = new List<String>();
   }
 
   public class Preview {
@@ -68,6 +71,10 @@ public with sharing class AXF_CLS_CTRL_ContractScope {
   @TestVisible
   private static Date today = Date.today();
 
+  // Test seam: fails after the entries are updated, to prove the rollback undoes them too.
+  @TestVisible
+  private static Boolean failAfterEntryUpdate = false;
+
   // Preview of the entries the chosen scopes would change; no DML.
   @AuraEnabled
   public static Preview preview(
@@ -96,6 +103,7 @@ public with sharing class AXF_CLS_CTRL_ContractScope {
         row.newDueDate = source.newDueDate;
         row.amount = source.amount;
         row.newAmount = source.newAmount;
+        row.changedFields = source.changedFields;
         preview.rows.add(row);
       }
       return preview;
@@ -152,6 +160,9 @@ public with sharing class AXF_CLS_CTRL_ContractScope {
           }
         }
         summary.updated = plan.toUpdate.size();
+      }
+      if (failAfterEntryUpdate) {
+        throw fail('Falha simulada após atualizar os lançamentos.');
       }
       if (
         edit.proposed.AXF_CTR_PKL_Status__c ==
@@ -215,7 +226,7 @@ public with sharing class AXF_CLS_CTRL_ContractScope {
     AXF_OBJ_Contract__c contract = ALT_CLS_ContractGeneration.load(
       new Set<Id>{ contractId }
     )[0];
-    String type = contract.RecordType.DeveloperName;
+    String type = contract.RecordType?.DeveloperName;
     if (!allowedFor(type).contains(AXF_OBJ_Contract__c.Name)) {
       throw fail('Este tipo de contrato não pode ser editado por aqui.');
     }
@@ -259,7 +270,7 @@ public with sharing class AXF_CLS_CTRL_ContractScope {
     Map<String, Object> scopes
   ) {
     Edit edit = new Edit();
-    Set<SObjectField> allowed = allowedFor(current.RecordType.DeveloperName);
+    Set<SObjectField> allowed = allowedFor(current.RecordType?.DeveloperName);
     Map<String, SObjectField> fields = Schema.SObjectType.AXF_OBJ_Contract__c.fields.getMap();
     Set<String> changedScopes = new Set<String>();
     for (
@@ -270,7 +281,8 @@ public with sharing class AXF_CLS_CTRL_ContractScope {
         throw fail('O campo ' + apiName + ' não pode ser editado por aqui.');
       }
       Object typed = convert(field, values.get(apiName));
-      if (typed != current.get(field)) {
+      validate(field, typed);
+      if (differs(typed, current.get(field))) {
         current.put(field, typed);
         edit.changes.add(field);
         String scopeField = SCOPE_OF.get(field);
@@ -305,12 +317,62 @@ public with sharing class AXF_CLS_CTRL_ContractScope {
     Integer fromNumber = null;
     Object start = choice.get('fromNumber');
     if (start != null && String.isNotBlank(String.valueOf(start))) {
-      fromNumber = Integer.valueOf(String.valueOf(start));
+      fromNumber = parseFromNumber(String.valueOf(start).trim());
     }
     if (scope == ALT_CLS_ContractScope.SCOPE_FROM && fromNumber == null) {
       throw fail('Informe a parcela inicial do escopo "A partir da parcela".');
     }
     return new ALT_CLS_ContractScope.Choice(scope, fromNumber);
+  }
+
+  private static Integer parseFromNumber(String text) {
+    Integer parsed = null;
+    try {
+      parsed = text.isNumeric() ? Integer.valueOf(text) : null;
+    } catch (Exception e) {
+      parsed = null;
+    }
+    if (parsed == null || parsed < 1) {
+      throw fail('Parcela inicial inválida.');
+    }
+    return parsed;
+  }
+
+  // Strings compare case-sensitively (Apex == does not), so a case-only rename is a change.
+  private static Boolean differs(Object typed, Object current) {
+    if (typed instanceof String && current instanceof String) {
+      return !((String) typed).equals((String) current);
+    }
+    return typed != current;
+  }
+
+  private static void validate(SObjectField field, Object typed) {
+    if (field == AXF_OBJ_Contract__c.Name) {
+      if (typed == null || String.isBlank((String) typed)) {
+        throw fail('O nome do contrato não pode ficar em branco.');
+      }
+    } else if (field == AXF_OBJ_Contract__c.AXF_CTR_NUM_DueDay__c) {
+      requireWholeBetween(typed, 1, 31, 'O dia de vencimento');
+    } else if (field == AXF_OBJ_Contract__c.AXF_CTR_NUM_InstallmentCount__c) {
+      requireWholeBetween(typed, 1, 600, 'O número de parcelas');
+    }
+  }
+
+  private static void requireWholeBetween(
+    Object typed,
+    Integer min,
+    Integer max,
+    String label
+  ) {
+    if (typed == null) {
+      return;
+    }
+    Decimal value = (Decimal) typed;
+    if (value != value.setScale(0) || value < min || value > max) {
+      throw fail(
+        label + ' deve ser um número inteiro entre ' + min + ' e ' + max + '.'
+      );
+    }
   }
 
   private static Object convert(SObjectField field, Object raw) {

@@ -48,6 +48,8 @@ public with sharing class ALT_CLS_ContractScope {
     public Date newDueDate;
     public Decimal amount;
     public Decimal newAmount;
+    // PT-BR labels of the Category / Account-Card changes (shown in the preview).
+    public List<String> changedFields = new List<String>();
   }
 
   public class Plan {
@@ -126,7 +128,8 @@ public with sharing class ALT_CLS_ContractScope {
       Boolean changed = false;
       if (want != null) {
         if (
-          included(FIELD_NAME, choices, row, entry) && want.Name != entry.Name
+          included(FIELD_NAME, choices, row, entry) &&
+          !want.Name.equals(entry.Name)
         ) {
           change.Name = want.Name;
           row.newName = want.Name;
@@ -155,6 +158,7 @@ public with sharing class ALT_CLS_ContractScope {
           want.AXF_ENT_LKP_Category__c != entry.AXF_ENT_LKP_Category__c
         ) {
           change.AXF_ENT_LKP_Category__c = want.AXF_ENT_LKP_Category__c;
+          row.changedFields.add('Categoria');
           changed = true;
         }
         if (
@@ -165,6 +169,7 @@ public with sharing class ALT_CLS_ContractScope {
         ) {
           change.AXF_ENT_LKP_BankAccount__c = want.AXF_ENT_LKP_BankAccount__c;
           change.AXF_ENT_LKP_CreditCard__c = want.AXF_ENT_LKP_CreditCard__c;
+          row.changedFields.add('Conta/Cartão');
           changed = true;
         }
       }
@@ -234,6 +239,7 @@ public with sharing class ALT_CLS_ContractScope {
         AXF_ENT_LKP_CreditCard__c
       FROM AXF_OBJ_Entry__c
       WHERE AXF_ENT_LKP_Contract__c = :contractId
+      WITH USER_MODE
       ORDER BY AXF_ENT_DAT_DueDate__c ASC, Id ASC
     ];
   }

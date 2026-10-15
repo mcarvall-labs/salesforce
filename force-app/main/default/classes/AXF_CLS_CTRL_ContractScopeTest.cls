@@ -3,13 +3,20 @@ private class AXF_CLS_CTRL_ContractScopeTest {
   private static Account holder;
 
   private static AXF_OBJ_Contract__c contract(Integer count) {
+    return contract('AXF_Installment', count);
+  }
+
+  private static AXF_OBJ_Contract__c contract(
+    String recordType,
+    Integer count
+  ) {
     holder = new Account(Name = 'Titular');
     insert holder;
     AXF_OBJ_Contract__c c = new AXF_OBJ_Contract__c(
       Name = 'Carta',
       AXF_CTR_MD_Holder__c = holder.Id,
       RecordTypeId = Schema.SObjectType.AXF_OBJ_Contract__c.getRecordTypeInfosByDeveloperName()
-        .get('AXF_Installment')
+        .get(recordType)
         .getRecordTypeId(),
       AXF_CTR_PKL_Direction__c = 'Expense',
       AXF_CTR_PKL_Status__c = 'Active',
@@ -41,8 +48,16 @@ private class AXF_CLS_CTRL_ContractScopeTest {
   }
 
   private static String errorOf(Id contractId, Map<String, Object> values) {
+    return errorOf(contractId, values, null);
+  }
+
+  private static String errorOf(
+    Id contractId,
+    Map<String, Object> values,
+    Map<String, Object> scopes
+  ) {
     try {
-      AXF_CLS_CTRL_ContractScope.save(contractId, values, null);
+      AXF_CLS_CTRL_ContractScope.save(contractId, values, scopes);
     } catch (AuraHandledException e) {
       return e.getMessage();
     }
@@ -132,7 +147,7 @@ private class AXF_CLS_CTRL_ContractScopeTest {
   }
 
   @IsTest
-  static void aFailureUndoesTheContractAndTheEntries() {
+  static void aValidationFailureLeavesTheContractAndTheEntriesUntouched() {
     AXF_OBJ_Contract__c c = contract(3);
     Account other = new Account(Name = 'Outro titular');
     insert other;
@@ -168,6 +183,166 @@ private class AXF_CLS_CTRL_ContractScopeTest {
       );
     }
     System.assertEquals(false, AXF_CLS_ContractHandler.bypass);
+  }
+
+  @IsTest
+  static void aFailureAfterTheEntriesWereUpdatedUndoesBoth() {
+    AXF_OBJ_Contract__c c = contract(3);
+    List<AXF_OBJ_Entry__c> before = entries(c.Id);
+    AXF_CLS_CTRL_ContractScope.failAfterEntryUpdate = true;
+    String message = errorOf(
+      c.Id,
+      new Map<String, Object>{
+        'Name' => 'Nova',
+        'AXF_CTR_CUR_Amount__c' => 150
+      },
+      new Map<String, Object>{
+        'NAME' => scope('ALL'),
+        'AMOUNT' => scope('ALL')
+      }
+    );
+    System.assert(message.contains('Falha simulada'), message);
+    AXF_OBJ_Contract__c saved = [
+      SELECT Name, AXF_CTR_CUR_Amount__c
+      FROM AXF_OBJ_Contract__c
+      WHERE Id = :c.Id
+    ];
+    System.assertEquals('Carta', saved.Name);
+    System.assertEquals(100, saved.AXF_CTR_CUR_Amount__c);
+    List<AXF_OBJ_Entry__c> after = entries(c.Id);
+    System.assertEquals(before.size(), after.size());
+    for (Integer i = 0; i < after.size(); i++) {
+      System.assertEquals(before[i].Name, after[i].Name);
+      System.assertEquals(
+        before[i].AXF_ENT_CUR_Amount__c,
+        after[i].AXF_ENT_CUR_Amount__c
+      );
+    }
+    System.assertEquals(false, AXF_CLS_ContractHandler.bypass);
+  }
+
+  @IsTest
+  static void aCaseOnlyRenameChangesTheContractAndTheEntries() {
+    AXF_OBJ_Contract__c c = contract(3);
+    AXF_CLS_CTRL_ContractScope.Summary summary = AXF_CLS_CTRL_ContractScope.save(
+      c.Id,
+      new Map<String, Object>{ 'Name' => 'carta' },
+      new Map<String, Object>{ 'NAME' => scope('ALL') }
+    );
+    System.assertEquals(3, summary.updated);
+    String savedName = [SELECT Name FROM AXF_OBJ_Contract__c WHERE Id = :c.Id]
+    .Name;
+    System.assert('carta'.equals(savedName), savedName);
+    for (AXF_OBJ_Entry__c e : entries(c.Id)) {
+      System.assert(e.Name.startsWith('carta '), e.Name);
+    }
+  }
+
+  @IsTest
+  static void anInvalidStartingInstallmentIsRejected() {
+    AXF_OBJ_Contract__c c = contract(2);
+    List<String> invalid = new List<String>{
+      'abc',
+      '1.5',
+      '0',
+      '-2',
+      '99999999999'
+    };
+    for (String bad : invalid) {
+      String message = errorOf(
+        c.Id,
+        new Map<String, Object>{ 'Name' => 'X' },
+        new Map<String, Object>{
+          'NAME' => new Map<String, Object>{
+            'scope' => 'FROM',
+            'fromNumber' => bad
+          }
+        }
+      );
+      System.assertEquals('Parcela inicial inválida.', message, bad);
+    }
+  }
+
+  @IsTest
+  static void serverSideValuesAreValidated() {
+    AXF_OBJ_Contract__c c = contract(2);
+    System.assertEquals(
+      'O nome do contrato não pode ficar em branco.',
+      errorOf(c.Id, new Map<String, Object>{ 'Name' => '  ' })
+    );
+    for (Integer bad : new List<Integer>{ 0, 601 }) {
+      System.assert(
+        errorOf(
+            c.Id,
+            new Map<String, Object>{ 'AXF_CTR_NUM_InstallmentCount__c' => bad }
+          )
+          .contains('entre 1 e 600')
+      );
+    }
+    System.assertEquals(
+      'Carta',
+      [SELECT Name FROM AXF_OBJ_Contract__c WHERE Id = :c.Id].Name
+    );
+  }
+
+  @IsTest
+  static void theDueDayMustBeBetween1And31() {
+    AXF_OBJ_Contract__c recurring = contract('AXF_Recurring', null);
+    for (Object bad : new List<Object>{ 0, 32, '5.5' }) {
+      System.assert(
+        errorOf(
+            recurring.Id,
+            new Map<String, Object>{ 'AXF_CTR_NUM_DueDay__c' => bad }
+          )
+          .contains('entre 1 e 31'),
+        String.valueOf(bad)
+      );
+    }
+  }
+
+  @IsTest
+  static void thePreviewListsCategoryAndAccountChanges() {
+    AXF_OBJ_Contract__c c = contract(2);
+    AXF_OBJ_Category__c category = new AXF_OBJ_Category__c(
+      Name = 'Casa',
+      AXF_CAT_PKL_Type__c = 'Expense'
+    );
+    insert category;
+    AXF_OBJ_BankAccount__c bank = new AXF_OBJ_BankAccount__c(
+      Name = 'Conta',
+      AXF_BA_MD_Holder__c = holder.Id,
+      AXF_BA_PKL_Institution__c = '341',
+      AXF_BA_PKL_Type__c = 'Checking'
+    );
+    insert bank;
+    Map<String, Object> values = new Map<String, Object>{
+      'AXF_CTR_LKP_Category__c' => category.Id,
+      'AXF_CTR_LKP_BankAccount__c' => bank.Id
+    };
+    AXF_CLS_CTRL_ContractScope.Preview onlyCategory = AXF_CLS_CTRL_ContractScope.preview(
+      c.Id,
+      values,
+      new Map<String, Object>{
+        'CATEGORY' => scope('ALL'),
+        'ACCOUNT' => scope('NONE')
+      }
+    );
+    System.assertEquals(
+      new List<String>{ 'Categoria' },
+      onlyCategory.rows[0].changedFields
+    );
+    AXF_CLS_CTRL_ContractScope.Preview both = AXF_CLS_CTRL_ContractScope.preview(
+      c.Id,
+      values,
+      new Map<String, Object>{
+        'CATEGORY' => scope('ALL'),
+        'ACCOUNT' => scope('ALL')
+      }
+    );
+    System.assertEquals(
+      new List<String>{ 'Categoria', 'Conta/Cartão' },
+      both.rows[0].changedFields
+    );
   }
 
   @IsTest

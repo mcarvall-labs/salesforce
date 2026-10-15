@@ -229,6 +229,23 @@ private class ALT_CLS_ContractScopeTest {
   }
 
   @IsTest
+  static void aCaseOnlyRenameChangesTheScopedEntries() {
+    AXF_OBJ_Contract__c c = contract('AXF_Installment', 3);
+    AXF_OBJ_Contract__c p = proposed(c.Id);
+    p.Name = 'carta';
+    ALT_CLS_ContractScope.Plan result = plan(
+      p,
+      choose(
+        ALT_CLS_ContractScope.FIELD_NAME,
+        ALT_CLS_ContractScope.SCOPE_ALL,
+        null
+      )
+    );
+    System.assertEquals(3, result.updated);
+    System.assert('carta 1/3'.equals(result.rows[0].newName));
+  }
+
+  @IsTest
   static void lastFinancingParcelAbsorbsTheResidue() {
     AXF_OBJ_Contract__c c = contract('AXF_Financing', 7);
     c.AXF_CTR_CUR_Amount__c = null;
