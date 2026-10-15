@@ -1,0 +1,135 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<title>AXF-337 — Gerar lançamento a partir da transação (protótipo para aprovação)</title>
+<style>
+:root{--blue:#0176d3;--bg:#f3f3f3;--bd:#dddbda;--mut:#706e6b;--ok:#2e844a;--err:#ba0517;--warn:#fe9339}
+*{box-sizing:border-box}
+body{margin:0;font:14px/1.4 -apple-system,Segoe UI,Arial,sans-serif;background:var(--bg);color:#181818}
+.nav{background:#fff;border-bottom:3px solid var(--blue);padding:10px 16px;font-weight:700;color:var(--blue)}
+.page{max-width:980px;margin:20px auto;padding:0 12px}
+.note{background:#fff8e1;border:1px solid #f0d37a;padding:8px 12px;border-radius:4px;font-size:12px;margin-bottom:16px}
+.card{background:#fff;border:1px solid var(--bd);border-radius:6px;padding:16px 20px;margin-bottom:16px}
+.hl{display:flex;justify-content:space-between;align-items:center;gap:12px;flex-wrap:wrap}
+.hl h2{margin:0;font-size:20px}.mut{color:var(--mut);font-size:12px}
+.grid{display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px 20px;margin-top:12px}
+.grid div span{display:block;font-size:11px;color:var(--mut)}
+button{cursor:pointer;padding:8px 16px;border:1px solid var(--bd);border-radius:4px;background:#fff;color:var(--blue);font:inherit}
+button.pri{background:var(--blue);color:#fff;border-color:var(--blue)}
+.ov{position:fixed;inset:0;background:rgba(0,0,0,.55);display:flex;align-items:flex-start;justify-content:center;overflow:auto;padding:30px 12px;z-index:9}
+.md{background:#fff;border-radius:8px;width:100%;max-width:700px;padding:20px 24px}
+.md h2{margin:0 0 2px;font-size:19px}
+.steps{display:flex;gap:6px;margin:10px 0 16px}.steps span{flex:1;height:5px;border-radius:3px;background:var(--bd)}.steps span.on{background:var(--blue)}
+label{display:block;font-size:12px;color:var(--mut);margin:12px 0 4px}
+input,select{width:100%;padding:8px;border:1px solid var(--bd);border-radius:4px;font:inherit;background:#fff}
+input[readonly],select[disabled]{background:#f3f3f3;color:#444}
+.row{display:grid;grid-template-columns:1fr 1fr;gap:0 14px}
+.auto{background:#eef4ff;border-radius:6px;padding:10px 12px;font-size:13px;margin-top:14px}
+.src{background:#f7f9fb;border:1px solid var(--bd);border-radius:6px;padding:10px 12px;font-size:13px;margin:10px 0}
+.src b{color:#032d60}
+.tag{display:inline-block;font-size:11px;border-radius:10px;padding:1px 8px;background:#e5f5e8;color:var(--ok);margin-left:6px}
+.tag.lock{background:#eef4ff;color:var(--blue)}
+.seg{display:grid;gap:8px;margin-top:6px}
+.opt{border:1px solid var(--bd);border-radius:6px;padding:10px 12px;cursor:pointer}
+.opt.on{border-color:var(--blue);background:#eef4ff}
+.opt b{display:block}
+.bar{display:flex;justify-content:space-between;margin-top:20px}
+table{width:100%;border-collapse:collapse;margin-top:10px}th,td{text-align:left;padding:6px 8px;border-bottom:1px solid var(--bd);font-size:13px}
+th{color:var(--mut);font-size:11px;text-transform:uppercase}td.r,th.r{text-align:right}
+h3{margin:22px 0 6px;font-size:15px;color:#032d60}
+.entry{display:grid;grid-template-columns:repeat(4,1fr);gap:10px}
+.entry div{background:#fff;border:1px solid var(--bd);border-radius:6px;padding:10px;font-size:12px}
+.entry b{display:block;font-size:13px;margin-bottom:2px}
+.ok{color:var(--ok);font-weight:600}.hide{display:none}
+.switch{display:flex;gap:8px;margin:8px 0 0}.switch button.on{background:var(--blue);color:#fff;border-color:var(--blue)}
+</style>
+</head>
+<body>
+<div class="nav">Axon · Transações da Conta › Transação</div>
+<div class="page">
+<div class="note">Protótipo navegável para aprovação (AXF-337). Dados fictícios; nada é gravado. Use o seletor abaixo para ver a transação como <b>saída</b> (vira Despesa) ou <b>entrada</b> (vira Receita) e clique em <b>Gerar lançamento</b>.</div>
+
+<div class="card">
+  <div class="hl">
+    <div><h2 id="tdesc"></h2><div class="mut">Transação da Conta · Importada do Pluggy · Sem lançamento vinculado</div></div>
+    <div><button class="pri" onclick="openW()">Gerar lançamento</button> <button>Ignorar</button></div>
+  </div>
+  <div class="grid" id="tgrid"></div>
+  <div class="switch"><span class="mut" style="align-self:center">Ver como:</span>
+    <button id="bOut" onclick="setTx('out')">Saída (despesa)</button><button id="bIn" onclick="setTx('in')">Entrada (receita)</button></div>
+</div>
+
+<h3>Onde o mesmo wizard é usado (padrão único de conversão)</h3>
+<div class="entry">
+  <div><b>Registro da transação</b>Botão "Gerar lançamento" no cabeçalho (esta tela).</div>
+  <div><b>Conciliação / fila do Pluggy</b>Ação "Criar lançamento" por transação; em lote, só quando não há configuração a fazer.</div>
+  <div><b>Fatura do cartão</b>Transação de cartão sem lançamento: mesma ação.</div>
+  <div><b>Popup Pagar/Receber da Home</b>Link "Não achei o lançamento: criar a partir da transação".</div>
+</div>
+</div>
+
+<div class="ov hide" id="ov"><div class="md" id="md"></div></div>
+
+<script>
+const brl = v => v.toLocaleString("pt-BR",{style:"currency",currency:"BRL"});
+const TX = {
+  out:{desc:"PIX ENVIADO — IMOBILIARIA SOL",valor:2500,data:"2026-10-05",conta:"Conta corrente — Banco A",tit:"Michel Lopes",sentido:"Saída",kind:"Expense"},
+  in :{desc:"SALARIO EMPRESA XYZ",valor:8200,data:"2026-10-05",conta:"Conta corrente — Banco A",tit:"Michel Lopes",sentido:"Entrada",kind:"Income"}
+};
+const TYPES = {
+  Expense:{avulsa:["Despesa avulsa","Paga uma vez."],recorrente:["Recorrente","Se repete todo mês: aluguel, assinatura."],parcelada:["Parcelada","Parcelas fixas, sem juros."],consorcio:["Consórcio","Parcela fixa mensal."],financiamento:["Financiamento","Valor financiado com juros (SAC/PRICE)."]},
+  Income:{avulsa:["Receita avulsa","Recebida uma vez."],recorrente:["Recorrente","Se repete todo mês: salário, aluguel recebido."]}
+};
+const CONTRACTS = {Expense:[["Aluguel apto 12 — Imobiliária Sol","Recorrente · R$ 2.500,00/mês","Sugerido: mesmo valor e descrição parecida"],["Condomínio","Recorrente · R$ 780,00/mês",""]],Income:[["Salário Empresa XYZ","Recorrente · R$ 8.200,00/mês","Sugerido: mesmo valor e descrição parecida"]]};
+let tx = TX.out, s;
+function reset(){ s = {step:0,ltype:"avulsa",contract:"none",cmode:"existing",cpick:0,desc:"",cat:"Moradia › Aluguel",status:"Realizado",dia:5,n:10,vf:200000,taxa:0.9}; }
+reset();
+function setTx(k){ tx = TX[k]; reset(); head(); }
+function head(){
+  document.getElementById("tdesc").textContent = tx.desc;
+  document.getElementById("tgrid").innerHTML = [["Valor",brl(tx.valor)],["Data","05/10/2026"],["Sentido",tx.sentido],["Conta",tx.conta],["Titular",tx.tit],["Status de conciliação","Pendente"]].map(([a,b])=>`<div><span>${a}</span>${b}</div>`).join("");
+  document.getElementById("bOut").className = tx===TX.out?"on":""; document.getElementById("bIn").className = tx===TX.in?"on":"";
+}
+function openW(){ reset(); s.desc = tx.desc.replace(/^PIX ENVIADO — /,"").replace(/^SALARIO /,"Salário "); document.getElementById("ov").classList.remove("hide"); draw(); }
+function closeW(){ document.getElementById("ov").classList.add("hide"); }
+const kind = () => tx.kind, isExp = () => tx.kind==="Expense", lbl = () => isExp()?"Despesa":"Receita";
+function needsContract(){ return s.ltype!=="avulsa"; }
+function steps(){ return needsContract() ? ["Dados","Contrato","Revisar"] : ["Dados","Revisar"]; }
+function draw(){
+  const st = steps(), idx = Math.min(s.step, st.length-1), cur = st[idx], T = TYPES[kind()][s.ltype];
+  let body = "";
+  if(cur==="Dados"){
+    body = `<div class="src"><b>Da transação</b> <span class="tag lock">bloqueado</span><br>${brl(tx.valor)} · 05/10/2026 · ${tx.conta} · Titular ${tx.tit} · ${tx.sentido}<div class="mut">Valor, data, conta, titular e sentido vêm da transação e não mudam aqui. O lançamento nasce <b>Realizado</b> e já conciliado com ela.</div></div>
+    <label>Tipo de ${lbl().toLowerCase()}</label><div class="seg">${Object.entries(TYPES[kind()]).map(([k,v])=>`<div class="opt ${s.ltype===k?"on":""}" onclick="s.ltype='${k}';s.step=0;draw()"><b>${v[0]}</b><span class="mut">${v[1]}</span></div>`).join("")}</div>
+    <div class="row"><div style="grid-column:1/-1"><label>Descrição <span class="tag">pré-preenchido</span></label><input value="${s.desc}" onchange="s.desc=this.value"></div>
+    <div><label>Categoria <span class="tag">sugerida</span></label><input value="${s.cat}" onchange="s.cat=this.value"></div>
+    <div><label>Competência</label><input value="10/2026" readonly></div></div>`;
+    if(s.ltype==="recorrente") body += `<div class="row"><div><label>Dia do vencimento</label><input type="number" value="5"></div><div><label>Data de fim (opcional)</label><input type="date"></div></div><div class="auto">Esta transação vira o lançamento realizado de out/2026; os próximos meses nascem pendentes.</div>`;
+    if(s.ltype==="parcelada"||s.ltype==="consorcio") body += `<div class="row"><div><label>Esta transação é a parcela nº</label><input type="number" value="1"></div><div><label>Nº total de parcelas</label><input type="number" value="${s.n}" onchange="s.n=+this.value"></div></div>`;
+    if(s.ltype==="financiamento") body += `<div class="row"><div><label>Valor financiado</label><input type="number" value="${s.vf}"></div><div><label>Taxa mensal (%)</label><input type="number" value="${s.taxa}"></div><div><label>Nº de parcelas</label><input type="number" value="${s.n}"></div><div><label>Sistema</label><select><option>PRICE</option><option>SAC</option></select></div></div>`;
+  } else if(cur==="Contrato"){
+    const list = CONTRACTS[kind()];
+    body = `<div class="mut">Este lançamento faz parte de um contrato ${s.ltype==="recorrente"?"recorrente":""}. Vincule a um existente ou crie um novo.</div>
+    <div class="seg"><div class="opt ${s.cmode==="existing"?"on":""}" onclick="s.cmode='existing';draw()"><b>Vincular a contrato existente</b><span class="mut">${list.length} contrato(s) compatível(is) deste titular</span></div>
+    <div class="opt ${s.cmode==="new"?"on":""}" onclick="s.cmode='new';draw()"><b>Criar novo contrato agora</b><span class="mut">Mini-wizard: o contrato é criado com os dados do passo anterior; você só confirma.</span></div></div>`;
+    if(s.cmode==="existing") body += `<label>Contrato</label><div class="seg">${list.map((c,i)=>`<div class="opt ${s.cpick===i?"on":""}" onclick="s.cpick=${i};draw()"><b>${c[0]}</b><span class="mut">${c[1]}</span>${c[2]?`<span class="tag">${c[2]}</span>`:""}</div>`).join("")}</div>`;
+    else body += `<div class="row"><div style="grid-column:1/-1"><label>Nome do contrato</label><input value="${s.desc}"></div><div><label>Tipo</label><input value="${T[0]}" readonly></div><div><label>Início</label><input value="05/10/2026" readonly></div></div><div class="auto">Preenchido pelo tipo e pelos dados da transação. ${s.ltype==="financiamento"?"As parcelas seguem a tabela SAC/PRICE.":"Os lançamentos futuros são gerados pelo contrato."}</div>`;
+  } else {
+    const ctr = !needsContract() ? "sem contrato" : s.cmode==="new" ? `novo contrato <b>${s.desc}</b>` : `contrato <b>${CONTRACTS[kind()][s.cpick][0]}</b>`;
+    body = `<h2 style="font-size:16px">Revise antes de concluir</h2><div class="mut">${s.desc} · ${T[0]} · ${s.cat}</div>
+    <div class="auto">Será criado: ${needsContract()&&s.cmode==="new"?"<b>1 Contrato</b>, ":""}<b>1 lançamento realizado</b> de ${brl(tx.valor)} em 05/10/2026 (${ctr}), <b>conciliado</b> com a transação${needsContract()?" e os próximos lançamentos pendentes do contrato":""}.</div>
+    <table><tr><th>Item</th><th>Data</th><th class="r">Valor</th><th>Situação</th></tr>
+    <tr><td>${lbl()} — ${s.desc}</td><td>05/10/2026</td><td class="r">${brl(tx.valor)}</td><td class="ok">Realizado · conciliado</td></tr>
+    ${needsContract()?`<tr><td class="mut">${s.desc}</td><td class="mut">05/11/2026</td><td class="r mut">${brl(tx.valor)}</td><td class="mut">Pendente</td></tr><tr><td colspan="4" class="mut">… demais conforme o contrato</td></tr>`:""}</table>`;
+  }
+  document.getElementById("md").innerHTML = `<h2>Gerar ${lbl().toLowerCase()} a partir da transação</h2><div class="mut">Etapa ${idx+1} de ${st.length} — ${cur}</div>
+  <div class="steps">${st.map((_,i)=>`<span class="${i<=idx?"on":""}"></span>`).join("")}</div>${body}
+  <div class="bar"><button onclick="${idx?"s.step=Math.max(0,"+idx+"-1)":"closeW()"};draw()">${idx?"Voltar":"Cancelar"}</button>
+  ${idx<st.length-1?`<button class="pri" onclick="s.step=${idx+1};draw()">Próximo</button>`:`<button class="pri" onclick="done()">Gerar ${lbl().toLowerCase()}</button>`}</div>`;
+}
+function done(){ document.getElementById("md").innerHTML = `<h2 class="ok">${lbl()} gerada e conciliada ✔</h2><div class="mut">Protótipo: nada foi gravado. A transação passa a Conciliada e o registro mostra o lançamento vinculado.</div><div class="bar"><button class="pri" onclick="closeW()">Fechar</button></div>`; }
+head();
+</script>
+</body>
+</html>
