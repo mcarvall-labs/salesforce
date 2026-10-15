@@ -1,4 +1,5 @@
-import { LightningElement, api } from "lwc";
+import { LightningElement, api, wire } from "lwc";
+import { getRecord } from "lightning/uiRecordApi";
 import preview from "@salesforce/apex/AXF_CLS_CTRL_StatementImport.preview";
 import importStatement from "@salesforce/apex/AXF_CLS_CTRL_StatementImport.importStatement";
 
@@ -10,6 +11,8 @@ const STATUS_LABELS = {
 
 export default class AXF_LWC_statementImport extends LightningElement {
   @api recordId;
+  @api objectApiName;
+  recordTypeName;
   fileName;
   content;
   summary;
@@ -17,6 +20,28 @@ export default class AXF_LWC_statementImport extends LightningElement {
   isBusy = false;
   message;
   success = false;
+
+  get recordFields() {
+    return [`${this.objectApiName}.RecordType.DeveloperName`];
+  }
+
+  @wire(getRecord, { recordId: "$recordId", fields: "$recordFields" })
+  wiredRecord({ data }) {
+    this.recordTypeName = data
+      ? data.fields.RecordType.value.fields.DeveloperName.value
+      : undefined;
+  }
+
+  // Pluggy records are synced, so only manual ones accept a file; hidden until the record type is known.
+  get isManual() {
+    return this.recordTypeName === "AXF_Manual";
+  }
+
+  get cardTitle() {
+    return this.objectApiName === "AXF_OBJ_CreditCard__c"
+      ? "Importar fatura"
+      : "Importar extrato";
+  }
 
   get confirmDisabled() {
     return this.isBusy || !this.summary || this.summary.newCount === 0;

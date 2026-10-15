@@ -1,14 +1,16 @@
 <template>
   <lightning-card title="Extrato" icon-name="standard:account">
-    <lightning-button
-      slot="actions"
-      class="sync-button"
-      variant="brand"
-      icon-name="utility:sync"
-      label={syncLabel}
-      disabled={isSyncing}
-      onclick={handleSync}
-    ></lightning-button>
+    <template if:true={showSync}>
+      <lightning-button
+        slot="actions"
+        class="sync-button"
+        variant="brand"
+        icon-name="utility:sync"
+        label={syncLabel}
+        disabled={isSyncing}
+        onclick={handleSync}
+      ></lightning-button>
+    </template>
     <div class="slds-p-horizontal_medium">
       <template if:true={isLoading}>
         <lightning-spinner

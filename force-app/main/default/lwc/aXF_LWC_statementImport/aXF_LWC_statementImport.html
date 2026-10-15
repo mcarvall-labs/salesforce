@@ -1,5 +1,6 @@
 <template>
-  <lightning-card title="Importar extrato ou fatura" icon-name="standard:file">
+  <template if:true={isManual}>
+  <lightning-card title={cardTitle} icon-name="standard:file">
     <div class="slds-p-horizontal_medium">
       <lightning-input
         type="file"
@@ -67,4 +68,5 @@
       </template>
     </div>
   </lightning-card>
+  </template>
 </template>
