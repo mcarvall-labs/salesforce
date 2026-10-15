@@ -199,8 +199,16 @@ private class ALT_CLS_TimesheetDocumentTest {
   @IsTest
   static void theInvoiceFallsBackToTheCpfWhenThereIsNoTaxId() {
     AXF_OBJ_Contract__c c = service('EUR', true);
-    update new Account(Id = holder.Id, AXF_ACC_TXT_TaxId__c = null, AXF_ACC_TXT_CPF__c = '123.456.789-09');
-    update new Account(Id = client.Id, AXF_ACC_TXT_TaxId__c = null, AXF_ACC_TXT_CPF__c = '987.654.321-00');
+    update new Account(
+      Id = holder.Id,
+      AXF_ACC_TXT_TaxId__c = null,
+      AXF_ACC_TXT_CPF__c = '123.456.789-09'
+    );
+    update new Account(
+      Id = client.Id,
+      AXF_ACC_TXT_TaxId__c = null,
+      AXF_ACC_TXT_CPF__c = '987.654.321-00'
+    );
     log(c, 1, 9, 17);
     ALT_CLS_TimesheetDocument.InvoiceView view = new ALT_CLS_TimesheetDocument()
       .invoiceView(c.Id, 2026, 9);
