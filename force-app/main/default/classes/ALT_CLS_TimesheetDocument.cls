@@ -315,6 +315,7 @@ public with sharing class ALT_CLS_TimesheetDocument {
         BillingPostalCode,
         BillingCountry,
         AXF_ACC_TXT_TaxId__c,
+        AXF_ACC_TXT_CPF__c,
         AXF_ACC_TAL_PaymentDetails__c
       FROM Account
       WHERE Id = :contract.AXF_CTR_MD_Holder__c
@@ -327,7 +328,8 @@ public with sharing class ALT_CLS_TimesheetDocument {
         BillingState,
         BillingPostalCode,
         BillingCountry,
-        AXF_ACC_TXT_TaxId__c
+        AXF_ACC_TXT_TaxId__c,
+        AXF_ACC_TXT_CPF__c
       FROM Account
       WHERE Id = :contract.AXF_CTR_LKP_Client__c
     ];
@@ -347,11 +349,15 @@ public with sharing class ALT_CLS_TimesheetDocument {
       : contract.AXF_CTR_NUM_SendDay__c.intValue();
     InvoiceView view = new InvoiceView();
     view.issuerName = issuer.Name;
-    view.issuerTaxId = issuer.AXF_ACC_TXT_TaxId__c;
+    view.issuerTaxId = String.isBlank(issuer.AXF_ACC_TXT_TaxId__c)
+      ? issuer.AXF_ACC_TXT_CPF__c
+      : issuer.AXF_ACC_TXT_TaxId__c;
     view.issuerAddress = address(issuer);
     view.invoiceNumber = invoiceNumber(first);
     view.billToName = client.Name;
-    view.billToTaxId = client.AXF_ACC_TXT_TaxId__c;
+    view.billToTaxId = String.isBlank(client.AXF_ACC_TXT_TaxId__c)
+      ? client.AXF_ACC_TXT_CPF__c
+      : client.AXF_ACC_TXT_TaxId__c;
     view.billToAddress = address(client);
     view.invoiceDate = shortDate(
       ALT_CLS_ContractSchedule.monthlyDate(first, shift, sendDay)
