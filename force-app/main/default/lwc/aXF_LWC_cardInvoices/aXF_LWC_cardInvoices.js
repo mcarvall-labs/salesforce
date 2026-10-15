@@ -1,6 +1,7 @@
 import { LightningElement, api, wire } from "lwc";
 import { NavigationMixin } from "lightning/navigation";
 import { ShowToastEvent } from "lightning/platformShowToastEvent";
+import { getRecord } from "lightning/uiRecordApi";
 import { MessageContext, publish } from "lightning/messageService";
 import INVOICE_SELECTED from "@salesforce/messageChannel/AXF_MC_InvoiceSelected__c";
 import getInvoices from "@salesforce/apex/AXF_CLS_CTRL_CardInvoices.getInvoices";
@@ -36,6 +37,16 @@ export default class AXF_LWC_cardInvoices extends NavigationMixin(
   @wire(MessageContext)
   messageContext;
 
+  @wire(getRecord, {
+    recordId: "$recordId",
+    fields: ["AXF_OBJ_CreditCard__c.RecordType.DeveloperName"]
+  })
+  wiredRecord({ data }) {
+    this.recordTypeName =
+      data?.fields?.RecordType?.value?.fields?.DeveloperName?.value;
+  }
+
+  recordTypeName;
   invoices = [];
   selectedIndex = -1;
   lines = [];
@@ -120,6 +131,11 @@ export default class AXF_LWC_cardInvoices extends NavigationMixin(
 
   get isProjected() {
     return Boolean(this.selected && this.selected.projected);
+  }
+
+  // Manual cards have nothing to sync; the button stays hidden until the record type is known.
+  get showSync() {
+    return this.recordTypeName === "AXF_Pluggy";
   }
 
   get syncLabel() {
