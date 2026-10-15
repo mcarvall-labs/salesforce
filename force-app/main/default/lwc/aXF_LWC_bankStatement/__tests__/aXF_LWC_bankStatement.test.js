@@ -39,10 +39,11 @@ const statement = {
   ]
 };
 
-
 const recordOf = (developerName) => ({
   fields: {
-    RecordType: { value: { fields: { DeveloperName: { value: developerName } } } }
+    RecordType: {
+      value: { fields: { DeveloperName: { value: developerName } } }
+    }
   }
 });
 async function setup(recordType = "AXF_Pluggy") {
@@ -51,7 +52,13 @@ async function setup(recordType = "AXF_Pluggy") {
   });
   element.recordId = "a00000000000001";
   document.body.appendChild(element);
-  getRecord.emit(recordOf(recordType));
+  if (recordType !== "UNKNOWN") {
+    getRecord.emit(
+      recordType
+        ? recordOf(recordType)
+        : { fields: { RecordType: { value: null } } }
+    );
+  }
   await flushPromises();
   return element;
 }
@@ -141,6 +148,18 @@ describe("c-a-x-f-l-w-c-bank-statement", () => {
   it("hides the Pluggy sync button on a manual account", async () => {
     getStatement.mockResolvedValue(statement);
     const element = await setup("AXF_Manual");
+    expect(element.shadowRoot.querySelector(".sync-button")).toBeNull();
+  });
+
+  it("hides the Pluggy sync button until the record type is known", async () => {
+    getStatement.mockResolvedValue(statement);
+    const element = await setup("UNKNOWN");
+    expect(element.shadowRoot.querySelector(".sync-button")).toBeNull();
+  });
+
+  it("hides the Pluggy sync button when the record has no record type", async () => {
+    getStatement.mockResolvedValue(statement);
+    const element = await setup(null);
     expect(element.shadowRoot.querySelector(".sync-button")).toBeNull();
   });
 });

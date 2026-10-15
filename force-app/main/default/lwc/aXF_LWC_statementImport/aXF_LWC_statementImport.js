@@ -27,9 +27,8 @@ export default class AXF_LWC_statementImport extends LightningElement {
 
   @wire(getRecord, { recordId: "$recordId", fields: "$recordFields" })
   wiredRecord({ data }) {
-    this.recordTypeName = data
-      ? data.fields.RecordType.value.fields.DeveloperName.value
-      : undefined;
+    this.recordTypeName =
+      data?.fields?.RecordType?.value?.fields?.DeveloperName?.value;
   }
 
   // Pluggy records are synced, so only manual ones accept a file; hidden until the record type is known.

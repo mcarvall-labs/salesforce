@@ -54,9 +54,8 @@ export default class AXF_LWC_bankStatement extends NavigationMixin(
     fields: ["AXF_OBJ_BankAccount__c.RecordType.DeveloperName"]
   })
   wiredRecord({ data }) {
-    this.recordTypeName = data
-      ? data.fields.RecordType.value.fields.DeveloperName.value
-      : undefined;
+    this.recordTypeName =
+      data?.fields?.RecordType?.value?.fields?.DeveloperName?.value;
   }
 
   // Manual accounts have nothing to sync; the button stays hidden until the record type is known.

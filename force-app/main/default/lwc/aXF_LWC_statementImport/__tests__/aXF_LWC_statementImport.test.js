@@ -33,7 +33,9 @@ const previewResult = {
 
 const recordOf = (developerName) => ({
   fields: {
-    RecordType: { value: { fields: { DeveloperName: { value: developerName } } } }
+    RecordType: {
+      value: { fields: { DeveloperName: { value: developerName } } }
+    }
   }
 });
 
@@ -47,7 +49,13 @@ async function setup(
   element.recordId = "a00000000000001";
   element.objectApiName = objectApiName;
   document.body.appendChild(element);
-  getRecord.emit(recordOf(recordType));
+  if (recordType !== "UNKNOWN") {
+    getRecord.emit(
+      recordType
+        ? recordOf(recordType)
+        : { fields: { RecordType: { value: null } } }
+    );
+  }
   await flushPromises();
   return element;
 }
@@ -136,20 +144,33 @@ describe("c-a-x-f-l-w-c-statement-import", () => {
     );
   });
 
-  it("is not shown on a Pluggy account or card", async () => {
-    const account = await setup("AXF_Pluggy");
-    expect(account.shadowRoot.querySelector("lightning-card")).toBeNull();
-    const card = await setup("AXF_Pluggy", "AXF_OBJ_CreditCard__c");
-    expect(card.shadowRoot.querySelector("lightning-card")).toBeNull();
+  it("is not shown on a Pluggy account", async () => {
+    const element = await setup("AXF_Pluggy");
+    expect(element.shadowRoot.querySelector("lightning-card")).toBeNull();
   });
 
-  it("titles the import by object: extrato for account, fatura for card", async () => {
-    const account = await setup();
-    expect(account.shadowRoot.querySelector("lightning-card").title).toBe(
+  it("is not shown on a Pluggy card", async () => {
+    const element = await setup("AXF_Pluggy", "AXF_OBJ_CreditCard__c");
+    expect(element.shadowRoot.querySelector("lightning-card")).toBeNull();
+  });
+
+  it("is not shown until the record type is known or when it has none", async () => {
+    const unknown = await setup("UNKNOWN");
+    expect(unknown.shadowRoot.querySelector("lightning-card")).toBeNull();
+    const none = await setup(null);
+    expect(none.shadowRoot.querySelector("lightning-card")).toBeNull();
+  });
+
+  it("titles the account import as Importar extrato", async () => {
+    const element = await setup();
+    expect(element.shadowRoot.querySelector("lightning-card").title).toBe(
       "Importar extrato"
     );
-    const card = await setup("AXF_Manual", "AXF_OBJ_CreditCard__c");
-    expect(card.shadowRoot.querySelector("lightning-card").title).toBe(
+  });
+
+  it("titles the card import as Importar fatura", async () => {
+    const element = await setup("AXF_Manual", "AXF_OBJ_CreditCard__c");
+    expect(element.shadowRoot.querySelector("lightning-card").title).toBe(
       "Importar fatura"
     );
   });

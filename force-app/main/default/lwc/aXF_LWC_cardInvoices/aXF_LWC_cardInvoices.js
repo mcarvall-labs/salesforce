@@ -42,9 +42,8 @@ export default class AXF_LWC_cardInvoices extends NavigationMixin(
     fields: ["AXF_OBJ_CreditCard__c.RecordType.DeveloperName"]
   })
   wiredRecord({ data }) {
-    this.recordTypeName = data
-      ? data.fields.RecordType.value.fields.DeveloperName.value
-      : undefined;
+    this.recordTypeName =
+      data?.fields?.RecordType?.value?.fields?.DeveloperName?.value;
   }
 
   recordTypeName;
