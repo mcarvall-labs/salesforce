@@ -24,6 +24,8 @@ private class AXF_CLS_CTRL_DashboardBudgetTest {
     insert restricted;
     ALT_CLS_SyncTestUser.create('axfbr', OBJECTS, restricted.Id);
     ALT_CLS_SyncTestUser.create('axfba', OBJECTS);
+    // Record type visibility (AXF_Person and the others holder() uses) comes from the Axon sets.
+    ALT_CLS_ConnectionTestUser.grantAxonAccess(UserInfo.getUserId());
   }
 
   private static Account holder(String name, String recordType) {
