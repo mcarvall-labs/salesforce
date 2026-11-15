@@ -33,6 +33,7 @@ private class ALT_CLS_ReconciliationAccessTest {
     insert users;
     ALT_CLS_SyncTestUser.create('axfac', OBJECTS, users[1].Id);
     ALT_CLS_SyncTestUser.create('axfad', OBJECTS);
+    ALT_CLS_ConnectionTestUser.grantAxonAccess(UserInfo.getUserId());
     // The Entry contract lookup is only readable with access to the contract (the Axon permission
     // set grants it); reconcile reads it.
     insert new ObjectPermissions(
@@ -61,52 +62,54 @@ private class ALT_CLS_ReconciliationAccessTest {
     AXF_OBJ_Entry__c entry;
   }
 
-  // Everything is created by the admin running the test; the restricted user only sees what is
-  // shared with it.
+  // Everything is created by the admin running the test (inside runAs, so the Axon permission
+  // sets assigned in setup apply); the restricted user only sees what is shared with it.
   private static Data data(Boolean shareWith) {
     Data data = new Data();
-    data.sharedHolder = new Account(Name = 'Titular visível');
-    data.hiddenHolder = new Account(Name = 'Titular oculto');
-    insert new List<Account>{ data.sharedHolder, data.hiddenHolder };
-    if (shareWith) {
-      insert new AccountShare(
-        AccountId = data.sharedHolder.Id,
-        UserOrGroupId = user('AxfWithPerm').Id,
-        AccountAccessLevel = 'Edit',
-        OpportunityAccessLevel = 'None',
-        CaseAccessLevel = 'None'
+    System.runAs(new User(Id = UserInfo.getUserId())) {
+      data.sharedHolder = new Account(Name = 'Titular visível');
+      data.hiddenHolder = new Account(Name = 'Titular oculto');
+      insert new List<Account>{ data.sharedHolder, data.hiddenHolder };
+      if (shareWith) {
+        insert new AccountShare(
+          AccountId = data.sharedHolder.Id,
+          UserOrGroupId = user('AxfWithPerm').Id,
+          AccountAccessLevel = 'Edit',
+          OpportunityAccessLevel = 'None',
+          CaseAccessLevel = 'None'
+        );
+      }
+      data.account = new AXF_OBJ_BankAccount__c(
+        Name = 'Conta',
+        AXF_BA_MD_Holder__c = data.sharedHolder.Id,
+        AXF_BA_PKL_Institution__c = '341',
+        AXF_BA_PKL_Type__c = 'Checking'
       );
+      data.card = new AXF_OBJ_CreditCard__c(
+        Name = 'Cartão',
+        AXF_CC_MD_Holder__c = data.sharedHolder.Id,
+        AXF_CC_PKL_Institution__c = '341'
+      );
+      insert data.account;
+      insert data.card;
+      data.bank = new AXF_OBJ_BankAccountTransaction__c(
+        AXF_BAT_MD_BankAccount__c = data.account.Id,
+        AXF_BAT_DAT_Date__c = Date.newInstance(2026, 10, 7),
+        AXF_BAT_CUR_Amount__c = -100,
+        AXF_BAT_TXT_Description__c = 'Pagamento'
+      );
+      data.purchase = new AXF_OBJ_CreditCardTransaction__c(
+        AXF_CCT_MD_CreditCard__c = data.card.Id,
+        AXF_CCT_DAT_Date__c = Date.newInstance(2026, 10, 7),
+        AXF_CCT_CUR_Amount__c = -30,
+        AXF_CCT_CUR_AmountBRL__c = -30,
+        AXF_CCT_TXT_CurrencyCode__c = 'BRL',
+        AXF_CCT_TXT_Description__c = 'Compra'
+      );
+      insert data.bank;
+      insert data.purchase;
+      data.entry = entry(data.sharedHolder.Id);
     }
-    data.account = new AXF_OBJ_BankAccount__c(
-      Name = 'Conta',
-      AXF_BA_MD_Holder__c = data.sharedHolder.Id,
-      AXF_BA_PKL_Institution__c = '341',
-      AXF_BA_PKL_Type__c = 'Checking'
-    );
-    data.card = new AXF_OBJ_CreditCard__c(
-      Name = 'Cartão',
-      AXF_CC_MD_Holder__c = data.sharedHolder.Id,
-      AXF_CC_PKL_Institution__c = '341'
-    );
-    insert data.account;
-    insert data.card;
-    data.bank = new AXF_OBJ_BankAccountTransaction__c(
-      AXF_BAT_MD_BankAccount__c = data.account.Id,
-      AXF_BAT_DAT_Date__c = Date.newInstance(2026, 10, 7),
-      AXF_BAT_CUR_Amount__c = -100,
-      AXF_BAT_TXT_Description__c = 'Pagamento'
-    );
-    data.purchase = new AXF_OBJ_CreditCardTransaction__c(
-      AXF_CCT_MD_CreditCard__c = data.card.Id,
-      AXF_CCT_DAT_Date__c = Date.newInstance(2026, 10, 7),
-      AXF_CCT_CUR_Amount__c = -30,
-      AXF_CCT_CUR_AmountBRL__c = -30,
-      AXF_CCT_TXT_CurrencyCode__c = 'BRL',
-      AXF_CCT_TXT_Description__c = 'Compra'
-    );
-    insert data.bank;
-    insert data.purchase;
-    data.entry = entry(data.sharedHolder.Id);
     return data;
   }
 
@@ -275,9 +278,10 @@ private class ALT_CLS_ReconciliationAccessTest {
     Id restrictedId = user('AxfWithPerm').Id;
     Id hiddenEntryId;
     Id ownEntryId = data.entry.Id;
-    AXF_OBJ_Entry__c hiddenOwner = entry(data.hiddenHolder.Id);
-    hiddenOwner.AXF_ENT_LKP_BankAccountTransaction__c = data.bank.Id;
+    AXF_OBJ_Entry__c hiddenOwner;
     System.runAs(new User(Id = UserInfo.getUserId())) {
+      hiddenOwner = entry(data.hiddenHolder.Id);
+      hiddenOwner.AXF_ENT_LKP_BankAccountTransaction__c = data.bank.Id;
       update hiddenOwner;
     }
     hiddenEntryId = hiddenOwner.Id;

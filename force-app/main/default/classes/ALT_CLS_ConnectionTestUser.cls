@@ -1,8 +1,9 @@
 /**
- * @description Test helper: creates a Standard User holding the Axon permission sets
- * (Configuração and Usuário), so user-mode reads and writes on
- * AXF_OBJ_PluggyConnection__c run with the same access as a real user. The permission
- * sets come from the deployed metadata, so no permission DML is needed.
+ * @description Test helper for Axon access: creates a Standard User holding the Axon
+ * permission sets (Configuração and Usuário), so user-mode reads and writes run with
+ * the same access as a real user, and grants the same sets to any user (for example the
+ * deploy user, which has no Axon access in production). The permission sets come from
+ * the deployed metadata; only their assignments are inserted.
  */
 @IsTest
 public class ALT_CLS_ConnectionTestUser {
@@ -30,21 +31,67 @@ public class ALT_CLS_ConnectionTestUser {
       Username = alias + System.currentTimeMillis() + '@example.com'
     );
     insert u;
-    List<PermissionSetAssignment> assignments = new List<PermissionSetAssignment>();
-    for (PermissionSet ps : [
-      SELECT Id
-      FROM PermissionSet
-      WHERE Name IN ('AXF_PS_Configuracao', 'AXF_PS_Usuario')
+    grantAxonAccess(u.Id);
+    return u;
+  }
+
+  /**
+   * @description Assigns AXF_PS_Usuario and AXF_PS_Configuracao to the given user,
+   * skipping a permission set the user already holds directly (no DUPLICATE in orgs
+   * where the admin already has it). For the running user, the access only applies
+   * inside a System.runAs opened after this call. It inserts setup objects, so call it
+   * before any non-setup DML of the transaction (typically in @TestSetup).
+   */
+  public static void grantAxonAccess(Id userId) {
+    Set<String> names = new Set<String>{
+      'AXF_PS_Configuracao',
+      'AXF_PS_Usuario'
+    };
+    Map<Id, PermissionSet> sets = new Map<Id, PermissionSet>(
+      [SELECT Id FROM PermissionSet WHERE Name IN :names]
+    );
+    Assert.areEqual(
+      names.size(),
+      sets.size(),
+      'Axon permission sets must exist: ' + names
+    );
+    for (PermissionSetAssignment existing : [
+      SELECT PermissionSetId
+      FROM PermissionSetAssignment
+      WHERE
+        AssigneeId = :userId
+        AND PermissionSetGroupId = NULL
+        AND PermissionSetId IN :sets.keySet()
     ]) {
+      sets.remove(existing.PermissionSetId);
+    }
+    List<PermissionSetAssignment> assignments = new List<PermissionSetAssignment>();
+    for (Id psId : sets.keySet()) {
       assignments.add(
-        new PermissionSetAssignment(AssigneeId = u.Id, PermissionSetId = ps.Id)
+        new PermissionSetAssignment(AssigneeId = userId, PermissionSetId = psId)
       );
     }
     insert assignments;
-    return u;
   }
 
   public static User find(String alias) {
     return [SELECT Id FROM User WHERE Alias = :alias LIMIT 1];
+  }
+
+  @IsTest
+  static void grantingAgainAssignsEachAxonSetOnceDirectly() {
+    User u = create('axfgrnt');
+    grantAxonAccess(u.Id);
+    System.assertEquals(
+      2,
+      [
+        SELECT COUNT()
+        FROM PermissionSetAssignment
+        WHERE
+          AssigneeId = :u.Id
+          AND PermissionSetGroupId = NULL
+          AND PermissionSet.Name IN ('AXF_PS_Configuracao', 'AXF_PS_Usuario')
+      ]
+    );
   }
 }

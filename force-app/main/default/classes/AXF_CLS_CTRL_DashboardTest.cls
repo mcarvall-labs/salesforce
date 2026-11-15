@@ -40,6 +40,8 @@ private class AXF_CLS_CTRL_DashboardTest {
     insert new List<User>{ restricted, withoutPermission };
     ALT_CLS_SyncTestUser.create('axfdr', OBJECTS, restricted.Id);
     ALT_CLS_SyncTestUser.create('axfda', OBJECTS);
+    // Record type visibility (AXF_Person and the others holder() uses) comes from the Axon sets.
+    ALT_CLS_ConnectionTestUser.grantAxonAccess(UserInfo.getUserId());
   }
 
   // Person Accounts take LastName instead of Name.
