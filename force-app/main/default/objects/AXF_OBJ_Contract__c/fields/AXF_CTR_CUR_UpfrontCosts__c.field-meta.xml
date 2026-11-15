@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<CustomField xmlns="http://soap.sforce.com/2006/04/metadata">
+    <fullName>AXF_CTR_CUR_UpfrontCosts__c</fullName>
+    <label>Financed Fees and IOF</label>
+    <description
+  >Tarifas, IOF e custos iniciais financiados junto com o valor financiado (somam ao saldo devedor).</description>
+    <inlineHelpText
+  >Tarifas, IOF e custos iniciais financiados junto com o valor financiado (somam ao saldo devedor).</inlineHelpText>
+    <precision>18</precision>
+    <scale>2</scale>
+    <required>false</required>
+    <trackTrending>false</trackTrending>
+    <type>Currency</type>
+</CustomField>

@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<CustomField xmlns="http://soap.sforce.com/2006/04/metadata">
+    <fullName>AXF_CTR_CUR_Insurance__c</fullName>
+    <label>Monthly Insurance</label>
+    <description
+  >Valor fixo do seguro (ex.: MIP/DFI) somado a cada parcela.</description>
+    <inlineHelpText
+  >Valor fixo do seguro (ex.: MIP/DFI) somado a cada parcela.</inlineHelpText>
+    <precision>18</precision>
+    <scale>2</scale>
+    <required>false</required>
+    <trackTrending>false</trackTrending>
+    <type>Currency</type>
+</CustomField>

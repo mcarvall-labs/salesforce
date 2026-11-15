@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<ValidationRule xmlns="http://soap.sforce.com/2006/04/metadata">
+    <fullName>AXF_BA_VR_ConnectionSameHolder</fullName>
+    <active>true</active>
+    <errorConditionFormula
+  >AND(NOT(ISBLANK(AXF_BA_LKP_Connection__c)), AXF_BA_LKP_Connection__r.AXF_CON_MD_Holder__c &lt;&gt; AXF_BA_MD_Holder__c)</errorConditionFormula>
+    <errorDisplayField>AXF_BA_LKP_Connection__c</errorDisplayField>
+    <errorMessage
+  >The connection must belong to the same holder as the bank account.</errorMessage>
+</ValidationRule>

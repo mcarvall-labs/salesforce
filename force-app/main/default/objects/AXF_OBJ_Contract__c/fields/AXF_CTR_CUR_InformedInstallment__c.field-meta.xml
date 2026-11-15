@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<CustomField xmlns="http://soap.sforce.com/2006/04/metadata">
+    <fullName>AXF_CTR_CUR_InformedInstallment__c</fullName>
+    <label>Informed Installment</label>
+    <description
+  >Parcela constante informada (juros + amortização, sem os encargos mensais). Quando preenchida, a taxa mensal é a implícita.</description>
+    <inlineHelpText
+  >Parcela constante informada (juros + amortização, sem os encargos mensais). Quando preenchida, a taxa mensal é a implícita.</inlineHelpText>
+    <precision>18</precision>
+    <scale>2</scale>
+    <required>false</required>
+    <trackTrending>false</trackTrending>
+    <type>Currency</type>
+</CustomField>

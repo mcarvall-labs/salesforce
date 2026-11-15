@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<CustomField xmlns="http://soap.sforce.com/2006/04/metadata">
+    <fullName>AXF_ENT_FOR_Overdue__c</fullName>
+    <formula
+  >AND(TEXT(AXF_ENT_PKL_Status__c) = &apos;Pending&apos;, AXF_ENT_DAT_DueDate__c &lt; TODAY())</formula>
+    <formulaTreatBlanksAs>BlankAsZero</formulaTreatBlanksAs>
+    <label>Overdue</label>
+    <required>false</required>
+    <trackTrending>false</trackTrending>
+    <type>Checkbox</type>
+</CustomField>

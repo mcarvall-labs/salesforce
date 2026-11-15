@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<CustomField xmlns="http://soap.sforce.com/2006/04/metadata">
+    <fullName>AXF_ENT_FOR_AffectsCash__c</fullName>
+    <formula
+  >OR(ISBLANK(AXF_ENT_LKP_CreditCard__c), NOT(ISBLANK(AXF_ENT_LKP_Invoice__c)))</formula>
+    <formulaTreatBlanksAs>BlankAsZero</formulaTreatBlanksAs>
+    <label>Affects Cash</label>
+    <required>false</required>
+    <trackTrending>false</trackTrending>
+    <type>Checkbox</type>
+</CustomField>

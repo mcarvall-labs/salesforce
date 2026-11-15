@@ -1,0 +1,84 @@
+<template>
+  <div class="picker">
+    <lightning-input
+      class="category-search"
+      type="search"
+      label={label}
+      placeholder={placeholder}
+      maxlength={maxName}
+      value={inputValue}
+      autocomplete="off"
+      onfocus={handleFocus}
+      onblur={handleBlur}
+      onchange={handleInput}
+      onkeydown={handleKeydown}
+    ></lightning-input>
+    <template lwc:if={isOpen}>
+      <ul
+        class="list"
+        role="listbox"
+        aria-label={label}
+        onmousedown={handleListMouseDown}
+      >
+        <template for:each={rows} for:item="row">
+          <li
+            key={row.key}
+            class={row.className}
+            role="option"
+            aria-selected={row.selected}
+            data-id={row.id}
+            onmousedown={handleSelect}
+          >
+            {row.label}
+          </li>
+        </template>
+        <template lwc:if={noRows}>
+          <li class="option option_dim" role="presentation">
+            Nenhuma categoria encontrada
+          </li>
+        </template>
+        <template lwc:if={canCreate}>
+          <li class={createClass} role="option" onmousedown={handleCreate}>
+            {createLabel}
+          </li>
+        </template>
+        <template lwc:if={value}>
+          <li class={clearClass} role="option" onmousedown={handleClear}>
+            Sem categoria
+          </li>
+        </template>
+      </ul>
+    </template>
+
+    <template lwc:if={isCreating}>
+      <div class="create-panel">
+        <lightning-input
+          class="new-name"
+          label="Nome da nova categoria"
+          value={newName}
+          maxlength={maxName}
+          disabled
+        ></lightning-input>
+        <lightning-combobox
+          class="new-parent"
+          label="Categoria pai"
+          options={parentOptions}
+          value={newParentId}
+          onchange={handleParentChange}
+        ></lightning-combobox>
+        <div class="create-actions">
+          <lightning-button
+            label="Cancelar"
+            onclick={handleCancelCreate}
+          ></lightning-button>
+          <lightning-button
+            class="confirm-create"
+            variant="brand"
+            label="Criar categoria"
+            onclick={handleConfirmCreate}
+          ></lightning-button>
+        </div>
+      </div>
+    </template>
+  </div>
+</template>

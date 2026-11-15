@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<ValidationRule xmlns="http://soap.sforce.com/2006/04/metadata">
+    <fullName>AXF_ENT_VR_PaymentDateOnlyRealized</fullName>
+    <active>true</active>
+    <errorConditionFormula
+  >AND(TEXT(AXF_ENT_PKL_Status__c) &lt;&gt; &apos;Realized&apos;, NOT(ISBLANK(AXF_ENT_DAT_PaymentDate__c)))</errorConditionFormula>
+    <errorDisplayField>AXF_ENT_DAT_PaymentDate__c</errorDisplayField>
+    <errorMessage
+  >The payment date can only be filled when the status is Realized.</errorMessage>
+</ValidationRule>

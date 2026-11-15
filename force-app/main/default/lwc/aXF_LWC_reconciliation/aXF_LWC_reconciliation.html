@@ -1,0 +1,280 @@
+<template>
+  <lightning-card title="Conciliação" icon-name="standard:reconciliation">
+    <div class="slds-p-horizontal_medium">
+      <template lwc:if={isLoading}>
+        <lightning-spinner
+          alternative-text="Carregando"
+          size="small"
+        ></lightning-spinner>
+      </template>
+      <template lwc:if={errorMessage}>
+        <p class="slds-text-color_error" role="alert">{errorMessage}</p>
+      </template>
+      <template lwc:if={infoMessage}>
+        <p class="slds-text-color_weak" role="status">{infoMessage}</p>
+      </template>
+
+      <div
+        class="slds-grid slds-wrap slds-grid_vertical-align-end slds-gutters_x-small"
+      >
+        <div class="slds-col slds-size_1-of-1 slds-medium-size_1-of-6">
+          <lightning-combobox
+            class="holder-filter"
+            label="Titular"
+            value={holderId}
+            options={holderOptions}
+            onchange={handleHolder}
+          ></lightning-combobox>
+        </div>
+        <div class="slds-col slds-size_1-of-1 slds-medium-size_1-of-6">
+          <lightning-combobox
+            class="source-filter"
+            label="Conta/Cartão"
+            data-filter="source"
+            value={filters.source}
+            options={sourceOptions}
+            onchange={handleFilter}
+          ></lightning-combobox>
+        </div>
+        <div class="slds-col slds-size_1-of-1 slds-medium-size_1-of-6">
+          <lightning-combobox
+            class="month-filter"
+            label="Mês"
+            value={month}
+            options={monthOptions}
+            onchange={handleMonth}
+          ></lightning-combobox>
+        </div>
+        <div class="slds-col slds-size_1-of-1 slds-medium-size_1-of-6">
+          <lightning-input
+            class="text-filter"
+            type="search"
+            label="Descrição"
+            data-filter="text"
+            value={filters.text}
+            onchange={handleFilter}
+          ></lightning-input>
+        </div>
+        <div class="slds-col slds-size_1-of-2 slds-medium-size_1-of-12">
+          <lightning-input
+            class="min-filter"
+            type="number"
+            step="0.01"
+            label="Valor mín."
+            data-filter="min"
+            value={filters.min}
+            onchange={handleFilter}
+          ></lightning-input>
+        </div>
+        <div class="slds-col slds-size_1-of-2 slds-medium-size_1-of-12">
+          <lightning-input
+            class="max-filter"
+            type="number"
+            step="0.01"
+            label="Valor máx."
+            data-filter="max"
+            value={filters.max}
+            onchange={handleFilter}
+          ></lightning-input>
+        </div>
+        <div class="slds-col slds-size_1-of-2 slds-medium-size_1-of-6">
+          <lightning-input
+            class="date-from-filter"
+            type="date"
+            label="De"
+            data-filter="dateFrom"
+            value={filters.dateFrom}
+            onchange={handleFilter}
+          ></lightning-input>
+        </div>
+        <div class="slds-col slds-size_1-of-2 slds-medium-size_1-of-6">
+          <lightning-input
+            class="date-to-filter"
+            type="date"
+            label="Até"
+            data-filter="dateTo"
+            value={filters.dateTo}
+            onchange={handleFilter}
+          ></lightning-input>
+        </div>
+        <div class="slds-col slds-size_1-of-1 slds-medium-size_1-of-6">
+          <lightning-combobox
+            class="type-filter"
+            label="Tipo"
+            data-filter="type"
+            value={filters.type}
+            options={typeOptions}
+            onchange={handleFilter}
+          ></lightning-combobox>
+        </div>
+      </div>
+
+      <div
+        class="slds-m-vertical_small slds-grid slds-grid_align-spread slds-grid_vertical-align-center"
+      >
+        <p class="suggestion-note slds-text-color_weak">
+          {suggestionCount} sugestões (valor igual, até 7 dias; moedas
+          diferentes com tolerância de 5 %). Linhas em verde nas duas listas.
+        </p>
+        <lightning-button
+          class="suggest-all"
+          variant="brand"
+          label={suggestAllLabel}
+          disabled={cannotSuggestAll}
+          onclick={handleReconcileSuggested}
+        ></lightning-button>
+      </div>
+
+      <div class="slds-grid slds-wrap slds-gutters">
+        <div class="slds-col slds-size_1-of-1 slds-large-size_1-of-2">
+          <h3 class="slds-text-heading_small slds-m-bottom_x-small">
+            Lançamentos pendentes ({entryCount})
+          </h3>
+          <table class="entries slds-table slds-table_bordered">
+            <thead>
+              <tr>
+                <th scope="col">Venc.</th>
+                <th scope="col">Descrição</th>
+                <th scope="col">Tipo</th>
+                <th scope="col" class="slds-text-align_right">Valor</th>
+              </tr>
+            </thead>
+            <tbody>
+              <template for:each={entryRows} for:item="entry">
+                <tr
+                  key={entry.id}
+                  class={entry.rowClass}
+                  data-id={entry.id}
+                  onclick={handleEntryClick}
+                  onkeydown={handleRowKey}
+                  tabindex="0"
+                  aria-selected={entry.isSelected}
+                >
+                  <td>
+                    <lightning-formatted-date-time
+                      value={entry.dueDate}
+                      time-zone="UTC"
+                      month="2-digit"
+                      day="2-digit"
+                    ></lightning-formatted-date-time>
+                  </td>
+                  <td>
+                    {entry.name}
+                    <template lwc:if={entry.isInvoice}>
+                      <a href="#" data-id={entry.id} onclick={handleOpenEntry}
+                        >ver fatura</a
+                      >
+                    </template>
+                  </td>
+                  <td>
+                    <lightning-badge label={entry.kindLabel}></lightning-badge>
+                  </td>
+                  <td class="slds-text-align_right">
+                    <lightning-formatted-number
+                      value={entry.signedAmount}
+                      format-style="currency"
+                      currency-code={entry.currencyCode}
+                    ></lightning-formatted-number>
+                  </td>
+                </tr>
+              </template>
+            </tbody>
+          </table>
+        </div>
+        <div class="slds-col slds-size_1-of-1 slds-large-size_1-of-2">
+          <h3 class="slds-text-heading_small slds-m-bottom_x-small">
+            Transações não conciliadas ({transactionCount})
+          </h3>
+          <table class="transactions slds-table slds-table_bordered">
+            <thead>
+              <tr>
+                <th scope="col">Data</th>
+                <th scope="col">Descrição</th>
+                <th scope="col">Origem</th>
+                <th scope="col" class="slds-text-align_right">Valor</th>
+              </tr>
+            </thead>
+            <tbody>
+              <template for:each={transactionRows} for:item="transaction">
+                <tr
+                  key={transaction.id}
+                  class={transaction.rowClass}
+                  data-id={transaction.id}
+                  onclick={handleTransactionClick}
+                  onkeydown={handleRowKey}
+                  tabindex="0"
+                  aria-selected={transaction.isSelected}
+                  aria-disabled={transaction.blocked}
+                >
+                  <td>
+                    <lightning-formatted-date-time
+                      value={transaction.transactionDate}
+                      time-zone="UTC"
+                      month="2-digit"
+                      day="2-digit"
+                    ></lightning-formatted-date-time>
+                  </td>
+                  <td>{transaction.description}</td>
+                  <td>
+                    <lightning-badge
+                      label={transaction.sourceLabel}
+                    ></lightning-badge>
+                  </td>
+                  <td class="slds-text-align_right">
+                    <lightning-formatted-number
+                      value={transaction.amount}
+                      format-style="currency"
+                      currency-code={transaction.currencyCode}
+                    ></lightning-formatted-number>
+                    <template lwc:if={transaction.hasBRL}>
+                      <div class="slds-text-body_small slds-text-color_weak">
+                        =
+                        <lightning-formatted-number
+                          value={transaction.amountBRL}
+                          format-style="currency"
+                          currency-code="BRL"
+                        ></lightning-formatted-number>
+                        na fatura
+                      </div>
+                    </template>
+                  </td>
+                </tr>
+              </template>
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+      <div class="slds-m-vertical_small">
+        <lightning-button
+          class="reconcile slds-m-right_x-small"
+          variant="brand"
+          label="Conciliar"
+          disabled={cannotReconcile}
+          onclick={handleReconcile}
+        ></lightning-button>
+        <lightning-button
+          class="ignore slds-m-right_x-small"
+          label="Ignorar transação"
+          disabled={cannotAct}
+          onclick={handleIgnore}
+        ></lightning-button>
+        <lightning-button
+          class="create-entry slds-m-right_x-small"
+          label="Criar lançamento a partir da transação"
+          disabled={cannotAct}
+          onclick={handleCreateEntry}
+        ></lightning-button>
+        <lightning-button
+          class="undo"
+          label="Desconciliar último"
+          disabled={cannotUndo}
+          onclick={handleUndo}
+        ></lightning-button>
+      </div>
+      <p class="hint slds-text-color_weak slds-m-bottom_small" role="status">
+        {hint}
+      </p>
+    </div>
+  </lightning-card>
+</template>

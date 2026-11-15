@@ -1,0 +1,13 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<CustomFieldTranslation xmlns="http://soap.sforce.com/2006/04/metadata">
+    <label>Tipo</label>
+    <picklistValues>
+        <masterLabel>Checking</masterLabel>
+        <translation>Corrente</translation>
+    </picklistValues>
+    <picklistValues>
+        <masterLabel>Savings</masterLabel>
+        <translation>Poupança</translation>
+    </picklistValues>
+    <name>AXF_BA_PKL_Type__c</name>
+</CustomFieldTranslation>

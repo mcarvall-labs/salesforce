@@ -1,0 +1,26 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<LightningMessageChannel xmlns="http://soap.sforce.com/2006/04/metadata">
+  <description>Fatura selecionada na página do cartão de crédito.</description>
+  <isExposed>false</isExposed>
+  <lightningMessageFields>
+    <description>Competência (AAAA-MM)</description>
+    <fieldName>period</fieldName>
+  </lightningMessageFields>
+  <lightningMessageFields>
+    <description>Data de vencimento</description>
+    <fieldName>dueDate</fieldName>
+  </lightningMessageFields>
+  <lightningMessageFields>
+    <description>Valor total</description>
+    <fieldName>totalAmount</fieldName>
+  </lightningMessageFields>
+  <lightningMessageFields>
+    <description>Moeda</description>
+    <fieldName>currencyCode</fieldName>
+  </lightningMessageFields>
+  <lightningMessageFields>
+    <description>Situação traduzida</description>
+    <fieldName>statusLabel</fieldName>
+  </lightningMessageFields>
+  <masterLabel>Fatura selecionada</masterLabel>
+</LightningMessageChannel>

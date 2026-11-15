@@ -1,0 +1,47 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<CustomObjectTranslation xmlns="http://soap.sforce.com/2006/04/metadata">
+    <caseValues>
+        <plural>false</plural>
+        <value>Lançamento</value>
+    </caseValues>
+    <caseValues>
+        <plural>true</plural>
+        <value>Lançamentos</value>
+    </caseValues>
+    <gender>Masculine</gender>
+    <nameFieldLabel>Descrição</nameFieldLabel>
+    <quickActions>
+        <label>Marcar como realizado</label>
+        <name>AXF_ENT_QA_MarkRealized</name>
+    </quickActions>
+    <validationRules>
+        <errorMessage
+    >O valor deve ser maior que zero. Use o campo Tipo para definir receita ou despesa.</errorMessage>
+        <name>AXF_ENT_VR_AmountPositive</name>
+    </validationRules>
+    <validationRules>
+        <errorMessage
+    >A data de pagamento é obrigatória quando o status é Realizado.</errorMessage>
+        <name>AXF_ENT_VR_PaymentDateRequired</name>
+    </validationRules>
+    <validationRules>
+        <errorMessage
+    >Preencha a conta bancária ou o cartão de crédito, não os dois.</errorMessage>
+        <name>AXF_ENT_VR_AccountOrCardOnly</name>
+    </validationRules>
+    <validationRules>
+        <errorMessage
+    >A conta bancária deve pertencer ao mesmo titular do lançamento.</errorMessage>
+        <name>AXF_ENT_VR_BankAccountSameHolder</name>
+    </validationRules>
+    <validationRules>
+        <errorMessage
+    >O cartão de crédito deve pertencer ao mesmo titular do lançamento.</errorMessage>
+        <name>AXF_ENT_VR_CreditCardSameHolder</name>
+    </validationRules>
+    <validationRules>
+        <errorMessage
+    >A data de pagamento só pode ser preenchida quando o status é Realizado.</errorMessage>
+        <name>AXF_ENT_VR_PaymentDateOnlyRealized</name>
+    </validationRules>
+</CustomObjectTranslation>

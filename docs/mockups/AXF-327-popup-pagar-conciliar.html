@@ -1,0 +1,346 @@
+<!doctype html>
+<html lang="pt-BR">
+  <head>
+    <meta charset="utf-8" />
+    <title>Protótipo — Popup Pagar/Receber com conciliação Pluggy</title>
+    <style>
+      :root {
+        --blue: #0176d3;
+        --bd: #e3e1df;
+        --mut: #706e6b;
+        --ok: #2e844a;
+        --err: #ba0517;
+        --warn: #dd7a01;
+      }
+      * {
+        box-sizing: border-box;
+      }
+      body {
+        margin: 0;
+        font:
+          14px/1.45 -apple-system,
+          Segoe UI,
+          Arial,
+          sans-serif;
+        background: #8a8a8a;
+        color: #181818;
+        min-height: 100vh;
+      }
+      .note {
+        background: #fff8e1;
+        border-bottom: 1px solid #f0d98c;
+        padding: 8px 14px;
+        font-size: 12px;
+      }
+      .modal {
+        width: 640px;
+        max-width: 96vw;
+        margin: 28px auto;
+        background: #fff;
+        border-radius: 8px;
+        box-shadow: 0 8px 30px rgba(0, 0, 0, 0.4);
+      }
+      .mh {
+        padding: 14px 18px;
+        border-bottom: 2px solid var(--blue);
+        background: #f3f6fb;
+        border-radius: 8px 8px 0 0;
+      }
+      .mh h2 {
+        margin: 0;
+        font-size: 18px;
+        color: #032d60;
+      }
+      .mb {
+        padding: 16px 18px;
+      }
+      .info {
+        color: var(--mut);
+        font-size: 13px;
+        margin: 2px 0 12px;
+      }
+      .tabs {
+        display: flex;
+        border: 1px solid var(--bd);
+        border-radius: 6px;
+        overflow: hidden;
+        margin-bottom: 14px;
+      }
+      .tabs div {
+        flex: 1;
+        padding: 9px 12px;
+        text-align: center;
+        cursor: pointer;
+        font-weight: 600;
+        background: #fff;
+      }
+      .tabs div + div {
+        border-left: 1px solid var(--bd);
+      }
+      .tabs .on {
+        background: var(--blue);
+        color: #fff;
+      }
+      .tabs small {
+        display: block;
+        font-weight: 400;
+        font-size: 11px;
+        opacity: 0.85;
+      }
+      .sec {
+        display: none;
+      }
+      .sec.on {
+        display: block;
+      }
+      label {
+        display: block;
+        font-size: 12px;
+        color: var(--mut);
+        margin: 10px 0 3px;
+      }
+      input {
+        width: 100%;
+        padding: 7px 9px;
+        border: 1px solid #c9c7c5;
+        border-radius: 4px;
+        font: inherit;
+      }
+      .two {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 12px;
+      }
+      .tx {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        border: 1px solid var(--bd);
+        border-radius: 6px;
+        padding: 9px 12px;
+        margin-bottom: 8px;
+        cursor: pointer;
+      }
+      .tx.sel {
+        border-color: var(--blue);
+        box-shadow: 0 0 0 1px var(--blue);
+        background: #eef4ff;
+      }
+      .tx .r {
+        width: 16px;
+        height: 16px;
+        border: 2px solid #aaa;
+        border-radius: 50%;
+        flex: none;
+      }
+      .tx.sel .r {
+        border-color: var(--blue);
+        background: radial-gradient(var(--blue) 45%, #fff 50%);
+      }
+      .tx .d {
+        flex: 1;
+      }
+      .tx .d small {
+        display: block;
+        color: var(--mut);
+        font-size: 12px;
+      }
+      .tx .v {
+        font-weight: 700;
+        white-space: nowrap;
+      }
+      .out {
+        color: var(--err);
+      }
+      .in {
+        color: var(--ok);
+      }
+      .tag {
+        font-size: 11px;
+        padding: 1px 8px;
+        border-radius: 10px;
+        font-weight: 600;
+        margin-left: 6px;
+      }
+      .t-best {
+        background: #e3f3e8;
+        color: var(--ok);
+      }
+      .t-near {
+        background: #fdf0e0;
+        color: var(--warn);
+      }
+      .diff {
+        background: #fff8e1;
+        border: 1px solid #f0d98c;
+        border-radius: 6px;
+        padding: 8px 12px;
+        font-size: 12px;
+        margin-top: 6px;
+      }
+      .empty {
+        color: var(--mut);
+        font-size: 13px;
+        padding: 10px;
+        border: 1px dashed var(--bd);
+        border-radius: 6px;
+        text-align: center;
+      }
+      .link {
+        color: var(--blue);
+        font-size: 12px;
+        cursor: pointer;
+      }
+      .mf {
+        padding: 12px 18px;
+        border-top: 1px solid var(--bd);
+        background: #f3f3f3;
+        border-radius: 0 0 8px 8px;
+        display: flex;
+        gap: 8px;
+        justify-content: flex-end;
+        align-items: center;
+      }
+      .mf .sp {
+        margin-right: auto;
+        font-size: 12px;
+        color: var(--mut);
+      }
+      button {
+        font: inherit;
+        padding: 7px 16px;
+        border: 1px solid var(--bd);
+        border-radius: 4px;
+        background: #fff;
+        color: var(--blue);
+        cursor: pointer;
+      }
+      button.pri {
+        background: var(--blue);
+        border-color: var(--blue);
+        color: #fff;
+      }
+    </style>
+  </head>
+  <body>
+    <div class="note">
+      PROTÓTIPO para aprovação — popup aberto por <b>Pagar</b>/<b>Receber</b> na
+      lista "Lançamentos do mês". Dados fictícios. Clique nas abas e nas
+      transações.
+    </div>
+
+    <div class="modal">
+      <div class="mh"><h2 id="ttl">Pagar</h2></div>
+      <div class="mb">
+        <div style="font-size: 16px; font-weight: 600" id="nm">
+          Energia elétrica
+        </div>
+        <div class="info">
+          Vencimento: 05/10/2026 · Previsto: R$ 320,00 · Titular: Pessoal ·
+          Conta: Itaú
+        </div>
+
+        <div class="tabs">
+          <div class="on" id="t1" onclick="tab(1)">
+            Conciliar com o Pluggy<small>3 transações compatíveis</small>
+          </div>
+          <div id="t2" onclick="tab(2)">
+            Informar manualmente<small>sem transação do banco</small>
+          </div>
+        </div>
+
+        <div class="sec on" id="s1">
+          <div class="info" style="margin-top: 0">
+            Escolha a transação do banco que corresponde a este lançamento.
+            Mostramos as de valor próximo (±5%) e data próxima (±7 dias).
+          </div>
+          <div class="tx sel" onclick="pick(this)">
+            <span class="r"></span>
+            <div class="d">
+              <b
+                >DEB ENEL SP
+                <span class="tag t-best">Melhor correspondência</span></b
+              ><small>04/10/2026 · Itaú conta corrente · Pluggy</small>
+            </div>
+            <div class="v out">− R$ 320,00</div>
+          </div>
+          <div class="tx" onclick="pick(this)">
+            <span class="r"></span>
+            <div class="d">
+              <b
+                >PAG BOLETO ENERGIA
+                <span class="tag t-near">Valor próximo</span></b
+              ><small>06/10/2026 · Itaú conta corrente · Pluggy</small>
+            </div>
+            <div class="v out">− R$ 331,40</div>
+          </div>
+          <div class="tx" onclick="pick(this)">
+            <span class="r"></span>
+            <div class="d">
+              <b>PIX ELETROPAULO <span class="tag t-near">Data próxima</span></b
+              ><small>09/10/2026 · Nubank conta · Pluggy</small>
+            </div>
+            <div class="v out">− R$ 318,20</div>
+          </div>
+          <div class="diff" id="df">
+            Ao confirmar: o lançamento fica <b>Pago em 04/10/2026</b> com
+            <b>R$ 320,00</b> (data e valor da transação) e a transação sai da
+            lista "A conciliar".
+          </div>
+          <div style="margin-top: 10px">
+            <span class="link" onclick="tab(2)"
+              >Não achei a transação — informar manualmente</span
+            >
+            · <span class="link">Buscar outras transações do período ↗</span>
+          </div>
+        </div>
+
+        <div class="sec" id="s2">
+          <div class="two">
+            <div>
+              <label>Data do pagamento *</label><input value="14/10/2026" />
+            </div>
+            <div><label>Valor pago *</label><input value="320,00" /></div>
+          </div>
+          <div class="diff">
+            Sem conciliação: o lançamento fica <b>Pago</b>, mas continua sem
+            vínculo com o banco. Quando a transação do Pluggy chegar, ela
+            aparece em <b>A conciliar</b> para ser vinculada depois.
+          </div>
+        </div>
+      </div>
+      <div class="mf">
+        <span class="sp" id="sum">Vincula 1 transação do Pluggy</span
+        ><button>Cancelar</button
+        ><button class="pri" id="ok">Pagar e conciliar</button>
+      </div>
+    </div>
+
+    <script>
+      function tab(n) {
+        for (const i of [1, 2]) {
+          document.getElementById("t" + i).classList.toggle("on", i == n);
+          document.getElementById("s" + i).classList.toggle("on", i == n);
+        }
+        document.getElementById("ok").textContent =
+          n == 1 ? "Pagar e conciliar" : "Confirmar pagamento";
+        document.getElementById("sum").textContent =
+          n == 1 ? "Vincula 1 transação do Pluggy" : "Sem vínculo com o banco";
+      }
+      function pick(e) {
+        document
+          .querySelectorAll(".tx")
+          .forEach((x) => x.classList.remove("sel"));
+        e.classList.add("sel");
+        const d = e.querySelector("small").textContent.split(" · ")[0],
+          v = e.querySelector(".v").textContent.replace("− ", "");
+        document.getElementById("df").innerHTML =
+          "Ao confirmar: o lançamento fica <b>Pago em " +
+          d +
+          "</b> com <b>" +
+          v +
+          '</b> (data e valor da transação) e a transação sai da lista "A conciliar".';
+      }
+    </script>
+  </body>
+</html>

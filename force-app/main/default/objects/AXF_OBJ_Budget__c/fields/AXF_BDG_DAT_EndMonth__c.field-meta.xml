@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<CustomField xmlns="http://soap.sforce.com/2006/04/metadata">
+    <fullName>AXF_BDG_DAT_EndMonth__c</fullName>
+    <label>End Month</label>
+    <description
+  >Primeiro dia do último mês de vigência; vazio = sem fim.</description>
+    <required>false</required>
+    <trackTrending>false</trackTrending>
+    <type>Date</type>
+</CustomField>

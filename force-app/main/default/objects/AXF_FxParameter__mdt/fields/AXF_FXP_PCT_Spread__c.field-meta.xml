@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<CustomField xmlns="http://soap.sforce.com/2006/04/metadata">
+    <fullName>AXF_FXP_PCT_Spread__c</fullName>
+    <description
+  >Spread charged by the exchange house over the PTAX quote.</description>
+    <fieldManageability>SubscriberControlled</fieldManageability>
+    <label>Spread (%)</label>
+    <precision>6</precision>
+    <scale>4</scale>
+    <required>true</required>
+    <type>Percent</type>
+</CustomField>

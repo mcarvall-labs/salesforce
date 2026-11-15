@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<PermissionSet xmlns="http://soap.sforce.com/2006/04/metadata">
+  <description
+  >Acesso do administrador à credencial externa do Pluggy, usada para testar a autenticação e validar o Item Id. Atribuir somente a administradores.</description>
+  <externalCredentialPrincipalAccesses>
+    <enabled>true</enabled>
+    <externalCredentialPrincipal
+    >AXF_EXC_Pluggy-AXF_Pluggy_Principal</externalCredentialPrincipal>
+  </externalCredentialPrincipalAccesses>
+  <hasActivationRequired>false</hasActivationRequired>
+  <label>Axon - Configuração (credenciais)</label>
+</PermissionSet>

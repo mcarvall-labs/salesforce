@@ -1,0 +1,13 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<CompactLayout xmlns="http://soap.sforce.com/2006/04/metadata">
+    <fullName>AXF_CCT_Compact</fullName>
+    <fields>Name</fields>
+    <fields>AXF_CCT_MD_CreditCard__c</fields>
+    <fields>AXF_CCT_LKP_Invoice__c</fields>
+    <fields>AXF_CCT_DAT_Date__c</fields>
+    <fields>AXF_CCT_TXT_Description__c</fields>
+    <fields>AXF_CCT_CUR_Amount__c</fields>
+    <fields>AXF_CCT_CUR_AmountBRL__c</fields>
+    <fields>AXF_CCT_TXT_PluggyCategory__c</fields>
+    <label>Transação do Cartão</label>
+</CompactLayout>

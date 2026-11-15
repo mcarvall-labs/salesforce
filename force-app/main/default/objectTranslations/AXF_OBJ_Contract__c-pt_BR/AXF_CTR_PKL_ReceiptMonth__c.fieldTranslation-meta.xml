@@ -1,0 +1,13 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<CustomFieldTranslation xmlns="http://soap.sforce.com/2006/04/metadata">
+    <label>Mês de recebimento</label>
+    <picklistValues>
+        <masterLabel>SameMonth</masterLabel>
+        <translation>Mesmo mês da competência</translation>
+    </picklistValues>
+    <picklistValues>
+        <masterLabel>NextMonth</masterLabel>
+        <translation>Mês seguinte</translation>
+    </picklistValues>
+    <name>AXF_CTR_PKL_ReceiptMonth__c</name>
+</CustomFieldTranslation>

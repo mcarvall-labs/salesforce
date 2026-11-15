@@ -1,0 +1,30 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<CustomObjectTranslation xmlns="http://soap.sforce.com/2006/04/metadata">
+    <caseValues>
+        <plural>false</plural>
+        <value>Apontamento de Horas</value>
+    </caseValues>
+    <caseValues>
+        <plural>true</plural>
+        <value>Apontamentos de Horas</value>
+    </caseValues>
+    <gender>Masculine</gender>
+    <nameFieldLabel>Nº do apontamento</nameFieldLabel>
+    <validationRules>
+        <errorMessage>A Saída 1 deve ser depois da Entrada 1.</errorMessage>
+        <name>AXF_TME_VR_FirstPeriodOrder</name>
+    </validationRules>
+    <validationRules>
+        <errorMessage>A Saída 2 deve ser depois da Entrada 2.</errorMessage>
+        <name>AXF_TME_VR_SecondPeriodOrder</name>
+    </validationRules>
+    <validationRules>
+        <errorMessage>A Entrada 2 não pode ser antes da Saída 1.</errorMessage>
+        <name>AXF_TME_VR_PeriodsDoNotOverlap</name>
+    </validationRules>
+    <validationRules>
+        <errorMessage
+    >Preencha a entrada e a saída de cada período.</errorMessage>
+        <name>AXF_TME_VR_PeriodComplete</name>
+    </validationRules>
+</CustomObjectTranslation>

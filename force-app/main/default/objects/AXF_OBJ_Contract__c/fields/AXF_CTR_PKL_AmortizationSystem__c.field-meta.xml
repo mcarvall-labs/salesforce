@@ -1,0 +1,18 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<CustomField xmlns="http://soap.sforce.com/2006/04/metadata">
+    <fullName>AXF_CTR_PKL_AmortizationSystem__c</fullName>
+    <label>Amortization System</label>
+    <required>false</required>
+    <trackTrending>false</trackTrending>
+    <type>Picklist</type>
+    <valueSet>
+        <restricted>true</restricted>
+        <valueSetDefinition>
+            <sorted>false</sorted>
+            <value><fullName>SAC</fullName><default>false</default><label
+        >SAC</label></value>
+            <value><fullName>PRICE</fullName><default>false</default><label
+        >PRICE</label></value>
+        </valueSetDefinition>
+    </valueSet>
+</CustomField>

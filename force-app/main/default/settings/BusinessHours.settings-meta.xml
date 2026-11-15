@@ -1,0 +1,371 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<BusinessHoursSettings xmlns="http://soap.sforce.com/2006/04/metadata">
+    <businessHours>
+        <active>true</active>
+        <default>true</default>
+        <fridayEndTime>00:00:00.000Z</fridayEndTime>
+        <fridayStartTime>00:00:00.000Z</fridayStartTime>
+        <mondayEndTime>00:00:00.000Z</mondayEndTime>
+        <mondayStartTime>00:00:00.000Z</mondayStartTime>
+        <saturdayEndTime>00:00:00.000Z</saturdayEndTime>
+        <saturdayStartTime>00:00:00.000Z</saturdayStartTime>
+        <sundayEndTime>00:00:00.000Z</sundayEndTime>
+        <sundayStartTime>00:00:00.000Z</sundayStartTime>
+        <thursdayEndTime>00:00:00.000Z</thursdayEndTime>
+        <thursdayStartTime>00:00:00.000Z</thursdayStartTime>
+        <tuesdayEndTime>00:00:00.000Z</tuesdayEndTime>
+        <tuesdayStartTime>00:00:00.000Z</tuesdayStartTime>
+        <wednesdayEndTime>00:00:00.000Z</wednesdayEndTime>
+        <wednesdayStartTime>00:00:00.000Z</wednesdayStartTime>
+        <name>Default</name>
+        <timeZoneId>America/Los_Angeles</timeZoneId>
+    </businessHours>
+    <businessHours>
+        <active>true</active>
+        <default>false</default>
+        <mondayEndTime>18:00:00.000Z</mondayEndTime>
+        <mondayStartTime>08:00:00.000Z</mondayStartTime>
+        <tuesdayEndTime>18:00:00.000Z</tuesdayEndTime>
+        <tuesdayStartTime>08:00:00.000Z</tuesdayStartTime>
+        <wednesdayEndTime>18:00:00.000Z</wednesdayEndTime>
+        <wednesdayStartTime>08:00:00.000Z</wednesdayStartTime>
+        <thursdayEndTime>18:00:00.000Z</thursdayEndTime>
+        <thursdayStartTime>08:00:00.000Z</thursdayStartTime>
+        <fridayEndTime>18:00:00.000Z</fridayEndTime>
+        <fridayStartTime>08:00:00.000Z</fridayStartTime>
+        <name>Brasil</name>
+        <timeZoneId>America/Sao_Paulo</timeZoneId>
+    </businessHours>
+    <businessHours>
+        <active>true</active>
+        <default>false</default>
+        <mondayEndTime>18:00:00.000Z</mondayEndTime>
+        <mondayStartTime>08:00:00.000Z</mondayStartTime>
+        <tuesdayEndTime>18:00:00.000Z</tuesdayEndTime>
+        <tuesdayStartTime>08:00:00.000Z</tuesdayStartTime>
+        <wednesdayEndTime>18:00:00.000Z</wednesdayEndTime>
+        <wednesdayStartTime>08:00:00.000Z</wednesdayStartTime>
+        <thursdayEndTime>18:00:00.000Z</thursdayEndTime>
+        <thursdayStartTime>08:00:00.000Z</thursdayStartTime>
+        <fridayEndTime>18:00:00.000Z</fridayEndTime>
+        <fridayStartTime>08:00:00.000Z</fridayStartTime>
+        <name>Portugal</name>
+        <timeZoneId>Europe/Lisbon</timeZoneId>
+    </businessHours>
+    <holidays>
+        <activityDate>2026-01-01</activityDate>
+        <businessHours>Brasil</businessHours>
+        <isRecurring>true</isRecurring>
+        <name>BR - Confraternização Universal</name>
+        <recurrenceDayOfMonth>1</recurrenceDayOfMonth>
+        <recurrenceMonthOfYear>JANUARY</recurrenceMonthOfYear>
+        <recurrenceStartDate>2026-01-01</recurrenceStartDate>
+        <recurrenceType>RecursYearly</recurrenceType>
+    </holidays>
+    <holidays>
+        <activityDate>2026-04-21</activityDate>
+        <businessHours>Brasil</businessHours>
+        <isRecurring>true</isRecurring>
+        <name>BR - Tiradentes</name>
+        <recurrenceDayOfMonth>21</recurrenceDayOfMonth>
+        <recurrenceMonthOfYear>APRIL</recurrenceMonthOfYear>
+        <recurrenceStartDate>2026-04-21</recurrenceStartDate>
+        <recurrenceType>RecursYearly</recurrenceType>
+    </holidays>
+    <holidays>
+        <activityDate>2026-05-01</activityDate>
+        <businessHours>Brasil</businessHours>
+        <isRecurring>true</isRecurring>
+        <name>BR - Dia do Trabalho</name>
+        <recurrenceDayOfMonth>1</recurrenceDayOfMonth>
+        <recurrenceMonthOfYear>MAY</recurrenceMonthOfYear>
+        <recurrenceStartDate>2026-05-01</recurrenceStartDate>
+        <recurrenceType>RecursYearly</recurrenceType>
+    </holidays>
+    <holidays>
+        <activityDate>2026-09-07</activityDate>
+        <businessHours>Brasil</businessHours>
+        <isRecurring>true</isRecurring>
+        <name>BR - Independência do Brasil</name>
+        <recurrenceDayOfMonth>7</recurrenceDayOfMonth>
+        <recurrenceMonthOfYear>SEPTEMBER</recurrenceMonthOfYear>
+        <recurrenceStartDate>2026-09-07</recurrenceStartDate>
+        <recurrenceType>RecursYearly</recurrenceType>
+    </holidays>
+    <holidays>
+        <activityDate>2026-10-12</activityDate>
+        <businessHours>Brasil</businessHours>
+        <isRecurring>true</isRecurring>
+        <name>BR - Nossa Senhora Aparecida</name>
+        <recurrenceDayOfMonth>12</recurrenceDayOfMonth>
+        <recurrenceMonthOfYear>OCTOBER</recurrenceMonthOfYear>
+        <recurrenceStartDate>2026-10-12</recurrenceStartDate>
+        <recurrenceType>RecursYearly</recurrenceType>
+    </holidays>
+    <holidays>
+        <activityDate>2026-11-02</activityDate>
+        <businessHours>Brasil</businessHours>
+        <isRecurring>true</isRecurring>
+        <name>BR - Finados</name>
+        <recurrenceDayOfMonth>2</recurrenceDayOfMonth>
+        <recurrenceMonthOfYear>NOVEMBER</recurrenceMonthOfYear>
+        <recurrenceStartDate>2026-11-02</recurrenceStartDate>
+        <recurrenceType>RecursYearly</recurrenceType>
+    </holidays>
+    <holidays>
+        <activityDate>2026-11-15</activityDate>
+        <businessHours>Brasil</businessHours>
+        <isRecurring>true</isRecurring>
+        <name>BR - Proclamação da República</name>
+        <recurrenceDayOfMonth>15</recurrenceDayOfMonth>
+        <recurrenceMonthOfYear>NOVEMBER</recurrenceMonthOfYear>
+        <recurrenceStartDate>2026-11-15</recurrenceStartDate>
+        <recurrenceType>RecursYearly</recurrenceType>
+    </holidays>
+    <holidays>
+        <activityDate>2026-11-20</activityDate>
+        <businessHours>Brasil</businessHours>
+        <isRecurring>true</isRecurring>
+        <name>BR - Consciência Negra</name>
+        <recurrenceDayOfMonth>20</recurrenceDayOfMonth>
+        <recurrenceMonthOfYear>NOVEMBER</recurrenceMonthOfYear>
+        <recurrenceStartDate>2026-11-20</recurrenceStartDate>
+        <recurrenceType>RecursYearly</recurrenceType>
+    </holidays>
+    <holidays>
+        <activityDate>2026-12-25</activityDate>
+        <businessHours>Brasil</businessHours>
+        <isRecurring>true</isRecurring>
+        <name>BR - Natal</name>
+        <recurrenceDayOfMonth>25</recurrenceDayOfMonth>
+        <recurrenceMonthOfYear>DECEMBER</recurrenceMonthOfYear>
+        <recurrenceStartDate>2026-12-25</recurrenceStartDate>
+        <recurrenceType>RecursYearly</recurrenceType>
+    </holidays>
+    <holidays>
+        <activityDate>2026-02-16</activityDate>
+        <businessHours>Brasil</businessHours>
+        <isRecurring>false</isRecurring>
+        <name>BR - Carnaval (segunda) 2026</name>
+    </holidays>
+    <holidays>
+        <activityDate>2026-02-17</activityDate>
+        <businessHours>Brasil</businessHours>
+        <isRecurring>false</isRecurring>
+        <name>BR - Carnaval (terça) 2026</name>
+    </holidays>
+    <holidays>
+        <activityDate>2026-04-03</activityDate>
+        <businessHours>Brasil</businessHours>
+        <isRecurring>false</isRecurring>
+        <name>BR - Sexta-feira Santa 2026</name>
+    </holidays>
+    <holidays>
+        <activityDate>2026-06-04</activityDate>
+        <businessHours>Brasil</businessHours>
+        <isRecurring>false</isRecurring>
+        <name>BR - Corpus Christi 2026</name>
+    </holidays>
+    <holidays>
+        <activityDate>2027-02-08</activityDate>
+        <businessHours>Brasil</businessHours>
+        <isRecurring>false</isRecurring>
+        <name>BR - Carnaval (segunda) 2027</name>
+    </holidays>
+    <holidays>
+        <activityDate>2027-02-09</activityDate>
+        <businessHours>Brasil</businessHours>
+        <isRecurring>false</isRecurring>
+        <name>BR - Carnaval (terça) 2027</name>
+    </holidays>
+    <holidays>
+        <activityDate>2027-03-26</activityDate>
+        <businessHours>Brasil</businessHours>
+        <isRecurring>false</isRecurring>
+        <name>BR - Sexta-feira Santa 2027</name>
+    </holidays>
+    <holidays>
+        <activityDate>2027-05-27</activityDate>
+        <businessHours>Brasil</businessHours>
+        <isRecurring>false</isRecurring>
+        <name>BR - Corpus Christi 2027</name>
+    </holidays>
+    <holidays>
+        <activityDate>2028-02-28</activityDate>
+        <businessHours>Brasil</businessHours>
+        <isRecurring>false</isRecurring>
+        <name>BR - Carnaval (segunda) 2028</name>
+    </holidays>
+    <holidays>
+        <activityDate>2028-02-29</activityDate>
+        <businessHours>Brasil</businessHours>
+        <isRecurring>false</isRecurring>
+        <name>BR - Carnaval (terça) 2028</name>
+    </holidays>
+    <holidays>
+        <activityDate>2028-04-14</activityDate>
+        <businessHours>Brasil</businessHours>
+        <isRecurring>false</isRecurring>
+        <name>BR - Sexta-feira Santa 2028</name>
+    </holidays>
+    <holidays>
+        <activityDate>2028-06-15</activityDate>
+        <businessHours>Brasil</businessHours>
+        <isRecurring>false</isRecurring>
+        <name>BR - Corpus Christi 2028</name>
+    </holidays>
+    <holidays>
+        <activityDate>2026-01-01</activityDate>
+        <businessHours>Portugal</businessHours>
+        <isRecurring>true</isRecurring>
+        <name>PT - Ano Novo</name>
+        <recurrenceDayOfMonth>1</recurrenceDayOfMonth>
+        <recurrenceMonthOfYear>JANUARY</recurrenceMonthOfYear>
+        <recurrenceStartDate>2026-01-01</recurrenceStartDate>
+        <recurrenceType>RecursYearly</recurrenceType>
+    </holidays>
+    <holidays>
+        <activityDate>2026-04-25</activityDate>
+        <businessHours>Portugal</businessHours>
+        <isRecurring>true</isRecurring>
+        <name>PT - Dia da Liberdade</name>
+        <recurrenceDayOfMonth>25</recurrenceDayOfMonth>
+        <recurrenceMonthOfYear>APRIL</recurrenceMonthOfYear>
+        <recurrenceStartDate>2026-04-25</recurrenceStartDate>
+        <recurrenceType>RecursYearly</recurrenceType>
+    </holidays>
+    <holidays>
+        <activityDate>2026-05-01</activityDate>
+        <businessHours>Portugal</businessHours>
+        <isRecurring>true</isRecurring>
+        <name>PT - Dia do Trabalhador</name>
+        <recurrenceDayOfMonth>1</recurrenceDayOfMonth>
+        <recurrenceMonthOfYear>MAY</recurrenceMonthOfYear>
+        <recurrenceStartDate>2026-05-01</recurrenceStartDate>
+        <recurrenceType>RecursYearly</recurrenceType>
+    </holidays>
+    <holidays>
+        <activityDate>2026-06-10</activityDate>
+        <businessHours>Portugal</businessHours>
+        <isRecurring>true</isRecurring>
+        <name>PT - Dia de Portugal</name>
+        <recurrenceDayOfMonth>10</recurrenceDayOfMonth>
+        <recurrenceMonthOfYear>JUNE</recurrenceMonthOfYear>
+        <recurrenceStartDate>2026-06-10</recurrenceStartDate>
+        <recurrenceType>RecursYearly</recurrenceType>
+    </holidays>
+    <holidays>
+        <activityDate>2026-08-15</activityDate>
+        <businessHours>Portugal</businessHours>
+        <isRecurring>true</isRecurring>
+        <name>PT - Assunção de Nossa Senhora</name>
+        <recurrenceDayOfMonth>15</recurrenceDayOfMonth>
+        <recurrenceMonthOfYear>AUGUST</recurrenceMonthOfYear>
+        <recurrenceStartDate>2026-08-15</recurrenceStartDate>
+        <recurrenceType>RecursYearly</recurrenceType>
+    </holidays>
+    <holidays>
+        <activityDate>2026-10-05</activityDate>
+        <businessHours>Portugal</businessHours>
+        <isRecurring>true</isRecurring>
+        <name>PT - Implantação da República</name>
+        <recurrenceDayOfMonth>5</recurrenceDayOfMonth>
+        <recurrenceMonthOfYear>OCTOBER</recurrenceMonthOfYear>
+        <recurrenceStartDate>2026-10-05</recurrenceStartDate>
+        <recurrenceType>RecursYearly</recurrenceType>
+    </holidays>
+    <holidays>
+        <activityDate>2026-11-01</activityDate>
+        <businessHours>Portugal</businessHours>
+        <isRecurring>true</isRecurring>
+        <name>PT - Todos os Santos</name>
+        <recurrenceDayOfMonth>1</recurrenceDayOfMonth>
+        <recurrenceMonthOfYear>NOVEMBER</recurrenceMonthOfYear>
+        <recurrenceStartDate>2026-11-01</recurrenceStartDate>
+        <recurrenceType>RecursYearly</recurrenceType>
+    </holidays>
+    <holidays>
+        <activityDate>2026-12-01</activityDate>
+        <businessHours>Portugal</businessHours>
+        <isRecurring>true</isRecurring>
+        <name>PT - Restauração da Independência</name>
+        <recurrenceDayOfMonth>1</recurrenceDayOfMonth>
+        <recurrenceMonthOfYear>DECEMBER</recurrenceMonthOfYear>
+        <recurrenceStartDate>2026-12-01</recurrenceStartDate>
+        <recurrenceType>RecursYearly</recurrenceType>
+    </holidays>
+    <holidays>
+        <activityDate>2026-12-08</activityDate>
+        <businessHours>Portugal</businessHours>
+        <isRecurring>true</isRecurring>
+        <name>PT - Imaculada Conceição</name>
+        <recurrenceDayOfMonth>8</recurrenceDayOfMonth>
+        <recurrenceMonthOfYear>DECEMBER</recurrenceMonthOfYear>
+        <recurrenceStartDate>2026-12-08</recurrenceStartDate>
+        <recurrenceType>RecursYearly</recurrenceType>
+    </holidays>
+    <holidays>
+        <activityDate>2026-12-25</activityDate>
+        <businessHours>Portugal</businessHours>
+        <isRecurring>true</isRecurring>
+        <name>PT - Natal</name>
+        <recurrenceDayOfMonth>25</recurrenceDayOfMonth>
+        <recurrenceMonthOfYear>DECEMBER</recurrenceMonthOfYear>
+        <recurrenceStartDate>2026-12-25</recurrenceStartDate>
+        <recurrenceType>RecursYearly</recurrenceType>
+    </holidays>
+    <holidays>
+        <activityDate>2026-04-03</activityDate>
+        <businessHours>Portugal</businessHours>
+        <isRecurring>false</isRecurring>
+        <name>PT - Sexta-feira Santa 2026</name>
+    </holidays>
+    <holidays>
+        <activityDate>2026-04-05</activityDate>
+        <businessHours>Portugal</businessHours>
+        <isRecurring>false</isRecurring>
+        <name>PT - Páscoa 2026</name>
+    </holidays>
+    <holidays>
+        <activityDate>2026-06-04</activityDate>
+        <businessHours>Portugal</businessHours>
+        <isRecurring>false</isRecurring>
+        <name>PT - Corpo de Deus 2026</name>
+    </holidays>
+    <holidays>
+        <activityDate>2027-03-26</activityDate>
+        <businessHours>Portugal</businessHours>
+        <isRecurring>false</isRecurring>
+        <name>PT - Sexta-feira Santa 2027</name>
+    </holidays>
+    <holidays>
+        <activityDate>2027-03-28</activityDate>
+        <businessHours>Portugal</businessHours>
+        <isRecurring>false</isRecurring>
+        <name>PT - Páscoa 2027</name>
+    </holidays>
+    <holidays>
+        <activityDate>2027-05-27</activityDate>
+        <businessHours>Portugal</businessHours>
+        <isRecurring>false</isRecurring>
+        <name>PT - Corpo de Deus 2027</name>
+    </holidays>
+    <holidays>
+        <activityDate>2028-04-14</activityDate>
+        <businessHours>Portugal</businessHours>
+        <isRecurring>false</isRecurring>
+        <name>PT - Sexta-feira Santa 2028</name>
+    </holidays>
+    <holidays>
+        <activityDate>2028-04-16</activityDate>
+        <businessHours>Portugal</businessHours>
+        <isRecurring>false</isRecurring>
+        <name>PT - Páscoa 2028</name>
+    </holidays>
+    <holidays>
+        <activityDate>2028-06-15</activityDate>
+        <businessHours>Portugal</businessHours>
+        <isRecurring>false</isRecurring>
+        <name>PT - Corpo de Deus 2028</name>
+    </holidays>
+</BusinessHoursSettings>

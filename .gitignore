@@ -48,4 +48,12 @@ $RECYCLE.BIN/
 **/venv/
 manifest/package.xml
 package.xml
-force-app/main/default/profiles/Admin.profile-meta.xml
+
+# AXF-78 metadata backups taken before destructive deploys (org snapshots, never committed)
+_bmad-output/backups/
+
+.sf-package-builder/
+
+# AI planning artifacts live in the workspace root, never in this repository
+_bmad/
+_bmad-output/

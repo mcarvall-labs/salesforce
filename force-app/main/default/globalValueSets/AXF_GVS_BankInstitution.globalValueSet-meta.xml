@@ -1,0 +1,1162 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<GlobalValueSet xmlns="http://soap.sforce.com/2006/04/metadata">
+    <description
+  >Instituições financeiras (código COMPE). Valor API = código; rótulo = código - nome.</description>
+    <masterLabel>AXF_GVS_BankInstitution</masterLabel>
+    <sorted>false</sorted>
+    <customValue>
+        <fullName>001</fullName>
+        <default>false</default>
+        <label>001 - Banco do Brasil</label>
+    </customValue>
+    <customValue>
+        <fullName>003</fullName>
+        <default>false</default>
+        <label>003 - Banco da Amazônia</label>
+    </customValue>
+    <customValue>
+        <fullName>004</fullName>
+        <default>false</default>
+        <label>004 - Banco do Nordeste</label>
+    </customValue>
+    <customValue>
+        <fullName>007</fullName>
+        <default>false</default>
+        <label>007 - BNDES</label>
+    </customValue>
+    <customValue>
+        <fullName>010</fullName>
+        <default>false</default>
+        <label>010 - Credicoamo</label>
+    </customValue>
+    <customValue>
+        <fullName>011</fullName>
+        <default>false</default>
+        <label>011 - Credit Suisse Hedging-Griffo</label>
+    </customValue>
+    <customValue>
+        <fullName>012</fullName>
+        <default>false</default>
+        <label>012 - Banco Inbursa</label>
+    </customValue>
+    <customValue>
+        <fullName>014</fullName>
+        <default>false</default>
+        <label>014 - Natixis Brasil</label>
+    </customValue>
+    <customValue>
+        <fullName>017</fullName>
+        <default>false</default>
+        <label>017 - BNY Mellon Banco</label>
+    </customValue>
+    <customValue>
+        <fullName>018</fullName>
+        <default>false</default>
+        <label>018 - Banco Tricury</label>
+    </customValue>
+    <customValue>
+        <fullName>019</fullName>
+        <default>false</default>
+        <label>019 - Banco Azteca do Brasil</label>
+    </customValue>
+    <customValue>
+        <fullName>021</fullName>
+        <default>false</default>
+        <label>021 - Banestes</label>
+    </customValue>
+    <customValue>
+        <fullName>024</fullName>
+        <default>false</default>
+        <label>024 - Banco Bandepe</label>
+    </customValue>
+    <customValue>
+        <fullName>025</fullName>
+        <default>false</default>
+        <label>025 - Banco Alfa</label>
+    </customValue>
+    <customValue>
+        <fullName>029</fullName>
+        <default>false</default>
+        <label>029 - Banco Itaú Consignado</label>
+    </customValue>
+    <customValue>
+        <fullName>033</fullName>
+        <default>false</default>
+        <label>033 - Santander</label>
+    </customValue>
+    <customValue>
+        <fullName>036</fullName>
+        <default>false</default>
+        <label>036 - Banco Bradesco BBI</label>
+    </customValue>
+    <customValue>
+        <fullName>037</fullName>
+        <default>false</default>
+        <label>037 - Banpará</label>
+    </customValue>
+    <customValue>
+        <fullName>040</fullName>
+        <default>false</default>
+        <label>040 - Banco Cargill</label>
+    </customValue>
+    <customValue>
+        <fullName>041</fullName>
+        <default>false</default>
+        <label>041 - Banrisul</label>
+    </customValue>
+    <customValue>
+        <fullName>047</fullName>
+        <default>false</default>
+        <label>047 - Banese</label>
+    </customValue>
+    <customValue>
+        <fullName>062</fullName>
+        <default>false</default>
+        <label>062 - Hipercard Banco Múltiplo</label>
+    </customValue>
+    <customValue>
+        <fullName>063</fullName>
+        <default>false</default>
+        <label>063 - Banco Bradescard</label>
+    </customValue>
+    <customValue>
+        <fullName>064</fullName>
+        <default>false</default>
+        <label>064 - Goldman Sachs do Brasil</label>
+    </customValue>
+    <customValue>
+        <fullName>065</fullName>
+        <default>false</default>
+        <label>065 - Banco AndBank</label>
+    </customValue>
+    <customValue>
+        <fullName>066</fullName>
+        <default>false</default>
+        <label>066 - Banco Morgan Stanley</label>
+    </customValue>
+    <customValue>
+        <fullName>069</fullName>
+        <default>false</default>
+        <label>069 - Banco Crefisa</label>
+    </customValue>
+    <customValue>
+        <fullName>070</fullName>
+        <default>false</default>
+        <label>070 - BRB - Banco de Brasília</label>
+    </customValue>
+    <customValue>
+        <fullName>074</fullName>
+        <default>false</default>
+        <label>074 - Banco J. Safra</label>
+    </customValue>
+    <customValue>
+        <fullName>077</fullName>
+        <default>false</default>
+        <label>077 - Banco Inter</label>
+    </customValue>
+    <customValue>
+        <fullName>082</fullName>
+        <default>false</default>
+        <label>082 - Banco Topázio</label>
+    </customValue>
+    <customValue>
+        <fullName>083</fullName>
+        <default>false</default>
+        <label>083 - Banco da China Brasil</label>
+    </customValue>
+    <customValue>
+        <fullName>084</fullName>
+        <default>false</default>
+        <label>084 - Uniprime Norte do Paraná</label>
+    </customValue>
+    <customValue>
+        <fullName>085</fullName>
+        <default>false</default>
+        <label>085 - Ailos</label>
+    </customValue>
+    <customValue>
+        <fullName>088</fullName>
+        <default>false</default>
+        <label>088 - Banco Randon</label>
+    </customValue>
+    <customValue>
+        <fullName>091</fullName>
+        <default>false</default>
+        <label>091 - Unicred Central RS</label>
+    </customValue>
+    <customValue>
+        <fullName>092</fullName>
+        <default>false</default>
+        <label>092 - BRK Crédito</label>
+    </customValue>
+    <customValue>
+        <fullName>093</fullName>
+        <default>false</default>
+        <label>093 - Polocred</label>
+    </customValue>
+    <customValue>
+        <fullName>094</fullName>
+        <default>false</default>
+        <label>094 - Banco Finaxis</label>
+    </customValue>
+    <customValue>
+        <fullName>096</fullName>
+        <default>false</default>
+        <label>096 - B3 - Banco B3</label>
+    </customValue>
+    <customValue>
+        <fullName>097</fullName>
+        <default>false</default>
+        <label>097 - Credisis</label>
+    </customValue>
+    <customValue>
+        <fullName>098</fullName>
+        <default>false</default>
+        <label>098 - Credialiança</label>
+    </customValue>
+    <customValue>
+        <fullName>099</fullName>
+        <default>false</default>
+        <label>099 - Uniprime Central</label>
+    </customValue>
+    <customValue>
+        <fullName>100</fullName>
+        <default>false</default>
+        <label>100 - Planner Corretora</label>
+    </customValue>
+    <customValue>
+        <fullName>101</fullName>
+        <default>false</default>
+        <label>101 - Renascença DTVM</label>
+    </customValue>
+    <customValue>
+        <fullName>102</fullName>
+        <default>false</default>
+        <label>102 - XP Investimentos</label>
+    </customValue>
+    <customValue>
+        <fullName>104</fullName>
+        <default>false</default>
+        <label>104 - CEF</label>
+    </customValue>
+    <customValue>
+        <fullName>105</fullName>
+        <default>false</default>
+        <label>105 - Lecca Crédito</label>
+    </customValue>
+    <customValue>
+        <fullName>107</fullName>
+        <default>false</default>
+        <label>107 - Banco Bocom BBM</label>
+    </customValue>
+    <customValue>
+        <fullName>108</fullName>
+        <default>false</default>
+        <label>108 - PortoCred</label>
+    </customValue>
+    <customValue>
+        <fullName>111</fullName>
+        <default>false</default>
+        <label>111 - Oliveira Trust</label>
+    </customValue>
+    <customValue>
+        <fullName>113</fullName>
+        <default>false</default>
+        <label>113 - Magliano</label>
+    </customValue>
+    <customValue>
+        <fullName>117</fullName>
+        <default>false</default>
+        <label>117 - Advanced Corretora</label>
+    </customValue>
+    <customValue>
+        <fullName>119</fullName>
+        <default>false</default>
+        <label>119 - Banco Western Union</label>
+    </customValue>
+    <customValue>
+        <fullName>120</fullName>
+        <default>false</default>
+        <label>120 - Banco Rodobens</label>
+    </customValue>
+    <customValue>
+        <fullName>121</fullName>
+        <default>false</default>
+        <label>121 - Banco Agibank</label>
+    </customValue>
+    <customValue>
+        <fullName>122</fullName>
+        <default>false</default>
+        <label>122 - Banco Bradesco BERJ</label>
+    </customValue>
+    <customValue>
+        <fullName>124</fullName>
+        <default>false</default>
+        <label>124 - Banco Woori Bank</label>
+    </customValue>
+    <customValue>
+        <fullName>125</fullName>
+        <default>false</default>
+        <label>125 - Plural</label>
+    </customValue>
+    <customValue>
+        <fullName>126</fullName>
+        <default>false</default>
+        <label>126 - BR Partners</label>
+    </customValue>
+    <customValue>
+        <fullName>127</fullName>
+        <default>false</default>
+        <label>127 - Codepe Corretora</label>
+    </customValue>
+    <customValue>
+        <fullName>128</fullName>
+        <default>false</default>
+        <label>128 - MS Bank</label>
+    </customValue>
+    <customValue>
+        <fullName>129</fullName>
+        <default>false</default>
+        <label>129 - UBS Brasil Banco de Investimento</label>
+    </customValue>
+    <customValue>
+        <fullName>130</fullName>
+        <default>false</default>
+        <label>130 - Caruana</label>
+    </customValue>
+    <customValue>
+        <fullName>131</fullName>
+        <default>false</default>
+        <label>131 - Tullett Prebon</label>
+    </customValue>
+    <customValue>
+        <fullName>132</fullName>
+        <default>false</default>
+        <label>132 - ICBC do Brasil</label>
+    </customValue>
+    <customValue>
+        <fullName>133</fullName>
+        <default>false</default>
+        <label>133 - Cresol Confederação</label>
+    </customValue>
+    <customValue>
+        <fullName>134</fullName>
+        <default>false</default>
+        <label>134 - BGC Liquidez</label>
+    </customValue>
+    <customValue>
+        <fullName>135</fullName>
+        <default>false</default>
+        <label>135 - Gradual Corretora</label>
+    </customValue>
+    <customValue>
+        <fullName>136</fullName>
+        <default>false</default>
+        <label>136 - Unicred do Brasil</label>
+    </customValue>
+    <customValue>
+        <fullName>138</fullName>
+        <default>false</default>
+        <label>138 - Get Money Corretora</label>
+    </customValue>
+    <customValue>
+        <fullName>139</fullName>
+        <default>false</default>
+        <label>139 - Intesa Sanpaolo Brasil</label>
+    </customValue>
+    <customValue>
+        <fullName>140</fullName>
+        <default>false</default>
+        <label>140 - Nu Invest</label>
+    </customValue>
+    <customValue>
+        <fullName>142</fullName>
+        <default>false</default>
+        <label>142 - Broker Brasil</label>
+    </customValue>
+    <customValue>
+        <fullName>143</fullName>
+        <default>false</default>
+        <label>143 - Treviso Corretora</label>
+    </customValue>
+    <customValue>
+        <fullName>144</fullName>
+        <default>false</default>
+        <label>144 - Bexs Banco de Câmbio</label>
+    </customValue>
+    <customValue>
+        <fullName>145</fullName>
+        <default>false</default>
+        <label>145 - Levycam</label>
+    </customValue>
+    <customValue>
+        <fullName>146</fullName>
+        <default>false</default>
+        <label>146 - Guitta Corretora</label>
+    </customValue>
+    <customValue>
+        <fullName>149</fullName>
+        <default>false</default>
+        <label>149 - Facta Financeira</label>
+    </customValue>
+    <customValue>
+        <fullName>157</fullName>
+        <default>false</default>
+        <label>157 - ICAP do Brasil</label>
+    </customValue>
+    <customValue>
+        <fullName>159</fullName>
+        <default>false</default>
+        <label>159 - Casa do Crédito</label>
+    </customValue>
+    <customValue>
+        <fullName>163</fullName>
+        <default>false</default>
+        <label>163 - Commerzbank Brasil</label>
+    </customValue>
+    <customValue>
+        <fullName>169</fullName>
+        <default>false</default>
+        <label>169 - Banco Olé Bonsucesso Consignado</label>
+    </customValue>
+    <customValue>
+        <fullName>173</fullName>
+        <default>false</default>
+        <label>173 - BRL Trust</label>
+    </customValue>
+    <customValue>
+        <fullName>174</fullName>
+        <default>false</default>
+        <label>174 - Pernambucanas Financiadora</label>
+    </customValue>
+    <customValue>
+        <fullName>177</fullName>
+        <default>false</default>
+        <label>177 - Guide Investimentos</label>
+    </customValue>
+    <customValue>
+        <fullName>180</fullName>
+        <default>false</default>
+        <label>180 - CM Capital Markets</label>
+    </customValue>
+    <customValue>
+        <fullName>182</fullName>
+        <default>false</default>
+        <label>182 - Dacasa Financeira</label>
+    </customValue>
+    <customValue>
+        <fullName>183</fullName>
+        <default>false</default>
+        <label>183 - Socred</label>
+    </customValue>
+    <customValue>
+        <fullName>184</fullName>
+        <default>false</default>
+        <label>184 - Banco Itaú BBA</label>
+    </customValue>
+    <customValue>
+        <fullName>188</fullName>
+        <default>false</default>
+        <label>188 - Ativa Investimentos</label>
+    </customValue>
+    <customValue>
+        <fullName>189</fullName>
+        <default>false</default>
+        <label>189 - HS Financeira</label>
+    </customValue>
+    <customValue>
+        <fullName>190</fullName>
+        <default>false</default>
+        <label>190 - Servicoop</label>
+    </customValue>
+    <customValue>
+        <fullName>191</fullName>
+        <default>false</default>
+        <label>191 - Nova Futura</label>
+    </customValue>
+    <customValue>
+        <fullName>194</fullName>
+        <default>false</default>
+        <label>194 - Parmetal</label>
+    </customValue>
+    <customValue>
+        <fullName>197</fullName>
+        <default>false</default>
+        <label>197 - Stone Pagamentos</label>
+    </customValue>
+    <customValue>
+        <fullName>208</fullName>
+        <default>false</default>
+        <label>208 - Banco BTG Pactual</label>
+    </customValue>
+    <customValue>
+        <fullName>212</fullName>
+        <default>false</default>
+        <label>212 - Banco Original</label>
+    </customValue>
+    <customValue>
+        <fullName>213</fullName>
+        <default>false</default>
+        <label>213 - Banco Arbi</label>
+    </customValue>
+    <customValue>
+        <fullName>217</fullName>
+        <default>false</default>
+        <label>217 - Banco John Deere</label>
+    </customValue>
+    <customValue>
+        <fullName>218</fullName>
+        <default>false</default>
+        <label>218 - Banco BS2</label>
+    </customValue>
+    <customValue>
+        <fullName>222</fullName>
+        <default>false</default>
+        <label>222 - Banco Credit Agricole Brasil</label>
+    </customValue>
+    <customValue>
+        <fullName>224</fullName>
+        <default>false</default>
+        <label>224 - Banco Fibra</label>
+    </customValue>
+    <customValue>
+        <fullName>233</fullName>
+        <default>false</default>
+        <label>233 - Banco Cifra</label>
+    </customValue>
+    <customValue>
+        <fullName>237</fullName>
+        <default>false</default>
+        <label>237 - Bradesco</label>
+    </customValue>
+    <customValue>
+        <fullName>241</fullName>
+        <default>false</default>
+        <label>241 - Banco Clássico</label>
+    </customValue>
+    <customValue>
+        <fullName>243</fullName>
+        <default>false</default>
+        <label>243 - Banco Master</label>
+    </customValue>
+    <customValue>
+        <fullName>246</fullName>
+        <default>false</default>
+        <label>246 - Banco ABC Brasil</label>
+    </customValue>
+    <customValue>
+        <fullName>249</fullName>
+        <default>false</default>
+        <label>249 - Banco Investcred Unibanco</label>
+    </customValue>
+    <customValue>
+        <fullName>250</fullName>
+        <default>false</default>
+        <label>250 - BCV - Banco de Crédito e Varejo</label>
+    </customValue>
+    <customValue>
+        <fullName>253</fullName>
+        <default>false</default>
+        <label>253 - Bexs Corretora de Câmbio</label>
+    </customValue>
+    <customValue>
+        <fullName>254</fullName>
+        <default>false</default>
+        <label>254 - Paraná Banco</label>
+    </customValue>
+    <customValue>
+        <fullName>260</fullName>
+        <default>false</default>
+        <label>260 - Nubank</label>
+    </customValue>
+    <customValue>
+        <fullName>265</fullName>
+        <default>false</default>
+        <label>265 - Banco Fator</label>
+    </customValue>
+    <customValue>
+        <fullName>266</fullName>
+        <default>false</default>
+        <label>266 - Banco Cédula</label>
+    </customValue>
+    <customValue>
+        <fullName>269</fullName>
+        <default>false</default>
+        <label>269 - HSBC Brasil</label>
+    </customValue>
+    <customValue>
+        <fullName>270</fullName>
+        <default>false</default>
+        <label>270 - Sagitur Corretora</label>
+    </customValue>
+    <customValue>
+        <fullName>271</fullName>
+        <default>false</default>
+        <label>271 - IB Corretora</label>
+    </customValue>
+    <customValue>
+        <fullName>272</fullName>
+        <default>false</default>
+        <label>272 - AGK Corretora</label>
+    </customValue>
+    <customValue>
+        <fullName>274</fullName>
+        <default>false</default>
+        <label>274 - Money Plus</label>
+    </customValue>
+    <customValue>
+        <fullName>276</fullName>
+        <default>false</default>
+        <label>276 - Senff</label>
+    </customValue>
+    <customValue>
+        <fullName>278</fullName>
+        <default>false</default>
+        <label>278 - Genial Investimentos</label>
+    </customValue>
+    <customValue>
+        <fullName>280</fullName>
+        <default>false</default>
+        <label>280 - Will Financeira</label>
+    </customValue>
+    <customValue>
+        <fullName>283</fullName>
+        <default>false</default>
+        <label>283 - RB Capital</label>
+    </customValue>
+    <customValue>
+        <fullName>290</fullName>
+        <default>false</default>
+        <label>290 - PagBank</label>
+    </customValue>
+    <customValue>
+        <fullName>292</fullName>
+        <default>false</default>
+        <label>292 - BS2 DTVM</label>
+    </customValue>
+    <customValue>
+        <fullName>298</fullName>
+        <default>false</default>
+        <label>298 - Vip's Corretora</label>
+    </customValue>
+    <customValue>
+        <fullName>299</fullName>
+        <default>false</default>
+        <label>299 - Sorocred</label>
+    </customValue>
+    <customValue>
+        <fullName>300</fullName>
+        <default>false</default>
+        <label>300 - Banco de la Nación Argentina</label>
+    </customValue>
+    <customValue>
+        <fullName>301</fullName>
+        <default>false</default>
+        <label>301 - Contabilizei Bank</label>
+    </customValue>
+    <customValue>
+        <fullName>306</fullName>
+        <default>false</default>
+        <label>306 - Portopar</label>
+    </customValue>
+    <customValue>
+        <fullName>307</fullName>
+        <default>false</default>
+        <label>307 - Terra Investimentos</label>
+    </customValue>
+    <customValue>
+        <fullName>309</fullName>
+        <default>false</default>
+        <label>309 - Cambionet</label>
+    </customValue>
+    <customValue>
+        <fullName>310</fullName>
+        <default>false</default>
+        <label>310 - VORTX</label>
+    </customValue>
+    <customValue>
+        <fullName>311</fullName>
+        <default>false</default>
+        <label>311 - Dourada Corretora</label>
+    </customValue>
+    <customValue>
+        <fullName>313</fullName>
+        <default>false</default>
+        <label>313 - Amazônia Corretora</label>
+    </customValue>
+    <customValue>
+        <fullName>315</fullName>
+        <default>false</default>
+        <label>315 - PI DTVM</label>
+    </customValue>
+    <customValue>
+        <fullName>318</fullName>
+        <default>false</default>
+        <label>318 - Banco BMG</label>
+    </customValue>
+    <customValue>
+        <fullName>319</fullName>
+        <default>false</default>
+        <label>319 - OM DTVM</label>
+    </customValue>
+    <customValue>
+        <fullName>320</fullName>
+        <default>false</default>
+        <label>320 - China Construction Bank Brasil</label>
+    </customValue>
+    <customValue>
+        <fullName>321</fullName>
+        <default>false</default>
+        <label>321 - Crefaz</label>
+    </customValue>
+    <customValue>
+        <fullName>322</fullName>
+        <default>false</default>
+        <label>322 - CCR de Abelardo Luz</label>
+    </customValue>
+    <customValue>
+        <fullName>323</fullName>
+        <default>false</default>
+        <label>323 - Mercado Pago</label>
+    </customValue>
+    <customValue>
+        <fullName>324</fullName>
+        <default>false</default>
+        <label>324 - Cartos</label>
+    </customValue>
+    <customValue>
+        <fullName>325</fullName>
+        <default>false</default>
+        <label>325 - Órama</label>
+    </customValue>
+    <customValue>
+        <fullName>326</fullName>
+        <default>false</default>
+        <label>326 - Parati</label>
+    </customValue>
+    <customValue>
+        <fullName>329</fullName>
+        <default>false</default>
+        <label>329 - QI Sociedade de Crédito Direto</label>
+    </customValue>
+    <customValue>
+        <fullName>330</fullName>
+        <default>false</default>
+        <label>330 - Banco Bari</label>
+    </customValue>
+    <customValue>
+        <fullName>331</fullName>
+        <default>false</default>
+        <label>331 - Fram Capital</label>
+    </customValue>
+    <customValue>
+        <fullName>332</fullName>
+        <default>false</default>
+        <label>332 - Acesso Soluções de Pagamento</label>
+    </customValue>
+    <customValue>
+        <fullName>335</fullName>
+        <default>false</default>
+        <label>335 - Banco Digio</label>
+    </customValue>
+    <customValue>
+        <fullName>336</fullName>
+        <default>false</default>
+        <label>336 - C6 Bank</label>
+    </customValue>
+    <customValue>
+        <fullName>340</fullName>
+        <default>false</default>
+        <label>340 - Superdigital</label>
+    </customValue>
+    <customValue>
+        <fullName>341</fullName>
+        <default>false</default>
+        <label>341 - Itaú Unibanco</label>
+    </customValue>
+    <customValue>
+        <fullName>348</fullName>
+        <default>false</default>
+        <label>348 - Banco XP</label>
+    </customValue>
+    <customValue>
+        <fullName>349</fullName>
+        <default>false</default>
+        <label>349 - AL5 Crediz</label>
+    </customValue>
+    <customValue>
+        <fullName>352</fullName>
+        <default>false</default>
+        <label>352 - Toro Investimentos</label>
+    </customValue>
+    <customValue>
+        <fullName>354</fullName>
+        <default>false</default>
+        <label>354 - Necton Investimentos</label>
+    </customValue>
+    <customValue>
+        <fullName>355</fullName>
+        <default>false</default>
+        <label>355 - Ótimo</label>
+    </customValue>
+    <customValue>
+        <fullName>359</fullName>
+        <default>false</default>
+        <label>359 - Zema Crédito</label>
+    </customValue>
+    <customValue>
+        <fullName>360</fullName>
+        <default>false</default>
+        <label>360 - Trinus Capital</label>
+    </customValue>
+    <customValue>
+        <fullName>362</fullName>
+        <default>false</default>
+        <label>362 - Cielo</label>
+    </customValue>
+    <customValue>
+        <fullName>363</fullName>
+        <default>false</default>
+        <label>363 - Singulare</label>
+    </customValue>
+    <customValue>
+        <fullName>364</fullName>
+        <default>false</default>
+        <label>364 - Efí (Gerencianet)</label>
+    </customValue>
+    <customValue>
+        <fullName>365</fullName>
+        <default>false</default>
+        <label>365 - Solidus</label>
+    </customValue>
+    <customValue>
+        <fullName>366</fullName>
+        <default>false</default>
+        <label>366 - Banco Société Générale Brasil</label>
+    </customValue>
+    <customValue>
+        <fullName>367</fullName>
+        <default>false</default>
+        <label>367 - Vitreo</label>
+    </customValue>
+    <customValue>
+        <fullName>370</fullName>
+        <default>false</default>
+        <label>370 - Banco Mizuho do Brasil</label>
+    </customValue>
+    <customValue>
+        <fullName>371</fullName>
+        <default>false</default>
+        <label>371 - Warren</label>
+    </customValue>
+    <customValue>
+        <fullName>373</fullName>
+        <default>false</default>
+        <label>373 - UP.P</label>
+    </customValue>
+    <customValue>
+        <fullName>374</fullName>
+        <default>false</default>
+        <label>374 - Realize</label>
+    </customValue>
+    <customValue>
+        <fullName>376</fullName>
+        <default>false</default>
+        <label>376 - Banco J.P. Morgan</label>
+    </customValue>
+    <customValue>
+        <fullName>380</fullName>
+        <default>false</default>
+        <label>380 - PicPay</label>
+    </customValue>
+    <customValue>
+        <fullName>381</fullName>
+        <default>false</default>
+        <label>381 - Banco Mercedes-Benz</label>
+    </customValue>
+    <customValue>
+        <fullName>382</fullName>
+        <default>false</default>
+        <label>382 - Fidúcia</label>
+    </customValue>
+    <customValue>
+        <fullName>383</fullName>
+        <default>false</default>
+        <label>383 - Juno</label>
+    </customValue>
+    <customValue>
+        <fullName>384</fullName>
+        <default>false</default>
+        <label>384 - Global Finanças</label>
+    </customValue>
+    <customValue>
+        <fullName>387</fullName>
+        <default>false</default>
+        <label>387 - Banco Toyota do Brasil</label>
+    </customValue>
+    <customValue>
+        <fullName>389</fullName>
+        <default>false</default>
+        <label>389 - Banco Mercantil do Brasil</label>
+    </customValue>
+    <customValue>
+        <fullName>390</fullName>
+        <default>false</default>
+        <label>390 - Banco GM</label>
+    </customValue>
+    <customValue>
+        <fullName>393</fullName>
+        <default>false</default>
+        <label>393 - Banco Volkswagen</label>
+    </customValue>
+    <customValue>
+        <fullName>394</fullName>
+        <default>false</default>
+        <label>394 - Banco Bradesco Financiamentos</label>
+    </customValue>
+    <customValue>
+        <fullName>396</fullName>
+        <default>false</default>
+        <label>396 - Hub Pagamentos</label>
+    </customValue>
+    <customValue>
+        <fullName>397</fullName>
+        <default>false</default>
+        <label>397 - Listo</label>
+    </customValue>
+    <customValue>
+        <fullName>398</fullName>
+        <default>false</default>
+        <label>398 - Ideal Corretora</label>
+    </customValue>
+    <customValue>
+        <fullName>399</fullName>
+        <default>false</default>
+        <label>399 - Kirton Bank</label>
+    </customValue>
+    <customValue>
+        <fullName>412</fullName>
+        <default>false</default>
+        <label>412 - Banco Capital</label>
+    </customValue>
+    <customValue>
+        <fullName>422</fullName>
+        <default>false</default>
+        <label>422 - Banco Safra</label>
+    </customValue>
+    <customValue>
+        <fullName>456</fullName>
+        <default>false</default>
+        <label>456 - Banco MUFG Brasil</label>
+    </customValue>
+    <customValue>
+        <fullName>464</fullName>
+        <default>false</default>
+        <label>464 - Banco Sumitomo Mitsui Brasileiro</label>
+    </customValue>
+    <customValue>
+        <fullName>473</fullName>
+        <default>false</default>
+        <label>473 - Banco Caixa Geral Brasil</label>
+    </customValue>
+    <customValue>
+        <fullName>477</fullName>
+        <default>false</default>
+        <label>477 - Citibank</label>
+    </customValue>
+    <customValue>
+        <fullName>479</fullName>
+        <default>false</default>
+        <label>479 - Banco ItauBank</label>
+    </customValue>
+    <customValue>
+        <fullName>487</fullName>
+        <default>false</default>
+        <label>487 - Deutsche Bank</label>
+    </customValue>
+    <customValue>
+        <fullName>488</fullName>
+        <default>false</default>
+        <label>488 - JPMorgan Chase Bank</label>
+    </customValue>
+    <customValue>
+        <fullName>492</fullName>
+        <default>false</default>
+        <label>492 - ING Bank</label>
+    </customValue>
+    <customValue>
+        <fullName>494</fullName>
+        <default>false</default>
+        <label>494 - Banco de la República Oriental del Uruguay</label>
+    </customValue>
+    <customValue>
+        <fullName>495</fullName>
+        <default>false</default>
+        <label>495 - Banco de la Provincia de Buenos Aires</label>
+    </customValue>
+    <customValue>
+        <fullName>545</fullName>
+        <default>false</default>
+        <label>545 - Senso Corretora</label>
+    </customValue>
+    <customValue>
+        <fullName>600</fullName>
+        <default>false</default>
+        <label>600 - Banco Luso Brasileiro</label>
+    </customValue>
+    <customValue>
+        <fullName>604</fullName>
+        <default>false</default>
+        <label>604 - Banco Industrial do Brasil</label>
+    </customValue>
+    <customValue>
+        <fullName>610</fullName>
+        <default>false</default>
+        <label>610 - Banco VR</label>
+    </customValue>
+    <customValue>
+        <fullName>611</fullName>
+        <default>false</default>
+        <label>611 - Banco Paulista</label>
+    </customValue>
+    <customValue>
+        <fullName>612</fullName>
+        <default>false</default>
+        <label>612 - Banco Guanabara</label>
+    </customValue>
+    <customValue>
+        <fullName>613</fullName>
+        <default>false</default>
+        <label>613 - Omni Banco</label>
+    </customValue>
+    <customValue>
+        <fullName>623</fullName>
+        <default>false</default>
+        <label>623 - Banco Pan</label>
+    </customValue>
+    <customValue>
+        <fullName>626</fullName>
+        <default>false</default>
+        <label>626 - Banco C6 Consignado</label>
+    </customValue>
+    <customValue>
+        <fullName>630</fullName>
+        <default>false</default>
+        <label>630 - Banco Smartbank</label>
+    </customValue>
+    <customValue>
+        <fullName>633</fullName>
+        <default>false</default>
+        <label>633 - Banco Rendimento</label>
+    </customValue>
+    <customValue>
+        <fullName>634</fullName>
+        <default>false</default>
+        <label>634 - Banco Triângulo</label>
+    </customValue>
+    <customValue>
+        <fullName>637</fullName>
+        <default>false</default>
+        <label>637 - Banco Sofisa</label>
+    </customValue>
+    <customValue>
+        <fullName>643</fullName>
+        <default>false</default>
+        <label>643 - Banco Pine</label>
+    </customValue>
+    <customValue>
+        <fullName>652</fullName>
+        <default>false</default>
+        <label>652 - Itaú Unibanco Holding</label>
+    </customValue>
+    <customValue>
+        <fullName>653</fullName>
+        <default>false</default>
+        <label>653 - Banco Indusval</label>
+    </customValue>
+    <customValue>
+        <fullName>654</fullName>
+        <default>false</default>
+        <label>654 - Banco Digimais</label>
+    </customValue>
+    <customValue>
+        <fullName>655</fullName>
+        <default>false</default>
+        <label>655 - Banco Votorantim</label>
+    </customValue>
+    <customValue>
+        <fullName>707</fullName>
+        <default>false</default>
+        <label>707 - Banco Daycoval</label>
+    </customValue>
+    <customValue>
+        <fullName>712</fullName>
+        <default>false</default>
+        <label>712 - Banco Ourinvest</label>
+    </customValue>
+    <customValue>
+        <fullName>739</fullName>
+        <default>false</default>
+        <label>739 - Banco Cetelem</label>
+    </customValue>
+    <customValue>
+        <fullName>741</fullName>
+        <default>false</default>
+        <label>741 - Banco Ribeirão Preto</label>
+    </customValue>
+    <customValue>
+        <fullName>743</fullName>
+        <default>false</default>
+        <label>743 - Banco Semear</label>
+    </customValue>
+    <customValue>
+        <fullName>746</fullName>
+        <default>false</default>
+        <label>746 - Banco Modal</label>
+    </customValue>
+    <customValue>
+        <fullName>747</fullName>
+        <default>false</default>
+        <label>747 - Banco Rabobank International Brasil</label>
+    </customValue>
+    <customValue>
+        <fullName>748</fullName>
+        <default>false</default>
+        <label>748 - Sicredi</label>
+    </customValue>
+    <customValue>
+        <fullName>751</fullName>
+        <default>false</default>
+        <label>751 - Scotiabank Brasil</label>
+    </customValue>
+    <customValue>
+        <fullName>752</fullName>
+        <default>false</default>
+        <label>752 - Banco BNP Paribas Brasil</label>
+    </customValue>
+    <customValue>
+        <fullName>753</fullName>
+        <default>false</default>
+        <label>753 - Novo Banco Continental</label>
+    </customValue>
+    <customValue>
+        <fullName>754</fullName>
+        <default>false</default>
+        <label>754 - Banco Sistema</label>
+    </customValue>
+    <customValue>
+        <fullName>755</fullName>
+        <default>false</default>
+        <label>755 - Bank of America Merrill Lynch</label>
+    </customValue>
+    <customValue>
+        <fullName>756</fullName>
+        <default>false</default>
+        <label>756 - Sicoob</label>
+    </customValue>
+    <customValue>
+        <fullName>757</fullName>
+        <default>false</default>
+        <label>757 - Banco KEB Hana do Brasil</label>
+    </customValue>
+</GlobalValueSet>

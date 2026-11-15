@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<CustomField xmlns="http://soap.sforce.com/2006/04/metadata">
+    <fullName>AXF_BDG_DAT_StartMonth__c</fullName>
+    <label>Start Month</label>
+    <description>Primeiro dia do mês em que a meta passa a valer.</description>
+    <required>true</required>
+    <trackTrending>false</trackTrending>
+    <type>Date</type>
+</CustomField>

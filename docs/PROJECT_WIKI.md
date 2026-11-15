@@ -23,7 +23,7 @@ Welcome to the **Axon Finance** Project Wiki. This document serves as the single
    - [5.1 Component Hierarchy & Layout Strategy](#51-component-hierarchy--layout-strategy)
    - [5.2 Key LWC Modules Reference](#52-key-lwc-modules-reference)
 6. [Apex Core Framework & Trigger Architecture](#6-apex-core-framework--trigger-architecture)
-   - [6.1 Trigger Handler Pattern (`AXF_CLS_TH_*`)](#61-trigger-handler-pattern-axf_cls_th_)
+   - [6.1 Trigger Handler Pattern (`AXF_CLS_*Handler`)](#61-trigger-handler-pattern-axf_cls_handler)
    - [6.2 Key Services & Controllers](#62-key-services--controllers)
 7. [Operations & Development Guidelines](#7-operations--development-guidelines)
 
@@ -78,7 +78,7 @@ The system has evolved across major development epics and stories:
 All metadata components follow strict prefix rules specified in `PROJECT_RULES.md`:
 
 - **Apex Class / Trigger:** `AXF_CLS_*` / `AXF_TRG_*`
-- **Trigger Handler:** `AXF_CLS_TH_*`
+- **Trigger Handler:** `AXF_CLS_*Handler` (one per trigger; enforced by `scripts/ci/trigger-handler-boundary.mjs`, AXF-105)
 - **Lightning Web Components:** `aXF_LWC_*`
 - **Custom Objects / FlexiPages:** `AXF_OBJ_*` / `AXF_RPL_*`
 - **Credentials:** `AXF_NC_*` (Named Credential) / `AXF_EXC_*` (External Credential)
@@ -156,13 +156,33 @@ aXF_HPL_HomePage (FlexiPage)
 
 ## 6. Apex Core Framework & Trigger Architecture
 
-### 6.1 Trigger Handler Pattern (`AXF_CLS_TH_*`)
+### 6.1 Trigger Handler Pattern (`AXF_CLS_*Handler`)
 
-All Apex triggers follow a lightweight standard delegating logic to dedicated Handler classes:
+Every Apex trigger contains only context dispatch and delegation to exactly one
+`AXF_CLS_*Handler` class (AXF-105). Business rules — queries, DML, validation,
+calculations, field changes — live in the handler or in the `ALT_CLS_*` business
+service it calls. CI enforces the boundary with
+`node scripts/ci/trigger-handler-boundary.mjs` (one trigger per object, only
+`Trigger.*` context arguments, handler class must exist).
 
-- **`AXF_TRG_AccountCardNaming` / `AXF_CLS_TH_AccountCardNaming`:** Automatically formats `Name` of `AXF_OBJ_BankAccount__c` and `AXF_OBJ_CreditCard__c` to `{Account Name} - {Bank Institution Name}` in uppercase upon Insert/Update.
-- **`AXF_TRG_BankInstitution` / `AXF_CLS_TH_BankInstitution`:** Cleans up bank institution names.
-- **`AXF_TRG_CashFlow` / `AXF_CLS_TH_CashFlow`:** Validates required Account lookups and calculates installment due dates.
+```apex
+trigger AXF_TRG_Example on AXF_OBJ_Example__c(before insert, before update) {
+  if (Trigger.isBefore && Trigger.isInsert) {
+    AXF_CLS_ExampleTriggerHandler.handleBeforeInsert(Trigger.new);
+  }
+  if (Trigger.isBefore && Trigger.isUpdate) {
+    AXF_CLS_ExampleTriggerHandler.handleBeforeUpdate(
+      Trigger.new,
+      Trigger.oldMap
+    );
+  }
+}
+```
+
+Current pairs (see `force-app/main/default/triggers`): realization facts and
+allocations (`AXF_CLS_{RA,BAT,CCT,FTX}TriggerHandler` → `ALT_CLS_RealizationGuard`),
+FX snapshots/settlements, contract term versions, schedule runs, card billing
+cycle rules, review items, work records and the Pluggy webhook event.
 
 ---
 

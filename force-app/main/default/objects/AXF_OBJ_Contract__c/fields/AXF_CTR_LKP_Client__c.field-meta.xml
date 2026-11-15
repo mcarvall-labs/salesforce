@@ -1,0 +1,23 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<CustomField xmlns="http://soap.sforce.com/2006/04/metadata">
+    <fullName>AXF_CTR_LKP_Client__c</fullName>
+    <label>Client</label>
+    <deleteConstraint>SetNull</deleteConstraint>
+    <lookupFilter>
+        <active>true</active>
+        <errorMessage
+    >Choose an account of the Customer record type.</errorMessage>
+        <filterItems>
+            <field>Account.RecordType.DeveloperName</field>
+            <operation>equals</operation>
+            <value>AXF_Customer</value>
+        </filterItems>
+        <isOptional>false</isOptional>
+    </lookupFilter>
+    <referenceTo>Account</referenceTo>
+    <relationshipLabel>Client Contracts</relationshipLabel>
+    <relationshipName>ClientContracts</relationshipName>
+    <required>false</required>
+    <trackTrending>false</trackTrending>
+    <type>Lookup</type>
+</CustomField>

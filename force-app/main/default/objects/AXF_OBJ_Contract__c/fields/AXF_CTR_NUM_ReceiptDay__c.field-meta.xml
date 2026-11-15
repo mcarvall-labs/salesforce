@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<CustomField xmlns="http://soap.sforce.com/2006/04/metadata">
+    <fullName>AXF_CTR_NUM_ReceiptDay__c</fullName>
+    <label>Receipt Due Day</label>
+    <precision>2</precision>
+    <scale>0</scale>
+    <required>false</required>
+    <unique>false</unique>
+    <trackTrending>false</trackTrending>
+    <type>Number</type>
+</CustomField>

@@ -1,0 +1,123 @@
+<template>
+  <lightning-card title="Extrato" icon-name="standard:account">
+    <template if:true={showSync}>
+      <lightning-button
+        slot="actions"
+        class="sync-button"
+        variant="brand"
+        icon-name="utility:sync"
+        label={syncLabel}
+        disabled={isSyncing}
+        onclick={handleSync}
+      ></lightning-button>
+    </template>
+    <div class="slds-p-horizontal_medium">
+      <template if:true={isLoading}>
+        <lightning-spinner
+          alternative-text="Carregando"
+          size="small"
+        ></lightning-spinner>
+      </template>
+      <template if:true={errorMessage}>
+        <p class="slds-text-color_error" role="alert">{errorMessage}</p>
+      </template>
+      <template if:true={statement}>
+        <template if:true={statement.truncated}>
+          <p class="slds-text-color_weak" role="status">
+            Extrato limitado às transações mais recentes; meses mais antigos não
+            aparecem.
+          </p>
+        </template>
+        <template if:true={hasMonths}>
+          <div
+            class="slds-grid slds-grid_align-center slds-grid_vertical-align-center slds-m-bottom_x-small"
+          >
+            <lightning-button-icon
+              class="month-previous"
+              icon-name="utility:chevronleft"
+              variant="border"
+              alternative-text="Mês anterior"
+              disabled={isOldest}
+              onclick={handlePrevious}
+            ></lightning-button-icon>
+            <span
+              class="month-label slds-m-horizontal_medium slds-text-heading_small slds-text-align_center"
+              >{monthLabel}</span
+            >
+            <lightning-button-icon
+              class="month-next"
+              icon-name="utility:chevronright"
+              variant="border"
+              alternative-text="Próximo mês"
+              disabled={isNewest}
+              onclick={handleNext}
+            ></lightning-button-icon>
+          </div>
+          <p
+            class="month-summary slds-text-align_center slds-text-color_weak slds-m-bottom_small"
+          >
+            Entradas
+            <lightning-formatted-number
+              value={totalIn}
+              format-style="currency"
+              currency-code={statement.currencyCode}
+            ></lightning-formatted-number>
+            · Saídas
+            <lightning-formatted-number
+              value={totalOut}
+              format-style="currency"
+              currency-code={statement.currencyCode}
+            ></lightning-formatted-number>
+            · {rowCount} transações
+          </p>
+        </template>
+        <template if:false={hasRows}>
+          <p class="slds-m-top_small">Nenhuma transação no período.</p>
+        </template>
+        <template if:true={hasRows}>
+          <table class="slds-table slds-table_bordered slds-m-top_small">
+            <thead>
+              <tr>
+                <th scope="col">Data</th>
+                <th scope="col">Descrição</th>
+                <th scope="col" class="slds-text-align_right">Valor</th>
+                <th scope="col" class="slds-text-align_right">Saldo</th>
+              </tr>
+            </thead>
+            <tbody>
+              <template for:each={statement.rows} for:item="row">
+                <tr key={row.id}>
+                  <td>
+                    <lightning-formatted-date-time
+                      value={row.transactionDate}
+                      time-zone="UTC"
+                    ></lightning-formatted-date-time>
+                  </td>
+                  <td>
+                    <a href="#" data-id={row.id} onclick={handleOpen}
+                      >{row.description}</a
+                    >
+                  </td>
+                  <td class="slds-text-align_right">
+                    <lightning-formatted-number
+                      value={row.amount}
+                      format-style="currency"
+                      currency-code={statement.currencyCode}
+                    ></lightning-formatted-number>
+                  </td>
+                  <td class="slds-text-align_right">
+                    <lightning-formatted-number
+                      value={row.runningBalance}
+                      format-style="currency"
+                      currency-code={statement.currencyCode}
+                    ></lightning-formatted-number>
+                  </td>
+                </tr>
+              </template>
+            </tbody>
+          </table>
+        </template>
+      </template>
+    </div>
+  </lightning-card>
+</template>
