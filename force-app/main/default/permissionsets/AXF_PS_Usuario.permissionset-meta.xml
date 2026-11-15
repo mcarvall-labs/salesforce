@@ -528,6 +528,11 @@
     </fieldPermissions>
     <fieldPermissions>
         <editable>true</editable>
+        <field>Account.AXF_ACC_TXT_CPF__c</field>
+        <readable>true</readable>
+    </fieldPermissions>
+    <fieldPermissions>
+        <editable>true</editable>
         <field>Account.AXF_ACC_TAL_PaymentDetails__c</field>
         <readable>true</readable>
     </fieldPermissions>

@@ -60,6 +60,7 @@ private class ALT_CLS_PluggySyncBatchTest {
         'AXF_OBJ_CreditCardTransaction__c'
       }
     );
+    ALT_CLS_ConnectionTestUser.grantAxonAccess(UserInfo.getUserId());
   }
 
   private static ALT_CLS_PluggySyncBatch phase(
@@ -494,42 +495,46 @@ private class ALT_CLS_PluggySyncBatchTest {
 
   @IsTest
   static void scheduledExecuteStartsTheFullSync() {
-    Test.startTest();
-    new ALT_CLS_PluggySyncSchedule().execute(null);
-    System.assertEquals(
-      1,
-      [
-        SELECT COUNT()
-        FROM AsyncApexJob
-        WHERE ApexClass.Name = 'ALT_CLS_PluggySyncBatch'
-      ]
-    );
-    Test.stopTest();
+    System.runAs(new User(Id = UserInfo.getUserId())) {
+      Test.startTest();
+      new ALT_CLS_PluggySyncSchedule().execute(null);
+      System.assertEquals(
+        1,
+        [
+          SELECT COUNT()
+          FROM AsyncApexJob
+          WHERE ApexClass.Name = 'ALT_CLS_PluggySyncBatch'
+        ]
+      );
+      Test.stopTest();
+    }
   }
 
   @IsTest
   static void scheduleRegistersTheDailyJobAndRunsTheBatch() {
-    // A test name keeps the org's real daily job untouched.
-    String jobName = 'Axon test - Sync diário Pluggy';
-    Test.startTest();
-    ALT_CLS_PluggySyncSchedule.scheduleDaily(jobName);
-    // Running it again replaces the job instead of failing on the duplicate name.
-    Id jobId = ALT_CLS_PluggySyncSchedule.scheduleDaily(jobName);
-    Test.stopTest();
-    System.assertEquals(
-      1,
-      [SELECT COUNT() FROM CronTrigger WHERE CronJobDetail.Name = :jobName]
-    );
-    CronTrigger cron = [
-      SELECT CronExpression, CronJobDetail.Name
-      FROM CronTrigger
-      WHERE Id = :jobId
-    ];
-    System.assertEquals('0 0 3 * * ?', cron.CronExpression);
-    System.assertEquals(jobName, cron.CronJobDetail.Name);
-    System.assertEquals(
-      'Axon - Sync diário Pluggy',
-      ALT_CLS_PluggySyncSchedule.JOB_NAME
-    );
+    System.runAs(new User(Id = UserInfo.getUserId())) {
+      // A test name keeps the org's real daily job untouched.
+      String jobName = 'Axon test - Sync diário Pluggy';
+      Test.startTest();
+      ALT_CLS_PluggySyncSchedule.scheduleDaily(jobName);
+      // Running it again replaces the job instead of failing on the duplicate name.
+      Id jobId = ALT_CLS_PluggySyncSchedule.scheduleDaily(jobName);
+      Test.stopTest();
+      System.assertEquals(
+        1,
+        [SELECT COUNT() FROM CronTrigger WHERE CronJobDetail.Name = :jobName]
+      );
+      CronTrigger cron = [
+        SELECT CronExpression, CronJobDetail.Name
+        FROM CronTrigger
+        WHERE Id = :jobId
+      ];
+      System.assertEquals('0 0 3 * * ?', cron.CronExpression);
+      System.assertEquals(jobName, cron.CronJobDetail.Name);
+      System.assertEquals(
+        'Axon - Sync diário Pluggy',
+        ALT_CLS_PluggySyncSchedule.JOB_NAME
+      );
+    }
   }
 }

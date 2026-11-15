@@ -1,4 +1,5 @@
 import { createElement } from "lwc";
+import { getRecord } from "lightning/uiRecordApi";
 import AXF_LWC_statementImport from "c/aXF_LWC_statementImport";
 import preview from "@salesforce/apex/AXF_CLS_CTRL_StatementImport.preview";
 import importStatement from "@salesforce/apex/AXF_CLS_CTRL_StatementImport.importStatement";
@@ -30,12 +31,32 @@ const previewResult = {
   ]
 };
 
-function setup() {
+const recordOf = (developerName) => ({
+  fields: {
+    RecordType: {
+      value: { fields: { DeveloperName: { value: developerName } } }
+    }
+  }
+});
+
+async function setup(
+  recordType = "AXF_Manual",
+  objectApiName = "AXF_OBJ_BankAccount__c"
+) {
   const element = createElement("c-a-x-f-l-w-c-statement-import", {
     is: AXF_LWC_statementImport
   });
   element.recordId = "a00000000000001";
+  element.objectApiName = objectApiName;
   document.body.appendChild(element);
+  if (recordType !== "UNKNOWN") {
+    getRecord.emit(
+      recordType
+        ? recordOf(recordType)
+        : { fields: { RecordType: { value: null } } }
+    );
+  }
+  await flushPromises();
   return element;
 }
 
@@ -58,7 +79,7 @@ describe("c-a-x-f-l-w-c-statement-import", () => {
 
   it("previews the chosen file with the status of each line", async () => {
     preview.mockResolvedValue(previewResult);
-    const element = setup();
+    const element = await setup();
     await pickFile(element);
     expect(preview).toHaveBeenCalledWith({
       recordId: "a00000000000001",
@@ -76,7 +97,7 @@ describe("c-a-x-f-l-w-c-statement-import", () => {
       message: "Importação concluída.",
       imported: 1
     });
-    const element = setup();
+    const element = await setup();
     await pickFile(element);
     element.shadowRoot.querySelector("lightning-button").click();
     await flushPromises();
@@ -88,7 +109,7 @@ describe("c-a-x-f-l-w-c-statement-import", () => {
 
   it("shows the server error when the preview fails", async () => {
     preview.mockRejectedValue({ body: { message: "Formato não suportado." } });
-    const element = setup();
+    const element = await setup();
     await pickFile(element, "extrato.pdf");
     expect(element.shadowRoot.querySelector('[role="alert"]').textContent).toBe(
       "Formato não suportado."
@@ -113,13 +134,44 @@ describe("c-a-x-f-l-w-c-statement-import", () => {
         }
       ]
     });
-    const element = setup();
+    const element = await setup();
     await pickFile(element);
     expect(
       element.shadowRoot.querySelector('[role="status"]').textContent
     ).toContain("limite do arquivo");
     expect(element.shadowRoot.querySelector("tbody").textContent).toContain(
       "Linha idêntica repetida: 2×"
+    );
+  });
+
+  it("is not shown on a Pluggy account", async () => {
+    const element = await setup("AXF_Pluggy");
+    expect(element.shadowRoot.querySelector("lightning-card")).toBeNull();
+  });
+
+  it("is not shown on a Pluggy card", async () => {
+    const element = await setup("AXF_Pluggy", "AXF_OBJ_CreditCard__c");
+    expect(element.shadowRoot.querySelector("lightning-card")).toBeNull();
+  });
+
+  it("is not shown until the record type is known or when it has none", async () => {
+    const unknown = await setup("UNKNOWN");
+    expect(unknown.shadowRoot.querySelector("lightning-card")).toBeNull();
+    const none = await setup(null);
+    expect(none.shadowRoot.querySelector("lightning-card")).toBeNull();
+  });
+
+  it("titles the account import as Importar extrato", async () => {
+    const element = await setup();
+    expect(element.shadowRoot.querySelector("lightning-card").title).toBe(
+      "Importar extrato"
+    );
+  });
+
+  it("titles the card import as Importar fatura", async () => {
+    const element = await setup("AXF_Manual", "AXF_OBJ_CreditCard__c");
+    expect(element.shadowRoot.querySelector("lightning-card").title).toBe(
+      "Importar fatura"
     );
   });
 });

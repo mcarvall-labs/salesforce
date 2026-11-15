@@ -1,4 +1,5 @@
 import { createElement } from "lwc";
+import { getRecord } from "lightning/uiRecordApi";
 import AXF_LWC_bankStatement from "c/aXF_LWC_bankStatement";
 import getStatement from "@salesforce/apex/AXF_CLS_CTRL_BankStatement.getStatement";
 
@@ -38,12 +39,26 @@ const statement = {
   ]
 };
 
-async function setup() {
+const recordOf = (developerName) => ({
+  fields: {
+    RecordType: {
+      value: { fields: { DeveloperName: { value: developerName } } }
+    }
+  }
+});
+async function setup(recordType = "AXF_Pluggy") {
   const element = createElement("c-a-x-f-l-w-c-bank-statement", {
     is: AXF_LWC_bankStatement
   });
   element.recordId = "a00000000000001";
   document.body.appendChild(element);
+  if (recordType !== "UNKNOWN") {
+    getRecord.emit(
+      recordType
+        ? recordOf(recordType)
+        : { fields: { RecordType: { value: null } } }
+    );
+  }
   await flushPromises();
   return element;
 }
@@ -128,5 +143,23 @@ describe("c-a-x-f-l-w-c-bank-statement", () => {
     element.shadowRoot.querySelector(".sync-button").click();
     await flushPromises();
     expect(getStatement).toHaveBeenCalledTimes(1);
+  });
+
+  it("hides the Pluggy sync button on a manual account", async () => {
+    getStatement.mockResolvedValue(statement);
+    const element = await setup("AXF_Manual");
+    expect(element.shadowRoot.querySelector(".sync-button")).toBeNull();
+  });
+
+  it("hides the Pluggy sync button until the record type is known", async () => {
+    getStatement.mockResolvedValue(statement);
+    const element = await setup("UNKNOWN");
+    expect(element.shadowRoot.querySelector(".sync-button")).toBeNull();
+  });
+
+  it("hides the Pluggy sync button when the record has no record type", async () => {
+    getStatement.mockResolvedValue(statement);
+    const element = await setup(null);
+    expect(element.shadowRoot.querySelector(".sync-button")).toBeNull();
   });
 });
