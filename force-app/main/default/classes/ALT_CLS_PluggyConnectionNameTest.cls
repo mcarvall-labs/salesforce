@@ -45,7 +45,10 @@ private class ALT_CLS_PluggyConnectionNameTest {
       Id recordTypeId = [
         SELECT Id
         FROM RecordType
-        WHERE SobjectType = 'Account' AND IsPersonType = TRUE
+        WHERE
+          SobjectType = 'Account'
+          AND IsPersonType = TRUE
+          AND DeveloperName = 'AXF_Person'
         LIMIT 1
       ]
       .Id;

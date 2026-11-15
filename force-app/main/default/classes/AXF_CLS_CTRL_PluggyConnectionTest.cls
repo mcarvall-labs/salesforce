@@ -45,6 +45,7 @@ private class AXF_CLS_CTRL_PluggyConnectionTest {
         'AXF_OBJ_CreditCard__c'
       }
     );
+    ALT_CLS_ConnectionTestUser.grantAxonAccess(UserInfo.getUserId());
   }
 
   private static User syncUser() {
@@ -83,31 +84,35 @@ private class AXF_CLS_CTRL_PluggyConnectionTest {
 
   @IsTest
   static void accountsFailureAfterValidItemIsReported() {
-    AXF_OBJ_PluggyConnection__c connection = connection();
-    ALT_CLS_PluggyAccountSync.assignRecordType = false;
-    Test.setMock(HttpCalloutMock.class, new PluggyMock(200, 500));
-    Test.startTest();
-    AXF_CLS_CTRL_PluggyConnection.TestView view = AXF_CLS_CTRL_PluggyConnection.testAndSync(
-      connection.Id
-    );
-    Test.stopTest();
-    System.assertEquals(false, view.success);
-    System.assert(view.message.contains('HTTP 500'), view.message);
-    System.assertEquals(0, view.accounts);
+    System.runAs(syncUser()) {
+      AXF_OBJ_PluggyConnection__c connection = connection();
+      ALT_CLS_PluggyAccountSync.assignRecordType = false;
+      Test.setMock(HttpCalloutMock.class, new PluggyMock(200, 500));
+      Test.startTest();
+      AXF_CLS_CTRL_PluggyConnection.TestView view = AXF_CLS_CTRL_PluggyConnection.testAndSync(
+        connection.Id
+      );
+      Test.stopTest();
+      System.assertEquals(false, view.success);
+      System.assert(view.message.contains('HTTP 500'), view.message);
+      System.assertEquals(0, view.accounts);
+    }
   }
 
   @IsTest
   static void invalidItemDoesNotImport() {
-    AXF_OBJ_PluggyConnection__c connection = connection();
-    Test.setMock(HttpCalloutMock.class, new PluggyMock(404));
-    Test.startTest();
-    AXF_CLS_CTRL_PluggyConnection.TestView view = AXF_CLS_CTRL_PluggyConnection.testAndSync(
-      connection.Id
-    );
-    Test.stopTest();
-    System.assertEquals(false, view.success);
-    System.assertEquals('Item Id não encontrado no Pluggy.', view.message);
-    System.assertEquals(0, [SELECT COUNT() FROM AXF_OBJ_BankAccount__c]);
+    System.runAs(syncUser()) {
+      AXF_OBJ_PluggyConnection__c connection = connection();
+      Test.setMock(HttpCalloutMock.class, new PluggyMock(404));
+      Test.startTest();
+      AXF_CLS_CTRL_PluggyConnection.TestView view = AXF_CLS_CTRL_PluggyConnection.testAndSync(
+        connection.Id
+      );
+      Test.stopTest();
+      System.assertEquals(false, view.success);
+      System.assertEquals('Item Id não encontrado no Pluggy.', view.message);
+      System.assertEquals(0, [SELECT COUNT() FROM AXF_OBJ_BankAccount__c]);
+    }
   }
 
   @IsTest

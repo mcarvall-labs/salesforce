@@ -3,6 +3,7 @@ private class AXF_CLS_CTRL_ConnectionDashboardTest {
   @TestSetup
   static void setup() {
     ALT_CLS_ConnectionTestUser.create('axfctrl');
+    ALT_CLS_ConnectionTestUser.grantAxonAccess(UserInfo.getUserId());
   }
 
   private static User controllerUser() {
@@ -76,22 +77,24 @@ private class AXF_CLS_CTRL_ConnectionDashboardTest {
 
   @IsTest
   static void syncConnectionStartsTheBackgroundSync() {
-    AXF_OBJ_PluggyConnection__c active = connection('Active');
-    ALT_CLS_PluggySyncBatch.chainNextPhase = false;
-    Test.startTest();
-    AXF_CLS_CTRL_ConnectionDashboard.SyncView view = AXF_CLS_CTRL_ConnectionDashboard.syncConnection(
-      active.Id
-    );
-    System.assertEquals(true, view.success, view.message);
-    System.assert(view.message.contains('iniciada'));
-    Test.stopTest();
-    System.assert(
-      [
-        SELECT COUNT()
-        FROM AsyncApexJob
-        WHERE ApexClass.Name = 'ALT_CLS_PluggySyncBatch'
-      ] >= 1
-    );
+    System.runAs(new User(Id = UserInfo.getUserId())) {
+      AXF_OBJ_PluggyConnection__c active = connection('Active');
+      ALT_CLS_PluggySyncBatch.chainNextPhase = false;
+      Test.startTest();
+      AXF_CLS_CTRL_ConnectionDashboard.SyncView view = AXF_CLS_CTRL_ConnectionDashboard.syncConnection(
+        active.Id
+      );
+      System.assertEquals(true, view.success, view.message);
+      System.assert(view.message.contains('iniciada'));
+      Test.stopTest();
+      System.assert(
+        [
+          SELECT COUNT()
+          FROM AsyncApexJob
+          WHERE ApexClass.Name = 'ALT_CLS_PluggySyncBatch'
+        ] >= 1
+      );
+    }
   }
 
   // Answers the accounts call of whichever item is asked, with an account id of that item.
@@ -118,30 +121,32 @@ private class AXF_CLS_CTRL_ConnectionDashboardTest {
 
   @IsTest
   static void syncConnectionSyncsOnlyTheClickedConnection() {
-    AXF_OBJ_PluggyConnection__c clicked = connection('Active');
-    AXF_OBJ_PluggyConnection__c other = connection('Error');
-    ALT_CLS_PluggySyncBatch.chainNextPhase = false;
-    ALT_CLS_PluggyAccountSync.assignRecordType = false;
-    Test.setMock(HttpCalloutMock.class, new AccountsMock());
-    Test.startTest();
-    AXF_CLS_CTRL_ConnectionDashboard.syncConnection(clicked.Id);
-    Test.stopTest();
-    System.assertEquals(
-      1,
-      [
-        SELECT COUNT()
-        FROM AXF_OBJ_BankAccount__c
-        WHERE AXF_BA_LKP_Connection__c = :clicked.Id
-      ]
-    );
-    System.assertEquals(
-      0,
-      [
-        SELECT COUNT()
-        FROM AXF_OBJ_BankAccount__c
-        WHERE AXF_BA_LKP_Connection__c = :other.Id
-      ]
-    );
+    System.runAs(new User(Id = UserInfo.getUserId())) {
+      AXF_OBJ_PluggyConnection__c clicked = connection('Active');
+      AXF_OBJ_PluggyConnection__c other = connection('Error');
+      ALT_CLS_PluggySyncBatch.chainNextPhase = false;
+      ALT_CLS_PluggyAccountSync.assignRecordType = false;
+      Test.setMock(HttpCalloutMock.class, new AccountsMock());
+      Test.startTest();
+      AXF_CLS_CTRL_ConnectionDashboard.syncConnection(clicked.Id);
+      Test.stopTest();
+      System.assertEquals(
+        1,
+        [
+          SELECT COUNT()
+          FROM AXF_OBJ_BankAccount__c
+          WHERE AXF_BA_LKP_Connection__c = :clicked.Id
+        ]
+      );
+      System.assertEquals(
+        0,
+        [
+          SELECT COUNT()
+          FROM AXF_OBJ_BankAccount__c
+          WHERE AXF_BA_LKP_Connection__c = :other.Id
+        ]
+      );
+    }
   }
 
   @IsTest

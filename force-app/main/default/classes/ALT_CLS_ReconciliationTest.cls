@@ -10,9 +10,11 @@ private class ALT_CLS_ReconciliationTest {
         'AXF_OBJ_BankAccountTransaction__c',
         'AXF_OBJ_CreditCard__c',
         'AXF_OBJ_CreditCardInvoice__c',
-        'AXF_OBJ_CreditCardTransaction__c'
+        'AXF_OBJ_CreditCardTransaction__c',
+        'AXF_OBJ_Contract__c'
       }
     );
+    ALT_CLS_ConnectionTestUser.grantAxonAccess(UserInfo.getUserId());
   }
 
   private static Account holder;

@@ -2,6 +2,13 @@
 private class AXF_CLS_ReconciliationPermissionTest {
   private static final Date DUE = Date.newInstance(2026, 10, 10);
 
+  // Where the deploy user has no Axon access (production), the data DML needs the Axon permission
+  // sets; a direct assignment only applies inside a runAs opened after it.
+  @TestSetup
+  static void setup() {
+    ALT_CLS_ConnectionTestUser.grantAxonAccess(UserInfo.getUserId());
+  }
+
   // A user that only has the real Axon - Usuário permission set (no helper permission set), so the
   // test fails when the set misses an object, a field or an Apex class the screen needs.
   private static User axonUser() {
@@ -45,60 +52,62 @@ private class AXF_CLS_ReconciliationPermissionTest {
 
   private static Data data(User user) {
     Data data = new Data();
-    data.holder = new Account(Name = 'Titular');
-    insert data.holder;
-    insert new AccountShare(
-      AccountId = data.holder.Id,
-      UserOrGroupId = user.Id,
-      AccountAccessLevel = 'Edit',
-      OpportunityAccessLevel = 'None',
-      CaseAccessLevel = 'None'
-    );
-    data.account = new AXF_OBJ_BankAccount__c(
-      Name = 'Conta',
-      AXF_BA_MD_Holder__c = data.holder.Id,
-      AXF_BA_PKL_Institution__c = '341',
-      AXF_BA_PKL_Type__c = 'Checking'
-    );
-    data.card = new AXF_OBJ_CreditCard__c(
-      Name = 'Cartão',
-      AXF_CC_MD_Holder__c = data.holder.Id,
-      AXF_CC_PKL_Institution__c = '341'
-    );
-    insert data.account;
-    insert data.card;
-    data.entry = new AXF_OBJ_Entry__c(
-      Name = 'Conta de luz',
-      AXF_ENT_MD_Holder__c = data.holder.Id,
-      AXF_ENT_CUR_Amount__c = 100,
-      AXF_ENT_DAT_DueDate__c = DUE,
-      AXF_ENT_PKL_Type__c = 'Expense',
-      AXF_ENT_PKL_Status__c = 'Pending'
-    );
-    insert data.entry;
-    data.bank = new AXF_OBJ_BankAccountTransaction__c(
-      AXF_BAT_MD_BankAccount__c = data.account.Id,
-      AXF_BAT_DAT_Date__c = DUE,
-      AXF_BAT_CUR_Amount__c = -100,
-      AXF_BAT_TXT_Description__c = 'Pagamento'
-    );
-    data.transfer = new AXF_OBJ_BankAccountTransaction__c(
-      AXF_BAT_MD_BankAccount__c = data.account.Id,
-      AXF_BAT_DAT_Date__c = DUE,
-      AXF_BAT_CUR_Amount__c = -500,
-      AXF_BAT_TXT_Description__c = 'Transferência'
-    );
-    data.purchase = new AXF_OBJ_CreditCardTransaction__c(
-      AXF_CCT_MD_CreditCard__c = data.card.Id,
-      AXF_CCT_DAT_Date__c = DUE,
-      AXF_CCT_CUR_Amount__c = -30,
-      AXF_CCT_CUR_AmountBRL__c = -30,
-      AXF_CCT_TXT_CurrencyCode__c = 'BRL',
-      AXF_CCT_TXT_Description__c = 'Compra'
-    );
-    insert data.bank;
-    insert data.transfer;
-    insert data.purchase;
+    System.runAs(new User(Id = UserInfo.getUserId())) {
+      data.holder = new Account(Name = 'Titular');
+      insert data.holder;
+      insert new AccountShare(
+        AccountId = data.holder.Id,
+        UserOrGroupId = user.Id,
+        AccountAccessLevel = 'Edit',
+        OpportunityAccessLevel = 'None',
+        CaseAccessLevel = 'None'
+      );
+      data.account = new AXF_OBJ_BankAccount__c(
+        Name = 'Conta',
+        AXF_BA_MD_Holder__c = data.holder.Id,
+        AXF_BA_PKL_Institution__c = '341',
+        AXF_BA_PKL_Type__c = 'Checking'
+      );
+      data.card = new AXF_OBJ_CreditCard__c(
+        Name = 'Cartão',
+        AXF_CC_MD_Holder__c = data.holder.Id,
+        AXF_CC_PKL_Institution__c = '341'
+      );
+      insert data.account;
+      insert data.card;
+      data.entry = new AXF_OBJ_Entry__c(
+        Name = 'Conta de luz',
+        AXF_ENT_MD_Holder__c = data.holder.Id,
+        AXF_ENT_CUR_Amount__c = 100,
+        AXF_ENT_DAT_DueDate__c = DUE,
+        AXF_ENT_PKL_Type__c = 'Expense',
+        AXF_ENT_PKL_Status__c = 'Pending'
+      );
+      insert data.entry;
+      data.bank = new AXF_OBJ_BankAccountTransaction__c(
+        AXF_BAT_MD_BankAccount__c = data.account.Id,
+        AXF_BAT_DAT_Date__c = DUE,
+        AXF_BAT_CUR_Amount__c = -100,
+        AXF_BAT_TXT_Description__c = 'Pagamento'
+      );
+      data.transfer = new AXF_OBJ_BankAccountTransaction__c(
+        AXF_BAT_MD_BankAccount__c = data.account.Id,
+        AXF_BAT_DAT_Date__c = DUE,
+        AXF_BAT_CUR_Amount__c = -500,
+        AXF_BAT_TXT_Description__c = 'Transferência'
+      );
+      data.purchase = new AXF_OBJ_CreditCardTransaction__c(
+        AXF_CCT_MD_CreditCard__c = data.card.Id,
+        AXF_CCT_DAT_Date__c = DUE,
+        AXF_CCT_CUR_Amount__c = -30,
+        AXF_CCT_CUR_AmountBRL__c = -30,
+        AXF_CCT_TXT_CurrencyCode__c = 'BRL',
+        AXF_CCT_TXT_Description__c = 'Compra'
+      );
+      insert data.bank;
+      insert data.transfer;
+      insert data.purchase;
+    }
     return data;
   }
 
